@@ -1,0 +1,66 @@
+@startuml  
+title AwesomeMusic - AI Music Creation and Sharing Platform  
+  
+package "Client Layer" {  
+"  [Web Browser]"  
+"  [Mobile App]"  
+}  
+  
+package "Presentation Layer" {  
+"  [Web Frontend]"  
+}  
+  
+package "Application Layer" {  
+"  [Web Backend]"  
+}  
+  
+package "Service Layer" {  
+"  [Algorithm Service]"  
+"  [Scheduling Service]"  
+}  
+  
+package "Infrastructure Layer" {  
+"  [RabbitMQ]"  
+"  [User Database]"  
+"  [Score Database]"  
+"  [Model Database]"  
+"  [Recommendation DB]"  
+"  [Nginx]"  
+"  [etcd]"  
+"  [Hadoop]"  
+}  
+  
+package "External Systems" {  
+"  [Email Service]"  
+"  [File Storage]"  
+"  [Monitoring]"  
+} 
+  
+"Web Browser --> Web Frontend : HTTPS"  
+"Mobile App --> Web Frontend : HTTPS"  
+"Web Frontend --> Web Backend : REST API"  
+"Web Backend --> Algorithm Service : Music Generation"  
+"Web Backend --> Scheduling Service : Task Submission"  
+"Web Backend --> User Database : User Data"  
+"Web Backend --> Score Database : Score Data"  
+"Web Backend --> Model Database : Model Data"  
+"Web Backend --> Recommendation DB : Recommendations"  
+"Algorithm Service --> RabbitMQ : Task Status"  
+"Scheduling Service --> RabbitMQ : Task Queue"  
+"Algorithm Service --> Model Database : Model Parameters"  
+"Algorithm Service --> Score Database : Score Processing"  
+"Scheduling Service --> Algorithm Service : Daily Training"  
+"Scheduling Service --> Algorithm Service : Classification"  
+"Scheduling Service --> Algorithm Service : Recommendations"  
+"Nginx --> Web Backend : Load Balancing"  
+"etcd --> Web Backend : Configuration"  
+"etcd --> Algorithm Service : Configuration"  
+"etcd --> Scheduling Service : Configuration"  
+"Hadoop --> Algorithm Service : Big Data Processing"  
+"Web Backend --> Email Service : Notifications"  
+"Web Backend --> File Storage : File Storage"  
+"Web Backend --> Monitoring : Metrics"  
+"Algorithm Service --> Recommendation DB : Generate Recommendations"  
+"Web Backend --> Recommendation DB : Update Hot Charts"  
+  
+@enduml 

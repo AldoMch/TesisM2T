@@ -1,0 +1,65 @@
+@startuml
+title NLP4L (attic-nlp4l) Architecture
+
+skinparam componentStyle rectangle
+
+package "Presentation / Interaction" {
+  component "Scala Interactive Interface" as ScalaUI
+  component "Chart Display (Experimental)" as Chart
+}
+
+package "Application / Services" {
+  component "Schema Loader & Validator" as SchemaSvc
+  component "Index Processing Service" as IndexProc
+  component "Term Data Access Service" as TermSvc
+  component "Search Service" as SearchSvc
+  component "Vectorization Service\n(LIBSVM Export)" as VectorSvc
+}
+
+package "Integration / Infrastructure" {
+  component "Lucene API Integration" as LuceneAPI
+  component "Resource / File Loader" as ResourceLoader
+}
+
+database "Lucene Index" as LuceneIndex
+artifact "Schema Configuration\n(resource or file)" as SchemaConfig
+artifact "LIBSVM Output File" as LibsvmFile
+component "External ML Tools\n(e.g., Spark, Mahout)" as MLTools
+
+' Interactions
+ScalaUI --> SchemaSvc : load schema
+ScalaUI --> IndexProc : process index
+ScalaUI --> SearchSvc : search
+ScalaUI --> VectorSvc : export vectors
+ScalaUI --> Chart : visualize word count
+
+Chart --> TermSvc : word count data
+
+' Service dependencies
+SchemaSvc --> ResourceLoader
+ResourceLoader --> SchemaConfig
+
+IndexProc --> LuceneAPI
+TermSvc --> LuceneAPI
+SearchSvc --> LuceneAPI
+VectorSvc --> LuceneAPI
+
+LuceneAPI --> LuceneIndex
+
+VectorSvc --> LibsvmFile
+MLTools --> LibsvmFile
+
+' Notes / constraints
+note right of LuceneAPI
+  Depends on Apache Lucene 5.2.0
+end note
+
+note right of VectorSvc
+  Produces document vectors in LIBSVM format
+end note
+
+note right of Chart
+  Experimental feature; stability not guaranteed
+end note
+
+@enduml

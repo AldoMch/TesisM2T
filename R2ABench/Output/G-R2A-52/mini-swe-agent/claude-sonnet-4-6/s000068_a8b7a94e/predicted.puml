@@ -1,0 +1,81 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+
+title NASA cFS Bundle - Architecture Diagram
+
+rectangle "External Systems" as EXT {
+    component [GitHub Actions\nCI Platform] as CI
+    component [GitHub Repository\n(nasa/cFS)] as REPO
+}
+
+rectangle "CI / Automation Layer" as CI_LAYER {
+    component [Changelog Workflow\n(ubuntu-latest)] as CHANGELOG_WF
+    component [Format Check Workflow\n(ubuntu-18.04)] as FORMAT_WF
+    component [Build & Test Workflow\n(ubuntu-18.04)] as BUILD_WF
+    component [Reusable Workflows\n(workflow_call)] as REUSABLE_WF
+    component [Static Analysis /\nCodeQL Workflow] as ANALYSIS_WF
+}
+
+rectangle "Build Layer" as BUILD_LAYER {
+    component [Makefile.sample /\nsample_defs Assets] as MAKE_ASSETS
+    component [make prep /\nmake install] as BUILD_TOOL
+    component [Build Variants\n(debug / release)] as BUILD_VARIANTS
+    component [Git Submodules\n(cFE, OSAL, PSP,\nFramework Apps)] as SUBMODULES
+}
+
+rectangle "cFS Runtime Target Layer" as RUNTIME_LAYER {
+    component [core-cpu1\n(cFS Executable)] as CORE_CPU1
+    component [cFE\n(Core Flight Executive)] as CFE
+    component [OSAL\n(OS Abstraction Layer)] as OSAL
+    component [PSP\n(Platform Support Package)] as PSP
+    component [Framework Applications] as FRAMEWORK_APPS
+}
+
+rectangle "Host-Side Tools Layer" as HOST_LAYER {
+    component [cmdUtil\n(Command Utility)] as CMDUTIL
+    component [Telemetry Observer\n(Operator UI / Terminal)] as TELEM_OBS
+}
+
+rectangle "Related Libraries & Tools" as LIBS_LAYER {
+    component [cFS_LIB /\ncFS_IO_LIB] as CFS_LIBS
+    component [SIL / ECI] as SIL_ECI
+    component [CCDD /\nPerfutils-java /\ngen_sch_tbl] as TOOLS
+}
+
+database "Build Artifacts" as BUILD_ARTIFACTS
+database "Changelog Artifact" as CHANGELOG_ARTIFACT
+database "Telemetry Data Stream" as TELEM_DATA
+
+REPO --> CI : triggers workflows
+CI --> CI_LAYER : executes
+
+CHANGELOG_WF --> CHANGELOG_ARTIFACT : generates & uploads
+FORMAT_WF ..> REUSABLE_WF : uses workflow_call
+BUILD_WF ..> REUSABLE_WF : uses workflow_call
+ANALYSIS_WF ..> REUSABLE_WF : uses workflow_call
+
+BUILD_WF --> BUILD_LAYER : invokes build steps
+MAKE_ASSETS --> BUILD_TOOL : provides Makefile & sample_defs
+SUBMODULES --> BUILD_TOOL : source checkout with submodules
+BUILD_TOOL --> BUILD_VARIANTS : produces debug/release
+BUILD_TOOL --> BUILD_ARTIFACTS : outputs
+
+BUILD_ARTIFACTS --> RUNTIME_LAYER : deployed to
+CORE_CPU1 --> CFE : contains
+CFE --> OSAL : depends on
+CFE --> PSP : depends on
+CORE_CPU1 --> FRAMEWORK_APPS : loads
+
+CMDUTIL --> CORE_CPU1 : sends commands\n(--pktid, --cmdcode,\n--endian, --uint32)
+CORE_CPU1 --> TELEM_DATA : emits telemetry
+TELEM_DATA --> TELEM_OBS : observed via IP address\n(incl. 127.0.0.1)
+TELEM_OBS --> CMDUTIL : operator sends no-op\ncommands, observes counters
+
+BUILD_LAYER ..> LIBS_LAYER : references
+RUNTIME_LAYER ..> CFS_LIBS : uses at runtime
+RUNTIME_LAYER ..> SIL_ECI : integrates
+TOOLS ..> BUILD_LAYER : tooling support
+
+@enduml

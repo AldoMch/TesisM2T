@@ -1,0 +1,82 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam queue {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Data Scientist Environment" as DataScientistEnvironment {
+    rectangle "Python ML / DL Code" as PythonCode
+    rectangle "ClearML Snippet" as ClearmlSnippet
+}
+
+package "GPU / Kubernetes Workers\nOn Prem or Cloud" as GpuMachines {
+    rectangle "ClearML Agent\nService Pod" as ClearmlAgent
+    rectangle "Kubernetes Glue" as KubernetesGlue
+    rectangle "YAML Job Template" as YamlTemplate
+    rectangle "Kubernetes Job" as KubernetesJob
+    rectangle "Pod Execution Environment\nand Docker User Code" as DockerExecution
+    rectangle "Mapped Docker Socket\nSibling Containers" as DockerSocket
+}
+
+package "ClearML Server" as ClearmlServer {
+    package "Experiment Manager" as ExperimentManager {
+        rectangle "Versioning" as Versioning
+        rectangle "Visualization" as Visualization
+        rectangle "Collaboration" as Collaboration
+        rectangle "Data Tracking" as DataTracking
+    }
+
+    package "ML Ops" as MlOps {
+        queue "Execution Queue" as ExecutionQueue
+        rectangle "Monitoring" as Monitoring
+        rectangle "Orchestration" as Orchestration
+    }
+
+    rectangle "Backend Service API" as BackendApi
+}
+
+PythonCode --> ClearmlSnippet : instrument code
+ClearmlSnippet --> BackendApi : HTTPS experiment metadata
+BackendApi --> Versioning : store code and artifacts
+BackendApi --> Visualization : metrics and plots
+BackendApi --> Collaboration : shared experiment state
+BackendApi --> DataTracking : data and model tracking
+
+Orchestration --> ExecutionQueue : schedule jobs
+ClearmlAgent --> ExecutionQueue : pull queued jobs
+KubernetesGlue --> ExecutionQueue : pull queued jobs
+KubernetesGlue --> YamlTemplate : apply template
+KubernetesGlue --> KubernetesJob : prepare K8s job
+KubernetesJob --> DockerExecution : start pod execution
+ClearmlAgent --> DockerExecution : install env\nrun / monitor user code
+ClearmlAgent --> DockerSocket : manage sibling containers
+DockerSocket --> DockerExecution : Docker execution access
+DockerExecution --> ClearmlAgent : stdout / stderr / status
+ClearmlAgent --> BackendApi : status reports,\npings, telemetry
+BackendApi --> Monitoring : worker telemetry
+Monitoring --> Orchestration : runtime health
+BackendApi --> Orchestration : job / control requests
+@enduml

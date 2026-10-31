@@ -1,0 +1,126 @@
+@startuml
+
+package "Infrastructure/Deployment Layer" {
+  node "Docker Compose Environment" as ComposeEnv
+  node "Shared Compose Network" as ComposeNet
+  component "Host Port Mappings" as PortMappings
+}
+
+package "Orchestration Layer" {
+  component "Airflow Webserver/Scheduler" as Airflow
+  component "Airflow DAG" as AirflowDAG
+  component "SparkSubmitOperator" as SparkSubmitOperator
+  component "spark_default connection" as SparkDefaultConn
+}
+
+package "Persistence Layer" {
+  database "Postgres 9.6" as Postgres
+}
+
+package "Cluster Compute Layer" {
+  component "Spark Master" as SparkMaster
+  component "spark-worker-1" as SparkWorker1
+  component "spark-worker-2" as SparkWorker2
+  component "spark-worker-3" as SparkWorker3
+}
+
+package "Interactive Development Layer" {
+  component "Jupyter/PySpark" as Jupyter
+}
+
+package "Shared Data Layer" {
+  component "Mounted DAG Directory" as DagMount
+  component "Mounted Spark App Directory" as SparkAppMount
+  component "Mounted Notebook Directory" as NotebookMount
+  component "Mounted Input Data Directory" as DataMount
+}
+
+package "Runtime/Dependency Layer" {
+  component "Airflow Python Environment" as AirflowPython
+  component "Bundled Spark Distribution" as SparkDist
+}
+
+package "Observability Layer" {
+  component "Airflow Task Logs" as AirflowTaskLogs
+  component "Container Logs" as ContainerLogs
+}
+
+actor "Data Engineer" as DataEngineer
+
+cloud "Host Machine" as Host
+cloud "Docker Engine" as Docker
+cloud "Docker Compose" as DockerCompose
+
+Airflow --> Postgres : metadata persistence
+Airflow --> DagMount : loads DAGs
+Airflow --> SparkAppMount : references Spark apps
+Airflow --> DataMount : reads input data (DEP-004)
+Airflow --> AirflowTaskLogs : writes task logs (FR-006 / NFR-005 / DE-007)
+Airflow --> AirflowDAG : schedules / executes
+
+AirflowDAG --> SparkSubmitOperator : contains task
+SparkSubmitOperator --> SparkDefaultConn : uses connection
+SparkSubmitOperator --> AirflowPython : executes in
+SparkDefaultConn --> SparkMaster : master URI spark://spark:7077
+AirflowPython --> SparkDist : spark-submit / pyspark
+SparkDist --> SparkMaster : submission target spark://spark:7077
+
+SparkWorker1 --> SparkMaster : register / work
+SparkMaster --> SparkWorker1 : dispatch
+SparkWorker2 --> SparkMaster : register / work
+SparkMaster --> SparkWorker2 : dispatch
+SparkWorker3 --> SparkMaster : register / work
+SparkMaster --> SparkWorker3 : dispatch
+
+SparkMaster --> SparkAppMount : reads Spark apps
+SparkMaster --> DataMount : reads input data
+SparkWorker1 --> SparkAppMount : reads Spark apps
+SparkWorker1 --> DataMount : reads input data
+SparkWorker2 --> SparkAppMount : reads Spark apps
+SparkWorker2 --> DataMount : reads input data
+SparkWorker3 --> SparkAppMount : reads Spark apps
+SparkWorker3 --> DataMount : reads input data
+
+Jupyter --> NotebookMount : notebooks
+Jupyter --> DataMount : input data
+
+ComposeEnv --> Airflow : creates service
+ComposeEnv --> Postgres : creates service
+ComposeEnv --> SparkMaster : creates service
+ComposeEnv --> SparkWorker1 : creates service
+ComposeEnv --> SparkWorker2 : creates service
+ComposeEnv --> SparkWorker3 : creates service
+ComposeEnv --> Jupyter : creates service
+ComposeEnv --> ComposeNet : shared network
+
+ComposeNet --> Airflow : service name resolution
+ComposeNet --> Postgres : service name resolution
+ComposeNet --> SparkMaster : service name resolution
+ComposeNet --> SparkWorker1 : service name resolution
+ComposeNet --> SparkWorker2 : service name resolution
+ComposeNet --> SparkWorker3 : service name resolution
+ComposeNet --> Jupyter : service name resolution
+
+Host --> PortMappings : configured host ports
+PortMappings --> Airflow : 8282 (Airflow UI)
+PortMappings --> SparkMaster : Spark UI 8181 / cluster 7077
+PortMappings --> Jupyter : 8888 / 4040-4080
+PortMappings --> Postgres : 5432
+
+Docker --> ComposeEnv : container runtime
+Docker --> ContainerLogs : container stdout / stderr
+DockerCompose --> ComposeEnv : service topology
+
+DataEngineer --> Airflow : triggers / monitors DAGs (8282)
+DataEngineer --> Jupyter : notebooks (8888)
+DataEngineer --> Postgres : metadata / results access
+DataEngineer --> AirflowTaskLogs : views task logs
+DataEngineer --> ContainerLogs : views container logs
+
+note right of SparkDist
+  MASTER target syntax may include inherited
+  Mesos / YARN / generic spark:// (C-007).
+  These are parameters, not deployed infrastructure.
+end note
+
+@enduml

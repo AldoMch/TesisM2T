@@ -1,0 +1,91 @@
+@startuml
+!define LAYER1 #LightBlue
+!define LAYER2 #LightGreen
+!define LAYER3 #LightYellow
+!define EXTERNAL #LightGray
+!define DATABASE #LightPink
+
+title LwM2M Device Management System Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> White
+  BorderColor Black
+  ArrowColor Black
+}
+
+package "External Systems" <<EXTERNAL>> {
+  component "API Clients" as clients <<External>>
+  component "Ethereum Blockchain" as blockchain <<External>>
+  component "LwM2M Devices/Services" as lwm2m <<External>>
+}
+
+package "Application Layer" <<LAYER1>> {
+  component "Spring Backend" as spring_backend {
+    component "User Management API" as user_api
+    component "Authentication Service" as auth_service
+    component "API Gateway" as api_gateway
+  }
+  
+  component "Blockchain Integration Service" as blockchain_service {
+    component "Client Bootstrap Manager" as bootstrap_manager
+    component "Smart Contract Interface" as contract_interface
+    component "Web3j Client" as web3j_client
+  }
+  
+  component "LwM2M Processing Service" as lwm2m_service {
+    component "Node JSON Parser" as json_parser
+    component "Type Mapping Service" as type_mapper
+    component "Validation Service" as validation_service
+  }
+}
+
+package "Data Layer" <<DATABASE>> {
+  component "User Database" as user_db <<Database>>
+  component "Blockchain Smart Contract" as smart_contract <<Database>>
+  component "Configuration Store" as config_store <<Database>>
+}
+
+' External connections
+clients --> api_gateway : "HTTP REST API\n(Authorization Header)"
+api_gateway --> auth_service : "Token Validation"
+auth_service --> user_api : "Authenticated Requests"
+
+' User management flow
+user_api --> user_db : "CRUD Operations"
+
+' Blockchain integration flow
+bootstrap_manager --> contract_interface : "Client Operations"
+contract_interface --> web3j_client : "Contract Calls"
+web3j_client --> blockchain : "HTTP/Web3j\nEthereum Node"
+contract_interface --> smart_contract : "Read/Write\nClient Data"
+
+' LwM2M processing flow
+lwm2m --> json_parser : "JSON Node Data"
+json_parser --> validation_service : "Structure Validation"
+validation_service --> type_mapper : "Validated Data"
+type_mapper --> config_store : "Configuration Storage"
+
+' Cross-service interactions
+bootstrap_manager --> json_parser : "Bootstrap Configuration"
+user_api --> bootstrap_manager : "Client Management"
+bootstrap_manager --> lwm2m : "Bootstrap Configuration"
+
+note right of blockchain_service
+  String fields encoded/decoded
+  as 32-byte ASCII for contract
+  compatibility
+end note
+
+note right of lwm2m_service
+  Leshan/LwM2M model types
+  JSON validation and parsing
+  Primitive type mapping
+end note
+
+note right of spring_backend
+  JWT token validation
+  Protected user operations
+  Spring HTTP controllers
+end note
+
+@enduml

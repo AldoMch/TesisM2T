@@ -1,0 +1,114 @@
+@startuml
+title VirtualMotionTracker - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' External Systems / Actors
+' =========================================================
+actor "External Control\nApplication Integrator" as CtrlIntegrator
+actor "Runtime Integrator /\nOperator" as RuntimeOp
+
+package "External Systems" {
+  component "User Application\n(External Control Source)" as UserApp
+  component "SteamVR / OpenVR Runtime" as SteamVR
+}
+
+' =========================================================
+' Presentation / Input Layer (External Control Interface - OSC)
+' =========================================================
+package "External Control Interface Layer" {
+  component "OSC Control Input Interface\n(port/command set unspecified)" as OSCInterface
+}
+
+' =========================================================
+' VMT Manager Side (External Input Handling + Management)
+' =========================================================
+package "VMT Manager" {
+  component "Control Input Handler\n(OSC message reception)" as InputHandler
+  component "Virtual Motion Tracking\nState Processor" as MotionProcessor
+  component "Manager Shared-Memory\nJSON Communication Client" as ManagerShm
+}
+
+' =========================================================
+' Shared-Memory IPC Layer (JSON messages + control metadata)
+' =========================================================
+package "Inter-Process Communication Layer" {
+  component "Shared Memory Segment" as SharedMemory
+  component "Manager-to-Driver Channel\n(JSON payload)" as M2DChannel
+  component "Driver-to-Manager Channel\n(JSON payload)" as D2MChannel
+  database "Control Metadata\nsend count | handshake count | message length" as ShmMetadata
+}
+
+' =========================================================
+' VMT Driver Side (Runtime Driver Integration)
+' =========================================================
+package "VMT Driver" {
+  component "Driver Shared-Memory\nJSON Communication Client" as DriverShm
+  component "OpenVR Driver Interface\n(Integration Point)" as DriverInterface
+}
+
+' =========================================================
+' Data Stores / Configuration Artifacts
+' =========================================================
+package "Configuration Data Stores" {
+  database "Legacy Controller Binding Document\n(JSON: controller_type = mycontroller)" as BindingStore
+}
+
+' =========================================================
+' OpenVR SDK / Dependency Context
+' =========================================================
+package "OpenVR SDK (Dependency Context)" {
+  component "OpenVR Driver Interface API" as OpenVRDriverApi
+  component "OpenVR SDK Constants &\nData Structures" as OpenVRSdk
+}
+
+' =========================================================
+' Relationships
+' =========================================================
+CtrlIntegrator --> UserApp : configures / drives
+RuntimeOp --> SteamVR : installs and runs driver
+
+UserApp --> OSCInterface : external control input
+OSCInterface --> InputHandler : control messages
+InputHandler --> MotionProcessor : control input data (DR-001)
+MotionProcessor --> ManagerShm : tracking state updates
+
+ManagerShm --> SharedMemory : read / write
+SharedMemory --> M2DChannel : manager-to-driver JSON (FR-003)
+SharedMemory --> D2MChannel : driver-to-manager JSON (FR-003)
+SharedMemory --> ShmMetadata : synchronizes (FR-004)
+
+M2DChannel --> DriverShm : JSON message
+D2MChannel --> DriverShm : JSON message
+DriverShm --> SharedMemory : read / write
+
+DriverShm --> DriverInterface : motion tracking data
+DriverInterface --> OpenVRDriverApi : implements / uses
+OpenVRDriverApi --> SteamVR : loaded and hosted by runtime (FR-005, NFR-001)
+OpenVRSdk ..> DriverInterface : dependency context
+
+SteamVR --> BindingStore : loads legacy binding for mycontroller
+BindingStore --> SteamVR : JSON action/input path mappings (FR-006, DR-004, DR-005)
+
+note right of SharedMemory
+  Bidirectional JSON exchange between
+  VMT Manager and VMT Driver (C-002, NFR-002)
+end note
+
+note bottom of BindingStore
+  Mappings (mode=button, sub_mode=complex):
+  /user/hand/right/input/a -> /actions/legacy/in/right_axis1_press
+  /user/hand/right/input/c -> /actions/legacy/in/right_a_press
+  /user/hand/right/input/b -> /actions/legacy/in/right_grip_press
+end note
+
+note bottom of DriverInterface
+  Architectural separation maintained between
+  external input handling, shared-memory
+  communication and runtime integration (NFR-004)
+end note
+
+@enduml

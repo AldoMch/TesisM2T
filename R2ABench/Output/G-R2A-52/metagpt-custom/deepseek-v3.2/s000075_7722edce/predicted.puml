@@ -1,0 +1,61 @@
+@startuml
+
+package "Client/Editor Layer" {
+    component "Browser Editor" as editor
+    component "Canvas Operations" as canvas
+    component "Redux Store" as redux
+    
+    editor --> redux : Manages state
+    editor --> canvas : Performs render/delete
+}
+
+package "API/Server Layer" {
+    component "Django Server" as django
+    component "Data Models" as models
+    component "Gauge Resource" as gauge
+    component "Display Resource" as display
+    component "Layout Resource" as layout
+    
+    django --> models : Uses
+    django --> gauge : Manages
+    django --> display : Manages
+    django --> layout : Manages
+}
+
+package "Data Persistence Layer" {
+    database "PostgreSQL" as db
+}
+
+package "Viewer/Render Layer" {
+    component "Viewer Component" as viewer
+}
+
+node "Web Browser" as browser {
+    editor --> browser : Runs in
+    viewer --> browser : Runs in
+}
+
+' Development Dependencies
+component "Node.js/npm" as npm
+component "Python 3.7" as python
+component "Development Server" as devserver
+
+' Key Dependencies
+editor --> django : HTTP requests\n(fetch/update data)
+editor --> viewer : Creates layouts\nfor rendering
+django --> viewer : Serves display data\nand layouts
+models --> db : CRUD operations
+viewer --> django : Retrieves gauge data\nand layouts
+
+' Development Flow
+npm --> editor : Builds client assets
+python --> django : Runtime environment
+devserver --> django : Development hosting
+
+' Data Flow Connections
+gauge --> editor : Provides gauge data
+display --> viewer : Provides display config
+layout --> editor : Provides layout templates
+layout --> viewer : Provides render layouts
+
+@enduml

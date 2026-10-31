@@ -1,0 +1,84 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam rectangle {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+
+title Turing System Architecture
+
+package "External Systems" {
+  [API Clients] as clients
+  [Kubernetes Cluster] as k8s
+  [MLflow Model Registry] as mlflow
+  [Jaeger] as jaeger
+}
+
+package "Turing Core" {
+  [HTTP API Server] as api_server
+  [Middleware Layer] as middleware
+  [OpenAPI Spec] as openapi
+  [Service Components] as services
+  [Cluster Components] as cluster_components
+}
+
+package "PyFuncEnsembler Runtime" {
+  [PyFuncEnsembler Webservice] as pyfunc_service
+  [Docker Image Builder] as image_builder
+  [User-defined Ensembler] as user_ensembler
+}
+
+package "Data Resources" {
+  [Router Resource] as router_resource
+  [Ensembler Resource] as ensembler_resource
+}
+
+' External connections
+clients --> api_server : HTTP/JSON\n/projects/{id}/routers\n/projects/{id}/ensemblers
+api_server --> k8s : Deployment Lifecycle\n(Create/Update/Delete)
+api_server --> mlflow : Fetch Model Artifacts
+api_server --> jaeger : Traces (if enabled)
+
+' Internal Turing Core connections
+api_server --> middleware : Intercepts Requests
+middleware --> openapi : Validation
+middleware --> services : Authorization
+api_server --> services : Business Logic
+services --> cluster_components : Orchestrates
+cluster_components --> k8s : Manages Router Deployments
+services --> ensembler_resource : CRUD Operations
+services --> router_resource : List Operations
+
+' PyFuncEnsembler connections
+services --> image_builder : Build Request
+image_builder --> mlflow : Download Artifacts
+image_builder --> pyfunc_service : Produces Image
+pyfunc_service --> user_ensembler : Hosts
+k8s --> pyfunc_service : Deploys as Service
+api_server --> pyfunc_service : Calls for Ensembling
+
+' Data flow
+ensembler_resource --> services : JSON Representations\n(Ensembler, EnsemblerId)
+router_resource --> services : Router List
+
+note right of api_server
+  Port 8080 default
+  Configurable via
+  ports.containerPort
+end note
+
+note top of middleware
+  Configurable:
+  - Authorization
+  - OpenAPI Validation
+end note
+
+note left of pyfunc_service
+  Exposes user-defined
+  ensemblers as
+  a webservice
+end note
+
+@enduml

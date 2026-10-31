@@ -1,0 +1,85 @@
+@startuml
+title torc_py Task-Based Parallelism Library - Architecture Overview
+
+skinparam componentStyle rectangle
+
+package "Application Layer" {
+  [Python Application] as App
+  [HPC Application] as HPCApp
+  [MPI Application] as MPIApp
+  [Data Preprocessing User] as DPU
+}
+
+package "Library Interface Layer" {
+  [torc API] as TorcAPI
+}
+
+package "Core Execution Layer" {
+  [Task Manager] as TaskManager
+  [Worker Thread Pool] as WorkerPool
+  [SPMD Executor] as SPMDExec
+  [Callback Handler] as CallbackHandler
+}
+
+package "Communication & Coordination Layer" {
+  [MPI Communicator] as MPIComm
+  [Task Stealing Coordinator] as StealCoord
+}
+
+package "Runtime Configuration" {
+  [Environment Variables] as EnvVars
+}
+
+package "External Dependencies" {
+  [MPI (mpi4py)] as MPI
+  [Python Threading] as PyThreading
+}
+
+database "Data Stores" {
+  [Task Queue] as TaskQueue
+  [Result Storage] as ResultStore
+}
+
+App --> TorcAPI : uses
+HPCApp --> TorcAPI : uses
+MPIApp --> TorcAPI : uses
+DPU --> TorcAPI : uses
+
+TorcAPI --> TaskManager : delegates
+TaskManager --> WorkerPool : manages
+TaskManager --> SPMDExec : coordinates
+TaskManager --> CallbackHandler : triggers
+TaskManager --> TaskQueue : enqueues/dequeues
+TaskManager --> ResultStore : stores/retrieves
+
+WorkerPool --> PyThreading : utilizes
+WorkerPool <-- TaskStealCoord : steals tasks from
+TaskStealCoord --> MPIComm : communicates via
+MPIComm --> MPI : built on
+
+SPMDExec --> MPIComm : uses for coordination
+
+EnvVars --> TaskManager : configures
+EnvVars --> WorkerPool : configures
+EnvVars --> StealCoord : configures
+
+note right of TaskManager
+  Core orchestration component handling:
+  - Task submission and scheduling
+  - Worker assignment (cyclic/direct)
+  - Result management
+  - Callback triggering
+end note
+
+note right of TaskStealCoord
+  Implements inter-process 
+  task stealing mechanism
+end note
+
+note bottom of SPMDExec
+  Enables switching to 
+  Single Program Multiple Data 
+  execution mode
+end note
+
+@enduml

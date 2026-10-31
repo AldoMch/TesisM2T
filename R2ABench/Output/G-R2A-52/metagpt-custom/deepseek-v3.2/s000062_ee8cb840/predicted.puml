@@ -1,0 +1,94 @@
+@startuml
+
+' Define the system boundary
+node "Docker Container" {
+
+    ' External interfaces
+    component "ROS Master" as ros_master
+    database "ROS Topics" as ros_topics
+
+    ' Perception Subsystem
+    node "Perception" {
+        component "Traffic Light Detector" as tl_detector
+        note right of tl_detector
+            Detects AND classifies
+            traffic lights
+        end note
+    }
+
+    ' Planning Subsystem
+    node "Planning" {
+        component "Waypoint Loader" as wp_loader
+        component "Waypoint Updater" as wp_updater
+    }
+
+    ' Control Subsystem
+    node "Control" {
+        component "Waypoint Follower" as wp_follower
+        component "Drive-By-Wire Controller" as dbw_controller
+    }
+
+    ' External connections
+    component "Simulator" as simulator
+    component "Site Data" as site_data
+}
+
+' ROS Topic connections
+tl_detector --> ros_topics : publishes\n/traffic_waypoint
+tl_detector --> ros_topics : publishes\n/traffic_light_state
+
+wp_loader --> ros_topics : publishes\n/base_waypoints
+
+wp_updater --> ros_topics : publishes\n/final_waypoints
+wp_updater --> ros_topics : subscribes\n/current_pose
+wp_updater --> ros_topics : subscribes\n/base_waypoints
+wp_updater --> ros_topics : subscribes\n/traffic_waypoint
+
+wp_follower --> ros_topics : publishes\n/twist_cmd
+wp_follower --> ros_topics : subscribes\n/final_waypoints
+wp_follower --> ros_topics : subscribes\n/current_pose
+
+dbw_controller --> ros_topics : publishes\n/vehicle_cmd
+dbw_controller --> ros_topics : subscribes\n/twist_cmd
+dbw_controller --> ros_topics : subscribes\n/current_velocity
+
+' External system connections
+simulator --> ros_topics : publishes\n/image_color
+simulator --> ros_topics : publishes\n/current_pose
+simulator --> ros_topics : publishes\n/current_velocity
+simulator --> ros_topics : subscribes\n/vehicle_cmd
+
+site_data --> ros_topics : publishes\n/image_color
+site_data --> ros_topics : publishes\n/current_pose
+site_data --> ros_topics : publishes\n/current_velocity
+site_data --> ros_topics : subscribes\n/vehicle_cmd
+
+' ROS infrastructure
+ros_master ..> ros_topics : manages
+ros_master ..> tl_detector : coordinates
+ros_master ..> wp_loader : coordinates
+ros_master ..> wp_updater : coordinates
+ros_master ..> wp_follower : coordinates
+ros_master ..> dbw_controller : coordinates
+
+' Entry points (launch files)
+component "styx.launch" as styx_launch
+component "site.launch" as site_launch
+
+styx_launch ..> simulator : configures
+styx_launch ..> ros_master : starts
+styx_launch ..> tl_detector : starts
+styx_launch ..> wp_loader : starts
+styx_launch ..> wp_updater : starts
+styx_launch ..> wp_follower : starts
+styx_launch ..> dbw_controller : starts
+
+site_launch ..> site_data : configures
+site_launch ..> ros_master : starts
+site_launch ..> tl_detector : starts
+site_launch ..> wp_loader : starts
+site_launch ..> wp_updater : starts
+site_launch ..> wp_follower : starts
+site_launch ..> dbw_controller : starts
+
+@enduml

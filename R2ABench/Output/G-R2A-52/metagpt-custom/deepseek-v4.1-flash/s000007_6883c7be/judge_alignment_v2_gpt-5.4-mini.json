@@ -1,0 +1,661 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Task Scheduler::CGI Health\\nCheck",
+        "Task Scheduler::Daily Report"
+      ],
+      "predicted_nodes": [
+        "Test Client/Workload Layer::Test Client Workflow"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Appkey\\nValidate",
+        "Proxy Layer::cgi_proxy 1::Proxy Core"
+      ],
+      "predicted_nodes": [
+        "Proxy/Forwarding Layer::HTTP Proxy"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Proxy/Forwarding Layer::FullHttpRequest (URI, headers, body)"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Formatter"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Proxy/Forwarding Layer::Upstream Server Channel"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Global Limit"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Logging",
+        "Task Scheduler::Log Analysis",
+        "Task Scheduler::Monitor/Alarm"
+      ],
+      "predicted_nodes": [
+        "Observability Layer::Debug Logging"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Test Server Layer::GET /download Endpoint"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Download"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "File Handling Layer::File-Handling Handler"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Upload"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Clients::APP Client",
+        "Clients::Web Client",
+        "Support Platform::User Center"
+      ],
+      "predicted_nodes": [
+        "Global::HTTP Client"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Clients::Business Server",
+        "Support Platform::Permission\\nCenter"
+      ],
+      "predicted_nodes": [
+        "Global::Upstream Server"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Java Runtime Environment"
+      ],
+      "gt_nodes": [
+        "Clients::Developer"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Local Filesystem"
+      ],
+      "gt_nodes": [
+        "Support Platform::Data Bank\\nHDFS/Hbase/Druid"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Support Platform::Msg Center\\nKafka",
+        "Support Platform::Redis Cache"
+      ],
+      "predicted_nodes": [
+        "Global::Asynchronous HTTP Client Environment"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Maven Multi-Module Build Environment"
+      ],
+      "gt_nodes": [
+        "Support Platform::Mysql"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Test Client/Workload Layer::Concurrent Workload Generator"
+      ],
+      "gt_nodes": [
+        "Task Scheduler::CGI Case\\nExecutor"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "Build/Runtime Layer::Java Compilation Targets",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Build/Runtime Layer::Jersey Server/Client Library",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Build/Runtime Layer::Maven Multi-Module Build",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data/Response Layer::Binary File Payload",
+      "reference_nodes": [
+        "Support Platform::Data Bank\\nHDFS/Hbase/Druid",
+        "Support Platform::Msg Center\\nKafka",
+        "Support Platform::Mysql",
+        "Support Platform::Permission\\nCenter",
+        "Support Platform::Redis Cache",
+        "Support Platform::User Center"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data/Response Layer::Content-Disposition Attachment Metadata",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Download",
+        "Proxy Layer::cgi_proxy 1::Plugin::Upload",
+        "Business Servers::Business Server B"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data/Response Layer::File-Handling Map Payload",
+      "reference_nodes": [
+        "CGI Portal::CGI Manager",
+        "Proxy Layer::cgi_proxy 1::Plugin::Upload"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data/Response Layer::HTTP Response Status",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Task Scheduler::CGI Health\\nCheck"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data/Response Layer::Structured Response Object",
+      "reference_nodes": [
+        "Global::Log consumer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data/Response Layer::application/octet-stream Media Type",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Download"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "File Handling Layer::File-Handling Handler",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Upload"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Asynchronous HTTP Client Environment",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Task Scheduler::CGI Case\\nExecutor"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Grizzly/Jersey HTTP Server Environment",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::HTTP Client",
+      "reference_nodes": [
+        "Clients::APP Client",
+        "Clients::Business Server",
+        "Clients::Web Client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Java Runtime Environment",
+      "reference_nodes": [
+        "Clients::Developer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Local Filesystem",
+      "reference_nodes": [
+        "Support Platform::Data Bank\\nHDFS/Hbase/Druid",
+        "Support Platform::Redis Cache"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Maven Multi-Module Build Environment",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Upstream Server",
+      "reference_nodes": [
+        "Clients::Business Server",
+        "Support Platform::Permission\\nCenter"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Observability Layer::Debug Logging",
+      "reference_nodes": [
+        "CGI Portal::Log & Tree\\ninquire",
+        "Task Scheduler::Log Analysis",
+        "Task Scheduler::Monitor/Alarm"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Proxy/Forwarding Layer::FullHttpRequest (URI, headers, body)",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Formatter",
+        "Proxy Layer::cgi_proxy 1::Proxy Core"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Proxy/Forwarding Layer::HTTP Proxy",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Appkey\\nValidate",
+        "Proxy Layer::cgi_proxy 1::Proxy Core"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Proxy/Forwarding Layer::Upstream Server Channel",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Global Limit"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Client/Workload Layer::Async HTTP Client Close",
+      "reference_nodes": [
+        "Business Servers::Business Server A",
+        "CGI Portal::Http Test\\nClient",
+        "Task Scheduler::CGI Case\\nExecutor"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Client/Workload Layer::Concurrent Workload Generator",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Task Scheduler::CGI Case\\nExecutor"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Client/Workload Layer::Executor Service Shutdown",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Task Scheduler::CGI Case\\nExecutor"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Client/Workload Layer::Test Client Workflow",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Task Scheduler::CGI Case\\nExecutor"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Server Layer::GET /download Endpoint",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Download"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Server Layer::Test Server",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Proxy Layer::cgi_proxy 1::Plugin::Download"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Access Layer\\nKeepalived(VIP)::Openresty"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Business Servers::......"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Business Servers::Business Server A"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Business Servers::Business Server B"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Business Servers::Business Server C"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Appkey\\nManager"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::CGI Manager"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Case Manager"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Document\\nGenerate"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Test Client/Workload Layer::Test Client Workflow"
+      ],
+      "gt_node": "CGI Portal::Http Test\\nClient"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Log & Tree\\ninquire"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Metrics &\\nReport"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Service\\nManager"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::HTTP Client"
+      ],
+      "gt_node": "Clients::APP Client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Upstream Server"
+      ],
+      "gt_node": "Clients::Business Server"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Java Runtime Environment"
+      ],
+      "gt_node": "Clients::Developer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::HTTP Client"
+      ],
+      "gt_node": "Clients::Web Client"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Log consumer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Proxy/Forwarding Layer::HTTP Proxy"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Appkey\\nValidate"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Proxy/Forwarding Layer::FullHttpRequest (URI, headers, body)"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Formatter"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Proxy/Forwarding Layer::Upstream Server Channel"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Global Limit"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Logging"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Login &\\nPermission"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Agent"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Attach Check"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Check\\nParameter"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Test Server Layer::GET /download Endpoint"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Download"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Mock"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "File Handling Layer::File-Handling Handler"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Upload"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Proxy/Forwarding Layer::HTTP Proxy",
+        "Proxy/Forwarding Layer::FullHttpRequest (URI, headers, body)"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Proxy Core"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Local Filesystem"
+      ],
+      "gt_node": "Support Platform::Data Bank\\nHDFS/Hbase/Druid"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Msg Center\\nKafka"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Mysql"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Permission\\nCenter"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Redis Cache"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::User Center"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Test Client/Workload Layer::Concurrent Workload Generator"
+      ],
+      "gt_node": "Task Scheduler::CGI Case\\nExecutor"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Test Client/Workload Layer::Test Client Workflow"
+      ],
+      "gt_node": "Task Scheduler::CGI Health\\nCheck"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Test Client/Workload Layer::Test Client Workflow"
+      ],
+      "gt_node": "Task Scheduler::Daily Report"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Task Scheduler::Log Analysis"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Task Scheduler::Monitor/Alarm"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5797,
+      "completion_tokens": 1823,
+      "total_tokens": 7620,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Access Layer\\nKeepalived(VIP)::Openresty",
+    "Business Servers::......",
+    "Business Servers::Business Server A",
+    "Business Servers::Business Server B",
+    "Business Servers::Business Server C",
+    "CGI Portal::Appkey\\nManager",
+    "CGI Portal::CGI Manager",
+    "CGI Portal::Case Manager",
+    "CGI Portal::Document\\nGenerate",
+    "CGI Portal::Log & Tree\\ninquire",
+    "CGI Portal::Metrics &\\nReport",
+    "CGI Portal::Service\\nManager",
+    "Global::Log consumer",
+    "Proxy Layer::cgi_proxy 1::Login &\\nPermission",
+    "Proxy Layer::cgi_proxy 1::Plugin::Agent",
+    "Proxy Layer::cgi_proxy 1::Plugin::Attach Check",
+    "Proxy Layer::cgi_proxy 1::Plugin::Check\\nParameter",
+    "Proxy Layer::cgi_proxy 1::Plugin::Mock",
+    "Proxy Layer::cgi_proxy 2"
+  ],
+  "unmatched_predicted_nodes": [
+    "Build/Runtime Layer::Java Compilation Targets",
+    "Build/Runtime Layer::Jersey Server/Client Library",
+    "Build/Runtime Layer::Maven Multi-Module Build",
+    "Data/Response Layer::Binary File Payload",
+    "Data/Response Layer::Content-Disposition Attachment Metadata",
+    "Data/Response Layer::File-Handling Map Payload",
+    "Data/Response Layer::HTTP Response Status",
+    "Data/Response Layer::Structured Response Object",
+    "Data/Response Layer::application/octet-stream Media Type",
+    "Global::Grizzly/Jersey HTTP Server Environment",
+    "Test Client/Workload Layer::Async HTTP Client Close",
+    "Test Client/Workload Layer::Executor Service Shutdown",
+    "Test Server Layer::Test Server"
+  ],
+  "_provenance": {
+    "fingerprint": "bffac1e378f72580880e0f73ad6d782957b799c33684d29335ac3f99af6b6c9c",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

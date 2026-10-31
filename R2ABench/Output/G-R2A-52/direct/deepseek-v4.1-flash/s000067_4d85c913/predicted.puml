@@ -1,0 +1,94 @@
+@startuml
+title TraceLeft System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam nodesep 20
+skinparam ranksep 30
+
+package "Userspace" {
+  [TraceLeft CLI Executable] as CLI
+  [Trace Command] as TraceCmd
+  [CLI Event Registration Parser] as RegParser
+  [EventRegistration<br/>ProgramID<br/>Pids<br/>ELFPath] as EventReg
+
+  package "TraceLeft Library" {
+    [Library Core / Tracer API] as TracerAPI
+    [Probe Loader] as ProbeLoader
+    [Handler Map Manager] as MapManager
+    [Userspace Tracer / Event Dispatcher] as UserTracer
+    [Generator Subsystem] as Generator
+    [gobpf Integration] as Gobpf
+  }
+}
+
+package "Configuration / Build-Time" {
+  [Proto/JSON Event Configuration] as EventConfig
+  [Event Argument Metadata<br/>position, type, name,<br/>suffix, hash_func] as ArgMeta
+  [Generated eBPF Handler Source Code] as GenSource
+  [Documented Naming Scheme<br/>handle_NAME_progs<br/>handle_NAME_progs_ret<br/>kprobe/handle_NAME<br/>kretprobe/handle_NAME] as Naming
+}
+
+package "Target Linux Environment" {
+  [Traced Linux Process] as TracedProc
+}
+
+node "Linux Kernel Space" {
+  [Main eBPF Program] as MainBPF
+  [kprobe / kretprobe Hooks] as Hooks
+  [Handler Map<br/>handle_NAME_progs] as HandlerMap
+  [Return Handler Map<br/>handle_NAME_progs_ret] as RetHandlerMap
+  [Default Handler Probes] as DefaultHandlers
+  [Process-Specific Handler Probes] as ProcHandlers
+  [Handler eBPF Programs] as HandlerBPF
+  [Perf-Based Event Channel] as PerfChannel
+  [Common Event Header] as EventHeader
+}
+
+CLI --> TraceCmd : dispatches
+TraceCmd --> RegParser : parses trace arguments
+RegParser --> EventReg : creates
+TraceCmd --> TracerAPI : starts tracing
+TracerAPI --> ProbeLoader : installs probes
+TracerAPI --> UserTracer : receives events
+
+ProbeLoader --> MapManager : manages handler maps
+ProbeLoader --> DefaultHandlers : loads default handlers
+ProbeLoader --> ProcHandlers : loads process-specific handlers when available
+ProbeLoader --> Naming : follows naming rules
+ProbeLoader --> Gobpf : uses
+ProbeLoader --> TracedProc : attaches probes to selected process
+
+Gobpf --> MainBPF : loads and attaches
+Gobpf --> HandlerBPF : loads
+Gobpf --> Hooks : programs attach to kprobe / kretprobe
+
+Generator --> EventConfig : reads
+Generator --> ArgMeta : uses argument metadata
+Generator --> GenSource : produces
+GenSource --> HandlerBPF : becomes
+
+UserTracer --> PerfChannel : consumes events
+UserTracer --> EventHeader : dispatches using common leading section
+
+TracedProc --> Hooks : function calls trigger probes
+Hooks --> MainBPF : invokes
+MainBPF --> HandlerMap : selects handler by process context
+MainBPF --> RetHandlerMap : selects return handler by process context
+HandlerMap --> HandlerBPF : references
+RetHandlerMap --> HandlerBPF : references
+HandlerBPF --> PerfChannel : emits events
+HandlerBPF --> EventHeader : writes leading section
+
+note right of MainBPF
+  FR-007: If no handler probe is set for a trace probe,
+  the trace probe performs no handler action and returns 0.
+end note
+
+note right of UserTracer
+  Events begin with the common event header so the
+  userspace tracer can dispatch received events.
+end note
+
+@enduml

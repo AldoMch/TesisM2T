@@ -1,0 +1,136 @@
+@startuml
+title Intelligent Text Annotation System (ITAS) - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ===================== Actors =====================
+actor "System Annotation\nAdministrator" as Admin
+actor "Data Annotator" as Annotator
+actor "Researcher" as Researcher
+
+' ===================== Presentation Layer =====================
+package "Presentation Layer (Vue 3.0 / Ant Design Vue)" as Frontend {
+  component "Web UI\n(Login / Profile)" as UI_Auth
+  component "Annotation UI\n(Project / Task / Mark)" as UI_Annot
+  component "Mining UI\n(Upload / Model Select / Results)" as UI_Mining
+  component "Front-end Routing & State\n(vue-router / Pinia / Axios)" as UI_Runtime
+}
+
+' ===================== Edge / Gateway Layer =====================
+package "Edge & Gateway Layer" as Gateway {
+  component "Nginx\nReverse Proxy / Load Balancing" as Nginx
+  component "API Gateway\n(Spring Cloud Gateway)" as ApiGateway
+  component "Security\n(Spring Security - AuthN/AuthZ)" as Security
+}
+
+' ===================== Service Layer =====================
+package "Service Layer (Spring Boot / Spring Cloud)" as Services {
+
+  package "Annotation Subsystem" as AnnotationSvc {
+    component "User & Role Service\n(Account / Flexible Roles)" as UserSvc
+    component "Login Service" as LoginSvc
+    component "Project Service\n(Projects / Presets)" as ProjectSvc
+    component "Annotator Service\n(Per-project membership)" as AnnotatorSvc
+    component "Paper / Document Service" as PaperSvc
+    component "File Service\n(Upload / Download)" as FileSvc
+    component "Tag / Label Service" as TagSvc
+    component "Task Service\n(Assign / Complete / Stats)" as TaskSvc
+    component "Annotation Result Service\n(CRUD / Export)" as ResultSvc
+  }
+
+  package "Intelligent Mining Subsystem" as MiningSvc {
+    component "Mining Document Upload Service" as MineUploadSvc
+    component "Format Conversion Service\n(PDF / HTML / TXT)" as ConvertSvc
+    component "Model Selection Service\n(Built-in / Community / Third-party)" as ModelSelectSvc
+    component "Information Extraction Service\n(Key Data / Paragraph)" as ExtractSvc
+  }
+
+  package "Shared Platform Services" as SharedSvc {
+    component "Asynchronous Processing\nWorker (RabbitMQ Consumer)" as AsyncWorker
+    component "ML Model Runtime\n(BERT / GPT orchestration)" as ModelRuntime
+    component "Data Access Layer\n(MyBatis / MyBatis-Plus ORM)" as DAL
+  }
+}
+
+' ===================== Data Layer =====================
+package "Data Layer" as Data {
+  database "MySQL\n(Users, Projects, Tasks, Tags,\nResults, Document Indexes)" as MySQL
+  database "Minio Object Storage\n(Text / Unstructured Documents)" as Minio
+  database "Redis Cache" as Redis
+}
+
+' ===================== Infrastructure =====================
+package "Infrastructure & Messaging" as Infra {
+  queue "RabbitMQ\n(File Conversion & Async Tasks)" as RabbitMQ
+}
+
+' ===================== External Systems =====================
+package "External Systems" as External {
+  component "GPT API /\nThird-party ChatGPT-like Interface" as GPTApi
+  cloud "Tencent Cloud\n(Docker Containerized Deployment)" as TencentCloud
+}
+
+' ===================== Relationships =====================
+Admin --> UI_Auth
+Admin --> UI_Annot
+Annotator --> UI_Annot
+Researcher --> UI_Mining
+
+UI_Auth --> UI_Runtime
+UI_Annot --> UI_Runtime
+UI_Mining --> UI_Runtime
+
+UI_Runtime --> Nginx : HTTPS / JSON
+Nginx --> ApiGateway
+ApiGateway --> Security : Authenticate / Authorize
+
+Security --> UserSvc
+Security --> LoginSvc
+Security --> ProjectSvc
+Security --> TaskSvc
+Security --> ResultSvc
+Security --> MineUploadSvc
+Security --> ExtractSvc
+
+ProjectSvc --> AnnotatorSvc
+ProjectSvc --> PaperSvc
+PaperSvc --> FileSvc
+TaskSvc --> ResultSvc
+TagSvc --> ResultSvc
+
+MineUploadSvc --> ConvertSvc
+ConvertSvc --> RabbitMQ : enqueue conversion
+MineUploadSvc --> ModelSelectSvc
+ModelSelectSvc --> ExtractSvc
+ExtractSvc --> ModelRuntime
+
+AsyncWorker --> RabbitMQ : consume jobs
+AsyncWorker --> Minio
+AsyncWorker --> DAL
+
+UserSvc --> DAL
+LoginSvc --> DAL
+ProjectSvc --> DAL
+AnnotatorSvc --> DAL
+PaperSvc --> DAL
+FileSvc --> DAL
+TagSvc --> DAL
+TaskSvc --> DAL
+ResultSvc --> DAL
+MineUploadSvc --> DAL
+ConvertSvc --> DAL
+ModelSelectSvc --> DAL
+
+DAL --> MySQL
+DAL --> Redis : cache access
+FileSvc --> Minio : object read/write
+MineUploadSvc --> Minio : store uploaded docs
+ConvertSvc --> Minio : store converted docs
+
+ModelRuntime --> GPTApi : model invocation
+ModelRuntime --> MySQL : model/preset metadata
+
+TencentCloud -[hidden]- MySQL
+
+@enduml

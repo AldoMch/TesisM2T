@@ -1,0 +1,223 @@
+{
+  "schema": "compact_srs_evidence_pack_v1",
+  "product": "DeepCode——基于大语言模型的算法学习平台",
+  "source_document": "Dataset/E-R2A/JAVA/deepcode/deepcode_origin.md",
+  "target_template": "",
+  "evidence_items": [
+    {
+      "id": "DC-001",
+      "title": "系统概述、参考资料和术语",
+      "location": "deepcode_origin.md lines 125-167",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "系统名为“DeepCode——基于大语言模型的算法学习平台”，是 AI 辅助的在线编程平台。",
+        "系统具备登录、注册、编写代码、发布题解、创建题目、发表帖子和讨论等功能。",
+        "系统目标是为学生、算法爱好者和程序员提供学习和实践环境。",
+        "系统提供安全测评机制、交流学习平台，并集成大语言模型接口。",
+        "源文档引用 GB/T 19003-2008、GB/T 9385-2008、GB/T 8567-2006、GJB 438B-2009、GJB 438C（2021）、Vue、SpringBoot、MySQL 和 UML 规范。",
+        "术语包括 RUCM、Vue、SpringBoot、AI、LLM 和 UC。"
+      ]
+    },
+    {
+      "id": "DC-002",
+      "title": "运行环境和支持软件",
+      "location": "deepcode_origin.md lines 168-190",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "硬件需求为 8 核以上、主频 2.4GHz 以上处理器，32GB 以上内存，4TB 以上硬盘，千兆以上网络。",
+        "操作系统支持 Windows、Linux 和其他主流操作系统。",
+        "浏览器支持 Microsoft Edge、Chrome、Opera、Safari、Firefox 以及任何支持 HTML5 标准的浏览器。",
+        "软件需求包括 JDK 21-LTS、MySQL 5.7.44、Redis 7.4.6、Node.js 18.3 或更高版本、Spring Boot 3.1.2。",
+        "其他工具包括 Apache JMeter 5.6.13。"
+      ]
+    },
+    {
+      "id": "DC-003",
+      "title": "总体架构和用户角色",
+      "location": "deepcode_origin.md lines 192-250",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "系统从前端到后端分为前端层、表现层、代理层、业务层和访问层。",
+        "前端层使用 Vue3、Vuex、TypeScript、Vue Router、ESLint、Ant Design Vue、Webpack 和 Axios。",
+        "表现层通过 Vue 模板渲染、路由控制和 Ajax 交互实现页面导航和前后端数据交互。",
+        "代理层使用 Nginx 反向代理分发客户端请求至后端服务器。",
+        "业务层使用 Spring Boot、Lombok、MybatisPlus、Swagger、JWT、Sandbox、SMTP 和 Interceptor。",
+        "访问层使用 WebFlux 和线程池处理异步请求与资源分配。",
+        "用户角色包括注册用户、非注册用户（游客）和管理员。",
+        "注册用户可提交代码测评、查看题解、发布题目/题解、与 AI 交互、参与论坛讨论、查看和修改个人信息。",
+        "游客只能浏览题目，不能浏览题解或提交代码测评；可浏览论坛帖子但不能参与讨论。",
+        "管理员拥有注册用户全部功能，并能进行用户管理、论坛管理和题目管理。"
+      ]
+    },
+    {
+      "id": "DC-004",
+      "title": "前端、后端和判题机设计",
+      "location": "deepcode_origin.md lines 253-389",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "系统采用前后端分离架构，前端基于 Vue3，通过 RESTful API 与后端交互。",
+        "前端包含 Vue3、TypeScript、ESLint、Webpack、Vue CLI、Vuex、vue-router、Ant Design Vue、CodeMirror、wangEditor、ECharts、Axios 和 Nginx。",
+        "后端使用 Spring Boot 实现 RESTful API，先通过过滤器进行权限认证，并使用 JWT 保障用户身份安全。",
+        "后端按用户、题目、题解、论坛等模块划分业务。",
+        "后端通过 SMTP 提供邮件服务，通过 LangChain4j 调用 LLM 服务，通过 HTTP 请求调用判题服务。",
+        "数据持久层使用 MySQL；Redis 用作临时数据和高频访问数据缓存；MinIO 保存图像、测试用例等文件；Swagger 管理接口文档。",
+        "判题机包含 JudgeHost 和 JudgeCore。",
+        "JudgeHost 接收判题请求，管理任务调度，返回代码运行测试结果；线程不足时加入等待队列，队列满时告知服务繁忙。",
+        "JudgeHost 获取测试用例文件，调用 JudgeCore 编译执行用户代码，比较实际输出和期望输出并封装测试结果。",
+        "JudgeCore 验证代码文件路径、输入文件路径、最长运行时间、最大内存、最大输出长度等输入参数，创建子进程执行用户代码，使用监控线程、setrlimit 和 seccomp 限制运行时间、内存、输出和系统调用。"
+      ]
+    },
+    {
+      "id": "DC-005",
+      "title": "用户认证、个人信息和权限管理",
+      "location": "deepcode_origin.md lines 392-528",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "用户认证管理实现账号创建、登录验证，并区分注册用户、游客和管理员访问权限。",
+        "游客注册时填写用户名、邮箱、密码（长度大于 8）等信息；前端验证密码格式，后端校验用户名唯一性，生成用户唯一标识码并存入用户数据库。",
+        "登录时后端验证用户名存在且密码正确，成功后前端跳转至用户主页；用户名或密码错误时提示错误。",
+        "注册用户可查询个人信息和活跃状态，如评论数、题解数、题目 AC 数。",
+        "注册用户可编辑昵称、头像 URL、个人简介等信息，后端验证登录状态后更新用户数据库。",
+        "管理员可封禁、解封用户或赋予管理员权限；请求包含管理员权限标识、目标用户 ID 和操作类型，后端验证管理员权限和操作合法性后更新用户状态或权限字段。"
+      ]
+    },
+    {
+      "id": "DC-006",
+      "title": "题库、提交测评和题目/题解管理",
+      "location": "deepcode_origin.md lines 529-632",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "系统支持用户查看题目详情、题解、提交记录，并提交代码进行评测。",
+        "用户点击题目时，前端发送题目 ID 和登录状态至后端；后端查询题目标题、描述、难度、标签和题解列表；已登录用户附加该题提交记录。",
+        "未登录用户点击题解时弹出登录提醒，登录后加载题解内容。",
+        "登录用户提交代码时上传代码内容，前端发送题目 ID、代码和用户 ID；后端验证题目存在和登录状态，将代码发送至评测服务器，并记录提交时间、语言和代码片段。",
+        "评测完成后，用户可在题目页面或个人中心查看提交状态、耗时和内存使用。",
+        "注册用户可上传题目，填写题目标题、描述、测试样例等信息并提交至待审核题库。",
+        "管理员审核待审核题目，可通过或驳回；通过后题目状态更新为已审核并开放给用户，驳回时填写原因并通知提交者。",
+        "具备编辑权限的用户可编辑题目或题解；后端验证格式并更新数据库。",
+        "管理员或授权用户删除题目时，先验证关联活动，允许时执行软删除并隐藏相关题解和提交记录。"
+      ]
+    },
+    {
+      "id": "DC-007",
+      "title": "论坛互动和论坛内容管理",
+      "location": "deepcode_origin.md lines 633-739",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "系统支持用户浏览帖子、发布内容、评论互动、点赞、回复和举报。",
+        "用户进入论坛首页或板块时，前端请求帖子列表；点击帖子加载正文和评论。",
+        "登录用户可发布帖子，填写标题和内容，后端验证格式后存入数据库并跳转帖子详情页。",
+        "游客仅能浏览公开帖子；发布时格式错误或内容过长时提示修改。",
+        "用户发布评论时，后端校验敏感词和长度，通过后存入评论表并关联帖子 ID。",
+        "评论互动包括点赞、回复和举报；点赞记录日志并更新计数，回复生成子评论，举报触发审核流程。",
+        "网络中断时保存草稿，恢复后重新提交。",
+        "帖子作者或管理员可删除违规或无效帖子及评论；删除帖子和评论均采用权限验证和软删除。"
+      ]
+    },
+    {
+      "id": "DC-008",
+      "title": "AI 辅助功能",
+      "location": "deepcode_origin.md lines 740-805",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "系统通过大语言模型提供题目推荐、题目分析、代码解释、审核辅助和论坛回复等智能功能。",
+        "用户触发智能推荐题目时，系统检查已完成题目数；已完成不少于 5 题时分析历史行为和知识点，否则返回新手推荐。",
+        "系统拼接用户行为数据和推荐提示词，调用 AI 接口生成推荐题目难度和标签，后端检索匹配题目并展示推荐列表。",
+        "用户在题目详情页点击 AI 分析，或在提交记录页点击 AI 解释；系统提取题目内容或代码片段，拼接提示词调用 AI 接口。",
+        "AI 返回解题思路或代码逻辑解释后，后端存储结果并前端展示；已有历史分析时直接调取。",
+        "管理员审核题目时可点击 AI 辅助，系统发送题目内容至 AI 生成审核建议。",
+        "用户在评论中输入 @AI 触发回复功能；系统检查冷却时间不少于 10 分钟，提取帖子上下文调用 AI，并以 @AI 账号发布新评论。",
+        "AI 服务繁忙、无有效回复或高频请求时，系统提示用户重试或稍后重试。"
+      ]
+    },
+    {
+      "id": "DC-009",
+      "title": "公共交互、权限控制和异常处理",
+      "location": "deepcode_origin.md lines 806-840",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "公共前后端交互流程为用户操作、权限校验、业务逻辑、数据库操作、成功响应或事务回滚。",
+        "游客只能查看题目（不含题解）和浏览公开帖子，不能提交、发布或互动。",
+        "注册用户具备题目提交、题解查看、论坛发布与互动权限；上传题目需审核，编辑/删除题目/题解需权限校验。",
+        "管理员拥有用户管理、题目审核、论坛内容管理等高级权限。",
+        "所有操作前校验用户登录状态，未登录或状态失效时引导至登录页面。",
+        "输入数据格式校验在前端和后端双重执行，包括密码长度、图片大小、敏感词过滤等。",
+        "调用 AI 服务等外部接口时，处理网络超时、服务不可用等异常，提示用户重试并记录日志。"
+      ]
+    },
+    {
+      "id": "DC-010",
+      "title": "数据库设计原则",
+      "location": "deepcode_origin.md lines 841-864",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "数据库设计根据系统应用目标、功能要求、用户数据和应用需求确定存储结构和处理方式。",
+        "数据库表应具有规范命名方式，字段名应具有明确含义。",
+        "数据库表之间应具有明确关联关系并设置外键约束以保证数据一致性。",
+        "应根据业务需求合理设计索引以提高查询性能。",
+        "数据库安全性应得到保障，密码等敏感信息应加密存储。",
+        "数据库设计强调第三范式以减少冗余、提高存储和更新效率、一致性和可维护性；必要时可为查询效率权衡冗余。"
+      ]
+    },
+    {
+      "id": "DC-011",
+      "title": "核心数据模型",
+      "location": "deepcode_origin.md lines 865-1014",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "User 表记录用户和管理员属性，包括 id、email、password、nickname、avatar、is_admin、description。",
+        "Follow 表记录用户关注关系，包括 follower_id、followee_id 和 create_time。",
+        "Question 表记录题目，包括 title、content、difficulty 和 deleted。",
+        "TestCase 表记录题目测试用例，包括 question_id、input 和 output 文件 URL。",
+        "QuestionTag 和 QuestionTagMap 表记录题目标签及其映射。",
+        "Record 表记录用户每次提交代码的测评结果，包括 user_id、question_id、lang_id、submit_code、result、runtime、memory、submit_time、extra_info、test_case_total_num、test_case_passed_num。",
+        "Language 表记录编程语言名称。"
+      ]
+    },
+    {
+      "id": "DC-012",
+      "title": "题解和讨论数据模型",
+      "location": "deepcode_origin.md lines 1015-1160",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "Solution 表记录题解，包括 question_id、author_id、title、content、like_num、view_num、create_time 和 deleted。",
+        "SolutionTag、SolutionTagMap、SolutionLike 和 SolutionComment 表记录题解标签、标签映射、点赞和评论。",
+        "Discussion 表记录讨论，包括 user_id、title、content、view_num、create_time 和 deleted。",
+        "DiscussionLike 和 DiscussionComment 表记录讨论点赞和评论。",
+        "评论内容字段长度为 varchar(510)，题解和讨论内容字段长度为 varchar(2550)。"
+      ]
+    },
+    {
+      "id": "DC-013",
+      "title": "部署、网络、安全、监控和 CI/CD",
+      "location": "deepcode_origin.md lines 1161-1222",
+      "evidence_type": "explicit",
+      "extracted_facts": [
+        "生产环境将 Web、应用、数据库和缓存集成至一台云服务器，配置为 8 核以上 2.4GHz 以上 CPU、32GB 以上内存、4TB 以上硬盘、Ubuntu 22.04 LTS。",
+        "开发与测试环境使用 2 核以上 2.4GHz 以上 CPU、8GB 以上内存、200GB 以上硬盘、Ubuntu 22.04 LTS。",
+        "内部服务通过内网 IP 通信，并使用防火墙限制访问；静态资源通过 CDN 分发；DNS 用于域名解析。",
+        "所有外部通信强制使用 HTTPS；身份认证使用 OAuth 2.0 或 JWT。",
+        "系统对用户提交数据严格校验以防 SQL 注入和 XSS 攻击。",
+        "代码评测在独立 Docker 容器中运行，限制 CPU 时间和内存大小等资源使用。",
+        "防火墙仅允许必要端口开放；数据库每日备份并异地存储。",
+        "监控指标包括 CPU 使用率、内存使用率、磁盘 I/O、接口响应时间、错误率、QPS、数据库查询延迟和连接数。",
+        "CPU 或内存使用率超过 80%、接口错误率超过 1%、数据库查询延迟超过 15 秒时触发报警。",
+        "使用 Prometheus 收集监控数据，Grafana 展示监控数据，PagerDuty 或钉钉机器人发送报警通知。",
+        "部署流程包括 Gitlab CI/CD 自动构建 Docker 镜像、推送私有镜像仓库、Kubernetes 部署服务、配置自动扩缩容和快速回滚。"
+      ]
+    }
+  ],
+  "extraction_notes": [
+    "源文件标题为软件设计文档，但含有系统概述、运行环境、关键业务流程、数据库、部署、安全和监控信息，可转换为标准 SRS。",
+    "功能需求按 3.4 关键业务流程和 3.3 判题机流程抽取；数据库字段和部署技术不扩展为用户功能。",
+    "技术栈、部署方式、网络拓扑和工具链作为约束或运行环境处理。",
+    "安全、监控、备份、报警和沙箱隔离作为非功能需求处理。"
+  ],
+  "unsupported_or_missing": [
+    "源文档未给出完整 REST API 路径、请求/响应 JSON schema、错误码表或权限矩阵细节。",
+    "源文档未明确具体 LLM 提供商、模型名称、调用限额、提示词模板和内容安全策略。",
+    "源文档未明确代码评测支持的具体编程语言集合及每种语言的编译运行命令。",
+    "源文档未明确端到端性能指标，例如题目列表响应时间、判题完成时间或并发用户数。",
+    "源文档未明确数据保留期限、隐私合规边界、备份恢复演练要求和审计日志保存周期。"
+  ]
+}

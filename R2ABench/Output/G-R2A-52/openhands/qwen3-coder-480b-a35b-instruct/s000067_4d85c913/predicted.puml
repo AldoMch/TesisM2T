@@ -1,0 +1,107 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam noteFontSize 10
+
+' External Actors
+actor "CLI Operator" as cli_operator
+actor "Developer/Integrator" as developer
+
+' Main System Components
+package "TraceLeft System" {
+    [CLI Entry Point] as cli
+    [TraceLeft Library] as library
+    [eBPF Probes\n(kprobe/kretprobe)] as probes
+    [Handler Maps] as handler_maps
+    [Handler Programs] as handler_programs
+    [Perf-based Event Channel] as perf_channel
+    [Userspace Tracer] as tracer
+    [Handler Generator] as generator
+}
+
+' External Dependencies
+package "External Dependencies" {
+    [Linux Kernel\n(eBPF support)] as kernel
+    [gobpf Library] as gobpf
+}
+
+' Data Structures
+package "Configuration & Data" {
+    [Event Configuration\nMetadata] as config_metadata
+    [Common Event Header] as event_header
+    [Event Registration\nStructure] as event_reg
+}
+
+' Relationships
+cli_operator --> cli : uses
+developer --> generator : provides\nconfiguration
+developer <-- tracer : consumes\nevents
+
+cli --> library : uses
+library --> probes : installs
+library --> generator : uses
+library --> tracer : manages
+library --> kernel : interfaces with
+library --> gobpf : uses
+
+probes --> handler_maps : use
+handler_maps --> handler_programs : select
+handler_programs --> perf_channel : emit events
+perf_channel --> tracer : delivers events
+tracer --> event_header : uses for\ndispatching
+
+generator --> handler_programs : generates
+generator <-- config_metadata : reads
+library <-- event_reg : creates from\nCLI arguments
+
+note right of library
+    Core responsibilities:
+    - Probe installation
+    - Handler management
+    - Event processing
+    - CLI integration
+end note
+
+note right of probes
+    Attach to:
+    - kprobe hooks
+    - kretprobe hooks
+end note
+
+note right of handler_maps
+    Two types:
+    - handle_NAME_progs
+    - handle_NAME_progs_ret
+end note
+
+note left of handler_programs
+    Naming scheme:
+    - kprobe/handle_NAME
+    - kretprobe/handle_NAME
+end note
+
+note right of perf_channel
+    Event delivery mechanism
+    between kernel and userspace
+end note
+
+note bottom of config_metadata
+    Fields include:
+    - position
+    - type
+    - name
+    - suffix
+    - hash_func
+end note
+
+note bottom of event_reg
+    Contains:
+    - ProgramID
+    - Pids
+    - ELFPath
+end note
+
+@enduml

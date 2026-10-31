@@ -1,0 +1,86 @@
+@startuml
+title PlugIt Framework - Layered Architecture
+
+skinparam componentStyle rectangle
+
+rectangle "External" {
+  actor "External User/System" as user
+  component "PlugIt API Client" as apiclient
+  component "Mail Server" as mailsrv
+}
+
+rectangle "Internal Network" {
+  package "Proxy Layer" {
+    component "PlugIt Proxy" as proxy
+    database "Proxy Data Store" as proxydb
+    folder "Proxy Config" as proxycfg
+    artifact "Local Config (private)" as proxylocal
+    component "Mail Processing (Example/Standalone)" as mailproc
+    component "Mail Handler" as mailhandler
+  }
+  package "Service Layer" {
+    component "PlugIt Service A" as svcA
+    database "Service A DB (MySQL/SQLite)" as s1db
+    folder "Service A Config" as s1cfg
+    artifact "Local Config (private)" as s1local
+
+    component "PlugIt Service B" as svcB
+    database "Service B DB (MySQL/SQLite)" as s2db
+    folder "Service B Config" as s2cfg
+    artifact "Local Config (private)" as s2local
+  }
+}
+
+user --> proxy : Use via UI/Proxy
+apiclient --> proxy : API requests (API_URL / PI_BASE_URL)
+proxy --> svcA : PlugIt Protocol
+proxy --> svcB : PlugIt Protocol
+proxy --> proxydb : Read/Write
+svcA --> s1db : Read/Write
+svcB --> s2db : Read/Write
+
+mailsrv --> mailproc : Inbound Email
+mailproc --> mailhandler : Validated payload
+mailhandler --> proxy : Invoke service/workflow
+
+proxycfg -- proxy
+proxylocal -- proxy
+s1cfg -- svcA
+s1local -- svcA
+s2cfg -- svcB
+s2local -- svcB
+
+note right of proxy
+- Main Proxy API endpoint exposed
+- Network access control via PI_ALLOWED_NETWORKS
+end note
+
+note bottom of svcA
+- Configured with Proxy API endpoint
+- Versioned schema upgrades
+end note
+
+note bottom of svcB
+- Configured with Proxy API endpoint
+- Versioned schema upgrades
+end note
+
+note right of mailproc
+- Validate routing token (hash:data)
+- Discard auto-responses
+- Extract first text part and pass to handler
+end note
+
+note bottom of proxylocal
+Private settings excluded from source control
+end note
+
+note bottom of s1local
+Private settings excluded from source control
+end note
+
+note bottom of s2local
+Private settings excluded from source control
+end note
+
+@enduml

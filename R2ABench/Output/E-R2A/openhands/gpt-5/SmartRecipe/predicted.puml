@@ -1,0 +1,103 @@
+@startuml
+title Smart Recipe System - High-Level Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam wrapWidth 200
+
+rectangle "Users" as Users {
+  rectangle "Mobile App\n(Android & iOS UI)" as Mobile
+}
+
+node "Backend" as Backend {
+  package "Spring Boot Core Services" as SpringBoot {
+    package "Control Layer\n(REST Controllers)" as Control
+    package "Service Layer" as Service
+    package "Business Layer" as Business {
+      component "Auth & Account\nManagement" as Auth
+      component "Recipe Recognition\nOrchestrator" as Recog
+      component "Text Search" as Search
+      component "Health Analysis" as Health
+      component "Personalized Nutrition\nAdvice" as Advice
+      component "Diet Plan" as Diet
+      component "Community Sharing\n& Interaction" as Community
+      component "Recommendation\nEngine" as Reco
+      component "Admin Review &\nRecipe Management" as AdminMgmt
+      component "Merchant Map\nDisplay" as Map
+    }
+    package "Data Access Layer\n(DAO/Repository)" as DAL
+  }
+  node "Flask Model Inference Service" as Flask
+}
+
+database "MySQL" as MySQL
+rectangle "Redis Cache" as Redis
+
+' Connections
+Mobile -[#1e88e5]-> Control : HTTP/Ajax API calls\n(login, search, recognition, share, recommend)
+Control --> Service
+Service --> Business
+Business --> DAL
+DAL --> MySQL : CRUD
+
+' Caching and inference
+Business -[#2e7d32]-> Redis : cache reads/writes
+Business -[#6a1b9a]-> Flask : image vectors,\nmodel inference request
+Flask --> Business : inference result
+
+' Business modules data access
+Auth --> DAL
+Recog --> DAL
+Search --> DAL
+Health --> DAL
+Advice --> DAL
+Diet --> DAL
+Community --> DAL
+Reco --> DAL
+AdminMgmt --> DAL
+Map --> DAL
+
+' External communications details
+Mobile ..> Flask : image bytes may be proxied\nvia Spring Boot
+Mobile ..> Redis : no direct access
+Mobile ..> MySQL : no direct access
+
+' Roles
+note right of AdminMgmt
+Requires administrator role:
+- add recipes
+- review user recipes
+- batch user management
+end note
+
+' Constraints and platforms
+note bottom of SpringBoot
+- Implements main business logic (Spring Boot)
+- Layers: Control, Service, Business, Data Access
+- Exposes REST APIs to Mobile
+end note
+
+note bottom of Flask
+Provides model inference for
+photo-based recipe recognition
+end note
+
+note bottom of MySQL
+Stores: users, login, recipes,
+nutrition data, health info,
+ingredients, taboos, comments,
+merchants, recommendation features
+end note
+
+note bottom of Redis
+Caches frequently accessed data
+to improve performance
+end note
+
+' Security and assumptions
+note top of Mobile
+Login required for most operations
+end note
+
+@enduml

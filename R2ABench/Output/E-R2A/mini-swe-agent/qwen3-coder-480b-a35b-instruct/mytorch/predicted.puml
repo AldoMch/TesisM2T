@@ -1,0 +1,110 @@
+@startuml
+!define RECTANGLE class
+!define DATABASE rectangle
+!define COMPONENT component
+!define INTERFACE interface
+
+skinparam componentStyle rectangle
+
+title MyTorch System Architecture
+
+' User layer
+actor "Deep Learning Beginner" as User
+
+' Presentation layer
+package "Frontend" {
+    COMPONENT "Main Interface" as MainUI
+    COMPONENT "Configuration Interface" as ConfigUI
+    COMPONENT "Training Interface" as TrainUI
+    COMPONENT "Inference Interface" as InferUI
+}
+
+' Application layer
+package "Backend" {
+    COMPONENT "Model Management" as ModelMgr
+    COMPONENT "Training Engine" as TrainEngine
+    COMPONENT "Inference Engine" as InferEngine
+    COMPONENT "Data Loader" as DataLoader
+    COMPONENT "Framework Extension" as FrameworkExt
+}
+
+' Framework layer
+package "MyTorch/NNE Framework" {
+    COMPONENT "Neural Network Components" as NNComponents
+    COMPONENT "Loss Functions" as LossFunc
+    COMPONENT "Optimizers" as Optimizers
+    COMPONENT "Weight Initialization" as WeightInit
+    COMPONENT "GPU Acceleration" as GPUAccel
+}
+
+' Data layer
+package "Persistence" {
+    DATABASE "SQLite Database" as Database
+}
+
+' External systems
+package "External Resources" {
+    rectangle "Preset Datasets" as Datasets
+    rectangle "GPU Hardware" as GPU
+}
+
+' Connections
+User --> MainUI
+User --> ConfigUI
+User --> TrainUI
+User --> InferUI
+
+MainUI --> ConfigUI
+ConfigUI --> TrainUI
+TrainUI --> InferUI
+
+MainUI --> ModelMgr
+ConfigUI --> ModelMgr
+TrainUI --> TrainEngine
+InferUI --> InferEngine
+
+ModelMgr --> NNComponents
+ModelMgr --> FrameworkExt
+TrainEngine --> DataLoader
+TrainEngine --> LossFunc
+TrainEngine --> Optimizers
+TrainEngine --> GPUAccel
+InferEngine --> NNComponents
+InferEngine --> GPUAccel
+DataLoader --> Datasets
+
+FrameworkExt --> WeightInit
+FrameworkExt --> GPUAccel
+
+NNComponents --> Database
+LossFunc --> Database
+Optimizers --> Database
+TrainEngine --> Database
+InferEngine --> Database
+DataLoader --> Database
+
+GPUAccel --> GPU
+
+note right of Database
+  Stores:
+  - Models
+  - Datasets
+  - Training Logs
+  - Inference Logs
+end note
+
+note right of GPUAccel
+  Provides GPU
+  acceleration for
+  training and inference
+end note
+
+note bottom of FrameworkExt
+  Extends base NNE
+  framework with:
+  - Weight initialization
+  - Classic models
+  - Preset datasets
+end note
+
+@enduml

@@ -1,0 +1,78 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+title NLP4L System Architecture
+
+package "External Systems" {
+  [Apache Lucene Index] as LUCENE_INDEX
+  [External ML Tools] as ML_TOOLS
+  [Scala Interactive Environment] as SCALA_ENV
+  [Schema Configuration File/Resource] as SCHEMA_SOURCE
+}
+
+package "NLP4L Core System" {
+  [Index Processor] as INDEX_PROC
+  [Term Data Access] as TERM_ACCESS
+  [Search Engine] as SEARCH_ENGINE
+  [Document Vector Generator] as VECTOR_GEN
+  [Schema Loader & Validator] as SCHEMA_LOADER
+  [Schema Model] as SCHEMA_MODEL
+  [Chart Display (Experimental)] as CHART_DISP
+}
+
+package "Data Formats" {
+  [LIBSVM Format Writer] as LIBSVM_WRITER
+  [Word Count Data] as WORD_COUNT
+}
+
+LUCENE_INDEX --> INDEX_PROC : provides document data
+INDEX_PROC --> TERM_ACCESS : supplies term data
+INDEX_PROC --> SEARCH_ENGINE : supplies indexed data
+INDEX_PROC --> VECTOR_GEN : supplies document data
+
+TERM_ACCESS --> SCHEMA_MODEL : uses analyzer config
+SEARCH_ENGINE --> SCHEMA_MODEL : uses field definitions
+VECTOR_GEN --> LIBSVM_WRITER : creates vectors
+LIBSVM_WRITER --> ML_TOOLS : exports LIBSVM file
+
+SCHEMA_SOURCE --> SCHEMA_LOADER : loads configuration
+SCHEMA_LOADER --> SCHEMA_MODEL : creates in-memory model
+SCHEMA_MODEL --> INDEX_PROC : configures processing
+SCHEMA_MODEL --> TERM_ACCESS : configures analyzers
+SCHEMA_MODEL --> SEARCH_ENGINE : configures fields
+SCHEMA_MODEL --> VECTOR_GEN : configures vectorization
+
+TERM_ACCESS --> WORD_COUNT : generates word counts
+WORD_COUNT --> CHART_DISP : provides data
+CHART_DISP --> SCALA_ENV : displays chart
+
+SCALA_ENV --> INDEX_PROC : interactive control
+SCALA_ENV --> TERM_ACCESS : interactive access
+SCALA_ENV --> SEARCH_ENGINE : interactive queries
+SCALA_ENV --> VECTOR_GEN : interactive generation
+SCALA_ENV --> SCHEMA_LOADER : interactive loading
+SCALA_ENV --> CHART_DISP : interactive visualization
+
+note top of CHART_DISP
+  Experimental Component
+  Functionality may change
+end note
+
+note right of SCHEMA_LOADER
+  Validates:
+  - schema root object
+  - default analyzer
+  - field definitions
+end note
+
+note right of LIBSVM_WRITER
+  Output format for
+  ML interoperability
+end note
+@enduml

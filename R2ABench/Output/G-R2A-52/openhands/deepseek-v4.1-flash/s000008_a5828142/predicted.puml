@@ -1,0 +1,167 @@
+@startuml
+title Bunny Code - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam monochrome false
+skinparam defaultFontName SansSerif
+
+' =========================================================
+' Actors / Users
+' =========================================================
+actor "Visitor" as Visitor
+actor "Authenticated User" as AuthUser
+actor "Project Owner / Collaborator" as Collaborator
+actor "Battle Participant" as BattleUser
+actor "Maintainer / Operator" as Maintainer
+
+' =========================================================
+' Client / Presentation Layer
+' =========================================================
+package "Browser Runtime (Vue Frontend)" as FrontendPkg {
+  component "Web Frontend\n(UI-001)" as WebApp
+  component "Workspace Editor\n(UI-002)" as EditorUI
+  component "Battle View\n(UI-003)" as BattleUI
+  component "Playback View\n(UI-004)" as PlaybackUI
+  component "REST Client" as RestClient
+  component "Socket.IO Client" as SocketClient
+}
+
+Visitor --> WebApp : uses
+AuthUser --> WebApp
+Collaborator --> EditorUI
+BattleUser --> BattleUI
+AuthUser --> PlaybackUI
+
+WebApp ..> RestClient
+EditorUI ..> RestClient
+BattleUI ..> SocketClient
+EditorUI ..> SocketClient
+PlaybackUI ..> RestClient
+
+' =========================================================
+' Edge / Delivery Layer
+' =========================================================
+package "Edge & Delivery" as EdgePkg {
+  component "Nginx Reverse Proxy\n(C-011)" as Nginx
+  component "Automated Deployment Flow\n(NFR-008, C-011)" as Deploy
+  component "CDN / URL Distribution\n(CloudFront-style)\n(FR-018, COM-006)" as CDN
+}
+
+Maintainer --> Deploy
+
+' =========================================================
+' Application / Backend Layer
+' =========================================================
+package "Backend - Node.js / Express + Socket.IO (C-001)" as BackendPkg {
+
+  component "Authentication Service\nJWT validation\n(FR-001, FR-002, FR-003, API-001, API-002, API-003)" as AuthService
+  component "User Service\n(FR-001, DR-001, DR-002)" as UserService
+  component "Project & Version Service\n(FR-004, FR-005, API-004, API-005)" as ProjectService
+  component "Code Execution Service\n(FR-006, API-006, NFR-005)" as ExecService
+  component "Process Recording & Playback Service\n(FR-007, API-007, NFR-006)" as ReplayService
+  component "File Upload & Distribution Service\n(FR-017, FR-018, API-008)" as FileService
+  component "Battle Service\n(FR-011..FR-016, API-010)" as BattleService
+  component "Redis Coordination Service\n(FR-009, FR-013, NFR-001, NFR-002)" as RedisCoord
+
+  component "REST API Layer\n(COM-001)" as RestAPI
+  component "Socket.IO Workspace Handler\n(FR-008, FR-009, FR-010, API-009)" as WsSocket
+  component "Socket.IO Battle Handler\n(FR-011..FR-016, API-010)" as BattleSocket
+}
+
+' =========================================================
+' Data / Persistence Layer
+' =========================================================
+database "MySQL\nRelational Data\nUsers, Projects, Versions,\nProblems, Battles\n(C-003, COM-004)" as MySQL
+database "InfluxDB\nTime-Series Coding-Process Records\n(C-004, DR-009, COM-004)" as InfluxDB
+database "Redis\nLive Workspace & Battle State\nCache\n(C-005, C-006, C-007, DR-008, DR-011, COM-003)" as Redis
+
+' =========================================================
+' Execution & Storage Layer
+' =========================================================
+package "Execution & Storage" as InfraPkg {
+  component "Docker Sandbox\nIsolated Code Compilation / Execution\n(C-009, COM-005)" as Sandbox
+  component "Object Storage (S3-compatible)\nCode Files, Battle Result Files,\nUser Files, Static Assets, Archives\n(FR-017, C-010, COM-006)" as ObjectStorage
+}
+
+' =========================================================
+' Client <-> Edge <-> Backend Connectivity
+' =========================================================
+RestClient --> Nginx : HTTPS / REST\n(COM-001)
+SocketClient --> Nginx : WebSocket / Socket.IO\n(COM-002)
+Nginx --> RestAPI : routes REST requests
+Nginx --> WsSocket : routes socket events
+Nginx --> BattleSocket : routes socket events
+Nginx --> CDN : serves distributed assets
+Nginx --> WebApp : serves frontend bundle
+
+' =========================================================
+' Backend Internal Wiring
+' =========================================================
+RestAPI --> AuthService
+RestAPI --> UserService
+RestAPI --> ProjectService
+RestAPI --> ExecService
+RestAPI --> ReplayService
+RestAPI --> FileService
+
+WsSocket --> AuthService
+WsSocket --> ProjectService
+WsSocket --> RedisCoord
+
+BattleSocket --> AuthService
+BattleSocket --> BattleService
+BattleSocket --> RedisCoord
+
+BattleService --> ExecService : judging / execution
+BattleService --> ProjectService
+ExecService --> Sandbox : compiles / executes code
+FileService --> ObjectStorage : uploads files
+ReplayService --> InfluxDB : records / queries
+ProjectService --> MySQL : persists data
+UserService --> MySQL
+AuthService --> MySQL : validates identity
+BattleService --> MySQL : battle records
+RedisCoord --> Redis : cache operations
+WsSocket ..> Redis : workspace socket/version mapping (when non-read-only & ready)
+
+ObjectStorage --> CDN : distributable URLs / archives
+FileService --> CDN : returns URL (DEF-011, DR-015)
+
+' =========================================================
+' Notes on key behaviors
+' =========================================================
+note right of WsSocket
+  statusChecked event with project status object
+  readOnly / authorization (FR-008, DEF-004)
+  Default readOnly=true, authorization=false
+  when project/version missing (NFR-004)
+end note
+
+note bottom of BattleSocket
+  Battle invitation: socketID, battle name, difficulty,
+  inviter userID, inviter username (FR-011, DEF-006)
+  Acceptance uses Redis isolated execution & watched
+  cache state; invitation deleted after read (FR-013, NFR-001)
+end note
+
+note bottom of Redis
+  Redis host/port/username/password configured by
+  deployment (C-007, DR-016). Persistence, checksum,
+  append-only, protected mode are deployment choices (C-008).
+end note
+
+' =========================================================
+' Deployment relationship
+' =========================================================
+Deploy ..> FrontendPkg : deploys
+Deploy ..> BackendPkg : deploys
+Deploy ..> EdgePkg : configures
+Deploy ..> MySQL
+Deploy ..> InfluxDB
+Deploy ..> Redis
+Deploy ..> Sandbox
+Deploy ..> ObjectStorage
+
+@enduml

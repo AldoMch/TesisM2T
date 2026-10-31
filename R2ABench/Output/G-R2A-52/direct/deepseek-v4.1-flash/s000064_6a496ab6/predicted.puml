@@ -1,0 +1,112 @@
+@startuml
+title gran-book Backend Platform - System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+actor "End User" as EndUser
+actor "Administrator" as Admin
+
+package "Client Applications" {
+  component "Native Mobile Applications" as MobileApps
+  component "Administrative Web Application" as AdminWeb
+}
+
+package "GCP Environment" {
+  component "Cloud Load Balancer" as LB
+
+  node "GKE Cluster" as GKE {
+    component "Gateway / BFF Layer" as Gateway
+
+    package "Internal Backend APIs\n(Protocol Buffers / request-response)" as BackendAPIs {
+      component "Authentication API" as AuthAPI
+      component "User Management API" as UserAPI
+      component "Book Management API" as BookAPI
+      component "EC Site API" as ECAPI
+      component "Support API / Support Information" as SupportAPI
+      component "Administration API / Service" as AdminAPI
+      component "Notification Service" as NotificationService
+      component "Message Management Service" as MessageService
+      component "Book-search Integration" as BookSearchIntegration
+    }
+  }
+
+  node "GCE VM Operations" as VM {
+    component "Cluster Access / GKE Credential Retrieval" as GKEAccess
+    component "TLS Certificate Provisioning\n(Let's Encrypt DNS-01)" as TLSCert
+  }
+
+  database "MySQL" as MySQL
+  database "NoSQL Storage" as NoSQL
+  database "Object Storage" as ObjectStorage
+}
+
+package "External Services" {
+  cloud "Firebase Authentication" as Firebase
+  cloud "Book-search API\n(provider name unresolved)" as BookSearch
+  cloud "Stripe" as Stripe
+  cloud "Push Notification Provider" as Push
+  cloud "Email Notification Provider" as Email
+}
+
+EndUser --> MobileApps
+Admin --> AdminWeb
+MobileApps --> LB : HTTPS
+AdminWeb --> LB : HTTPS
+LB --> Gateway
+
+Gateway --> AuthAPI
+Gateway --> UserAPI
+Gateway --> BookAPI
+Gateway --> ECAPI
+Gateway --> SupportAPI
+Gateway --> AdminAPI
+Gateway --> NotificationService
+Gateway --> MessageService
+
+AuthAPI --> Firebase : authentication
+UserAPI --> MySQL : user data
+BookAPI --> MySQL : book data
+BookAPI --> BookSearchIntegration : lookup
+BookSearchIntegration --> BookSearch : external lookup
+BookAPI --> ObjectStorage : thumbnails/objects
+ECAPI --> MySQL : EC site data
+ECAPI --> Stripe : payments
+MessageService --> NoSQL : messages
+NotificationService --> Push : push notifications
+NotificationService --> Email : email notifications
+
+AdminAPI --> UserAPI
+AdminAPI --> BookAPI
+AdminAPI --> ECAPI
+AdminAPI --> SupportAPI
+
+GKEAccess --> GKE : credentialed access
+TLSCert --> LB : TLS certificates
+
+note right of BackendAPIs
+  Internal APIs follow documented
+  Protocol Buffers method naming and
+  request/response conventions.
+end note
+
+note bottom of Firebase
+  Authentication data is managed
+  through Firebase Authentication.
+end note
+
+note bottom of BookSearch
+  C-007: exact book-search provider
+  remains unresolved until design sources
+  are consistent.
+end note
+
+note bottom of VM
+  GCP operational procedures include
+  GCE VM setup, TLS cert tooling,
+  and GKE cluster credential retrieval.
+end note
+
+@enduml

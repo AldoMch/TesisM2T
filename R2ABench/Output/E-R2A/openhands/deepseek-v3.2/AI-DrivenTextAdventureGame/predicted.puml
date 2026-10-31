@@ -1,0 +1,242 @@
+@startuml
+!define RECTANGLE class
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F5F5F5
+skinparam classBorderColor #333333
+skinparam classArrowColor #333333
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+title AI-Driven Text Adventure Game and Community Platform - System Architecture
+
+package "Client Layer" {
+  rectangle "Web Browser\n(Vue.js/Nuxt.js)" as web_browser {
+    rectangle "Game Interface" as game_ui
+    rectangle "Community Interface" as community_ui
+    rectangle "Admin Interface" as admin_ui
+    rectangle "User Profile Interface" as profile_ui
+  }
+  
+  rectangle "Mobile Client\n(Optional)" as mobile_client {
+    rectangle "Game App" as mobile_game
+    rectangle "Community App" as mobile_community
+  }
+}
+
+package "API Gateway Layer" {
+  rectangle "API Gateway\n(Iris Framework)" as api_gateway {
+    rectangle "Authentication\nService" as auth_service
+    rectangle "Rate Limiting" as rate_limit
+    rectangle "Request Router" as request_router
+  }
+}
+
+package "Application Layer" {
+  package "Game Services" {
+    rectangle "Game Engine Service" as game_engine {
+      rectangle "LLM Integration" as llm_integration
+      rectangle "Plot Generator" as plot_generator
+      rectangle "State Manager" as state_manager
+    }
+    
+    rectangle "Save Management Service" as save_service {
+      rectangle "Cloud Save" as cloud_save
+      rectangle "Local Save" as local_save
+      rectangle "Save Sharing" as save_sharing
+    }
+    
+    rectangle "Game Content Service" as game_content {
+      rectangle "Background Manager" as background_mgr
+      rectangle "Choice Processor" as choice_processor
+      rectangle "Achievement System" as achievement_sys
+    }
+  }
+  
+  package "Community Services" {
+    rectangle "Post Service" as post_service {
+      rectangle "Post CRUD" as post_crud
+      rectangle "Review System" as review_system
+      rectangle "Search Engine" as search_engine
+    }
+    
+    rectangle "Interaction Service" as interaction_service {
+      rectangle "Comment Manager" as comment_mgr
+      rectangle "Reply Manager" as reply_mgr
+      rectangle "Favorite Manager" as favorite_mgr
+    }
+    
+    rectangle "Notification Service" as notification_service {
+      rectangle "Event Handler" as event_handler
+      rectangle "Notification Queue" as notification_queue
+      rectangle "Push Service" as push_service
+    }
+  }
+  
+  package "User Services" {
+    rectangle "User Service" as user_service {
+      rectangle "Registration" as registration
+      rectangle "Authentication" as authentication
+      rectangle "Profile Management" as profile_mgmt
+    }
+    
+    rectangle "Admin Service" as admin_service {
+      rectangle "User Management" as user_mgmt
+      rectangle "Content Moderation" as content_mod
+      rectangle "Report Handling" as report_handling
+    }
+  }
+}
+
+package "Data Layer" {
+  rectangle "MySQL Database\n(GORM ORM)" as mysql_db {
+    rectangle "User Schema" as user_schema
+    rectangle "Game Schema" as game_schema
+    rectangle "Community Schema" as community_schema
+    rectangle "Notification Schema" as notification_schema
+  }
+  
+  rectangle "Redis Cache" as redis_cache {
+    rectangle "Session Store" as session_store
+    rectangle "Game State Cache" as game_cache
+    rectangle "Content Cache" as content_cache
+  }
+  
+  rectangle "File Storage" as file_storage {
+    rectangle "Game Screenshots" as screenshots
+    rectangle "User Avatars" as avatars
+    rectangle "AIGC Images" as aigc_images
+  }
+}
+
+package "External Services" {
+  rectangle "LLM Provider API" as llm_api {
+    rectangle "Text Generation" as text_gen
+    rectangle "Reasoning Engine" as reasoning
+    rectangle "AIGC Service" as aigc_service
+  }
+  
+  rectangle "Email Service" as email_service {
+    rectangle "Verification Codes" as verification
+    rectangle "Notifications" as email_notifications
+  }
+  
+  rectangle "Payment Service" as payment_service {
+    rectangle "Game Currency" as currency
+    rectangle "Item Purchases" as purchases
+  }
+}
+
+package "Infrastructure Layer" {
+  rectangle "Docker Containers" as docker_containers {
+    rectangle "Service Containers" as service_containers
+    rectangle "Database Container" as db_container
+    rectangle "Cache Container" as cache_container
+  }
+  
+  rectangle "Kubernetes Cluster" as k8s_cluster {
+    rectangle "Deployments" as deployments
+    rectangle "Services" as k8s_services
+    rectangle "Ingress" as ingress
+    rectangle "ConfigMaps" as configmaps
+    rectangle "Secrets" as secrets
+  }
+  
+  rectangle "Monitoring" as monitoring {
+    rectangle "Logging" as logging
+    rectangle "Metrics" as metrics
+    rectangle "Alerting" as alerting
+  }
+}
+
+' Client to API Gateway connections
+web_browser --> api_gateway : "HTTPS/WebSocket"
+mobile_client --> api_gateway : "HTTPS/WebSocket"
+
+' API Gateway to Application Services
+api_gateway --> game_engine : "Game Requests"
+api_gateway --> save_service : "Save Operations"
+api_gateway --> post_service : "Community Requests"
+api_gateway --> interaction_service : "Interaction Requests"
+api_gateway --> user_service : "User Requests"
+api_gateway --> admin_service : "Admin Requests"
+api_gateway --> notification_service : "Event Notifications"
+
+' Internal Service Connections
+game_engine --> save_service : "Save/Load Game"
+game_engine --> game_content : "Content Management"
+save_service --> post_service : "Share to Community"
+post_service --> interaction_service : "Comments/Favorites"
+interaction_service --> notification_service : "New Interactions"
+user_service --> admin_service : "User Management"
+
+' Application to Data Layer
+game_engine --> mysql_db : "Game State"
+save_service --> mysql_db : "Save Data"
+game_content --> mysql_db : "Content Data"
+post_service --> mysql_db : "Post Data"
+interaction_service --> mysql_db : "Interaction Data"
+user_service --> mysql_db : "User Data"
+admin_service --> mysql_db : "Admin Data"
+notification_service --> mysql_db : "Notification Data"
+
+' Caching connections
+game_engine --> redis_cache : "Game State Cache"
+user_service --> redis_cache : "Session Cache"
+post_service --> redis_cache : "Content Cache"
+
+' File storage connections
+post_service --> file_storage : "Screenshots"
+user_service --> file_storage : "Avatars"
+game_content --> file_storage : "AIGC Images"
+
+' External service connections
+game_engine --> llm_api : "Plot Generation"
+game_content --> llm_api : "AIGC Content"
+user_service --> email_service : "Verification/Notifications"
+game_content --> payment_service : "Currency/Items"
+
+' Infrastructure connections
+docker_containers --> k8s_cluster : "Orchestration"
+k8s_cluster --> monitoring : "Health Checks"
+all --> monitoring : "Logs/Metrics"
+
+' Security boundaries
+cloud "Internet" as internet
+cloud "Internal Network" as internal_network
+
+internet --> api_gateway
+api_gateway --> internal_network
+internal_network --> mysql_db
+internal_network --> redis_cache
+internal_network --> file_storage
+internal_network --> external_services
+
+note right of internet
+  **Security Zones:**
+  - Public Internet (untrusted)
+  - DMZ (API Gateway)
+  - Internal Services (trusted)
+  - External APIs (controlled)
+end note
+
+' Deployment notes
+note bottom of k8s_cluster
+  **Deployment:**
+  - Docker containers for each service
+  - Kubernetes for orchestration
+  - Auto-scaling based on load
+  - Blue-green deployments
+end note
+
+' Key technology stack
+note right of api_gateway
+  **Tech Stack:**
+  - Frontend: Vue.js, Nuxt.js
+  - Backend: Iris (Go)
+  - Database: MySQL, GORM
+  - Cache: Redis
+  - Deployment: Docker, Kubernetes
+end note
+
+@enduml

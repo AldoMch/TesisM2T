@@ -1,0 +1,188 @@
+@startuml
+
+package "User Interface Layer" {
+  component "Registration/Login UI" as UI_Login
+  component "File Management UI" as UI_File
+  component "Detection Configuration UI" as UI_Config
+  component "Detection Record/Report UI" as UI_Report
+  component "Detection Result UI" as UI_Result
+  component "Help/Case UI" as UI_Help
+}
+
+package "Business Logic Layer" {
+  component "Account & Authentication Service" as BL_Account
+  component "File Management Service" as BL_File
+  component "Detection Configuration Service" as BL_Config
+  component "Detection Exception Configuration Service" as BL_ExceptionConfig
+  component "MDJ Parser" as BL_MDJParser
+  component "Database Parsing Service" as BL_DBParser
+  component "Matching Orchestration Service" as BL_Matching
+  component "Entity Matching Service" as BL_EntityMatch
+  component "Relationship Matching Service" as BL_RelationshipMatch
+  component "Attribute Matching Service" as BL_AttributeMatch
+  component "Consistency Detection Service" as BL_Detection
+  component "Repair Suggestion & Execution Service" as BL_Repair
+  component "Report Export Service" as BL_Report
+  component "Historical Record Service" as BL_History
+  component "Help & Case Service" as BL_Help
+  component "Open API Service" as BL_OpenAPI
+  component "Asynchronous Processing Service" as BL_Async
+  component "Access Control/Security Service" as BL_Access
+  component "Logging/Audit Service" as BL_Logging
+  component "Jackson/JSON Conversion" as BL_JSON
+}
+
+package "Data Access Layer" {
+  component "User Data Access" as DA_User
+  component "File Data Access" as DA_File
+  component "Parsing Model Data Access" as DA_Parsing
+  component "Configuration Data Access" as DA_Config
+  component "Matching/Detection Data Access" as DA_Matching
+  component "Repair/History Data Access" as DA_RepairHistory
+  component "Modification Record Data Access" as DA_ModRecord
+  component "Help/Case Data Access" as DA_Help
+  component "Operation Log Data Access" as DA_Log
+  component "JDBC Database Connector" as DA_JDBC
+}
+
+package "External Systems" {
+  database "MySQL Database" as MySQL
+  node "StarUML / MDJ class diagram files" as StarUML
+  cloud "Third-party applications" as ThirdParty
+}
+
+package "Security & Cross-Cutting" {
+  component "SSL/TLS Secure Transmission" as SEC_TLS
+}
+
+package "Test & Quality Assurance" {
+  component "Automated Test Framework" as QA_Test
+}
+
+UI_Login --> BL_Account
+UI_File --> BL_File
+UI_Config --> BL_Config
+UI_Config --> BL_ExceptionConfig
+UI_Report --> BL_Report
+UI_Report --> BL_History
+UI_Result --> BL_Matching
+UI_Result --> BL_Detection
+UI_Result --> BL_Repair
+UI_Help --> BL_Help
+UI_Result --> BL_Async
+
+BL_Account --> DA_User
+BL_Account --> BL_Logging
+
+BL_File --> DA_File
+BL_File --> BL_Access
+BL_File --> BL_Logging
+BL_File --> BL_MDJParser
+
+BL_Config --> DA_Config
+BL_Config --> BL_Access
+BL_Config --> BL_Logging
+
+BL_ExceptionConfig --> DA_Config
+BL_ExceptionConfig --> BL_Access
+BL_ExceptionConfig --> BL_Logging
+
+BL_MDJParser --> DA_File
+BL_MDJParser --> DA_Parsing
+BL_MDJParser --> BL_JSON
+BL_MDJParser --> BL_Logging
+
+BL_DBParser --> DA_JDBC
+BL_DBParser --> DA_Parsing
+BL_DBParser --> BL_JSON
+BL_DBParser --> BL_Logging
+
+BL_Matching --> BL_MDJParser
+BL_Matching --> BL_DBParser
+BL_Matching --> BL_EntityMatch
+BL_Matching --> BL_RelationshipMatch
+BL_Matching --> BL_AttributeMatch
+BL_Matching --> DA_Matching
+BL_Matching --> BL_Logging
+
+BL_EntityMatch --> DA_Matching
+BL_RelationshipMatch --> DA_Matching
+BL_AttributeMatch --> DA_Matching
+
+BL_Detection --> BL_Matching
+BL_Detection --> BL_Config
+BL_Detection --> BL_ExceptionConfig
+BL_Detection --> BL_Access
+BL_Detection --> DA_Matching
+BL_Detection --> BL_Logging
+
+BL_Repair --> BL_Detection
+BL_Repair --> BL_Access
+BL_Repair --> DA_RepairHistory
+BL_Repair --> DA_ModRecord
+BL_Repair --> BL_Logging
+
+BL_Report --> BL_Detection
+BL_Report --> BL_Access
+BL_Report --> DA_Matching
+BL_Report --> DA_File
+BL_Report --> BL_Logging
+
+BL_History --> DA_RepairHistory
+BL_History --> DA_ModRecord
+BL_History --> BL_Access
+BL_History --> BL_Logging
+
+BL_Help --> DA_Help
+BL_Help --> BL_Access
+BL_Help --> BL_Logging
+
+BL_OpenAPI --> BL_Detection
+BL_OpenAPI --> BL_Repair
+BL_OpenAPI --> BL_Access
+BL_OpenAPI --> BL_Logging
+
+BL_Async --> BL_Detection
+BL_Async --> BL_Repair
+BL_Async --> BL_Logging
+
+BL_Access --> DA_User
+BL_Access --> BL_Logging
+
+BL_Logging --> DA_Log
+
+DA_User --> DA_JDBC
+DA_File --> DA_JDBC
+DA_Parsing --> DA_JDBC
+DA_Config --> DA_JDBC
+DA_Matching --> DA_JDBC
+DA_RepairHistory --> DA_JDBC
+DA_ModRecord --> DA_JDBC
+DA_Help --> DA_JDBC
+DA_Log --> DA_JDBC
+
+StarUML --> UI_File
+ThirdParty --> SEC_TLS
+SEC_TLS --> BL_OpenAPI
+DA_JDBC --> SEC_TLS
+SEC_TLS --> MySQL
+
+QA_Test --> UI_Login
+QA_Test --> UI_File
+QA_Test --> UI_Config
+QA_Test --> UI_Report
+QA_Test --> UI_Result
+QA_Test --> UI_Help
+QA_Test --> BL_Account
+QA_Test --> BL_File
+QA_Test --> BL_Config
+QA_Test --> BL_Detection
+QA_Test --> BL_Repair
+QA_Test --> BL_Report
+QA_Test --> BL_History
+QA_Test --> BL_Help
+QA_Test --> BL_OpenAPI
+QA_Test --> DA_JDBC
+QA_Test --> SEC_TLS
+
+@enduml

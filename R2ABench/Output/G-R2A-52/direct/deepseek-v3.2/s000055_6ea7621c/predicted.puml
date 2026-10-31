@@ -1,0 +1,102 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam ArrowColor #333333
+skinparam RectangleBorderColor #333333
+skinparam RectangleBackgroundColor #FFFFFF
+skinparam RectangleFontStyle bold
+skinparam packageBackgroundColor #F0F0F0
+skinparam packageBorderColor #333333
+
+title Nobel Prize Laureates Autocomplete Web Application - System Architecture
+
+package "Client Environment" {
+  RECTANGLE "Web Browser" as Browser {
+    + User Interface (HTML/CSS/JS)
+    + Search Input Field
+    + Suggestions Display
+  }
+}
+
+package "Server Runtime (Node.js)" {
+  package "HTTP Server" as Server {
+    RECTANGLE "HTTP Listener" as HTTP_Server
+  }
+
+  package "Router Module" as Router {
+    RECTANGLE "Request Router" as Request_Router
+  }
+
+  package "Handler Module" as Handler {
+    RECTANGLE "Home Page Handler" as Home_Handler
+    RECTANGLE "Static Asset Handler" as Static_Handler
+    RECTANGLE "Not-Found Handler" as NotFound_Handler
+  }
+
+  package "Search Algorithm" as Search {
+    RECTANGLE "Autocomplete Module" as Autocomplete
+  }
+
+  package "Data Access" as Data {
+    RECTANGLE "Laureate Data Module" as Data_Module
+    RECTANGLE "Local JSON Data" as JSON_Data
+  }
+}
+
+package "Deployment Environment" {
+  RECTANGLE "Heroku Platform" as Heroku
+}
+
+' External interfaces
+Browser --> HTTP_Server : HTTP Requests/Responses
+HTTP_Server --> Request_Router : Routes Requests
+
+' Routing logic
+Request_Router --> Home_Handler : GET /
+Request_Router --> Autocomplete : URL contains "search"
+Request_Router --> Static_Handler : Other requests
+
+' Handler operations
+Home_Handler --> Static_Handler : Serves index.html
+Static_Handler --> NotFound_Handler : File read failure
+
+' Search algorithm flow
+Autocomplete --> Data_Module : Requests laureate names
+Data_Module --> JSON_Data : Reads local JSON file
+Data_Module --> Autocomplete : Returns name array
+Autocomplete --> Browser : Returns filtered results (max 10)
+
+' Static asset types
+Static_Handler --> Browser : HTML/CSS/JS/JPG/ICO
+
+' Deployment relationship
+Server --> Heroku : Deployed to
+
+' Data flow annotations
+note right of Browser
+  Input: Search string
+  Output: Array of laureate names
+end note
+
+note right of Autocomplete
+  Prefix matching
+  Max 10 results
+end note
+
+note right of JSON_Data
+  Nobel Prize laureate data
+  Object-based JSON structure
+end note
+
+note right of Static_Handler
+  Content-Type mapping:
+  - html → text/html
+  - css → text/css
+  - js → application/javascript
+  - jpg → image/jpg
+  - ico → image/x-icon
+end note
+
+@enduml

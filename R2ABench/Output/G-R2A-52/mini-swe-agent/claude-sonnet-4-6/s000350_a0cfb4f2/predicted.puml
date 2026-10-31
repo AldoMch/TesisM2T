@@ -1,0 +1,72 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> LightGray
+}
+
+title Squatm3gator Architecture
+
+actor "Web User / Client App" as User
+
+rectangle "Client Layer" {
+  component "Web Browser / Client" as Browser
+}
+
+rectangle "API Server Process" {
+  component "HTTP API Handler\n(GET /, GET /api/...)" as HTTPHandler
+  component "Session Manager" as SessionMgr
+  component "WebSocket / Socket.IO Server" as WSServer
+  component "Job Publisher" as JobPublisher
+  component "Background Consumer Thread" as ConsumerThread
+  component "Report Router" as ReportRouter
+}
+
+rectangle "Domain Generation Layer" {
+  component "squatm3 CLI Engine\n(subprocess)" as Squatm3
+}
+
+rectangle "Infrastructure Layer" {
+  database "Redis\n(Job Channel & Reporting)" as Redis
+}
+
+rectangle "External Services" {
+  component "GoDaddy Domain API\n(sso-key auth)" as GoDaddy
+}
+
+rectangle "Static Assets" {
+  component "index.html\n(Web Entry Page)" as IndexHTML
+}
+
+User --> Browser
+Browser --> HTTPHandler : HTTP GET / and API requests
+Browser <--> WSServer : WebSocket / Socket.IO\n(async progress & results)
+
+HTTPHandler --> SessionMgr : create / validate session
+HTTPHandler --> IndexHTML : serve web entry page
+HTTPHandler --> JobPublisher : submit domain-generation job
+
+JobPublisher --> Redis : publish job\n(session key as job ID)
+
+ConsumerThread --> Redis : subscribe / listen for jobs
+ConsumerThread --> Squatm3 : invoke via subprocess\n(attack options, domain)
+Squatm3 --> ConsumerThread : domain variant results
+
+ConsumerThread --> Redis : publish reporting messages\n(WORKER_ID#JOB_UUID#RESULT)
+
+ReportRouter --> Redis : consume reporting messages
+ReportRouter --> WSServer : route results to matching session
+
+ConsumerThread --> GoDaddy : optional domain availability check\n(Authorization: sso-key <key>:<secret>)
+
+note right of Redis
+  Job channel: API publishes jobs
+  Reporting channel: consumer publishes results
+  Format: WORKER_ID#JOB_UUID#{MESSAGE/RESULT}
+end note
+
+note right of Squatm3
+  Attack types: Hf, Hc, -add, F, R
+  Options: --output=json, --godaddy, etc.
+end note
+
+@enduml

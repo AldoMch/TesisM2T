@@ -1,0 +1,156 @@
+@startuml AI_TextAdventure_Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam PackageBackgroundColor #F0F4FF
+skinparam PackageBorderColor #5566AA
+skinparam PackageFontStyle bold
+skinparam ComponentBackgroundColor #DDEEFF
+skinparam ComponentBorderColor #3355AA
+skinparam DatabaseBackgroundColor #FFF8DD
+skinparam DatabaseBorderColor #AA8800
+skinparam CloudBackgroundColor #FDE8FF
+skinparam CloudBorderColor #884499
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "External Systems" {
+  [External LLM Provider] as LLMProvider
+  [AIGC Media Generation Service] as AIGCMedia
+  [Email / SMTP Service] as SMTPService
+  [Cloud / Self-Hosted Data Center] as CloudInfra
+}
+
+' ─────────────────────────────────────────────
+' LAYER 1 — CLIENT / PRESENTATION
+' ─────────────────────────────────────────────
+package "Client / Presentation Layer" {
+  [NuxtFrontend\n(Vue.js + Nuxt.js SSR)] as NuxtFrontend
+  [LocalSaveStore\n(Client-Side Offline\nGame Save Fallback)] as LocalSaveStore
+}
+
+' ─────────────────────────────────────────────
+' LAYER 2 — APPLICATION / BACKEND SERVICES
+' ─────────────────────────────────────────────
+package "Application / Backend Service Layer  (Go · Iris Framework)" {
+  [AuthService\n(Registration · Login · Session\nPassword Recovery · Email Verify)] as AuthService
+  [UserProfileService\n(Profile · Avatar · History)] as UserProfileService
+  [GameService\n(New Game · Saves · Choices\nShare to Community)] as GameService
+  [CommunityService\n(Posts · Comments · Replies\nSearch · Recommendations)] as CommunityService
+  [AdminService\n(User Governance · Post Review\nBan · Reports)] as AdminService
+  [FavoritesService\n(Folders · Add · View · Remove)] as FavoritesService
+  [NotificationService\n(Create · Read · Delete\nUnread Count)] as NotificationService
+  [AchievementService\n(Earn Currency · Buy Items\nHealth Packs · Resurrection\nCheck Achievements)] as AchievementService
+}
+
+' ─────────────────────────────────────────────
+' LAYER 3 — AI / MODEL INTEGRATION
+' ─────────────────────────────────────────────
+package "AI / Model Integration Layer" {
+  [LLMAdapter\n(Prompt Construction · LLM Call\nPlot & Event · AIGC Media Request\nImage & Audio · Media-State Assoc.)] as LLMAdapter
+}
+
+' ─────────────────────────────────────────────
+' LAYER 4 — DATA ACCESS
+' ─────────────────────────────────────────────
+package "Data Access Layer" {
+  [GormRepository\n(ORM CRUD — Users · Posts · Saves\nNotifs · Favorites · Achievements\nCurrency · Items · Logs)] as GormRepository
+}
+
+' ─────────────────────────────────────────────
+' LAYER 5 — PERSISTENCE
+' ─────────────────────────────────────────────
+package "Persistence Layer" {
+  database "MySQLDatabase\n(All Structured App Data)" as MySQLDatabase
+  database "VerificationCodeStore\n(Temp Email Codes\nPassword Recovery)" as VerificationCodeStore
+  database "ObjectStorage\n(AIGC Images · Audio\nPost Screenshots)" as ObjectStorage
+}
+
+' ─────────────────────────────────────────────
+' LAYER 6 — INFRASTRUCTURE / OPERATIONS
+' ─────────────────────────────────────────────
+package "Infrastructure / Operations Layer" {
+  [ContainerOrchestrator\n(Kubernetes · Docker Images\nAuto-Scaling · Health Probing\nRolling Updates)] as ContainerOrchestrator
+}
+
+' ═══════════════════════════════════════════════
+' ARROWS — Client to Backend Services
+' ═══════════════════════════════════════════════
+NuxtFrontend --> AuthService          : HTTPS requests
+NuxtFrontend --> GameService          : HTTPS requests
+NuxtFrontend --> CommunityService     : HTTPS requests
+NuxtFrontend --> UserProfileService   : HTTPS requests
+NuxtFrontend --> FavoritesService     : HTTPS requests
+NuxtFrontend --> NotificationService  : HTTPS requests
+NuxtFrontend --> AchievementService   : HTTPS requests
+NuxtFrontend --> AdminService         : HTTPS requests
+
+' ═══════════════════════════════════════════════
+' ARROWS — Offline save fallback
+' ═══════════════════════════════════════════════
+NuxtFrontend --> LocalSaveStore : write local save\n(cloud unavailable)
+LocalSaveStore ..> GameService  : sync when cloud\nrestored
+
+' ═══════════════════════════════════════════════
+' ARROWS — Backend Service inter-dependencies
+' ═══════════════════════════════════════════════
+AuthService --> SMTPService           : dispatch verification email
+AuthService --> VerificationCodeStore : store / validate temp codes
+AuthService --> GormRepository        : account CRUD
+
+GameService --> LLMAdapter            : player choice → plot generation
+GameService --> GormRepository        : save CRUD · share · integrity
+GameService --> AchievementService    : trigger achievement / currency check
+GameService --> CommunityService      : share save → create post
+
+CommunityService --> NotificationService : comment / reply / review events
+CommunityService --> UserProfileService  : record browsing history
+CommunityService --> AdminService        : submit user reports
+CommunityService --> GormRepository      : post / comment CRUD
+
+AdminService --> NotificationService  : review outcome notifications
+AdminService --> GormRepository       : governance · ban · review records
+
+FavoritesService --> GormRepository   : favorites CRUD
+NotificationService --> GormRepository : notification CRUD
+
+UserProfileService --> GormRepository : profile CRUD
+UserProfileService --> AuthService    : sensitive op logging trigger
+
+AchievementService --> GormRepository : achievements · currency · items CRUD
+
+' ═══════════════════════════════════════════════
+' ARROWS — AI / Model Integration
+' ═══════════════════════════════════════════════
+LLMAdapter --> LLMProvider    : outbound LLM API call\n(plot / events)
+LLMAdapter --> AIGCMedia      : request images\n& sound effects
+LLMAdapter --> ObjectStorage  : store AIGC media assets
+
+' ═══════════════════════════════════════════════
+' ARROWS — Media upload from community/game
+' ═══════════════════════════════════════════════
+CommunityService --> ObjectStorage : store post screenshots
+
+' ═══════════════════════════════════════════════
+' ARROWS — Data Access → Persistence
+' ═══════════════════════════════════════════════
+GormRepository --> MySQLDatabase : SQL queries & mutations
+
+' ═══════════════════════════════════════════════
+' ARROWS — Infrastructure (containment/management)
+' ═══════════════════════════════════════════════
+AuthService           ..> ContainerOrchestrator : managed by
+UserProfileService    ..> ContainerOrchestrator : managed by
+GameService           ..> ContainerOrchestrator : managed by
+CommunityService      ..> ContainerOrchestrator : managed by
+AdminService          ..> ContainerOrchestrator : managed by
+FavoritesService      ..> ContainerOrchestrator : managed by
+NotificationService   ..> ContainerOrchestrator : managed by
+AchievementService    ..> ContainerOrchestrator : managed by
+LLMAdapter            ..> ContainerOrchestrator : managed by
+GormRepository        ..> ContainerOrchestrator : managed by
+
+ContainerOrchestrator --> CloudInfra : runs on underlying\ncompute / network / storage
+
+@enduml

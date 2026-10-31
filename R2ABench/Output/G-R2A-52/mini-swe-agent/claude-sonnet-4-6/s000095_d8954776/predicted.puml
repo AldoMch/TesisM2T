@@ -1,0 +1,122 @@
+@startuml
+title GPSLogger Android Application Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2E86AB
+  FontColor #1A1A2E
+}
+skinparam package {
+  BackgroundColor #F0F8FF
+  BorderColor #4A90D9
+}
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+node "Android Device / Emulator" {
+
+  package "Build Layer" {
+    component [Gradle Build System] as Gradle
+    component [local.properties\n(sdk.dir)] as LocalProps
+    component [gradle.properties\n(OSM / Dropbox credentials)] as GradleProps
+    Gradle --> LocalProps : reads
+    Gradle --> GradleProps : reads
+  }
+
+  package "Application Layer" {
+    component [Main Activity] as MainActivity
+    component [UI Fragments] as Fragments
+
+    package "Core Services" {
+      component [GPS Logging Service] as GPSService
+      component [Event Bus] as EventBus
+      component [Location Listeners] as LocationListeners
+    }
+
+    package "Loggers" {
+      component [GPX Logger] as GPXLogger
+      component [KML Logger] as KMLLogger
+      component [Text File Logger] as TextLogger
+    }
+
+    package "Upload / Integration" {
+      component [OpenGTS Uploader] as OpenGTSUploader
+      component [GPRMC Encoder] as GPRMCEncoder
+      component [OpenStreetMap Uploader] as OSMUploader
+      component [Dropbox Uploader] as DropboxUploader
+    }
+
+    package "Configuration" {
+      component [Session / App Settings] as AppSettings
+    }
+  }
+
+  database "Local File Storage" {
+    [GPX Files] as GPXFiles
+    [KML Files] as KMLFiles
+    [Text Log Files] as TextFiles
+  }
+
+  package "Android Platform" {
+    component [Android SDK] as AndroidSDK
+    component [Google Play Services] as GooglePlayServices
+  }
+}
+
+cloud "External Services" {
+  component [OpenGTS Server\n(UDP endpoint)] as OpenGTSServer
+  component [OpenStreetMap API] as OSMApi
+  component [Dropbox API] as DropboxApi
+}
+
+' Build-time injections
+Gradle --> AppSettings : injects credentials\nat build time
+
+' Location acquisition flow
+AndroidSDK --> LocationListeners : provides location updates
+GooglePlayServices --> LocationListeners : provides location updates
+LocationListeners --> GPSService : delivers location data
+GPSService --> EventBus : publishes location events
+
+' Event consumption
+EventBus --> Fragments : location events
+EventBus --> GPXLogger : location events
+EventBus --> KMLLogger : location events
+EventBus --> TextLogger : location events
+EventBus --> OpenGTSUploader : location events
+
+' Logging output
+GPXLogger --> GPXFiles : writes
+KMLLogger --> KMLFiles : writes
+TextLogger --> TextFiles : writes
+
+' OpenGTS integration
+OpenGTSUploader --> GPRMCEncoder : encodes location\nas GPRMC string
+OpenGTSUploader --> OpenGTSServer : sends UDP datagram
+
+' External service uploads
+OSMUploader --> OSMApi : uploads (OAuth)
+DropboxUploader --> DropboxApi : uploads (App Key)
+
+' Settings usage
+AppSettings --> OpenGTSUploader : server, port,\nmethod, deviceId
+AppSettings --> OSMUploader : OSM credentials
+AppSettings --> DropboxUploader : Dropbox credentials
+
+' UI
+MainActivity --> Fragments : hosts
+MainActivity --> GPSService : starts/stops
+
+@enduml

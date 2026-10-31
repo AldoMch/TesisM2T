@@ -1,0 +1,85 @@
+@startuml
+skinparam componentStyle rectangle
+title veinmind-tools Architecture (SRS-derived)
+
+package "veinmind-tools" {
+  package "CLI Commands" {
+    [scan-image]
+    [scan-container]
+    [scan-iac]
+  }
+  [Image Scanner]
+  [Container Scanner]
+  [IaC Scanner]
+  [Authorization Router]
+  [Report Event Client]
+}
+
+package "SDK/Libraries" {
+  [veinmind-sdk / libveinmind]
+}
+
+package "Runner-based Execution" {
+  [run.sh (parallel-container startup)]
+  [veinmind-runner (image)]
+}
+
+package "Container Runtime" {
+  [Docker]
+  [Containerd]
+}
+
+package "Registries" {
+  [DockerHub]
+  [Docker Registry]
+  [Harbor]
+}
+
+package "Python Example Package" {
+  [Base: veinmind/python3.6:1.3.1-stretch]
+  [Entrypoint: /tool/entrypoint.sh -> python scan.py $*]
+}
+
+[Scan Report Data] <<storage>>
+[IaC Alert Details] <<storage>>
+[Policy Libraries]
+
+[scan-image] --> [Image Scanner]
+[scan-container] --> [Container Scanner]
+[scan-iac] --> [IaC Scanner]
+
+[Image Scanner] ..> [veinmind-sdk / libveinmind]
+[Container Scanner] ..> [veinmind-sdk / libveinmind]
+[IaC Scanner] ..> [veinmind-sdk / libveinmind]
+
+[Image Scanner] --> [Docker]
+[Container Scanner] --> [Docker]
+
+[Docker] ..> [DockerHub]
+[Docker] ..> [Docker Registry]
+[Docker] ..> [Harbor]
+[Containerd] ..> [DockerHub]
+[Containerd] ..> [Docker Registry]
+[Containerd] ..> [Harbor]
+
+[run.sh (parallel-container startup)] --> [veinmind-runner (image)]
+[veinmind-runner (image)] --> [Docker]
+[run.sh (parallel-container startup)] --> [scan-image]
+[run.sh (parallel-container startup)] --> [scan-container]
+[run.sh (parallel-container startup)] --> [scan-iac]
+
+[Docker] --> [Authorization Router] : authorization request\n(method, URI)
+[Authorization Router] --> [Docker] : plugin action\nor NoneDockerPlugin
+
+[IaC Scanner] --> [Policy Libraries]
+[IaC Scanner] --> [Report Event Client]
+[Report Event Client] --> [IaC Alert Details]
+[Image Scanner] --> [Scan Report Data]
+[Container Scanner] --> [Scan Report Data]
+
+[Base: veinmind/python3.6:1.3.1-stretch] --> [Entrypoint: /tool/entrypoint.sh -> python scan.py $*]
+[Entrypoint: /tool/entrypoint.sh -> python scan.py $*] --> [scan-image]
+[Entrypoint: /tool/entrypoint.sh -> python scan.py $*] --> [scan-container]
+[Entrypoint: /tool/entrypoint.sh -> python scan.py $*] --> [scan-iac]
+
+@enduml

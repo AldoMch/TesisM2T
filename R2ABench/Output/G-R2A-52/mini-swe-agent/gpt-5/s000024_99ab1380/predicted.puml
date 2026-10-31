@@ -1,0 +1,108 @@
+@startuml
+title OCI Jenkins Terraform Deployment - Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+package "Operator Environment" as operator {
+  component "Terraform CLI\n(init, plan, apply)" as terraform
+  component "Variable Files\n(terraform.tfvars)" as tfvars
+  component "JSON Input (optional)" as json
+  component "SSH Keys\n(authorized_keys, private key path)" as sshkeys
+}
+
+package "Deployment Orchestration (IaC)" as orchestration {
+  component "Terraform Configuration" as tfconfig
+  component "OCI Provider" as ociprov
+  component "Jenkins Master Module" as mastermod
+  component "Jenkins Agent Module" as agentmod
+  component "Bastion Access Config" as bastioncfg
+}
+
+cloud "Oracle Cloud Infrastructure (OCI)" as oci {
+  node "Tenancy / Compartment" as tenancy {
+    frame "Network (VCN)" as vcn {
+      node "Public Subnet" as pubsub {
+        node "Jenkins Master" as master
+        node "Bastion Host" as bastion
+        node "Load Balancer (optional)" as lb
+      }
+      node "Private Subnet(s)" as privsub {
+        node "Jenkins Agent(s)" as agents
+      }
+      component "Route Tables / DHCP / Security Lists" as netobjs
+      component "NAT Gateway" as nat
+    }
+  }
+  component "OCI Identity & Access\n(OCIDs, Region, Keys)" as ociid
+  component "Compute (Instances/VNICs)" as compute
+}
+
+note right of terraform
+- Command-line driven
+- Reads variables and inputs
+- Executes Terraform workflow
+end note
+
+note right of master
+- HTTP port, JNLP port
+- Jenkins version, plugins
+- Cloud-Init (base64)
+end note
+
+note right of agents
+- JNLP master address/ports
+- Cloud-Init (base64)
+end note
+
+' Inputs and orchestration
+ tfvars --> terraform : provides variables
+ json --> terraform : provides inputs
+ sshkeys --> terraform : key paths
+ terraform --> tfconfig : executes
+ tfconfig --> ociprov : uses provider
+ tfconfig --> mastermod : module inputs
+ tfconfig --> agentmod : module inputs
+ tfconfig --> bastioncfg : private access inputs
+ ociprov ..> ociid : authenticate/configure
+ ociprov --> oci : OCI APIs
+
+' Provisioned resources
+ mastermod --> compute : provision instance
+ agentmod --> compute : provision instances
+ mastermod --> master
+ agentmod --> agents
+ bastioncfg --> bastion
+
+' Networking and communications
+ master -[#blue]-> agents : JNLP
+ bastion ..[#gray].. agents : SSH (bastion-mediated)
+ bastion ..[#gray].. master : SSH (admin)
+ agents ..[#gray].. nat : Outbound Internet (NAT)
+ lb -[#green]- master : Public access (optional)
+
+' Placement within network
+ master -- pubsub
+ bastion -- pubsub
+ lb -- pubsub
+ agents -- privsub
+ netobjs -- vcn
+ nat -- vcn
+
+' External constraints and existing-infra
+ note bottom of vcn
+ Existing network objects provided:
+ - Subnets (public/private)
+ - Route tables, DHCP options
+ - Security lists
+ end note
+
+ note bottom of oci
+ Constraints:
+ - OCI-only deployment
+ - Bastion variable name: bastion_host
+ end note
+
+@enduml

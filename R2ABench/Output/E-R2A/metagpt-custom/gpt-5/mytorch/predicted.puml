@@ -1,0 +1,160 @@
+@startuml
+
+node "Visual DL Training/Inference System" as System {
+
+  package "Presentation Layer (Front End)" {
+    component "Main UI" as MainUI
+    component "Configuration UI" as ConfigUI
+    component "Training UI" as TrainUI
+    component "Inference UI" as InferUI
+    component "Guidance & Help Module" as HelpModule
+  }
+
+  package "Backend Service Layer" {
+    component "API Controller/Gateway" as APIGateway
+    component "Training Orchestrator" as TrainOrchestrator
+    component "Inference Service" as InferenceService
+    component "Data Loading Service" as DataLoadingService
+    component "Model Management Service" as ModelMgmtService
+    component "Model Initialization Service" as ModelInitService
+    component "Model Loader" as ModelLoader
+    component "Fault Handler" as FaultHandler
+  }
+
+  package "Framework Extension Layer (MyTorch/NNE)" {
+    component "NNE Framework Extension Core" as NNECore
+    component "Weight Initialization Module" as WeightInit
+    component "Classic Models Library" as ClassicModels
+    component "Preset Dataset Catalog" as DatasetCatalog
+  }
+
+  package "Compute Acceleration Layer (GPU)" {
+    component "GPU Acceleration Engine" as GPUEngine
+    component "GPU Resource Manager" as GPUManager
+  }
+
+  package "Data Persistence Layer (SQLite)" {
+    database "SQLite Persistence" as SQLiteDB
+    component "Logging Repository" as LoggingRepo
+    component "Model Repository" as ModelRepo
+    component "Dataset Repository" as DatasetRepo
+    component "Data Loading Config Repository" as DataConfigRepo
+    component "Task History Repository" as TaskHistoryRepo
+    component "Backup & Recovery Manager" as BackupMgr
+  }
+
+  package "Observability & Fault Management" {
+    component "Monitoring Agent" as MonitoringAgent
+    component "Exception Detector" as ExceptionDetector
+    component "Security & Privacy Guard" as SecurityGuard
+  }
+}
+
+node "External Systems" {
+  cloud "Existing NNE Framework Base Code" as NNEBase
+  cloud "GPU API/Drivers" as GPUDrivers
+  cloud "SQLite Database Engine" as SQLiteEngine
+  cloud "Public Dataset Sources (CIFAR, ImageNet, COCO, Fashion-MNIST, IMDB, Penn Treebank, SVHN, EMNIST)" as PublicDatasets
+  cloud "Python 3.8+ Runtime & Libraries" as PythonRuntime
+}
+
+' UI routes through API Gateway
+MainUI --> APIGateway
+ConfigUI --> APIGateway
+TrainUI --> APIGateway
+InferUI --> APIGateway
+
+' API Gateway to backend services
+APIGateway --> TrainOrchestrator
+APIGateway --> InferenceService
+APIGateway --> DataLoadingService
+APIGateway --> ModelMgmtService
+APIGateway --> ModelInitService
+APIGateway --> MonitoringAgent
+APIGateway --> LoggingRepo
+
+' Training orchestration dependencies
+TrainOrchestrator --> NNECore
+TrainOrchestrator --> GPUEngine
+TrainOrchestrator --> DataLoadingService
+TrainOrchestrator --> GPUManager
+TrainOrchestrator --> ModelMgmtService
+TrainOrchestrator --> LoggingRepo
+TrainOrchestrator --> TaskHistoryRepo
+TrainOrchestrator --> SQLiteDB
+
+' Inference service dependencies
+InferenceService --> NNECore
+InferenceService --> DataLoadingService
+InferenceService --> GPUManager
+InferenceService --> ModelMgmtService
+InferenceService --> ModelLoader
+InferenceService --> LoggingRepo
+InferenceService --> TaskHistoryRepo
+
+' Data loading service dependencies and persistence
+DataLoadingService --> DatasetCatalog
+DataLoadingService --> LoggingRepo
+DataLoadingService --> DataConfigRepo
+DataLoadingService --> DatasetRepo
+
+' Model management and initialization
+ModelMgmtService --> LoggingRepo
+ModelMgmtService --> NNECore
+ModelMgmtService --> ModelRepo
+ModelMgmtService --> SQLiteDB
+ModelInitService --> NNECore
+ModelInitService --> ModelMgmtService
+ModelInitService --> LoggingRepo
+ModelInitService --> TaskHistoryRepo
+
+' Model loader resolves addresses and instantiates models
+ModelLoader --> ModelMgmtService
+ModelLoader --> ModelRepo
+ModelLoader --> NNECore
+
+' Repositories persist to SQLite
+LoggingRepo --> SQLiteDB
+ModelRepo --> SQLiteDB
+DatasetRepo --> SQLiteDB
+DataConfigRepo --> SQLiteDB
+TaskHistoryRepo --> SQLiteDB
+
+' GPU management and acceleration
+GPUManager --> GPUEngine
+GPUManager --> NNECore
+GPUEngine --> GPUDrivers
+
+' Fault handling and exception detection
+ExceptionDetector --> FaultHandler
+FaultHandler --> LoggingRepo
+FaultHandler --> TrainOrchestrator
+FaultHandler --> InferenceService
+FaultHandler --> TaskHistoryRepo
+
+' Monitoring flows
+TrainOrchestrator --> MonitoringAgent
+GPUEngine --> MonitoringAgent
+SQLiteDB --> MonitoringAgent
+MonitoringAgent --> LoggingRepo
+
+' Security and backup
+BackupMgr --> SQLiteDB
+SecurityGuard --> SQLiteDB
+SecurityGuard --> APIGateway
+
+' Framework core dependencies
+NNECore --> ClassicModels
+NNECore --> WeightInit
+NNECore --> NNEBase
+
+' External engines
+SQLiteDB --> SQLiteEngine
+
+' Public datasets
+DatasetCatalog --> PublicDatasets
+
+' Runtime
+System --> PythonRuntime
+
+@enduml

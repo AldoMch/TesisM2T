@@ -1,0 +1,132 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam rectangle {
+    borderColor #666666
+    borderWidth 1
+}
+
+skinparam component {
+    borderColor #666666
+    borderWidth 1
+}
+
+skinparam node {
+    borderColor #666666
+    borderWidth 1
+}
+
+skinparam database {
+    borderColor #666666
+    borderWidth 1
+}
+
+skinparam package {
+    borderColor #666666
+    borderWidth 1
+}
+
+' System Layers
+package "Client Layer" {
+    rectangle "Web Browser" as browser
+}
+
+package "Frontend Layer" {
+    rectangle "Vue 3 Application" as frontend
+}
+
+package "Proxy Layer" {
+    rectangle "Nginx Reverse Proxy" as nginx
+}
+
+package "Presentation Layer" {
+    rectangle "RESTful API" as restapi
+}
+
+package "Business Layer" {
+    rectangle "Spring Boot Application" as springboot
+    
+    package "Application Modules" {
+        rectangle "Users Module" as users
+        rectangle "Problems Module" as problems
+        rectangle "Solutions Module" as solutions
+        rectangle "Forum Module" as forum
+        rectangle "AI Assistance Module" as ai
+        rectangle "Judging Module" as judging
+    }
+}
+
+package "Access Layer" {
+    database "MySQL Database" as mysql
+    database "Redis Cache" as redis
+    database "MinIO Storage" as minio
+}
+
+package "External Services" {
+    rectangle "JudgeHost/JudgeCore" as judge
+    rectangle "LLM Service" as llm
+    rectangle "SMTP Service" as smtp
+    rectangle "CDN" as cdn
+    rectangle "Monitoring Stack" as monitoring
+}
+
+' Connections
+browser --> frontend : HTML5/JavaScript
+frontend --> cdn : Static Resources
+frontend --> nginx : HTTPS Requests
+nginx --> restapi : HTTP Requests
+restapi --> springboot : API Calls
+
+springboot --> users : Module Interaction
+springboot --> problems : Module Interaction
+springboot --> solutions : Module Interaction
+springboot --> forum : Module Interaction
+springboot --> ai : Module Interaction
+springboot --> judging : Module Interaction
+
+users --> mysql : User Data
+problems --> mysql : Problem Data
+solutions --> mysql : Solution Data
+forum --> mysql : Forum Data
+ai --> mysql : AI Result Data
+judging --> mysql : Submission Records
+
+springboot --> redis : Cache Operations
+springboot --> minio : File Storage
+
+judging --> judge : Judging Requests
+ai --> llm : AI Service Calls
+springboot --> smtp : Email Notifications
+springboot --> monitoring : Metrics Collection
+
+note right of springboot
+  Key Technologies:
+  - Spring Boot 3.1.2
+  - JDK 21-LTS
+  - MyBatis-Plus
+  - JWT/OAuth 2.0
+  - LangChain4j
+end note
+
+note right of judge
+  Components:
+  - JudgeHost (Scheduler)
+  - JudgeCore (Executor)
+  - Docker Containers (Isolation)
+end note
+
+note right of monitoring
+  Stack:
+  - Prometheus (Collection)
+  - Grafana (Visualization)
+  - PagerDuty/DingTalk (Alerting)
+end note
+
+note bottom of cdn
+  Delivers:
+  - Images
+  - CSS/JS Files
+  - Other Static Assets
+end note
+
+@enduml

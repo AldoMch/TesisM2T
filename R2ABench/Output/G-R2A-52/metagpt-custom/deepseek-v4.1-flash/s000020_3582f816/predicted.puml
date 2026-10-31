@@ -1,0 +1,94 @@
+@startuml
+package "Admin Client/UI Layer" {
+  component "MyEMS Admin Application" as AdminApp
+}
+
+package "Admin Routing/Module Layer" {
+  component "Admin Routing Configuration" as RoutingConfig
+  component "User Settings Route/View" as UserRoute
+  component "Contact Settings Route/View" as ContactRoute
+  component "Tariff Settings Modules" as TariffSettings
+  component "Category Settings Modules" as CategorySettings
+  component "Lazy-Loading Route Mechanism" as LazyLoader
+  component "User-related services/controllers" as UserModules
+  component "Login-related services/controllers" as LoginModules
+  component "Contact-related modules" as ContactModules
+  component "UI Libraries" as UILibs
+}
+
+package "Integration/Communication Layer" {
+  component "API Base Path Resolver" as ApiBaseResolver
+  interface "/api/ same-origin endpoint" as ApiEndpoint
+}
+
+package "API Service Layer" {
+  component "RESTful API Service" as RestApi
+}
+
+package "Runtime/Deployment Layer" {
+  node "Python Environment" as PythonEnv {
+    component "Python Runtime Dependencies" as PythonDeps
+    component "REST Framework Support" as RestFramework
+    component "CORS Support" as CorsSupport
+    component "WSGI Execution Support" as WsgiSupport
+    component "Spreadsheet/Image Handling" as SpreadsheetImage
+    component "MySQL Connector Support" as MySQLConnector
+  }
+
+  node "Linux Development Environment" as LinuxEnv
+  node "Windows Development Environment" as WindowsEnv
+  cloud "Docker" as Docker
+  database "MySQL-compatible Database" as MySQL
+  component "Runtime Configuration Data" as RuntimeConfig
+  component "Development Quick-Run Support" as QuickRun
+  component "Docker-Based Installation" as DockerInstall
+}
+
+package "External Systems" {
+  component "Browser Environment" as Browser
+  component "MyEMS components" as MyEMSComponents
+  component "Third-party applications" as ThirdPartyApps
+  component "Reverse proxy such as Nginx" as NginxProxy
+}
+
+Browser --> AdminApp : hosts/executes
+AdminApp --> ApiBaseResolver : uses computed /api/ base path
+ApiBaseResolver --> Browser : computes from browser protocol, hostname, port
+
+RoutingConfig --> UserRoute : declares /user, MENU.USERSETTING.USER
+RoutingConfig --> ContactRoute : declares /contact, MENU.SETTINGS.CONTACT
+RoutingConfig --> TariffSettings : declares tariff settings modules
+RoutingConfig --> CategorySettings : declares category settings modules
+
+UserRoute --> LazyLoader : lazy-loads required modules
+ContactRoute --> LazyLoader : lazy-loads required modules
+LazyLoader --> UserModules : loads user services/controllers
+LazyLoader --> LoginModules : loads login-related services/controllers
+LazyLoader --> ContactModules : loads contact modules
+LazyLoader --> UILibs : loads required UI libraries
+
+AdminApp --> ApiEndpoint : HTTP/HTTPS same-origin /api/
+AdminApp --> NginxProxy : HTTP/HTTPS /api/ requests via reverse proxy
+NginxProxy --> RestApi : forwards /api/ requests
+ApiEndpoint --> RestApi : direct same-origin routing when no reverse proxy
+
+PythonEnv --> RestApi : hosts/executes
+RestApi --> PythonDeps : requires declared Python packages
+RestApi --> RestFramework : uses REST framework support
+RestApi --> CorsSupport : uses CORS support
+RestApi --> WsgiSupport : runs via WSGI execution support
+RestApi --> SpreadsheetImage : uses spreadsheet/image handling
+RestApi --> MySQLConnector : uses MySQL connector support
+RestApi --> MySQL : persistent storage where required / MySQL-backed API behavior enabled
+RestApi --> RuntimeConfig : uses runtime package/network/DB config
+
+QuickRun --> RestApi : starts Linux/Windows dev mode
+LinuxEnv --> QuickRun : Linux development execution
+WindowsEnv --> QuickRun : Windows development execution
+DockerInstall --> PythonEnv : prepares Python runtime environment
+DockerInstall --> RuntimeConfig : prepares runtime configuration
+DockerInstall --> Docker : uses Docker environment
+
+MyEMSComponents --> RestApi : RESTful integration
+ThirdPartyApps --> RestApi : RESTful integration
+@enduml

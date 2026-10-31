@@ -1,0 +1,176 @@
+@startuml MyTorch_System_Architecture
+title MyTorch - Visual Deep Learning Training / Inference System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam ArrowColor #4B5563
+skinparam packageBorderColor #374151
+skinparam componentBorderColor #374151
+
+actor "Deep Learning\nBeginner" as User
+actor "Developer /\nTeam Member" as Dev
+actor "Stakeholder" as Stake
+
+' ============================================================
+package "Visual Front End" as FE {
+  component "Main Interface\n[UI-MAIN]" as UI_MAIN
+  component "Configuration Interface\n(model structure, params,\nweight init, components)\n[UI-CONF]" as UI_CONF
+  component "Training Interface\n(loss / accuracy,\nreal-time visualization)\n[UI-TRAIN]" as UI_TRAIN
+  component "Inference Interface\n(result display, performance)\n[UI-INFER]" as UI_INFER
+  component "Guidance & Help\n(steps, prompts, examples,\nparameter explanations)\n[UI-HELP]" as UI_HELP
+}
+
+' ============================================================
+package "System Back End" as BE {
+  component "Back-End Business / Service API\n(model init, training, inference,\nmodel management)\n[FR-019]" as BE_API
+
+  component "Model Configuration Service\n[FR-001, DR-001]" as BE_CFG
+  component "Data Loading Service\n(preprocess, augmentation,\nsplitting)\n[FR-002, FR-003, DR-002]" as BE_DATA
+
+  component "Training Service\n(start, evaluate & save,\nmanual terminate)\n[FR-004, FR-005, FR-006, DR-004]" as BE_TRAIN
+
+  component "Inferencer\n(model loader + data loader,\nforward(), result return)\n[FR-007, FR-008, FR-009, DR-005]" as BE_INFER
+
+  component "Model Management Service\n(create, save, load, list)\n[FR-017, FR-019]" as BE_MODEL
+
+  component "Monitoring & Fault Handling\n(gradient explosion, GPU/memory\noverflow, resource KPIs, errors)\n[NFR-011..NFR-015, DR-011]" as BE_MON
+
+  component "Persistence & Backup Service\n(SQLite backup / auto & manual\nrecovery, security & integrity)\n[FR-020, FR-021, NFR-014, DR-010, DR-012]" as BE_PERSIST
+}
+
+' ============================================================
+package "MyTorch / NNE Framework (extended)" as NNE {
+  component "NNE Core\n(tensor, layer, activation,\nloss, optimizer, forward())\n[C-001]" as NNE_CORE
+
+  component "GPU Acceleration Module\n(device detect & configure,\nhost<->device copy,\nasync CPU/GPU, easy APIs,\nlegacy compatibility)\n[FR-010, FR-012, FR-013, FR-014, FR-015]" as NNE_GPU
+
+  component "GPU Matrix Operation Kernels\n(add, multiply, scalar multiply,\nmean, extremum, element-wise fn)\n[FR-011, DR-006]" as NNE_KERNELS
+
+  component "Weight Initialization\n(He, Lecun, Xavier,\nactivation-function mapping)\n[FR-016, DR-007]" as NNE_INIT
+
+  component "Classic Model Zoo\n(ResNet, VGG, Transformer,\nadded to NNE API)\n[FR-017, DR-008]" as NNE_MODELS
+
+  component "Preset Datasets\n(download links + loaders:\nCIFAR, ImageNet, COCO,\nFashion-MNIST, IMDB, PTB,\nSVHN, EMNIST)\n[FR-018, DR-003]" as NNE_DATA
+
+  component "Data Augmentation /\nPreprocessing / Splitting" as NNE_AUG
+}
+
+' ============================================================
+database "SQLite Local Database\n(deployed with the system)\n[C-008]" as DB {
+  component "model_config /\nweight_init_config\n[DR-001, DR-007]" as T_CFG
+  component "datasets /\ndata_loading_config\n[DR-002, DR-003]" as T_DATA
+  component "training_task /\ntraining_logs /\nevaluation_results\n[DR-004, DR-009]" as T_TRAIN
+  component "inference_task /\ninference_logs\n[DR-005, DR-009]" as T_INFER
+  component "error & fault records /\nperformance metrics\n[DR-011]" as T_ERR
+  component "Backup files\n(auto + manual)\n[FR-021, C-009]" as T_BACKUP
+}
+
+' ============================================================
+cloud "GPU Device / Hardware\n[C-002]" as GPU
+folder "Local File Storage\n(models, dataset cache,\nbackup files)" as FS
+
+' ------------------------------------------------------------
+' Actors
+User --> UI_MAIN
+Dev --> FE
+Stake --> FE
+
+' Front end -> Back end (concrete protocol not specified in SRS)
+UI_MAIN --> BE_API
+UI_CONF --> BE_CFG
+UI_TRAIN --> BE_TRAIN
+UI_INFER --> BE_INFER
+UI_HELP ..> BE_API : "guidance, examples,\nparameter help"
+
+' Back end internal orchestration
+BE_API --> BE_CFG
+BE_API --> BE_DATA
+BE_API --> BE_TRAIN
+BE_API --> BE_INFER
+BE_API --> BE_MODEL
+BE_API --> BE_PERSIST
+
+BE_CFG --> BE_MODEL
+BE_DATA --> BE_TRAIN
+BE_DATA --> BE_INFER
+BE_MODEL --> BE_TRAIN
+BE_MODEL --> BE_INFER
+BE_TRAIN --> BE_INFER
+
+BE_MON ..> BE_TRAIN : "monitor / terminate"
+BE_MON ..> BE_INFER : "monitor"
+BE_MON ..> BE_PERSIST : "log faults & metrics"
+
+' Back end -> MyTorch / NNE framework
+BE_CFG --> NNE_CORE
+BE_DATA --> NNE_DATA
+BE_DATA --> NNE_AUG
+BE_MODEL --> NNE_MODELS
+BE_MODEL --> NNE_INIT
+BE_TRAIN --> NNE_CORE
+BE_TRAIN --> NNE_GPU
+BE_INFER --> NNE_CORE
+BE_INFER --> NNE_GPU
+
+' Framework internals
+NNE_CORE --> NNE_INIT
+NNE_CORE --> NNE_MODELS
+NNE_MODELS --> NNE_INIT
+NNE_DATA --> NNE_AUG
+NNE_GPU --> NNE_KERNELS
+NNE_CORE --> NNE_GPU : "accelerated ops\n(compatible path)"
+NNE_KERNELS --> NNE_GPU
+
+' Framework -> GPU device
+NNE_GPU --> GPU : "detect / configure,\nmemcpy, async compute"
+NNE_KERNELS --> GPU : "multi-core matrix ops"
+
+' Data persistence
+BE_PERSIST --> T_CFG
+BE_PERSIST --> T_DATA
+BE_PERSIST --> T_TRAIN
+BE_PERSIST --> T_INFER
+BE_PERSIST --> T_ERR
+BE_PERSIST --> T_BACKUP
+BE_PERSIST --> FS : "model weights,\ndataset files,\nbackup copies"
+NNE_DATA --> FS : "preset dataset files"
+
+' Real-time feedback loop
+T_TRAIN --> BE_TRAIN : "logs / metrics"
+T_INFER --> BE_INFER : "results / logs"
+BE_TRAIN --> UI_TRAIN : "loss decrease,\naccuracy, progress"
+BE_INFER --> UI_INFER : "inference results"
+BE_MON --> UI_TRAIN : "resource & fault alerts"
+
+' ------------------------------------------------------------
+note right of BE_API
+  <b>Communication</b>
+  Concrete protocols / API paths are
+  not defined in the SRS; only the
+  front-end <-> back-end <->
+  MyTorch <-&gt; SQLite call
+  relationships are specified.
+end note
+
+note bottom of NNE
+  <b>Non-Functional Constraints</b>
+  * float precision >= numpy.float32 (NFR-001, C-010)
+  * time records accurate to 1 second (NFR-002, C-011)
+  * Loader/engine response: UI &lt; 1s, training engine &lt; 3s (NFR-003/004)
+  * Python 3.8.x+, deps in requirements.txt (C-006, C-007)
+  * security / privacy / confidentiality (NFR-016..018, C-012)
+end note
+
+note bottom of BE_MON
+  Monitors gradient explosion, inference
+  memory overflow, GPU utilization,
+  memory usage and training speed;
+  triggers automatic termination and
+  records troubleshooting suggestions.
+end note
+
+@enduml

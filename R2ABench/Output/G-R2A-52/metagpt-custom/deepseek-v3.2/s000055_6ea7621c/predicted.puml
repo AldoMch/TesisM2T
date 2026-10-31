@@ -1,0 +1,55 @@
+@startuml
+
+package "Frontend (Browser)" {
+  component "Search Input Field" as search_input
+  component "Suggestions Output" as suggestions_output
+  component "Frontend Helper Module" as frontend_helper
+}
+
+package "Request Routing Layer" {
+  component "Router" as router
+}
+
+package "Request Handlers" {
+  component "Home Page Handler" as home_handler
+  component "Search Request Handler" as search_handler
+  component "Static Asset Handler" as static_handler
+  component "Not-Found Handler" as notfound_handler
+}
+
+package "Business Logic" {
+  component "autocomplete/search-hint algorithm" as autocomplete_algorithm
+  component "Content-Type Mapper" as content_mapper
+}
+
+package "Data Access" {
+  storage "Local JSON Data" as local_data
+}
+
+' Frontend connections
+search_input --> frontend_helper : "captures input"
+frontend_helper --> router : "initiates requests"
+router --> suggestions_output : "returns results"
+
+' Routing logic
+router --> home_handler : "home page requests"
+router --> search_handler : "search requests"
+router --> static_handler : "static file requests"
+router --> notfound_handler : "failed requests"
+
+' Handler implementations
+home_handler --> static_handler : "serves index.html"
+search_handler --> autocomplete_algorithm : "processes query"
+static_handler --> content_mapper : "maps file types"
+static_handler --> notfound_handler : "on read failure"
+notfound_handler --> static_handler : "serves 404 page"
+
+' Business logic dependencies
+autocomplete_algorithm --> local_data : "reads JSON data"
+content_mapper --> local_data : "reads config"
+
+' External interface
+[Client Browser] --> router : "HTTP Requests"
+router --> [Client Browser] : "HTTP Responses"
+
+@enduml

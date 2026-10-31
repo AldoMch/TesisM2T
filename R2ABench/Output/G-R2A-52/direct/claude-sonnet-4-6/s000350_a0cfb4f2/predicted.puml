@@ -1,0 +1,142 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam rectangle {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+
+skinparam component {
+  BackgroundColor #E8F4E8
+  BorderColor #2E7D32
+  FontColor #000000
+}
+
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F57F17
+  FontColor #000000
+}
+
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+  FontColor #000000
+}
+
+skinparam node {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontColor #000000
+}
+
+skinparam arrow {
+  Color #444444
+  FontColor #222222
+  FontSize 10
+}
+
+title Squatm3gator System Architecture
+
+actor "Web User /\nClient Application" as User
+actor "Operator" as Operator
+
+node "Squatm3gator API Process" {
+
+  component "HTTP API Layer" as HTTP {
+    component "GET / Handler\n(Main Page + Session Init)\n[FR-001]" as RootHandler
+    component "GET Homoglyph-Complete\nEndpoint\n[FR-006]" as HomoglyphEndpoint
+    component "Domain Job Request\nHandler\n[FR-003, FR-004]" as JobRequestHandler
+    component "HTTP Error Handler\n(400/404/500)\n[FR-007, FR-008]" as ErrorHandler
+  }
+
+  component "Session Manager\n[DR-001]" as SessionManager
+
+  component "Attack Option Parser\n[FR-003, DR-003, DR-004]" as AttackParser
+
+  component "Redis Producer\n[FR-004]" as RedisProducer
+
+  component "WebSocket / Socket.IO\nChannel\n[FR-005]" as WSChannel
+
+  component "Background Consumer Thread\n[FR-002, C-003]" as ConsumerThread {
+    component "Redis Job Listener\n[FR-002]" as JobListener
+    component "Worker Report Reader\n[FR-005, DR-002]" as ReportReader
+    component "Session Correlator\n[NFR-002, DR-001]" as SessionCorrelator
+  }
+
+  component "squatm3 Subprocess Wrapper\n[C-003, C-004]" as Squatm3Wrapper
+
+}
+
+database "Redis\nMessage Queue\n[C-001]" as Redis {
+  component "Job Channel" as JobChannel
+  component "Reporting Channel" as ReportChannel
+}
+
+cloud "GoDaddy API\n[C-002, DR-005]" as GoDaddy
+
+component "index.html\nTemplate\n[FR-001]" as IndexTemplate
+
+note right of AttackParser
+  Supported codes: Hf, Hc, -add, F, R
+  Hf -> -Hf, -add -> --add
+  godaddy==1 -> GoDaddy option
+  output==1 -> --output=json
+end note
+
+note right of SessionManager
+  Session Key == Job ID
+  Used for session creation,
+  job correlation, and
+  result isolation [DR-001]
+end note
+
+note bottom of ConsumerThread
+  Report format:
+  WORKER_ID#JOB_UUID#{MESSAGE/RESULT}
+  [DR-002]
+end note
+
+User --> RootHandler : HTTP GET /
+User --> HomoglyphEndpoint : HTTP GET (domain param)
+User --> JobRequestHandler : HTTP GET (attack codes,\ngodaddy, output flags)
+User <--> WSChannel : WebSocket /\nSocket.IO async updates
+
+Operator --> Redis : Configure Redis URI
+Operator --> GoDaddy : Configure API key,\nsecret, base URL,\nendpoints [DR-005]
+
+RootHandler --> SessionManager : create session
+RootHandler --> IndexTemplate : render
+IndexTemplate --> User : Rendered index.html
+
+JobRequestHandler --> SessionManager : validate session
+JobRequestHandler --> AttackParser : parse attack codes\nand flags
+AttackParser --> JobRequestHandler : constructed options string\nor parsing error
+
+JobRequestHandler --> RedisProducer : create & publish job\n(session key as job ID)
+RedisProducer --> JobChannel : publish job message
+
+HomoglyphEndpoint --> Squatm3Wrapper : invoke homoglyph-complete\nattack
+
+JobListener --> JobChannel : subscribe / listen
+JobListener --> Squatm3Wrapper : trigger domain generation\n(job options as CLI args)
+
+Squatm3Wrapper --> GoDaddy : optional domain\navailability check\n[Authorization: sso-key key:secret]
+GoDaddy --> Squatm3Wrapper : availability results
+
+Squatm3Wrapper --> ReportChannel : publish\nWORKER_ID#JOB_UUID#{RESULT}
+
+ReportReader --> ReportChannel : read report messages
+ReportReader --> SessionCorrelator : pass report + job ID
+SessionCorrelator --> WSChannel : emit to matching\nclient session only\n[NFR-002]
+
+JobRequestHandler --> ErrorHandler : on HTTP 400/404/500\nor query parse failure
+ErrorHandler --> User : plain-text error response
+
+@enduml

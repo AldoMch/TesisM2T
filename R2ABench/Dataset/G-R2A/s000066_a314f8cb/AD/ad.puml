@@ -1,0 +1,68 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Browser Clients" as BrowserClients {
+    rectangle "Client Browser\nPlayer 1" as ClientOne
+    rectangle "Client Browser\nPlayer 2" as ClientTwo
+    rectangle "Client Browser\nPlayer 3" as ClientThree
+}
+
+rectangle "DNS" as Dns
+
+package "Static Web Tier" as StaticWebTier {
+    rectangle "Web Server\nGame assets, HTML, CSS, JS" as WebServerOne
+    rectangle "Web Server\nGame assets, HTML, CSS, JS" as WebServerTwo
+}
+
+cloud "Erlang / OTP Game Server Cluster" as GameCluster {
+    rectangle "Server Master\nErlang" as ServerMaster
+    rectangle "Server Slave\nErlang" as ServerSlaveOne
+    rectangle "Server Slave\nErlang" as ServerSlaveTwo
+}
+
+ClientOne --> Dns : DNS lookup
+ClientTwo --> Dns : DNS lookup
+ClientThree --> Dns : DNS lookup
+
+Dns --> ClientOne : web host address
+Dns --> ClientTwo : web host address
+Dns --> ClientThree : web host address
+
+ClientOne --> WebServerOne : HTTP static assets
+ClientTwo --> WebServerOne : HTTP static assets
+ClientThree --> WebServerTwo : HTTP static assets
+
+ClientOne --> ServerMaster : WebSocket over HTTP\nJSON events
+ClientTwo --> ServerMaster : WebSocket over HTTP\nJSON events
+ClientThree --> ServerMaster : WebSocket over HTTP\nJSON events
+
+ServerMaster <--> ServerSlaveOne : master/slave coordination\nfault tolerance
+ServerMaster <--> ServerSlaveTwo : master/slave coordination\nfault tolerance
+ServerSlaveOne <--> ServerSlaveTwo : slave coordination
+
+note right of BrowserClients
+  Browser clients initiate WebSocket connections.
+  Client-to-client P2P is not supported.
+end note
+@enduml

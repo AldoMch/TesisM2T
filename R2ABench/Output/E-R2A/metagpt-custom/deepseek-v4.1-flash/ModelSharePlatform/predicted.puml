@@ -1,0 +1,126 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+title Deep Learning Model Sharing Platform - Layered Component/Deployment Diagram
+
+node "Modern Browser\n(Chrome/Edge/Firefox - IE unsupported)" as BROWSER {
+  component "Frontend UI\n(Vue/TypeScript)" as UI
+  component "Internationalization\n(Chinese/English)" as I18N
+}
+
+node "Application Server / Runtime Host\n(x86-64/ARM, >=4 GB RAM, >=30 GB disk)" as APP_HOST {
+  package "Application / API Layer" {
+    component "Backend Application/API\n(Spring Boot)" as API
+  }
+
+  package "Security / Authentication Layer" {
+    component "Authentication & Authorization" as AUTH
+    component "Security / Injection Prevention" as SEC
+  }
+
+  package "Domain / Business Layer" {
+    component "Account Management" as ACCOUNT
+    component "Q&A Community" as QA
+    component "Blog Sharing" as BLOG
+    component "Model Management" as MODEL
+    component "Model Review / Review State" as REVIEW
+    component "Dataset Management" as DATASET
+    component "Follow Management" as FOLLOW
+    component "Purchase / Payment" as PURCHASE
+    component "Recommendation" as RECO
+    component "Online Invocation" as INVOKE
+    component "Administrator Governance" as ADMIN
+  }
+
+  package "Integration / External Interface Layer" {
+    component "Email Notification\n(placeholder - SRS only requires sending email)" as EMAIL
+    component "Payment Interface\n(placeholder - channel undefined in SRS)" as PAYMENT
+  }
+}
+
+node "Data / Storage Host" as DATA_HOST {
+  package "Data / Persistence Layer" {
+    component "Data Access / Persistence" as DAL
+    component "Browsing History" as HISTORY
+    database "MySQL" as MYSQL
+  }
+
+  package "File / Storage Layer" {
+    component "File Storage\n(Model & Dataset Files)" as FILESTORE
+  }
+}
+
+' Presentation dependencies
+UI --> API : HTTPS / JSON
+I18N --> UI : locale switch
+
+' Application/API orchestration
+API --> AUTH : authenticate / authorize
+API --> SEC : validate / sanitize
+API --> ACCOUNT
+API --> QA
+API --> BLOG
+API --> MODEL
+API --> REVIEW : review workflow
+API --> DATASET
+API --> FOLLOW
+API --> PURCHASE
+API --> RECO
+API --> INVOKE
+API --> ADMIN
+API --> HISTORY : record browsing events
+
+' Security and authentication
+AUTH --> ACCOUNT : credentials / roles
+AUTH --> DAL : login state / verification data
+
+' Domain to persistence
+ACCOUNT --> DAL
+QA --> DAL
+BLOG --> DAL
+MODEL --> DAL
+REVIEW --> DAL : persist review state (DR-006)
+DATASET --> DAL
+FOLLOW --> DAL
+PURCHASE --> DAL
+RECO --> DAL
+HISTORY --> DAL : persist/read browsing history
+INVOKE --> DAL
+ADMIN --> DAL
+
+' File and storage dependencies
+MODEL --> FILESTORE : model upload/download
+DATASET --> FILESTORE : dataset upload/download
+INVOKE --> MODEL : select model
+INVOKE --> DATASET : select dataset
+
+' Model review
+MODEL --> REVIEW : submit model for review / review state (FR-018)
+ADMIN --> REVIEW : approve/reject model review
+
+' Recommendation inputs
+RECO --> HISTORY : use browsing history (AD-003/DR-009)
+RECO --> ACCOUNT : use registration information (DR-009)
+RECO --> MODEL : recommend models (FR-023)
+
+' Purchase and payment
+PURCHASE --> ACCOUNT : balance check
+PURCHASE --> MODEL : purchased model list (FR-024)
+PURCHASE --> PAYMENT : initiate payment (placeholder - channel undefined)
+
+' Email notification
+ACCOUNT --> EMAIL : password recovery
+
+' Administrator governance
+ADMIN --> ACCOUNT : cancel account
+ADMIN --> QA : delete illegal Q&A
+ADMIN --> BLOG : delete illegal blog/comment
+ADMIN --> MODEL : delete illegal model
+ADMIN --> DATASET : delete illegal dataset
+
+' Data persistence
+DAL --> MYSQL : SQL
+
+@enduml

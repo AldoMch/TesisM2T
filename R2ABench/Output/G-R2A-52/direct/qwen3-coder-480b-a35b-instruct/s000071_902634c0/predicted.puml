@@ -1,0 +1,80 @@
+@startuml
+!define RECTANGLE class
+
+title ClearML Agent System Architecture
+
+skinparam componentStyle rectangle
+
+package "ClearML Agent" {
+  [Kubernetes Glue] as glue
+  [Service Pod] as servicepod
+  [Worker Telemetry] as telemetry
+  [Backend Service Client] as backendclient
+  [Experiment Executor] as executor
+}
+
+package "External Systems" {
+  [ClearML Server] as server
+  [Kubernetes Cluster] as k8s
+  [Docker Daemon] as docker
+}
+
+glue --> k8s : prepares jobs
+glue --> server : retrieves jobs
+servicepod --> docker : manages containers
+servicepod --> executor : runs experiments
+executor --> telemetry : reports status
+telemetry --> server : sends reports\npings server
+backendclient --> server : API calls
+k8s --> executor : executes pods
+
+note right of glue
+  Converts queued jobs 
+  to Kubernetes jobs 
+  using YAML templates
+end note
+
+note right of servicepod
+  Long-running pod 
+  using clearml-agent image
+end note
+
+note right of telemetry
+  Periodic status reporting
+  Default: every 2 seconds
+  Ping server every 30 seconds
+end note
+
+note right of backendclient
+  Supports create, get, 
+  get_by_id, get_all, 
+  get_all_ex operations
+end note
+
+note right of executor
+  Installs experiment 
+  environment and monitors 
+  experiment process
+end note
+
+note top of server
+  ClearML Server
+  - Experiment management
+  - Visualization & collaboration
+  - Data tracking
+  - MLOps monitoring
+end note
+
+note bottom of k8s
+  Kubernetes Cluster
+  - Pods execution
+  - Job orchestration
+end note
+
+note bottom of docker
+  Docker Daemon
+  - Sibling container management
+  - Requires socket mapping
+end note
+
+@enduml

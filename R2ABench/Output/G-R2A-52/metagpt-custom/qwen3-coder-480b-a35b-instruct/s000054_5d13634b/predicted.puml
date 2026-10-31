@@ -1,0 +1,48 @@
+@startuml
+title Ethereum-Based Smart Contract System Architecture
+
+' === Deployment Nodes ===
+node "Ethereum Network" {
+    node "Ethereum Name Service (ENS)" as ens
+}
+
+' === Component Layers ===
+
+package "Smart Contract Layer" {
+    component "Owner Address" as owner
+    component "Consumer Contract Wallet" as wallet
+    component "Token Whitelist" as whitelist_sc
+    component "TKN Holder Contract" as tkn_holder
+    component "Controller Contracts" as controllers
+    component "Oracle/Rate-Provider" as oracle_sc
+    component "Gas Tank" as gastank
+}
+
+interface "ENS Resolution Interface" as ens_iface
+interface "Oracle/Rate-Provider Interface" as oracle_iface
+interface "Token Whitelist Interface" as whitelist_iface
+interface "Controller Count Interface" as controller_count_iface
+
+' === Dependencies and Connections ===
+
+' Internal Dependencies
+owner --> wallet : owns
+owner --> gastank : manages
+wallet --> controllers : interacts with
+wallet --> whitelist_sc : reads token data
+wallet --> oracle_sc : fetches exchange rates
+wallet --> gastank : uses for gas
+wallet --> ens_iface : resolves names via
+whitelist_sc --> tkn_holder : checks burnable tokens
+controllers ..> controller_count_iface : exposes
+
+' Contract Resolution Behavior
+ens_iface --> ens : resolves via
+
+' Interface Usage
+wallet --> oracle_iface : uses
+oracle_sc ..> oracle_iface
+wallet --> whitelist_iface : uses
+whitelist_sc ..> whitelist_iface
+
+@enduml

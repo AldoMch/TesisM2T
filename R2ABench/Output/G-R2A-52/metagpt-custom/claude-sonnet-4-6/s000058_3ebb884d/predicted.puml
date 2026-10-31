@@ -1,0 +1,166 @@
+@startuml macpro-appian-connector Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultTextAlignment center
+
+skinparam package {
+  BackgroundColor #EEF2FF
+  BorderColor #4A5568
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #2D3748
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+' ─────────────────────────────────────────────
+' External Systems
+' ─────────────────────────────────────────────
+
+cloud "Appian" as Appian {
+  component [Appian Data Source] as AppianSrc
+}
+
+cloud "CMS BigMAC" as BigMAC {
+  component [BigMAC Data Receiver] as BigMACRecv
+}
+
+cloud "GitHub Platform" as GitHubPlatform {
+  component [GitHub Actions API] as GHActionsAPI
+  component [GitHub Pull Requests API] as GHPRAPI
+}
+
+' ─────────────────────────────────────────────
+' AWS Account / Region boundary
+' ─────────────────────────────────────────────
+
+package "AWS Account / Region" as AWSAccount {
+
+  ' ─────────────────────────────────────────────
+  ' AWS Infrastructure
+  ' ─────────────────────────────────────────────
+
+  package "AWS Infrastructure" as AWSInfra {
+
+    component [AWS CLI Credentials] as AWSCLICreds
+
+    component [ECS Cluster] as ECSCluster
+    component [ECS Service\n(runtime event producer)] as ECSService
+
+    component [EventBridge Rule] as EventBridgeRule
+
+    component [SNS Topic] as SNSTopic
+    component [IAM Policy\n(EventBridge publish\npermission on SNS)] as IAMPerm
+
+    component [SNS Subscription Targets\n(manually maintained endpoints)] as SNSSubTargets
+  }
+
+  ' ─────────────────────────────────────────────
+  ' Runtime Pre-condition
+  ' ─────────────────────────────────────────────
+
+  package "Runtime Environment" as RuntimeEnv {
+    component [Node Version Manager\n(nvm use - NFR-001)] as NVM
+  }
+
+  ' ─────────────────────────────────────────────
+  ' CLI / Script Layer
+  ' ─────────────────────────────────────────────
+
+  package "CLI / Script Layer" as CLILayer {
+    component [Stage Listing Script\n(listRunningStages)] as StageListingScript
+  }
+
+  ' ─────────────────────────────────────────────
+  ' Connector Management Layer
+  ' ─────────────────────────────────────────────
+
+  package "Connector Management Layer" as ConnectorLayer {
+    component [Connector Configuration Handler\n(cluster + service + connector defs)] as ConnConfigHandler
+    component [Connector Management Library\nput / delete(empty-set) / restart\n(FR-002, DR-002)] as ConnMgmtLib
+  }
+
+  ' ─────────────────────────────────────────────
+  ' Event Routing & Alerting Layer
+  ' ─────────────────────────────────────────────
+
+  package "Event Routing & Alerting Layer" as EventLayer {
+    component [SNS Subscription Manager\n(manual / out-of-band operator action)\n(FR-004, NFR-002)] as SNSSubMgr
+  }
+
+  ' ─────────────────────────────────────────────
+  ' Metrics Collection Layer
+  ' ─────────────────────────────────────────────
+
+  package "Metrics Collection Layer" as MetricsLayer {
+    component [Deployment Metrics Collector\nfailedRuns / passedRuns\n(FR-005)] as DeployMetrics
+    component [PR Metrics Collector\ncreated_at / merged_at\nwhole-hour difference\n(FR-006, DR-005)] as PRMetrics
+    component [Paginated Result Aggregator\nper_page=100\n(NFR-004)] as PaginatedAgg
+  }
+
+  ' ─────────────────────────────────────────────
+  ' CI/CD Layer
+  ' ─────────────────────────────────────────────
+
+  package "CI/CD Layer" as CICDLayer {
+    component [GitHub Actions Workflow\n(deploy.yml)] as GHWorkflow
+  }
+
+}
+
+' ─────────────────────────────────────────────
+' Dependency Arrows
+' ─────────────────────────────────────────────
+
+' NVM pre-condition -> Stage Listing Script (M-003)
+NVM --> StageListingScript : nvm use pre-condition\n(FR-001, NFR-001)
+
+' Stage Listing -> AWS credentials + ECS query (D-001, M-004)
+StageListingScript --> AWSCLICreds : requires credentials\n(C-001, C-003)
+StageListingScript --> ECSCluster : queries running stages\nin current AWS account/region\n(FR-001, C-001)
+
+' Connector Handler -> Connector Library (FR-002)
+ConnConfigHandler --> ConnMgmtLib : delegates put /\ndelete(empty-set) / restart\n(FR-002, DR-002)
+
+' Connector Library -> Appian and BigMAC via connector operations
+AppianSrc --> ConnMgmtLib : Appian data source\n(connector configuration target)
+ConnMgmtLib --> BigMACRecv : connector transfers data\nto CMS BigMAC\n(FR-002)
+
+' Connector Library scoped to ECS cluster+service env vars (D-004 — label only, not direct API call)
+ConnConfigHandler ..> ECSCluster : scoped by cluster\nenv var (DR-002)
+ConnConfigHandler ..> ECSService : scoped by service\nenv var (DR-002)
+
+' ECS Service -> EventBridge (M-001, D-002)
+ECSService --> EventBridgeRule : emits runtime service events\n(FR-003)
+
+' IAM Policy grants EventBridge publish rights on SNS topic (D-003, H-004)
+IAMPerm --> EventBridgeRule : grants publish permission\nto EventBridge (DR-003)
+
+' EventBridge -> SNS (FR-003)
+EventBridgeRule --> SNSTopic : forwards matching\nservice events\n(FR-003)
+
+' SNS -> Subscription Targets (M-002)
+SNSTopic --> SNSSubTargets : delivers notifications\nto subscription endpoints\n(FR-003, FR-004, NFR-002)
+
+' Operator / SNS Subscription Manager manages SNS topic (D-006)
+SNSSubMgr --> SNSTopic : operator manages\nsubscription targets\n(FR-004, NFR-002)
+
+' Metrics -> GitHub Actions API (paginated aggregation) (D-005)
+DeployMetrics --> PaginatedAgg : requests paginated\nworkflow runs (FR-005)
+PRMetrics --> PaginatedAgg : requests paginated\nclosed PRs (FR-006)
+PaginatedAgg --> GHActionsAPI : paginated query\nper_page=100 (NFR-004)
+PaginatedAgg --> GHPRAPI : paginated query\nper_page=100 (NFR-004)
+
+' CI/CD Workflow triggers via GitHub Actions (H-003 removed — no publish arrow)
+GHWorkflow ..> GHActionsAPI : workflow runs recorded\nin GitHub Actions API\n(FR-005, DR-004, C-006)
+
+@enduml

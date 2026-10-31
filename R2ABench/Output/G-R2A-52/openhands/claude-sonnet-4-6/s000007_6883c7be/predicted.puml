@@ -1,0 +1,74 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+
+package "Maven Multi-Module Build" {
+
+    package "Proxy SDK Module\n[Java 1.7]" {
+        component [HTTP Proxy] as Proxy
+        component [Proxy Forwarding Handler] as ForwardingHandler
+        component [Channel Activation Handler] as ChannelHandler
+        component [Debug Logger] as DebugLogger
+
+        Proxy --> ForwardingHandler : delegates to
+        ForwardingHandler --> ChannelHandler : writes & flushes\nFullHttpRequest on\nchannel activation
+        ForwardingHandler --> DebugLogger : logs URI,\nheaders, body\n(if debug enabled)
+    }
+
+    package "Test Server Module\n[Java 1.8 / Grizzly-Jersey]" {
+        component [Test HTTP Server] as TestServer
+        component [File Download Endpoint\nGET /download] as DownloadEndpoint
+        component [File Upload Handler] as UploadHandler
+        component [Structured Response Object\n{code: Integer, msg: String, data: Object}] as ResponseObj
+
+        TestServer --> DownloadEndpoint : exposes
+        TestServer --> UploadHandler : exposes
+        DownloadEndpoint --> ResponseObj : uses
+        UploadHandler --> ResponseObj : uses
+    }
+
+    package "Test Client Module\n[Java 1.8]" {
+        component [Async HTTP Client] as AsyncClient
+        component [Fixed Thread Pool\n(50 threads)] as ThreadPool
+        component [Success Counter\n(HTTP 200 responses)] as Counter
+
+        ThreadPool --> AsyncClient : schedules\n1000 requests/thread
+        AsyncClient --> Counter : increments on\nHTTP 200
+    }
+}
+
+database "Local Filesystem" as FileSystem
+
+node "Upstream Server" as UpstreamServer
+
+actor "HTTP Client" as HTTPClient
+
+HTTPClient --> Proxy : sends HTTP request\n(URI, headers, body)
+Proxy --> UpstreamServer : forwards FullHttpRequest\nafter channel activation
+AsyncClient --> TestServer : issues HTTP GET requests
+DownloadEndpoint --> FileSystem : reads target file\n(if exists)
+UploadHandler --> FileSystem : stores uploaded file
+DownloadEndpoint ..> AsyncClient : returns binary payload\n(application/octet-stream)\n+ Content-Disposition\nor no attachment\n(file absent)
+
+note right of DownloadEndpoint
+  GET /download:
+  - File exists: binary payload +
+    Content-Disposition attachment
+  - File absent: no file entity returned
+end note
+
+note right of UploadHandler
+  Returns map payload:
+  { "filepath": <filename> }
+end note
+
+note bottom of ForwardingHandler
+  Forwards retained FullHttpRequest
+  (URI, headers, body) without
+  header/body transformation.
+  Triggered by upstream channel activation.
+end note
+
+@enduml

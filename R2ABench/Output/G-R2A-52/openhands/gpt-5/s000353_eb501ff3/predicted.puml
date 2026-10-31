@@ -1,0 +1,52 @@
+@startuml
+Title Turing System Architecture (from SRS)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "API Client" as api_client
+
+package "Turing API Service" as apisvc {
+  [Authorization Middleware] as auth_mw
+  [OpenAPI Request Validation] as val_mw
+  [Router & Ensembler Endpoints\n(HTTP/JSON)] as endpoints
+  [OpenAPI Handlers] as handlers
+  [Cluster Lifecycle Manager] as clm
+}
+
+api_client --> auth_mw : HTTP requests
+auth_mw --> val_mw
+val_mw --> endpoints
+endpoints --> handlers
+
+note right of endpoints
+- OpenAPI 3.0.3 defined
+- JSON for Ensembler CRUD
+- Project-scoped: routers, ensemblers
+end note
+
+package "Kubernetes Cluster" as k8s {
+  [Kubernetes API] as k8s_api
+  component "Turing Router Deployment\n(user container :8080 by default)" as router
+}
+
+handlers --> clm : manage router deployments
+clm --> k8s_api : create/update/delete
+k8s_api --> router
+
+component "PyFuncEnsembler Service\n(webservice runtime)" as pyfunc
+router --> pyfunc : ensemble requests (HTTP)
+
+cloud "Jaeger Tracing" as jaeger
+router ..> jaeger : traces (when enabled)
+
+database "MLflow Model Registry" as mlflow
+pyfunc ..> mlflow : download model artifacts\n(for local image build)
+
+note right of router
+- Protocol: HTTP_JSON | UPI_V1
+- Port: 8080 default (configurable)
+- Jaeger tracing optional/sampled
+end note
+
+@enduml

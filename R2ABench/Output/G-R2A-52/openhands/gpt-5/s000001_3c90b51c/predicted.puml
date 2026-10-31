@@ -1,0 +1,91 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+rectangle "JSeats Core (Java)" as Core {
+  component "Caller-facing Allocation API" as API <<API>>
+  component "AllocationProcessor" as Processor
+  component "Method Registry" as Registry
+  component "Tally Filters SPI" as FilterSPI <<API>>
+  component "Result Decorators SPI" as DecoratorSPI <<API>>
+  component "Tie-breaking Rules" as Tie
+  component "AllocationMethod Contract" as Contract <<API>>
+
+  package "Methods" {
+    component "Majority\n(Simple, Qualified)" as Mj <<Method>>
+    component "Absolute Majority" as Abs <<Method>>
+    component "Ranked\n(By Votes)" as Ranked <<Method>>
+    component "Equal Proportions\n(Huntington-Hill)" as EqP <<Method>>
+    component "Largest Remainder\n(Hare, Droop, Imperiali)" as LR <<Method>>
+    component "Highest Averages\n(D'Hondt, Sainte-Lague/Webster*, Imperiali, Danish)" as HA <<Method>>
+  }
+
+  component "Tally Filters" as Filters <<Filter>>
+  component "Result Decorators" as Decorators <<Decorator>>
+  component "Divisor Sequence Provider" as DivSeq
+}
+
+package "Data & Config" {
+  component "Tally" as Tally <<Data>>
+  component "Candidate" as Candidate <<Data>>
+  component "Result" as Result <<Data>>
+  component "Properties" as Props <<Config>>
+  component "Processor Configuration\n(method, filters, decorators,\nproperties, tie-breaker)" as ProcCfg <<Config>>
+  artifact "Tally XML" as TallyXML <<XML>>
+}
+
+component "XML Loader\n(Tally.fromXML)" as XMLLoader <<IO>>
+component "CLI Launcher" as CLI <<CLI>>
+component "SeatAllocationException" as SAE <<Exception>>
+
+CLI --> API : invoke allocation\nlist methods/filters/decorators
+CLI --> XMLLoader : load tally from XML
+CLI --> ProcCfg : build config from args
+XMLLoader --> TallyXML
+XMLLoader --> Tally
+
+API --> Processor : submit tally+config
+Processor --> Filters : pre-process tally
+Processor --> Registry : resolve method
+Processor --> Tie
+Processor --> Contract : invoke selected method via contract
+Processor --> Decorators : post-process result
+Processor --> SAE : on failure
+
+Filters --> Tally
+Decorators --> Result
+Contract ..> Mj : selectable
+Contract ..> Abs
+Contract ..> Ranked
+Contract ..> EqP
+Contract ..> LR
+Contract ..> HA
+HA --> DivSeq : variant divisors
+
+Tally --> Processor
+Props --> Processor
+ProcCfg --> Processor
+Processor --> Result
+
+note right of Abs
+Derives minimumVotes = (potentialVotes / 2) + 1\nthen delegates to qualified-majority processing.
+end note
+
+note right of HA
+Variant-specific divisor sequences.\nWebster supports user-provided first divisor.
+end note
+
+note bottom of API
+Immutable Tally applies within\nallocation-method contract only.\nCaller-facing API may construct/modify\nTally before invoking a method.
+end note
+
+note bottom of CLI
+No network interfaces.\nOut of scope: web UI.
+end note
+
+note top of Core
+Java-only implementation.
+end note
+
+@enduml

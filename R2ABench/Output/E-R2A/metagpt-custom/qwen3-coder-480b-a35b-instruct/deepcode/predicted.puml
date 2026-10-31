@@ -1,0 +1,83 @@
+@startuml
+' Deployment nodes representing infrastructure layers
+node "Frontend Layer" {
+    component "Vue 3 UI" as frontend
+}
+
+node "Presentation Layer" {
+    component "Spring Boot Backend" as springBackend
+}
+
+node "Proxy Layer" {
+    component "Nginx Reverse Proxy" as nginx
+}
+
+node "Business Layer" {
+    component "User Management" as userMgmt
+    component "Problem Bank" as problemBank
+    component "Judging Service" as judgingService
+    component "Forum" as forum
+}
+
+node "Access Layer" {
+    component "Data Storage" as dataStore {
+        database "MySQL" as mysql
+        database "Redis" as redis
+        database "MinIO" as minio
+    }
+}
+
+cloud "External Systems" {
+    component "JudgeHost" as judgeHost
+    component "JudgeCore" as judgeCore
+    component "LLM Service" as llmService
+    component "SMTP Mail Service" as smtp
+    component "CDN" as cdn
+    component "DNS Service" as dns
+    component "Prometheus" as prometheus
+    component "Grafana" as grafana
+    component "PagerDuty" as pagerduty
+    component "DingTalk Robot" as dingtalk
+    component "Swagger UI" as swagger
+}
+
+' Interfaces for communication between components
+interface "REST API" as restApi
+
+' Connections
+frontend --> nginx : "Client Requests"
+nginx --> springBackend : "Route Requests"
+springBackend --> restApi
+restApi --> userMgmt
+restApi --> problemBank
+restApi --> judgingService
+restApi --> forum
+
+userMgmt --> dataStore : "CRUD Users"
+userMgmt --> smtp : "Send Emails"
+problemBank --> dataStore : "CRUD Problems"
+forum --> dataStore : "Manage Posts/Comments"
+judgingService --> dataStore : "Access Test Cases"
+judgingService --> judgeHost : "Execute Code"
+judgingService --> judgeCore : "Resource Control"
+judgingService --> redis : "Queue/Submission Cache"
+
+springBackend --> dataStore : "General Data Access"
+springBackend --> redis : "Session/Caching"
+
+llmService --> redis : "Response Caching"
+llmService --> dataStore : "Context Retrieval"
+
+' Monitoring & Infrastructure integrations
+prometheus --> nginx : "Metrics Collection"
+prometheus --> springBackend : "Metrics Collection"
+prometheus --> judgeHost : "Judging Metrics"
+prometheus --> llmService : "AI Service Metrics"
+grafana --> prometheus : "Visualize Metrics"
+pagerduty --> prometheus : "Alerting"
+dingtalk --> pagerduty : "Notifications"
+cdn --> frontend : "Static Assets Delivery"
+dns --> nginx : "Domain Resolution"
+swagger --> springBackend : "API Documentation"
+
+@enduml

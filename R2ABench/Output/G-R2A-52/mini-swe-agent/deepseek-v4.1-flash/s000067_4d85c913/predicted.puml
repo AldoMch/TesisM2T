@@ -1,0 +1,88 @@
+@startuml
+title TraceLeft - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ===================== Userspace: CLI Layer =====================
+package "Userspace - CLI Layer" as CLI {
+  [CLI Entry Point\n(executable + command dispatch)] as CLIEntry
+  [Trace Command] as TraceCmd
+  [CLI Argument Parser] as ArgParser
+}
+
+' ===================== Userspace: TraceLeft Library =====================
+package "Userspace - TraceLeft Library" as LIB {
+  [Userspace Tracer\n(event dispatch)] as Tracer
+  [Probe Loader &\nHandler Naming Resolver] as ProbeLoader
+  [Perf Event Channel Reader] as PerfReader
+}
+
+' ===================== Userspace: Generation Subsystem =====================
+package "Userspace - Handler Generation" as GEN {
+  [Handler Source Generator] as Generator
+}
+
+' ===================== Configuration / Metadata =====================
+package "Configuration Artifacts" as CFG {
+  database "Event Configuration\n(Proto/JSON metadata)" as EventConfig
+  database "Generated eBPF\nHandler Source" as GenSource
+  artifact "Event Registration Structure\n(ProgramID, Pids, ELFPath)" as Registration
+}
+
+' ===================== Kernel Space: eBPF =====================
+package "Kernel Space - eBPF Runtime" as KERN {
+  [Main eBPF Program\n(kprobe/kretprobe attach)] as MainProg
+  [Program Map] as ProgMap
+  [Return Program Map] as RetProgMap
+  [Handler eBPF Programs\n(default + process-specific)] as Handlers
+}
+
+' ===================== External Systems =====================
+package "External Systems" as EXT {
+  [Linux Kernel\neBPF / kprobe / kretprobe] as LinuxKernel
+  [Linux perf Subsystem] as Perf
+  [gobpf Library] as Gobpf
+  [Traced Processes\n(syscall / file / network)] as TracedProc
+}
+
+' --------------------- CLI dependencies ---------------------
+CLIEntry --> TraceCmd
+CLIEntry --> ArgParser
+TraceCmd --> ArgParser
+TraceCmd --> Registration
+TraceCmd --> ProbeLoader
+ArgParser --> Registration
+
+' --------------------- Library dependencies ---------------------
+Tracer --> Registration
+Tracer --> PerfReader
+ProbeLoader --> ProgMap
+ProbeLoader --> RetProgMap
+ProbeLoader --> Handlers
+ProbeLoader --> Gobpf
+MainProg --> Gobpf
+Tracer --> Gobpf
+
+' --------------------- Generation dependencies ---------------------
+Generator --> EventConfig
+Generator --> GenSource
+GenSource --> Handlers
+
+' --------------------- Kernel space internal ---------------------
+MainProg --> ProgMap
+MainProg --> RetProgMap
+ProgMap --> Handlers
+RetProgMap --> Handlers
+MainProg --> LinuxKernel
+
+' --------------------- Kernel to userspace event flow ---------------------
+Handlers --> Perf
+Perf --> PerfReader
+PerfReader --> Tracer
+TracedProc --> LinuxKernel
+
+' --------------------- External ---------------------
+LinuxKernel --> Gobpf
+
+@enduml

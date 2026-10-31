@@ -1,0 +1,115 @@
+@startuml
+title PN Infra - Cognito, API Gateway and VPC Endpoint Infrastructure
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+' ================= Actors / External Clients =================
+actor "API Client" as Client
+actor "Infrastructure Operator" as Operator
+actor "Security / Ops Reviewer" as Reviewer
+
+' ================= External Systems =================
+package "External Systems" {
+  [AWS CloudFormation Service] as CFN
+  [Amazon SQS] as SQS
+  [Network Load Balancer] as NLB
+  [ECS Integration Backend] as ECS
+}
+
+' ================= Infrastructure as Code Layer =================
+package "Infrastructure as Code & Installation Layer" {
+  [Installation Scripts / AWS CLI Profiles] as InstallScripts
+  [Cognito CloudFormation Stack Template] as CognitoTemplate
+  [API Gateway CloudFormation Stack Template] as ApiGwTemplate
+  [SQS VPC Endpoint CloudFormation Template] as VpcEndpointTemplate
+}
+
+' ================= Cognito Account =================
+package "AWS Cognito Account" {
+  package "Amazon Cognito" {
+    [Cognito User Pool] as UserPool
+    [User-Pool Client\n(custom:Role, email)] as UserPoolClient
+    [Cognito Identity Pool] as IdentityPool
+  }
+  package "IAM" {
+    [Unauthenticated IAM Role] as UnauthRole
+    [Authenticated IAM Role] as AuthRole
+  }
+}
+
+' ================= API Gateway Account =================
+package "AWS API Gateway Account" {
+  package "Amazon API Gateway" {
+    [Cognito User-Pool Authorizer] as Authorizer
+    [WhoAmI Method\n(x-pagopa-pn-cx-role)] as WhoAmIMethod
+    [ECS Proxy Method\n(role header forwarding)] as EcsMethod
+    [API Gateway Stage / Deployment] as Stage
+    [CallbackURL Output] as CallbackURL
+    [API Gateway VPC Link] as VpcLink
+  }
+}
+
+' ================= VPC Networking =================
+package "VPC / Network Layer" {
+  [SQS Interface VPC Endpoint\n(private DNS enabled)] as VpcEndpoint
+  [Endpoint Security Group\n(TCP ingress from VPC CIDR)] as EndpointSG
+  [Target Subnets] as Subnets
+}
+
+' ================= Relationships =================
+Operator --> InstallScripts : runs installation
+InstallScripts --> CFN : deploys stacks
+CFN --> CognitoTemplate : provisions
+CFN --> ApiGwTemplate : provisions
+CFN --> VpcEndpointTemplate : provisions
+
+' Cognito provisioning
+CognitoTemplate --> UserPool : defines
+CognitoTemplate --> UserPoolClient : defines
+CognitoTemplate --> IdentityPool : defines
+UserPool --> UserPoolClient : hosts client
+UserPoolClient --> IdentityPool : provider link\n(UserPoolId, ClientId, ProviderName)
+CognitoTemplate --> UnauthRole : defines
+CognitoTemplate --> AuthRole : defines
+UnauthRole --> IdentityPool : role attachment\n(unauthenticated)
+AuthRole --> IdentityPool : role attachment\n(authenticated)
+
+' API Gateway provisioning
+ApiGwTemplate --> Authorizer : configures
+ApiGwTemplate --> WhoAmIMethod : defines
+ApiGwTemplate --> EcsMethod : defines
+ApiGwTemplate --> Stage : deploys (depends on WhoAmI & ECS)
+ApiGwTemplate --> VpcLink : configures
+Stage --> CallbackURL : publishes
+
+' Cross-account authentication
+UserPool --> Authorizer : user-pool ARN (cross-account input)
+Authorizer --> WhoAmIMethod : authorizes
+Authorizer --> EcsMethod : authorizes
+WhoAmIMethod --> WhoAmIMethod : map custom:Role claim\n to response header
+
+' Client access
+Client --> Stage : calls API / callback endpoint
+Client --> UserPool : authenticates
+UserPool --> IdentityPool : federated identities
+
+' ECS / VPC link integration
+EcsMethod --> VpcLink : integration
+VpcLink --> NLB : routes to backend
+EcsMethod --> ECS : forwards x-pagopa-pn-cx-role
+
+' VPC endpoint / SQS
+VpcEndpointTemplate --> VpcEndpoint : defines
+VpcEndpointTemplate --> EndpointSG : defines
+EndpointSG --> VpcEndpoint : secures
+VpcEndpoint --> Subnets : placed in
+VpcEndpoint --> SQS : private interface endpoint\n(regional SQS service name)
+ECS --> VpcEndpoint : private SQS access
+
+' Reviewers
+Reviewer --> CognitoTemplate : inspects
+Reviewer --> ApiGwTemplate : inspects
+Reviewer --> VpcEndpointTemplate : inspects
+
+@enduml

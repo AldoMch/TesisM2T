@@ -1,0 +1,139 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam nodeFontSize 13
+skinparam componentFontSize 12
+skinparam rectangleFontSize 12
+skinparam arrowFontSize 11
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+
+title MyEMS REST API and Admin Routing — System Architecture
+
+actor "Administrator" as Admin
+actor "MyEMS Components" as MyEMSComp
+actor "Third-Party Applications" as ThirdParty
+actor "Developer / Deployer" as DevDeploy
+
+package "Browser Environment" {
+
+    package "MyEMS Admin Application" {
+
+        component "Client-Side Router" as Router {
+            portin "route: /user"
+            portin "route: /contact"
+        }
+
+        component "User Settings Module\n(Lazy-Loaded)" as UserModule {
+            note right: FR-003\nUser services, controllers,\nlogin modules, UI libraries
+        }
+
+        component "Contact Settings Module\n(Lazy-Loaded)" as ContactModule {
+            note right: FR-005\nContact-related modules
+        }
+
+        component "Tariff Settings Module\n(Lazy-Loaded)" as TariffModule {
+            note right: FR-006\nTariff workflow modules
+        }
+
+        component "Category Settings Module\n(Lazy-Loaded)" as CategoryModule {
+            note right: FR-006\nCategory workflow modules
+        }
+
+        component "API Base Path Resolver" as BasePathResolver {
+            note right: FR-007 / SI-002\n{protocol}//{hostname}:{port}/api/
+        }
+
+        database "Route Configuration Data" as RouteData {
+            note right: DR-001 to DR-005\nPath, title key, module list\nAPI base path value
+        }
+    }
+}
+
+package "Network / Routing Layer" {
+    component "Reverse Proxy\n(e.g. Nginx — optional)" as ReverseProxy {
+        note right: CI-002 / CON-003\nForwards /api/ to API service\nNot the only valid mechanism
+    }
+}
+
+package "API Service Runtime\n(Python Environment)" {
+
+    component "MyEMS REST API Service" as APIService {
+        note right: FR-001 / SI-001\nRESTful interfaces for\nMyEMS components and\nthird-party applications
+    }
+
+    package "Python Dependencies (CON-001)" {
+        component "REST Framework Support" as RestFW
+        component "CORS Support" as CORS
+        component "WSGI Execution Support" as WSGI
+        component "Spreadsheet & Image Handling" as SpreadImg
+        component "MySQL Connector" as MySQLConn
+    }
+
+    package "Deployment Paths (FR-008 / FR-009)" {
+        component "Linux Quick-Run\nDevelopment Mode" as LinuxRun
+        component "Windows Quick-Run\nDevelopment Mode" as WinRun
+        component "Docker-Based\nInstallation" as DockerSetup
+    }
+}
+
+package "Persistent Storage" {
+    database "MySQL Database" as MySQLDB {
+        note right: CON-005 / DI-002\nRequired for MySQL-backed\nAPI features
+    }
+}
+
+' Administrator interactions
+Admin --> Router : navigates /user or /contact
+
+' Router to lazy-loaded modules
+Router --> UserModule : lazy-load on /user (FR-003 / CON-004)
+Router --> ContactModule : lazy-load on /contact (FR-005 / CON-004)
+Router --> TariffModule : lazy-load where configured (FR-006)
+Router --> CategoryModule : lazy-load where configured (FR-006)
+
+' Route data feeds router and resolver
+RouteData --> Router : route definitions (DR-001..DR-004)
+RouteData --> BasePathResolver : API base path value (DR-005)
+
+' Admin modules resolve API base path
+UserModule --> BasePathResolver : get API base path
+ContactModule --> BasePathResolver : get API base path
+
+' Browser to network
+BasePathResolver --> ReverseProxy : HTTP/HTTPS /api/ requests\n(CI-001 / NFR-001)
+UserModule --> ReverseProxy : API calls via /api/
+ContactModule --> ReverseProxy : API calls via /api/
+
+' Reverse proxy to API service
+ReverseProxy --> APIService : forward /api/ requests
+
+' Direct API access without proxy
+BasePathResolver ..> APIService : direct same-origin /api/\n(when no reverse proxy)
+
+' External actors to API service
+MyEMSComp --> APIService : RESTful API integration (SI-001)
+ThirdParty --> APIService : RESTful API integration (SI-001)
+
+' API service to dependencies
+APIService --> RestFW : uses
+APIService --> CORS : uses
+APIService --> WSGI : uses
+APIService --> SpreadImg : uses
+APIService --> MySQLConn : uses
+
+' API service to database
+MySQLConn --> MySQLDB : database connectivity (DI-002)
+
+' Developer/Deployer interactions
+DevDeploy --> LinuxRun : execute Linux quick-run (FR-008)
+DevDeploy --> WinRun : execute Windows quick-run (FR-008)
+DevDeploy --> DockerSetup : execute Docker setup (FR-009)
+
+LinuxRun --> APIService : starts API service
+WinRun --> APIService : starts API service
+DockerSetup --> APIService : prepares API runtime
+
+@enduml

@@ -1,0 +1,106 @@
+@startuml
+
+cloud "Command-line Shell Environment" as Shell
+cloud "File System" as FS
+
+node "Java Runtime Environment (JRE)" as JRE {
+  package "CLI Layer" as CLI {
+    component "Command-Line Launcher" as CL
+    component "CLI Argument Handler" as CLAH
+  }
+
+  package "Public API Layer" as API {
+    component "Caller-Facing Allocation Entry Point" as Entry
+    interface "Allocation-Method Contract" as Contract
+    component "SeatAllocationException" as SAE
+  }
+
+  package "Processing/Workflow Layer" as PWL {
+    component "Processor Orchestrator" as Orchestrator
+    component "Protected Tally View Adapter" as ProtectedTally
+    component "Tie-Breaking Handler" as TieHandler
+  }
+
+  package "Extension Interfaces Layer" as EXT {
+    interface "Tally Filtering API" as FilterAPI
+    interface "Result Decoration API" as DecoratorAPI
+  }
+
+  package "Method Implementations Layer" as MIL {
+    component "Majority: Simple" as MajoritySimple
+    component "Majority: Qualified" as MajorityQualified
+    component "Majority: Absolute" as MajorityAbsolute
+    component "Ranked-by-Votes Processor" as Ranked
+    component "Equal Proportions (Huntington-Hill) Processor" as EPHH
+    component "Largest Remainder: Hare" as LRHare
+    component "Largest Remainder: Droop" as LRDroop
+    component "Largest Remainder: Imperiali" as LRImperiali
+    component "Highest Averages: D'Hondt" as DH
+    component "Highest Averages: Sainte-Lague/Webster" as SL
+    component "Highest Averages: Imperiali" as HAImperiali
+    component "Highest Averages: Danish" as HADanish
+    component "Divisor Sequence Provider" as Divisors
+  }
+
+  package "Data/Model Layer" as MODEL {
+    component "Tally Model" as Tally
+    component "Candidate Model" as Candidate
+    component "Result Model" as ResultModel
+    component "Processor Configuration" as ProcConfig
+    component "Properties" as PropertiesModel
+  }
+
+  package "IO Layer" as IOL {
+    component "XML IO" as XMLIO
+    component "File IO Adapter" as FileIO
+  }
+}
+
+Shell --> CL
+CL --> CLAH
+CL --> Entry
+CL --> XMLIO
+CL --> FileIO
+CL --> Contract
+CL --> FilterAPI
+CL --> DecoratorAPI
+
+CLAH --> ProcConfig
+CLAH --> Tally
+
+FileIO --> FS
+
+Entry --> ProcConfig
+Entry --> Tally
+Entry --> ResultModel
+
+Entry --> Orchestrator
+Orchestrator --> FilterAPI
+Orchestrator --> Contract
+Orchestrator --> DecoratorAPI
+Orchestrator --> TieHandler
+Orchestrator --> SAE
+Orchestrator --> ProcConfig
+Orchestrator --> Tally
+Orchestrator --> PropertiesModel
+Orchestrator --> ResultModel
+Orchestrator --> ProtectedTally
+
+FilterAPI --> Tally
+DecoratorAPI --> ResultModel
+
+XMLIO --> Tally
+XMLIO --> ProcConfig
+XMLIO --> ResultModel
+
+MIL --> ProtectedTally
+MIL --> Contract
+
+MajorityAbsolute --> MajorityQualified
+DH --> Divisors
+SL --> Divisors
+HAImperiali --> Divisors
+HADanish --> Divisors
+Divisors --> PropertiesModel
+
+@enduml

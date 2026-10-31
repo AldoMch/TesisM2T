@@ -1,0 +1,116 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam backgroundColor #FEFEFE
+skinparam package {
+    BackgroundColor #F0F4FF
+    BorderColor #4444AA
+}
+skinparam node {
+    BackgroundColor #E8F0FE
+    BorderColor #3355AA
+}
+skinparam component {
+    BackgroundColor #DDEEFF
+    BorderColor #336699
+}
+skinparam database {
+    BackgroundColor #FFF4E0
+    BorderColor #AA7700
+}
+skinparam cloud {
+    BackgroundColor #E8FFE8
+    BorderColor #338833
+}
+
+together {
+    actor "End Users" as EndUsers
+    actor "Administrators" as Admins
+}
+
+together {
+    [Native Mobile Apps] as MobileApps
+    [Admin Web Application] as AdminWeb
+}
+
+EndUsers --> MobileApps
+Admins --> AdminWeb
+
+node "GCP" {
+
+    component "Load Balancer" as LB
+
+    MobileApps --> LB
+    AdminWeb --> LB
+
+    node "GKE Cluster" {
+
+        package "Gateway / BFF Layer" {
+            [Native App Gateway / BFF] as NativeGW
+            [Admin Gateway / BFF] as AdminGW
+        }
+
+        LB --> NativeGW
+        LB --> AdminGW
+
+        package "Backend Services" {
+            [Authentication API] as AuthAPI
+            [User Management API\n(Golang)] as UserAPI
+            [Book Management API\n(Golang)] as BookAPI
+            [EC Site API\n(Golang)] as ECAPI
+            [Support API\n(Golang)] as SupportAPI
+            [Message Management Service] as MsgService
+            [Notification Service] as NotifService
+        }
+
+        NativeGW --> AuthAPI
+        NativeGW --> UserAPI
+        NativeGW --> BookAPI
+        NativeGW --> ECAPI
+        NativeGW --> SupportAPI
+        NativeGW --> MsgService
+
+        AdminGW --> UserAPI
+        AdminGW --> BookAPI
+        AdminGW --> ECAPI
+        AdminGW --> SupportAPI
+    }
+
+    package "GCP Data Stores" {
+        database "MySQL\n(User Data)" as MySQLUser
+        database "MySQL\n(Book Data)" as MySQLBook
+        database "MySQL\n(EC Site Data)" as MySQLEC
+        database "NoSQL Storage\n(Message Data)" as NoSQL
+        storage "Object Storage\n(Thumbnails / Objects)" as ObjStore
+    }
+
+    UserAPI --> MySQLUser
+    BookAPI --> MySQLBook
+    ECAPI --> MySQLEC
+    MsgService --> NoSQL
+    BookAPI --> ObjStore
+    UserAPI --> ObjStore
+
+    node "GCE VM (Ops)" as GCEVM {
+        [Cloud SDK] as CloudSDK
+        [TLS Certificate Tooling\n(Let's Encrypt DNS-01)] as TLSTool
+    }
+}
+
+cloud "External Services" {
+    [Firebase Authentication] as FirebaseAuth
+    [Book-Search API] as BookSearchAPI
+    [Stripe\n(Payment)] as Stripe
+    [Push Notification Provider] as PushNotif
+    [Email Notification Provider] as EmailNotif
+}
+
+AuthAPI --> FirebaseAuth : authenticate
+BookAPI --> BookSearchAPI : book lookup
+ECAPI --> Stripe : payment processing
+NotifService --> PushNotif : push notification
+NotifService --> EmailNotif : email notification
+ECAPI --> NotifService
+UserAPI --> NotifService
+
+@enduml

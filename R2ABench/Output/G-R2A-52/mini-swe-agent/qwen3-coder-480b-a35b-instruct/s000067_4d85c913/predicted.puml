@@ -1,0 +1,75 @@
+@startuml
+title TraceLeft System Architecture
+
+skinparam componentStyle rectangle
+
+' Layers
+package "User Space" {
+  [CLI Operator] as cli_user
+  [TraceLeft CLI] as cli
+  [Userspace Tracer] as tracer
+  [Event Consumer] as consumer
+}
+
+package "Kernel Space" {
+  [eBPF Probes] as probes
+  [Handler Programs] as handlers
+  [Perf Event Channel] as perf_channel
+}
+
+package "Configuration & Metadata" {
+  [Event Configuration] as config
+  [Handler Generator] as generator
+}
+
+' External Systems
+database "Linux Kernel" {
+  [eBPF Support] as ebpf_kernel
+  [Kprobe/Kretprobe] as kprobes_kernel
+}
+
+' Connections
+cli_user --> cli : invokes
+cli --> tracer : starts
+tracer --> consumer : dispatches events
+consumer --> tracer : receives events
+
+config --> generator : provides metadata
+generator --> handlers : generates source
+handlers --> perf_channel : emits events
+perf_channel --> tracer : delivers events
+
+probes --> ebpf_kernel : installed in
+probes --> kprobes_kernel : uses
+handlers --> probes : attached to
+handlers --> kprobes_kernel : uses
+
+tracer --> handlers : loads
+tracer --> probes : manages
+
+note right of cli
+  Entry point for
+  trace commands
+end note
+
+note right of tracer
+  Manages probe lifecycle
+  and event dispatching
+end note
+
+note right of handlers
+  eBPF programs that
+  handle trace events
+end note
+
+note right of perf_channel
+  Perf-based event
+  delivery mechanism
+end note
+
+note right of generator
+  Generates eBPF handler
+  source from config
+end note
+
+@enduml

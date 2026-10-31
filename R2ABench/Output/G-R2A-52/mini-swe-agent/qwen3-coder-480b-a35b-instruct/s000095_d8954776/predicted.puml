@@ -1,0 +1,68 @@
+@startuml
+' GPSLogger Architecture Diagram
+
+skinparam componentStyle rectangle
+
+' Layers
+package "Presentation Layer" {
+  [Main Activity/Fragments] as ui
+}
+
+package "Business Logic Layer" {
+  [GPS Logging Service] as gpsService
+  [Event Bus] as eventBus
+  [Location Listeners] as locListeners
+  [GPRMC Encoder] as gprmcEncoder
+  [Settings Manager] as settings
+}
+
+package "Data Access Layer" {
+  [File Loggers] as loggers
+  [OpenGTS Uploader] as openGtsUploader
+  [OSM Uploader] as osmUploader
+  [Dropbox Uploader] as dropboxUploader
+}
+
+package "External Systems" {
+  [Android Location APIs] as androidLoc
+  [Google Play Services] as playServices
+  [OpenStreetMap API] as osmApi
+  [Dropbox API] as dropboxApi
+  [OpenGTS Server] as openGtsServer
+  [File System] as fileSystem
+}
+
+' Connections
+ui --> eventBus : Consumes location events
+gpsService --> eventBus : Publishes location events
+gpsService --> locListeners : Uses
+locListeners --> androidLoc : Requests locations
+locListeners --> playServices : Uses (optional)
+gpsService --> settings : Gets configurations
+gpsService --> loggers : Writes logs
+gpsService --> gprmcEncoder : Encodes locations
+gprmcEncoder --> openGtsUploader : Provides encoded data
+openGtsUploader --> openGtsServer : Sends UDP messages
+loggers --> fileSystem : Writes files
+osmUploader --> osmApi : Uploads to
+dropboxUploader --> dropboxApi : Uploads to
+settings --> fileSystem : Stores configs
+
+' Notes
+note right of gpsService
+  Core GPS logging functionality
+end note
+
+note right of openGtsUploader
+  Optional OpenGTS integration
+end note
+
+note right of osmUploader
+  Optional OSM integration
+end note
+
+note right of dropboxUploader
+  Optional Dropbox integration
+end note
+
+@enduml

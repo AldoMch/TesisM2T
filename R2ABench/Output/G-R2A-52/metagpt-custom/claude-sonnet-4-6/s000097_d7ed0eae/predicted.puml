@@ -1,0 +1,123 @@
+@startuml BeeGreen Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #F9FBE7
+skinparam package {
+  BackgroundColor #F1F8E9
+  BorderColor #558B2F
+  FontColor #33691E
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #DCEDC8
+  BorderColor #7CB342
+  FontColor #1B5E20
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam database {
+  BackgroundColor #FFF9C4
+  BorderColor #F9A825
+  FontColor #1B5E20
+}
+skinparam interface {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam arrow {
+  Color #558B2F
+  FontColor #33691E
+}
+
+' ─────────────────────────────────────────────
+' CLIENT LAYER
+' ─────────────────────────────────────────────
+package "Client Layer" {
+
+  component "WebsiteClient\n(React / TypeScript)" as WebsiteClient
+  component "BrowserExtensionClient\n(Chrome Extension)" as BrowserExtensionClient
+
+}
+
+' ─────────────────────────────────────────────
+' BACKEND API LAYER
+' ─────────────────────────────────────────────
+package "Backend API Layer\n(Node.js / LoopBack)" {
+
+  interface "REST /users" as UsersEndpoint
+  interface "REST /ping" as PingEndpoint
+
+  component "UserController" as UserController
+  component "PingController" as PingController
+
+  component "UserRepository\n(LoopBack Repository)" as UserRepository
+
+  component "UserModel\n(Entity Schema)" as UserModel
+  component "NewUserModel\n(Input Schema — User minus id)" as NewUserModel
+  component "InventoryItemModel\n(Entity Schema)" as InventoryItemModel
+  component "PingResponseModel\n(greeting, date, url, headers)" as PingResponseModel
+
+  component "HTTPRequestContext" as HTTPRequestContext
+
+  ' D-001 fix: interfaces route TO controllers
+  UsersEndpoint --> UserController : routes inbound\nHTTP requests
+  PingEndpoint  --> PingController  : routes inbound\nHTTP requests
+
+  ' H-001 fix: removed UserController --> UserModel
+  UserController --> UserRepository : delegates persistence\n(create / query / patch / findById)
+  UserController --> NewUserModel   : validates create\ninput schema
+
+  ' D-003 fix: UserRepository binds to UserModel entity schema
+  UserRepository --> UserModel : maps User entity\nschema
+
+  PingController --> HTTPRequestContext   : reads url, headers, date
+  PingController --> PingResponseModel   : constructs PingResponse\n(greeting, date, url, headers)
+
+  ' D-002 fix: InventoryItemModel linked to PersistentDataStore (see below)
+
+}
+
+' ─────────────────────────────────────────────
+' DATA / PERSISTENCE LAYER
+' ─────────────────────────────────────────────
+package "Data / Persistence Layer" {
+
+  database "PersistentDataStore\n(Users & InventoryItems)" as PersistentDataStore
+
+}
+
+' ─────────────────────────────────────────────
+' DATA-PROCESSING LAYER
+' ─────────────────────────────────────────────
+' S-001 fix: use package instead of cloud for grouping components
+package "Data-Processing Layer" {
+
+  component "ScoringAndRecommendationService" as ScoringService
+
+}
+
+' ─────────────────────────────────────────────
+' INTER-LAYER DEPENDENCIES
+' ─────────────────────────────────────────────
+
+' Client → Backend API
+' H-003 fix: removed client --> PingEndpoint arrows (not SRS-specified)
+' H-004 fix: removed "shopping context" label
+WebsiteClient          --> UsersEndpoint : HTTP REST\nPOST / GET / PATCH /users
+BrowserExtensionClient --> UsersEndpoint : HTTP REST\n/users
+
+' Backend API → Data/Persistence
+UserRepository --> PersistentDataStore : LoopBack repository\nabstractions (read / write User records)
+
+' D-002 fix: InventoryItemModel referenced by PersistentDataStore
+PersistentDataStore --> InventoryItemModel : persists InventoryItem\nrecords per entity schema
+
+' Data-Processing → Data/Persistence
+' H-002 fix: removed ScoringService --> InventoryItemModel
+' D-004 fix: read-only path from ScoringService to PersistentDataStore
+ScoringService --> PersistentDataStore : reads product-related\n(InventoryItem) records
+
+@enduml

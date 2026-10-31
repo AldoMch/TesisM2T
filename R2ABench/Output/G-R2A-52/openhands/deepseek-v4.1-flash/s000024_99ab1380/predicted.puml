@@ -1,0 +1,109 @@
+@startuml
+title System Architecture - OCI Jenkins Terraform Deployment
+
+skinparam componentStyle rectangle
+
+actor "Deployment Operator\n(DevOps Engineer)" as Operator
+actor "Infrastructure\nAdministrator" as Admin
+
+package "Operator Workstation / Control Host" {
+  component "Terraform Variable Files\n(terraform.tfvars)" as TFVars
+  component "JSON Input Files\n(example/test values)" as JsonInput
+  component "SSH Key Material\n(ssh_authorized_keys,\nssh_private_key)" as SSHKeys
+  component "Terraform CLI\n(init / plan / apply)" as TFCLI
+}
+
+package "Terraform Configuration (IaC)" {
+  component "Provider & Variable Layer\nOCI access: tenancy_ocid,\ncompartment_ocid, user_ocid,\nregion, fingerprint,\nprivate_key_path" as VarLayer
+  component "Jenkins Cluster Variables\nlabel_prefix, jenkins_version,\njenkins_password,\nhttp_port, jnlp_port, plugins" as ClusterVars
+  component "Master Module\nmaster_ad, master_subnet_id,\nmaster_display_name,\nmaster_image_id, master_shape" as MasterModule
+  component "Slave/Agent Module\nslave_count, slave_ads,\nslave_subnet_ids,\nslave_display_name,\nslave_image_id, slave_shape" as SlaveModule
+  component "Bastion Access Config\nbastion_host, bastion_user,\nbastion_private_key" as BastionCfg
+  component "Cloud-Init Data (base64)\nmaster_user_data,\nslave_user_data" as CloudInit
+}
+
+package "Oracle Cloud Infrastructure (OCI)" {
+  package "Identity & Tenancy" {
+    component "OCI Tenancy /\nCompartment" as Tenancy
+    component "Availability Domains" as AD
+  }
+
+  package "Prepared Network Objects" {
+    component "Virtual Cloud Network (VCN)" as VCN
+    component "Route Tables" as RT
+    component "DHCP Options" as DHCP
+    component "Security Lists" as SecList
+    component "Public Subnet" as PubSubnet
+    component "Private Node Subnets\n(NAT-enabled outbound)" as PrivSubnet
+  }
+
+  package "Compute Instances" {
+    component "Jenkins Master Instance\n(VNIC, public subnet)" as Master
+    component "Jenkins Slave/Agent Instances\n(VNIC, private subnets)" as Slaves
+  }
+
+  package "Private-Network Prerequisites" {
+    component "NAT Connectivity" as NAT
+    component "Bastion Host" as Bastion
+    component "Load Balancer\n(public entry point)" as LB
+  }
+}
+
+' Operator interactions
+Operator --> TFVars : configures
+Operator --> JsonInput : provides values
+Operator --> SSHKeys : provides keys
+Operator --> TFCLI : runs commands
+
+Admin --> PubSubnet : prepares
+Admin --> PrivSubnet : prepares
+Admin --> RT : prepares
+Admin --> DHCP : prepares
+Admin --> SecList : prepares
+Admin --> NAT : prepares NAT connectivity
+Admin --> Bastion : prepares bastion host
+Admin --> LB : provides public address
+
+' Configuration flow
+TFVars --> TFCLI : supplies values
+JsonInput --> TFCLI : supplies example values
+TFCLI --> VarLayer : initializes & applies
+VarLayer --> ClusterVars
+ClusterVars --> MasterModule
+ClusterVars --> SlaveModule
+BastionCfg --> MasterModule
+BastionCfg --> SlaveModule
+CloudInit --> MasterModule
+CloudInit --> SlaveModule
+
+' Provisioning into OCI
+VarLayer --> Tenancy : authenticates (OCI API)
+VarLayer --> AD : targets availability domain
+MasterModule --> Master : provisions
+SlaveModule --> Slaves : provisions (slave_count)
+MasterModule --> PubSubnet : attaches (master_subnet_id)
+SlaveModule --> PrivSubnet : attaches (slave_subnet_ids)
+MasterModule --> CloudInit
+SlaveModule --> CloudInit
+MasterModule --> SecList
+SlaveModule --> SecList
+
+' Networking
+VCN o-- PubSubnet
+VCN o-- PrivSubnet
+PubSubnet --> RT
+PrivSubnet --> RT
+RT --> NAT : outbound via NAT
+PrivSubnet --> NAT
+Bastion --> PrivSubnet : private access
+LB --> Master : public entry
+
+' Runtime communication
+Operator --> Master : SSH (authorized key)
+Operator --> Bastion : SSH (bastion_private_key)
+Bastion ..> Slaves : SSH jump access
+Master <..> Slaves : Jenkins JNLP\n(http_port / jnlp_port)
+SSHKeys --> Master : authorized_keys injection
+SSHKeys --> Slaves : authorized_keys injection
+
+@enduml

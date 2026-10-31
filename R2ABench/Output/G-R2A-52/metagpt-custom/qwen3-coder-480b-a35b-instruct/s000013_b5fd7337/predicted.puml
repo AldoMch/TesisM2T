@@ -1,0 +1,37 @@
+@startuml
+
+' Deployment Layer
+node "Docker Host" {
+    node "Frontend Container" {
+        component "React Frontend"
+    }
+
+    node "Backend Container" {
+        component "FastAPI Backend"
+    }
+
+    node "Elasticsearch Container" {
+        database "Elasticsearch"
+    }
+
+    node "Kibana Container" {
+        component "Kibana"
+    }
+
+    cloud "External Services Layer" {
+        component "Genius API"
+    }
+}
+
+' Docker Network
+"Frontend Container" .. "Backend Container" : Docker Network
+"Backend Container" .. "Elasticsearch Container" : Docker Network
+"Kibana Container" .. "Elasticsearch Container" : Docker Network
+
+' Component Dependencies
+"React Frontend" --> "FastAPI Backend" : HTTP Requests
+"FastAPI Backend" --> "Elasticsearch" : Store/Retrieve Data
+"FastAPI Backend" --> "Genius API" : Search Missing Songs
+"Kibana" --> "Elasticsearch" : Data Inspection
+
+@enduml

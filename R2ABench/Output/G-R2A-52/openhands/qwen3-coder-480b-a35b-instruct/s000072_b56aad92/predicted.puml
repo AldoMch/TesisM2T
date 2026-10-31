@@ -1,0 +1,104 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam noteFontSize 10
+
+title ParaStation/psmpi System Architecture\nSample: s000072_b56aad92
+
+package "ParaStation/psmpi" {
+  [Communication Subsystem] as comm_subsys #LightBlue
+  [Embedded hwloc Verification] as hwloc_verify #LightGreen
+  [Libfabric Integration] as libfabric_int #LightYellow
+  [CH4 Network Module] as ch4_module #LightGray
+  
+  note right of comm_subsys
+    Responsibilities:
+    - Initialization/Finalization
+    - Progress Advancement
+    - Connection Establishment
+    - One-to-Many Transfer
+  end note
+  
+  note right of hwloc_verify
+    Manual verification workflows:
+    - run-embedded-tests.sh <tarball>
+    - ./autogen.sh + ./configure + make
+    - Directory rename to hwloc-tree/
+  end note
+  
+  note right of libfabric_int
+    Verbs Provider:
+    - libibverbs (>=1.1.8)
+    - librdmacm (>=1.0.16)
+    - Linux Verbs API integration
+  end note
+  
+  note left of ch4_module
+    Network library integration:
+    - OFI/libfabric support
+    - UCX support
+  end note
+  
+  [Send State Machine] as send_sm #LightPink
+  
+  note bottom of send_sm
+    Send Path Logic:
+    - Flow control checks
+    - Direct access vs packet packing
+    - Rendezvous control fields:
+      * rndv-rts: envelope, LIBA(OD)
+      * rndv-cts: two LIBAs
+      * rndv-data: one LIBA
+  end note
+}
+
+comm_subsys --> send_sm : implements
+send_sm ..> ch4_module : integrates with
+libfabric_int ..> ch4_module : provides transport
+hwloc_verify ..> comm_subsys : verifies communication
+
+note top of comm_subsys
+  Send State Machine Path:
+  1. Flow control check
+  2. Direct access or packet packing
+  3. Control field handling
+end note
+
+rectangle "External Dependencies" as externals {
+  [Linux Verbs Libraries] as verbs_libs #White
+  [Build Tools] as build_tools #White
+  [hwloc Distribution Tarball] as hwloc_tarball #White
+}
+
+libfabric_int --> verbs_libs : requires
+hwloc_verify --> hwloc_tarball : consumes
+hwloc_verify --> build_tools : uses
+
+note right of externals
+  Environment Variables:
+  - CFLAGS, LDFLAGS for non-default paths
+  - LD_LIBRARY_PATH for runtime linking
+end note
+
+rectangle "User Interfaces" as ui {
+  [CLI for hwloc Tests] as cli_hwloc #White
+  [Build Interface] as cli_build #White
+}
+
+cli_hwloc --> hwloc_verify : executes
+cli_build --> libfabric_int : configures
+cli_build --> hwloc_verify : builds
+
+legend bottom
+  Color Legend:
+  LightBlue = Core Communication Components
+  LightGreen = Verification Components
+  LightYellow = Transport Integration
+  LightPink = State Machines/Logic
+  LightGray = Network Modules
+end legend
+
+@enduml

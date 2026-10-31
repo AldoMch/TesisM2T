@@ -1,0 +1,159 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6CC
+!define DATA_COLOR #E6FFE6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Data>> DATA_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title GPSLogger Android Application - Layered Architecture
+
+package "Presentation Layer" <<Layer>> {
+  component "Main Activity/Fragments" <<Component>> {
+    [UI Fragments]
+    [Settings UI]
+  }
+}
+
+package "Application Layer" <<Layer>> {
+  component "Event Bus" <<Component>> {
+    [Location Event Publisher]
+    [Event Consumers]
+  }
+  
+  component "GPS Logging Service" <<Component>> {
+    [Location Listener]
+    [Location Processor]
+  }
+}
+
+package "Business Logic Layer" <<Layer>> {
+  component "Loggers" <<Component>> {
+    [GPX Logger]
+    [KML Logger]
+    [Text File Logger]
+  }
+  
+  component "Uploaders" <<Component>> {
+    [OpenGTS Uploader]
+    [OpenStreetMap Uploader]
+    [Dropbox Uploader]
+  }
+  
+  component "Data Encoders" <<Component>> {
+    [GPRMC Encoder]
+    [SerializableLocation Converter]
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "Configuration Manager" <<Component>> {
+    [Gradle Properties Parser]
+    [Build Configuration]
+  }
+  
+  component "Local Storage" <<Data>> {
+    [GPX Files]
+    [KML Files]
+    [Text Log Files]
+  }
+  
+  component "Application Settings" <<Data>> {
+    [User Preferences]
+    [Service Configurations]
+  }
+}
+
+package "External Systems" <<External>> {
+  component "Android Platform" <<External>> {
+    [GPS Hardware]
+    [Google Play Services]
+  }
+  
+  component "OpenStreetMap API" <<External>> {
+    [OSM Service]
+  }
+  
+  component "Dropbox API" <<External>> {
+    [Dropbox Service]
+  }
+  
+  component "OpenGTS Server" <<External>> {
+    [UDP Endpoint]
+  }
+}
+
+package "Development Environment" <<External>> {
+  component "Build System" <<External>> {
+    [Gradle Properties]
+    [local.properties]
+  }
+  
+  component "Android SDK" <<External>> {
+    [Build Tools 19.0.3]
+    [Support Libraries]
+  }
+}
+
+'--- Presentation Layer Connections ---'
+"Main Activity/Fragments" --> "Event Bus" : Consumes location events
+"Main Activity/Fragments" --> "Application Settings" : Reads/Writes user preferences
+
+'--- Application Layer Connections ---'
+"GPS Logging Service" --> "Event Bus" : Publishes location events
+"GPS Logging Service" --> "Android Platform" : Acquires GPS location
+"GPS Logging Service" --> "Google Play Services" : Uses location services
+
+'--- Business Logic Layer Connections ---'
+"Loggers" --> "Local Storage" : Writes log files
+"Uploaders" --> "Data Encoders" : Uses encoded data
+"OpenGTS Uploader" --> "OpenGTS Server" : Sends UDP packets
+"OpenStreetMap Uploader" --> "OpenStreetMap API" : Uploads data
+"Dropbox Uploader" --> "Dropbox API" : Uploads files
+"GPRMC Encoder" --> "SerializableLocation Converter" : Converts location data
+
+'--- Data Layer Connections ---'
+"Configuration Manager" --> "Build System" : Reads Gradle properties
+"Configuration Manager" --> "Application Settings" : Stores configuration
+"Configuration Manager" --> "Uploaders" : Provides credentials
+
+'--- External Dependencies ---'
+"Build System" --> "Android SDK" : Requires build tools
+"GPS Logging Service" --> "GPS Hardware" : Location acquisition
+
+'--- Key Data Flows ---'
+"Android Platform" --> "GPS Logging Service" : Location updates
+"GPS Logging Service" --> "Loggers" : Location data for logging
+"GPS Logging Service" --> "Data Encoders" : Location data for encoding
+"Data Encoders" --> "OpenGTS Uploader" : GPRMC encoded data
+"Configuration Manager" --> "OpenStreetMap Uploader" : OSM credentials
+"Configuration Manager" --> "Dropbox Uploader" : Dropbox credentials
+
+note right of "Event Bus"
+  <b>Event-based Architecture:</b>
+  Location events are published
+  to the event bus and consumed
+  by UI fragments
+end note
+
+note bottom of "OpenGTS Uploader"
+  <b>UDP Protocol:</b>
+  Sends GPRMC encoded data
+  to configured OpenGTS server
+end note
+
+note left of "Configuration Manager"
+  <b>Build-time Configuration:</b>
+  Reads credentials from
+  ~/.gradle/gradle.properties
+  and local.properties
+end note
+
+@enduml

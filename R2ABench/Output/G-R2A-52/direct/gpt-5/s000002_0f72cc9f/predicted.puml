@@ -1,0 +1,112 @@
+@startuml
+title Escape Application - System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam shadowing false
+skinparam roundcorner 8
+
+package "Deployment Environment" {
+  node "Browser" as Browser {
+    package "Web Client (React SPA)" as WebClient {
+      [Auth UI\n(Sign-up / Sign-in)] as AuthUI
+      [Shared Credential Handlers] as CredHandlers
+      [State Store\n(shared email/password, content results)] as StateStore
+      [Router\n(React-Router)] as Router
+      [Content Retrieval Module] as ContentModule
+      [Error Display] as ErrorUI
+      [Scene Renderer\n(A-Frame + aframe-react)] as SceneRenderer
+      [jQuery] as JQuery
+
+      AuthUI -down-> CredHandlers : delegate input changes
+      CredHandlers -down-> StateStore : update email/password
+      AuthUI ..> Router : cross-navigation\n(sign-up <-> sign-in)
+      ContentModule -down-> StateStore : accumulate paragraph/content
+      ContentModule -down-> ErrorUI : on error\n(visible indicator)
+      SceneRenderer ..> StateStore : read rendering data
+      AuthUI ..> JQuery : UI helpers
+      ContentModule ..> JQuery : async requests
+      SceneRenderer ..> JQuery : DOM/event helpers
+
+      note right of SceneRenderer
+        Scene/support components available:
+        - Lobby, SF, Louvre, Berlin, Milan, Rome, Hack
+        - Camera, Sky, Plane, TextPlane
+      end note
+
+      note bottom of ContentModule
+        Sequential title-based retrieval:
+        - Request titles in order
+        - Continue on each success
+        - Set final paragraph state once
+        - Log/display error on failure
+      end note
+    }
+  }
+
+  node "Node.js/Express Server" as Server {
+    [Express Router] as Express
+    [Auth Controller] as AuthController
+    [User Controller] as UserController
+    [Content Controller] as ContentController
+    [User Model] as UserModel
+    [bcrypt-nodejs] as Bcrypt
+
+    Express -> AuthController : /api/auth/signup\n/api/auth/signin
+    AuthController --> UserController : create/find user
+    UserController --> UserModel : create/find ops
+    UserController --> Bcrypt : compare hash
+
+    Express -> ContentController : /api/content?title=...
+    ContentController --> UserModel : user-related lookups (as needed)
+  }
+
+  database "MariaDB\n(users, likes, photos, comments)" as DB
+  queue "Redis Cache" as Cache
+  cloud "Image Storage\n(S3-style)" as S3
+}
+
+' Client-Server communications
+WebClient --> Express : HTTP/JSON\n- Credentials POST\n- Content requests
+Express --> WebClient : JSON responses\n- Auth status/user\n- Paragraphs or error
+
+' Server to data stores
+UserModel --> DB : SQL (CRUD)
+ContentController --> DB : read content metadata/data
+ContentController --> Cache : cache read/write
+Server --> S3 : image read/write\n(photos)
+
+' Client to image storage (optional direct fetches)
+WebClient ..> S3 : HTTP GET images (CDN/static)
+
+' Security & constraints notes
+note top of Bcrypt
+  Password verification
+  via bcrypt-nodejs
+  (no plaintext comparison)
+end note
+
+note right of WebClient
+  Client constraints:
+  - React + React-Router
+  - A-Frame + aframe-react
+  - jQuery
+end note
+
+note right of Server
+  Server constraints:
+  - Node.js
+  - Express-style routing
+  - User controller + model
+end note
+
+' Interface/data format notes
+note bottom of WebClient
+  Data formats:
+  - Credential payload: { email, password }
+  - Auth response: status/user for navigation
+  - Title query: ?title=...
+  - Accumulated paragraphs on success
+end note
+
+@enduml

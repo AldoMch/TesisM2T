@@ -1,0 +1,149 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam rectangle {
+    BackgroundColor #FAFAFA
+    BorderColor #888888
+}
+skinparam package {
+    BackgroundColor #EEF4FF
+    BorderColor #5577BB
+}
+skinparam database {
+    BackgroundColor #FFF8E1
+    BorderColor #F9A825
+}
+skinparam cloud {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+skinparam node {
+    BackgroundColor #F3E5F5
+    BorderColor #7B1FA2
+}
+
+title DeepCode System Architecture
+
+actor "Visitor" as visitor
+actor "Registered User" as reguser
+actor "Administrator" as admin
+
+package "Client Layer" {
+    component "Web Browser\n(Edge / Chrome / Opera / Safari / Firefox)" as browser
+    note right of browser : HTML5, Vue 3, TypeScript\nVuex, vue-router\nAnt Design Vue, CodeMirror\nwangEditor, ECharts, Axios
+}
+
+cloud "CDN\n(Static Resources)" as cdn
+component "DNS" as dns
+
+package "Proxy Layer" {
+    component "Nginx\n(Reverse Proxy / HTTPS Termination)" as nginx
+}
+
+package "Backend Application Layer (Spring Boot 3.1.2 / JDK 21)" {
+    component "Auth Filter\n(JWT / OAuth 2.0\nInterceptor)" as auth
+
+    package "Business Modules" {
+        component "User Module\n(Registration, Login,\nProfile, Permissions)" as usermod
+        component "Problem Module\n(Browse, Upload,\nReview, Edit, Delete)" as problemmod
+        component "Solution Module\n(View, Publish,\nEdit, Like, Comment)" as solutionmod
+        component "Forum Module\n(Posts, Comments,\nLikes, Reports)" as forummod
+        component "AI Module\n(Recommendation,\nAnalysis, Explanation,\nReview, @AI Reply)" as aimod
+        component "Judging Module\n(Submit, Queue,\nResult Tracking)" as judgemod
+        component "SMTP Mail Service\n(Notifications)" as smtp
+    }
+
+    component "API Documentation\n(Swagger)" as swagger
+    component "WebFlux /\nThread Pool" as webflux
+}
+
+package "Judging Service" {
+    component "JudgeHost\n(Task Scheduling,\nQueue Management)" as judgehost
+    component "JudgeCore\n(Code Execution,\nResource Limiting,\nseccomp sandbox)" as judgecore
+    node "Docker Container\n(Isolated Execution)" as dockerjudge
+}
+
+package "Data Storage Layer" {
+    database "MySQL 5.7.44\n(Business Data:\nUsers, Problems,\nSolutions, Forum,\nSubmissions, Tags)" as mysql
+    database "Redis 7.4.6\n(Cache:\nSessions, High-Freq\nData, Drafts)" as redis
+    database "MinIO\n(Object Storage:\nImages, Test Cases,\nAI Results)" as minio
+}
+
+cloud "External Services" {
+    component "LLM Service\n(via LangChain4j)" as llm
+    component "SMTP Server" as smtpserver
+}
+
+package "Observability" {
+    component "Prometheus\n(Metrics Collection)" as prometheus
+    component "Grafana\n(Visualization)" as grafana
+    component "PagerDuty /\nDingTalk Robot\n(Alerting)" as alerting
+}
+
+package "CI/CD & Deployment" {
+    component "GitLab CI/CD\n(Build, Test, Deploy)" as gitlab
+    component "Docker\n(Image Build)" as dockerbuild
+    component "Private Image Registry" as registry
+    component "Kubernetes\n(Orchestration,\nScaling, Rollback)" as k8s
+}
+
+visitor --> browser
+reguser --> browser
+admin --> browser
+
+browser ..> dns : domain resolution
+browser ..> cdn : static resources\n(CSS, JS, Images)
+browser --> nginx : HTTPS requests
+
+nginx --> auth : forward requests
+
+auth --> usermod
+auth --> problemmod
+auth --> solutionmod
+auth --> forummod
+auth --> aimod
+auth --> judgemod
+
+usermod --> smtp : send notifications
+smtp --> smtpserver : SMTP
+
+judgemod --> judgehost : HTTP judging request
+judgehost --> judgecore : execute code
+judgecore --> dockerjudge : sandboxed execution
+judgehost --> minio : fetch test cases
+
+aimod --> llm : LangChain4j API calls
+
+usermod --> mysql
+problemmod --> mysql
+solutionmod --> mysql
+forummod --> mysql
+judgemod --> mysql
+aimod --> mysql
+
+usermod --> redis
+problemmod --> redis
+forummod --> redis
+judgemod --> redis
+
+problemmod --> minio : store/retrieve files
+solutionmod --> minio : store images
+aimod --> minio : store AI results
+
+auth --> redis : token validation
+
+prometheus --> nginx : scrape metrics
+prometheus --> mysql : scrape metrics
+prometheus --> redis : scrape metrics
+prometheus --> judgehost : scrape metrics
+prometheus --> k8s : scrape metrics
+prometheus --> grafana : feed metrics
+grafana --> alerting : trigger alerts
+
+gitlab --> dockerbuild : build images
+dockerbuild --> registry : push images
+registry --> k8s : pull & deploy
+k8s --> nginx : manage deployment
+k8s --> judgehost : manage deployment
+
+@enduml

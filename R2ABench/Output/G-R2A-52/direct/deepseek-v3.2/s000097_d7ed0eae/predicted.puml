@@ -1,0 +1,69 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam ArrowColor #333333
+skinparam RectangleBorderColor #333333
+skinparam RectangleBackgroundColor #FFFFFF
+skinparam RectangleFontColor #333333
+skinparam ArrowFontColor #333333
+skinparam ArrowFontSize 12
+skinparam RectangleFontSize 12
+skinparam RectangleFontStyle normal
+skinparam Shadowing false
+
+title BeeGreen System Architecture
+
+package "Client Tier" {
+  [React/TypeScript Website] as Website
+  [Chrome Browser Extension] as Extension
+}
+
+package "API Tier" {
+  [LoopBack Node.js Server] as BackendAPI
+}
+
+package "Data Tier" {
+  database "Persistent Storage" as Storage {
+    [User Repository]
+    [InventoryItem Data]
+  }
+}
+
+package "Supporting Services" {
+  [Sustainability Scoring Service] as ScoringService
+  [Recommendation Workflow Engine] as WorkflowEngine
+}
+
+' Client to API connections
+Website --> BackendAPI : HTTP/JSON REST\n(POST/GET/PATCH /users, GET /ping)
+Extension --> BackendAPI : HTTP/JSON REST\n(POST/GET/PATCH /users, GET /ping)
+
+' API to Data connections
+BackendAPI --> Storage : Data Access\n(User CRUD Operations)
+BackendAPI --> Storage : Data Access\n(InventoryItem Read)
+
+' API to Supporting Services connections
+BackendAPI --> ScoringService : Sustainability Data
+BackendAPI --> WorkflowEngine : Recommendation Triggers
+
+' Supporting Services to Data connections
+ScoringService --> Storage : Read/Write Product Data
+WorkflowEngine --> Storage : Read User/Product Data
+
+note top of BackendAPI
+  **Documented Endpoints:**
+  POST /users (FR-001)
+  GET /users (FR-002)
+  PATCH /users (FR-003)
+  GET /users/{id} (FR-004)
+  GET /ping (FR-005)
+end note
+
+note right of Storage
+  **Data Models:**
+  User (DR-001)
+  InventoryItem (DR-002)
+end note
+
+@enduml

@@ -1,0 +1,69 @@
+@startuml
+skinparam componentStyle rectangle
+
+title Campus Helper Platform - Layered Architecture
+
+actor EndUser
+actor Admin
+
+node WeChat
+component MiniApp
+
+EndUser --> MiniApp
+Admin --> MiniApp
+MiniApp ..> WeChat : Runs within
+
+package ServerSide {
+  package PresentationLayer {
+    [REST API (Controllers)] as API
+  }
+  package BusinessLayer {
+    [Product Service] as ProdSvc
+    [Order Service] as OrdSvc
+    [User & Auth Service] as UserSvc
+    [Management Service] as MgmtSvc
+  }
+  package DataLayer {
+    [User Repository] as UserRepo
+    [Product Repository] as ProdRepo
+    [Order Repository] as OrdRepo
+    [Favorite Repository] as FavRepo
+    [Tag/Category Repository] as TagRepo
+    [Admin Log Repository] as LogRepo
+  }
+  package DataEntityLayer {
+    database DB
+  }
+}
+
+MiniApp --> API : HTTPS/JSON
+
+API --> ProdSvc
+API --> OrdSvc
+API --> UserSvc
+API --> MgmtSvc
+
+ProdSvc --> ProdRepo
+ProdSvc --> TagRepo
+OrdSvc --> OrdRepo
+UserSvc --> UserRepo
+UserSvc --> FavRepo
+MgmtSvc --> LogRepo
+MgmtSvc --> UserRepo
+MgmtSvc --> ProdRepo
+MgmtSvc --> OrdRepo
+
+UserRepo --> DB
+ProdRepo --> DB
+OrdRepo --> DB
+FavRepo --> DB
+TagRepo --> DB
+LogRepo --> DB
+
+component Mon
+ProdSvc --> Mon
+OrdSvc --> Mon
+UserSvc --> Mon
+MgmtSvc --> Mon
+
+@enduml

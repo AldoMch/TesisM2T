@@ -1,0 +1,102 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+
+title Archifiltre-Docs Architecture\n(Settings Sanitization, Export Generation, Hash Computation)
+
+package "Electron Desktop Application" {
+
+    package "Main Process Layer" {
+        component [Settings Sanitizer] as SettingsSanitizer
+        component [Export Controller] as ExportController
+        component [Hash Controller] as HashController
+        component [Translation Module] as TranslationModule
+    }
+
+    package "Background Worker / Child Process Layer" {
+        component [Tree CSV Export Worker] as TreeCsvWorker
+        component [RESIP Export Worker] as ResipWorker
+        component [CSV Export Worker] as CsvWorker
+        component [Excel Export Worker] as ExcelWorker
+        component [Hash Computation Worker\n(Batch Processing)] as HashWorker
+    }
+
+    package "Observable / Stream Interface Layer" {
+        component [Export Observable Stream] as ExportStream
+        component [Hash Data Stream] as HashStream
+    }
+
+    database "User Settings Store\n(Persisted Settings)" as UserSettingsStore {
+        storage "isTrackingEnabled\nisMonitoringEnabled\nlanguage" as SettingsFields
+    }
+
+    database "Application User Data Directory" as UserDataDir {
+        file "hash-result-debug" as HashResultDebug
+        file "hash-error-debug" as HashErrorDebug
+    }
+}
+
+package "Export Data Inputs" {
+    component [Files & Folders Map] as FilesAndFolders
+    component [Metadata] as Metadata
+    component [Aliases] as Aliases
+    component [Comments] as Comments
+    component [Tags] as Tags
+    component [Hashes] as Hashes
+}
+
+package "Export Outputs" {
+    artifact "CSV Export Output" as CsvOutput
+    artifact "Tree CSV Export Output" as TreeCsvOutput
+    artifact "RESIP Export Output" as ResipOutput
+    artifact "Excel Export Output" as ExcelOutput
+    artifact "Hash Map Results" as HashMapResults
+}
+
+' Settings flow
+UserSettingsStore --> SettingsSanitizer : persisted settings input
+SettingsSanitizer --> UserSettingsStore : normalized settings with defaults
+
+' Translation module provides language to export controller
+TranslationModule --> ExportController : current language value
+
+' Export controller orchestrates workers
+ExportController --> TreeCsvWorker : files-and-folders map + language
+ExportController --> ResipWorker : files, metadata, aliases,\ncomments, tags + language
+ExportController --> CsvWorker : aliases, comments, files,\nmetadata, tags, hashes + language
+ExportController --> ExcelWorker : CsvExporterData + language
+
+' Data inputs flow to export controller
+FilesAndFolders --> ExportController
+Metadata --> ExportController
+Aliases --> ExportController
+Comments --> ExportController
+Tags --> ExportController
+Hashes --> ExportController
+
+' Workers deliver via Observable/Stream layer
+TreeCsvWorker --> ExportStream : async progress + CSV result
+ResipWorker --> ExportStream : async progress + RESIP result
+CsvWorker --> ExportStream : async progress + CSV result
+ExcelWorker --> ExportStream : async export results
+
+' Hash controller
+HashController --> HashWorker : paths + basePath\n(batch processing)
+HashWorker --> HashStream : data processing stream
+HashWorker --> HashResultDebug : buffered debug writer
+HashWorker --> HashErrorDebug : buffered debug writer
+HashStream --> HashMapResults : aggregated hash maps
+
+' Outputs
+ExportStream --> TreeCsvOutput
+ExportStream --> ResipOutput
+ExportStream --> CsvOutput
+ExportStream --> ExcelOutput
+
+' Electron runtime dependency
+note bottom of UserDataDir
+  Accessed via Electron
+  app.getPath("userData")
+end note
+
+@enduml

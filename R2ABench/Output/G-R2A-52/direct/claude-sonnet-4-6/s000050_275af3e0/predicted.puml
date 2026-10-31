@@ -1,0 +1,192 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+  FontColor #000000
+}
+
+skinparam package {
+  BackgroundColor #F0F0F0
+  BorderColor #999999
+  FontColor #000000
+}
+
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontColor #000000
+}
+
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #333333
+  FontSize 11
+}
+
+title hAFL2 — Hypervisor Fuzzing System Architecture
+
+'==============================================================
+' TOP-LEVEL ZONES
+'==============================================================
+
+package "Developer / Operator CLI" as CLI_ZONE {
+  component "Standalone Test\nEntry Point\n(kAFL-Fuzzer/test.py)" as TEST_RUNNER
+  component "Linux Launch\nScripts (bash)" as LINUX_LAUNCH
+  component "Windows Build\nScript\n(compile.sh)" as WIN_BUILD
+  component "Visual Studio\nBuild Tool" as VS_BUILD
+}
+
+package "kAFL-Fuzzer Core" as KAFL_CORE {
+  component "pytest Test\nExecution Engine" as PYTEST
+  component "Random Mutator\nTest Suite" as MUT_RANDOM
+  component "Deterministic Mutator\nTest Suite\n(bitflip, byte, etc.)" as MUT_DET
+  component "Havoc Mutator\nTest Suite" as MUT_HAVOC
+  component "Payload Data\n(byte array)" as PAYLOAD_DATA
+  component "Effector Map\n(boolean[])" as EFFECTOR_MAP
+}
+
+package "Linux Userspace Fuzzing Workflow" as LINUX_ZONE {
+  node "Host Linux System" as LINUX_HOST {
+    component "initrd Builder" as INITRD_BUILDER
+    component "Shared Library\nCollector" as LIB_COLLECTOR
+    database "initrd Image\n(target binary +\nshared libs)" as INITRD_IMG
+  }
+  node "Linux Guest VM" as LINUX_GUEST {
+    component "Embedded\nForkserver" as FORKSERVER
+    component "Target Userspace\nBinary" as TARGET_BIN
+  }
+}
+
+package "Windows Hyper-V Fuzzing Workflow" as WIN_ZONE {
+
+  node "Child Partition VM\n(Windows)" as CHILD_VM {
+    component "Harness Driver\n(compiled w/ VS)" as HARNESS_DRV
+    component "packet_sender.exe\n(IOCTL trigger)" as PKT_SENDER
+    component "loader.exe\n(snapshot + load\n+ execute)" as LOADER_EXE
+    component "Child Partition\nFuzzing Payload\nSource" as CHILD_PAYLOAD
+  }
+
+  node "Root Partition VM\n(Windows)" as ROOT_VM {
+    component "VMSwitch\n(vmswitch.sys)\nFuzzing Target" as VMSWITCH
+    component "Crash Monitor\nDriver\n(compiled w/ VS)" as CRASH_MON
+    component "netvsc / VMBus\nChannel" as VMBUS
+  }
+
+  component "Windows Build\nArtifacts\n(offset config\nper build)" as WIN_ARTIFACTS
+}
+
+package "hAFL2 Fuzzing Controller" as HAFL2_CTRL {
+  component "hAFL2 Core\nOrchestrator" as HAFL2_CORE
+  component "Crash Result\nHandler" as CRASH_HANDLER
+  component "Coverage /\nFeedback Collector" as COVERAGE
+}
+
+cloud "kAFL Hypercall\nInterface" as HYPERCALL_IF
+
+'==============================================================
+' RELATIONSHIPS — CLI to subsystems
+'==============================================================
+
+TEST_RUNNER --> PYTEST : invokes
+TEST_RUNNER --> MUT_RANDOM : runs
+TEST_RUNNER --> MUT_DET : runs
+TEST_RUNNER --> MUT_HAVOC : runs
+
+PYTEST --> MUT_RANDOM : executes
+PYTEST --> MUT_DET : executes
+PYTEST --> MUT_HAVOC : executes
+
+MUT_DET --> PAYLOAD_DATA : mutates / restores
+MUT_DET --> EFFECTOR_MAP : reads (optional)
+MUT_RANDOM --> PAYLOAD_DATA : mutates
+MUT_HAVOC --> PAYLOAD_DATA : mutates
+
+LINUX_LAUNCH --> INITRD_BUILDER : triggers build
+LINUX_LAUNCH --> HAFL2_CORE : launches kAFL workflow
+
+WIN_BUILD --> WIN_ARTIFACTS : compiles\n(compile.sh)
+VS_BUILD --> HARNESS_DRV : compiles
+VS_BUILD --> CRASH_MON : compiles
+
+'==============================================================
+' LINUX USERSPACE WORKFLOW
+'==============================================================
+
+INITRD_BUILDER --> LIB_COLLECTOR : requests shared libs
+LIB_COLLECTOR --> INITRD_IMG : copies host libs
+INITRD_BUILDER --> INITRD_IMG : packages target binary
+
+INITRD_IMG --> LINUX_GUEST : loaded into guest
+FORKSERVER --> TARGET_BIN : forks & executes
+FORKSERVER --> HYPERCALL_IF : maps kAFL hypercalls\nto AFL-style I/O
+HYPERCALL_IF --> HAFL2_CORE : hypercall signals
+FORKSERVER --> COVERAGE : coverage / iteration feedback
+
+'==============================================================
+' WINDOWS HYPER-V FUZZING WORKFLOW
+'==============================================================
+
+WIN_ARTIFACTS --> LOADER_EXE : build artifact
+WIN_ARTIFACTS --> PKT_SENDER : build artifact
+
+LOADER_EXE --> PKT_SENDER : loads & executes
+LOADER_EXE --> CHILD_VM : creates fuzzing snapshot
+
+HARNESS_DRV --> CHILD_PAYLOAD : sources fuzzing payload
+CHILD_PAYLOAD --> PKT_SENDER : payload provided
+PKT_SENDER --> VMBUS : IOCTL triggers\npacket send via\nnetvsc/VMBus
+VMBUS --> VMSWITCH : fuzzing payload\ndelivered to target
+
+CRASH_MON --> VMSWITCH : monitors for crashes
+CRASH_MON --> CRASH_HANDLER : returns crash\nmonitoring result
+
+'==============================================================
+' hAFL2 CONTROLLER
+'==============================================================
+
+HAFL2_CORE --> LINUX_GUEST : orchestrates\nLinux fuzzing
+HAFL2_CORE --> CHILD_VM : orchestrates\nWindows fuzzing
+CRASH_HANDLER --> HAFL2_CORE : crash status feedback
+COVERAGE --> HAFL2_CORE : feedback loop
+
+'==============================================================
+' NOTES
+'==============================================================
+
+note bottom of CHILD_VM
+  DSE must be disabled (elevated cmd)
+  VM must be powered off before config
+  VM restarted after DSE disable
+end note
+
+note bottom of WIN_ARTIFACTS
+  Windows-build-specific offset must
+  be set in source before compilation
+  (C-004, NFR-005, DR-005)
+end note
+
+note right of INITRD_IMG
+  DR-001: target binary packaged
+  DR-002: shared libs from host
+  (C-001: BSD 3-Clause / AGPL-3.0)
+end note
+
+@enduml

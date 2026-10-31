@@ -1,0 +1,103 @@
+@startuml
+
+package "Presentation/UI Layer" {
+  component "Vue.js / Vue 3.0 Web UI\nLogin, profile, mining, upload, results, projects, tasks\n(Ant Design, vue-router, Pinia)" as VueUI
+  component "Registration / Sign-up UI\nAccount creation, sign-up flow" as RegistrationUI
+  component "Axios HTTP Client" as Axios
+}
+
+cloud "Tencent Cloud\nDeployment/runtime & public access hosting" as TencentCloud {
+  node "Docker\nContainerized deployment & environment consistency" as Docker {
+
+    package "Gateway/Edge Layer" {
+      component "Nginx Reverse Proxy\nReverse proxy, forwarding, load balancing" as Nginx
+      component "Spring Gateway" as SpringGateway
+      component "Spring Security\nAuthentication & authorization\n(Registration/sign-up, login, roles)" as SpringSecurity
+    }
+
+    package "Application/Microservice Layer" {
+      component "Spring Boot / Spring Cloud Microservices\nService discovery, config, load balancing, inter-service comm." as SpringCloud
+      component "User/Role Management Component\nAdmin, annotator, researcher; roles, task switching, profile,\nregistration/sign-up, user/role persistence" as UserRoleMgmt
+
+      package "Annotation Subsystem" {
+        component "Annotation Controllers/Services\nAnnotator, file, label, login, paper, project,\nresult export/return, tag, task, user" as AnnotationAPI
+        component "Annotation Management Component\nProjects, annotators, documents, tags, marks, tasks, results, users" as AnnotationMgmt
+        component "Annotation Preset Management\nParagraph/entity annotation presets, preset rules/templates" as AnnotationPreset
+      }
+
+      package "Mining Subsystem" {
+        component "Mining Subsystem Services\nUpload, format conversion, model selection, information extraction" as MiningServices
+        component "Mining Workflow Component\nParagraph-level info extraction, key data, few-shot extraction" as MiningWorkflow
+      }
+
+      package "Shared Document Services" {
+        component "Document Conversion Component\nPDF, HTML, TXT reference maintenance\n(for mining and annotation workflows)" as DocConversion
+      }
+    }
+
+    package "Data Access/Persistence Layer" {
+      component "MyBatis / MyBatis Plus\nORM / database access" as MyBatis
+    }
+  }
+}
+
+package "Storage/Cache Layer" {
+  database "MySQL\nStructured records" as MySQL
+  component "Minio / Object Storage\nText/unstructured documents, object IDs, bucket refs" as Minio
+  component "Redis Cache\nCache access" as Redis
+}
+
+package "Asynchronous Messaging Layer" {
+  component "RabbitMQ\nAsync file conversion and processing" as RabbitMQ
+}
+
+package "ML/Model Layer" {
+  component "BERT Model\nParagraph model / paragraph localization" as BERT
+  interface "GPT / GPT API\nEntity model / interface capability" as GPTAPI
+}
+
+VueUI --> Axios
+RegistrationUI --> Axios
+Axios --> Nginx
+Nginx --> SpringGateway
+SpringGateway --> SpringSecurity
+SpringSecurity --> SpringCloud
+SpringCloud --> UserRoleMgmt
+SpringCloud --> AnnotationAPI
+SpringCloud --> MiningServices
+
+UserRoleMgmt --> MyBatis
+
+AnnotationAPI --> AnnotationMgmt
+AnnotationAPI --> AnnotationPreset
+AnnotationMgmt --> AnnotationPreset
+AnnotationPreset --> MyBatis
+
+AnnotationAPI --> BERT
+AnnotationAPI --> GPTAPI
+AnnotationMgmt --> BERT
+AnnotationMgmt --> GPTAPI
+AnnotationMgmt --> DocConversion
+
+MiningServices --> MiningWorkflow
+MiningServices --> DocConversion
+MiningWorkflow --> BERT
+MiningWorkflow --> GPTAPI
+MiningServices --> BERT
+MiningServices --> GPTAPI
+MiningServices --> AnnotationMgmt : consumes annotation outputs for mining
+
+AnnotationMgmt --> MyBatis
+MiningServices --> MyBatis
+DocConversion --> MyBatis
+MyBatis --> MySQL
+
+AnnotationMgmt --> Minio
+AnnotationMgmt --> Redis
+AnnotationMgmt --> RabbitMQ
+MiningServices --> Minio
+MiningServices --> RabbitMQ
+DocConversion --> Minio
+DocConversion --> RabbitMQ
+
+@enduml

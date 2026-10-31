@@ -1,0 +1,56 @@
+@startuml
+title Kubescape host-scanner Deployment and Component Architecture (from SRS)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "HTTP Client" as Client
+actor "E2E Test Runner\n(Go build tags)" as Tester
+
+node "Kubernetes Cluster" {
+  node "Worker Node" {
+    node "host-scanner Pod\n(DaemonSet, privileged)" {
+      node "host-scanner Container" as Container {
+        component "HTTP API Service" as Api
+        component "Host Info Collector" as Collector
+        component "CNI Directory Resolver" as CniResolver
+        component "JSON Sanitizer" as Sanitizer
+        artifact "Process Args & Runtime Config" as ProcCfg
+      }
+    }
+
+    node "Kubelet" as Kubelet
+    node "Container Runtime\n(containerd / CRI-O)" as Runtime
+
+    folder "Host Filesystem" as HostFS {
+      folder "/etc" as etc
+      folder "/run" as run
+      folder "/var/lib" as varlib
+      file "CNI Config Files" as CniCfg
+      file "Control-Plane JSON\n(e.g., encryption provider config)" as CpJson
+    }
+  }
+}
+
+' External interactions
+Client --> Api : HTTP requests/responses\n(404 for unknown paths)
+Tester --> Api : E2E HTTP tests
+Tester ..> Sanitizer : Provider-specific\nexpected data via build tags
+
+' Intra-container flows
+Api --> Collector : Request host/node info
+Api --> CniResolver : Resolve CNI configuration dir
+Api --> Sanitizer : Sanitize control-plane JSON
+
+' Host access
+Collector --> HostFS : Read host/node data (mounted volumes)
+CniResolver --> CniCfg : Read CNI configuration
+CniResolver ..> ProcCfg : Use runtime/CLI inputs
+Sanitizer --> CpJson : Read control-plane JSON\nremove secrets
+
+' Runtime and agent contexts
+CniResolver ..> Runtime : Use runtime type
+Collector ..> Kubelet : Interact with node-agent context
+Collector ..> Runtime : Access container runtime context
+
+@enduml

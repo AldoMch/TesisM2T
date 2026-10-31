@@ -1,0 +1,96 @@
+@startuml
+title lowes/auditor - Client-side Auditing Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+actor Developer as dev
+
+node "JVM Application (Java 11)" as app {
+  component "Application Service\n(Integrating Code)" as svc
+  component "Auditor Client API\nlowes/auditor" as auditor <<library>>
+  interface "EventPublisher" as iPublisher
+  interface "LogProvider" as iLogger
+  interface "AuditEventElementFilter" as iFilter
+
+  component "Comparator" as comparator
+  component "Filter Engine" as filterEngine
+  component "Event Builder" as builder
+  component "JSON Serializer" as serializer
+
+  component "Logger Impl" as loggerImpl <<pluggable>>
+
+  artifact "Domain Objects\noldObject, newObject" as domain
+  artifact "AuditorEventConfig\n- applicationName\n- eventSource\n- eventSubType\n- metadata\n- filters.element: enabled, types, includes" as config
+  artifact "Element Includes" as includes
+  artifact "AuditEvent JSON\n- elements: name, previousValue, updatedValue, metadata.fqdn\n- eventType: CREATED | UPDATED | DELETED\n- metadata: applicationName, eventSource, eventSubType" as auditJson
+
+  dev --> svc : integrate API\nand configuration
+  svc --> auditor : audit(oldObject, newObject, config)
+
+  svc --> domain
+  domain --> auditor
+  svc --> config
+  config --> auditor
+  config --> includes
+  includes --> filterEngine
+
+  auditor ..> iPublisher : uses
+  auditor ..> iLogger : uses
+  auditor ..> iFilter : uses
+
+  auditor --> comparator : detect changes
+  auditor --> filterEngine : apply filters
+  comparator --> builder : changed elements
+  filterEngine ..> iFilter : filter strategies
+  filterEngine --> builder : included elements
+
+  builder --> serializer : build AuditEvent
+  serializer --> auditJson
+  auditJson --> iPublisher
+
+  loggerImpl -up-|> iLogger : provides
+}
+
+cloud "Event Streaming" as es {
+  node "Kafka Cluster" as kafka {
+    queue "Topic: audit.events" as topic
+  }
+}
+
+component "KafkaPublisher" as kafkaPub <<default>>
+kafkaPub -up-|> iPublisher : provides
+kafkaPub --> topic : produce JSON
+
+component "CustomPublisher\n(optional)" as customPub <<optional>>
+customPub -up-|> iPublisher : provides
+' CustomPublisher may publish to non-Kafka targets (not shown)
+
+rectangle "Downstream Consumers (Out of Scope)" as consumers {
+  component "Event Consumer Service(s)" as consumerSvc
+  consumerSvc --> topic : consume JSON\n→ deserialize to AuditEvent
+}
+
+node "Logging Sink" as logSink
+loggerImpl --> logSink : application logs
+
+auditor --> iLogger : audit logs
+auditor --> iPublisher : publish(auditJson)
+
+note top of auditor
+Kotlin client library for JVM apps.
+Compares object states and emits AuditEvent.
+end note
+
+note right of kafkaPub
+Default EventPublisher implementation
+using Kafka producer configuration.
+end note
+
+note bottom of topic
+Published payload is JSON deserializable
+into AuditEvent by consumers.
+end note
+
+@enduml

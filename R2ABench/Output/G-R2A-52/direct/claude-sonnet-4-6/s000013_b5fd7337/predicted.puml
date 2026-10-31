@@ -1,0 +1,145 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2E86AB
+  FontColor #1A1A2E
+  FontSize 13
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #2E86AB
+  FontColor #1A1A2E
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #F57C00
+  FontColor #1A1A2E
+  FontSize 12
+}
+skinparam actor {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontColor #1A1A2E
+  FontSize 12
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+  FontColor #1A1A2E
+  FontSize 12
+}
+skinparam rectangle {
+  BackgroundColor #EDE7F6
+  BorderColor #512DA8
+  FontColor #1A1A2E
+  FontSize 12
+}
+skinparam arrow {
+  Color #37474F
+  FontColor #37474F
+  FontSize 11
+}
+skinparam linetype ortho
+
+title Song Mood Storage, Retrieval & Search — System Architecture
+
+actor "End User\n(Browser)" as EndUser
+actor "Data Inspector /\nOperator" as Inspector
+
+cloud "External Services" {
+  component "Genius API\n(External Song Search)" as GeniusAPI
+}
+
+rectangle "Docker Application Network" {
+
+  node "Frontend Container\n[React]" as FrontendContainer {
+    component "React Web App\n(Song Mood Lookup UI)" as ReactApp
+  }
+
+  node "Backend Container\n[FastAPI]" as BackendContainer {
+    component "FastAPI Application" as FastAPIApp
+    component "Song Lookup\nWorkflow" as LookupWorkflow
+    component "Elasticsearch\nClient" as ESClient
+    component "Genius API\nClient" as GeniusClient
+  }
+
+  node "Elasticsearch Container" as ESContainer {
+    database "Elasticsearch\nIndex" as ESIndex {
+      component "Song Records\n(name, SLink, lyrics, language)" as SongRecords
+      component "Mood Associations\n(song identity + mood value)" as MoodAssoc
+      component "Artist Metadata\n(name, genres, song count)" as ArtistMeta
+    }
+  }
+
+  node "Kibana Container" as KibanaContainer {
+    component "Kibana Data\nInspection UI" as KibanaUI
+  }
+
+}
+
+' User to Frontend
+EndUser -right-> ReactApp : "HTTP Browser Access\n(COM-001, UI-001, FR-001)"
+
+' Inspector to Kibana
+Inspector -down-> KibanaUI : "HTTP Browser Access\n(UI-002, FR-006)"
+
+' Frontend to Backend
+ReactApp -down-> FastAPIApp : "Song Lookup Request\n(API-001, HTTP/REST)"
+
+' Backend internal flow
+FastAPIApp -down-> LookupWorkflow : "Invoke Lookup Logic"
+LookupWorkflow -right-> ESClient : "Query / Write\nSong & Mood Data"
+LookupWorkflow -right-> GeniusClient : "Search Missing Song\n(FR-003)"
+
+' Backend to Elasticsearch
+ESClient -down-> ESIndex : "Query Known Songs\n& Store Mood Associations\n(API-002, FR-002, FR-004, FR-005)"
+
+' Backend to Genius API
+GeniusClient -right-> GeniusAPI : "External Song Search\n(API-003, COM-003, C-007)"
+
+' Kibana to Elasticsearch
+KibanaUI -left-> ESIndex : "Data Inspection\n(API-004, FR-006)"
+
+' Return flows (noted as notes)
+GeniusAPI --[dashed]--> GeniusClient : "Search Results\n(DEF-004, DR-005)"
+ESIndex --[dashed]--> ESClient : "Stored Mood Value\n(DEF-003, NFR-002)"
+FastAPIApp --[dashed]--> ReactApp : "Mood Response\n(FR-002, FR-003)"
+
+note top of FrontendContainer
+  <b>C-001</b>: React technology
+  <b>NFR-003</b>: Browser accessible
+  <b>NFR-001</b>: Separate Docker container
+end note
+
+note top of BackendContainer
+  <b>C-002</b>: FastAPI technology
+  <b>C-005</b>: Depends on Genius API
+  <b>NFR-004</b>: Elasticsearch as authoritative store
+  <b>C-009</b>: No classifier / inference module
+end note
+
+note bottom of ESContainer
+  <b>C-003</b>: Elasticsearch for persistent storage
+  <b>DR-001</b>: Song records (name, SLink, lyrics, language)
+  <b>DR-002</b>: Artist metadata (name, genres, song count)
+  <b>DR-003</b>: Mood associations stored here
+  <b>DR-004</b>: English songs dataset scope
+end note
+
+note bottom of KibanaContainer
+  <b>C-004</b>: Kibana as auxiliary data UI
+  Depends on Elasticsearch availability
+end note
+
+note right of GeniusAPI
+  <b>C-007</b>: External dependency only
+  Not an internal container service
+  <b>C-008</b>: English songs dataset scope
+end note
+
+@enduml

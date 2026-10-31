@@ -1,0 +1,125 @@
+@startuml
+title Bunny Code System Architecture
+
+' === Presentation Layer ===
+node "Presentation Layer" {
+    component "Vue Frontend" as FE
+}
+
+' === API Layer ===
+node "API Layer" {
+    component "Node.js/Express Backend" as API
+    () REST
+    () SocketChannel
+    () JWT
+}
+
+' === Business Logic Layer ===
+node "Business Logic Layer" {
+    component "Project Service" as ProjSvc
+    component "Workspace Service" as WkspSvc
+    component "Code Execution Service" as ExecSvc
+    component "Playback Service" as PlaySvc
+    component "Battle Service" as BattleSvc
+    component "File Service" as FileSvc
+    component "Workspace Authorization Service" as WkspAuthzSvc
+    component "Collaboration Coordinator" as CollabCoord
+    component "Battle Invitation Manager" as BattleInviteMgr
+}
+
+' === Data Layer ===
+node "Data Layer" {
+    database "MySQL Database" as MySQL
+    database "InfluxDB Database" as InfluxDB
+    database "Redis Cache" as Redis
+}
+
+' === Infrastructure Layer ===
+node "Infrastructure Layer" {
+    node "Docker Sandbox" as Docker
+    cloud "Object Storage" as ObjStore
+    cloud "CDN Distribution" as CDN
+    component "Nginx Proxy" as Nginx
+}
+
+' === External Interfaces ===
+interface "Storage Interface" as StoreInterface
+interface "CDN Interface" as CDNInterface
+interface "Execution Interface" as ExecInterface
+interface "Cache Access" as CacheAccess
+interface "Database Access" as DBAccess
+
+' === Connections ===
+
+' Presentation to API
+FE --> REST : uses
+FE --> SocketChannel : uses
+FE --> ObjStore : direct asset access
+FE --> CDN : fetch assets
+
+' API Layer internal
+API ..() REST
+API ..() SocketChannel
+API ..() JWT
+
+' Business Logic to API (implementing endpoints)
+ProjSvc --> API : implements
+WkspSvc --> API : implements
+ExecSvc --> API : implements
+PlaySvc --> API : implements
+BattleSvc --> API : implements
+FileSvc --> API : implements
+WkspAuthzSvc --> API : implements
+CollabCoord --> API : implements
+BattleInviteMgr --> API : implements
+
+' Data Access
+ProjSvc --> MySQL : accesses
+WkspSvc --> MySQL : accesses
+ExecSvc --> MySQL : logs execution
+PlaySvc --> MySQL : stores playback metadata
+BattleSvc --> MySQL : persists battles
+FileSvc --> MySQL : stores file metadata
+WkspAuthzSvc --> MySQL : checks permissions
+BattleInviteMgr --> MySQL : stores invitations
+CollabCoord --> MySQL : stores session info
+
+' Authentication & Authorization
+ProjSvc --> JWT : validates tokens
+WkspSvc --> JWT : validates tokens
+ExecSvc --> JWT : validates tokens
+PlaySvc --> JWT : validates tokens
+BattleSvc --> JWT : validates tokens
+FileSvc --> JWT : validates tokens
+WkspAuthzSvc --> JWT : validates tokens
+CollabCoord --> JWT : validates tokens
+BattleInviteMgr --> JWT : validates tokens
+
+' Workspace & Redis
+WkspSvc --> Redis : coordinates sessions
+CollabCoord --> Redis : manages locks/state
+
+' Battle & Redis
+BattleSvc --> Redis : manages live state
+
+' Code Execution & Docker
+ExecSvc --> Docker : routes executions
+
+' Playback & InfluxDB
+PlaySvc --> InfluxDB : records/query telemetry
+
+' File Service & Storage
+FileSvc --> ObjStore : uploads/distributes
+FileSvc --> CDN : distributes assets
+
+' Infrastructure connections
+Nginx --> API : reverse proxies
+Nginx --> FE : serves static content
+API --> Docker : triggers via deployment hooks
+API --> ObjStore : configures storage
+API --> CDN : invalidates/purges cache
+API --> MySQL : schema migrations
+API --> Redis : cache config
+API --> InfluxDB : telemetry setup
+
+@enduml

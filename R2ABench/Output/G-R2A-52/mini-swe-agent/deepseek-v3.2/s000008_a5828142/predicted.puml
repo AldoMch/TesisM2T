@@ -1,0 +1,183 @@
+@startuml
+
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATABASE_COLOR #F0FFF0
+!define CACHE_COLOR #FFF8E1
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Database>> DATABASE_COLOR
+  BackgroundColor<<Cache>> CACHE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title Bunny Code - Collaborative Coding Platform Architecture
+
+' === LAYERS ===
+component "Client Layer" <<Layer>> {
+  component "Web Browser (Vue.js)" as Browser {
+    component "REST API Client" as RESTClient
+    component "Socket.IO Client" as SocketClient
+    component "Code Editor" as CodeEditor
+    component "Battle Interface" as BattleUI
+  }
+}
+
+component "Application Layer" <<Layer>> {
+  component "Node.js/Express Backend" as Backend {
+    component "Authentication Service" as AuthService
+    component "Project Management" as ProjectService
+    component "Workspace Coordination" as WorkspaceService
+    component "Battle Management" as BattleService
+    component "Code Execution Service" as ExecutionService
+    component "File Upload Service" as FileService
+    component "Playback Service" as PlaybackService
+    
+    component "REST API Gateway" as APIGateway
+    component "Socket.IO Server" as SocketServer
+  }
+}
+
+component "Data Layer" <<Layer>> {
+  component "MySQL Database" <<Database>> as MySQL {
+    component "Users Table" as UsersDB
+    component "Projects Table" as ProjectsDB
+    component "Versions Table" as VersionsDB
+    component "Battles Table" as BattlesDB
+  }
+  
+  component "InfluxDB" <<Database>> as InfluxDB {
+    component "Coding Process Records" as TimeSeriesDB
+  }
+  
+  component "Redis Cache" <<Cache>> as Redis {
+    component "Workspace State" as WorkspaceCache
+    component "Battle Invitations" as BattleInviteCache
+    component "Battle State" as BattleStateCache
+  }
+}
+
+component "External Services Layer" <<Layer>> {
+  component "Docker Sandbox" <<External>> as DockerSandbox {
+    component "Code Execution Engine" as ExecutionEngine
+  }
+  
+  component "Object Storage (S3-compatible)" <<External>> as ObjectStorage {
+    component "Code Files" as CodeStorage
+    component "Battle Results" as BattleStorage
+    component "User Files" as UserStorage
+    component "Static Assets" as AssetStorage
+  }
+  
+  component "CDN Distribution" <<External>> as CDN {
+    component "Content Delivery" as ContentDelivery
+  }
+}
+
+component "Infrastructure Layer" <<Layer>> {
+  component "Nginx Reverse Proxy" <<External>> as Nginx
+  component "Deployment Scripts" <<External>> as Deployment
+}
+
+' === CONNECTIONS ===
+' Client to Application Layer
+Browser --> APIGateway : REST API (HTTP/HTTPS)
+Browser --> SocketServer : WebSocket (Socket.IO)
+
+' Internal Backend Connections
+APIGateway --> AuthService : Authentication Requests
+APIGateway --> ProjectService : Project Operations
+APIGateway --> ExecutionService : Code Execution
+APIGateway --> FileService : File Uploads
+APIGateway --> PlaybackService : Playback Queries
+
+SocketServer --> WorkspaceService : Workspace Events
+SocketServer --> BattleService : Battle Events
+
+' Backend to Data Layer
+AuthService --> UsersDB : User CRUD
+ProjectService --> ProjectsDB : Project CRUD
+ProjectService --> VersionsDB : Version CRUD
+BattleService --> BattlesDB : Battle CRUD
+PlaybackService --> TimeSeriesDB : Time-Series Queries
+
+' Backend to Cache
+WorkspaceService --> WorkspaceCache : Real-time State
+BattleService --> BattleInviteCache : Temporary Invitations
+BattleService --> BattleStateCache : Battle Coordination
+
+' Backend to External Services
+ExecutionService --> ExecutionEngine : Code Execution Requests
+FileService --> CodeStorage : Store Code Files
+FileService --> BattleStorage : Store Battle Results
+FileService --> UserStorage : Store User Files
+FileService --> AssetStorage : Store Static Assets
+
+' Storage to CDN
+ObjectStorage --> ContentDelivery : Distributable URLs
+
+' Infrastructure Connections
+Nginx --> Browser : Serve Frontend
+Nginx --> Backend : Reverse Proxy
+Deployment --> Backend : Automated Deployment
+Deployment --> MySQL : Database Setup
+Deployment --> InfluxDB : Time-series Setup
+Deployment --> Redis : Cache Configuration
+Deployment --> DockerSandbox : Sandbox Setup
+Deployment --> ObjectStorage : Storage Configuration
+Deployment --> CDN : Distribution Setup
+
+' === NOTES AND CONSTRAINTS ===
+note right of Browser
+  Vue.js Frontend Application
+  - Real-time collaboration
+  - Code editing
+  - Battle participation
+end note
+
+note right of Backend
+  Node.js/Express with Socket.IO
+  - JWT authentication
+  - Real-time coordination
+  - Sandbox isolation
+end note
+
+note right of MySQL
+  Relational Data Storage:
+  - Users, Projects, Versions
+  - Battles, Problems
+end note
+
+note right of InfluxDB
+  Time-Series Data:
+  - Coding process records
+  - Playback data
+end note
+
+note right of Redis
+  Real-time Coordination:
+  - Workspace state
+  - Battle invitations
+  - Battle state
+end note
+
+note right of DockerSandbox
+  Code Execution Sandbox:
+  - Docker-based isolation
+  - Secure execution
+end note
+
+note right of ObjectStorage
+  S3-compatible Storage:
+  - Code files
+  - Battle results
+  - User files
+  - Static assets
+end note
+
+@enduml

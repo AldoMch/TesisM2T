@@ -1,0 +1,56 @@
+@startuml
+title GKE Pub/Sub WebSocket Adapter - System Architecture
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+
+actor "Web Client\n(Browser / WebSocket)" as Client
+
+rectangle "Google Cloud Platform" {
+  component "Pub/Sub Topic\nprojects/<project-id>/topics/<topic-name>\n[SI-001 / DI-001 / DR-003]" as Topic
+}
+
+rectangle "Google Kubernetes Engine" {
+
+  component "Kubernetes ConfigMap\nitem: topic = <topic-id>\n[SI-003 / DR-001]" as CM
+
+  component "LoadBalancer Service\nTCP port 80 -> targetPort 8080\n[SI-005 / FR-005 / CI-002 / NFR-004]" as SVC
+
+  component "HorizontalPodAutoscaler\nmin 1 / max 2 / CPU 80%\n[SI-006 / FR-009 / NFR-001]" as HPA
+
+  component "Adapter Deployment\n(one configured topic per instance)\n[FR-003 / DR-006]" as DEP {
+
+    component "Adapter Pod :8080\n[FR-007 / NFR-002]" as POD {
+
+      component "exec.sh\ncontainer entrypoint\n[CON-006 / FR-002]" as EXEC
+
+      component "pulltop (Node.js)\npulls topic, writes output stream\n[SI-002 / DR-007]" as PULL
+
+      component "Recent-Message Cache\nup to last 10 messages\n[DI-003 / FR-008 / NFR-003]" as CACHE
+
+      component "websocketd\nlistens on :8080\n[CI-003 / FR-002]" as WS
+    }
+  }
+}
+
+Client --> SVC : WebSocket connection\n[UI-001 / CI-001 / FR-001 / NFR-005]
+SVC --> POD : forward TCP 8080\n[FR-006 / CI-002]
+HPA --> DEP : scales replicas\n[FR-009 / NFR-001]
+CM ..> DEP : SYMBOL environment variable\n[SI-004 / FR-004 / DR-002]
+DEP --> Topic : one subscription per running instance\n[SI-001 / SI-002 / FR-007 / NFR-002]
+EXEC --> PULL : starts with SYMBOL topic parameter\n[FR-002 / DR-002]
+PULL --> CACHE : stores recent messages\n[FR-008 / DR-005]
+PULL --> WS : runtime output stream\n[CI-003 / DR-007]
+CACHE --> WS : serves cached messages on connect\n[FR-008 / DI-003]
+
+note right of DEP
+  FR-010 / CON-001..003: deployment requires a GCP
+  project with billing enabled, topic read access,
+  and Pub/Sub subscription creation permission.
+  CON-008: client-count autoscaling not assumed.
+end note
+
+@enduml

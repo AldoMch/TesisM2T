@@ -1,0 +1,175 @@
+@startuml
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam packageBorderColor #555555
+skinparam packageBackgroundColor #F5F5F5
+skinparam nodeBorderColor #336699
+skinparam nodeBackgroundColor #E8F0FE
+skinparam databaseBorderColor #8B4513
+skinparam databaseBackgroundColor #FFF8DC
+skinparam cloudBorderColor #777777
+skinparam cloudBackgroundColor #EEEEEE
+skinparam arrowColor #333333
+
+' ─────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────
+cloud "External Systems" {
+  component [Docker Compose v3.7] as DockerCompose
+  component [postgres:9.6 Image (Docker Hub)] as ImgPostgres
+  component [bitnami/spark:latest Image (Docker Hub)] as ImgSpark
+  component [jupyter/pyspark-notebook Image (Docker Hub)] as ImgJupyter
+  component [Dockerfile + Requirements\n(docker-airflow-spark build context)] as AirflowBuildCtx
+}
+
+' ─────────────────────────────────────────
+' HOST MACHINE
+' ─────────────────────────────────────────
+node "Host Machine" {
+
+  component [Host Port Mapping\n5432, 8282, 8181, 7077\n8888, 4040-4080] as HostPorts
+
+  ' ───────────────────────────────────────
+  ' NETWORKING LAYER
+  ' ───────────────────────────────────────
+  package "Networking Layer" #E3F2FD {
+    component [ComposeNetwork\n(Docker Compose Bridge Network)\nDNS: service-name resolution] as ComposeNetwork
+  }
+
+  ' ───────────────────────────────────────
+  ' SHARED STORAGE LAYER
+  ' ───────────────────────────────────────
+  package "Shared Storage Layer" #FFF9C4 {
+    component [SharedMountVolumes\n/dags  (DAG definitions)\n/spark-apps  (Spark application files)\n/notebooks  (Jupyter notebooks)\n/data  (input datasets)] as SharedMount
+  }
+
+  ' ───────────────────────────────────────
+  ' METADATA PERSISTENCE LAYER
+  ' ───────────────────────────────────────
+  package "Metadata Persistence Layer" #FCE4EC {
+    database "PostgresDB\npostgres:9.6\nport 5432" as PostgresDB
+  }
+
+  ' ───────────────────────────────────────
+  ' ORCHESTRATION LAYER
+  ' ───────────────────────────────────────
+  package "Orchestration Layer" #E8F5E9 {
+
+    node "Airflow Container\n(docker-airflow-spark:latest)" as AirflowContainer {
+      component [AirflowWebserver\nWeb UI - port 8282] as AirflowWeb
+      component [AirflowScheduler\n(LocalExecutor Mode)] as AirflowSched
+      component [SparkSubmitOperator\n(within DAGs)] as SparkSubmitOp
+      component [SparkDefaultConnection\nspark://spark:7077] as SparkConn
+      component [PySpark Runtime\n(pyspark package)\nenables spark-submit] as PySparkRT
+    }
+
+  }
+
+  ' ───────────────────────────────────────
+  ' COMPUTE LAYER
+  ' ───────────────────────────────────────
+  package "Compute Layer" #EDE7F6 {
+
+    node "Spark Master Container\n(bitnami/spark:latest)" as SparkMasterNode {
+      component [SparkMaster\nhostname: spark\nsubmit port: 7077\nWeb UI: 8181\nSPARK_MODE=master] as SparkMaster
+    }
+
+    node "Spark Worker-1 Container\n(bitnami/spark:latest)" as SW1Node {
+      component [SparkWorker-1\nSPARK_MODE=worker\nmaster: spark://spark:7077] as SparkW1
+    }
+
+    node "Spark Worker-2 Container\n(bitnami/spark:latest)" as SW2Node {
+      component [SparkWorker-2\nSPARK_MODE=worker\nmaster: spark://spark:7077] as SparkW2
+    }
+
+    node "Spark Worker-3 Container\n(bitnami/spark:latest)" as SW3Node {
+      component [SparkWorker-3\nSPARK_MODE=worker\nmaster: spark://spark:7077] as SparkW3
+    }
+
+  }
+
+  ' ───────────────────────────────────────
+  ' INTERACTIVE DEVELOPMENT LAYER
+  ' ───────────────────────────────────────
+  package "Interactive Development Layer" #FBE9E7 {
+
+    node "Jupyter Container\n(jupyter/pyspark-notebook)" as JupyterNode {
+      component [JupyterPySpark\nNotebook UI - port 8888\nSpark App UI - ports 4040-4080\ninteractive PySpark sessions] as Jupyter
+    }
+
+  }
+
+}
+
+' ═══════════════════════════════════════════
+' DEPENDENCIES / ARROWS
+' ═══════════════════════════════════════════
+
+' Docker Compose provisions all services
+DockerCompose --> AirflowContainer : provisions
+DockerCompose --> SparkMasterNode : provisions
+DockerCompose --> SW1Node : provisions
+DockerCompose --> SW2Node : provisions
+DockerCompose --> SW3Node : provisions
+DockerCompose --> JupyterNode : provisions
+DockerCompose --> PostgresDB : provisions
+
+' Custom image build
+AirflowBuildCtx --> AirflowContainer : builds docker-airflow-spark:latest
+
+' Image pulls
+ImgPostgres --> PostgresDB : image source
+ImgSpark --> SparkMasterNode : image source
+ImgSpark --> SW1Node : image source
+ImgSpark --> SW2Node : image source
+ImgSpark --> SW3Node : image source
+ImgJupyter --> JupyterNode : image source
+
+' Startup dependency
+AirflowContainer --> PostgresDB : depends_on (startup)
+
+' Orchestration internal wiring
+AirflowSched --> SparkSubmitOp : executes operator tasks
+SparkSubmitOp --> SparkConn : resolves cluster endpoint
+SparkConn --> PySparkRT : provides connection config to operator
+
+' Orchestration - Metadata (container-level)
+AirflowContainer --> PostgresDB : DAG run / task state / scheduler metadata
+
+' Orchestration - Compute
+SparkSubmitOp --> SparkMaster : submit Spark app via spark://spark:7077
+
+' Compute internal
+SparkMaster --> SparkW1 : dispatch tasks
+SparkMaster --> SparkW2 : dispatch tasks
+SparkMaster --> SparkW3 : dispatch tasks
+
+' Jupyter - Compute
+Jupyter --> SparkMaster : interactive PySpark sessions
+
+' Shared storage mounts
+AirflowContainer --> SharedMount : mounts /dags, /spark-apps, /data
+SparkSubmitOp --> SharedMount : reads Spark app files from /spark-apps
+SparkMasterNode --> SharedMount : mounts /spark-apps, /data
+SparkW1 --> SharedMount : mounts /spark-apps, /data
+SparkW2 --> SharedMount : mounts /spark-apps, /data
+SparkW3 --> SharedMount : mounts /spark-apps, /data
+Jupyter --> SharedMount : mounts /notebooks, /data
+
+' Networking
+ComposeNetwork --> AirflowContainer : DNS resolution
+ComposeNetwork --> SparkMasterNode : DNS resolution (spark)
+ComposeNetwork --> SW1Node : DNS resolution
+ComposeNetwork --> SW2Node : DNS resolution
+ComposeNetwork --> SW3Node : DNS resolution
+ComposeNetwork --> JupyterNode : DNS resolution
+ComposeNetwork --> PostgresDB : DNS resolution (postgres)
+
+' Host port exposure
+HostPorts --> AirflowWeb : 8282
+HostPorts --> SparkMaster : 8181 / 7077
+HostPorts --> PostgresDB : 5432
+HostPorts --> Jupyter : 8888 / 4040-4080
+
+@enduml

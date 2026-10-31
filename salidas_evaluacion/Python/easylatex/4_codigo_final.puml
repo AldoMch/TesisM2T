@@ -1,0 +1,21 @@
+@startuml
+component "API & Security Gateway" as compapigateway
+component "Authentication and Account Service" as compauthservice
+component "Project & Collaboration Service" as compcollabservice
+component "Data Persistence Layer" as compdatapersistence
+component "LaTeX Rendering & Export Engine" as complatexengine
+component "Document Ingestion & Recognition Service" as comprecognitionservice
+component "Version Control Service" as compversionservice
+component "Web Client Application" as compwebclient
+compapigateway --> compauthservice : gRPC / Internal REST
+compapigateway --> compcollabservice : gRPC / Internal REST
+compapigateway --> complatexengine : gRPC / Internal REST
+compapigateway --> comprecognitionservice : gRPC / Internal REST
+compapigateway --> compversionservice : gRPC / Internal REST
+compauthservice --> compdatapersistence : Encrypted Database Driver
+compcollabservice --> compdatapersistence : Encrypted Database Driver
+compcollabservice --> compversionservice : gRPC / Internal REST
+comprecognitionservice --> compdatapersistence : Encrypted Database Driver / Blob Storage
+compversionservice --> compdatapersistence : Encrypted Database Driver
+compwebclient --> compapigateway : HTTPS / WSS
+@enduml

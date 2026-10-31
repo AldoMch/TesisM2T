@@ -1,0 +1,146 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #222222
+  ArrowColor #336699
+}
+skinparam node {
+  BackgroundColor #EEF5EE
+  BorderColor #447744
+  FontColor #222222
+}
+skinparam database {
+  BackgroundColor #FFF8DC
+  BorderColor #AA8800
+  FontColor #222222
+}
+skinparam cloud {
+  BackgroundColor #F5F0FF
+  BorderColor #7755AA
+  FontColor #222222
+}
+skinparam rectangle {
+  BackgroundColor #F0F0F0
+  BorderColor #888888
+  FontColor #222222
+}
+skinparam ArrowColor #444444
+skinparam defaultFontSize 12
+
+title Prediction Cards — System Architecture
+
+actor "Prediction Participant\n(Browser User)" as User
+
+rectangle "Browser Frontend\n(React + Aeternity SDK)" {
+  component "Wallet Provider\n/ Context" as WalletCtx
+  component "Frontend Prediction\nAPI / Provider" as PredAPI
+  component "Prediction Creation\nUI" as CreateUI
+  component "Prediction Viewing\nUI" as ViewUI
+  component "Outcome NFT Operations\nUI (Fund / Rent / Withdraw / Claim)" as NFTOpsUI
+}
+
+rectangle "Aeternity Wallet\n(Browser Extension / Client)" as AEWallet
+
+node "Aeternity Blockchain" {
+  component "AENS Name Resolution" as AENS
+  component "PredictionCards\nSmart Contract\n(Sophia)" as SmartContract
+  note right of SmartContract
+    Maintains:
+    - Prediction state
+    - Outcome NFT state
+    - Oracle query/response
+    - Reward-claiming rules
+  end note
+}
+
+rectangle "Oracle Service\n(Quarkus)" {
+  component "Oracle Registration\n& Validity Manager" as OracleReg
+  component "Pending Query\nChecker (Scheduled)" as QueryChecker
+  component "Price Comparison\n& Response Submitter" as PriceComp
+  component "Runtime Configuration\nLoader" as OracleCfg
+}
+
+rectangle "Prediction-Processing Service\n(Scheduled)" {
+  component "Closed Prediction\nDetector" as ClosedDetector
+  component "Oracle Query\nInitiator" as OracleInit
+  component "Result Processor\n(Post-Oracle)" as ResultProc
+}
+
+cloud "External Price Provider\n(Market Data API)" as PriceProvider
+
+database "Prediction Media Storage\n(IPFS-compatible)" as MediaStorage
+
+rectangle "Local Contract\nIntegration-Test Environment" {
+  component "Aeternity Node\n(Local)" as LocalNode
+  component "Compiler Service\n(Local)" as LocalCompiler
+  component "Index / Debug\nEndpoint" as LocalIndex
+  component "Test Proxy\n(CORS: GET, POST, OPTIONS\nHeaders: Content-Type,\nCache-Control,\nContent-Range, Range)" as TestProxy
+}
+
+' ── User to Frontend ──────────────────────────────────────────
+User --> WalletCtx : connects wallet
+User --> CreateUI : enters asset, target price,\ntime range, NFT media
+User --> ViewUI : views predictions
+User --> NFTOpsUI : fund / rent / withdraw / claim
+
+' ── Frontend internal ─────────────────────────────────────────
+WalletCtx --> PredAPI : provides wallet context
+PredAPI --> CreateUI : exposes prediction ops\n(via context)
+PredAPI --> ViewUI : exposes prediction ops\n(via context)
+PredAPI --> NFTOpsUI : exposes prediction ops\n(via context)
+
+' ── Frontend to Wallet ────────────────────────────────────────
+PredAPI --> AEWallet : wallet-backed contract calls\n(SDK integration)
+
+' ── Wallet to Blockchain ──────────────────────────────────────
+AEWallet --> AENS : resolve contract\nby AENS name
+AENS --> SmartContract : locate deployed contract
+AEWallet --> SmartContract : submit transactions\n(create prediction,\nfund, rent, withdraw,\nclaim reward)
+
+' ── Frontend to Blockchain (read) ────────────────────────────
+PredAPI --> SmartContract : read prediction state
+
+' ── Frontend to Media Storage ────────────────────────────────
+ViewUI --> MediaStorage : load outcome NFT\nmedia references
+NFTOpsUI --> MediaStorage : load outcome NFT\nmedia references
+CreateUI --> MediaStorage : reference NFT\nmedia on creation
+
+' ── Oracle Service internal ───────────────────────────────────
+OracleCfg --> OracleReg : provides keys, node,\ncompiler, fees, validity params
+OracleCfg --> QueryChecker : provides scheduling,\nnode, network config
+OracleCfg --> PriceComp : provides network\nand key config
+
+' ── Oracle Service to Blockchain ─────────────────────────────
+OracleReg --> SmartContract : register oracle /\nextend validity (Aeternity oracle)
+QueryChecker --> SmartContract : check pending\noracle queries (scheduled)
+PriceComp --> SmartContract : submit oracle\nresult response\n(higher / lower_or_equal)
+
+' ── Oracle Service to External Price ─────────────────────────
+PriceComp --> PriceProvider : obtain actual\nasset price
+
+' ── Prediction-Processing Service ────────────────────────────
+ClosedDetector --> SmartContract : discover closed predictions
+ClosedDetector --> OracleInit : trigger oracle query\nfor closed prediction
+OracleInit --> SmartContract : initiate oracle query\n(asset, target price, end time)
+ResultProc --> SmartContract : drive on-chain result processing\nafter oracle response available
+SmartContract --> ResultProc : oracle response available\n(winning outcome + reward path)
+
+' ── Prediction-Processing to Oracle coordination (implicit) ──
+QueryChecker ..> OracleInit : pending queries detected\n(oracle service processes)
+
+' ── AENS for services ─────────────────────────────────────────
+OracleInit --> AENS : resolve contract name
+ResultProc --> AENS : resolve contract name
+
+' ── Local Test Environment ───────────────────────────────────
+TestProxy --> LocalNode : proxy blockchain calls\n(CORS-enabled)
+TestProxy --> LocalCompiler : proxy compiler calls\n(CORS-enabled)
+TestProxy --> LocalIndex : proxy index/debug\ncalls (CORS-enabled)
+LocalNode --> SmartContract : local contract\ndeployment & calls
+LocalCompiler --> SmartContract : compile Sophia\ncontract locally
+
+@enduml

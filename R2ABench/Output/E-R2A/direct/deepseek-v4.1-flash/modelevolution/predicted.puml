@@ -1,0 +1,137 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+left to right direction
+
+actor Learner
+actor "Model Contributor" as Contributor
+actor Administrator
+
+package "Client Environment" {
+  component "Browser\n(Firefox / Chrome / 360)" as Browser
+  package "Front-end Web UI" {
+    component "Account Management UI" as AccountUI
+    component "Model Search & Viewing UI" as SearchUI
+    component "Model Contribution & Editing UI" as ContributeUI
+    component "Evolution Relationship Editing UI" as EvoUI
+    component "User Management UI" as UserUI
+    component "Navigation & Responsive UI" as NavUI
+    component "Browser Console" as Console
+  }
+}
+
+package "Server Environment" {
+  package "Back-end Application" {
+    component "Web/API Backend" as API
+    component "Account & Auth Service" as AuthSvc
+    component "Model Management Service" as ModelSvc
+    component "Evolution Relationship Service" as EvoSvc
+    component "User Management Service" as UserSvc
+    component "Visualization Service" as VizSvc
+    component "Security & Compliance Service" as SecSvc
+    component "Data Access Layer" as DAL
+  }
+  package "Algorithm Support Module" {
+    component "Python Libraries" as PyLib
+    component "ONNX/PyTorch Parser" as Parser
+    component "Operator/Layer Analyzer" as Analyzer
+    component "Evolution Comparator" as EvoComp
+    component "Performance Metrics Evaluator" as Metrics
+    component "Graph Layout / Topology Generator" as GraphGen
+  }
+}
+
+package "Data Layer" {
+  database "Neo4j\n(Evolution Graph)" as Neo4j
+  database "MySQL\n(Users, Models, Metadata)" as MySQL
+  component "Encrypted Model Storage\n(ONNX / PyTorch Source)" as ModelStore
+}
+
+package "External Systems / Interfaces" {
+  component "OAuth 2.0 / 2FA Provider" as OAuth
+  component "Communication Protocols\nHTTP, HTTPS, TCP, IP, FTP, SMTP, UDP" as Protocols
+}
+
+' Actor access
+Learner --> Browser
+Contributor --> Browser
+Administrator --> Browser
+
+' UI access
+Browser --> AccountUI
+Browser --> SearchUI
+Browser --> ContributeUI
+Browser --> EvoUI
+Browser --> UserUI
+Browser --> NavUI
+Browser --> Console
+
+' UI to API
+AccountUI --> API : HTTPS/TLS
+SearchUI --> API : HTTPS/TLS
+ContributeUI --> API : HTTPS/TLS
+EvoUI --> API : HTTPS/TLS
+UserUI --> API : HTTPS/TLS
+
+' API to services
+API --> AuthSvc
+API --> ModelSvc
+API --> EvoSvc
+API --> UserSvc
+API --> VizSvc
+API --> SecSvc
+
+' Services to DAL
+AuthSvc --> DAL
+ModelSvc --> DAL
+EvoSvc --> DAL
+UserSvc --> DAL
+VizSvc --> DAL
+SecSvc --> DAL
+
+' Algorithm support
+ModelSvc --> Parser
+ModelSvc --> Metrics
+EvoSvc --> EvoComp
+VizSvc --> GraphGen
+Parser --> Analyzer
+EvoComp --> Analyzer
+GraphGen --> Neo4j
+GraphGen --> MySQL
+
+' Data access
+DAL --> Neo4j
+DAL --> MySQL
+DAL --> ModelStore
+
+' External
+AuthSvc --> OAuth
+SecSvc ..> Protocols
+PyLib ..> Parser
+PyLib ..> Analyzer
+PyLib ..> EvoComp
+PyLib ..> Metrics
+PyLib ..> GraphGen
+
+' Cross-cutting notes
+note right of SecSvc
+  Security & Compliance:
+  - 2FA + OAuth 2.0
+  - TLS / PCI DSS
+  - AES/DES model encryption
+  - Access control, anti-spoofing,
+    tamper protection, privacy policy
+end note
+
+note bottom of API
+  Performance & Reliability:
+  - 50 concurrent users
+  - 10 model mods/s, 50 queries/s
+  - Static page < 1s
+  - Model add-to-result < 1 min
+  - 7x24 availability, failover < 0.5h
+end note
+
+@enduml

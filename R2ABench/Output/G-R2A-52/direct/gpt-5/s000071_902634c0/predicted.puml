@@ -1,0 +1,117 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam wrapWidth 220
+
+title ClearML Agent Kubernetes Integration Architecture
+
+cloud "ClearML Server" as server {
+  component "Execution Queue" as queue
+  component "Backend API Gateway" as api
+  component "Events Service v2.5" as events
+  component "Models Service v2.4" as models
+}
+
+node "Kubernetes Cluster" as k8s {
+  node "Agent - Service Pod" as svcPod <<Pod>> {
+    component "clearml-agent Container" as agentSvc
+    component "Worker Telemetry" as telem1
+    component "Backend Client SDK" as client1
+    folder "/var/run/docker.sock (mapped)" as dockersock
+    note right of svcPod
+      Long-lasting service-pod mode (FR-003)
+      Uses 'clearml-agent' Docker image (C-001)
+      Requires mapped Docker socket for sibling-container management (C-002)
+      Default logging: log_stdout=true (FR-006, NFR-001)
+      Worker config fields: report_period_sec (default 2s),
+      ping_period_sec (default 30s), log_stdout, report_global_mem_used (DR-001)
+      Memory reporting scopes: process/subprocess; global when report_global_mem_used=true (NFR-002)
+    end note
+  }
+
+  node "Agent - Kubernetes Glue Pod" as gluePod <<Pod>> {
+    component "Kubernetes Glue" as glue
+    component "Worker Telemetry" as telem2
+    component "Backend Client SDK" as client2
+    note right of gluePod
+      Kubernetes Glue execution flow (FR-001)
+      Pulls jobs from ClearML execution queue
+      Prepares Kubernetes Job from provided YAML template (C-003, DR-006)
+      Default logging: log_stdout=true (FR-006)
+      Worker config fields: report_period_sec=2s, ping_period_sec=30s (defaults) (NFR-001, DR-001)
+    end note
+  }
+
+  artifact "Kubernetes Job Template (YAML)" as yamltmpl
+
+  node "Kubernetes Job" as kjob <<Job>> {
+    node "Experiment Pod" as expPod <<Pod>> {
+      component "Experiment Runtime\n(env install, start, monitor)" as exp
+      note right of expPod
+        In-pod experiment startup and monitoring (FR-002)
+      end note
+    }
+  }
+
+  node "Worker Node Docker Daemon" as dockerHost {
+    component "Docker Engine" as dockerd
+    component "Sibling Experiment Container(s)" as siblings
+  }
+}
+
+' Backend service wiring
+api --> events
+api --> models
+
+' Client interactions with backend API
+client1 --> api : create, get, get_by_id,\nget_all, get_all_ex (session-based)
+client2 --> api : create, get, get_by_id,\nget_all, get_all_ex (session-based)
+
+note bottom of api
+  Backend service actions (FR-007):
+  - create -> returns entity with response ID
+  - get/get_by_id -> returns mapped entity
+  - get_all/get_all_ex -> returns TableResponse
+  Compatibility: models v2.4, events v2.5 (NFR-003, C-004)
+end note
+
+' Events service data model notes
+note right of events
+  Events histograms (DR-002):
+  - Request fields: task, samples, key
+  - key axis selectors: iter, iso_time, timestamp
+end note
+
+' Models service data model notes
+note right of models
+  Models:
+  - Delete request: model, force (DR-003)
+  - Model object nullable metadata:
+    id, name, user, company, created, task (DR-004)
+end note
+
+' Telemetry and connectivity
+telem1 --> api : status report (default 2s)\nconnectivity ping (default 30s)\n(FR-004, FR-005, NFR-001)
+telem2 --> api : status report (default 2s)\nconnectivity ping (default 30s)\n(FR-004, FR-005, NFR-001)
+
+' Service-pod sibling-container management via Docker socket
+agentSvc -[#gray]-> dockersock : uses mapped socket (C-002, C-005)
+dockersock -[#gray]--> dockerd : host Docker daemon
+agentSvc --> siblings : install env, start & monitor\nexperiment process (FR-002, FR-003)
+
+' Kubernetes Glue flow
+glue --> queue : pull queued job (FR-001, DR-005)
+yamltmpl --> glue : template input (DR-006)
+glue --> kjob : create K8s Job from template (FR-001)
+glue --> exp : install env, start & monitor\nexperiment process (FR-002)
+
+' Optional: service-pod may also report logs by default
+agentSvc -[#blue,dashed]-> telem1 : stdout/stderr enabled (FR-006)
+glue -[#blue,dashed]-> telem2 : stdout/stderr enabled (FR-006)
+
+' Server-side routing to services
+api -[#gray,dashed]-> events : histogram queries
+api -[#gray,dashed]-> models : model CRUD incl. delete
+
+@enduml

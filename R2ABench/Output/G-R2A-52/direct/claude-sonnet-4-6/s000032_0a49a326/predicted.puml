@@ -1,0 +1,146 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #222222
+}
+skinparam database {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam cloud {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam node {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam component {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam arrow {
+  Color #444444
+}
+skinparam defaultFontSize 12
+
+title Activiti 7 Platform Architecture
+
+actor "Authenticated User\n/ Developer / Integrator" as user
+actor "Task API User\n(ROLE_ACTIVITI_USER)" as taskUser
+actor "Human Participant" as humanParticipant
+actor "Cluster Operator" as operator
+
+cloud "External Network / Public IP" as publicIP {
+  rectangle "NGINX Ingress Controller\n[CI-002, FR-007, C-003]" as nginx
+}
+
+node "Kubernetes / GKE Cluster" as k8s {
+
+  rectangle "API Gateway\n[Architecture Background]" as gateway
+
+  node "Identity & Access Management" as iam {
+    rectangle "Keycloak\n(SSO / Token Issuer)\n[API-001, FR-001, DR-001, NFR-001]" as keycloak
+    rectangle "Spring Security\n(Role / User / Group Context)\n[C-001, DR-006, CI-001]" as springSecurity
+  }
+
+  node "Activiti Runtime Services" as runtimeServices {
+    rectangle "Example Runtime Bundle\n(Process Definitions & Instances)\n[API-003, API-004, FR-002, FR-003, DR-002, DR-003]" as runtimeBundle {
+      rectangle "ProcessRuntime API\n[API-008, FR-006]" as processRuntime
+      rectangle "TaskRuntime API\n(Requires ROLE_ACTIVITI_USER)\n[API-007, FR-005, FR-006, C-002, NFR-003]" as taskRuntime
+    }
+    rectangle "Audit Service\n[API-005, FR-004, DR-004]" as auditService
+    rectangle "Query Service\n[API-006, DR-005]" as queryService
+    rectangle "Notification Service\n[Architecture Background]" as notificationService
+    rectangle "Cloud Connectors\n[Architecture Background]" as cloudConnectors
+  }
+
+  node "Configuration & Deployment" as configNode {
+    database "Deployment Descriptors\n(Input Rate & Replica Count)\n[DE-007, DR-007, NFR-002]" as deploymentDescriptors
+    database "Kubernetes Config Maps\n/ Registry\n[Architecture Background]" as configMaps
+  }
+
+  node "Spring Boot Application Context\n[C-001]" as springBoot {
+    rectangle "Spring Boot App\n(User / Security Setup)" as springBootApp
+  }
+}
+
+' External access flows
+user --> publicIP : REST / API Requests
+taskUser --> publicIP : REST / API Requests\n(ROLE_ACTIVITI_USER required)
+humanParticipant --> publicIP : Human Task Interaction
+operator --> nginx : Configure Ingress\n& Public IP
+
+publicIP --> nginx
+nginx --> gateway : Route external traffic\nto internal services [FR-007]
+
+' Gateway to runtime services
+gateway --> runtimeBundle
+gateway --> auditService
+gateway --> queryService
+
+' Authentication flows
+user --> keycloak : Obtain Auth Token\n[API-001, DE-001]
+keycloak --> user : Authentication Token\n[NFR-001, AD-001]
+user --> nginx : Requests with Bearer Token\n[CI-003, FR-001, API-002]
+
+' Spring Security integration
+springBootApp --> springSecurity : Security & Role Context\n[C-001, DR-006]
+springSecurity --> taskRuntime : Validate ROLE_ACTIVITI_USER\n[FR-005, C-002, AD-003]
+springSecurity --> processRuntime : Authorize authenticated user
+
+' Token validation
+nginx --> keycloak : Validate Token\n[FR-001, NFR-003]
+
+' Runtime bundle internals
+processRuntime --> taskRuntime : Combined in Full Example\n[API-008, FR-006]
+taskRuntime --> humanParticipant : Human Task Assignment\n[FR-006]
+
+' Audit & Query
+runtimeBundle --> auditService : Publish process/task events\n[FR-004, DE-004]
+runtimeBundle --> queryService : Publish process state\n[DR-005, DE-005]
+runtimeBundle --> notificationService : Publish notifications\n[Architecture Background]
+runtimeBundle --> cloudConnectors : Cloud integration\n[Architecture Background]
+
+' Config
+operator --> deploymentDescriptors : Configure input rate\n& replica count [NFR-002, DR-007]
+deploymentDescriptors --> k8s : Apply scalability params\n[AD-005]
+configMaps --> runtimeBundle : Supply config\n[Architecture Background]
+
+' Data items legend note
+note bottom of auditService
+  DE-004: Audit Event Records
+  (events for just-started process instance)
+end note
+
+note bottom of queryService
+  DE-005: Process Execution Information
+  (read-oriented process state)
+end note
+
+note right of keycloak
+  DE-001: Authentication Token
+  (time-limited, AD-001)
+  NFR-001: Token becomes invalid
+  after expiry or invalidation
+end note
+
+note right of runtimeBundle
+  DE-002: Process Definition Listing
+  DE-003: Process Instance Start Request
+  FR-002: View deployed definitions
+  FR-003: Start SimpleProcess
+end note
+
+note right of deploymentDescriptors
+  DE-007: Deployment Descriptor Params
+  - Data input rate
+  - Cloud component replica count
+  NFR-002: Scalability experiments
+end note
+
+@enduml

@@ -1,0 +1,71 @@
+@startuml
+title hAFL2 Architecture - Component/Deployment Diagram
+
+' === LAYERS ===
+package "Fuzzing Execution Layer" {
+    component "Standalone Test Runner"
+}
+
+package "Target Packaging Layer" {
+    component "Linux Userspace Launcher"
+    component "Shared Library Copier"
+    component "InitRD Packager"
+}
+
+package "Guest Interaction Layer" {
+    component "Embedded Forkserver"
+}
+
+package "Windows Workflow Layer" {
+    component "Packet Sender (packet_sender.exe)"
+    component "Loader (loader.exe)"
+}
+
+package "VM Orchestration Layer" {
+    component "Child Partition Harness"
+}
+
+package "Monitoring & Feedback Layer" {
+    component "Root Partition Monitor"
+}
+
+' === PRIMARY DEPLOYMENT ENVIRONMENTS ===
+node "Child Partition VM" {
+    component "Guest Environment"
+}
+
+node "Root Partition VM" {
+    component "Host Environment"
+}
+
+' === EXTERNAL SYSTEMS ===
+component "kAFL-Fuzzer"
+database "VMBus/netvsc Channels"
+component "Hyper-V Virtual Switch (vmswitch.sys)"
+
+' === TARGET PACKAGING WORKFLOW ===
+"Linux Userspace Launcher" --> "Shared Library Copier"
+"Shared Library Copier" --> "InitRD Packager"
+"InitRD Packager" --> "Standalone Test Runner"
+
+' === GUEST INTERACTION PATHWAY ===
+"Standalone Test Runner" --> "Embedded Forkserver"
+"Embedded Forkserver" <--> "Guest Environment"
+
+' === WINDOWS WORKFLOW CONNECTIONS ===
+"Child Partition Harness" --> "Packet Sender (packet_sender.exe)"
+"Packet Sender (packet_sender.exe)" --> "Loader (loader.exe)"
+"Loader (loader.exe)" --> "Child Partition Harness"
+
+' === VM ORCHESTRATION AND MONITORING ===
+"Child Partition Harness" <--> "Child Partition VM"
+"Root Partition Monitor" <--> "Root Partition VM"
+"Child Partition Harness" <--> "VMBus/netvsc Channels"
+"Root Partition Monitor" <--> "VMBus/netvsc Channels"
+"Packet Sender (packet_sender.exe)" --> "Hyper-V Virtual Switch (vmswitch.sys)"
+
+' === FEEDBACK AND VERIFICATION PATHS ===
+"Standalone Test Runner" --> "kAFL-Fuzzer"
+"Root Partition Monitor" --> "Child Partition Harness"
+
+@enduml

@@ -1,0 +1,118 @@
+{
+  "candidate": {
+    "sample_id": "s000028_3e80e738",
+    "repository_name": "pagopa/pn-infra",
+    "image_url": "https://github.com/pagopa/pn-infra/blob/develop/scripts/rest-api-cognito/architecture-cognito.png",
+    "source_ref": "3898c35e634efe1527655e90a586ee6247de24f4",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 9234,
+    "document_count": 19,
+    "document_types": [
+      "code_api_route",
+      "deployment_config",
+      "readme"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 39,
+      "user_scenario": 26,
+      "api_io": 121,
+      "deployment": 29,
+      "constraints": 12,
+      "non_functional": 2
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "scripts/rest-api-cognito/account-A-cognito.yaml",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.0523125717200051,
+      "text": "ts IdToken: !Ref IdTokenValidityUnits RefreshToken: !Ref RefreshTokenValidityUnits UserPoolId: !Ref UserPool WriteAttributes: - custom:Role - email # Creates a federeated Identity pool IdentityPool: Type: AWS::Cognito::IdentityPool Properties: IdentityPoolName: !Sub ${AuthName}Identity AllowUnauthenticatedIdentities: true CognitoIdentityProviders: - ClientId: !Ref UserPoolClient ProviderName: !GetAtt UserPool.ProviderName # Create a role for unauthorized acces to AWS resources. Very limited access. Only allows users in the previously created Identity Pool CognitoUnAuthorizedRole: Type: \"AWS::IAM::Role\" Properties: AssumeRolePolicyDocument: Version: \"2012-10-17\" Statement: - Effect: \"Allow..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "scripts/rest-api-cognito/account-A-cognito.yaml",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05172067701196252,
+      "text": "AWSTemplateFormatVersion: '2010-09-09' Description: CloudFormation stack to create Cognito user and identity pool Parameters: AuthName: Type: String Description: Unique Auth Name for Cognito Resources Default: Cognito-Auth AccessTokenValidityUnits: Type: String Description: A time unit of seconds, minutes, hours, or days for the value that you set in the AccessTokenValidity parameter. AllowedValues: - days - hours - minutes - seconds Default: minutes CognitoUserPoolName: Description: The name of the user pool. Type: String IdTokenValidityUnits: Type: String Description: A time unit of seconds, minutes, hours, or days for the value that you set in the IdTokenValidity parameter. AllowedValu..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "runtime-infra/fragments/vpc-endpoints.yaml",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05573770491803279,
+      "text": "C2::VPCEndpoint' Properties: VpcEndpointType: Interface PrivateDnsEnabled: true SecurityGroupIds: - !Ref InterfaceSecurityGroup ServiceName: !Sub 'com.amazonaws.${AWS::Region}.sqs' SubnetIds: !Ref Subnets VpcId: !Ref VpcId ### ALLOW ACCESS TO SERVICES ELASTIC NETWORK INTERFACES ### ########################################################################### InterfaceSecurityGroup: Type: 'AWS::EC2::SecurityGroup' Properties: GroupDescription: 'Controls Inbound Access to the VPC Interface Endpoint from within the VPC' VpcId: !Ref VpcId SecurityGroupIngress: - FromPort: '0' ToPort: '65535' IpProtocol: tcp CidrIp: !Ref VpcCidr Tags: - Key: Name Value: !Sub '${VpcName}-Interface-Endpoint-SecGrp'"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "scripts/rest-api-cognito/account-B-api-gateway.yaml",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05200925391194346,
+      "text": "ders to client for verification of role headers - ResponseParameters: method.response.header.x-pagopa-pn-cx-role: false StatusCode: 200 ResourceId: !Ref WhoAmIResource RestApiId: !Ref MyAPIGateway APIDeployment: Type: AWS::ApiGateway::Deployment DependsOn: [WhoAmIMethod, ECSMethod] Properties: RestApiId: !Ref MyAPIGateway StageName: !Ref ApiGatewayStageName Outputs: CallbackURL: Description: \"API Gateway endpoint\" Value: !Sub \""
+    },
+    {
+      "evidence_id": "E005",
+      "path": "installation/README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05419895060218036,
+      "text": "\\ \\ -p-2 profilo_helpdesk \\ -d-2 helpdesk.pn.internal \\ -v-2 \\ \\ -p-3 profilo_confidential \\ -d-3 confidential.pn.internal \\ -v-3 ./ensure-public-dns-and-certificates.sh \\ -e \\ -p profilo_core \\ -P profilo_dns_delegator \\ -l profilo_spidhub aws --profile profilo_spidhub \\ iam create-service-linked-role \\ --aws-service-name ecs.amazonaws.com ./setup.sh profilo_spidhub eu-south-1 `` UserRegistryApiKeyForPF spidhub- -hub-login .pn.pagopa.it/login?entityID=xx_testenv2&authLevel=SpidL2 .pn.pagopa.it/ pn-data-vault/scripts/aws/cfn/once4account/ .yaml pn-data-vault/scripts/aws/cfn/microservice- -cfg.json confidential.pn.internal pn-data-vault/scripts/aws/cfn/infa- -cfg.json s3://cd-pipeline-data..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "scripts/rest-api-cognito/account-A-cognito.yaml",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05345074632753111,
+      "text": "AWSTemplateFormatVersion: '2010-09-09' Description: CloudFormation stack to create Cognito user and identity pool Parameters: AuthName: Type: String Description: Unique Auth Name for Cognito Resources Default: Cognito-Auth AccessTokenValidityUnits: Type: String Description: A time unit of seconds, minutes, hours, or days for the value that you set in the AccessTokenValidity parameter. AllowedValues: - days - hours - minutes - seconds Default: minutes CognitoUserPoolName: Description: The name of the user pool. Type: String IdTokenValidityUnits: Type: String Description: A time unit of seconds, minutes, hours, or days for the value that you set in the IdTokenValidity parameter. AllowedValu..."
+    }
+  ]
+}

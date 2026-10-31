@@ -1,0 +1,76 @@
+@startuml
+' Layered Component/Deployment Diagram for AWS Infrastructure Architecture
+
+' Define Nodes for each architectural layer
+node "Infrastructure Layer" {
+    component "CognitoStack"
+    component "ApiGatewayStack"
+    component "VpcEndpointTemplate"
+}
+
+node "Authentication Layer" {
+    component "CognitoUserPool"
+    component "CognitoIdentityPool"
+    component "UserPoolClient"
+}
+
+node "Authorization Layer" {
+    component "CognitoAuthorizer"
+    component "AuthRoleMapping"
+}
+
+node "Networking Layer" {
+    component "SqsVpcEndpoint"
+    component "VpcSecurityGroup"
+}
+
+node "Integration Layer" {
+    component "WhoAmIMethod"
+    component "EcsProxyMethod"
+    component "VpcLink"
+    component "ApiStageDeployment"
+    component "CallbackUrlOutput"
+}
+
+cloud "External Systems" {
+    database "AWS Cognito"
+    database "API Gateway"
+    database "Amazon SQS"
+    database "AWS IAM"
+    database "AWS VPC"
+    database "ECS"
+}
+
+' Define dependencies between components
+CognitoStack --> CognitoUserPool : creates
+CognitoStack --> CognitoIdentityPool : creates
+CognitoStack --> UserPoolClient : configures
+CognitoStack --> AuthRoleMapping : defines
+ApiGatewayStack --> CognitoUserPool : uses for authorizer config
+ApiGatewayStack --> WhoAmIMethod : creates
+ApiGatewayStack --> EcsProxyMethod : creates
+ApiGatewayStack --> ApiStageDeployment : deploys
+ApiGatewayStack --> CallbackUrlOutput : generates
+CognitoIdentityPool --> CognitoUserPool : binds to user pool
+CognitoIdentityPool <--> CognitoUserPool : client/provider binding
+ApiGatewayStack --> CognitoAuthorizer : configures
+WhoAmIMethod --> CognitoAuthorizer : requires
+EcsProxyMethod --> CognitoAuthorizer : requires
+VpcEndpointTemplate --> SqsVpcEndpoint : creates
+VpcEndpointTemplate --> VpcSecurityGroup : creates
+SqsVpcEndpoint --> "AWS VPC" : connects via VPC
+WhoAmIMethod --> "API Gateway" : exposed through
+EcsProxyMethod --> "API Gateway" : exposed through
+CognitoUserPool --> "AWS Cognito" : managed by
+CognitoIdentityPool --> "AWS Cognito" : managed by
+CognitoAuthorizer --> "API Gateway" : integrated with
+CognitoAuthorizer --> "AWS Cognito" : validates against
+SqsVpcEndpoint --> "Amazon SQS" : enables private access
+EcsProxyMethod --> VpcLink : uses
+VpcLink --> "ECS" : integrates with
+CognitoStack --> "AWS IAM" : creates roles
+ApiGatewayStack --> "AWS IAM" : uses roles
+VpcEndpointTemplate --> "AWS IAM" : applies policies
+VpcEndpointTemplate --> "AWS VPC" : accepts subnet/CIDR inputs
+
+@enduml

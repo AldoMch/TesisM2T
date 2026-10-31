@@ -1,0 +1,219 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam rectangleBorderColor #555555
+skinparam rectangleBackgroundColor #EEF2FF
+skinparam nodeBorderColor #555555
+skinparam nodeBackgroundColor #FFF9E6
+skinparam databaseBorderColor #555555
+skinparam databaseBackgroundColor #E6F4EA
+skinparam cloudBorderColor #555555
+skinparam cloudBackgroundColor #FDE8E8
+skinparam componentBorderColor #555555
+skinparam componentBackgroundColor #E8F4FD
+skinparam arrowColor #333333
+skinparam arrowThickness 1.5
+skinparam packageBorderColor #888888
+skinparam packageBackgroundColor #FEFEFE
+
+title AI-Driven Text Adventure Game and Community Platform\nSystem Architecture Diagram
+
+actor "Guest" as guest
+actor "Registered User / Player" as player
+actor "Community Administrator" as admin
+
+node "Client Tier\n(Browser / Device)" {
+  component "Nuxt.js / Vue.js\nFrontend Application" as frontend {
+    component "Game UI\n(New Game, Save, Choice,\nBackground Setup, Tutorial)" as gameUI
+    component "Community UI\n(Posts, Comments,\nSearch, Recommendations)" as communityUI
+    component "User Profile UI\n(Registration, Login,\nProfile, Browsing History)" as userUI
+    component "Notification UI\n(Unread, Read, Delete)" as notifUI
+    component "Favorites UI\n(Add, View, Remove)" as favUI
+    component "Admin UI\n(User List, Post List,\nReview, Ban/Restore)" as adminUI
+  }
+}
+
+node "API Gateway / Load Balancer" as gateway {
+  component "Reverse Proxy\n& Load Balancer" as proxy
+  component "Auth Middleware\n(Session / Token)" as authMid
+  component "Rate Limiter\n& Security Filter" as rateLimiter
+}
+
+node "Application Tier\n(Iris Go Web Framework — Kubernetes Pods)" {
+
+  package "User & Auth Service" as userService {
+    component "Registration & Login\nController" as authCtrl
+    component "Profile Controller\n(Avatar, Username,\nBrowsing History)" as profileCtrl
+    component "Password Recovery\nController" as passCtrl
+    component "Notification Settings\nController" as notifSettingsCtrl
+  }
+
+  package "Game Service" as gameService {
+    component "Save Manager\n(Create, View, Delete,\nContinue, Share)" as saveCtrl
+    component "Game Engine\nController\n(Background Setup,\nChoice Progression)" as gameCtrl
+    component "Save Integrity\nVerifier" as saveVerifier
+    component "Achievement &\nReward Controller\n(Currency, Items)" as achieveCtrl
+  }
+
+  package "Community Service" as communityService {
+    component "Post Controller\n(Publish, Edit, Delete,\nDetails, Search,\nRecommendations)" as postCtrl
+    component "Comment Controller\n(Comment, Delete)" as commentCtrl
+    component "Reply Controller\n(Reply, Delete)" as replyCtrl
+    component "Review Status\nController" as reviewStatusCtrl
+  }
+
+  package "Favorites Service" as favService {
+    component "Favorites Controller\n(Add, View, Remove)" as favCtrl
+  }
+
+  package "Notification Service" as notifService {
+    component "Notification Controller\n(Create, View,\nMark Read, Delete)" as notifCtrl
+    component "Notification Event\nListener" as notifListener
+  }
+
+  package "Admin Service" as adminService {
+    component "Admin Auth Controller" as adminAuthCtrl
+    component "User Management\nController\n(List, Ban, Restore)" as userMgmtCtrl
+    component "Post Review\nController\n(Review, Approve, Reject)" as postReviewCtrl
+    component "Report & Feedback\nController" as reportCtrl
+  }
+
+  package "Search Service" as searchService {
+    component "Search Controller\n(Topics, Users,\nPost Content)" as searchCtrl
+  }
+
+  package "AIGC Media Service" as aigcMediaService {
+    component "AIGC Image\nProcessor" as aigcImageCtrl
+    component "Music & Sound\nEffect Manager" as soundCtrl
+  }
+
+  package "Observability & Security" as obsService {
+    component "Audit Logger\n(Sensitive Operations\n& System Events)" as auditLog
+    component "Health Monitor\n& Fault Detector" as healthMonitor
+    component "Encryption\nService" as encryptService
+  }
+}
+
+cloud "External AI / LLM Provider" as llmProvider {
+  component "Large Language Model\nReasoning API\n(Plot, Random Events,\nDecision Effects)" as llmAPI
+}
+
+database "Data Tier\n(MySQL via GORM)" as dbTier {
+  database "User & Auth DB\n(Accounts, Profiles,\nSessions, Browsing History,\nNotification Settings)" as userDB
+  database "Game DB\n(Saves, Background Info,\nGame State, Choices,\nRandom Events)" as gameDB
+  database "Community DB\n(Posts, Comments,\nReplies, Review Records,\nSearch Index)" as communityDB
+  database "Favorites DB\n(Favorites Folders,\nPost Links)" as favDB
+  database "Notification DB\n(Notifications,\nRead/Unread Status)" as notifDB
+  database "Achievement DB\n(Achievements, Currency,\nItems, Rewards)" as achieveDB
+  database "Admin & Governance DB\n(Admin Accounts,\nReport Feedback,\nBan/Restore Status,\nAudit Logs)" as adminDB
+}
+
+node "Deployment Infrastructure\n(Docker + Kubernetes)" as infraNode {
+  component "Docker Containers\n(Per Microservice)" as dockerContainers
+  component "Kubernetes Orchestrator\n(Scaling, Deployment,\nService Discovery)" as k8sOrchestrator
+  component "Persistent Volume\n(Save Files,\nAIGC Media Assets,\nLocal Temp Saves)" as persistentVol
+}
+
+cloud "Cloud / Data Center\nProvider" as cloudProvider {
+  component "Object Storage\n(Avatars, Game Screenshots,\nAIGC Images, Sound Effects)" as objectStorage
+  component "Email Service\n(Verification Codes,\nPassword Recovery)" as emailService
+  component "CDN\n(Static Assets)" as cdn
+}
+
+guest --> frontend
+player --> frontend
+admin --> frontend
+
+gameUI --> gateway
+communityUI --> gateway
+userUI --> gateway
+notifUI --> gateway
+favUI --> gateway
+adminUI --> gateway
+
+gateway --> proxy
+proxy --> authMid
+authMid --> rateLimiter
+
+rateLimiter --> userService
+rateLimiter --> gameService
+rateLimiter --> communityService
+rateLimiter --> favService
+rateLimiter --> notifService
+rateLimiter --> adminService
+rateLimiter --> searchService
+
+authCtrl --> encryptService
+passCtrl --> encryptService
+encryptService --> userDB
+
+authCtrl --> userDB
+profileCtrl --> userDB
+passCtrl --> userDB
+notifSettingsCtrl --> userDB
+
+profileCtrl --> objectStorage
+authCtrl --> emailService
+passCtrl --> emailService
+
+saveCtrl --> gameDB
+gameCtrl --> gameDB
+saveVerifier --> gameDB
+achieveCtrl --> achieveDB
+saveCtrl --> persistentVol
+
+gameCtrl --> llmAPI
+llmAPI --> gameCtrl
+
+aigcImageCtrl --> llmAPI
+aigcImageCtrl --> objectStorage
+soundCtrl --> objectStorage
+
+postCtrl --> communityDB
+commentCtrl --> communityDB
+replyCtrl --> communityDB
+reviewStatusCtrl --> communityDB
+postCtrl --> objectStorage
+
+commentCtrl --> notifListener
+replyCtrl --> notifListener
+postReviewCtrl --> notifListener
+notifListener --> notifCtrl
+notifCtrl --> notifDB
+
+favCtrl --> favDB
+
+searchCtrl --> communityDB
+searchCtrl --> userDB
+
+adminAuthCtrl --> adminDB
+userMgmtCtrl --> userDB
+userMgmtCtrl --> adminDB
+postReviewCtrl --> communityDB
+postReviewCtrl --> adminDB
+reportCtrl --> adminDB
+
+auditLog --> adminDB
+healthMonitor --> adminDB
+healthMonitor --> gameDB
+
+saveCtrl --> postCtrl
+
+infraNode --> gameService
+infraNode --> communityService
+infraNode --> userService
+infraNode --> notifService
+infraNode --> favService
+infraNode --> adminService
+infraNode --> searchService
+infraNode --> aigcMediaService
+infraNode --> obsService
+
+k8sOrchestrator --> dockerContainers
+dockerContainers --> persistentVol
+
+cloudProvider --> infraNode
+
+@enduml

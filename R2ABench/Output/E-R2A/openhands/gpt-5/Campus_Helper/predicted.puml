@@ -1,0 +1,79 @@
+@startuml
+title Campus Helper Platform - Layered Architecture
+
+left to right direction
+
+package "Presentation Layer" {
+  [WeChat Mini Program Client] as client
+  [Administration Console] as admin_ui
+}
+
+package "Business Layer" {
+  [Auth & Permission Service] as auth
+  [Product Browsing Service] as product_browse
+  [Order Service] as order
+  [Personal Center Service] as personal
+  [Favorites Service] as favorites
+  [Category & Tag Service] as category
+  [Search Service] as search
+  [Admin Product Management Service] as admin_product
+  [Admin Order Management Service] as admin_order
+  [Admin User Management Service] as admin_user
+  [Logging Service] as logging
+  [Monitoring Service] as monitoring
+}
+
+package "Data Layer" {
+  [User Repository] as user_repo
+  [Product Repository] as product_repo
+  [Order Repository] as order_repo
+  [Favorite Repository] as favorite_repo
+  [Tag/Category Repository] as tag_repo
+  [Admin Log Repository] as log_repo
+  [Metrics Repository] as metrics_repo
+}
+
+database "CampusHelperDB" as db {
+}
+
+cloud "WeChat Mini Program Runtime" as wechat_runtime
+
+client --> auth
+client --> product_browse
+client --> category
+client --> search
+client --> favorites
+client --> order
+client --> personal
+
+admin_ui --> auth
+admin_ui --> admin_product
+admin_ui --> admin_order
+admin_ui --> admin_user
+admin_ui --> logging
+
+auth --> user_repo
+product_browse --> product_repo
+category --> tag_repo
+search --> product_repo
+favorites --> favorite_repo
+order --> order_repo
+personal --> user_repo
+
+admin_product --> product_repo
+admin_order --> order_repo
+admin_user --> user_repo
+
+logging --> log_repo
+monitoring --> metrics_repo
+
+user_repo --> db
+product_repo --> db
+order_repo --> db
+favorite_repo --> db
+tag_repo --> db
+log_repo --> db
+metrics_repo --> db
+
+client .. wechat_runtime : depends on
+@enduml

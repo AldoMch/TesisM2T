@@ -1,0 +1,51 @@
+@startuml
+
+package "External Systems" {
+  component "Kubernetes Cluster" as k8s
+  component "MLflow Model Registry" as mlflow
+  component "Jaeger" as jaeger
+}
+
+package "API Layer" {
+  component "OpenAPI Specifications" as openapi_specs
+  component "HTTP API Handlers" as api_handlers
+  component "Authorization Middleware" as auth_middleware
+  component "Validation Middleware" as validation_middleware
+}
+
+package "Service Layer" {
+  component "Ensembler Manager" as ensembler_manager
+}
+
+package "Cluster Integration Layer" {
+  component "Router Deployment Manager" as router_deployment_manager
+}
+
+package "Runtime Layer" {
+  component "Turing Router" as turing_router
+  component "PyFuncEnsembler Service" as pyfunc_ensembler
+}
+
+' API Layer connections
+api_handlers --> auth_middleware : "uses for\nauthorization"
+api_handlers --> validation_middleware : "uses for\nrequest validation"
+validation_middleware --> openapi_specs : "validates against"
+openapi_specs --> api_handlers : "defines behavior for"
+
+' Service Layer connections
+ensembler_manager --> openapi_specs : "references\nproject/ensembler IDs"
+
+' Cluster Integration Layer connections
+router_deployment_manager --> k8s : "deploys routers to"
+
+' Runtime Layer connections
+turing_router --> pyfunc_ensembler : "invokes during\ninference"
+pyfunc_ensembler --> mlflow : "loads model artifacts from"
+pyfunc_ensembler --> jaeger : "sends traces to"
+
+' Cross-layer connections
+api_handlers --> ensembler_manager : "manages ensemblers via"
+api_handlers --> router_deployment_manager : "manages routers via"
+router_deployment_manager --> turing_router : "creates and deploys"
+
+@enduml

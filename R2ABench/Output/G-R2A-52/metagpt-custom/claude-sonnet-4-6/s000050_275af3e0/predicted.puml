@@ -1,0 +1,172 @@
+@startuml hAFL2_Hypervisor_Fuzzing_System
+
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #5C6BC0
+skinparam packageFontColor #1A237E
+skinparam packageFontStyle bold
+skinparam componentBackgroundColor #E8F5E9
+skinparam componentBorderColor #388E3C
+skinparam componentFontColor #1B5E20
+skinparam nodeBackgroundColor #FFF3E0
+skinparam nodeBorderColor #E65100
+skinparam nodeFontColor #BF360C
+skinparam databaseBackgroundColor #FCE4EC
+skinparam databaseBorderColor #C62828
+skinparam databaseFontColor #B71C1C
+skinparam cloudBackgroundColor #E3F2FD
+skinparam cloudBorderColor #1565C0
+skinparam cloudFontColor #0D47A1
+skinparam interfaceBackgroundColor #F3E5F5
+skinparam interfaceBorderColor #6A1B9A
+skinparam arrowColor #424242
+skinparam arrowFontColor #424242
+skinparam arrowFontSize 10
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "kAFL-Fuzzer\n(External Framework)" as kAFL
+cloud "Hyper-V Hypervisor\n(External Hypervisor Stack)" as HyperV
+
+node "pytest\n(Test Execution Framework)" as pytest
+node "Visual Studio\n(Build Toolchain)" as VisualStudio
+
+' ─────────────────────────────────────────────
+' LAYER 1 – TEST & ORCHESTRATION LAYER
+' ─────────────────────────────────────────────
+package "Test & Orchestration Layer" as OrchestrLayer {
+  component "StandaloneTestRunner\n(test.py)" as TestRunner
+  component "RandomMutator\n(Random Test Suite)" as RandMutator
+  component "DeterministicMutator\n(Deterministic Test Suite)" as DetMutator
+  component "HavocMutator\n(Havoc Test Suite)" as HavocMutator
+}
+
+' ─────────────────────────────────────────────
+' LAYER 2 – DATA & CONFIGURATION LAYER
+' ─────────────────────────────────────────────
+package "Data & Configuration Layer" as DataLayer {
+  database "Mutation Payloads\n(Byte Arrays)" as Payloads
+  database "Effector Maps\n(Boolean Arrays)" as EffectorMaps
+  database "initrd Artifact\n(Packaged Target)" as InitrdArtifact
+  component "OffsetConfiguration\n(Build-time Constants)" as OffsetConfig
+}
+
+' ─────────────────────────────────────────────
+' LAYER 3 – LINUX USERSPACE FUZZING LAYER
+' ─────────────────────────────────────────────
+node "Linux Host OS" as LinuxHost {
+  package "Linux Userspace Fuzzing Layer" as LinuxLayer {
+    component "InitrdBuilder\n(Bash Script Workflow)" as InitrdBuilder
+    component "SharedLibraryCopier\n(Host Lib Packager)" as SharedLibCopier
+    component "LaunchScript\n(Bash kAFL Launcher)" as LaunchScript
+  }
+}
+
+' ─────────────────────────────────────────────
+' LAYER 4 – GUEST FORKSERVER LAYER
+' ─────────────────────────────────────────────
+node "Guest VM (kAFL Guest Context)" as GuestVM {
+  package "Guest Forkserver Layer" as ForkserverLayer {
+    component "EmbeddedForkserver\n(Hypercall Translator)" as Forkserver
+  }
+}
+
+' ─────────────────────────────────────────────
+' LAYER 5 – WINDOWS HELPER & HARNESS LAYER
+' ─────────────────────────────────────────────
+node "Windows Guest OS / Child Partition VM" as ChildPartition {
+  package "Windows Helper & Harness Layer" as WinHarnessLayer {
+    component "CompileScript\n(compile.sh – Bash Build)" as CompileScript
+    component "LoaderExe\n(loader.exe)" as LoaderExe
+    component "PacketSenderExe\n(packet_sender.exe)" as PacketSenderExe
+    component "HarnessDriver\n(Kernel Driver – Child Partition)" as HarnessDriver
+  }
+}
+
+' ─────────────────────────────────────────────
+' LAYER 6 – HYPER-V TARGET & CRASH MONITORING LAYER
+' ─────────────────────────────────────────────
+node "Windows Root Partition VM" as RootPartition {
+  package "Hyper-V Target & Crash Monitoring Layer" as TargetLayer {
+    component "VMSwitchTarget\n(vmswitch.sys)" as VMSwitch
+    component "CrashMonitorDriver\n(Kernel Driver – Root Partition)" as CrashMonitor
+  }
+}
+
+' ─────────────────────────────────────────────
+' INTER-PARTITION CHANNEL
+' ─────────────────────────────────────────────
+interface "VMBus / netvsc\n(Inter-Partition Channel)" as VMBus
+
+' ─────────────────────────────────────────────
+' FUZZING RESULT STORE
+' ─────────────────────────────────────────────
+database "Fuzzing Results\n(Crash Reports / Coverage)" as FuzzingResults
+
+' ─────────────────────────────────────────────
+' KEY DEPENDENCY ARROWS
+' ─────────────────────────────────────────────
+
+' pytest as alternative executor of test functions inside test.py
+pytest --> TestRunner : executes test functions
+
+' Orchestration → test suite components
+TestRunner --> RandMutator : invokes random\ntest suite
+TestRunner --> DetMutator : invokes deterministic\ntest suite
+TestRunner --> HavocMutator : invokes havoc\ntest suite
+
+' Mutation engines <-> payload stores
+RandMutator --> Payloads : reads / mutates
+DetMutator --> Payloads : reads / mutates
+HavocMutator --> Payloads : reads / mutates
+DetMutator --> EffectorMaps : guided by
+
+' Linux build pipeline – shared library copy step
+SharedLibCopier --> InitrdArtifact : copies host shared\nlibraries into initrd
+InitrdBuilder --> SharedLibCopier : orchestrates lib\ncopy step
+InitrdBuilder --> InitrdArtifact : packages target\ninto initrd
+
+' LaunchScript consumes initrd artifact (user-driven sequential steps)
+InitrdArtifact --> LaunchScript : consumed by\nlaunch workflow
+LaunchScript --> kAFL : invokes kAFL\nworkflow
+
+' Launch activates in-guest forkserver
+LaunchScript --> Forkserver : activates in-guest\nforkserver
+
+' Forkserver <-> kAFL (bidirectional hypercall I/O)
+Forkserver --> kAFL : hypercall /\nAFL-style I/O
+kAFL --> Forkserver : fuzzing payloads\ndelivered
+
+' Windows build toolchain – compile.sh for loader/packet_sender
+CompileScript --> LoaderExe : compiles
+CompileScript --> PacketSenderExe : compiles
+
+' Visual Studio compiles kernel drivers
+VisualStudio --> HarnessDriver : compiles
+VisualStudio --> CrashMonitor : compiles
+
+' Offset configuration dependencies (loader.exe and packet_sender.exe only)
+OffsetConfig --> LoaderExe : embedded at\ncompile time
+OffsetConfig --> PacketSenderExe : embedded at\ncompile time
+
+' Child partition fuzzing flow
+LoaderExe --> PacketSenderExe : creates snapshot\nand executes
+PacketSenderExe --> HarnessDriver : triggers packet-sending\nIOCTL
+
+' Harness → VMBus → VMSwitch
+HarnessDriver --> VMBus : dispatches\nfuzzing payloads
+VMBus --> VMSwitch : routes payloads to\nroot partition
+
+' VMSwitch monitored by CrashMonitor
+VMSwitch --> CrashMonitor : execution observed\nby crash monitor
+
+' Crash results returned to hAFL2 fuzzing results store
+CrashMonitor --> FuzzingResults : crash status /\nmonitoring results
+
+' Hyper-V infrastructure
+HyperV --> ChildPartition : hosts child\npartition VM
+HyperV --> RootPartition : hosts root\npartition VM
+HyperV --> VMBus : provides VMBus\ninfrastructure
+
+@enduml

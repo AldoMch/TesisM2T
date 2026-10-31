@@ -1,0 +1,69 @@
+@startuml
+
+' Define Nodes for External Systems (Documented Interfaces Only)
+node "GitHub Actions" as github_actions
+node "CCDD" as ccdd
+node "Perfutils-java" as perfutils_java
+node "gen_sch_tbl" as gen_sch_tbl
+
+' Build Layer
+package "Build Layer" {
+    component "Makefile Manager" as makefile_manager
+    component "Makefile.sample" as makefile_sample
+    component "sample_defs" as sample_defs
+    component "Git Submodule Handler" as git_submodule_handler
+}
+
+' Execution Layer
+package "Execution Layer" {
+    component "Core Executable Runner" as core_exec_runner
+    component "core-cpu1" as core_cpu1
+}
+
+' Command Layer
+package "Command Layer" {
+    component "Command Utility" as cmd_util
+}
+
+' Telemetry Layer
+package "Telemetry Layer" {
+    component "Telemetry Handler" as telemetry_handler
+}
+
+' CI/Workflow Layer
+package "CI/Workflow Layer" {
+    component "Changelog Generator" as changelog_gen {
+        [Closed Issues]
+        [Breaking Changes]
+        [New Features]
+        [Bug Fixes]
+        [Performance Improvements]
+    }
+    component "Format Checker" as format_checker
+    component "Reusable Workflow Engine" as workflow_engine
+    component "workflow_call" as workflow_call
+}
+
+' Internal Component Dependencies
+makefile_manager --> core_exec_runner : prepares & installs\nbuild artifacts
+cmd_util --> core_exec_runner : sends commands\nto running cFS
+telemetry_handler --> core_exec_runner : observes telemetry\nfrom cFS instance
+core_exec_runner --> core_cpu1 : executes
+
+' Workflow Layer Internal Dependencies
+workflow_engine --> changelog_gen : enables
+workflow_engine --> format_checker : enables
+workflow_call --> workflow_engine : invokes reusable workflows
+
+' External System Interactions (Interfaces Only)
+github_actions --> workflow_call : triggers via
+ccdd --> makefile_manager : documented interface
+perfutils_java --> telemetry_handler : documented interface
+gen_sch_tbl --> makefile_manager : documented interface
+
+' Additional Build Layer Relationships
+git_submodule_handler --> makefile_manager : provides submodules
+makefile_sample --> makefile_manager : sample configuration
+sample_defs --> makefile_manager : default definitions
+
+@enduml

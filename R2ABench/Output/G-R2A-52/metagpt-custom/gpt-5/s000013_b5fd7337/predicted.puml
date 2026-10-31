@@ -1,0 +1,77 @@
+@startuml
+
+package "External Actors" {
+  boundary "Web Browser / End User" as Browser
+  boundary "Data Inspector / Operator" as Operator
+}
+
+package "Presentation Layer" {
+  component "React Frontend" as React
+  interface "UI-001 React UI (COM-001)" as UI001
+  UI001 --> React
+}
+
+package "Application/API Layer" {
+  component "FastAPI Backend" as FastAPI
+  interface "API-001 Song Lookup" as API001
+  API001 --> FastAPI
+}
+
+package "Data Store Layer" {
+  database "Elasticsearch" as ES
+  interface "API-002 ES Search/Index" as API002
+  API002 --> ES
+}
+
+package "Data Inspection Layer" {
+  component "Kibana" as Kibana
+  interface "API-004 ES Read" as API004
+  API004 --> ES
+  interface "UI-002 Kibana UI" as UI002
+  UI002 --> Kibana
+}
+
+package "External Systems" {
+  cloud "Genius API" as Genius
+  interface "API-003 Genius Search" as API003
+  API003 --> Genius
+}
+
+' Logical interactions
+Browser --> UI001
+React --> API001
+FastAPI --> API002
+Kibana --> API004
+Operator --> UI002
+FastAPI --> API003
+
+package "Deployment/Infrastructure Layer" {
+  node "Docker Runtime" as Docker {
+    node "Frontend Container" as C_Frontend
+    node "Backend Container" as C_Backend
+    node "Elasticsearch Container" as C_ES
+    node "Kibana Container" as C_Kibana
+    node "Docker Network" as C_Network
+  }
+
+  ' Containers attached to Docker Network
+  C_Frontend -- C_Network
+  C_Backend -- C_Network
+  C_ES -- C_Network
+  C_Kibana -- C_Network
+
+  ' External access patterns (clarify SPA behavior)
+  Browser --> C_Frontend : Loads SPA (COM-001)
+  Browser --> C_Backend : API calls (HTTP/S)
+
+  ' Backend outbound to external service
+  C_Backend --> Genius
+}
+
+' Mapping logical components to deployment containers
+React ..> C_Frontend : deployed to
+FastAPI ..> C_Backend : deployed to
+ES ..> C_ES : deployed to
+Kibana ..> C_Kibana : deployed to
+
+@enduml

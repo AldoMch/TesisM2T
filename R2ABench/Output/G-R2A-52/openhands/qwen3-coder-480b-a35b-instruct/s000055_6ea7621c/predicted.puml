@@ -1,0 +1,50 @@
+@startuml
+!theme plain
+skinparam linetype ortho
+
+title FAC10/week4-jajascript System Architecture
+
+package "Web Application" {
+  [Frontend] as frontend
+  [HTTP Router] as router
+  [Request Handler] as handler
+  [Search/Autocomplete Module] as search
+  [Local Data Access] as data
+  
+  database "Laureate Data\n(JSON)" as laureateData
+  folder "Public Assets" as assets {
+    [HTML Files] as html
+    [CSS Files] as css
+    [JavaScript Files] as js
+    [Image Files] as images
+  }
+}
+
+frontend --> router : HTTP requests
+router --> handler : Delegate home,\nstatic, not-found
+router --> search : Delegate search\n(URL contains 'search')
+handler --> assets : Serve static content
+search --> data : Get laureate names
+data --> laureateData : Read JSON data
+search --> handler : Return results
+handler --> frontend : HTTP responses
+search --> frontend : Autocomplete results
+
+note right of router
+  Routes requests based on URL patterns:
+  - '/' → Home page handler
+  - Contains 'search' → Search module
+  - Others → Static asset handler
+end note
+
+note right of search
+  Implements prefix matching algorithm
+  Returns at most 10 matching laureate names
+end note
+
+note right of data
+  Extracts field values from 
+  laureate objects
+end note
+
+@enduml

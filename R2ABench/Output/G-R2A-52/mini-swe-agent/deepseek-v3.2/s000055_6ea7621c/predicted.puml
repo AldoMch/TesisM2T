@@ -1,0 +1,100 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F0F0
+!define DATASTORE_COLOR #E6FFE6
+!define EXTERNAL_COLOR #FFF0E6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<DataStore>> DATASTORE_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+title Nobel Prize Laureates Autocomplete Web Application - Layered Architecture
+
+package "Presentation Layer" <<Layer>> {
+  component "Web Browser" <<Component>> {
+    component "Search Input Field"
+    component "Suggestions Display"
+  }
+}
+
+package "HTTP Layer" <<Layer>> {
+  component "HTTP Server" <<Component>> {
+    component "Request Handler"
+  }
+}
+
+package "Application Layer" <<Layer>> {
+  component "Router" <<Component>> {
+    note right: Routes requests based on URL patterns\n- / → Home page\n- search → Autocomplete\n- Others → Static assets
+  }
+  
+  component "Home Page Handler" <<Component>>
+  component "Static Asset Handler" <<Component>>
+  component "Not-Found Handler" <<Component>>
+  
+  component "Autocomplete Module" <<Component>> {
+    component "Search Algorithm"
+    component "Value Extractor"
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  database "Laureate Data Store" <<DataStore>> {
+    component "Local JSON Data"
+  }
+}
+
+package "Infrastructure Layer" <<Layer>> {
+  component "Heroku Platform" <<External>> {
+    component "Node.js Runtime"
+  }
+}
+
+' Web Browser to HTTP Server
+[Web Browser] --> [HTTP Server] : HTTP Requests\n(GET /, search, static assets)
+
+' HTTP Server to Router
+[HTTP Server] --> [Router] : Delegates requests
+
+' Router to Handlers
+[Router] --> [Home Page Handler] : / requests
+[Router] --> [Autocomplete Module] : search requests
+[Router] --> [Static Asset Handler] : Static file requests
+[Router] --> [Not-Found Handler] : Unhandled requests
+
+' Handlers to HTTP Server
+[Home Page Handler] --> [HTTP Server] : HTML response
+[Static Asset Handler] --> [HTTP Server] : Static assets\n(HTML, CSS, JS, JPG, ICO)
+[Not-Found Handler] --> [HTTP Server] : 404 HTML response
+[Autocomplete Module] --> [HTTP Server] : JSON array of names
+
+' Autocomplete Module to Data Store
+[Autocomplete Module] --> [Laureate Data Store] : Reads laureate data
+
+' HTTP Server to Web Browser
+[HTTP Server] --> [Web Browser] : HTTP Responses
+
+' Infrastructure dependencies
+[HTTP Server] --> [Heroku Platform] : Deployed on
+[Autocomplete Module] --> [Heroku Platform] : Runs in Node.js
+
+note bottom of [Autocomplete Module]
+  Functions:
+  - Prefix matching
+  - Limit to 10 results
+  - Field value extraction
+end note
+
+note right of [Laureate Data Store]
+  Contains:
+  - Nobel Prize laureate names
+  - Object-based data
+  - Fields: firstname, etc.
+end note
+
+@enduml

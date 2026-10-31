@@ -1,0 +1,145 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam nodeBackgroundColor #EAF7EA
+skinparam databaseBackgroundColor #FFF8E1
+skinparam cloudBackgroundColor #FCE4EC
+skinparam defaultFontSize 12
+skinparam ArrowColor #444444
+skinparam componentBorderColor #555577
+skinparam packageBorderColor #3344AA
+skinparam nodeBorderColor #227722
+
+title ParaStation/psmpi — Layered Architecture Diagram
+
+legend right
+  --> : required / structural dependency
+  ..> : optional / build-time conditional dependency
+endlegend
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "External Sources & OS Infrastructure" as ExtLayer {
+
+    component "hwloc Distribution Tarball\n(FR-001, FR-002)" as HwlocTarball
+
+    package "Autotools Toolchain" as AutotoolsPkg {
+        component "autogen.sh" as Autogen
+        component "configure" as Configure
+        component "make / make check" as Make
+    }
+
+    package "Linux Verbs Infrastructure" as VerbsInfra {
+        component "libibverbs\n(>= 1.1.8)" as Libibverbs
+        component "librdmacm\n(>= 1.0.16)" as Librdmacm
+        component "Matching Verbs Headers\n(build-time)" as VerbsHeaders
+    }
+
+    component "OFI/libfabric\n(system-level instance)" as OFISystem
+    component "UCX\n(alternative CH4 backend)" as UCX
+}
+
+' ─────────────────────────────────────────────
+' LAYER 1 — BUILD & VERIFICATION
+' ─────────────────────────────────────────────
+package "Build & Verification Layer" as BuildLayer {
+
+    component "EmbeddedHwlocTestRunner\n./run-embedded-tests.sh <tarball>\n(configure → make → make check\n→ clean → distclean)\n[exits 0 on success, nonzero on failure]\n(FR-001, C-002)" as EmbeddedHwlocTestRunner
+
+    component "ManualHwlocBuildWorkflow\nhwloc-tree/ rename path\n(autogen.sh → configure → make)\n(FR-002, C-003)" as ManualHwlocBuildWorkflow
+
+    component "BuildEnvironmentVariables\n(CFLAGS, LDFLAGS,\nLD_LIBRARY_PATH)\n(NFR-003)" as BuildEnvVars
+}
+
+' ─────────────────────────────────────────────
+' LAYER 2 — COMMUNICATION SUBSYSTEM
+' ─────────────────────────────────────────────
+package "Communication Subsystem Layer" as CommLayer {
+
+    component "CommunicationSubsystemManager\n(init, finalize, progress,\nblocking-progress,\nconnection establishment)\n(FR-003)" as CommSubsystemMgr
+
+    component "OneToManyTransferHandler\n(scatter-style\none-to-many transfer)\n(FR-004)" as OneToManyHandler
+}
+
+' ─────────────────────────────────────────────
+' LAYER 3 — SEND STATE-MACHINE
+' ─────────────────────────────────────────────
+package "Send State-Machine Layer" as SendSMLayer {
+
+    component "SendStateMachine\n(flow-control gate, direct-access\nvs. packet-buffer mode,\nrndv-rts / rndv-cts / rndv-data\ncontrol-field population)\n(FR-005, FR-006, FR-007, FR-008)" as SendSM
+
+    component "FlowControlState\n(flow-restricted /\nflow-enabled condition)\n(FR-005, DR-005)" as FlowControlState
+
+    component "PacketBuffer\n(envelope + rendezvous\ncontrol terms: LIBA(OD),\ntwo LIBAs, one LIBA)\n(DR-001, DR-004)" as PacketBuffer
+
+    component "NetworkSendDescriptor\n(posted-send descriptor;\nassociated with PinnedUserData\nor PacketBuffer at post time)\n(DR-002, DR-003)" as NetworkSendDescriptor
+
+    component "DataDescriptor\n(payload descriptor;\nsource of data for packing\nor direct-access binding)\n(DR-003, FR-006, FR-007)" as DataDescriptor
+
+    component "PinnedUserData\n(user buffer pinned\nfor zero-copy DMA)\n(DR-002, DR-003, FR-006)" as PinnedUserData
+
+    component "NetworkDevice\n(hardware send endpoint;\nreceives posted send\ndescriptors from send path)\n(DR-002, Section 3)" as NetworkDevice
+}
+
+' ─────────────────────────────────────────────
+' LAYER 4 — TRANSPORT INTEGRATION
+' ─────────────────────────────────────────────
+package "Transport Integration Layer" as TransportLayer {
+
+    component "CH4NetworkModuleIntegration\n(CH4 network-module binding;\nselects OFI/libfabric or UCX)\n(Section 2)" as CH4NetMod
+
+    component "EmbeddedLibfabricModule\n(embedded Libfabric CH4 backend)" as EmbeddedLibfabric
+
+    component "VerbsProvider\n(optional sub-component;\nenabled at build time)\n(NFR-001, NFR-002)" as VerbsProvider
+}
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Build & Verification Layer
+' ─────────────────────────────────────────────
+HwlocTarball     --> EmbeddedHwlocTestRunner : consumed by (FR-001)
+HwlocTarball     --> ManualHwlocBuildWorkflow : consumed by (FR-002)
+
+AutotoolsPkg     --> EmbeddedHwlocTestRunner  : build toolchain
+AutotoolsPkg     --> ManualHwlocBuildWorkflow : build toolchain
+
+ManualHwlocBuildWorkflow --> BuildEnvVars : requires for non-default\npaths (NFR-003, C-003)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Build Env → Verbs (D-001 fix)
+' ─────────────────────────────────────────────
+BuildEnvVars --> VerbsProvider : required for verbs\nbuild paths\n(NFR-003, C-004, C-005)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Send State-Machine Layer (internal)
+' ─────────────────────────────────────────────
+SendSM --> FlowControlState      : consults before\nposting send\n(FR-005, DR-005)
+SendSM --> DataDescriptor        : reads payload source\nfor packing or\ndirect-access binding\n(FR-006, FR-007, DR-003)
+SendSM --> NetworkSendDescriptor : prepares per send;\nassociates with\nPinnedUserData or PacketBuffer\n(FR-006, DR-002)
+SendSM --> PacketBuffer          : writes control fields;\npacks payload\n(FR-007, FR-008, DR-001)
+
+DataDescriptor   --> PinnedUserData      : references pinned\nuser buffer\n(DR-002, DR-003)
+PinnedUserData   --> NetworkSendDescriptor : bound into descriptor\nfor zero-copy DMA\n(DR-002, FR-006)
+PacketBuffer     ..> NetworkSendDescriptor : associated at\nsend-post time\n(DR-001, DR-002)
+
+NetworkSendDescriptor --> NetworkDevice  : posted send descriptor\nsubmitted to hardware\n(DR-002, Section 3)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Transport Integration Layer
+' ─────────────────────────────────────────────
+CommSubsystemMgr --> CH4NetMod          : uses transport binding\n(FR-003)
+CH4NetMod        --> EmbeddedLibfabric  : selects OFI/embedded\nbackend
+CH4NetMod        --> UCX                : selects UCX backend\n(alternative)
+CH4NetMod        --> OFISystem          : selects system OFI\nbackend (Section 2)
+EmbeddedLibfabric --> OFISystem         : may delegate to\nsystem OFI instance
+EmbeddedLibfabric ..> VerbsProvider    : contains (optional,\nbuild-time conditional)\n(NFR-001, NFR-002)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Verbs Provider → External OS
+' ─────────────────────────────────────────────
+VerbsProvider --> Libibverbs   : required >= 1.1.8\n(NFR-001, C-004, C-005)
+VerbsProvider --> Librdmacm    : required >= 1.0.16\n(NFR-001, C-004, C-005)
+VerbsProvider --> VerbsHeaders : compile-time header\nmatch required (NFR-002)
+
+@enduml

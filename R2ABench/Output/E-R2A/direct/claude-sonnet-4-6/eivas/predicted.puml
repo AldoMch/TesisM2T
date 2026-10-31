@@ -1,0 +1,238 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #003366
+}
+skinparam rectangle {
+  BackgroundColor #EEF4FF
+  BorderColor #336699
+  FontColor #003366
+}
+skinparam component {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontColor #1B5E20
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F57F17
+  FontColor #4E342E
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+  FontColor #880E4F
+}
+skinparam actor {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontColor #4A148C
+}
+skinparam arrow {
+  Color #336699
+  FontColor #336699
+}
+
+title EIVAS — Epidemiological Investigation & Analysis Web System\nArchitecture Diagram
+
+'===== ACTORS =====
+actor "Epidemiological\nForm Filler" as Filler
+actor "Epidemiological\nAnalyst" as Analyst
+
+'===== EXTERNAL SERVICE =====
+cloud "Map / Geographic\nVisualization Service\n(AD-003)" as MapService
+
+'===== TOP-LEVEL SYSTEM BOUNDARY =====
+node "EIVAS Web Application (C-001)" {
+
+  '===== FRONT-END LAYER =====
+  rectangle "Front-End Layer (Browser / Multi-OS — NFR-006)" {
+
+    rectangle "Epidemiological Reporting Module" as ReportingUI {
+      component "Reporting Form\n(Basic / Disease / Itinerary / Imported)" as ReportForm
+      component "Activity Location\nPrompt Display (FR-002)" as PromptDisplay
+      component "Map Address\nConfirmation (FR-003)" as MapConfirm
+    }
+
+    rectangle "Case Management Module" as CaseMgmtUI {
+      component "Case List View\n(Name / ID / Gender / Phone /\nAge / Residence / Status — FR-005)" as CaseList
+      component "Search by Name (FR-006)" as NameSearch
+      component "Sort by Age (FR-007)" as AgeSort
+      component "Filter by Gender (FR-008)" as GenderFilter
+      component "Edit / Complete\nCase Info (FR-004)" as CaseEdit
+    }
+
+    rectangle "Individual Case Analysis Module" as IndividualUI {
+      component "Itinerary Path\nVisualization (FR-009)" as ItineraryViz
+      component "Associated Cases\nQuery (Spatial & Temporal\nThresholds — FR-010)" as AssocQuery
+      component "Case Relationship\nGraph (FR-011)" as RelGraph
+    }
+
+    rectangle "Overall Analysis Module" as OverallUI {
+      component "Regional Flow\nMap (FR-012)" as FlowMap
+      component "Case Clustering\nGraph (FR-013)" as ClusterGraph
+    }
+
+    rectangle "Outbreak Overview Module" as OutbreakUI {
+      component "Outbreak Heat\nMap (FR-014)" as HeatMap
+      component "Temperature & Humidity\nTrend Chart (FR-015)" as TempChart
+      component "Age Distribution\nPie Chart (FR-016)" as AgeChart
+      component "Occupation Distribution\nPie Chart (FR-017)" as OccChart
+      component "Transportation\nStats Bar Chart (FR-018)" as TransChart
+    }
+
+    rectangle "UI Support Components" as UISupport {
+      component "Operation Prompts &\nError Feedback (NFR-009, C-007)" as PromptFeedback
+      component "Data Quality\nError Prompt (DR-008)" as DataQualityPrompt
+    }
+  }
+
+  '===== BACK-END / API LAYER =====
+  rectangle "Back-End API / Service Layer" {
+
+    rectangle "Case & Reporting Service" as CaseService {
+      component "Case Submission\nHandler (FR-001)" as SubmitHandler
+      component "Activity Location\nPrompt Query (FR-002)" as PromptQuery
+      component "Case CRUD\nService (FR-004, FR-005)" as CaseCRUD
+      component "Case Search /\nSort / Filter\nService (FR-006, FR-007, FR-008)" as CaseQuerySvc
+    }
+
+    rectangle "Investigation & Association Service" as InvestService {
+      component "Itinerary Query\nService (FR-009)" as ItineraryQuery
+      component "Association Query\nService (FR-010)" as AssocSvc
+      component "Relationship Graph\nData Service (FR-011)" as RelGraphSvc
+    }
+
+    rectangle "Analysis Orchestration Service" as AnalysisSvc {
+      component "Regional Flow Map\nOrchestrator (FR-012)" as FlowOrch
+      component "Case Clustering\nOrchestrator (FR-013)" as ClusterOrch
+    }
+
+    rectangle "Statistical Data Service" as StatSvc {
+      component "Heat Map Data\nService (FR-014)" as HeatMapSvc
+      component "Climate Data\nService (FR-015)" as ClimateSvc
+      component "Demographic Stats\nService (FR-016, FR-017)" as DemoSvc
+      component "Transportation Stats\nService (FR-018)" as TransSvc
+    }
+
+    rectangle "Security & Reliability Services" as SecService {
+      component "Personal Info\nEncryption (NFR-004, C-004)" as Encryption
+      component "IP Cooldown /\nRate Limiter (NFR-005, C-004)" as RateLimiter
+      component "Failover Manager\n(NFR-003, C-005)\n[<20 min switchover]" as Failover
+    }
+  }
+
+  '===== ALGORITHM MODULE =====
+  rectangle "Algorithm Module (AD-002)" as AlgoModule {
+    component "Movement & Risk\nCalculation Engine\n(FR-012)" as RiskEngine
+    component "Case Clustering\nEngine\n(FR-013)" as ClusterEngine
+    component "Association\nThreshold Engine\n(FR-010)" as AssocEngine
+  }
+
+  '===== DATA LAYER =====
+  rectangle "Data Layer (AD-001)" {
+    database "Primary Database\n(Cases / Itineraries /\nAssociations / Stats)" as PrimaryDB
+    database "Backup Database\n(NFR-003, C-005)" as BackupDB
+
+    rectangle "Data Stores" {
+      component "Basic Case\nInfo Store (DR-001)" as CaseStore
+      component "Disease Info\nStore (DR-002)" as DiseaseStore
+      component "Itinerary Trajectory\nStore (DR-003)" as ItineraryStore
+      component "Imported Case\nInfo Store (DR-004)" as ImportedStore
+      component "Case Management\nRecord Store (DR-005)" as MgmtStore
+      component "Associated Case\nEntry Store (DR-006)" as AssocStore
+      component "Analytical Chart\nData Store (DR-007)" as ChartStore
+    }
+  }
+}
+
+'===== ACTOR CONNECTIONS =====
+Filler --> ReportForm : Enter case /\ndisease / itinerary /\nimported info
+Filler --> PromptDisplay : Receive location prompts
+Filler --> MapConfirm : Confirm address on map
+Filler --> CaseEdit : Complete / correct\ncase info
+
+Analyst --> CaseList : View & manage cases
+Analyst --> NameSearch : Search by name
+Analyst --> AgeSort : Sort by age
+Analyst --> GenderFilter : Filter by gender
+Analyst --> ItineraryViz : View itinerary paths
+Analyst --> AssocQuery : Query associated cases
+Analyst --> RelGraph : View relationship graph
+Analyst --> OverallUI : Regional & clustering analysis
+Analyst --> OutbreakUI : View outbreak overview
+
+'===== FRONT-END TO BACK-END =====
+ReportForm --> SubmitHandler : Submit formatted\ncase info (FR-001)
+PromptDisplay --> PromptQuery : Request location prompts
+MapConfirm --> MapService : Display & confirm\naddress on map
+CaseEdit --> CaseCRUD : Update case record
+CaseList --> CaseCRUD : Fetch case list
+NameSearch --> CaseQuerySvc : Name search
+AgeSort --> CaseQuerySvc : Age sort
+GenderFilter --> CaseQuerySvc : Gender filter
+ItineraryViz --> ItineraryQuery : Query itinerary
+AssocQuery --> AssocSvc : Query by threshold
+RelGraph --> RelGraphSvc : Fetch relationship data
+FlowMap --> FlowOrch : Request flow map
+ClusterGraph --> ClusterOrch : Request clustering graph
+HeatMap --> HeatMapSvc : Fetch heat map data
+TempChart --> ClimateSvc : Fetch climate data
+AgeChart --> DemoSvc : Fetch age stats
+OccChart --> DemoSvc : Fetch occupation stats
+TransChart --> TransSvc : Fetch transport stats
+
+'===== SECURITY WIRING =====
+CaseQuerySvc --> Encryption : Encrypt personal\ninfo queries (NFR-004)
+CaseCRUD --> Encryption : Encrypt personal\ninfo queries
+AssocSvc --> Encryption : Encrypt results
+SubmitHandler --> RateLimiter : Check IP rate
+CaseQuerySvc --> RateLimiter : Check IP rate
+
+'===== BACK-END TO ALGORITHM =====
+FlowOrch --> RiskEngine : Pass case data\nfor risk calculation
+ClusterOrch --> ClusterEngine : Pass case data\nfor clustering
+AssocSvc --> AssocEngine : Apply spatial &\ntemporal thresholds
+
+'===== BACK-END TO DATABASE =====
+SubmitHandler --> PrimaryDB : Store case record
+CaseCRUD --> PrimaryDB : CRUD operations
+CaseQuerySvc --> PrimaryDB : Query records
+ItineraryQuery --> PrimaryDB : Fetch itinerary
+AssocSvc --> PrimaryDB : Fetch association data
+RelGraphSvc --> PrimaryDB : Fetch graph data
+FlowOrch --> PrimaryDB : Fetch case info\n(data quality check DR-008)
+ClusterOrch --> PrimaryDB : Fetch case info\n(data quality check DR-008)
+HeatMapSvc --> PrimaryDB : Fetch stopover counts
+ClimateSvc --> PrimaryDB : Fetch climate data
+DemoSvc --> PrimaryDB : Fetch demographic data
+TransSvc --> PrimaryDB : Fetch transport data
+PromptQuery --> PrimaryDB : Query historical\nitinerary prompts
+
+'===== DATABASE INTERNAL =====
+PrimaryDB --> CaseStore
+PrimaryDB --> DiseaseStore
+PrimaryDB --> ItineraryStore
+PrimaryDB --> ImportedStore
+PrimaryDB --> MgmtStore
+PrimaryDB --> AssocStore
+PrimaryDB --> ChartStore
+
+'===== ALGORITHM RESULTS BACK =====
+RiskEngine --> FlowOrch : Return risk levels &\nflow map data
+ClusterEngine --> ClusterOrch : Return cluster results
+AssocEngine --> AssocSvc : Return filtered\nassociation entries
+FlowOrch --> FlowMap : Render or error prompt
+ClusterOrch --> ClusterGraph : Render or error prompt
+FlowOrch --> DataQualityPrompt : Insufficient data\nerror (DR-008)
+ClusterOrch --> DataQualityPrompt : Insufficient data\nerror (DR-008)
+
+'===== FAILOVER =====
+PrimaryDB --> Failover : Monitor health
+Failover --> BackupDB : Switch within 20 min\non unexpected event (NFR-003)
+
+@enduml

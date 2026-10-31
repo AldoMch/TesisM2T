@@ -1,0 +1,128 @@
+@startuml
+!define RECTANGLE rectangle
+!define CLOUD cloud
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+title "Containerized Song Mood Storage and Retrieval System Architecture"
+
+package "External Environment" {
+  actor "End User" as user
+  CLOUD "Web Browser" as browser
+  CLOUD "Genius API\n(External Service)" as genius_api #lightblue
+}
+
+package "Dockerized Application Stack" {
+  package "Frontend Layer" {
+    RECTANGLE "React Frontend\nContainer" as frontend #lightgreen
+    note right of frontend
+      React web application
+      Browser-accessible UI
+      Serves HTML/CSS/JS
+    end note
+  }
+  
+  package "Backend Layer" {
+    RECTANGLE "FastAPI Backend\nContainer" as backend #lightyellow
+    note right of backend
+      FastAPI Python application
+      Handles song lookup requests
+      Coordinates storage and external API calls
+    end note
+  }
+  
+  package "Storage Layer" {
+    RECTANGLE "Elasticsearch\nContainer" as elasticsearch #lightpink
+    note right of elasticsearch
+      Persistent storage for:
+      - Song records
+      - Mood associations
+      - Fast retrieval
+    end note
+  }
+  
+  package "Monitoring & Inspection" {
+    RECTANGLE "Kibana\nContainer" as kibana #lightgray
+    note right of kibana
+      Auxiliary data inspection UI
+      Visualizes Elasticsearch data
+      For operators and data inspectors
+    end note
+  }
+}
+
+'Docker Network' as docker_network
+
+'Docker Host\n(Container Runtime)' as docker_host
+
+user --> browser : "Accesses application\nvia HTTP(S)"
+browser --> frontend : "HTTP requests\n(UI-001, COM-001)"
+
+frontend --> backend : "API calls\n(API-001, FR-001)"
+
+backend --> elasticsearch : "Query/write song records\n& mood associations\n(API-002, FR-002, FR-004, FR-005)"
+
+backend --> genius_api : "Search for missing songs\n(API-003, FR-003, C-005)"
+
+kibana --> elasticsearch : "Data inspection\n(API-004, FR-006, C-004)"
+
+'Container Orchestration' as orchestration
+
+orchestration ..> frontend : "Deploys & manages"
+orchestration ..> backend : "Deploys & manages"
+orchestration ..> elasticsearch : "Deploys & manages"
+orchestration ..> kibana : "Deploys & manages"
+
+docker_host ..> frontend : "Runs in"
+docker_host ..> backend : "Runs in"
+docker_host ..> elasticsearch : "Runs in"
+docker_host ..> kibana : "Runs in"
+
+docker_network ..> frontend : "Connects via"
+docker_network ..> backend : "Connects via"
+docker_network ..> elasticsearch : "Connects via"
+docker_network ..> kibana : "Connects via"
+
+'Container Registry' as registry
+registry ..> orchestration : "Pulls images from"
+
+legend right
+  | Color Legend |
+  <#lightgreen> Frontend Component |
+  <#lightyellow> Backend Component |
+  <#lightpink> Storage Component |
+  <#lightgray> Monitoring Component |
+  <#lightblue> External Service |
+endlegend
+
+note top of frontend
+  **Technology:** React
+  **Constraint:** C-001
+end note
+
+note top of backend
+  **Technology:** FastAPI
+  **Constraint:** C-002
+end note
+
+note top of elasticsearch
+  **Technology:** Elasticsearch
+  **Constraint:** C-003, NFR-004
+end note
+
+note top of kibana
+  **Technology:** Kibana
+  **Constraint:** C-004
+end note
+
+note bottom of orchestration
+  **Deployment Constraint:** C-006
+  **External API:** C-007
+  **Dataset Scope:** C-008
+  **No Runtime Classifier:** C-009
+end note
+
+@enduml

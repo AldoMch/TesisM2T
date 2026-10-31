@@ -1,0 +1,115 @@
+@startuml
+skinparam componentStyle rectangle
+title Home Recipes System Architecture
+
+actor "End User" as EndUser
+actor "API Consumer / Tester" as ApiConsumer
+actor "Developer" as Dev
+actor "Operator" as Ops
+
+package "Shared Contract and Code Generation" {
+  artifact ".proto Service + Message Definitions\n(Protocol Buffers Contract)" as Proto
+
+  component "protoc" as Protoc
+  component "Dart protoc plugin" as DartPlugin
+  component "protoc-gen-go\n+ go-grpc plugin" as GoPlugin
+  component "protoc-gen-grpc-gateway" as GwPlugin
+
+  component "Generated Dart Client Stubs" as DartStubs
+  component "Generated Go Server Stubs" as GoStubs
+  component "Generated Gateway Reverse-Proxy" as GwStubs
+
+  Proto --> Protoc : input
+  Protoc --> DartPlugin
+  Protoc --> GoPlugin
+  Protoc --> GwPlugin
+
+  DartPlugin --> DartStubs
+  GoPlugin --> GoStubs
+  GwPlugin --> GwStubs
+
+  note bottom of GwPlugin
+  Requires proto annotations and gateway deps (C-003)
+  end note
+}
+
+package "Client Application" {
+  component "Flutter/Dart Client\n(Android, iOS, Web, macOS)" as Client
+  DartStubs -down-> Client : uses
+}
+
+package "Backend Server Stack" {
+  component "gRPC-Gateway\n(HTTP to gRPC)" as Gateway
+  component "Go gRPC Server\n(Recipe & Ingredient Services)" as Server
+
+  GwStubs -down-> Gateway : uses
+  GoStubs -down-> Server : uses
+
+  Gateway --> Server : gRPC calls\n(COM-003)
+}
+
+' External interactions
+EndUser --> Client : Uses UI (UI-001)
+ApiConsumer --> Gateway : HTTP requests\n(COM-002)
+
+' Client-to-Server gRPC
+Client --> Server : gRPC via generated stubs\n(COM-001)
+
+' HTTP Gateway endpoints
+interface "POST /recipes\n(addRecipe)" as addRecipe
+interface "GET /recipes\n(ListAllRecipes)\n(streaming where applicable)" as listRecipes
+interface "POST /home-ingredients\n(ListAllIngredientsAtHome)" as homeIngredients
+interface "POST /recipe-ingredients\n(GetAllIngredientsForRecipe)" as recipeIngredients
+
+Gateway -- addRecipe
+Gateway -- listRecipes
+Gateway -- homeIngredients
+Gateway -- recipeIngredients
+
+' Roles with tools
+Dev --> Protoc : generates code\n(FR-002, FR-003, API-001)
+Ops --> Gateway : run/deploy\n(FR-004..FR-006)
+Ops --> Server : run/deploy\n(FR-004..FR-006)
+
+' Deployment targets overview
+package "Deployment Targets" {
+  node "Local Execution" as Local
+  node "Docker Runtime" as Docker
+  node "Kubernetes (Local Cluster)" as K8s
+  node "Azure Kubernetes Service (AKS)" as AKS
+}
+
+Gateway ..> Local : deployable to\n(FR-003)
+Server ..> Local : deployable to\n(FR-003)
+
+Gateway ..> Docker : containerized\n(FR-004, NFR-003)
+Server ..> Docker : containerized\n(FR-004, NFR-003)
+
+Gateway ..> K8s : manifests apply\n(FR-005, NFR-004)
+Server ..> K8s : manifests apply\n(FR-005, NFR-004)
+
+Gateway ..> AKS : AKS manifests\n(FR-006, NFR-004)
+Server ..> AKS : AKS manifests\n(FR-006, NFR-004)
+
+note right of Gateway
+- Depends on gRPC Server at runtime (C-004)
+- Preserves streaming for ListAllRecipes (COM-004, NFR-005)
+- Exposes addRecipe, ListAllRecipes,\n  ListAllIngredientsAtHome,\n  GetAllIngredientsForRecipe (API-005..API-008)
+end note
+
+note right of Proto
+Shared contract drives client, server,\nand gateway interfaces (NFR-002, DR-001)
+end note
+
+note right of Docker
+Docker execution depends on built image\nand runtime availability (C-005)
+end note
+
+note right of K8s
+Requires valid manifests and local cluster (C-006)
+end note
+
+note right of AKS
+Requires valid AKS manifests and cluster access (C-007)
+end note
+@enduml

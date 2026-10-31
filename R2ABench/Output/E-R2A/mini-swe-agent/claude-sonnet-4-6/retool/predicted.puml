@@ -1,0 +1,76 @@
+@startuml
+title ReTool System Architecture
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+
+package "Client Layer" {
+    component [Web Browser Chrome 81+] as Browser
+    component [Vue.js Frontend SPA] as VueApp
+    Browser --> VueApp : renders
+}
+
+VueApp --> [API Gateway] : HTTP REST
+
+package "Gateway and Core Microservices (Local Server)" {
+    component [API Gateway] as Gateway
+    component [User Management Service] as UserSvc
+    component [Project Management Service] as ProjectSvc
+    component [Requirements Management Service] as ReqSvc
+}
+
+Gateway --> UserSvc : route
+Gateway --> ProjectSvc : route
+Gateway --> ReqSvc : route
+
+ReqSvc --> [Algorithm Service] : invoke NLP algorithms
+
+package "Algorithm Service Layer (Remote Server - EC2 t2.xlarge)" {
+    component [Algorithm Service] as AlgoSvc
+    note right of AlgoSvc : Flask + PyTorch + NLP
+    component [Requirement Itemization Module] as ItemizeMod
+    component [Requirement Structuring Module] as StructMod
+    component [Common Req Identification Module] as CommonMod
+    component [Conflict Detection Module] as ConflictMod
+    component [Association Analysis Module] as AssocMod
+    component [Forward Tracing Module] as TraceMod
+    AlgoSvc --> ItemizeMod
+    AlgoSvc --> StructMod
+    AlgoSvc --> CommonMod
+    AlgoSvc --> ConflictMod
+    AlgoSvc --> AssocMod
+    AlgoSvc --> TraceMod
+}
+
+package "Data Layer" {
+    database [MongoDB - 3-copy Replica Set] as MongoDB
+}
+
+UserSvc --> MongoDB : CRUD user and role data
+ProjectSvc --> MongoDB : CRUD project data
+ReqSvc --> MongoDB : CRUD requirement data
+AlgoSvc --> MongoDB : read/write analysis results
+
+package "Cross-Cutting Concerns" {
+    component [Authentication and Authorization] as Auth
+    component [Logging and Audit Service] as LogSvc
+    component [File Storage - Word Documents] as FileStor
+}
+
+Gateway --> Auth : validate token
+UserSvc --> Auth : issue/revoke token
+ReqSvc --> FileStor : upload/retrieve Word docs
+AlgoSvc --> FileStor : read docs for itemization
+UserSvc --> LogSvc : log events
+ProjectSvc --> LogSvc : log events
+ReqSvc --> LogSvc : log events
+AlgoSvc --> LogSvc : log events
+
+note top of Gateway
+  Routing, load balancing, rate limiting
+end note
+
+note bottom of MongoDB
+  Periodic backup, 3-copy offsite disaster recovery
+end note
+
+@enduml

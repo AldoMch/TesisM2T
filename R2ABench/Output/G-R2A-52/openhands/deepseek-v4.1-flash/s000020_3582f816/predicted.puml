@@ -1,0 +1,79 @@
+@startuml
+title MyEMS REST API and Admin Routing - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Administrator" as AdminUser
+actor "MyEMS Component" as MyEMSComp
+actor "Third-Party Application" as ThirdParty
+actor "Developer / Deployer" as DevDeploy
+
+rectangle "Admin Host (Current Browser Origin)" {
+
+  component "MyEMS Admin Application" as AdminApp {
+    component "Client-Side Router" as Router
+    component "User Settings Route\n/user\nMENU.USERSETTING.USER" as UserRoute
+    component "Contact Settings Route\n/contact\nMENU.SETTINGS.CONTACT" as ContactRoute
+    component "Tariff Settings Modules" as TariffModules
+    component "Category Settings Modules" as CategoryModules
+    component "Lazy-Loaded Route Modules\n(user/contact services, controllers, UI libs)" as LazyModules
+    component "API Base-Path Resolver\n{protocol}//{hostname}:{port}/api/" as BasePathResolver
+    component "Same-Origin API Client" as ApiClient
+  }
+
+  database "Route Configuration Data\n(path, title key, module deps)" as RouteConfig
+}
+
+rectangle "API Deployment Environment" {
+
+  component "MyEMS REST API Service" as ApiService {
+    component "RESTful Endpoints" as RestEndpoints
+    component "CORS Support" as Cors
+    component "WSGI Execution Support" as Wsgi
+    component "Spreadsheet / Image Handling" as SpreadsheetImage
+    component "MySQL Connector" as MysqlConnector
+  }
+
+  component "Reverse Proxy (e.g. Nginx)\nTLS/HTTP /api/ routing" as ReverseProxy
+  node "Python Runtime\n(declared dependency set)" as PythonRuntime
+  database "MySQL-Compatible Database" as Database
+  node "Development Quick-Run\n(Linux / Windows)" as DevQuickRun
+  node "Docker-Based Installation" as DockerSetup
+}
+
+AdminUser --> AdminApp : navigates settings workflows
+AdminApp --> Router
+Router --> UserRoute : resolves
+Router --> ContactRoute : resolves
+Router --> TariffModules : settings coverage (FR-006)
+Router --> CategoryModules : settings coverage (FR-006)
+UserRoute --> LazyModules : declares dependencies
+ContactRoute --> LazyModules : declares dependencies
+LazyModules ..> Router : loaded before view is used
+
+AdminApp --> BasePathResolver : computes base path
+BasePathResolver --> ApiClient : provides /api/ base path
+ApiClient --> ReverseProxy : same-origin /api/ requests (HTTP/HTTPS)
+ReverseProxy --> RestEndpoints : forwards /api/ traffic
+ApiClient ..> RestEndpoints : direct same-origin /api/ access
+
+MyEMSComp --> RestEndpoints : RESTful integration
+ThirdParty --> RestEndpoints : REST integration
+RestEndpoints --> Cors
+RestEndpoints --> Wsgi
+RestEndpoints --> SpreadsheetImage
+ApiService --> MysqlConnector
+MysqlConnector --> Database : persistent storage
+PythonRuntime --> ApiService : provides dependencies (NFR-005)
+DevDeploy --> DevQuickRun : development execution
+DevDeploy --> DockerSetup : installation / setup
+DevQuickRun --> PythonRuntime
+DockerSetup --> PythonRuntime : prepares runtime environment
+RouteConfig --> Router
+RouteConfig --> UserRoute
+RouteConfig --> ContactRoute
+RouteConfig --> TariffModules
+RouteConfig --> CategoryModules
+
+@enduml

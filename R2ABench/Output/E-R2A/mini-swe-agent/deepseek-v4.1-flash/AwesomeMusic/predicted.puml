@@ -1,0 +1,99 @@
+@startuml
+title AwesomeMusic - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ===================== Client Layer =====================
+package "Client Layer" {
+  actor "Music Enthusiast / Composer" as User
+  component "Web Browser" as Browser {
+    component "Web Frontend\n(HTML/CSS/JS, Bootstrap)" as FE
+  }
+}
+
+' ===================== Edge / Gateway Layer =====================
+package "Edge / Gateway Layer" {
+  component "Nginx Gateway\n(HTTPS, Load Balancing, Network Isolation)" as Gateway
+}
+
+' ===================== Application Layer =====================
+package "Web Backend (Golang / Gin)" as Backend {
+  component "Account & Auth Service" as AuthSvc
+  component "Score Management Service\n(upload/download/list)" as ScoreSvc
+  component "Favorite & Follow Service" as SocialSvc
+  component "Search Service" as SearchSvc
+  component "Recommendation Service" as RecSvc
+  component "Hot Chart Service" as HotSvc
+  component "Model Management Service" as ModelSvc
+  component "Generation Request Service" as GenSvc
+  component "Scheduling & Task Service\n(serialize metadata, enqueue, poll status, retry)" as SchedSvc
+}
+
+' ===================== Messaging / Coordination Layer =====================
+package "Messaging & Coordination Layer" {
+  queue "RabbitMQ\nTask Queue (MQ)" as MQ
+  component "etcd\nService Registry / Coordination" as Etcd
+}
+
+' ===================== Algorithm Service Layer =====================
+package "Algorithm Service" as Algo {
+  component "Online Generation Service\n(midi->abc, 5 track seeds, score, abc->midi)" as OnlineGen
+  component "MIDI/ABC Conversion" as Conv
+  component "Track Seed Extraction" as SeedExt
+  component "User GPT-2 Generation Model" as GPT2
+  component "LSTM Score Representation\n& Classification" as LSTM
+  component "Recommendation Algorithm" as RecAlgo
+  component "Offline Model Iterative Upgrade\n(Daily Training)" as OfflineTrain
+}
+
+' ===================== Data Layer =====================
+package "Data Layer" {
+  database "Relational Database\n(accounts, scores, favorites, follows,\nlabels, task metadata, hot charts)" as RDB
+  database "Hadoop HDFS\n(MIDI/ABC artifacts, 3-replica storage)" as HDFS
+}
+
+' ===================== External Systems =====================
+package "External Systems" {
+  component "MIDI Player / MIDI-Capable Software" as MidiPlayer
+}
+
+' ===================== Relationships =====================
+User --> Browser
+Browser --> Gateway : HTTPS
+Gateway --> FE : serves static assets
+FE --> Gateway : HTTPS REST/API
+Gateway --> Backend : TCP/IP
+
+AuthSvc --> RDB
+ScoreSvc --> RDB
+ScoreSvc --> HDFS
+SocialSvc --> RDB
+SearchSvc --> RDB
+RecSvc --> RecAlgo
+HotSvc --> RDB
+ModelSvc --> RDB
+GenSvc --> SchedSvc
+SchedSvc --> MQ : enqueue task metadata
+SchedSvc --> RDB : task status / logs
+Backend --> Etcd : coordination / discovery
+
+MQ --> OnlineGen : generation tasks
+MQ --> OfflineTrain : daily training / classification / recommendation tasks
+OnlineGen --> Conv
+OnlineGen --> SeedExt
+OnlineGen --> GPT2
+OfflineTrain --> GPT2 : update user model params
+OfflineTrain --> LSTM
+RecAlgo --> LSTM
+
+Conv --> HDFS : abc/midi files
+SeedExt --> HDFS
+GPT2 --> HDFS : model parameters
+LSTM --> RDB : score labels / representations
+
+ScoreSvc --> MidiPlayer : downloadable MIDI
+HDFS ..> RDB : metadata references
+
+@enduml

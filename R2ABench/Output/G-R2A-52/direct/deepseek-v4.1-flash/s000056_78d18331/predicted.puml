@@ -1,0 +1,74 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+actor "HTTP Client" as HttpClient
+actor "Operator" as Operator
+actor "Test Engineer" as TestEngineer
+
+node "Kubernetes Node" {
+  node "Privileged DaemonSet: host-scanner" as HostScanner {
+    interface "HTTP API" as HttpApi
+    component "HTTP Endpoint Handler" as EndpointHandler
+    component "CNI Configuration Directory Resolver" as CniResolver
+    component "Control-Plane JSON Sanitizer" as Sanitizer
+  }
+  component "Kubernetes Node Host Information" as HostInfo
+}
+
+package "host-scanner Test Suite" {
+  component "Provider-Specific E2E Tests" as E2ETests
+  artifact "Go Build Tags\n//go:build &lt;provider&gt;" as BuildTags
+}
+
+component "Runtime & Process Configuration Inputs\n(runtime type, config-file content,\nCLI CNI-directory args)" as RuntimeInputs
+component "Control-Plane JSON Data\n(with encryption provider secrets)" as JsonRaw
+component "Sanitized JSON Output\n(secrets removed)" as JsonClean
+
+HttpClient --> HttpApi : HTTP GET request
+HttpApi --> HttpClient : HTTP response\n(status codes)
+HttpApi -- EndpointHandler : routes requests
+EndpointHandler --> HttpApi : 404 for /doesnotexist\nand other responses
+
+EndpointHandler ..> CniResolver : uses for path resolution
+EndpointHandler ..> Sanitizer : uses for JSON sanitization
+
+CniResolver --> RuntimeInputs : consumes runtime/config/CLI inputs
+CniResolver --> HostInfo : reads host info
+CniResolver --> RuntimeInputs : resolves CNI dir\n(/etc/cni/, /var/lib/cni/, subpaths)
+
+Sanitizer --> JsonRaw : accepts
+Sanitizer --> JsonClean : produces sanitized JSON
+
+E2ETests --> HttpApi : E2E HTTP requests
+E2ETests ..> BuildTags : selects provider-specific\nexpected data structures
+TestEngineer --> E2ETests : executes tests
+Operator --> HostScanner : deploys / runs
+
+note right of EndpointHandler
+  FR-001, NFR-003
+  Unknown endpoint /doesnotexist
+  returns HTTP 404
+end note
+
+note bottom of CniResolver
+  FR-002, DR-003, DR-004
+  Resolves CNI configuration directory
+  from runtime/process inputs
+end note
+
+note bottom of Sanitizer
+  FR-003, NFR-001, DR-005, DR-006
+  Removes encryption provider
+  configuration secrets
+end note
+
+note bottom of E2ETests
+  NFR-002, C-001, DR-007
+  Provider-specific E2E selection
+  via Go build tags
+end note
+
+@enduml

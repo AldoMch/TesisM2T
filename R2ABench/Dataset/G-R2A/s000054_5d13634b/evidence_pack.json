@@ -1,0 +1,119 @@
+{
+  "candidate": {
+    "sample_id": "s000054_5d13634b",
+    "repository_name": "tokencard/contracts",
+    "image_url": "https://github.com/tokencard/contracts/blob/master/docs/high_level_architecture.svg",
+    "source_ref": "bc0f072277770488e2c428c255785b186bd73589",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 67386,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 169,
+      "user_scenario": 103,
+      "api_io": 401,
+      "deployment": 2,
+      "constraints": 444,
+      "non_functional": 52
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|dense|hyde",
+      "score": 0.04103727791502561,
+      "text": "stance of the *Consumer Contract Wallet* (wallet.sol) to the Ethereum Network which interacts with an exchange rate *oracle* (oracle.sol) that exists to provide exchange rates needed to secure a user's tokens. The individual *Consumer Contract Wallet* contracts use the Ethereum Name Service (ENS) to resolve the location of the exchange rate oracle, as well as to resolve the location of the *controller* (controller.sol) contract, and the *tokenwhitelist* (tokenWhitelist.sol) contract. The *tokenWhitelist* is a whitelist of tokens and their exchange rates that are used to secure a user's tokens within their wallet, it also determines which tokens can be used to load the TokenCard and which..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|dense|hyde",
+      "score": 0.04054090806073884,
+      "text": "ber of different \"pots of tokens\" for a given user: - The user’s entire ETH and ERC20 token assets stored within the *Consumer Contract Wallet*. - An amount of ETH used to pay for the gas - *Gas Tank*. The *Gas Tank* is a representation of the ETH on the user's . It should be noted that this ETH is NOT protected by the security features in the *Consumer Contract Wallet* as it resides outside of the Smart Contract. ## Requirements - This will own all of the user’s Smart Contracts and will be referred to as the *Owner*, this is sometime referred to as an *Externally Owned Address* - The - Is a set of Addresses, owned and operated by Token Group Ltd, used to provide services to the end user..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "pkg/bindings/internals/controller.go",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05403225806451612,
+      "text": "default method if one is available. func (_Controller *ControllerRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) { return _Controller.Contract.ControllerTransactor.contract.Transfer(opts) } // Transact invokes the (paid) contract method with params as input values. func (_Controller *ControllerRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) { return _Controller.Contract.ControllerTransactor.contract.Transact(opts, method, params...) } // Call invokes the (constant) contract method with params as input values and // sets the output to result. The result type might be a single field for simple // returns, a slice of..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "pkg/bindings/mocks/oraclize-connector.go",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053867229952090125,
+      "text": "f interfaces for anonymous returns and a struct for named // returns. func (_Oraclize *OraclizeRaw) Call(opts *bind.CallOpts, result interface{}, method string, params ...interface{}) error { return _Oraclize.Contract.OraclizeCaller.contract.Call(opts, result, method, params...) } // Transfer initiates a plain transaction to move funds to the contract, calling // its default method if one is available. func (_Oraclize *OraclizeRaw) Transfer(opts *bind.TransactOpts) (*types.Transaction, error) { return _Oraclize.Contract.OraclizeTransactor.contract.Transfer(opts) } // Transact invokes the (paid) contract method with params as input values. func (_Oraclize *OraclizeRaw) Transact(opts *bind...."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "pkg/bindings/internals/controller.go",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05093918310237096,
+      "text": ".Transfer(opts) } // Transact invokes the (paid) contract method with params as input values. func (_Controller *ControllerTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) { return _Controller.Contract.contract.Transact(opts, method, params...) } // AdminCount is a free data retrieval call binding the contract method 0x2b7832b3. // // Solidity: function adminCount() constant returns(uint256) func (_Controller *ControllerCaller) AdminCount(opts *bind.CallOpts) (*big.Int, error) { var ( ret0 = new(*big.Int) ) out := ret0 err := _Controller.contract.Call(opts, out, \"adminCount\") return *ret0, err } // AdminCount is a free data..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "pkg/bindings/internals/controller.go",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.0504641091766905,
+      "text": ") } // ControllerCount is a free data retrieval call binding the contract method 0x15b9a8b8. // // Solidity: function controllerCount() constant returns(uint256) func (_Controller *ControllerCaller) ControllerCount(opts *bind.CallOpts) (*big.Int, error) { var ( ret0 = new(*big.Int) ) out := ret0 err := _Controller.contract.Call(opts, out, \"controllerCount\") return *ret0, err } // ControllerCount is a free data retrieval call binding the contract method 0x15b9a8b8. // // Solidity: function controllerCount() constant returns(uint256) func (_Controller *ControllerSession) ControllerCount() (*big.Int, error) { return _Controller.Contract.ControllerCount(&_Controller.CallOpts) } // ControllerC..."
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+@startuml
+title DeepCode Layered Architecture
+
+actor User
+package Frontend {
+  [UI Views] as UI
+  [Axios API Client] as APIClient
+}
+User --> UI
+UI --> APIClient
+
+package Backend {
+  package Presentation_Layer {
+    [REST Controllers] as RestControllers
+    [JWT Authentication Filter] as JwtFilter
+  }
+  package Proxy_Layer {
+    [Interceptors / Rate Limiter] as Interceptors
+    [LangChain4j Client] as LangChainClient
+    [Judge HTTP Client] as JudgeHttpClient
+    [SMTP Client] as SmtpClient
+  }
+  package Business_Layer {
+    [User Service] as UserService
+    [Problem Service] as ProblemService
+    [Solution Service] as SolutionService
+    [Forum Service] as ForumService
+    [AI Assistance Service] as AIService
+    [Submission/Judging Orchestrator] as Orchestrator
+  }
+  package Access_Layer {
+    [MyBatis-Plus Repositories] as Repos
+    [Redis Cache Access] as RedisAccess
+    [Object Storage Adapter (MinIO SDK)] as MinIOAccess
+  }
+}
+
+APIClient --> RestControllers : REST/JSON
+RestControllers --> JwtFilter
+JwtFilter --> Interceptors
+Interceptors --> UserService
+Interceptors --> ProblemService
+Interceptors --> SolutionService
+Interceptors --> ForumService
+AIService --> LangChainClient
+Orchestrator --> JudgeHttpClient
+
+UserService --> Repos
+ProblemService --> Repos
+SolutionService --> Repos
+ForumService --> Repos
+UserService --> RedisAccess
+ProblemService --> RedisAccess
+SolutionService --> RedisAccess
+ForumService --> RedisAccess
+ProblemService --> MinIOAccess
+SolutionService --> MinIOAccess
+
+database MySQL_5_7 as MySQL
+queue Redis_7_4 as Redis
+cloud MinIO_Object_Storage as MinIO
+cloud External_LLM_Provider as LLM
+node Judging_Service as Judge {
+  [JudgeHost] as JudgeHost
+  [JudgeCore] as JudgeCore
+}
+component SMTP_Server as SMTP
+
+Repos --> MySQL
+RedisAccess --> Redis
+MinIOAccess --> MinIO
+LangChainClient --> LLM
+JudgeHttpClient --> Judge
+SmtpClient --> SMTP
+
+note right of LLM
+AI problem recommendation, analysis, code explanations
+end note
+
+note right of Judge
+Executes submissions, enforces resource limits, returns results
+end note
+
+@enduml

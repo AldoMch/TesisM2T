@@ -1,0 +1,147 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #222222
+}
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #6677AA
+}
+skinparam node {
+  BackgroundColor #EEF8EE
+  BorderColor #448844
+}
+skinparam database {
+  BackgroundColor #FFF8E0
+  BorderColor #AA8800
+}
+skinparam cloud {
+  BackgroundColor #F5F0FF
+  BorderColor #7755AA
+}
+
+actor Guest
+actor "Registered User / Player" as Player
+actor "Community Administrator" as Admin
+
+node "Client Layer\n(Browser / Device)" {
+  package "Frontend Application\n(Vue.js + Nuxt.js SSR)" {
+    [Game UI\n(new game, saves, choices,\nbackground setup, tutorial)] as GameUI
+    [Community UI\n(posts, comments, replies,\nsearch, recommendations)] as CommunityUI
+    [User UI\n(registration, login, logout,\nprofile, browsing history)] as UserUI
+    [Favorites UI\n(add, view, remove)] as FavUI
+    [Notification UI\n(unread, read, delete)] as NotifUI
+    [Admin UI\n(user list, post list,\nreview, ban/restore)] as AdminUI
+  }
+}
+
+node "Deployment Infrastructure\n(Docker + Kubernetes)" {
+
+  package "API & Middleware Layer\n(Iris Go Framework)" {
+    [API Gateway / Router\n(routing, middleware,\nauthentication, session)] as APIGateway
+  }
+
+  package "Application Services" {
+    [User Service\n(registration, login, logout,\npassword, profile, history)] as UserSvc
+    [Admin Service\n(admin login/logout,\nuser & post governance,\nban / restore accounts)] as AdminSvc
+    [Game Service\n(new game, load save,\nchoices, background,\nsave CRUD, share save)] as GameSvc
+    [Community Service\n(posts, comments, replies,\nsearch, review workflow,\nhomepage recommendations)] as CommSvc
+    [Favorites Service\n(add, view, remove favorites)] as FavSvc
+    [Notification Service\n(create, view, mark read,\ndelete notifications)] as NotifSvc
+    [Achievement & Item Service\n(achievements, currency,\nhealth packs, items)] as AchievSvc
+  }
+
+  package "Data Access Layer\n(Gorm ORM)" {
+    [User Repository\n(accounts, profiles,\nbrowsing history)] as UserRepo
+    [Admin Repository\n(admin accounts,\npermissions, reports)] as AdminRepo
+    [Game Repository\n(saves, background,\ngame state, choices)] as GameRepo
+    [Community Repository\n(posts, comments, replies,\nreview records, search)] as CommRepo
+    [Favorites Repository\n(favorites folders,\npost links)] as FavRepo
+    [Notification Repository\n(messages, read status)] as NotifRepo
+    [Achievement Repository\n(achievements, currency,\nitems)] as AchievRepo
+  }
+
+}
+
+database "MySQL\nRelational Database" {
+  [user_accounts\nuser_profiles\nbrowing_history] as UserDB
+  [admin_accounts\npermissions\nreport_feedback\naccount_status] as AdminDB
+  [game_saves\ngame_background\ngame_state\nplayer_choices] as GameDB
+  [posts\ncomments\nreplies\npost_review_records\nsearch_data] as CommDB
+  [favorites] as FavDB
+  [notifications] as NotifDB
+  [achievements\ncurrency\nitems] as AchievDB
+  [sensitive_logs] as LogDB
+}
+
+cloud "External Services" {
+  [Large Language Model\n(plot generation, random events,\ndecision effects, state updates)] as LLMSvc
+  [AIGC Service\n(image generation,\nmusic & sound effects)] as AIGCSvc
+  [Email Service\n(verification codes,\npassword recovery)] as EmailSvc
+  [Cloud Provider /\nData Center\n(compute, storage, scaling)] as CloudInfra
+}
+
+Guest --> GameUI
+Guest --> CommunityUI
+Guest --> UserUI
+Player --> GameUI
+Player --> CommunityUI
+Player --> UserUI
+Player --> FavUI
+Player --> NotifUI
+Admin --> AdminUI
+
+GameUI --> APIGateway
+CommunityUI --> APIGateway
+UserUI --> APIGateway
+FavUI --> APIGateway
+NotifUI --> APIGateway
+AdminUI --> APIGateway
+
+APIGateway --> UserSvc
+APIGateway --> AdminSvc
+APIGateway --> GameSvc
+APIGateway --> CommSvc
+APIGateway --> FavSvc
+APIGateway --> NotifSvc
+APIGateway --> AchievSvc
+
+UserSvc --> UserRepo
+AdminSvc --> AdminRepo
+GameSvc --> GameRepo
+CommSvc --> CommRepo
+FavSvc --> FavRepo
+NotifSvc --> NotifRepo
+AchievSvc --> AchievRepo
+
+UserRepo --> UserDB
+AdminRepo --> AdminDB
+GameRepo --> GameDB
+CommRepo --> CommDB
+FavRepo --> FavDB
+NotifRepo --> NotifDB
+AchievRepo --> AchievDB
+UserRepo --> LogDB
+AdminRepo --> LogDB
+
+CommSvc --> NotifSvc : "triggers on comment /\nreply / review event"
+GameSvc --> NotifSvc : "triggers on\nreview event"
+GameSvc --> AchievSvc : "updates currency\n& achievements"
+CommSvc --> AchievSvc : "awards currency\nfor posting"
+
+GameSvc --> LLMSvc : "plot generation,\nrandom events,\ndecision effects"
+GameSvc --> AIGCSvc : "AIGC images,\nmusic & sound"
+UserSvc --> EmailSvc : "send verification\ncodes"
+
+note right of CloudInfra
+  Kubernetes orchestrates containers.
+  Docker packages all services.
+  Provides compute, storage,
+  auto-scaling, and fault recovery.
+end note
+
+@enduml

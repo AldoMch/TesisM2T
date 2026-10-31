@@ -1,0 +1,133 @@
+@startuml HelpWithCOVID_Architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam packageBorderColor #555555
+skinparam packageFontStyle bold
+skinparam componentBackgroundColor #DDEEFF
+skinparam componentBorderColor #336699
+skinparam databaseBackgroundColor #FFF8DC
+skinparam databaseBorderColor #B8860B
+skinparam cloudBackgroundColor #E8F8E8
+skinparam cloudBorderColor #228B22
+skinparam nodeBackgroundColor #F5F0FF
+skinparam nodeBorderColor #6A0DAD
+
+'============================
+' CONFIGURATION LAYER
+'============================
+package "Configuration Layer" as ConfigLayer #FFF3E0 {
+  component [FirebaseConfigLoader\n(Reads & exposes Firebase\nruntime config values)] as FirebaseConfigLoader
+  component [EnvStore\n(OS Env / .env / Secrets Manager)\n- FIREBASE_AUTH_DOMAIN\n- FIREBASE_DATABASE_URL\n- FIREBASE_PROJECT_ID\n- FIREBASE_PUBLIC_API_KEY] as EnvStore
+}
+
+'============================
+' FRONTEND / CHANNEL ENTRY LAYER
+'============================
+package "Frontend / Channel Entry Layer (Next.js)" as FrontendLayer #E3F2FD {
+  component [NextJsApp\n(Host Runtime)] as NextJsApp
+  component [SessionHandler\n(getIdToken / dispatch login|logout)] as SessionHandler
+  component [FormTaskEntryPoint\n(Web Form UI Intake)] as FormTaskEntryPoint
+  component [ExternalUserChannel\n(SMS / Telephony / Text-Call\nCI-003 / UI-002)] as ExternalChannel
+}
+
+'============================
+' MIDDLEWARE LAYER
+'============================
+package "Middleware Layer" as MiddlewareLayer #E8F5E9 {
+  component [TaskMiddleware\n(Address Resolution /\nService-Area Eligibility)] as TaskMiddleware
+  component [ServiceAreaRejector\n(Returns rejection response\nwhen outside operated area\nFR-011 / DR-008)] as ServiceAreaRejector
+}
+
+'============================
+' BACKEND LAYER
+'============================
+package "Backend Layer (Firebase Functions / Next.js API Routes)" as BackendLayer #F3E5F5 {
+  component [SessionMiddleware\n(Server-Side Session Provider\n<<wraps LoginApiRoute>>\nSI-004 / CON-004)] as SessionMiddleware
+  component [LoginApiRoute\n(POST /api/login)] as LoginApiRoute
+  component [LogoutApiRoute\n(POST /api/logout)] as LogoutApiRoute
+  component [FirebaseAdminVerifier\n(Firebase Admin SDK /\nToken Verification)] as FirebaseAdminVerifier
+  component [OnFleetTaskHandler\n(Task Creation Coordinator)] as OnFleetTaskHandler
+  component [ServerSideSession\n<<session data store>>\n(decoded token data +\noriginal token\nDR-004 / FR-006 / SI-004)] as ServerSideSession
+}
+
+'============================
+' BUILD CONFIGURATION LAYER
+' (Build-time constraint CON-005: CSS, Sass, static assets)
+'============================
+package "Build Configuration Layer (CON-005)" as BuildLayer #FFF9E6 {
+  component [NextJsBuildConfig\n(CSS / Sass / Static Asset\nConfiguration\nCON-005)] as NextJsBuildConfig
+}
+
+'============================
+' EXTERNAL INTEGRATION LAYER
+'============================
+package "External Integration Layer" as ExternalLayer #E0F7FA {
+  cloud "Firebase Authentication\n(Token Issuance &\nAdmin Verification)" as FirebaseAuth
+  cloud "OnFleet\n(Task Management /\nDelivery Platform)" as OnFleet
+}
+
+'============================
+' DEPENDENCIES — Configuration Layer
+'============================
+EnvStore --> FirebaseConfigLoader : supplies env vars\n(auth domain, project ID,\nAPI key, database URL)
+
+'============================
+' DEPENDENCIES — Configuration -> Frontend & External
+'============================
+FirebaseConfigLoader --> NextJsApp : provides Firebase runtime config\nat application startup (FR-008 / DR-005)
+FirebaseConfigLoader --> FirebaseAuth : initialises Firebase SDK\n(auth domain / project ID / API key\nDR-005)
+
+'============================
+' DEPENDENCIES — Build Configuration -> Frontend
+'============================
+NextJsBuildConfig --> NextJsApp : applies CSS / Sass /\nstatic asset pipeline (CON-005)
+
+'============================
+' DEPENDENCIES — Frontend internal
+'============================
+NextJsApp --> SessionHandler : hosts session logic
+NextJsApp --> FormTaskEntryPoint : hosts web form UI
+
+'============================
+' DEPENDENCIES — Entry Points -> Middleware (peer paths FR-010)
+'============================
+FormTaskEntryPoint --> TaskMiddleware : forwards task requests\n(address + user data)\n[Form UI path]
+ExternalChannel --> TaskMiddleware : forwards task requests\n(address + user data)\n[Channel path CI-003 / FR-010]
+
+'============================
+' DEPENDENCIES — Middleware internal (FR-011 / DR-008)
+'============================
+TaskMiddleware --> OnFleetTaskHandler : passes eligible requests\n(service-area approved /\nneighbourhood resolved)
+TaskMiddleware --> ServiceAreaRejector : routes ineligible requests\n(outside operated area)
+
+'============================
+' DEPENDENCIES — Frontend -> Backend (direct routes, no interface relay)
+'============================
+SessionHandler --> LoginApiRoute : POST /api/login\n(Firebase ID token in body)
+SessionHandler --> LogoutApiRoute : POST /api/logout\n(same-origin credentials)
+
+'============================
+' DEPENDENCIES — Backend: SessionMiddleware wraps LoginApiRoute (D3 fix)
+'============================
+SessionMiddleware ..> LoginApiRoute : <<wraps>>\n(provides session object\nto handler SI-004 / CON-004)
+
+'============================
+' DEPENDENCIES — Backend: Login flow
+'============================
+LoginApiRoute --> FirebaseAdminVerifier : invokes token verification\n(extracts & validates token)
+FirebaseAdminVerifier --> FirebaseAuth : Firebase Admin SDK\nID token verification call
+LoginApiRoute --> ServerSideSession : writes decoded token data\n+ original token to session\n(FR-006 / DR-004)
+
+'============================
+' DEPENDENCIES — Backend: Logout flow (H1/H2 fix — no reverse call to SessionMiddleware)
+'============================
+LogoutApiRoute --> ServerSideSession : destroys / invalidates\nserver-side session object\n(FR-002 / SI-002 / CI-002)
+
+'============================
+' DEPENDENCIES — Backend -> External
+'============================
+OnFleetTaskHandler --> OnFleet : OnFleet API call\n(create delivery / service task)
+
+@enduml

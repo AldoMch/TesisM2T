@@ -1,0 +1,192 @@
+@startuml Smart_Recipe_System_Architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BorderColor #555555
+  FontSize 13
+}
+skinparam PackageFontStyle bold
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #D6E8F7
+  FontSize 11
+}
+skinparam database {
+  BorderColor #336633
+  BackgroundColor #D6F0D6
+}
+skinparam cloud {
+  BorderColor #993366
+  BackgroundColor #F5D6E8
+}
+skinparam interface {
+  BorderColor #555555
+}
+skinparam ArrowColor #333333
+
+' ─────────────────────────────────────────────
+' MOBILE FRONTEND LAYER
+' ─────────────────────────────────────────────
+package "Mobile Frontend Layer" as MobileLayer #EAF4FB {
+
+  component [LoginScreen] as LoginScreen
+  component [PhotoCaptureScreen] as PhotoCaptureScreen
+  component [RecipeDisplayScreen] as RecipeDisplayScreen
+  component [HealthCenterScreen] as HealthCenterScreen
+  component [CommunityScreen] as CommunityScreen
+  component [RecommendationScreen] as RecommendationScreen
+  component [AdminInterfaceScreen] as AdminInterfaceScreen
+  component [FeedbackScreen] as FeedbackScreen
+  component [ImagePreprocessor] as ImagePreprocessor
+
+  ' DE-001 fix: PhotoCaptureScreen feeds image to ImagePreprocessor
+  PhotoCaptureScreen --> ImagePreprocessor : captured image
+}
+
+' ─────────────────────────────────────────────
+' CONTROL / API GATEWAY LAYER
+' ─────────────────────────────────────────────
+package "Control / API Gateway Layer\n(Spring Boot Controllers)" as GatewayLayer #FFF8E1 {
+
+  component [PhotoRecognitionController] as PhotoRecCtrl
+  component [UserController] as UserCtrl
+  component [RecipeController] as RecipeCtrl
+  component [HealthController] as HealthCtrl
+  component [CommunityController] as CommunityCtrl
+  component [RecommendationController] as RecommendationCtrl
+  component [AdminController] as AdminCtrl
+  component [FeedbackController] as FeedbackCtrl
+}
+
+' ─────────────────────────────────────────────
+' BUSINESS LOGIC LAYER
+' ─────────────────────────────────────────────
+package "Business Logic Layer\n(Spring Boot Services)" as BusinessLayer #FFF0E6 {
+
+  component [AuthManager] as AuthMgr
+  component [RecipeService] as RecipeSvc
+  component [NutritionAnalysisService] as NutritionSvc
+  component [CalorieJudgmentService] as CalorieSvc
+  component [FoodTabooService] as FoodTabooSvc
+  component [CommunityService] as CommunitySvc
+  component [RecommendationService] as RecommendSvc
+  component [AdminService] as AdminSvc
+  component [CheckInService] as CheckInSvc
+  component [MerchantLocationService] as MerchantSvc
+  component [FeedbackService] as FeedbackSvc
+}
+
+' ─────────────────────────────────────────────
+' MODEL INFERENCE LAYER
+' ─────────────────────────────────────────────
+package "Model Inference Layer\n(Flask Service)" as InferenceLayer #F0E6FF {
+
+  component [FlaskInferenceService] as FlaskSvc
+  component [ModelRuntime] as ModelRuntime
+
+  FlaskSvc --> ModelRuntime : executes inference
+}
+
+' ─────────────────────────────────────────────
+' DATA ACCESS LAYER
+' ─────────────────────────────────────────────
+package "Data Access Layer\n(Spring Boot DAL)" as DataAccessLayer #E6F0E6 {
+
+  component [DataAccessRepository] as DARepo
+}
+
+' ─────────────────────────────────────────────
+' PERSISTENCE LAYER
+' ─────────────────────────────────────────────
+package "Persistence Layer" as PersistenceLayer #E8F5E9 {
+
+  database "MySQL Database\n(users, recipes, ingredients,\nnutrition, health, merchants,\ncomments, history, feedback\n— 14+ entities)" as MySQL
+
+  database "Redis Cache\n(in-memory query cache)" as Redis
+}
+
+' ═════════════════════════════════════════════
+' INTER-LAYER DEPENDENCIES
+' ═════════════════════════════════════════════
+
+' --- Mobile -> Gateway (HTTP / Ajax) ---
+MobileLayer -down-> GatewayLayer : HTTP / Ajax requests\n(login, photo upload, search,\nsharing, check-in)
+
+' --- Explicit UI screen -> Controller connections ---
+' M-005 fix
+HealthCenterScreen -down-> HealthCtrl : health / check-in requests
+' M-006 fix
+AdminInterfaceScreen -down-> AdminCtrl : admin operations
+' M-008 fix
+RecommendationScreen -down-> RecommendationCtrl : recommendation requests
+' M-007 fix
+FeedbackScreen -down-> FeedbackCtrl : feedback submission
+
+' DE-001 fix: ImagePreprocessor sends vector to PhotoRecCtrl
+ImagePreprocessor -down-> PhotoRecCtrl : image matrix vector\n(preprocessed upload)
+
+' --- Gateway -> AuthManager (token validation) ---
+' M-001 fix: UserCtrl also connected; H-001 fix: removed interface artefact
+GatewayLayer -down-> AuthMgr : token validation\n(every protected endpoint)
+
+' --- Gateway Controllers -> Business Services ---
+' DE-003 fix: PhotoRecCtrl -> RecipeSvc (Business Layer), RecipeSvc -> FlaskSvc
+PhotoRecCtrl -down-> RecipeSvc : delegate recognition request
+UserCtrl -down-> AuthMgr : login / register / account mgmt
+RecipeCtrl -down-> RecipeSvc : recipe search / CRUD
+HealthCtrl -down-> NutritionSvc : health analysis / diet plan
+HealthCtrl -down-> CheckInSvc : check-in submission
+CommunityCtrl -down-> CommunitySvc : sharing / likes / comments
+' DE-004 fix: CommunityCtrl also routes to MerchantSvc
+CommunityCtrl -down-> MerchantSvc : merchant location display
+RecommendationCtrl -down-> RecommendSvc : personalized recommendations
+AdminCtrl -down-> AdminSvc : admin operations
+FeedbackCtrl -down-> FeedbackSvc : user feedback handling
+
+' --- RecipeService -> Flask Inference Service ---
+' DE-002 & DE-003 fix: Business Layer calls Flask, result returns to RecipeSvc
+RecipeSvc -right-> FlaskSvc : image matrix vector\n(cross-framework HTTP/REST)
+FlaskSvc -left-> RecipeSvc : predicted food identifiers\n(inference results)
+
+' --- Business Logic Internal ---
+' M-002 fix: FoodTabooService connected from NutritionSvc and RecipeSvc
+NutritionSvc -down-> FoodTabooSvc : food-combination taboo check
+RecipeSvc -down-> FoodTabooSvc : ingredient taboo validation
+
+' M-003 fix: CalorieJudgmentService
+NutritionSvc -down-> CalorieSvc : calorie judgment / evaluation
+RecipeSvc -down-> CalorieSvc : recipe calorie assessment
+
+' M-004 fix: CheckInService
+CheckInSvc -down-> DARepo : check-in record R/W
+
+' DE-006 fix: NutritionSvc reads back history for diet evaluation
+NutritionSvc -down-> DARepo : read prior check-in / diet history
+NutritionSvc -down-> DARepo : write nutrition / health data
+
+' DE-005 fix: AdminSvc acts on community content (not reverse)
+AdminSvc -down-> CommunitySvc : approve / reject community submissions
+
+' DE-007 fix: AdminSvc uses RecipeSvc for recipe addition
+AdminSvc -down-> RecipeSvc : add / manage recipes (FR-012)
+
+' --- Business Services -> Data Access ---
+AuthMgr -down-> DARepo : credential / token / profile R/W
+RecipeSvc -down-> DARepo : recipe lookup / CRUD
+FoodTabooSvc -down-> DARepo : taboo combination data lookup
+CalorieSvc -down-> DARepo : calorie / nutrition data lookup
+CommunitySvc -down-> DARepo : community content / comments
+RecommendSvc -down-> DARepo : follow / history records
+AdminSvc -down-> DARepo : admin data operations
+MerchantSvc -down-> DARepo : merchant location data
+FeedbackSvc -down-> DARepo : feedback record R/W
+
+' H-002 fix: Redis is infrastructure, accessed directly from DARepo
+' --- Data Access -> Persistence ---
+DARepo -down-> MySQL : SQL read / write\n(all data entities)
+DARepo -down-> Redis : cache GET / SET / EXPIRE\n(recipes, nutrition tables)
+DARepo ..down..> MySQL : fallback on cache miss
+
+@enduml

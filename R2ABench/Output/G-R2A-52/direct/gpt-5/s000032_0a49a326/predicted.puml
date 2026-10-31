@@ -1,0 +1,123 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+
+legend right
+= Legend =
+- Grey components: Architecture background
+- Solid components: Behaviors required by SRS
+endlegend
+
+actor "Authenticated User" as AuthUser
+actor "Task API User\n(ROLE_ACTIVITI_USER)" as TaskUser
+actor "Human Participant" as Human
+actor "Developer / Integrator" as Dev
+actor "Cluster Operator" as Operator
+
+cloud "Public Internet\n(Public IP)" as Internet
+component "Keycloak\nIdentity Provider / SSO" as Keycloak
+
+node "Kubernetes / GKE Cluster" as K8s {
+  component "NGINX Ingress Controller" as Ingress
+
+  package "Example Runtime Bundle\n(Spring Boot)" as RB {
+    component "User Endpoints\n- Process Definitions\n- Start SimpleProcess" as Endpoints
+    component "ProcessRuntime API" as ProcessAPI
+    component "TaskRuntime API" as TaskAPI
+    component "Spring Security\n(User/Groups/Roles)" as SpringSecurity
+  }
+
+  component "Audit Service" as Audit
+  component "Query Service" as Query
+  component "Notification Service" as Notify #Silver
+  component "Cloud Connectors" as Connectors #Silver
+  component "ConfigMaps / Registry" as Config #Silver
+  artifact "Deployment Descriptors\n(input rate, replica counts)" as Descriptors
+}
+
+' External authentication flow
+AuthUser --> Keycloak : Obtain token\n(API-001)
+TaskUser --> Keycloak : Obtain token\n(API-001)
+Human --> Keycloak : Obtain token (when applicable)
+
+' External access via ingress
+AuthUser --> Internet : Token-based requests\n(CI-003)
+TaskUser --> Internet : Task API requests\n(CI-003)
+Human --> Internet : Human task actions\n(via TaskRuntime)
+Dev --> Internet : Example calls combining\nProcessRuntime & TaskRuntime (API-008)
+
+Internet --> Ingress : External access to selected services\n(CI-002)
+Ingress --> Endpoints : Routed requests to user endpoints\n(FR-007)
+Ingress --> TaskAPI : Routed Task API requests\n(FR-007)
+Ingress --> Audit : Routed audit queries (read-only)\n(FR-007)
+Ingress --> Query : Routed query requests (read-only)\n(FR-007)
+
+' Internal authorization and API wiring
+Endpoints --> SpringSecurity : Validate token, establish user context\n(FR-001, CI-001, NFR-003)
+TaskAPI --> SpringSecurity : Enforce role check\n(ROLE_ACTIVITI_USER)\n(FR-005, C-002)
+SpringSecurity ..> Keycloak : Token issuer/JWKS configuration\n(C-001)
+
+' Process interactions
+Endpoints --> ProcessAPI : - List process definitions (FR-002)\n- Start SimpleProcess (FR-003)
+ProcessAPI --> Audit : Emit/view events for just-started instance\n(FR-004)
+ProcessAPI --> Query : Update/read process execution info\n(API-006)
+
+' Task interactions (human participant via TaskRuntime)
+TaskAPI --> Audit : Task-related audit events\n(API-005)
+TaskAPI --> Query : Task state reflected in query model\n(API-006)
+
+' Configuration and scalability controls
+Operator --> Ingress : Configure routes/hosts\n(FR-007, CI-002, C-003)
+Operator --> Descriptors : Configure input rate & replicas\n(NFR-002, DR-007)
+Descriptors --> RB : Apply replica counts / settings
+Descriptors --> Audit : Apply replica counts / settings
+Descriptors --> Query : Apply replica counts / settings
+Descriptors --> Connectors : Apply replica counts / settings #Silver
+Descriptors --> Notify : Apply replica counts / settings #Silver
+Config --> RB : Background config (registry/config maps) #Silver
+Config --> Audit : Background config #Silver
+Config --> Query : Background config #Silver
+
+' Notes for key requirements and constraints
+note right of SpringSecurity
+- Enforces token authentication (FR-001, CI-001, NFR-003)
+- Tokens are time-limited; expired/invalid rejected (NFR-001, AD-001/AD-002)
+- TaskRuntime requires ROLE_ACTIVITI_USER (FR-005, C-002, AD-003)
+- Uses Spring Security within Spring Boot (C-001)
+end note
+
+note right of Endpoints
+- View deployed process definitions (FR-002)
+- Start new SimpleProcess instance (FR-003)
+end note
+
+note bottom of Audit
+Displays audit events for the just-started process instance
+(FR-004, API-005, DR-004)
+end note
+
+note bottom of Query
+Exposes read-oriented process execution information
+(API-006, DR-005)
+end note
+
+note bottom of Ingress
+Routes external traffic from Public IP to selected internal services
+(FR-007, CI-002, C-003, AD-004)
+end note
+
+note bottom of Descriptors
+Scalability controls: input rate and replica counts
+(NFR-002, DR-007, AD-005)
+end note
+
+' Background components annotation
+Notify -[hidden]-> Connectors
+note right of Notify
+Architecture background (no explicit required behavior)
+(C-006)
+end note
+
+@enduml

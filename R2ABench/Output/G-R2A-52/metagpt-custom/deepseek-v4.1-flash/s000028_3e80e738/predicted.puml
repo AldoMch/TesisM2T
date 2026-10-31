@@ -1,0 +1,157 @@
+@startuml
+package "Deployment / Infrastructure-as-Code Layer" {
+  component "Cognito CloudFormation Stack" as CfnCognitoStack
+  component "API Gateway CloudFormation Stack" as CfnApiStack
+  component "VPC Endpoint CloudFormation Template" as CfnVpcEndpointTemplate
+  component "Installation Scripts/Inputs" as InstallInputs
+  component "DNS/Domain Inputs" as DnsDomainInputs
+  component "API Keys Inputs" as ApiKeysInputs
+  component "Environment Name Inputs" as EnvNameInputs
+  component "Stage Name Input" as StageNameInput
+  component "NLB ARN Input" as NlbArnInput
+}
+
+package "Cross-Account Integration Layer" {
+  interface "Cognito User-Pool ARN" as UserPoolArn
+}
+
+node "Cognito AWS Account" as CognitoAccount {
+  package "Authentication Layer" {
+    component "Cognito User Pool" as UserPool
+    component "Cognito User-Pool Client" as UserPoolClient
+    component "AccessTokenValidityUnits" as AccessTokenValidityUnits
+    component "IdTokenValidityUnits" as IdTokenValidityUnits
+    component "RefreshTokenValidityUnits" as RefreshTokenValidityUnits
+    component "Cognito Identity Pool" as IdentityPool
+    component "Permit Unauthenticated Identities" as PermitUnauthIdentities
+    component "Identity-Pool Role Mapping" as RoleMapping
+    component "Authenticated IAM Role" as AuthRole
+    component "Unauthenticated IAM Role" as UnauthRole
+    component "Unauthenticated Role Trust Policy\n(sts:AssumeRoleWithWebIdentity,\ncognito-identity.amazonaws.com,\nauth-method=unauthenticated)" as UnauthTrustPolicy
+    component "Unauthenticated Role Policy\n(limited actions)" as UnauthRolePolicy
+  }
+}
+
+node "API Gateway AWS Account" as ApiAccount {
+  package "API Layer" {
+    component "API Gateway Deployment" as ApiDeployment
+    component "API Gateway Stage" as ApiStage
+    component "Stage Name" as StageName
+    component "Cognito User-Pool Authorizer" as CognitoAuthorizer
+    component "WhoAmI Method" as WhoAmI
+    component "ECS Proxy Method" as EcsProxy
+    component "ECS Proxy Integration URI" as EcsIntegrationUri
+    component "API Gateway VPC Link" as VpcLink
+    component "CallbackURL Output" as CallbackURL
+    component "API Gateway Identifier" as ApiGatewayId
+    component "AWS Region" as AwsRegion
+  }
+}
+
+node "Network / VPC Environment" as VpcEnv {
+  package "Network/Connectivity Layer" {
+    component "VPC & Subnet Configuration" as VpcConfig
+    component "SQS VPC Interface Endpoint" as SqsEndpoint
+    component "VPC Endpoint Security Group" as EndpointSg
+    component "Private DNS Configuration" as PrivateDns
+  }
+}
+
+cloud "AWS CloudFormation" as AwsCfn
+cloud "AWS CLI Profiles" as AwsCli
+cloud "AWS Cognito" as AwsCognito
+cloud "AWS IAM" as AwsIam
+cloud "AWS API Gateway" as AwsApiGateway
+cloud "AWS VPC Networking" as AwsVpc
+cloud "AWS Security Groups" as AwsSg
+cloud "AWS Subnets" as AwsSubnets
+cloud "Amazon SQS" as AwsSqs
+node "Network Load Balancer" as Nlb
+
+' Deployment relations
+InstallInputs --> CfnCognitoStack : supplies installation-time inputs
+InstallInputs --> CfnApiStack : supplies installation-time inputs
+InstallInputs --> CfnVpcEndpointTemplate : supplies installation-time inputs
+DnsDomainInputs --> CfnApiStack : DNS/domain values
+ApiKeysInputs --> CfnApiStack : API keys
+EnvNameInputs --> CfnCognitoStack : environment names
+EnvNameInputs --> CfnApiStack : environment names
+EnvNameInputs --> CfnVpcEndpointTemplate : environment names
+StageNameInput --> CfnApiStack : stage name
+NlbArnInput --> CfnApiStack : NLB ARN
+AwsCli ..> InstallInputs : AWS profiles
+
+CfnCognitoStack ..> AwsCfn : deploys Cognito stack (YAML, 2010-09-09)
+CfnApiStack ..> AwsCfn : deploys API Gateway stack (YAML, 2010-09-09)
+CfnVpcEndpointTemplate ..> AwsCfn : deploys VPC endpoint template (YAML, 2010-09-09)
+
+CfnCognitoStack --> UserPool : provisions
+CfnCognitoStack --> UserPoolClient : provisions
+CfnCognitoStack --> IdentityPool : provisions
+CfnApiStack --> ApiDeployment : provisions
+CfnApiStack --> ApiStage : provisions
+CfnVpcEndpointTemplate --> SqsEndpoint : provisions
+
+' Authentication relations
+UserPool --> UserPoolClient : provides user-pool identifiers
+UserPoolClient --> IdentityPool : supplies ClientId / ProviderName
+UserPool --> IdentityPool : provider binding
+AccessTokenValidityUnits --> UserPoolClient : configures access token validity units (days/hours/minutes/seconds)
+IdTokenValidityUnits --> UserPoolClient : configures ID token validity units
+RefreshTokenValidityUnits --> UserPoolClient : configures refresh token validity units
+IdentityPool --> PermitUnauthIdentities : permits unauthenticated identities
+IdentityPool --> RoleMapping : attaches authenticated and unauthenticated roles
+RoleMapping --> AuthRole : authenticated role
+RoleMapping --> UnauthRole : unauthenticated role
+UnauthRole --> UnauthTrustPolicy : attached trust policy
+IdentityPool --> UnauthTrustPolicy : audience restricted to identity pool
+UnauthRole --> UnauthRolePolicy : limited policy actions
+UnauthTrustPolicy ..> AwsIam : managed by
+UnauthRolePolicy ..> AwsIam : managed by
+
+' User Pool ARN cross-account
+UserPool --> UserPoolArn : exposes ARN
+UserPoolArn --> CognitoAuthorizer : configures authorizer
+
+' API relations
+ApiDeployment --> WhoAmI : depends on method
+ApiDeployment --> EcsProxy : depends on method
+ApiDeployment --> ApiStage : deploys to stage
+StageNameInput --> StageName : configures stage name
+ApiStage --> StageName : uses stage name
+WhoAmI --> CognitoAuthorizer : uses authorization and maps custom:Role claim
+EcsProxy --> CognitoAuthorizer : uses authorization and forwards role claim to x-pagopa-pn-cx-role
+EcsProxy --> EcsIntegrationUri : uses configured integration URI
+EcsProxy --> VpcLink : integrates through
+VpcLink --> Nlb : routes to network load balancer ARN
+NlbArnInput --> VpcLink : configures NLB ARN
+ApiDeployment --> CallbackURL : publishes endpoint
+CallbackURL --> ApiGatewayId : composed with API Gateway identifier
+CallbackURL --> AwsRegion : composed with AWS region
+CallbackURL --> StageName : composed with stage name
+CallbackURL ..> AwsApiGateway : endpoint output
+
+' Network relations
+SqsEndpoint --> VpcConfig : uses VPC and subnets
+SqsEndpoint --> EndpointSg : associates security group
+EndpointSg --> VpcConfig : restricts inbound TCP 0-65535 to VPC CIDR
+SqsEndpoint --> PrivateDns : enables private DNS
+SqsEndpoint ..> AwsSqs : interface endpoint for regional SQS service
+
+' Managed-by / cloud relations
+UserPool ..> AwsCognito : managed by
+UserPoolClient ..> AwsCognito : managed by
+IdentityPool ..> AwsCognito : managed by
+AuthRole ..> AwsIam : managed by
+UnauthRole ..> AwsIam : managed by
+ApiDeployment ..> AwsApiGateway : managed by
+ApiStage ..> AwsApiGateway : managed by
+WhoAmI ..> AwsApiGateway : managed by
+EcsProxy ..> AwsApiGateway : managed by
+VpcLink ..> AwsApiGateway : managed by
+VpcConfig ..> AwsVpc : uses
+VpcConfig ..> AwsSubnets : uses
+EndpointSg ..> AwsSg : uses
+EndpointSg ..> AwsVpc : uses
+
+@enduml

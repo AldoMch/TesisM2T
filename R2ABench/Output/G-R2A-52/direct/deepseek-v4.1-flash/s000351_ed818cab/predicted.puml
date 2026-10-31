@@ -1,0 +1,119 @@
+@startuml
+title Kangrand System Architecture - SECP256K1 Interval ECDLP Solver
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Local Operator" as LocalOp
+actor "Distributed Operator" as DistOp
+actor "Offline Analyst" as Analyst
+
+package "Command-Line Environment" {
+  component "CLI Interface" as CLI
+}
+
+package "External Data & Files" {
+  component "ASCII Input File\n(hex values, compressed/uncompressed pubkeys)" as InputFile <<file>>
+  component "Work File\n(search + kangaroo state)" as WorkFile <<file>>
+  component "Wsplit Backup Files\n(prefixed work files)" as WsplitFile <<file>>
+  component "Server Configuration File" as ServerConfig <<file>>
+  component "Result File\n(solved key/output)" as ResultFile <<file>>
+  component "Master Work File /\nHash-Table Artifact" as MasterArtifact <<file>>
+}
+
+package "Solver Core" {
+  component "Input Parser\n(hex + public key parsing)" as Parser
+  component "Interval ECDLP Solver\n(Pollard's Kangaroo)" as Solver
+  component "Tame Herd" as Tame
+  component "Wild Herd" as Wild
+  component "Distinguished Point Selector\n(-d)" as DPS
+  component "In-Memory Hash Table\n(distinguished points)" as HashTable
+  component "Collision Detection &\nResult Reporting" as Collision
+}
+
+package "Persistence & Workflow" {
+  component "Work-File Manager\n(-w, -wi, -ws, -i)" as WorkMgr
+  component "Work-File Inspector\n(-info)" as Inspector
+  component "Offline Merger" as Merger
+  component "Wsplit Manager\n(prefixed backup, hash reset)" as Wsplit
+}
+
+package "Distributed Execution" {
+  component "Distributed Server\n(no authentication)" as Server
+  component "Distributed Client" as Client
+  component "GPU Compute Option\n(command-line enabled)" as GPU
+}
+
+LocalOp --> CLI
+DistOp --> CLI
+Analyst --> CLI
+
+CLI --> InputFile : select
+CLI --> Parser : start solve
+CLI --> WorkMgr : save/resume options
+CLI --> DPS : distinguished-point sizing
+CLI --> Inspector : inspect work file
+CLI --> Merger : merge work files
+CLI --> Server : start server\n(backup interval, DP setting, config)
+CLI --> Client : start client\n(server address)
+CLI --> GPU : GPU options
+
+InputFile --> Parser : read
+Parser --> Solver : parsed SECP256K1 interval instance
+Solver --> Tame
+Solver --> Wild
+Tame --> DPS : walk points
+Wild --> DPS : walk points
+DPS --> HashTable : store distinguished points
+HashTable --> Collision : check collisions
+Collision --> ResultFile : report solved key
+Collision --> Solver : continue/terminate state
+
+Solver --> WorkMgr : periodic state snapshot
+WorkMgr --> WorkFile : save/resume state
+WorkFile --> WorkMgr : resume data (-i)
+WorkMgr --> Wsplit : enable wsplit mode
+Wsplit --> WsplitFile : write prefixed backup
+Wsplit --> HashTable : reset after backup
+
+Inspector --> WorkFile : read
+Inspector --> CLI : work-file information
+
+Merger --> WorkFile : read multiple files
+Merger --> WsplitFile : read split-work files
+Merger --> MasterArtifact : combine into master work/hash table
+Merger --> ResultFile : merge-discovered result
+MasterArtifact --> ResultFile : consolidated output
+
+Server --> ServerConfig : read
+Server --> WorkFile : output server work files
+Server --> ResultFile : output server results
+Server --> Client : distribute work / accept connections
+Client --> Server : submit computed points / work
+Client --> GPU : optional GPU execution
+Client --> WorkFile : local work data
+Client --> ResultFile : local result data
+
+note right of Server
+  No built-in authentication.
+  Must be operator-controlled if exposed.
+  Stop clients before restarting with changed configuration.
+end note
+
+note bottom of Solver
+  Cryptographic scope: interval ECDLP on SECP256K1 only.
+end note
+
+note bottom of WorkMgr
+  Saved work can be resumed/merged for the same key and range
+  across hardware, distinguished-point bit counts, and kangaroo-count settings.
+end note
+
+note bottom of Merger
+  Merging split work files may require expected RAM at merge time
+  even if wsplit reduced RAM during collection.
+end note
+
+@enduml

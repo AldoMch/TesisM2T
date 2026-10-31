@@ -1,0 +1,83 @@
+@startuml
+
+node "Browser" {
+  package "Frontend Presentation (React)" {
+    component "Audio Playback UI"
+    component "Waveform Navigation UI"
+    component "Upload UI"
+    component "Image Upload UI"
+    component "Follow UI"
+    component "Feed Views"
+    component "Form UI"
+  }
+
+  package "Frontend State & Playback Control (Redux)" {
+    component "Redux Store & Actions"
+    component "Playback Manager"
+    component "HTTP API Client"
+    component "Cloudinary Upload Client"
+    component "Frontend Configuration Module"
+  }
+}
+
+node "Backend Server (Node/Express)" {
+  package "Backend API (Node/Express)" {
+    component "User/Auth Controller"
+    component "Follow Controller"
+    component "Feed Controller"
+    component "Sound Controller"
+  }
+}
+
+package "Data Persistence (PostgreSQL)" {
+  database "PostgreSQL" {
+    component "User Table/Model"
+    component "Sound Table/Model"
+    component "Follow Relationship Table/Model"
+  }
+}
+
+package "Media Storage (Cloudinary)" {
+  cloud "Cloudinary" {
+    component "Cloudinary Audio Storage"
+    component "Cloudinary Image Storage"
+  }
+}
+
+/' Key Frontend Flows '/
+"Audio Playback UI" --> "Playback Manager"
+"Waveform Navigation UI" --> "Playback Manager"
+"Playback Manager" --> "Redux Store & Actions"
+
+"Feed Views" --> "Redux Store & Actions"
+"Follow UI" --> "Redux Store & Actions"
+"Form UI" --> "Redux Store & Actions"
+
+"Upload UI" --> "Redux Store & Actions"
+"Image Upload UI" --> "Redux Store & Actions"
+
+"Redux Store & Actions" --> "HTTP API Client"
+"Redux Store & Actions" --> "Cloudinary Upload Client"
+"Cloudinary Upload Client" --> "Cloudinary Audio Storage"
+"Cloudinary Upload Client" --> "Cloudinary Image Storage"
+
+/' Frontend -> Backend API via HTTP Client '/
+"HTTP API Client" --> "User/Auth Controller"
+"HTTP API Client" --> "Sound Controller"
+"HTTP API Client" --> "Follow Controller"
+"HTTP API Client" --> "Feed Controller"
+
+/' Backend API -> Data Persistence '/
+"User/Auth Controller" --> "User Table/Model"
+"Sound Controller" --> "Sound Table/Model"
+"Follow Controller" --> "User Table/Model"
+"Follow Controller" --> "Follow Relationship Table/Model"
+"Feed Controller" --> "User Table/Model"
+"Feed Controller" --> "Sound Table/Model"
+"Feed Controller" --> "Follow Relationship Table/Model"
+
+/' Configuration dependencies '/
+"Frontend Configuration Module" --> "HTTP API Client"
+"Frontend Configuration Module" --> "Cloudinary Upload Client"
+
+@enduml

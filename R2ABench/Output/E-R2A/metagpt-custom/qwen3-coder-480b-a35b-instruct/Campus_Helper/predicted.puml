@@ -1,0 +1,75 @@
+@startuml
+' Deployment nodes representing runtime environments
+node "WeChat Mini Program Runtime" {
+    package "Presentation Layer" {
+        component "Product Interface"
+        component "Order Interface"
+        component "User Interface"
+        component "Admin Interface"
+        component "Personal Center Interface"
+    }
+}
+
+node "Campus Helper Backend" {
+    package "Business Layer" {
+        component "Product Module"
+        component "Order Module"
+        component "User Module"
+        component "Admin Module"
+        component "Favorite Module"
+        component "Security Validator"
+    }
+
+    package "Data Access Layer" {
+        component "Product Repository"
+        component "Order Repository"
+        component "User Repository"
+        component "Admin Repository"
+        component "Favorite Repository"
+        component "Category Repository"
+    }
+
+    package "Data Entity Layer" {
+        database "Database System"
+    }
+}
+
+' Presentation to Business Layer connections
+[Product Interface] --> [Product Module] : View Products
+[Order Interface] --> [Order Module] : Manage Orders
+[User Interface] --> [User Module] : Authenticate User
+[Admin Interface] --> [Admin Module] : Admin Operations
+[Personal Center Interface] --> [Favorite Module] : View Favorites
+[Personal Center Interface] --> [Order Module] : View Order History
+
+' Business Layer internal dependencies
+[Product Module] --> [Product Repository] : Access Products
+[Order Module] --> [Order Repository] : Access Orders
+[User Module] --> [User Repository] : Access Users
+[Favorite Module] --> [Favorite Repository] : Access Favorites
+[Admin Module] --> [Admin Repository] : Access Admin Data
+[Product Module] --> [Category Repository] : Access Categories
+[Order Module] --> [User Repository] : Get User Info
+[Product Module] --> [User Repository] : Get Publisher Info
+[Favorite Module] --> [Product Repository] : Fetch Favorited Products
+[Admin Module] --> [Product Repository] : Moderate Products
+[Admin Module] --> [Order Repository] : Monitor Orders
+[Admin Module] --> [User Repository] : Modify Users
+[Admin Module] --> [Admin Repository] : Log Activities
+
+' Security validation interactions
+[Product Interface] --> [Security Validator] : Validate Input
+[Order Interface] --> [Security Validator] : Validate Input
+[User Interface] --> [Security Validator] : Validate Credentials
+[Admin Interface] --> [Security Validator] : Validate Permissions
+[Personal Center Interface] --> [Security Validator] : Validate Session
+
+' Data Access Layer to Database
+[Product Repository] --> [Database System] : CRUD Operations
+[Order Repository] --> [Database System] : CRUD Operations
+[User Repository] --> [Database System] : CRUD Operations
+[Admin Repository] --> [Database System] : CRUD Operations
+[Favorite Repository] --> [Database System] : CRUD Operations
+[Category Repository] --> [Database System] : CRUD Operations
+
+@enduml

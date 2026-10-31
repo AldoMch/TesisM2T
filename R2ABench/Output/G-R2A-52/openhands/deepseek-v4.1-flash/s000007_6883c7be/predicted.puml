@@ -1,0 +1,126 @@
+@startuml
+title HTTP Proxy System - Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "HTTP Client" as Client
+
+package "HTTP Proxy System" {
+
+  package "HTTP Proxy Component" {
+
+    component "HTTP Proxy" as Proxy {
+      port "Inbound HTTP\n(FullHttpRequest)" as ProxyIn
+      port "Server-Side\nUpstream Channel" as ProxyUp
+    }
+
+    component "Proxy Forwarding Handler" as Forwarder {
+      note right of Forwarder
+        FR-002, FR-003, NFR-002, C-002
+        Retains inbound FullHttpRequest.
+        After upstream channel activates:
+        write + flush retained request
+        (URI, headers, body) - no header
+        or body transformation required.
+        Exposes URI/headers/body to debug log.
+      end note
+    }
+
+    component "Debug Logging" as DebugLog {
+      note right of DebugLog
+        NFR-002
+        Current forwarded request URI,
+        headers, and body content.
+      end note
+    }
+
+  }
+
+  package "Bundled Test Utilities" {
+
+    component "Test Server\n(Grizzly / Jersey)" as TestServer {
+      port "Base URI\n(API-001)" as BaseURI
+      port "GET /download\n(API-003)" as DownloadEP
+      port "File Upload\nHandling" as UploadEP
+    }
+
+    component "File Download Handler" as DownloadHandler {
+      note right of DownloadHandler
+        FR-004, FR-005, COM-002
+        If target file exists:
+          binary file body +
+          application/octet-stream +
+          Content-Disposition attachment
+          containing the file name.
+        Else: no file payload and
+        no attachment metadata.
+      end note
+    }
+
+    component "File Upload Handler" as UploadHandler {
+      note right of UploadHandler
+        FR-007, API-004, DR-005
+        Returns Map payload with
+        "filepath" -> handled file name.
+      end note
+    }
+
+    component "Async Test Client Workload" as TestClient {
+      port "Success Counter" as Counter
+    }
+    note right of TestClient
+      FR-006, NFR-001, NFR-003, C-003, DR-006
+      Fixed thread pool: 50 threads x
+      1,000 async GET requests = 50,000.
+      Counts responses whose status code == 200.
+      Shuts down executor and closes async client.
+    end note
+
+    component "Structured Response Object" as ResponseObj {
+      note right of ResponseObj
+        DR-002, DEF-003
+        code : Integer
+        msg  : String
+        data : Object
+      end note
+    }
+
+  }
+
+}
+
+node "Upstream Server" as Upstream {
+  port "Activated\nChannel" as UpstreamChannel
+}
+
+database "Local Filesystem\n(target file)" as FS
+
+' --- Runtime request/response path ---
+Client --> ProxyIn : HTTP request\n(URI, headers, body)\n[COM-001, DEF-001, DR-001]
+ProxyIn --> Forwarder : retained FullHttpRequest
+Forwarder --> ProxyUp : write + flush\n(after channel active) [C-002]
+ProxyUp --> UpstreamChannel : forwarded HTTP request\n[FR-002, FR-003, DEF-001]
+UpstreamChannel --> Upstream : process request
+Upstream --> Client : HTTP response\n(status code) [COM-001, DEF-002]
+Forwarder ..> DebugLog : URI, headers, body\n[NFR-002]
+
+' --- Test server startup and endpoints ---
+TestClient --> BaseURI : async HTTP GET\n[FR-001, API-001]
+TestClient --> TestServer : 50,000 async GET requests [NFR-001]
+BaseURI --> TestServer : web container started\nexposes reachable base URI [FR-001]
+DownloadEP --> DownloadHandler : request handling
+TestServer --> DownloadEP : GET /download [API-003]
+DownloadHandler --> FS : read target file [C-004, DR-003]
+FS --> DownloadHandler : file bytes (if exists)
+DownloadHandler --> Client : binary download response\n[FR-004, FR-005, COM-002, DEF-004]
+UploadEP --> UploadHandler : file upload handling
+UploadHandler --> ResponseObj : Map {"filepath": name}\n[FR-007, API-004, DEF-005]
+
+' --- Response handling ---
+TestClient --> ResponseObj : builds / reads
+ResponseObj --> Counter : status code drives\nsuccess decision [FR-006, DR-006]
+Upstream ..> Counter : status 200 observed
+
+@enduml

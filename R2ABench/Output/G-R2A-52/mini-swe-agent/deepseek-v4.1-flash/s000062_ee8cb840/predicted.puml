@@ -1,0 +1,147 @@
+@startuml
+title Udacity Self-Driving Car Engineer Capstone - Layered ROS System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+left to right direction
+
+' ============================================================
+' External / Environment layer
+' ============================================================
+package "External Environment" <<Environment>> {
+
+  component "Docker Engine\n(image build + runtime)" as Docker <<External>>
+  component "ROS Runtime\n(roscore / rospy / ROS topics)" as ROSRuntime <<External>>
+  component "Udacity Capstone\nProject Simulator" as Simulator <<External>>
+  component "Recorded Training Bag\n(.bag, download + unzip)" as TrainingBag <<External>>
+  component "Traffic Light Model\nClassifier Data" as TLModel <<External>>
+  component "CLI / Operator Console" as Operator <<External>>
+}
+
+' ============================================================
+' Data stores / data sources layer
+' ============================================================
+package "Data Layer" <<Data>> {
+
+  database "Waypoint Data Store\n(base_waypoints, twist.twist.linear.x\ntarget top speed)" as WaypointData <<DataStore>>
+  database "Traffic Light Image\n/ Classification Data" as TLData <<DataStore>>
+  database "Vehicle Command /\nTelemetry Data" as VehicleData <<DataStore>>
+}
+
+' ============================================================
+' Launch / Entry-point layer
+' ============================================================
+package "Launch / Entry Points" <<Launch>> {
+
+  component "launch/styx.launch\n(simulator mode)" as StyxLaunch <<Launch>>
+  component "launch/site.launch\n(site mode)" as SiteLaunch <<Launch>>
+  component "ROS Launch Manager\n(node graph bootstrap)" as ROSLaunch <<Launch>>
+}
+
+' ============================================================
+' Perception subsystem
+' ============================================================
+package "Perception Subsystem" <<Subsystem>> {
+
+  component "Traffic Light Detector Node\n(real image -> light region)" as TLDetector <<Node>>
+  component "Traffic Light Classifier Node\n(red / yellow / green state)" as TLClassifier <<Node>>
+  component "Traffic Waypoint Publisher\n(stop-related waypoint output)" as TLWaypointPub <<Node>>
+}
+
+' ============================================================
+' Planning subsystem
+' ============================================================
+package "Planning Subsystem" <<Subsystem>> {
+
+  component "Waypoint Loader Node\n(loads base waypoints)" as WaypointLoader <<Node>>
+  component "Waypoint Updater Node\n(final waypoints + target speed\n+ stop deceleration)" as WaypointUpdater <<Node>>
+}
+
+' ============================================================
+' Control subsystem
+' ============================================================
+package "Control Subsystem" <<Subsystem>> {
+
+  component "Waypoint Follower Node\n(path tracking / trajectory)" as WaypointFollower <<Node>>
+  component "Twist Controller\n(throttle + steering, speed <= target)" as TwistController <<Node>>
+  component "Drive-By-Wire (DBW) Node\n(vehicle command)" as DBWNode <<Node>>
+}
+
+' ============================================================
+' ROS Topic Bus (communication backbone)
+' ============================================================
+package "ROS Topic Bus" <<Communication>> {
+
+  component "/current_pose" as TCurrentPose <<Topic>>
+  component "/base_waypoints" as TBaseWaypoints <<Topic>>
+  component "/traffic_waypoint" as TTrafficWaypoint <<Topic>>
+  component "/final_waypoints" as TFinalWaypoints <<Topic>>
+  component "/twist_cmd" as TTwistCmd <<Topic>>
+  component "/vehicle_cmd" as TVehicleCmd <<Topic>>
+}
+
+' ============================================================
+' Dependencies: environment & launch
+' ============================================================
+Docker -down-> ROSRuntime : hosts
+Operator --> Docker : build / run commands
+Operator --> ROSLaunch : launch ROS nodes
+ROSLaunch -down-> StyxLaunch : selects simulator graph
+ROSLaunch -down-> SiteLaunch : selects site graph
+
+StyxLaunch -down-> WaypointLoader
+StyxLaunch -down-> WaypointUpdater
+StyxLaunch -down-> WaypointFollower
+StyxLaunch -down-> TwistController
+StyxLaunch -down-> DBWNode
+
+SiteLaunch -down-> WaypointLoader
+SiteLaunch -down-> WaypointUpdater
+SiteLaunch -down-> WaypointFollower
+SiteLaunch -down-> TwistController
+SiteLaunch -down-> DBWNode
+SiteLaunch -down-> TLDetector
+SiteLaunch -down-> TLClassifier
+
+' ============================================================
+' Dependencies: data sources
+' ============================================================
+WaypointData -up-> WaypointLoader : base waypoints
+TLModel -up-> TLClassifier : classifier model
+TrainingBag -up-> SiteLaunch : bag playback (site mode)
+Simulator -up-> StyxLaunch : simulator telemetry / control
+TLData -up-> TLDetector : real images
+
+' ============================================================
+' Dependencies: perception flow
+' ============================================================
+TLDetector --> TLClassifier : detections
+TLClassifier --> TLWaypointPub : light state
+TLWaypointPub --> TTrafficWaypoint : publishes
+
+' ============================================================
+' Dependencies: planning flow
+' ============================================================
+TCurrentPose --> WaypointUpdater : vehicle pose
+TBaseWaypoints --> WaypointUpdater : base path
+TTrafficWaypoint --> WaypointUpdater : stop / slowdown waypoint
+WaypointUpdater --> TFinalWaypoints : publishes final path
+
+' ============================================================
+' Dependencies: control flow
+' ============================================================
+TFinalWaypoints --> WaypointFollower : desired trajectory
+WaypointFollower --> TTwistCmd : linear/angular twist
+TTwistCmd --> TwistController : target speed and heading
+TwistController --> DBWNode : throttle / steering / brake
+DBWNode --> TVehicleCmd : publishes vehicle command
+TVehicleCmd --> Simulator : simulator mode actuation
+TVehicleCmd --> VehicleData : telemetry logging
+
+' ============================================================
+' Feedback loop
+' ============================================================
+Simulator -down-> TCurrentPose : pose feedback
+TrainingBag -down-> TCurrentPose : pose from recorded data
+
+@enduml

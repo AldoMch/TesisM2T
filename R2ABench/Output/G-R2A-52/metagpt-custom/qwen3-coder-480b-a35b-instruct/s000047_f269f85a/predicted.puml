@@ -1,0 +1,67 @@
+@startuml
+' Deployment Node for Electron Environment
+node "Electron Runtime Environment" {
+    ' Controller Layer
+    package "Controller Layer" {
+        component "ExportController"
+    }
+
+    ' Worker/Processing Layer
+    package "Worker/Processing Layer" {
+        component "TreeCsvExporter"
+        component "ResipExporter"
+        component "CsvExporter"
+        component "ExcelExporter"
+        component "HashComputer"
+    }
+
+    ' Utility/Service Layer
+    package "Utility/Service Layer" {
+        component "SettingsSanitizer"
+        component "TranslationModule"
+    }
+
+    ' External Systems within Electron Context
+    node "File System" {
+        database "FileSystem"
+    }
+
+    node "User Data Directory" {
+        database "UserDataDir"
+    }
+}
+
+' Data Flow Inputs to Controller
+ExportController --> FileSystem : reads files-and-folders map
+ExportController --> SettingsSanitizer : retrieves sanitized settings
+
+' Controller to SettingsStore interaction
+ExportController --> SettingsStore : reads raw settings
+
+' Dependencies - Controller to Workers
+ExportController --> TreeCsvExporter : invokes
+ExportController --> ResipExporter : manages
+ExportController --> CsvExporter : coordinates
+ExportController --> ExcelExporter : oversees
+
+' Dependencies - Export Workers to TranslationModule
+TreeCsvExporter --> TranslationModule : requires language
+ResipExporter --> TranslationModule : needs language
+CsvExporter --> TranslationModule : includes language
+ExcelExporter --> TranslationModule : requires language
+
+' HashComputer Dependencies
+HashComputer --> FileSystem : processes file paths and content
+HashComputer --> UserDataDir : writes debug files (FR-009)
+
+' Background Processing via Child Processes (NFR-001/NFR-002)
+TreeCsvExporter ..> "Child\nProcess\nMechanism" : spawns
+ResipExporter ..> "Child\nProcess\nMechanism" : spawns
+CsvExporter ..> "Child\nProcess\nMechanism" : spawns
+ExcelExporter ..> "Child\nProcess\nMechanism" : spawns
+HashComputer ..> "Child\nProcess\nMechanism" : uses
+
+' SettingsSanitizer Dependencies
+SettingsSanitizer --> SettingsStore : reads/writes sanitized settings
+
+@enduml

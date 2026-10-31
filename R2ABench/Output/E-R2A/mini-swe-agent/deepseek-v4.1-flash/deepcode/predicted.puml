@@ -1,0 +1,127 @@
+@startuml
+title DeepCode - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam arrowColor #444444
+skinparam componentBackgroundColor #F8F9FB
+skinparam databaseBackgroundColor #EAF3FF
+
+' ================= Actors =================
+actor "Visitor / Registered User" as User
+actor "Administrator" as Admin
+
+' ================= Front-end Layer =================
+package "Front-end Layer (Browser, HTML5)" {
+  component "Vue 3 SPA\nTypeScript, Vuex, vue-router" as SPA
+  component "UI Widgets\nAnt Design Vue, CodeMirror,\nwangEditor, ECharts, Axios" as Widgets
+}
+
+' ================= Edge / Proxy Layer =================
+package "Edge / Proxy Layer" {
+  component "DNS Service\n(domain resolution)" as DNS
+  component "CDN\n(images, CSS, JS)" as CDN
+  component "Nginx Reverse Proxy\nHTTPS / TLS termination" as Nginx
+}
+
+' ================= Presentation Layer =================
+package "Presentation Layer (Spring Boot 3.1.2 / JDK 21)" {
+  component "RESTful API Controllers" as API
+  component "Authentication Filters / Interceptor\nJWT / OAuth 2.0" as Auth
+  component "Input Validation\n(SQLi / XSS protection)" as Validation
+  component "Swagger / OpenAPI Docs" as Swagger
+}
+
+' ================= Business Layer =================
+package "Business Layer" {
+  component "User and Permission Service\nregister, login, profile,\nban / unban / grant roles" as UserSvc
+  component "Problem Bank Service\nbrowse, upload, review,\nedit, soft delete" as ProblemSvc
+  component "Judging Submission Service\nsubmit code, records,\ntask queue / service busy" as JudgeSubmitSvc
+  component "Solution Service\nedit, like, comment" as SolutionSvc
+  component "Forum Service\nposts, comments, likes,\nreplies, reports, drafts" as ForumSvc
+  component "AI Assistance Service\nLangChain4j: recommend, analyze,\nexplain, review, @AI replies" as AISvc
+  component "Notification Service\nSMTP email" as NotifySvc
+}
+
+' ================= Access / Data Layer =================
+package "Access Layer (MyBatis-Plus)" {
+  database "MySQL 5.7.44\nusers, problems, records,\nsolutions, forum, AI results" as MySQL
+  database "Redis 7.4.6\ncache and high-frequency data" as Redis
+  database "MinIO Object Storage\nimages, test cases, files" as MinIO
+}
+
+' ================= External Systems =================
+package "External Systems" {
+  package "Judging Service" {
+    component "JudgeHost\nscheduling, threads, queue" as JudgeHost
+    component "JudgeCore\nDocker sandbox, seccomp,\nresource limits" as JudgeCore
+  }
+  component "LLM Service\nlarge language model" as LLM
+  component "SMTP Mail Server" as SMTP
+}
+
+' ================= Observability =================
+package "Observability" {
+  component "Prometheus\n(metrics collection)" as Prometheus
+  component "Grafana\n(dashboards)" as Grafana
+  component "PagerDuty / DingTalk Robot\n(alert delivery)" as Alerting
+}
+
+' ================= Deployment and DevOps =================
+package "Deployment and DevOps" {
+  component "GitLab CI/CD" as CICD
+  component "Private Image Registry" as Registry
+  component "Kubernetes\ncontainer orchestration,\nscaling, rollback" as K8s
+}
+
+' ================= Relationships =================
+User --> SPA
+Admin --> SPA
+SPA --> Widgets
+SPA --> DNS
+SPA --> CDN
+SPA --> Nginx : HTTPS / REST
+
+Nginx --> API
+API --> Auth : validate login / permission
+Auth --> Validation
+API --> UserSvc
+API --> ProblemSvc
+API --> JudgeSubmitSvc
+API --> SolutionSvc
+API --> ForumSvc
+API --> AISvc
+
+UserSvc --> MySQL
+ProblemSvc --> MySQL
+JudgeSubmitSvc --> MySQL
+SolutionSvc --> MySQL
+ForumSvc --> MySQL
+AISvc --> MySQL
+
+UserSvc --> Redis
+ForumSvc --> Redis
+SolutionSvc --> Redis
+JudgeSubmitSvc --> Redis
+
+ProblemSvc --> MinIO
+JudgeSubmitSvc --> MinIO
+AISvc --> MinIO
+
+JudgeSubmitSvc --> JudgeHost : HTTP (intranet)
+JudgeHost --> JudgeCore : invoke
+JudgeCore --> MinIO : read test cases
+AISvc --> LLM : LangChain4j / HTTPS
+NotifySvc --> SMTP
+
+Prometheus --> MySQL : DB metrics
+Prometheus --> API : app metrics
+Grafana --> Prometheus
+Alerting --> Grafana
+
+CICD --> Registry : push images
+CICD --> K8s : deploy
+Registry --> K8s
+
+@enduml

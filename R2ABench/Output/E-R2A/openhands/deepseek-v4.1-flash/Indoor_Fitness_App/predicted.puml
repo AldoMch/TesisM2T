@@ -1,0 +1,177 @@
+@startuml
+title Indoor Fitness App - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =====================================================================
+' External Actors / Devices
+' =====================================================================
+actor "Amateur Exercise\nEnthusiast" as Amateur
+actor "Professional\nExerciser / Coach" as Pro
+actor "Administrator\nUser" as Admin
+
+actor "Mobile Phone Camera\n(>=30 fps)" as Camera <<device>>
+actor "Android Casting\nTarget Device\n(same LAN)" as CastTarget <<device>>
+
+' =====================================================================
+' Mobile App (Android 8.0+ / iOS 11.0+)
+' =====================================================================
+package "Indoor Fitness App (Mobile)" as MobileApp {
+
+  package "Presentation Layer" as Presentation {
+    component "App Main Interface\n(today plan preview / full plan)" as UIMain
+    component "Exercise Interface\n(movement, standard, evaluation,\nstick diagram, remaining time)" as UIExercise
+    component "Professional Report\nInterface (charts)" as UIReport
+    component "Exercise History\nInterface (calendar / monthly overview)" as UIHistory
+    component "Personal Interface\n(profile, preferences, records)" as UIPersonal
+    component "Casting Operation\nInterface (search/connect/cast)" as UICast
+  }
+
+  package "Application / Domain Layer" as Domain {
+    component "Posture Evaluation\nModule" as PostureEval
+    component "Training Plan\nModule" as PlanMgr
+    component "Exercise State\nMonitoring Module" as StateMonitor
+    component "Report & Poster\nModule" as ReportMgr
+    component "History & Personal\nManagement Module" as HistoryMgr
+    component "Identity & Permission\nModule" as AuthMgr
+  }
+
+  package "Processing Capabilities" as LocalProcessing {
+    component "Camera Capture\nInterface" as CameraCapture
+    component "Skeleton Extraction\n(real-time feedback)" as SkeletonExtract
+    component "Skeleton Comparison\n& Scoring Engine" as ScoringEngine
+    component "Real-time Screen\nRecording / Casting Client" as CastClient
+  }
+
+  package "Platform Foundation" as Foundation {
+    component "Module Interface /\nData Exchange Bus" as ModuleBus
+    component "Local Secure\nData Store\n(data-leakage controls)" as SecureStore
+  }
+}
+
+' =====================================================================
+' Server Side
+' =====================================================================
+package "Server-Side Processing" as Server {
+
+  package "Service Layer" as Services {
+    component "Recommendation\nService" as RecommendSvc
+    component "Report / Poster\nMaterial Processing Service" as MaterialSvc
+    component "Training Plan\nService" as PlanSvc
+    component "User & Identity\nService" as UserSvc
+    component "Administration\nService" as AdminSvc
+  }
+
+  package "Data Access Layer" as DataAccess {
+    component "Data Access /\nSQL Query Layer\n(input check, filtering,\nvariable binding,\nprecompiled statements)" as SqlAccess
+    component "Static / Dynamic\nData Model\n(E-R, data dictionary)" as DataModel
+  }
+}
+
+' =====================================================================
+' Data Stores (product unspecified)
+' =====================================================================
+database "Standard Video &\nStandard Movement Store" as StdMovementDB
+database "User / Body /\nTraining Profile Store" as UserDB
+database "Training Plan &\nCompletion Store" as PlanDB
+database "History, Report &\nPoster Material Store" as HistoryDB
+
+' =====================================================================
+' Relationships - Actors to App
+' =====================================================================
+Amateur --> UIMain
+Pro --> UIExercise
+Pro --> UIReport
+Admin --> AuthMgr
+
+Camera --> CameraCapture
+CameraCapture --> SkeletonExtract
+
+' =====================================================================
+' Relationships - Presentation to Domain
+' =====================================================================
+UIMain --> PlanMgr
+UIExercise --> PostureEval
+UIExercise --> StateMonitor
+UIReport --> ReportMgr
+UIHistory --> HistoryMgr
+UIPersonal --> HistoryMgr
+UICast --> CastClient
+
+' =====================================================================
+' Relationships - Domain internal
+' =====================================================================
+PostureEval --> SkeletonExtract
+PostureEval --> ScoringEngine
+PostureEval --> StateMonitor
+StateMonitor --> PlanMgr
+PlanMgr --> RecommendSvc
+ReportMgr --> MaterialSvc
+HistoryMgr --> UserSvc
+AuthMgr --> UserSvc
+AuthMgr --> AdminSvc
+
+' =====================================================================
+' Relationships - App to Server (protocol unspecified)
+' =====================================================================
+RecommendSvc --> PlanSvc
+MaterialSvc --> PlanSvc
+UserSvc --> SqlAccess
+AdminSvc --> SqlAccess
+PlanSvc --> SqlAccess
+RecommendSvc --> SqlAccess
+
+' =====================================================================
+' Relationships - Server to Data Stores
+' =====================================================================
+SqlAccess --> DataModel
+DataModel --> StdMovementDB
+DataModel --> UserDB
+DataModel --> PlanDB
+DataModel --> HistoryDB
+
+' =====================================================================
+' Relationships - Casting (same LAN)
+' =====================================================================
+CastClient --> CastTarget : "device discovery,\nconnection, video stream\n(<=100 ms), commands (<=50 ms)"
+
+' =====================================================================
+' Relationships - Module bus and secure store
+' =====================================================================
+ModuleBus -up- PostureEval
+ModuleBus -up- PlanMgr
+ModuleBus -up- ReportMgr
+ModuleBus -up- HistoryMgr
+ModuleBus -up- AuthMgr
+PostureEval --> SecureStore
+PlanMgr --> SecureStore
+HistoryMgr --> SecureStore
+AuthMgr --> SecureStore
+
+' =====================================================================
+' Deployment / Environment notes
+' =====================================================================
+note right of Server
+  Server HW: Pentium 900M (rec. P4 1.2G),
+  >=256 MB RAM.
+  Stores exercise data with SQL injection
+  protection; database product unspecified.
+end note
+
+note bottom of MobileApp
+  Mobile HW: octa-core 2.45 GHz,
+  4 GB RAM + 32 GB ROM+.
+  OS: Android 8.0+ / iOS 11.0+.
+  Runtime targets: pose model >=20 fps,
+  accuracy >=95% (normal), >=90% visible
+  parts under occlusion.
+end note
+
+note right of CastTarget
+  Casting precondition: same LAN.
+  Casting target limited to Android devices.
+end note
+
+@enduml

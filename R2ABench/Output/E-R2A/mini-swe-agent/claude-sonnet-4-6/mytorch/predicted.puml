@@ -1,0 +1,95 @@
+@startuml
+title MyTorch Deep Learning Framework - System Architecture
+
+skinparam componentStyle rectangle
+
+package "Frontend Layer" {
+    [Main Interface] as MainUI
+    [Configuration Interface] as ConfigUI
+    [Training Interface] as TrainUI
+    [Inference Interface] as InferUI
+}
+
+package "Backend Layer" {
+    [Backend API Service] as BackendAPI
+    [Model Initialization Service] as ModelInitSvc
+    [Model Training Service] as TrainSvc
+    [Inference Service] as InferSvc
+    [Model Management Service] as ModelMgmtSvc
+    [Exception and Fault Handler] as FaultHandler
+    [GPU Monitor] as GPUMonitor
+}
+
+package "MyTorch NNE Framework Layer" {
+    [MyTorch Core Engine] as MyTorchCore
+    [Data Loader] as DataLoader
+    [Classic Models ResNet VGG Transformer] as ModelDef
+    [Loss Functions] as LossFn
+    [Optimizers and LR Scheduler] as Optimizer
+    [Weight Initializer He Lecun Xavier] as WeightInit
+    [GPU Acceleration Module] as GPUAccel
+    [Forward and Backward Engine] as ForwardBack
+}
+
+package "Data Layer" {
+    database "SQLite Local DB" as SQLiteDB
+    [Model Store] as ModelStore
+    [Dataset Store] as DatasetStore
+    [Training Log Store] as TrainLog
+    [Inference Log Store] as InferLog
+    [DB Backup and Recovery] as DBBackup
+}
+
+package "External Environment" {
+    [Preset Datasets] as PresetData
+    [GPU Hardware] as GPU
+    [Python 3.8+ Runtime] as PythonRT
+    [NNE Base Framework] as NNEBase
+    [Public Datasets External] as ExtData
+}
+
+MainUI --> BackendAPI
+ConfigUI --> BackendAPI
+TrainUI --> BackendAPI
+InferUI --> BackendAPI
+
+BackendAPI --> ModelInitSvc
+BackendAPI --> TrainSvc
+BackendAPI --> InferSvc
+BackendAPI --> ModelMgmtSvc
+BackendAPI --> FaultHandler
+BackendAPI --> GPUMonitor
+
+ModelInitSvc --> MyTorchCore
+TrainSvc --> MyTorchCore
+InferSvc --> MyTorchCore
+ModelMgmtSvc --> MyTorchCore
+
+MyTorchCore --> DataLoader
+MyTorchCore --> ModelDef
+MyTorchCore --> LossFn
+MyTorchCore --> Optimizer
+MyTorchCore --> WeightInit
+MyTorchCore --> GPUAccel
+MyTorchCore --> ForwardBack
+
+SQLiteDB --> ModelStore
+SQLiteDB --> DatasetStore
+SQLiteDB --> TrainLog
+SQLiteDB --> InferLog
+SQLiteDB --> DBBackup
+
+ModelMgmtSvc --> SQLiteDB
+TrainSvc --> SQLiteDB
+InferSvc --> SQLiteDB
+DataLoader --> DatasetStore
+
+DataLoader --> PresetData
+PresetData --> ExtData
+
+MyTorchCore --> NNEBase
+GPUAccel --> GPU
+MyTorchCore --> PythonRT
+GPUMonitor --> GPU
+
+@enduml

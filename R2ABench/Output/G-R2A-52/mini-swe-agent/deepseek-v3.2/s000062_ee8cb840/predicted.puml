@@ -1,0 +1,95 @@
+@startuml
+!define LAYER1 #LightBlue
+!define LAYER2 #LightGreen
+!define LAYER3 #LightYellow
+!define LAYER4 #LightPink
+!define EXTERNAL #LightGray
+
+title Self-Driving Car System Architecture
+
+package "External Systems" {
+  component "Docker Environment" as docker <<Container>> EXTERNAL
+  component "ROS Framework" as ros <<Framework>> EXTERNAL
+  component "Udacity Simulator" as simulator <<Simulator>> EXTERNAL
+  component "Training Bag" as bag <<Data>> EXTERNAL
+}
+
+package "Launch Layer" {
+  component "styx.launch" as styx_launch <<Launch File>> LAYER1
+  component "site.launch" as site_launch <<Launch File>> LAYER1
+}
+
+package "Perception Subsystem" {
+  component "Traffic Light Detection" as traffic_detection <<ROS Node>> LAYER2
+  component "Traffic Light Classification" as traffic_classification <<ROS Node>> LAYER2
+  component "Stop Waypoint Generator" as stop_waypoint <<ROS Node>> LAYER2
+}
+
+package "Planning Subsystem" {
+  component "Waypoint Loader" as waypoint_loader <<ROS Node>> LAYER3
+  component "Waypoint Updater" as waypoint_updater <<ROS Node>> LAYER3
+  component "Final Waypoint Generator" as final_waypoint <<ROS Node>> LAYER3
+}
+
+package "Control Subsystem" {
+  component "Waypoint Follower" as waypoint_follower <<ROS Node>> LAYER4
+  component "Drive-by-Wire Controller" as dbw_controller <<ROS Node>> LAYER4
+}
+
+database "Waypoint Data" as waypoint_db <<Data Store>>
+database "Traffic Light Data" as traffic_db <<Data Store>>
+
+' External connections
+docker --> ros : "hosts"
+ros --> styx_launch : "executes"
+ros --> site_launch : "executes"
+styx_launch --> simulator : "controls"
+site_launch --> bag : "plays back"
+
+' Launch to subsystem connections
+styx_launch --> traffic_detection : "starts"
+styx_launch --> waypoint_loader : "starts"
+styx_launch --> waypoint_follower : "starts"
+
+site_launch --> traffic_detection : "starts"
+site_launch --> waypoint_loader : "starts"
+site_launch --> waypoint_follower : "starts"
+
+' Perception subsystem internal connections
+traffic_detection --> traffic_classification : "image data"
+traffic_classification --> stop_waypoint : "light state"
+stop_waypoint --> traffic_db : "stores classification"
+
+' Planning subsystem internal connections
+waypoint_loader --> waypoint_db : "reads waypoints"
+waypoint_updater --> waypoint_db : "updates waypoints"
+waypoint_updater --> final_waypoint : "processed waypoints"
+
+' Control subsystem internal connections
+waypoint_follower --> dbw_controller : "control commands"
+
+' Cross-subsystem ROS topic connections
+traffic_detection --> waypoint_updater : "traffic_waypoint"
+waypoint_loader --> waypoint_updater : "base_waypoints"
+final_waypoint --> waypoint_follower : "final_waypoints"
+waypoint_follower --> dbw_controller : "twist_cmd"
+dbw_controller --> simulator : "vehicle_cmd"
+
+' Data flow annotations
+note right of traffic_detection
+  Processes real images
+  from bag playback
+end note
+
+note right of waypoint_loader
+  Loads waypoints with
+  target speed in
+  twist.twist.linear.x
+end note
+
+note right of dbw_controller
+  Generates throttle,
+  steering, brake commands
+end note
+
+@enduml

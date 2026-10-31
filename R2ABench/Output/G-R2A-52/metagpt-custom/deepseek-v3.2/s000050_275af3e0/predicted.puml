@@ -1,0 +1,59 @@
+@startuml
+
+package "Host Control Layer" {
+    component "hAFL2 Controller" as hAFL2_Controller
+    component "Launch Scripts" as LaunchScripts
+    component "pytest Integration" as pytest_Integration
+    component "Linux Host System" as LinuxHost
+    component "initrd Builder" as initrd_Builder
+}
+
+package "Guest Execution Layer" {
+    node "Linux Guest VM" {
+        component "Embedded Forkserver" as EmbeddedForkserver
+        component "initrd" as initrd
+    }
+    
+    node "Child Partition VM" {
+        component "Child Partition Harness" as ChildHarness
+        component "harness-driver" as harness_driver
+        component "packet_sender.exe" as PacketSender
+        component "loader.exe" as Loader
+        component "Windows Offset Config" as WindowsOffsetConfig
+    }
+    
+    node "Root Partition VM" {
+        component "Crash-Monitoring Workflow" as CrashMonitor
+    }
+}
+
+package "Communication Layer" {
+    component "Hypercall/IOCTL Translation" as HypercallIOCTL
+    component "VMBus/netvsc Channel" as VMBus_Channel
+    database "Hyper-V Virtual Switch" as VMSwitch
+}
+
+' Key Dependencies
+LinuxHost --> initrd_Builder : "provides shared libraries"
+initrd_Builder --> initrd : "packages into"
+LaunchScripts --> initrd_Builder : "orchestrates"
+pytest_Integration --> hAFL2_Controller : "executes tests via"
+
+' Communication Paths
+hAFL2_Controller --> HypercallIOCTL : "orchestrates"
+HypercallIOCTL --> EmbeddedForkserver : "translates for Linux"
+HypercallIOCTL --> ChildHarness : "translates for Windows"
+ChildHarness --> harness_driver : "controls"
+harness_driver --> PacketSender : "triggers IOCTL"
+PacketSender --> VMBus_Channel : "sends payloads via"
+VMBus_Channel --> VMSwitch : "communicates through"
+VMSwitch --> CrashMonitor : "triggers monitoring"
+CrashMonitor --> hAFL2_Controller : "reports crash results"
+
+' Internal Dependencies
+Loader --> PacketSender : "creates snapshot & executes"
+WindowsOffsetConfig --> ChildHarness : "configures"
+WindowsOffsetConfig --> PacketSender : "configures"
+WindowsOffsetConfig --> Loader : "configures"
+
+@enduml

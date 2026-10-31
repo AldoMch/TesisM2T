@@ -1,0 +1,48 @@
+@startuml
+
+component "InteractiveScalaEngine"
+
+component "LIBSVMExporter"
+component "ChartDisplay"
+
+component "SearchProvider"
+component "DocumentVectorGenerator"
+component "WordCountGenerator"
+
+component "IndexProcessor"
+component "TermDataAccessor"
+
+component "SchemaLoader"
+component "SchemaParser"
+database "SchemaModel" as SchemaModel
+
+cloud "Apache Lucene\n(5.2.0 ecosystem)" as Lucene
+database "External ML Tools\n(e.g., Spark, Mahout)" as MLTools
+file "Configuration\nFile/Resource" as ConfigSource
+
+' Core processing flow
+IndexProcessor --> TermDataAccessor : accesses
+DocumentVectorGenerator --> IndexProcessor : sources from
+WordCountGenerator --> IndexProcessor : sources from
+LIBSVMExporter --> DocumentVectorGenerator : obtains from
+ChartDisplay --> WordCountGenerator : receives data from
+
+' Search flow
+SearchProvider --> IndexProcessor : queries
+InteractiveScalaEngine --> SearchProvider : uses
+InteractiveScalaEngine --> DocumentVectorGenerator : uses
+InteractiveScalaEngine --> WordCountGenerator : uses
+
+' Schema configuration flow
+SchemaLoader --> ConfigSource : loads from
+SchemaParser --> SchemaLoader : parses after
+SchemaParser --> SchemaModel : produces
+IndexProcessor --> SchemaModel : uses
+SearchProvider --> SchemaModel : uses
+
+' External dependencies
+IndexProcessor --> Lucene : reads from
+TermDataAccessor --> Lucene : accesses
+LIBSVMExporter --> MLTools : exports to
+
+@enduml

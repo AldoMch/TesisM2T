@@ -1,0 +1,61 @@
+@startuml
+' Layered architecture diagram for IceFireDB components'
+
+title IceFireDB Decentralized Database Infrastructure
+
+skinparam componentStyle rectangle
+
+package "Application Layer" {
+  [Redis Application] as redisApp
+  [Pub/Sub Application] as pubsubApp
+  [SQL Client] as sqlClient
+}
+
+package "Service Layer" {
+  [Redis Proxy] as redisProxy
+  [Pub/Sub Service] as pubsubService
+  [SQL Result Handler] as sqlHandler
+}
+
+package "Data Layer" {
+  [Redis Standalone] as redisStandalone
+  [Redis Cluster] as redisCluster
+  [Peer Network (DHT)] as dhtNetwork
+}
+
+package "External Systems" {
+  [NAT/Private Networks] as natNetwork
+}
+
+redisApp --> redisProxy : Redis Commands
+pubsubApp --> pubsubService : Publish/Subscribe
+sqlClient --> sqlHandler : SQL Queries
+
+redisProxy --> redisStandalone : Data Storage
+redisProxy --> redisCluster : Data Storage
+redisProxy <--> redisProxy : Instruction Sync
+
+pubsubService <--> dhtNetwork : Peer Discovery & Routing
+pubsubService <--> pubsubService : Message Distribution
+pubsubService --> natNetwork : NAT Traversal
+
+sqlHandler --> sqlHandler : Internal Processing
+
+note right of redisProxy
+  Supports Redis command categories:
+  String, Set, List, Hash, Sorted Set,
+  Stream, and basic control commands
+end note
+
+note right of pubsubService
+  Redis-compatible Pub/Sub using
+  Kademlia DHT with libp2p/IPFS-style
+  peer discovery and routing
+end note
+
+note right of sqlHandler
+  Internal SQL/MySQL result data
+  handling for SQLite-related paths
+end note
+
+@enduml

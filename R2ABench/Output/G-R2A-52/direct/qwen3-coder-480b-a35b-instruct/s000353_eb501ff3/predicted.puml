@@ -1,0 +1,59 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE TuringSystem {
+  RECTANGLE "API Service" as api_service
+  RECTANGLE "Router Management" as router_mgmt
+  RECTANGLE "Ensembler Management" as ensembler_mgmt
+  RECTANGLE "PyFuncEnsembler Runtime" as pyfunc_runtime
+  RECTANGLE "Kubernetes Cluster" as k8s_cluster
+  RECTANGLE "MLflow Model Registry" as mlflow_registry
+  RECTANGLE "Jaeger Tracing" as jaeger_tracing
+}
+
+RECTANGLE "API Clients" as api_clients
+RECTANGLE "Platform Operators" as platform_operators
+RECTANGLE "End Users" as end_users
+
+api_clients --> api_service : HTTP Requests
+platform_operators --> router_mgmt : Manage Deployments
+end_users --> pyfunc_runtime : Use Ensemblers
+
+api_service --> ensembler_mgmt : Manage Ensemblers
+api_service --> router_mgmt : Manage Routers
+router_mgmt --> k8s_cluster : Deploy/Update/Delete
+pyfunc_runtime --> mlflow_registry : Download Artifacts
+router_mgmt --> jaeger_tracing : Trace Requests
+
+note right of api_service
+  - OpenAPI 3.0.3
+  - Authorization Middleware
+  - Request Validation
+end note
+
+note right of router_mgmt
+  - Kubernetes Lifecycle Ops
+  - Default Port 8080
+  - Protocol Support:
+    * HTTP_JSON
+    * UPI_V1
+end note
+
+note right of pyfunc_runtime
+  - Docker-based Packaging
+  - Webservice Exposure
+end note
+
+note top of k8s_cluster
+  Container Orchestration
+end note
+
+note bottom of mlflow_registry
+  Model Artifact Source
+end note
+
+note right of jaeger_tracing
+  Optional Tracing
+end note
+
+@enduml

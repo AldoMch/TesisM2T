@@ -1,0 +1,106 @@
+@startuml
+package "Deployment/Infrastructure Layer" {
+  cloud "Network" as Network
+
+  node "Client Environment\nWindows 10 64-bit\nIntel Core i7-6700HQ\n8 GB RAM\n>100 MB available storage" as ClientEnv {
+    package "Client/UI Layer" {
+      component "Google Chrome 81.0+" as Chrome
+      component "Vue.js Web Client" as VueClient
+
+      package "UI Modules/Interfaces" {
+        component "User Authentication Interface" as UIAuth
+        component "User Management Interface" as UIUser
+        component "Project List Interface" as UIProjectList
+        component "Member Management Interface" as UIMember
+        component "Baseline Management Interface" as UIBaseline
+        component "Requirements Management Interface" as UIReq
+        component "Requirement Analysis Interface" as UIAnalysis
+      }
+    }
+  }
+
+  node "Local Computer" as LocalComputer {
+    package "Gateway Layer" {
+      component "Gateway" as Gateway
+      component "Authentication & Authorization" as Auth
+      component "Security & Input Validation" as Security
+    }
+
+    package "Business/Microservice Layer" {
+      component "Flask Server-Side Framework" as Flask
+      component "User Management Service" as UserSvc
+      component "Project Management Service" as ProjectSvc
+      component "Baseline Management Service" as BaselineSvc
+      component "Requirements Management Service" as ReqSvc
+    }
+  }
+
+  node "Algorithm Server\nEC2 t2.xlarge\n4 vCPU, 16 GB RAM\nAmazon Linux 2" as AlgoServer {
+    package "Algorithm Layer" {
+      component "Flask Server-Side Framework" as FlaskAlgo
+      component "Algorithm Service" as AlgoSvc
+      package "Algorithm Internal Libraries/Capabilities" {
+        component "NLP" as NLP
+        component "PyTorch" as PyTorch
+        component "Word2vec" as Word2vec
+      }
+    }
+  }
+}
+
+package "Data Layer" {
+  database "MongoDB Database" as Mongo
+  database "Word Document Storage" as FileStorage
+}
+
+VueClient --> UIAuth : provides
+VueClient --> UIUser : provides
+VueClient --> UIProjectList : provides
+VueClient --> UIMember : provides
+VueClient --> UIBaseline : provides
+VueClient --> UIReq : provides
+VueClient --> UIAnalysis : provides
+
+UIAuth --> Gateway : authentication requests
+UIUser --> Gateway : user management requests
+UIProjectList --> Gateway : project list requests
+UIMember --> Gateway : member management requests
+UIBaseline --> Gateway : baseline management requests
+UIReq --> Gateway : requirements management requests
+UIAnalysis --> Gateway : requirement analysis requests
+
+Gateway --> Auth : authentication/access control
+Gateway --> Security : input validation/protection
+Auth --> UserSvc : user credentials, roles, permissions
+Gateway --> UserSvc : route user management requests
+Gateway --> ProjectSvc : route project management requests
+Gateway --> BaselineSvc : route baseline management requests
+Gateway --> ReqSvc : route requirements management requests
+
+UserSvc ..> Flask : uses
+ProjectSvc ..> Flask : uses
+BaselineSvc ..> Flask : uses
+ReqSvc ..> Flask : uses
+
+UserSvc --> Mongo : user accounts, roles, permissions
+ProjectSvc --> Mongo : projects, members, project roles
+BaselineSvc --> Mongo : baselines, baseline items
+ReqSvc --> Mongo : requirement items, item tree, tracing, analysis results
+ReqSvc --> FileStorage : store/retrieve Word documents
+
+ReqSvc --> AlgoSvc : requirement analysis requests
+AlgoSvc --> ReqSvc : itemization/analysis results
+AlgoSvc ..> FlaskAlgo : uses
+AlgoSvc ..> NLP : uses internally
+AlgoSvc ..> PyTorch : uses internally
+AlgoSvc ..> Word2vec : uses internally
+
+VueClient ..> Network : network required
+Gateway ..> Network : network required
+UserSvc ..> Network : network required
+ProjectSvc ..> Network : network required
+BaselineSvc ..> Network : network required
+ReqSvc ..> Network : network required
+AlgoSvc ..> Network : network required
+
+@enduml

@@ -1,0 +1,117 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam wrapWidth 160
+skinparam linetype ortho
+
+skinparam node {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontStyle bold
+}
+
+skinparam package {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontStyle bold
+}
+
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+
+skinparam rectangle {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+node "Cognito Account" as CognitoAccount {
+
+  package "Cognito Stack (CloudFormation)" as CognitoStack {
+
+    component "Cognito User Pool\n(CognitoUserPoolName, token validity units:\nAccessTokenValidityUnits,\nIdTokenValidityUnits,\nRefreshTokenValidityUnits)" as UserPool
+
+    component "User Pool Client\n(readable/writable attrs:\ncustom:Role, email)" as UserPoolClient
+
+    component "Cognito Identity Pool\n(AuthName, AllowUnauthenticated=true)" as IdentityPool
+
+    component "Identity Pool\nRole Attachment\n(authenticated + unauthenticated)" as RoleAttachment
+
+    component "IAM Authenticated Role\n(AssumeRoleWithWebIdentity\nfederated: cognito-identity.amazonaws.com)" as AuthRole
+
+    component "IAM Unauthenticated Role\n(AssumeRoleWithWebIdentity,\ncognito-identity:amr = unauthenticated,\naud = IdentityPool)" as UnauthRole
+  }
+}
+
+node "API Gateway Account" as APIGWAccount {
+
+  package "API Gateway Stack (CloudFormation)" as APIGWStack {
+
+    component "Cognito User-Pool\nAuthorizer\n(CognitoUserPoolARN)" as CognitoAuthorizer
+
+    component "API Gateway\n(stage: StageName)" as APIGateway
+
+    component "WhoAmI Method\n(GET, Cognito auth,\nresponse header:\nx-pagopa-pn-cx-role [optional],\nintegration maps custom:Role claim)" as WhoAmIMethod
+
+    component "ECS Proxy Method\n(Cognito auth,\nforwards x-pagopa-pn-cx-role\nfrom custom:Role claim)" as ECSMethod
+
+    component "API Gateway\nVPC Link\n(→ NLB ARN)" as VPCLink
+
+    component "Network Load\nBalancer (NLB)" as NLB
+
+    component "CallbackURL Output\n(API Gateway endpoint:\nhttps://{api-id}.execute-api.{region}.amazonaws.com/{stage})" as CallbackURL
+  }
+
+  package "VPC" as VPC {
+
+    rectangle "Subnets" as Subnets {
+
+      component "SQS VPC Interface\nEndpoint\n(type: interface,\nregional SQS service name,\nprivate DNS: enabled)" as SQSEndpoint
+    }
+
+    component "Endpoint Security Group\n(ingress: TCP 0-65535\nfrom VpcCidr only)" as EndpointSG
+  }
+}
+
+node "AWS Services" as AWSServices {
+  database "Amazon SQS" as SQS
+}
+
+rectangle "Installation Inputs\n(CloudFormation YAML templates,\nAWS CLI profiles, environment names,\nDNS/domain values, API keys,\naccount IDs, certificate IDs)" as InstallInputs
+
+rectangle "API Clients\n(call API Gateway endpoint,\nconsume x-pagopa-pn-cx-role header)" as APIClients
+
+' Cross-account ARN flow
+UserPool -right-> CognitoAuthorizer : UserPoolARN\n(cross-account)
+
+' Cognito stack internal relationships
+UserPool -down-> UserPoolClient : creates client
+UserPoolClient -down-> IdentityPool : ClientId + ProviderName
+IdentityPool -down-> RoleAttachment : binds roles
+RoleAttachment -right-> AuthRole : authenticated role
+RoleAttachment -down-> UnauthRole : unauthenticated role
+
+' API Gateway internal relationships
+CognitoAuthorizer -down-> APIGateway : authorizes methods
+APIGateway -down-> WhoAmIMethod : deploys (depends on method)
+APIGateway -down-> ECSMethod : deploys (depends on method)
+ECSMethod -right-> VPCLink : integration via VPC Link
+VPCLink -right-> NLB : routes to NLB ARN
+APIGateway -down-> CallbackURL : publishes output
+
+' VPC endpoint relationships
+SQSEndpoint -down-> EndpointSG : associated security group
+SQSEndpoint -right-> SQS : private connectivity\n(private DNS enabled)
+
+' External actors
+APIClients -up-> APIGateway : HTTPS requests\n(Bearer token)
+InstallInputs -up-> CognitoStack : CloudFormation parameters\n(AuthName, CognitoUserPoolName,\ntoken validity units)
+InstallInputs -up-> APIGWStack : CloudFormation parameters\n(StageName, CognitoUserPoolARN,\nNLB ARN, VpcId, Subnets, VpcCidr)
+
+@enduml

@@ -1,0 +1,52 @@
+@startuml
+' System architecture for LwM2M-oriented device management with blockchain integration
+
+package "Spring Backend" {
+  [User Management Controller] as userController
+  [User Service] as userService
+  [JWT Utility] as jwtUtility
+}
+
+package "Blockchain Integration" {
+  [Web3j Client] as web3jClient
+  [Smart Contract Interface] as contractInterface
+  [Client Data Converter] as dataConverter
+}
+
+package "LwM2M Processing" {
+  [Leshan Node Parser] as nodeParser
+  [JSON Deserializer] as jsonDeserializer
+}
+
+database "Ethereum Node" as ethereumNode
+database "LwM2M Devices" as lwm2mDevices
+
+' External interfaces
+actor "Authenticated API Client" as apiClient
+actor "Backend Integration Service" as backendService
+actor "LwM2M Service Component" as lwm2mComponent
+
+' Component relationships
+apiClient --> userController : HTTP requests\n(Authorization header)
+userController --> jwtUtility : validate token
+userController --> userService : delegate operations
+userService --> userController : return user data
+
+backendService --> web3jClient : HTTP transport
+web3jClient --> ethereumNode : Ethereum RPC calls
+web3jClient --> contractInterface : contract interactions
+contractInterface --> dataConverter : encode/decode data
+dataConverter --> contractInterface : formatted data
+contractInterface --> web3jClient : transaction receipts
+
+lwm2mComponent --> nodeParser : LwM2M data
+nodeParser --> jsonDeserializer : JSON payloads
+jsonDeserializer --> nodeParser : typed structures
+
+' Data flows
+userController ..> web3jClient : client data queries
+web3jClient ..> userController : security info
+userController ..> nodeParser : LwM2M JSON
+nodeParser ..> userController : parsed nodes
+
+@enduml

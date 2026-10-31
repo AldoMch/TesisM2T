@@ -1,0 +1,706 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "b2f29aa6ef0f9c5c6c156eb4aac8687125d19a8ee16f75b7e77858e71ec38be4",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "e5d89d68f0247448cfd6dafdac8c58a479516b17e002d0ae591e7c7131f8c96b",
+  "predicted_edges_sha256": "bddca8a9333fdfbeb73663c77f387b7b2facc9653132e6fbcdade1e412a3f426",
+  "precision": 0.30303030303030304,
+  "recall": 0.7,
+  "f1": 0.42296072507552873,
+  "reference_edges": [
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+    ],
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Postgres"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 1"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 2"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 3"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker N"
+    ],
+    [
+      "Docker Compose Environment::Postgres",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Postgres"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "Global::Data Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6"
+    ],
+    [
+      "Global::Data Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181"
+    ],
+    [
+      "Global::Notebook User",
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::Jupyter Notebook Server"
+    ],
+    [
+      "Global::Platform Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)"
+    ],
+    [
+      "Global::Platform Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest"
+    ],
+    [
+      "Global::Tester",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)"
+    ],
+    [
+      "Global::Tester",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6::Airflow Metadata DB"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::DAG directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::Spark application directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Scheduler",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::SparkSubmitOperator"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Scheduler"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::PySpark / spark-submit",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::PySpark / spark-submit",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::SparkSubmitOperator",
+      "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6::Airflow Metadata DB"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::./bin/pyspark",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::./bin/run-example",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::Spark ML Examples (libsvm)",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook",
+      "Host Machine::Shared Mounted Directories::Notebook directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::PySpark Kernel",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::PySpark Kernel",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master",
+      "Host Machine::Shared Mounted Directories::Spark application directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 1\\nbitnami/spark:latest::Spark Worker"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 2\\nbitnami/spark:latest::Spark Worker"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 3\\nbitnami/spark:latest::Spark Worker"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 1\\nbitnami/spark:latest::Spark Worker",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 2\\nbitnami/spark:latest::Spark Worker",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 3\\nbitnami/spark:latest::Spark Worker",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+    ],
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Postgres"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 1"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 2"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 3"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Postgres"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "Global::Data Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6::Airflow Metadata DB"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::PySpark / spark-submit",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::PySpark / spark-submit",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::SparkSubmitOperator",
+      "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6::Airflow Metadata DB"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 1\\nbitnami/spark:latest::Spark Worker"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 2\\nbitnami/spark:latest::Spark Worker"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 3\\nbitnami/spark:latest::Spark Worker"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker N"
+    ],
+    [
+      "Docker Compose Environment::Postgres",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "Global::Data Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181"
+    ],
+    [
+      "Global::Notebook User",
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::Jupyter Notebook Server"
+    ],
+    [
+      "Global::Platform Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)"
+    ],
+    [
+      "Global::Platform Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest"
+    ],
+    [
+      "Global::Tester",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)"
+    ],
+    [
+      "Global::Tester",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::DAG directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::Spark application directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Scheduler",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::SparkSubmitOperator"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Scheduler"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::./bin/pyspark",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::./bin/run-example",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::Spark ML Examples (libsvm)",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook",
+      "Host Machine::Shared Mounted Directories::Notebook directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::PySpark Kernel",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::PySpark Kernel",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master",
+      "Host Machine::Shared Mounted Directories::Spark application directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 1\\nbitnami/spark:latest::Spark Worker",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 2\\nbitnami/spark:latest::Spark Worker",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 3\\nbitnami/spark:latest::Spark Worker",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077"
+    ]
+  ],
+  "internal_reference_edges": [],
+  "internal_predicted_edges": [
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::SparkSubmitOperator",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::spark_default connection"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::spark_default connection",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::PySpark / spark-submit"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::Jupyter Notebook Server",
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::PySpark Kernel"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181"
+    ]
+  ],
+  "reference_witnesses": [
+    {
+      "edge_index": 0,
+      "counterpart_index": 15,
+      "source_group": 1,
+      "target_group": 2
+    },
+    {
+      "edge_index": 1,
+      "counterpart_index": 8,
+      "source_group": 1,
+      "target_group": 4
+    },
+    {
+      "edge_index": 2,
+      "counterpart_index": 27,
+      "source_group": 2,
+      "target_group": 5
+    },
+    {
+      "edge_index": 3,
+      "counterpart_index": 28,
+      "source_group": 2,
+      "target_group": 6
+    },
+    {
+      "edge_index": 4,
+      "counterpart_index": 29,
+      "source_group": 2,
+      "target_group": 7
+    },
+    {
+      "edge_index": 7,
+      "counterpart_index": 0,
+      "source_group": 0,
+      "target_group": 1
+    },
+    {
+      "edge_index": 9,
+      "counterpart_index": 1,
+      "source_group": 0,
+      "target_group": 4
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 0,
+      "counterpart_index": 7,
+      "source_group": 0,
+      "target_group": 1
+    },
+    {
+      "edge_index": 1,
+      "counterpart_index": 9,
+      "source_group": 0,
+      "target_group": 4
+    },
+    {
+      "edge_index": 8,
+      "counterpart_index": 1,
+      "source_group": 1,
+      "target_group": 4
+    },
+    {
+      "edge_index": 9,
+      "counterpart_index": 1,
+      "source_group": 1,
+      "target_group": 4
+    },
+    {
+      "edge_index": 15,
+      "counterpart_index": 0,
+      "source_group": 1,
+      "target_group": 2
+    },
+    {
+      "edge_index": 16,
+      "counterpart_index": 0,
+      "source_group": 1,
+      "target_group": 2
+    },
+    {
+      "edge_index": 17,
+      "counterpart_index": 1,
+      "source_group": 1,
+      "target_group": 4
+    },
+    {
+      "edge_index": 27,
+      "counterpart_index": 2,
+      "source_group": 2,
+      "target_group": 5
+    },
+    {
+      "edge_index": 28,
+      "counterpart_index": 3,
+      "source_group": 2,
+      "target_group": 6
+    },
+    {
+      "edge_index": 29,
+      "counterpart_index": 4,
+      "source_group": 2,
+      "target_group": 7
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "Docker Compose Environment::Airflow\\n(Spark Driver)": [
+      1
+    ],
+    "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)": [
+      2
+    ],
+    "Docker Compose Environment::Jupyter Notebook\\n(Spark)": [
+      3
+    ],
+    "Docker Compose Environment::Postgres": [
+      4
+    ],
+    "Docker Compose Environment::Spark Workers": [
+      5,
+      6,
+      7
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 1": [
+      5
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 2": [
+      6
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 3": [
+      7
+    ],
+    "Docker Compose Environment::Spark Workers::Worker N": [],
+    "Global::Data Engineer": [
+      0
+    ],
+    "Global::Docker Compose Environment": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "predicted_endpoint_anchors": {
+    "Global::Data Engineer": [
+      0
+    ],
+    "Global::External Web Access": [],
+    "Global::Host Machine": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "Global::Notebook User": [],
+    "Global::Platform Engineer": [],
+    "Global::Tester": [],
+    "Host Machine::Docker Compose Network (format 3.7)": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest": [
+      1
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Scheduler": [],
+    "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)": [
+      1
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::PySpark / spark-submit": [
+      1
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::SparkSubmitOperator": [
+      1
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::spark_default connection": [
+      1
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6": [],
+    "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::./bin/pyspark": [],
+    "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::./bin/run-example": [],
+    "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::Spark ML Examples (libsvm)": [],
+    "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook": [
+      3
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::Jupyter Notebook Server": [
+      3
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::PySpark Kernel": [
+      3
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6": [
+      4
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Postgres Container\\npostgres:9.6::Airflow Metadata DB": [
+      4
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master": [
+      2
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181": [
+      2
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Standalone Master\\nspark://spark:7077": [
+      2
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 1\\nbitnami/spark:latest": [
+      5
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 1\\nbitnami/spark:latest::Spark Worker": [
+      5
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 2\\nbitnami/spark:latest": [
+      6
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 2\\nbitnami/spark:latest::Spark Worker": [
+      6
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 3\\nbitnami/spark:latest": [
+      7
+    ],
+    "Host Machine::Docker Compose Network (format 3.7)::Spark Worker 3\\nbitnami/spark:latest::Spark Worker": [
+      7
+    ],
+    "Host Machine::Shared Mounted Directories": [],
+    "Host Machine::Shared Mounted Directories::DAG directory": [],
+    "Host Machine::Shared Mounted Directories::Input data directory": [],
+    "Host Machine::Shared Mounted Directories::Notebook directory": [],
+    "Host Machine::Shared Mounted Directories::Spark application directory": []
+  },
+  "reference_unanchored_edges": [
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker N"
+    ]
+  ],
+  "predicted_unanchored_edges": [
+    [
+      "Global::Notebook User",
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::Jupyter Notebook Server"
+    ],
+    [
+      "Global::Platform Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)"
+    ],
+    [
+      "Global::Platform Engineer",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest"
+    ],
+    [
+      "Global::Tester",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)"
+    ],
+    [
+      "Global::Tester",
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master::Spark Master Web UI\\n:8080 -> host 8181"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::DAG directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest",
+      "Host Machine::Shared Mounted Directories::Spark application directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Scheduler",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::SparkSubmitOperator"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Webserver\\n(LocalExecutor)",
+      "Host Machine::Docker Compose Network (format 3.7)::Airflow Container\\ndocker-airflow-spark:latest::Airflow Scheduler"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::./bin/pyspark",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::./bin/run-example",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6::Spark ML Examples (libsvm)",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook",
+      "Host Machine::Shared Mounted Directories::Input data directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook",
+      "Host Machine::Shared Mounted Directories::Notebook directory"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Jupyter Container\\njupyter/pyspark-notebook::PySpark Kernel",
+      "Host Machine::Docker Compose Network (format 3.7)::Bundled Spark Distribution\\nSpark 2.4.5 / Hadoop 2.6"
+    ],
+    [
+      "Host Machine::Docker Compose Network (format 3.7)::Spark Master Container\\nbitnami/spark:latest\\nSPARK_MODE=master",
+      "Host Machine::Shared Mounted Directories::Spark application directory"
+    ]
+  ]
+}

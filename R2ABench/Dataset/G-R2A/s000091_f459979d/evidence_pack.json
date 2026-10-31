@@ -1,0 +1,121 @@
+{
+  "candidate": {
+    "sample_id": "s000091_f459979d",
+    "repository_name": "ertis-research/lwm2m-blockchain",
+    "image_url": "https://github.com/ertis-research/lwm2m-blockchain/blob/master/images/architecture.png",
+    "source_ref": "caea581a21ac705c945540d1e54658b0bf82ecab",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 14675,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "config",
+      "readme",
+      "schema_model",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 151,
+      "user_scenario": 78,
+      "api_io": 148,
+      "deployment": 58,
+      "constraints": 19,
+      "non_functional": 29
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "leshan/Server/ServerLeshan/src/main/java/com/ivan/ServerLeshan/service/ClientStoreService.java",
+      "doc_type": "code_cli",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05089949847202205,
+      "text": "ew ArrayList (); try { Tuple7 , List , List , List , List , List , List > response = contract.getAllClients().send(); securityInfos = tuple7ToSecurityInfoCollection(response); } catch (Exception e) { e.printStackTrace(); } return securityInfos; } @Override public SecurityInfo add(SecurityInfo info) throws NonUniqueSecurityInfoException { System.out.println(\"BlockchainStore - add (Nothing to do)\"); return null; } @Override public SecurityInfo remove(String endpoint) { System.out.println(\"BlockchainStore - remove (Nothing to do)\"); return null; } // Connect to Ethereum node private Web3j connect(String url) throws Exception { Web3j web3j = Web3j.build(new HttpService(url)); log.info(\"Connec..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "mainApp/MainAppBackEnd/src/main/java/com/ivan/tfm/MainAppBackEnd/controllers/UserController.java",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.049432188065099456,
+      "text": "Service.getAll(); return new ResponseEntity<>(res, HttpStatus.OK); }else if(valid == 1) { return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); }else if(valid == 2) { return new ResponseEntity<>(HttpStatus.FORBIDDEN); } return new ResponseEntity<>(HttpStatus.BAD_REQUEST); } @PostMapping(\"/add\") public ResponseEntity addUser(@RequestHeader(\"Authorization\") String auth, @RequestBody User user) { int valid = JwtUtility.isValidToken(auth, 1); if(valid == 0) { userService.addUser(user); return new ResponseEntity (user, HttpStatus.CREATED); }else if(valid == 1) { return new ResponseEntity<>(HttpStatus.UNAUTHORIZED); }else if(valid == 2) { return new ResponseEntity<>(HttpStatus.FORBIDDEN); } ret..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "mainApp/MainAppBackEnd/src/main/java/com/ivan/tfm/MainAppBackEnd/services/ClientService.java",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05153307263072053,
+      "text": "package com.ivan.tfm.MainAppBackEnd.services; import java.math.BigInteger; import java.util.ArrayList; import java.util.List; import org.springframework.beans.factory.annotation.Autowired; import org.springframework.stereotype.Service; import org.web3j.protocol.core.methods.response.TransactionReceipt; import org.web3j.tuples.generated.Tuple7; import com.ivan.tfm.MainAppBackEnd.beans.Client; import com.ivan.tfm.MainAppBackEnd.utils.Converter; @Service public class ClientService { @Autowired BlockchainService blockchainService; private final String contractName = \"BootstrapStore\"; private int existsClient(String endpoint) throws Exception{ long startTime = System.currentTimeMillis(); BigIn..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "evaluation/tests/src/main/java/ClientTest.java",
+      "doc_type": "test",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.050526777875329235,
+      "text": "e[] id_sByte = Converter.asciiToByte32(id_s); byte[] key_sByyte = Converter.asciiToByte32(key_s); TransactionReceipt txReceipt; try { txReceipt = contract.addClient(endpointByte, url_bsByte, id_bsByte, key_bsByte, url_sByte, id_sByte, key_sByyte).send(); System.out.println(\"txReceipt addClient: \"+txReceipt.getTransactionHash()); } catch (Exception e) { e.printStackTrace(); } } public BootstrapConfig getClient(String endpoint, Identity deviceIdentity, BootstrapSession session) { BootstrapConfig bootstrapConfig = null; try { Tuple6 response = contract.getClient(Converter.asciiToByte32(endpoint)).send(); bootstrapConfig = ClientUtil.createBoostrapConfig(Converter.byteToAscii(response.compone..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "leshan/Server/ServerLeshan/src/main/java/com/ivan/ServerLeshan/json/LwM2mNodeDeserializer.java",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.055005749876188795,
+      "text": "leshan.core.model.ResourceModel.Type.STRING; node = LwM2mMultipleResource.newResource(id, values, expectedType); } else { throw new JsonParseException(\"Invalid node element\"); } } else { throw new JsonParseException(\"Invalid node element\"); } return node; } private org.eclipse.leshan.core.model.ResourceModel.Type getTypeFor(JsonPrimitive val) { if (val.isBoolean()) return org.eclipse.leshan.core.model.ResourceModel.Type.BOOLEAN; if (val.isString()) return org.eclipse.leshan.core.model.ResourceModel.Type.STRING; if (val.isNumber()) { if (val.getAsDouble() == val.getAsLong()) { return org.eclipse.leshan.core.model.ResourceModel.Type.INTEGER; } else { return org.eclipse.leshan.core.model.Res..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "leshan/Server/ServerLeshan/src/main/java/com/ivan/ServerLeshan/json/LwM2mNodeDeserializer.java",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053537701396608864,
+      "text": "com.google.gson.JsonElement; import com.google.gson.JsonObject; import com.google.gson.JsonParseException; import com.google.gson.JsonPrimitive; public class LwM2mNodeDeserializer implements JsonDeserializer { @Override public LwM2mNode deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context) throws JsonParseException { if (json == null) { return null; } LwM2mNode node; if (json.isJsonObject()) { JsonObject object = (JsonObject) json; Integer id = null; if (object.has(\"id\")) { id = object.get(\"id\").getAsInt(); } if (object.has(\"instances\")) { if (id == null) { throw new JsonParseException(\"Missing id\"); } JsonArray array = object.get(\"instances\").getAsJsonArray(); L..."
+    }
+  ]
+}

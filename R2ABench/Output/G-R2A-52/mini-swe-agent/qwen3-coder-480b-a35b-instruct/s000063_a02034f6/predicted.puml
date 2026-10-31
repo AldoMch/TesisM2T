@@ -1,0 +1,55 @@
+@startuml
+title Teamgram Server Architecture
+
+skinparam componentStyle rectangle
+
+' Layers
+package "Client Access Layer" {
+  [MTProto Server Interface] as clientInterface
+}
+
+package "Service Layer" {
+  [Access-Facing Services] as accessServices
+  [Messaging Services] as messagingServices
+  [Session Management] as sessionMgr
+  [Authorization Services] as authServices
+}
+
+package "Infrastructure & Storage" {
+  [MySQL] as mysql
+  [Redis] as redis
+  [etcd] as etcd
+  [Kafka] as kafka
+  [MinIO] as minio
+}
+
+package "Supporting Components" {
+  [Media Processing (Optional)] as mediaProc
+}
+
+' External Systems
+actor "Telegram Client" as client
+actor "Operator" as operator
+
+' Connections
+client -- clientInterface
+clientInterface --> accessServices : uses
+accessServices --> messagingServices : uses
+accessServices --> authServices : uses
+authServices --> sessionMgr : manages
+messagingServices --> sessionMgr : uses
+sessionMgr --> mysql : stores sessions
+sessionMgr --> redis : caches sessions
+authServices --> etcd : coordination
+messagingServices --> kafka : async messaging
+mediaProc --> minio : stores media
+messagingServices --> mediaProc : processes media (if enabled)
+
+operator -- accessServices : deploys/configures
+
+note right of mediaProc
+  Optional component
+Requires FFmpeg/FFProbe
+end note
+
+@enduml

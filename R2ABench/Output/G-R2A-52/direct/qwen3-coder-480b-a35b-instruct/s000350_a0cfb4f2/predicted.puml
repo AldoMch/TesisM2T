@@ -1,0 +1,83 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define QUEUE queue
+!define COMPONENT component
+
+title Squatm3gator System Architecture
+
+skinparam componentStyle rectangle
+
+' Actors
+actor "Web User" as WebUser
+actor "Client Application" as ClientApp
+actor "Operator" as Operator
+
+' Main Components
+RECTANGLE "Web UI\n(index.html)" as WebUI
+RECTANGLE "HTTP API Server" as APIServer
+QUEUE "Redis Message Queue" as RedisMQ
+RECTANGLE "Background Consumer Thread" as ConsumerThread
+RECTANGLE "Domain Generation Engine\n(squatm3 subprocess)" as SquatM3Engine
+RECTANGLE "WebSocket Channel" as WebSocketChannel
+RECTANGLE "GoDaddy API Integration" as GoDaddyAPI
+
+' Data Stores
+DATABASE "Session Store" as SessionStore
+DATABASE "Configuration Store" as ConfigStore
+
+' Relationships
+WebUser --> WebUI : accesses
+ClientApp --> APIServer : consumes
+Operator --> ConfigStore : configures
+
+WebUI --> APIServer : submits requests
+APIServer --> SessionStore : manages sessions
+APIServer --> RedisMQ : publishes jobs
+APIServer --> WebSocketChannel : emits updates
+APIServer --> ConfigStore : reads config
+
+ConsumerThread --> RedisMQ : listens for jobs
+ConsumerThread --> SquatM3Engine : executes
+ConsumerThread --> RedisMQ : reports results
+ConsumerThread --> WebSocketChannel : forwards updates
+
+RedisMQ --> ConsumerThread : delivers jobs
+RedisMQ --> APIServer : delivers reports
+
+WebSocketChannel --> WebUser : real-time updates
+WebSocketChannel --> ClientApp : async updates
+
+SquatM3Engine --> GoDaddyAPI : optional checks
+GoDaddyAPI --> SquatM3Engine : availability data
+
+note right of APIServer
+  - Handles HTTP requests
+  - Manages sessions
+  - Publishes jobs to Redis
+  - Emits WebSocket updates
+end note
+
+note right of ConsumerThread
+  - Listens to Redis jobs
+  - Executes squatm3 engine
+  - Reports results via Redis
+  - Forwards to WebSocket
+end note
+
+note right of SquatM3Engine
+  - Generates domain variants
+  - Supports multiple attack types
+  - Optional GoDaddy integration
+end note
+
+note bottom of RedisMQ
+  Job Queue & Reporting Channel
+end note
+
+note top of GoDaddyAPI
+  Optional domain availability checks
+  Using configured credentials
+end note
+
+@enduml

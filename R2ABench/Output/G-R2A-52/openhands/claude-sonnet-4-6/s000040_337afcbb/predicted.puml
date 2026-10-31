@@ -1,0 +1,116 @@
+@startuml
+
+skinparam rectangle {
+  BorderColor #555566
+  BackgroundColor #F4F4F8
+  FontSize 12
+}
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #D6E8FA
+  FontSize 11
+}
+skinparam database {
+  BorderColor #8B5E3C
+  BackgroundColor #FFF0DC
+  FontSize 11
+}
+skinparam actor {
+  BorderColor #444444
+  BackgroundColor #EEEEEE
+}
+skinparam note {
+  BorderColor #999900
+  BackgroundColor #FFFFCC
+}
+
+actor "External User / System" as ExternalUser
+
+rectangle "Internal Network" {
+
+  rectangle "PlugIt Proxy" as PlugItProxy {
+    component "Proxy API Endpoint\n(API_URL)" as ProxyAPI
+    database "Proxy Data Store" as ProxyDataStore
+  }
+
+  rectangle "PlugIt Service A" as ServiceA {
+    component "Service Logic A" as LogicA
+    component "Project Config A\n(API_URL, DEBUG,\nPI_BASE_URL,\nPI_ALLOWED_NETWORKS)" as ProjConfigA
+    component "Local / Private\nConfig A\n(SQLALCHEMY_URL, secrets)" as LocalConfigA
+    database "Service Database A\n(MySQL / SQLite)" as DBA
+  }
+
+  rectangle "PlugIt Service B" as ServiceB {
+    component "Service Logic B" as LogicB
+    component "Project Config B" as ProjConfigB
+    component "Local / Private\nConfig B" as LocalConfigB
+    database "Service Database B\n(MySQL / SQLite)" as DBB
+  }
+
+}
+
+rectangle "PlugIt API Client" as APIClient {
+  component "Client Initializer\n(main endpoint URL)" as ClientInit
+  component "User Info" as CapUser
+  component "Subscription Tags" as CapTags
+  component "Organization Info" as CapOrg
+  component "Project Members" as CapMembers
+  component "Email Sending" as CapEmail
+  component "Forum Topics" as CapForum
+}
+
+rectangle "Schema Management" {
+  component "Alembic Migration\nUpgrade Files\n(versioned)" as Alembic
+}
+
+rectangle "Standalone Proxy Mail Workflow\n(Example / Standalone Scope)" as MailWorkflow {
+  component "Inbound Email\nParser" as MailParser
+  component "Auto-Response\nFilter\n(x-auto-response-suppress,\nAuto-Submitted, precedence)" as AutoFilter
+  component "Routing Token\nValidator\n(SHA-512 [30:42])" as TokenValidator
+  component "Mail Handler" as MailHandler
+}
+
+cloud "Mail System\n(Inbound Email)" as MailSystem
+
+ExternalUser -right-> ProxyAPI : HTTPS
+
+ProxyAPI -right-> LogicA : PlugIt protocol
+ProxyAPI -right-> LogicB : PlugIt protocol
+ProxyAPI -down-> ProxyDataStore : read / write
+
+ProjConfigA -up-> LogicA : project settings
+LocalConfigA -up-> LogicA : private settings
+LogicA -down-> DBA : SQL
+
+ProjConfigB -up-> LogicB : project settings
+LocalConfigB -up-> LogicB : private settings
+LogicB -down-> DBB : SQL
+
+ClientInit -up-> ProxyAPI : API requests
+ClientInit -down-> CapUser
+ClientInit -down-> CapTags
+ClientInit -down-> CapOrg
+ClientInit -down-> CapMembers
+ClientInit -down-> CapEmail
+ClientInit -down-> CapForum
+
+Alembic -up-> DBA : schema upgrades
+Alembic -up-> DBB : schema upgrades
+
+MailSystem -right-> MailParser : inbound email
+MailParser -right-> AutoFilter : parsed message
+AutoFilter -right-> TokenValidator : non-auto-response\nmessage
+TokenValidator -right-> MailHandler : valid token +\ntext payload
+MailHandler -up-> MailSystem : remove processed\nmessage
+
+note bottom of MailWorkflow
+  Mail-driven processing is example/standalone
+  proxy scope only (AD-005, C-004).
+end note
+
+note right of LocalConfigA
+  Excluded from source control
+  (NFR-003, DR-002).
+end note
+
+@enduml

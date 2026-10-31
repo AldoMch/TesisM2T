@@ -1,0 +1,68 @@
+@startuml
+
+package "Interaction" {
+  component ChartDisplay
+  component InteractiveScalaAdapter
+}
+
+package "Application Services" {
+  component IndexProcessor
+  component SearchService
+  component Vectorizer
+}
+
+package "Domain/Model" {
+  component SchemaModel
+  component WordCountDataset
+  component SearchCriteriaModel
+}
+
+package "Infrastructure/Adapters" {
+  component TermDataAccess
+  component LibSVMExporter
+  component SchemaLoader
+  component SchemaValidator
+  component AnalyzerProvider
+  component ResourceFileLoader
+}
+
+database "Lucene Index (Apache Lucene 5.2.0)" as LuceneIndex
+cloud "External ML Tools (LIBSVM consumers)" as ExternalML
+cloud "Scala Interactive Environment" as ScalaEnv
+cloud "Resource/File Source" as ResourceSource
+artifact "LIBSVM File" as LibSVMFile
+
+' Interaction dependencies
+ScalaEnv --> InteractiveScalaAdapter
+ScalaEnv --> ChartDisplay
+InteractiveScalaAdapter --> IndexProcessor
+InteractiveScalaAdapter --> SearchService
+InteractiveScalaAdapter --> Vectorizer
+InteractiveScalaAdapter --> LibSVMExporter
+InteractiveScalaAdapter --> SchemaLoader
+ChartDisplay --> WordCountDataset
+
+' Application Service dependencies
+IndexProcessor --> TermDataAccess
+SearchService --> TermDataAccess
+SearchService --> SearchCriteriaModel
+Vectorizer --> TermDataAccess
+Vectorizer --> SchemaModel
+
+' Infrastructure dependencies
+LibSVMExporter --> Vectorizer
+LibSVMExporter --> LibSVMFile
+
+SchemaLoader --> ResourceFileLoader
+ResourceFileLoader --> ResourceSource
+SchemaLoader --> SchemaValidator
+SchemaLoader --> SchemaModel
+
+AnalyzerProvider --> SchemaModel
+TermDataAccess --> AnalyzerProvider
+TermDataAccess --> LuceneIndex
+
+' External tools consume the produced artifact
+ExternalML --> LibSVMFile
+
+@enduml

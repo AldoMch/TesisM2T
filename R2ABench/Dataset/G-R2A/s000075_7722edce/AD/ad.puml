@@ -1,0 +1,55 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Statlord" as Statlord {
+    rectangle "Browser Editor\nLayout authoring" as Editor
+
+    package "Server" as Server {
+        rectangle "Python / Django API" as DjangoApi
+        rectangle "Gauge Resource\nkey, value" as GaugeResource
+        rectangle "Display Resource\nresolution and state" as DisplayResource
+        rectangle "Layout Resource\ndata and display positions" as LayoutResource
+        database "PostgreSQL\npersistent models" as Postgres
+    }
+
+    rectangle "Viewer Instances\nheadless browsers" as Viewer
+    rectangle "Displays\nOLED, e-paper, LCD, browser" as Displays
+}
+
+Editor --> DjangoApi : create layouts\nposition data
+Editor --> LayoutResource : layout configuration
+Editor --> GaugeResource : realtime data values
+
+DjangoApi --> GaugeResource : API access
+DjangoApi --> DisplayResource : register displays
+DjangoApi --> LayoutResource : store layouts
+GaugeResource --> Postgres : persist gauge data
+DisplayResource --> Postgres : persist display state
+LayoutResource --> Postgres : persist layout data
+
+Viewer <--> DjangoApi : fetch layout and realtime data
+Viewer --> DjangoApi : serialized black/white pixel values
+Displays <--> DjangoApi : query display pixel values
+Displays --> DisplayResource : update screen state
+@enduml

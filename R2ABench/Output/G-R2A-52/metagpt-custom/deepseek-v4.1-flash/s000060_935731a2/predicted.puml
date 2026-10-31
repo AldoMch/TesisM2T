@@ -1,0 +1,73 @@
+@startuml
+
+node "JVM 11 / Java 11 Runtime Environment" as JVM {
+  node "Integrating JVM Application" as AppNode {
+    component "Caller Application Code" as CallerApp
+
+    node "lowes/auditor Kotlin/JVM Client Library" as AuditorLib {
+      package "API/Integration Layer" {
+        component "Auditing API" as AuditingAPI
+      }
+
+      package "Audit Processing Layer" {
+        component "Audit Change Detector" as ChangeDetector
+      }
+
+      package "Configuration and Filtering Layer" {
+        component "AuditorEventConfig\n(applicationName, eventSource, eventSubType, metadata,\nfilters.element: enabled, types, includes)" as Config
+        interface "AuditEventElementFilter" as IElementFilter
+      }
+
+      package "Data/Model Layer" {
+        component "AuditEvent Model" as AuditEventModel
+        component "Event Element Model\n(name, updatedValue, previousValue, metadata.fqdn)" as EventElementModel
+        component "Domain Object Input Model" as DomainModel
+      }
+
+      package "Event Publication Layer" {
+        interface "EventPublisher" as IEventPublisher
+      }
+
+      package "Logging Integration Layer" {
+        interface "LogProvider" as ILogProvider
+      }
+
+      package "Serialization/Exchange Layer" {
+        component "AuditEvent Serializer" as Serializer
+      }
+    }
+
+    package "Infrastructure-Provided Implementations" {
+      component "Default Kafka Publisher\n(EventPublisher Implementation)" as KafkaPublisher
+      component "LogProvider Implementation" as LogProviderImpl
+      component "InclusionFilter\n(AuditEventElementFilter Implementation;\nfilters.element: enabled, types, includes)" as InclusionFilter
+    }
+  }
+}
+
+package "External Systems" {
+  node "Kafka" as Kafka
+  cloud "Downstream Event-Consuming Services" as Downstream
+}
+
+CallerApp --> AuditingAPI : oldObject, newObject, optional AuditorEventConfig
+AuditingAPI --> DomainModel : consumes old/new domain objects
+ChangeDetector --> DomainModel : compares old/new
+AuditingAPI --> ChangeDetector : compare old/new with AuditorEventConfig
+ChangeDetector --> Config : reads applicationName, eventSource, eventSubType, metadata, filters.element
+ChangeDetector --> IElementFilter : filter changed elements
+InclusionFilter ..|> IElementFilter
+InclusionFilter --> Config : uses filters.element enabled/types/includes
+ChangeDetector --> AuditEventModel : create UPDATED/CREATED/DELETED AuditEvent with config values
+AuditEventModel --> EventElementModel : contains changed elements
+AuditingAPI --> IEventPublisher : publish AuditEvent
+AuditingAPI --> ILogProvider : logging support
+KafkaPublisher ..|> IEventPublisher
+KafkaPublisher --> Serializer : serialize AuditEvent to JSON payload
+Serializer --> AuditEventModel : serializes
+KafkaPublisher --> Kafka : send serialized AuditEvent to topic
+LogProviderImpl ..|> ILogProvider
+Kafka --> Downstream : published audit events
+Downstream ..> Kafka : consumes audit events
+
+@enduml

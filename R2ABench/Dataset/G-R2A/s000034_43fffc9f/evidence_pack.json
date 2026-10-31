@@ -1,0 +1,118 @@
+{
+  "candidate": {
+    "sample_id": "s000034_43fffc9f",
+    "repository_name": "IBM/torc_py",
+    "image_url": "https://github.com/IBM/torc_py/blob/master/doc/torc_architecture.png",
+    "source_ref": "cbd7199aad06f7bff7e8e089ebec2cd1b0265c8a",
+    "total_score": 96,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 3169,
+    "document_count": 4,
+    "document_types": [
+      "readme",
+      "requirements_like",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 48,
+      "user_scenario": 1,
+      "api_io": 6,
+      "deployment": 5,
+      "constraints": 2,
+      "non_functional": 10
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 96
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.054205069124423966,
+      "text": "d and fourth tasks are send to node 1. Eventually, every worker executes one task and the application is executed 4x times faster. ## 3. Examples ### 3.1. Submit and wait The primary task spawns and distributes cyclically 10 tasks to the available workers, waits for their completion and finally prints the results. ### 3.2. Parallel map Equivalent to the previous example but this timie using the function with default chunk size equal to 1. ### 3.3. Simple callback example Four tasks are spawned and executed by the available workers. When a task completes, it is passed as argument to a callback task that is executed by the worker threads of the node (process) where the parent task is active..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "tests/test_masterworker.py",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05379801665069342,
+      "text": "\"\"\" (C) Copyright IBM Corporation 2019 All rights reserved. This program and the accompanying materials are made available under the terms of the Eclipse Public License v1.0 which accompanies this distribution, and is available at \"\"\" import torc import time import os import sys def work(x): time.sleep(1.0) y = x**2 return y def main(): ntasks = 4 sequence = range(1, ntasks + 1) t0 = torc.gettime() tasks = [] for i in sequence: task = torc.submit(work, i) tasks.append(task) torc.wait() t1 = torc.gettime() print(\"elapsed time={:.3f} s\".format(t1-t0)) for t in tasks: inp = t.input() res = t.result() ref = work(inp) assert(res == ref) def test_masterworker(nworkers): os.environ[\"TORC_WORKERS..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.055135436864680656,
+      "text": "e callback function adds the task result to a global variable, implementing thus a reduction operation. This example assumes that a single worker thread per MPI process is used and that callbacks are instantiated as tasks that are executed by worker threads. ### 3.7. Late switch from SPMD to master-worker and image preprocessing ### 3.8. Parallel numerical optimization ### 3.9. Demonstration of work stealing All 16 tasks are submitted by the primary task, running on node 0, to the worker thread of rank 1. The idle workers that find the local queue empty, issue steal requests and eventually retreive a task from the queue of rank 1. The primary task resumes when all the child tasks have com..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05429957080935399,
+      "text": "# torc_py: supporting task-based parallelism in Python ## 1. Introduction ## **torc_py** is a platform-agnostic adaptive load balancing library that orchestrates scheduling of multiple function evaluations on both shared and distributed memory platforms. As an open-source tasking library, **torc_py**, aims at providing a parallel computing framework that: - offers a unified approach for expressing and executing task-based parallelism on both shared and distributed memory platforms - takes advantage of MPI internally in a transparent to the user way but also allows the use of legacy MPI code at the application level - provides lightweight support for parallel nested loops and map functions..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05489830693426674,
+      "text": "he scheduling of function evaluations of the TMCMC method within Π4U on multiple cluster nodes. The TMCMC method within is able to achieve an overall parallel efficiency of more than 90% on 1024 compute nodes of Piz Daint running hybrid MPI+GPU molecular simulation codes with highly variable time-to-solution between simulations with different interaction parameters. ### 6.1. Preprocessing of image datasets A typical preprocessing stage of Deep Learning workloads includes the transformation of datasets of raw images to a single file in HDF5 format. The images are organized in subfolders, where the name of each subfolder denotes the label of the enclosed images. For each image, the file is..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05474889409315639,
+      "text": "d and fourth tasks are send to node 1. Eventually, every worker executes one task and the application is executed 4x times faster. ## 3. Examples ### 3.1. Submit and wait The primary task spawns and distributes cyclically 10 tasks to the available workers, waits for their completion and finally prints the results. ### 3.2. Parallel map Equivalent to the previous example but this timie using the function with default chunk size equal to 1. ### 3.3. Simple callback example Four tasks are spawned and executed by the available workers. When a task completes, it is passed as argument to a callback task that is executed by the worker threads of the node (process) where the parent task is active..."
+    }
+  ]
+}

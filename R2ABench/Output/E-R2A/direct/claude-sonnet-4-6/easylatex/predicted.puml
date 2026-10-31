@@ -1,0 +1,225 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #003366
+}
+skinparam node {
+  BackgroundColor #EEF8EE
+  BorderColor #336633
+}
+skinparam database {
+  BackgroundColor #FFF8DD
+  BorderColor #996600
+}
+skinparam cloud {
+  BackgroundColor #F5F0FF
+  BorderColor #663399
+}
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #888888
+}
+skinparam arrow {
+  Color #444444
+}
+skinparam defaultFontSize 12
+
+title EasyLaTex — System Architecture Diagram
+
+actor "General User" as GU
+actor "Registered User" as RU
+actor "Collaborator" as CO
+actor "Project Owner" as PO
+
+cloud "Client Layer\n(Chrome / Firefox / Edge / Safari\nWindows / macOS / Linux)" as ClientLayer {
+  component "Browser UI" as BrowserUI {
+    component "Registration / Login / Password Recovery" as AuthUI
+    component "File Upload\n(Drag-and-Drop / File Select)" as UploadUI
+    component "LaTeX Editor" as EditorUI
+    component "Real-Time Render Preview" as PreviewUI
+    component "Export Controls" as ExportUI
+    component "Project & Workspace Management" as ProjectUI
+    component "Group & Collaboration Management" as GroupUI
+    component "Version Tree Browser" as VersionUI
+    component "Comments Panel" as CommentUI
+  }
+}
+
+rectangle "API Gateway / Web Server\n(Apache 2.4+ / Nginx 1.18+)" as APIGateway
+
+rectangle "Back-End Application Layer\n(Python 3.8+ / Node.js 14.x+)" as BackEnd {
+
+  rectangle "User Management Module" as UserMgmt {
+    component "Registration Service" as RegSvc
+    component "Authentication Service\n(Encrypted Credentials)" as AuthSvc
+    component "Password Recovery Service" as PwdSvc
+    component "Permission & Role Control\n(Owner / Collaborator)" as PermSvc
+  }
+
+  rectangle "File Processing Module" as FileProcMod {
+    component "File Upload Handler\n(JPG/PNG/PDF/CSV/XLSX)" as UploadHandler
+    component "PDF Parser" as PDFParser
+    component "CSV / Excel Parser" as CSVParser
+    component "Image Preprocessor" as ImgPreproc
+    component "Handwritten Input Processor" as HWProcessor
+  }
+
+  rectangle "AI Recognition Module" as AIMod {
+    component "OCR Engine\n(≥90% accuracy)" as OCREngine
+    component "Formula Recognition Model\n(Deep Learning)" as FormulaModel
+    component "Table Recognition Model" as TableModel
+    component "LaTeX Code Generator" as LaTeXGen
+  }
+
+  rectangle "Rendering Module" as RenderMod {
+    component "LaTeX Rendering Engine\n(TeX Live / MiKTeX)\n(<2 s latency)" as LaTeXRenderer
+    component "Preview Service\n(Real-Time Updates)" as PreviewSvc
+  }
+
+  rectangle "Export Module" as ExportMod {
+    component "PDF Exporter" as PDFExporter
+    component "LaTeX Source Exporter" as SrcExporter
+    component "Image Exporter\n(PNG / JPEG)" as ImgExporter
+  }
+
+  rectangle "Project & Workspace Module" as ProjectMod {
+    component "Project Manager\n(Create / View / Metadata)" as ProjMgr
+    component "Workspace Manager" as WorkspaceMgr
+  }
+
+  rectangle "Collaboration & Group Module" as CollabMod {
+    component "Group Manager\n(Create / Join / Browse)" as GroupMgr
+    component "Resource Sharing Service" as ShareSvc
+    component "Real-Time Collaboration\n(WebSocket)" as RTCollab
+  }
+
+  rectangle "Version Control Module" as VersionMod {
+    component "Version Tree Manager\n(History / Branches)" as VersionTree
+    component "Version File Editor" as VerFileMod
+    component "Version Restore Service" as RestoreSvc
+    component "Version Download Service" as DLSvc
+    component "Version Comment Service" as VerCommentSvc
+  }
+
+  rectangle "Security Module" as SecurityMod {
+    component "Encryption Service\n(Storage & Transmission)" as EncSvc
+    component "Input Validation &\nAnti-SQLi / XSS / CSRF" as InputVal
+    component "GDPR / Privacy Compliance" as PrivacySvc
+  }
+
+}
+
+rectangle "Internal API Layer\n(HTTP/REST)" as InternalAPI {
+  component "User Verification API" as UserAPI
+  component "File Storage API" as FileAPI
+  component "Image Recognition API" as RecogAPI
+  component "LaTeX Generation API" as GenAPI
+  component "Rendering API" as RenderAPI
+  component "Collaboration Management API" as CollabAPI
+  component "Version Control API" as VerAPI
+}
+
+database "Relational Database\n(MySQL 8.0+ / PostgreSQL 12+)" as RDBMS {
+  component "User Accounts\n(ID / Username / Email / Encrypted PW / Team / Project IDs)" as UserDB
+  component "Groups\n(Group ID / Name / Member IDs / Project IDs)" as GroupDB
+  component "Projects & Versions\n(Project ID / Name / Creator / Version / File Path /\nParsed Content / Workspace / Edit Time / Comments)" as ProjectDB
+  component "Uploaded Files\n(Images / PDFs / CSV / Excel)" as FileDB
+  component "Recognition & Generation Results\n(LaTeX Code / Rendered Preview / Exported Artifacts)" as ResultDB
+}
+
+rectangle "External Storage\n(File System / Object Store)" as FileStorage
+
+GU --> BrowserUI
+RU --> BrowserUI
+CO --> BrowserUI
+PO --> BrowserUI
+
+BrowserUI --> APIGateway : "HTTP/REST\n+ WebSocket"
+
+APIGateway --> BackEnd
+
+BackEnd --> InternalAPI
+
+UserMgmt --> InternalAPI
+FileProcMod --> InternalAPI
+AIMod --> InternalAPI
+RenderMod --> InternalAPI
+ExportMod --> InternalAPI
+ProjectMod --> InternalAPI
+CollabMod --> InternalAPI
+VersionMod --> InternalAPI
+SecurityMod --> InternalAPI
+
+InternalAPI --> RDBMS
+InternalAPI --> FileStorage
+
+UploadHandler --> PDFParser
+UploadHandler --> CSVParser
+UploadHandler --> ImgPreproc
+UploadHandler --> HWProcessor
+
+PDFParser --> OCREngine
+ImgPreproc --> OCREngine
+HWProcessor --> OCREngine
+CSVParser --> LaTeXGen
+OCREngine --> FormulaModel
+OCREngine --> TableModel
+FormulaModel --> LaTeXGen
+TableModel --> LaTeXGen
+
+LaTeXGen --> LaTeXRenderer
+LaTeXRenderer --> PreviewSvc
+LaTeXRenderer --> PDFExporter
+LaTeXRenderer --> SrcExporter
+LaTeXRenderer --> ImgExporter
+
+ProjMgr --> WorkspaceMgr
+GroupMgr --> ShareSvc
+ShareSvc --> RTCollab
+RTCollab --> VersionTree
+
+VersionTree --> VerFileMod
+VersionTree --> RestoreSvc
+VersionTree --> DLSvc
+VersionTree --> VerCommentSvc
+
+AuthSvc --> EncSvc
+RegSvc --> InputVal
+AuthSvc --> InputVal
+InputVal --> PrivacySvc
+
+note right of AIMod
+  FR-001: Handwritten input
+  FR-002: Image input
+  NFR-001: ≥88% conversion accuracy
+  C-002: ≥90% AI model accuracy
+end note
+
+note right of RenderMod
+  FR-013: Real-time rendering
+  NFR-002: <2 s render latency
+end note
+
+note right of CollabMod
+  FR-009: Group collaboration
+  NFR-009: Owner / Collaborator roles
+  C-001: WebSocket-capable browsers
+end note
+
+note right of SecurityMod
+  NFR-008: Encrypted storage & transmission
+  NFR-010: SQL injection / XSS / CSRF defenses
+  C-012: GDPR compliance
+end note
+
+note bottom of RDBMS
+  DR-001 to DR-006
+  FR-015: Persist users, groups, projects,
+  versions, files, comments
+end note
+
+@enduml

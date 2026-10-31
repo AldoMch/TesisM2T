@@ -1,0 +1,197 @@
+@startuml torc_py_architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BorderColor #555555
+  FontStyle bold
+  FontSize 13
+}
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #D6E8F7
+  FontSize 11
+}
+skinparam node {
+  BorderColor #557755
+  BackgroundColor #DFF0D8
+  FontSize 12
+}
+skinparam database {
+  BorderColor #886633
+  BackgroundColor #FFF3CD
+}
+skinparam cloud {
+  BorderColor #884444
+  BackgroundColor #F8D7DA
+}
+skinparam interface {
+  BorderColor #555555
+}
+skinparam ArrowColor #333333
+
+' ─────────────────────────────────────────────
+' EXAMPLE / APPLICATION LAYER
+' ─────────────────────────────────────────────
+package "Example / Application Layer" #EEF4FB {
+  component "ImagePreprocessingExample" as ImgEx
+  component "MasterWorkerExample" as MWEx
+  component "SPMDExample" as SPMDEx
+  component "NumericalOptimizationExample" as OptEx
+  component "TaskStealingExample" as StealEx
+}
+
+' ─────────────────────────────────────────────
+' PUBLIC API LAYER
+' ─────────────────────────────────────────────
+package "Public API Layer" #E8F4E8 {
+  component "TorcAPI\n(torc.submit, torc.wait, torc.map\ntorc.spmd, torc.start, torc.init\ntorc.launch, torc.shutdown\ntorc.worker_id, torc.num_workers\ntorc.node_id, torc.num_nodes\ntorc.enable_stealing\ntorc.disable_stealing, torc.gettime)" as TorcAPI
+}
+
+' ─────────────────────────────────────────────
+' TASK MANAGEMENT LAYER
+' ─────────────────────────────────────────────
+package "Task Management Layer" #FFF8E1 {
+  component "TaskSubmissionManager" as TSM
+  component "TaskDescriptor\n(Future-like: input, result)" as TD
+  component "CallbackDispatcher\n(fires on spawning rank\nafter result return)" as CBD
+  component "ParallelMapExecutor" as PME
+  component "CompletionIterator\n(as_completed: yields tasks\nin completion order)" as CI
+}
+
+' ─────────────────────────────────────────────
+' SCHEDULING & QUEUE LAYER
+' ─────────────────────────────────────────────
+package "Scheduling & Queue Layer" #F3E5F5 {
+  component "CyclicScheduler\n(qid = -1, round-robin)" as CS
+  component "DirectedScheduler\n(qid >= 0, targeted)" as DS
+  component "WorkerQueue\n(per-worker FIFO)" as WQ
+  component "StealingCoordinator\n(idle detection, steal request)" as SC
+}
+
+' ─────────────────────────────────────────────
+' EXECUTION LAYER
+' ─────────────────────────────────────────────
+package "Execution Layer" #FCE4EC {
+  component "WorkerThreadPool\n(TORC_WORKERS threads\nper MPI process\nidle-yield via TORC_WORKER_YIELDTIME)" as WTP
+  component "SPMDController\n(broadcast, MPI app-level\nall-rank execution)" as SPMDC
+  component "IdleYieldMonitor\n(worker idle-poll loop\nTORC_WORKER_YIELDTIME)" as IYM
+}
+
+' ─────────────────────────────────────────────
+' MPI COMMUNICATION LAYER
+' ─────────────────────────────────────────────
+package "MPI Communication Layer" #E0F2F1 {
+  component "MPICommSubsystem\n(task dispatch, result return\nsteal req/resp, SPMD coord)" as MCS
+  component "MPIPollingLoop\n(MPI message polling\nTORC_SERVER_YIELDTIME idle yield)" as MPL
+}
+
+' ─────────────────────────────────────────────
+' RUNTIME CONFIGURATION LAYER
+' ─────────────────────────────────────────────
+package "Runtime Configuration Layer" #ECEFF1 {
+  component "ConfigurationManager\n(TORC_WORKERS\nTORC_STEALING\nTORC_SERVER_YIELDTIME\nTORC_WORKER_YIELDTIME)" as CM
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "MPI Runtime\n(mpi4py, mpirun)" as MPI_RT
+cloud "Python Threading Runtime\n(threading module)" as THR_RT
+cloud "termcolor\n(console output formatting)" as TERMCOLOR
+
+node "Optional Dependencies" {
+  component "numpy" as NUMPY
+  component "cma\n(CMA-ES)" as CMA
+  component "h5py" as H5PY
+  component "pillow" as PILLOW
+}
+
+database "HDF5 File System\n(preprocessed image output)" as HDF5_FS
+database "Labeled Image File System\n(raw image input)" as IMG_FS
+
+' ═══════════════════════════════════════════════
+' DEPENDENCIES — APPLICATION → API
+' ═══════════════════════════════════════════════
+ImgEx   --> TorcAPI : torc.map
+MWEx    --> TorcAPI : torc.submit, torc.wait
+SPMDEx  --> TorcAPI : torc.spmd
+OptEx   --> TorcAPI : torc.submit, torc.wait, torc.map
+StealEx --> TorcAPI : torc.submit, torc.enable_stealing
+
+' ═══════════════════════════════════════════════
+' DEPENDENCIES — PUBLIC API → TASK MANAGEMENT
+' ═══════════════════════════════════════════════
+TorcAPI --> TSM    : torc.submit
+TorcAPI --> TSM    : torc.wait
+TorcAPI --> PME    : torc.map delegates to PME
+TorcAPI --> CI     : torc.as_completed
+TorcAPI --> SPMDC  : torc.spmd, torc.launch (non-rank-0 activation)
+TorcAPI --> CM     : torc.init, torc.start, torc.launch trigger config load
+TorcAPI --> TERMCOLOR : console output formatting
+
+' ═══════════════════════════════════════════════
+' DEPENDENCIES — TASK MANAGEMENT INTERNAL
+' ═══════════════════════════════════════════════
+PME --> TSM        : submit chunk tasks
+PME --> TD         : collect results via result()
+
+TSM --> CS         : cyclic routing (qid = -1)
+TSM --> DS         : directed routing (qid >= 0)
+TSM --> CBD        : register callbacks on task submission
+TSM --> MCS        : cross-rank task dispatch (outbound)
+TSM --> TD         : instantiate task descriptors
+
+CI  --> TD         : poll completion state of task descriptors
+
+' ═══════════════════════════════════════════════
+' DEPENDENCIES — SCHEDULING → QUEUES
+' ═══════════════════════════════════════════════
+CS --> WQ          : enqueue (round-robin selection)
+DS --> WQ          : enqueue (targeted qid)
+SC --> WQ          : inject stolen tasks, inspect empty queues
+SC --> MCS         : inter-process steal request and response
+SC --> CM          : check TORC_STEALING, runtime toggle
+
+' ═══════════════════════════════════════════════
+' DEPENDENCIES — EXECUTION LAYER
+' ═══════════════════════════════════════════════
+WTP --> WQ         : dequeue tasks for execution
+WTP --> TD         : populate result field on function return
+WTP --> CM         : read TORC_WORKERS count
+WTP --> IYM        : delegate idle-yield behavior
+WTP --> SC         : notify idle (trigger steal attempt)
+IYM --> CM         : read TORC_WORKER_YIELDTIME
+
+SPMDC --> MCS      : broadcast and synchronize across all ranks
+SPMDC --> WTP      : activate worker execution on all ranks (torc.launch, torc.spmd)
+
+' ═══════════════════════════════════════════════
+' DEPENDENCIES — MPI COMMUNICATION LAYER
+' ═══════════════════════════════════════════════
+MPL --> MCS        : drive MPI message polling and dispatch
+MPL --> CM         : read TORC_SERVER_YIELDTIME idle yield
+
+MCS --> TSM        : inbound result return to spawning rank
+MCS --> CBD        : trigger callback after result delivered to spawning rank
+MCS --> MPI_RT     : mpi4py send, recv, bcast
+
+' ═══════════════════════════════════════════════
+' DEPENDENCIES — THREADING
+' ═══════════════════════════════════════════════
+WTP --> THR_RT     : Python threading.Thread
+
+' ═══════════════════════════════════════════════
+' DEPENDENCIES — OPTIONAL / EXAMPLE EXTERNALS
+' ═══════════════════════════════════════════════
+ImgEx  --> H5PY    : HDF5 tensor and label output
+ImgEx  --> PILLOW  : image loading
+ImgEx  --> NUMPY   : tensor construction
+OptEx  --> CMA     : CMA-ES optimization logic
+OptEx  --> NUMPY   : numerical computation
+
+H5PY   --> HDF5_FS : write preprocessed datasets
+PILLOW --> IMG_FS  : read raw labeled images
+
+@enduml

@@ -1,0 +1,118 @@
+{
+  "candidate": {
+    "sample_id": "s000056_78d18331",
+    "repository_name": "kubescape/host-scanner",
+    "image_url": "https://github.com/kubescape/host-scanner/blob/master/docs/e2e-test-architecture.png",
+    "source_ref": "7096303f0cd65f72eeca2ff856ff4a320332639b",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 10926,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 44,
+      "user_scenario": 22,
+      "api_io": 92,
+      "deployment": 138,
+      "constraints": 45,
+      "non_functional": 7
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "sensor/internal/utils/containerruntime_test.go",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053811170320953505,
+      "text": "var/lib/kubelet/kubelet-config.yaml --container-runtime=remote --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock --image-pull-progress-deadline=2m --kubeconfig=/var/lib/kubelet/kubeconfig --network-plugin=cni --container-runtime-endpoint=/run/containerd/containerd.sock\", pid: 15, expected: \"/etc/cni/\", //expected: \"/run/containerd/\", }, { name: \"kubelet_manual_installation_with_custom_cni_dir\", process: \"/usr/local/bin/kubelet --config=/var/lib/kubelet/kubelet-config.yaml --container-runtime=remote --container-runtime-endpoint=unix:///var/run/containerd/containerd.sock --image-pull-progress-deadline=2m --kubeconfig=/var/lib/kubelet/kubeconfig --network-plugin=cni --c..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "sensor/internal/utils/containerruntime_test.go",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05099813432835821,
+      "text": "ConfigDirFromConfigCrio, cniConfigDirArgName: \"--cni-config-dir\", expected: \"/var/lib/cni/\", }, } for _, tt := range uid_tests { t.Run(tt.name, func(t *testing.T) { ctx := context.Background() // create ContainerRuntimeInfo cr := &ContainerRuntimeInfo{ properties: &containerRuntimeProperties{ DefaultConfigDir: tt.defaultConfigDir, DefaultConfigPath: tt.defaultConfigPath, ParseCNIFromConfigFunc: tt.parseCNIFromConfigFunc, CNIConfigDirArgName: tt.cniConfigDirArgName, }, process: &ProcessDetails{ CmdLine: strings.Split(tt.cmdLine, \" \"), }, rootDir: \"\", } cniConfigDirFormFile := cr.getCNIConfigDir(ctx) if !assert.Equal(t, tt.expected, cniConfigDirFormFile) { t.Logf(\"%s has different output\\n\"..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "e2e/README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05346965156589694,
+      "text": "n file (eg. ), in order to verify the right response from the HTTP requests. In order to make it possible we use the *build tags* functionality provided by . So, for each file that contains platform designed data structures, we have to write the specific build tag that identify the platform itself (eg. ). So, to run the tests for a specific provider, you need to run the following command inside directory: ### Write your own test As described above, in order to implement a test for a new endpoint, we have to do the following steps: * create a new endpoint file with ginkgo: * write the code to test the endpoint (without declare the stucture that you are going to use to compare the expected..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "e2e/doesnotexist_test.go",
+      "doc_type": "test",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05013004539320329,
+      "text": "package e2e_test import ( \"net/http\" . \"github.com/onsi/ginkgo\" . \"github.com/onsi/gomega\" ) var _ = Describe(\"Doesnotexist\", func() { var ( res *http.Response err error ) Context(\"testing /doesnotexist endpoint\", func() { It(\"should respond to a GET request\", func() { requestURL := url + \"/doesnotexist\" res, err = http.Get(requestURL) Expect(err).ToNot(HaveOccurred()) }) It(\"should return a 200 status code\", func() { Expect(res.StatusCode).To(BeEquivalentTo(404)) }) }) })"
+    },
+    {
+      "evidence_id": "E005",
+      "path": "sensor/controlplane_test.go",
+      "doc_type": "test",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.055122950819672126,
+      "text": "package sensor import ( \"encoding/json\" \"testing\" \"github.com/stretchr/testify/require\" ) func Test_removeEncryptionProviderConfigSecrets(t *testing.T) { type args struct { data string } tests := []struct { name string args args output string }{ { name: \"test\", args: args{ data: , }, output: , }, } for _, tt := range tests { t.Run(tt.name, func(t *testing.T) { var data map[string]interface{} json.Unmarshal([]byte(tt.args.data), &data) removeEncryptionProviderConfigSecrets(data) v, _ := json.Marshal(data) require.JSONEq(t, tt.output, string(v)) }) } }"
+    },
+    {
+      "evidence_id": "E006",
+      "path": "e2e/README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05463389656938045,
+      "text": "n file (eg. ), in order to verify the right response from the HTTP requests. In order to make it possible we use the *build tags* functionality provided by . So, for each file that contains platform designed data structures, we have to write the specific build tag that identify the platform itself (eg. ). So, to run the tests for a specific provider, you need to run the following command inside directory: ### Write your own test As described above, in order to implement a test for a new endpoint, we have to do the following steps: * create a new endpoint file with ginkgo: * write the code to test the endpoint (without declare the stucture that you are going to use to compare the expected..."
+    }
+  ]
+}

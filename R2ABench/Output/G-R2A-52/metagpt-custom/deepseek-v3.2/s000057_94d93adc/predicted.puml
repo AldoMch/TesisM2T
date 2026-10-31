@@ -1,0 +1,60 @@
+@startuml
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+package "Presentation Layer" {
+  component "React UI Components" as UI <<component>>
+  component "Redux Store" as Redux <<store>>
+  component "Audio Playback Manager" as Playback <<service>>
+  component "Waveform Controller" as Waveform <<component>>
+  component "Form Validation Handler" as Validation <<service>>
+  component "API Client" as APIClient <<service>>
+  component "Config Manager" as Config <<service>>
+  component "Cloudinary Client" as CloudClient <<service>>
+}
+
+package "Application Layer" {
+  component "Express Server" as Express <<service>>
+  component "Feed API Service" as FeedAPI <<service>>
+  component "User/Auth API Service" as AuthAPI <<service>>
+  component "Follow Manager" as FollowMgr <<service>>
+}
+
+package "Data Layer" {
+  database "PostgreSQL Database" as Postgres <<database>>
+}
+
+cloud "External Systems" {
+  component "Cloudinary" as Cloudinary <<external>>
+}
+
+' Presentation Layer dependencies
+UI --> Redux : "dispatches actions\nreads state"
+Redux --> Playback : "stores playback state\nfor continuity"
+UI --> Playback : "playback control\n(play/pause/seek)"
+UI --> Waveform : "waveform rendering\nscrubbing interaction"
+Waveform --> Playback : "seek position updates"
+Playback --> APIClient : "fetches audio data"
+UI --> Validation : "form validation calls"
+Validation --> APIClient : "validates via API\n(username availability)"
+UI --> APIClient : "data requests\n(feed/user/follow)"
+APIClient --> Config : "reads API base URL"
+UI --> CloudClient : "initiates media upload"
+CloudClient --> Cloudinary : "uploads files\nreceives URLs"
+Config --> CloudClient : "provides Cloudinary\nconfiguration"
+
+' Application Layer dependencies
+APIClient --> Express : "HTTP requests\n(API calls)"
+Express --> FeedAPI : "routes feed requests"
+Express --> AuthAPI : "routes auth requests"
+Express --> FollowMgr : "routes follow requests"
+FeedAPI --> Postgres : "retrieves follow feed data"
+AuthAPI --> Postgres : "manages user data\n& authentication"
+FollowMgr --> Postgres : "manages follow\nrelationships"
+
+' External dependencies
+FeedAPI --> FollowMgr : "uses follow data\nfor feed generation"
+@enduml

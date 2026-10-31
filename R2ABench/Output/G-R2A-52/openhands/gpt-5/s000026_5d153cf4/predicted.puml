@@ -1,0 +1,84 @@
+@startuml
+skinparam componentStyle rectangle
+
+title GKE Pub/Sub WebSocket Adapter Architecture
+
+' External clients
+component "Web Clients\n(WebSocket)" as Clients
+
+cloud "GCP" {
+  component "Pub/Sub Topic\nprojects/<project-id>/topics/<topic-name>" as PubTopic <<Pub/Sub>>
+}
+
+node "GKE Cluster" {
+  package "Namespace" {
+    component "ConfigMap\nkey: topic" as ConfigMap
+    component "Deployment\nAdapter" as Deployment
+    component "Service\nType: LoadBalancer\n80 -> 8080" as Service
+    component "HPA\nmin=1, max=2,\nCPU=80%" as HPA
+
+    node "Adapter Pod #1" as Pod1 {
+      component "Container: Adapter Runtime" as C1
+      component "exec.sh" as Exec1
+      component "pulltop" as Pull1
+      component "websocketd :8080" as WS1
+      component "Recent Message Cache\n(last 10)" as Cache1
+    }
+
+    node "Adapter Pod #2" as Pod2 {
+      component "Container: Adapter Runtime" as C2
+      component "exec.sh" as Exec2
+      component "pulltop" as Pull2
+      component "websocketd :8080" as WS2
+      component "Recent Message Cache\n(last 10)" as Cache2
+    }
+  }
+}
+
+' Client access and service routing
+Clients -down-> Service : WebSocket\nTCP 80
+Service -down-> WS1 : TCP 8080
+Service -down-> WS2 : TCP 8080
+
+' Topic consumption and runtime streaming
+PubTopic -down-> Pull1 : subscribe/pull
+PubTopic -down-> Pull2 : subscribe/pull
+Pull1 -right-> WS1 : stream stdout
+Pull2 -right-> WS2 : stream stdout
+
+' Entrypoint and topic parameter
+Exec1 -down-> Pull1 : start with\nSYMBOL=<topic>
+Exec2 -down-> Pull2 : start with\nSYMBOL=<topic>
+
+' Container composition
+C1 -down-> Exec1
+C1 -down-> WS1
+C1 -down-> Pull1
+C1 -down-> Cache1
+C2 -down-> Exec2
+C2 -down-> WS2
+C2 -down-> Pull2
+C2 -down-> Cache2
+
+' K8s wiring
+ConfigMap -left-> Deployment : envFrom\nSYMBOL <- topic
+Deployment -down-> Pod1 : manage
+Deployment -down-> Pod2 : manage
+HPA -left-> Deployment : scale replicas
+
+note top of Deployment
+Each deployment instance binds one externally reachable endpoint
+to one configured Pub/Sub topic.
+end note
+
+note right of Cache1
+Cache exposes up to last 10 messages
+per configured topic.
+end note
+
+note right of PubTopic
+One subscription per running adapter pod.
+Client count does not create subscriptions.
+end note
+
+@enduml

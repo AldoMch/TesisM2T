@@ -1,0 +1,167 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+skinparam node {
+  BackgroundColor #EAF7EA
+  BorderColor #27AE60
+  FontColor #1A1A1A
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+  FontColor #1A1A1A
+}
+skinparam rectangle {
+  BackgroundColor #FDEDEC
+  BorderColor #E74C3C
+  FontColor #1A1A1A
+}
+skinparam cloud {
+  BackgroundColor #F5EEF8
+  BorderColor #8E44AD
+  FontColor #1A1A1A
+}
+skinparam arrow {
+  Color #555555
+  FontColor #555555
+}
+
+title PromptHub System Architecture
+
+actor Visitor as visitor
+actor "Registered User" as user
+actor "Administrator" as admin
+actor "AI Artwork Creator" as creator
+
+cloud "Client Browser\n(Chrome 110+ / Safari 15.3+ / Firefox 119+\nWindows 7+ / macOS 8.0+)" as browser {
+}
+
+node "Docker Container\n(Ubuntu 22.0.4 / Docker 20.10.17)" as docker_env {
+
+  node "Front-End Module\n(HTML / CSS / JavaScript / Vue.js / JQuery)" as frontend {
+    component "Home Page & Artwork List UI\n(Popular Rec / Personalized Rec / Search / Filter / Sort)" as ui_home
+    component "Registration / Login / Account UI\n(Register / Login / Logout / Password / Avatar / Username)" as ui_auth
+    component "Artwork Detail UI\n(Image / Prompt / Model / Tags / Uploader / Comments / Replies)" as ui_detail
+    component "Upload & Edit UI\n(AI Image / Prompt / Model / Category / Additional Info)" as ui_upload
+    component "Favorite Management UI\n(Add / View / Query / Cancel / Category CRUD / Visibility)" as ui_fav
+    component "Administrator UI\n(User List / Artwork List / Review / Comment & Reply Management)" as ui_admin
+    component "Notification UI\n(Unread / Mark Read / Delete)" as ui_notif
+    component "User Profile UI\n(Personal Page / Another User Page / Follows / Fans / History)" as ui_profile
+  }
+
+  node "Back-End Module\n(Python / Java / Django Framework)" as backend {
+
+    component "User & Account Service\n(Register / Login / Logout / Password / Avatar / Username)" as svc_user
+    component "User Relationship Service\n(Follow / Unfollow / Follow List / Fan List)" as svc_rel
+    component "Artwork Service\n(Upload / Edit / Delete / Detail / Query / Sort / Filter)" as svc_artwork
+    component "Review Service\n(Admin Review Queue / Approve / Reject / Progress Query)" as svc_review
+    component "Comment Service\n(Add Comment / Delete Comment / View Comments)" as svc_comment
+    component "Reply Service\n(Add Reply / Delete Reply / View Replies)" as svc_reply
+    component "Favorite Service\n(Add / Cancel / View / Query / Category CRUD / Visibility)" as svc_fav
+    component "Browsing History Service\n(Record / View History)" as svc_history
+    component "Notification Service\n(Add Unread / Mark Read / Delete Notification)" as svc_notif
+    component "Administrator Service\n(User List / Artwork List / Comment & Reply Delete)" as svc_admin
+    component "Security & Auth Layer\n(HTTPS / Auth / Firewall / CORS / XSS / SQL Injection / Encryption)" as svc_security
+    component "Logging & Monitoring\n(Log Backup / Error Localization / Disk Usage / Docker Auto-Restart / Email Alert)" as svc_log
+    component "Access Control\n(Concurrent Access Limiter)" as svc_access
+  }
+
+  node "Algorithm Support Module\n(Python / PyTorch / TensorFlow)" as algo {
+    component "Popular Recommendation Engine\n(Sort by Popularity Descending)" as algo_popular
+    component "Personalized Recommendation Engine\n(Visited / Liked / Favorited / Follows / History / Pref Switch)" as algo_personal
+  }
+
+  database "SQLite Database\n(Primary Storage / Migratable to MySQL)" as db {
+    component "User Account Data\n(Email / Account Name / Password / Avatar / Username / State)" as db_user
+    component "Administrator Data\n(Identity / Auth State)" as db_admin
+    component "AI Artwork Data\n(Image / Prompt / Model / Category / Tags / Uploader / Info)" as db_artwork
+    component "Review Record\n(Queue / Progress / Approve / Reject)" as db_review
+    component "Comment Data\n(Content / User / Artwork / Deletion State)" as db_comment
+    component "Reply Data\n(Content / User / Artwork / Comment / Parent Reply)" as db_reply
+    component "Favorite Data\n(Relationship / Category / Visibility)" as db_fav
+    component "Follow Relationship\n(Follower / Followee)" as db_follow
+    component "Browsing History\n(User / Artwork / Timestamp)" as db_history
+    component "Recommendation Signals\n(Likes / Favorites / Follows / History / Pref Switch)" as db_recsig
+    component "Notification Data\n(Content / User / Read State / Deletion State)" as db_notif
+    component "Log & Sensitive Data\n(Encrypted / Backed Up)" as db_log
+  }
+
+  component "Offsite Disaster Recovery Backup" as backup
+}
+
+visitor --> browser
+user --> browser
+admin --> browser
+creator --> browser
+
+browser --> frontend : "HTTPS Secure Requests\n(Obfuscated & Compressed)"
+
+ui_home --> svc_artwork
+ui_home --> algo_popular
+ui_home --> algo_personal
+ui_auth --> svc_user
+ui_detail --> svc_artwork
+ui_detail --> svc_comment
+ui_detail --> svc_reply
+ui_upload --> svc_artwork
+ui_upload --> svc_review
+ui_fav --> svc_fav
+ui_admin --> svc_admin
+ui_admin --> svc_review
+ui_notif --> svc_notif
+ui_profile --> svc_user
+ui_profile --> svc_rel
+ui_profile --> svc_history
+ui_profile --> svc_fav
+
+frontend --> svc_security : "All requests pass\nSecurity & Auth Layer"
+
+svc_security --> svc_user
+svc_security --> svc_rel
+svc_security --> svc_artwork
+svc_security --> svc_review
+svc_security --> svc_comment
+svc_security --> svc_reply
+svc_security --> svc_fav
+svc_security --> svc_history
+svc_security --> svc_notif
+svc_security --> svc_admin
+svc_security --> svc_access
+
+svc_user --> db_user
+svc_rel --> db_follow
+svc_artwork --> db_artwork
+svc_review --> db_review
+svc_comment --> db_comment
+svc_reply --> db_reply
+svc_fav --> db_fav
+svc_history --> db_history
+svc_notif --> db_notif
+svc_admin --> db_user
+svc_admin --> db_artwork
+svc_admin --> db_comment
+svc_admin --> db_reply
+svc_log --> db_log
+
+svc_comment --> svc_notif : "Trigger Notification\n(New Comment)"
+svc_reply --> svc_notif : "Trigger Notification\n(New Reply)"
+svc_review --> svc_notif : "Trigger Notification\n(Review Progress Change)"
+
+algo_popular --> db_artwork : "Read Artwork Popularity"
+algo_popular --> db_recsig
+algo_personal --> db_recsig : "Read Signals & Preferences"
+algo_personal --> db_history
+algo_personal --> db_follow
+algo_personal --> db_fav
+
+db --> backup : "Offsite Disaster Recovery Backup"
+
+svc_log --> svc_notif : "Docker Restart\nEmail Alert to Developers"
+
+@enduml

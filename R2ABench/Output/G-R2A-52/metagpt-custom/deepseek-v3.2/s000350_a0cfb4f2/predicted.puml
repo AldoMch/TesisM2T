@@ -1,0 +1,63 @@
+@startuml
+
+package "Presentation Layer" {
+    component "Web UI" as webui
+    component "WebSocket Handler" as ws_handler
+}
+
+package "Application Layer" {
+    component "HTTP API" as http_api
+    component "Error Handler" as error_handler
+    component "Job Producer" as job_producer
+}
+
+package "Integration Layer" {
+    component "Background Consumer" as bg_consumer
+    component "GoDaddy Client" as godaddy_client
+}
+
+database "Redis" as redis
+component "Job Channel" as job_channel
+component "Report Channel" as report_channel
+
+rectangle "External Systems" {
+    component "GoDaddy API" as godaddy_api
+    component "squatm3 CLI Engine" as squatm3
+}
+
+' Main page rendering and session creation
+http_api --> webui : serves index.html (FR-001)
+http_api --> webui : creates session on GET / (FR-001)
+
+' Session validation for job creation
+http_api --> job_producer : creates job (validates session) (FR-004)
+
+' Error handling
+http_api --> error_handler : handles HTTP errors (FR-007, FR-008)
+error_handler --> webui : returns error responses
+
+' Attack parsing integration
+http_api --> job_producer : with parsed attack options (FR-003)
+
+' Job processing flow
+job_producer --> job_channel : publishes job requests
+bg_consumer --> job_channel : consumes jobs
+bg_consumer --> squatm3 : executes commands
+
+' Reporting flow
+bg_consumer --> report_channel : publishes results
+report_channel --> ws_handler : emits to matching sessions (FR-005)
+
+' External integrations
+godaddy_client --> godaddy_api : queries domains
+godaddy_client ..> job_producer : optional flag (configuration)
+godaddy_client ..> bg_consumer : optional check (configuration)
+
+' Data storage
+job_channel --> redis : stores
+report_channel --> redis : stores
+
+' Consumer initialization
+note right of bg_consumer: Starts at service\nstartup (FR-002)
+
+@enduml

@@ -1,0 +1,51 @@
+@startuml
+skinparam componentStyle rectangle
+title HTTP Proxy and Test Utilities Architecture
+
+package "Proxy Path" {
+  component "HTTP Client" as Client
+  component "HTTP Proxy" as Proxy <<Proxy>>
+  component "Upstream Server" as Upstream <<Server>>
+
+  Client --> Proxy : HTTP request\n(URI, headers, body)
+  Proxy --> Upstream : Forward retained FullHttpRequest\n(after upstream channel active)
+}
+
+package "Test Utilities" {
+  component "Test Client\n(Async HTTP Client,\nFixed Thread Pool)" as TestClient <<Client>>
+  package "Test Server (Grizzly/Jersey)" as TestServer {
+    component "Download Handler\nGET /download" as DownloadHandler
+    component "Upload Handler" as UploadHandler
+    component "Response API" as ResponseAPI
+  }
+}
+
+folder "Local Filesystem" as FS
+
+TestClient --> TestServer : HTTP requests
+TestServer --> TestClient : Structured response {code,msg,data}
+DownloadHandler --> FS : Check file exists\nread binary
+DownloadHandler --> TestClient : application/octet-stream +\nContent-Disposition attachment\n(if file exists)\n(no attachment if not)
+UploadHandler --> TestClient : Map payload {"filepath":<file name>}
+
+TestServer --> DownloadHandler
+TestServer --> UploadHandler
+TestServer --> ResponseAPI
+
+note right of Proxy
+- Writes & flushes retained request only when upstream channel active
+- No header/body transformation required during forwarding
+- Debug logs may include current URI/headers/body
+end note
+
+note bottom of TestClient
+- Counts successes where status code == 200
+- Closes HTTP client and shuts down executor after run
+- Example workload: 50 threads × 1000 GETs
+end note
+
+note bottom of DownloadHandler
+Returns binary file when present; else no file entity
+end note
+
+@enduml

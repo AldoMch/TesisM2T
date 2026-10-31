@@ -1,0 +1,73 @@
+@startuml
+title VirtualMotionTracker System Architecture
+left to right direction
+skinparam componentStyle rectangle
+
+' External system
+component "User Application" as UserApp <<External>>
+
+' Runtime dependency
+component "SteamVR / OpenVR Runtime" as Steam <<Runtime>>
+
+package "VirtualMotionTracker" {
+  component "VMT Manager" as Manager
+  component "VMT Driver" as Driver <<OpenVR Driver>>
+
+  node "Shared Memory (IPC)" as IPC {
+    component "Manager -> Driver\nJSON Channel" as M2D <<JSON>>
+    component "Driver -> Manager\nJSON Channel" as D2M <<JSON>>
+  }
+
+  artifact "Legacy Binding\nJSON (controller_type: mycontroller)" as Binding <<JSON>>
+}
+
+' External control input (OSC) to Manager
+UserApp ..> Manager : OSC control input
+note on link
+No fixed port or complete command set specified
+end note
+
+' Shared-memory JSON channels with synchronization metadata
+Manager --> M2D : write JSON
+M2D --> Driver : read JSON
+
+Driver --> D2M : write JSON
+D2M --> Manager : read JSON
+
+note right of M2D
+Shared-memory control fields:
+- send_count
+- handshake_count
+- message_length
+end note
+
+note right of D2M
+Shared-memory control fields:
+- send_count
+- handshake_count
+- message_length
+end note
+
+' Driver integration with SteamVR/OpenVR runtime
+Driver --> Steam : OpenVR driver interface
+
+' Legacy controller binding artifact flow
+Driver ..> Binding : provides / installs
+Binding ..> Steam : consumed by runtime
+
+note right of Binding
+Legacy mapping (right-hand):
+- /user/hand/right/input/a -> /actions/legacy/in/right_axis1_press
+- /user/hand/right/input/c -> /actions/legacy/in/right_a_press
+- /user/hand/right/input/b -> /actions/legacy/in/right_grip_press
+Mode: button, parameters.sub_mode: complex
+end note
+
+' Dependency context note
+note right of Driver
+OpenVR SDK behaviors (init, interface-version checks, shutdown,
+path constants, SDK structures) are dependency context, not core
+product functionality.
+end note
+
+@enduml

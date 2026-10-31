@@ -1,0 +1,126 @@
+@startuml
+title IceFireDB Decentralized Database Infrastructure - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' CLIENT LAYER (External Actors)
+' ============================================================
+package "Client Layer" <<Layer>> {
+  [Redis-Backed Application\n(Redis client)] as RedisApp
+  [Redis Pub/Sub-Style\nApplication] as PubSubApp
+  [Redis Deployment\nOperator] as Operator
+  [SQL/MySQL Protocol\nClient Path] as SQLClient
+}
+
+' ============================================================
+' PROTOCOL / INTERFACE LAYER
+' ============================================================
+package "Protocol / Interface Layer" <<Layer>> {
+  [Redis Command /\nProxy Interface] as RedisIface
+  [Redis Publish/Subscribe\nProtocol Interface] as PubSubIface
+  [Internal SQL/MySQL\nResult Data Interface] as SQLIface
+}
+
+' ============================================================
+' CORE SERVICE LAYER
+' ============================================================
+package "Core Service Layer" <<Layer>> {
+
+  package "IceFireDB-Redis-Proxy" {
+    [Redis Command Category\nSupport\n(String, Set, List, Hash,\nSorted Set, Stream, Control)] as CmdSupport
+    [Redis Instruction\nSynchronization Engine] as SyncEngine
+    [Cluster-Aware\nProxy Routing] as ClusterRouting
+    [Redis Storage\nForwarding] as Forwarding
+  }
+
+  package "IceFireDB-PubSub" {
+    [Decentralized P2P\nPub/Sub Engine] as P2SEngine
+    [Redis-Style Pub/Sub\nMessage Semantics] as PubSubSemantics
+    [Multi-Node\nOperation Manager] as MultiNode
+    [NAT / Private-Network\nCommunication] as NATComm
+  }
+
+  package "IceFireDB-SQLite (Internal)" {
+    [SQL Result Packet\nParser] as SQLParser
+    [Field Metadata &\nRow Handler] as RowHandler
+    [Warning / Status\nExtractor] as StatusExtractor
+  }
+}
+
+' ============================================================
+' NETWORK / PEER LAYER
+' ============================================================
+package "Network / Peer Layer" <<Layer>> {
+  [Decentralized Redis\nAgent Network] as AgentNet
+  [Peer Discovery & Routing\n(Kademlia DHT,\nlibp2p/IPFS-style)] as DHT
+}
+
+' ============================================================
+' STORAGE LAYER
+' ============================================================
+package "Storage Layer" <<Layer>> {
+  database "Standalone\nRedis Storage" as RedisStandalone
+  database "Clustered\nRedis Storage" as RedisCluster
+}
+
+' ============================================================
+' EXTERNAL SYSTEMS / DEPENDENCIES
+' ============================================================
+package "External Systems / Dependencies" <<External>> {
+  [libp2p / IPFS-Style\nP2P Network Stack] as LibP2P
+  [Redis Storage Target\n(Standalone or Cluster)] as RedisTarget
+}
+
+' ============================================================
+' RELATIONSHIPS - Clients to Interfaces
+' ============================================================
+RedisApp --> RedisIface : Redis commands / instructions
+PubSubApp --> PubSubIface : publish / subscribe
+Operator --> RedisIface : storage configuration
+SQLClient --> SQLIface : MySQL-style result packets
+
+' ============================================================
+' RELATIONSHIPS - Interface to Core
+' ============================================================
+RedisIface --> CmdSupport : validated commands
+PubSubIface --> PubSubSemantics : protocol events
+SQLIface --> SQLParser : packetized result data
+
+' ============================================================
+' RELATIONSHIPS - Redis Proxy Internals
+' ============================================================
+CmdSupport --> SyncEngine : supported instructions
+SyncEngine --> AgentNet : synchronize instructions
+SyncEngine --> Forwarding : write operations
+ClusterRouting --> Forwarding : route to cluster nodes
+Forwarding --> RedisTarget : write / persist data
+
+' ============================================================
+' RELATIONSHIPS - PubSub Internals
+' ============================================================
+PubSubSemantics --> P2SEngine : message dissemination
+MultiNode --> P2SEngine : multi-node operation
+NATComm --> P2SEngine : NAT / private-network transport
+P2SEngine --> DHT : peer discovery / routing
+DHT --> LibP2P : uses routing mechanisms
+
+' ============================================================
+' RELATIONSHIPS - SQL Internal Handling
+' ============================================================
+SQLParser --> RowHandler : fields / rows
+SQLParser --> StatusExtractor : warnings / status
+
+' ============================================================
+' RELATIONSHIPS - Network & Storage
+' ============================================================
+AgentNet --> DHT : peer networking
+AgentNet --> RedisCluster : cluster-aware behavior
+Forwarding --> RedisStandalone : standalone writes
+Forwarding --> RedisCluster : clustered writes
+RedisTarget --> RedisStandalone
+RedisTarget --> RedisCluster
+
+@enduml

@@ -1,0 +1,111 @@
+@startuml
+!define RECTANGLE class
+!define DATABASE rectangle
+!define COMPONENT rectangle
+!define INTERFACE rectangle
+
+skinparam componentStyle rectangle
+
+title Deep Learning Model Sharing Platform - Component Architecture
+
+' Layers
+package "Frontend Layer" {
+  [Web Client] as web_client
+  [Admin Console] as admin_console
+  [Mobile App] as mobile_app
+}
+
+package "API Gateway Layer" {
+  [API Gateway] as api_gateway
+}
+
+package "Application Services Layer" {
+  [User Management Service] as user_service
+  [Authentication Service] as auth_service
+  [Q&A Community Service] as qa_service
+  [Blog Service] as blog_service
+  [Model Management Service] as model_service
+  [Dataset Service] as dataset_service
+  [Follow Service] as follow_service
+  [Payment Service] as payment_service
+  [Recommendation Engine] as recommendation_engine
+  [Admin Service] as admin_service
+}
+
+package "Data Layer" {
+  database "MySQL Database" as mysql_db {
+    [User Data] as user_data
+    [Q&A Data] as qa_data
+    [Blog Data] as blog_data
+    [Model Data] as model_data
+    [Dataset Storage] as dataset_storage
+    [Follow Relations] as follow_data
+    [Transaction Data] as transaction_data
+  }
+}
+
+package "External Services" {
+  [Cloud Storage] as cloud_storage
+  [Payment Gateway] as payment_gateway
+}
+
+' Connections
+web_client --> api_gateway : HTTP/HTTPS
+admin_console --> api_gateway : HTTP/HTTPS
+mobile_app --> api_gateway : REST API
+
+api_gateway --> user_service : Routes requests
+api_gateway --> auth_service
+api_gateway --> qa_service
+api_gateway --> blog_service
+api_gateway --> model_service
+api_gateway --> dataset_service
+api_gateway --> follow_service
+api_gateway --> payment_service
+api_gateway --> recommendation_engine
+api_gateway --> admin_service
+
+user_service --> mysql_db
+auth_service --> mysql_db
+qa_service --> mysql_db
+blog_service --> mysql_db
+model_service --> mysql_db
+dataset_service --> mysql_db
+follow_service --> mysql_db
+payment_service --> mysql_db
+recommendation_engine --> mysql_db
+admin_service --> mysql_db
+
+model_service --> cloud_storage : Store model files
+dataset_service --> cloud_storage : Store datasets
+payment_service --> payment_gateway : Process payments
+
+' Relationships between data entities
+user_data --> qa_data
+user_data --> blog_data
+user_data --> model_data
+user_data --> dataset_storage
+user_data --> follow_data
+model_data --> transaction_data
+
+note right of model_service
+  Handles model upload,
+
+  download, online invocation,
+
+  and purchase functionality
+end note
+
+note right of dataset_service
+  Manages dataset upload,
+
+  download and modification
+end note
+
+note right of recommendation_engine
+  Provides personalized
+
+  model recommendations
+end note
+
+@enduml

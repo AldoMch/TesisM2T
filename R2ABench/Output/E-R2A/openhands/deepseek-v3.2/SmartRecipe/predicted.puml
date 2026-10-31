@@ -1,0 +1,215 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define STORAGE storage
+!define QUEUE queue
+!define COMPONENT component
+!define NODE node
+!define CLOUD cloud
+!define FRAME frame
+
+skinparam {
+  BackgroundColor #FFFFFF
+  ArrowColor #000000
+  ActorBorderColor #000000
+  UsecaseBorderColor #000000
+  ClassBorderColor #000000
+  ComponentBorderColor #000000
+  DatabaseBorderColor #000000
+  NodeBorderColor #000000
+  CloudBorderColor #000000
+  RectangleBorderColor #000000
+  FrameBorderColor #000000
+  ArrowFontColor #000000
+  ActorFontColor #000000
+  UsecaseFontColor #000000
+  ClassFontColor #000000
+  ComponentFontColor #000000
+  DatabaseFontColor #000000
+  NodeFontColor #000000
+  CloudFontColor #000000
+  RectangleFontColor #000000
+  FrameFontColor #000000
+  Shadowing false
+}
+
+title Smart Recipe System Architecture Diagram
+
+' === User Layer ===
+frame "User Layer" as user_layer {
+  rectangle "Mobile App (Android/iOS)" as mobile_app {
+    rectangle "User Interface Layer" as ui_layer {
+      rectangle "Login Interface" as login_ui
+      rectangle "Main Interface" as main_ui
+      rectangle "Photo Recognition Interface" as photo_ui
+      rectangle "Recipe Display Interface" as recipe_ui
+      rectangle "Health Center Interface" as health_ui
+      rectangle "Community Interface" as community_ui
+      rectangle "Recommendation Interface" as recommendation_ui
+      rectangle "Admin Interface" as admin_ui
+    }
+    
+    rectangle "App Logic Layer" as app_logic {
+      rectangle "Image Preprocessing" as image_preprocess
+      rectangle "Local Food Check" as local_food_check
+      rectangle "API Client" as api_client
+      rectangle "Local Storage" as local_storage
+    }
+  }
+}
+
+' === Communication Layer ===
+frame "Communication Layer" as comm_layer {
+  cloud "Internet" as internet
+  rectangle "REST API Gateway" as api_gateway {
+    rectangle "Authentication Service" as auth_service
+    rectangle "Request Router" as request_router
+    rectangle "Rate Limiter" as rate_limiter
+  }
+}
+
+' === Backend Service Layer ===
+frame "Backend Service Layer" as backend_layer {
+  rectangle "Spring Boot Application" as spring_boot {
+    rectangle "Controller Layer" as controller_layer {
+      rectangle "User Controller" as user_controller
+      rectangle "Recipe Controller" as recipe_controller
+      rectangle "Health Controller" as health_controller
+      rectangle "Community Controller" as community_controller
+      rectangle "Admin Controller" as admin_controller
+      rectangle "Search Controller" as search_controller
+    }
+    
+    rectangle "Service Layer" as service_layer {
+      rectangle "User Service" as user_service
+      rectangle "Recipe Service" as recipe_service
+      rectangle "Health Analysis Service" as health_service
+      rectangle "Community Service" as community_service
+      rectangle "Recommendation Service" as recommendation_service
+      rectangle "Admin Service" as admin_service
+      rectangle "Search Service" as search_service
+    }
+    
+    rectangle "Business Logic Layer" as business_layer {
+      rectangle "Nutrition Analysis Engine" as nutrition_engine
+      rectangle "Diet Plan Generator" as diet_plan_generator
+      rectangle "Calorie Calculator" as calorie_calculator
+      rectangle "Food Combination Checker" as food_combo_checker
+      rectangle "Personalization Engine" as personalization_engine
+    }
+  }
+  
+  rectangle "Flask Model Service" as flask_service {
+    rectangle "Image Recognition Model" as image_model
+    rectangle "Model Inference Engine" as inference_engine
+    rectangle "Recipe Generator" as recipe_generator
+  }
+}
+
+' === Data Layer ===
+frame "Data Layer" as data_layer {
+  database "MySQL Database" as mysql_db {
+    rectangle "User Tables" as user_tables
+    rectangle "Recipe Tables" as recipe_tables
+    rectangle "Health Tables" as health_tables
+    rectangle "Community Tables" as community_tables
+    rectangle "Nutrition Tables" as nutrition_tables
+    rectangle "Merchant Tables" as merchant_tables
+  }
+  
+  rectangle "Redis Cache" as redis_cache {
+    rectangle "Session Cache" as session_cache
+    rectangle "Recipe Cache" as recipe_cache
+    rectangle "Recommendation Cache" as rec_cache
+    rectangle "Health Data Cache" as health_cache
+  }
+  
+  storage "Image Storage" as image_storage {
+    rectangle "Food Images" as food_images
+    rectangle "Recipe Images" as recipe_images
+    rectangle "User Uploads" as user_uploads
+  }
+}
+
+' === External Systems ===
+frame "External Systems" as external_systems {
+  rectangle "Third-Party Services" as third_party {
+    rectangle "Map Service" as map_service
+    rectangle "Nutrition API" as nutrition_api
+    rectangle "Authentication Provider" as auth_provider
+  }
+  
+  rectangle "Catering Companies" as catering_companies
+  rectangle "Health Data Sources" as health_sources
+}
+
+' === Connections ===
+' Mobile App to Backend
+mobile_app --> internet : "HTTPS/AJAX"
+internet --> api_gateway : "API Requests"
+api_gateway --> spring_boot : "Authenticated Requests"
+api_gateway --> flask_service : "Model Inference Requests"
+
+' Spring Boot internal connections
+controller_layer --> service_layer : "Service Calls"
+service_layer --> business_layer : "Business Logic"
+service_layer --> data_layer : "Data Access"
+
+' Data access connections
+spring_boot --> mysql_db : "JDBC Connections"
+spring_boot --> redis_cache : "Cache Operations"
+spring_boot --> image_storage : "Image CRUD"
+
+' Model service connections
+flask_service --> mysql_db : "Recipe Data Access"
+flask_service --> image_storage : "Image Processing"
+spring_boot --> flask_service : "Model Inference Calls"
+
+' External integrations
+spring_boot --> third_party : "External API Calls"
+spring_boot --> catering_companies : "Data Export"
+spring_boot --> health_sources : "Health Data Import"
+
+' Data flow for key use cases
+note top of mobile_app
+  Photo Recognition Flow:
+  1. User uploads image
+  2. App preprocesses image
+  3. Send to Flask model service
+  4. Generate recipe from model
+  5. Store in MySQL
+  6. Cache in Redis
+  7. Return to user
+end note
+
+note right of spring_boot
+  Health Analysis Flow:
+  1. Get user health data
+  2. Get recipe nutrition data
+  3. Calculate personalized advice
+  4. Generate diet plan
+  5. Store analysis results
+end note
+
+note left of community_ui
+  Community Sharing Flow:
+  1. User uploads recipe
+  2. Store in pending review
+  3. Admin reviews content
+  4. Publish to community
+  5. Push to followers
+  6. Enable interactions
+end note
+
+' === Legend ===
+legend right
+  | Color | Meaning |
+  |---|---|
+  | <color:#ADD8E6>Light Blue</color> | User Interface Components |
+  | <color:#90EE90>Light Green</color> | Business Logic Components |
+  | <color:#FFB6C1>Light Pink</color> | Data Storage Components |
+  | <color:#FFFFE0>Light Yellow</color> | External Systems |
+  | <color:#E6E6FA>Light Purple</color> | Communication Layer |
+end legend
+
+@enduml

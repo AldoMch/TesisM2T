@@ -1,0 +1,99 @@
+@startuml
+package "Environment / Deployment Layer" {
+  node "Docker Host" as DockerHost
+  node "Docker/ROS Runtime" as DockerRosRuntime {
+    component "ROS Runtime" as ROSRuntime
+  }
+}
+
+package "Launch / Entry Layer" {
+  component "launch/styx.launch" as StyxLaunch
+  component "launch/site.launch" as SiteLaunch
+}
+
+package "ROS Communication Layer" {
+  interface "ROS Topics" as RosTopics
+  interface "current pose" as PoseTopic
+  interface "base waypoints" as BaseWpTopic
+  interface "traffic waypoint" as TrafficWpTopic
+  interface "final waypoints" as FinalWpTopic
+  interface "twist command" as TwistTopic
+  interface "vehicle command" as VehicleCmdTopic
+  interface "camera/image_raw" as CameraImageTopic
+  interface "waypoint target speed (twist.twist.linear.x)" as WaypointSpeed
+
+  RosTopics --> PoseTopic
+  RosTopics --> BaseWpTopic
+  RosTopics --> TrafficWpTopic
+  RosTopics --> FinalWpTopic
+  RosTopics --> TwistTopic
+  RosTopics --> VehicleCmdTopic
+  RosTopics --> CameraImageTopic
+}
+
+package "Perception Layer" {
+  component "Perception Subsystem" as Perception
+  component "Traffic Light Detector/Classifier" as TLDetector
+  component "Stop-Related Waypoint Output" as StopWpOut
+}
+
+package "Planning Layer" {
+  component "Planning Subsystem" as Planning
+  component "Waypoint Loader" as WpLoader
+  component "Waypoint Updater" as WpUpdater
+}
+
+package "Control Layer" {
+  component "Control Subsystem" as Control
+  component "Waypoint Follower" as WpFollower
+  component "Drive-by-Wire Control Node" as DbwNode
+}
+
+package "External Integration Layer" {
+  component "Simulator Interface" as SimInterface
+  component "Bag Playback Interface" as BagInterface
+  component "Bag Playback Tooling" as BagTooling
+  cloud "Udacity Capstone Project Simulator" as UdacitySim
+  database "Recorded Training Bag" as TrainingBag
+  database "Base Waypoint File" as BaseWpFile
+}
+
+DockerHost --> DockerRosRuntime : hosts / prepares
+DockerRosRuntime --> ROSRuntime : launches ROS
+StyxLaunch --> ROSRuntime : starts nodes
+SiteLaunch --> ROSRuntime : starts nodes
+
+StyxLaunch --> SimInterface : simulator mode
+SiteLaunch --> BagInterface : site mode
+SimInterface --> UdacitySim : interoperates
+BagInterface --> BagTooling : uses
+BagTooling --> TrainingBag : reads recorded bag
+BaseWpFile --> WpLoader : base waypoint input
+
+UdacitySim --> SimInterface : simulated sensor/vehicle data
+SimInterface --> CameraImageTopic : simulated camera images
+SimInterface --> PoseTopic : simulated pose
+VehicleCmdTopic --> SimInterface : vehicle command
+
+BagTooling --> CameraImageTopic : bag playback images
+BagTooling --> PoseTopic : bag playback pose
+BagTooling --> RosTopics : bag playback sensor data
+
+CameraImageTopic --> TLDetector : real images
+TLDetector --> StopWpOut : classification state
+StopWpOut --> TrafficWpTopic : stop-related waypoint
+
+WpLoader --> BaseWpTopic : publishes base waypoints
+BaseWpTopic --> WpUpdater : base waypoints
+WpUpdater --> FinalWpTopic : final waypoints
+WpUpdater --> WaypointSpeed : sets target speed field
+
+PoseTopic --> WpUpdater : current pose
+TrafficWpTopic --> WpUpdater : traffic waypoint
+FinalWpTopic --> WpFollower : final waypoints
+WaypointSpeed --> WpFollower : speed upper bound
+PoseTopic --> WpFollower : current pose
+WpFollower --> TwistTopic : twist command within speed cap
+TwistTopic --> DbwNode : twist command
+DbwNode --> VehicleCmdTopic : throttle/steering/brake
+@enduml

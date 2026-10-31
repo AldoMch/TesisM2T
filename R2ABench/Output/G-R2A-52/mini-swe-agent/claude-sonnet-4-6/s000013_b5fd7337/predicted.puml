@@ -1,0 +1,61 @@
+@startuml
+title Song Mood Storage and Retrieval System - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<container>> LightBlue
+  BackgroundColor<<external>> LightYellow
+  BackgroundColor<<datastore>> LightGreen
+  BackgroundColor<<ui>> LightCyan
+}
+
+actor "End User" as User
+actor "Data Inspector / Operator" as Inspector
+
+rectangle "Web Browser" as Browser {
+  component "React Frontend\n(Container: frontend)" <<container>> as Frontend
+}
+
+rectangle "Docker Application Stack" {
+  component "FastAPI Backend\n(Container: backend)" <<container>> as Backend
+
+  database "Elasticsearch\n(Container: elasticsearch)" <<datastore>> as Elasticsearch
+
+  component "Kibana\n(Container: kibana)" <<container>> as Kibana
+}
+
+rectangle "External Services" {
+  component "Genius API" <<external>> as GeniusAPI
+}
+
+User --> Browser : HTTP / Browser
+Inspector --> Kibana : Data Inspection UI
+
+Frontend --> Backend : REST API\n(Song Lookup Requests)
+
+Backend --> Elasticsearch : Song Lookup &\nMood Retrieval (known songs)
+Backend --> Elasticsearch : Store Song-Mood\nAssociations
+Backend --> GeniusAPI : Search Missing Songs\n(not in Elasticsearch)
+
+Kibana --> Elasticsearch : Data Inspection\n(Read Elasticsearch Data)
+
+note right of Backend
+  - Accepts song lookup requests
+  - Checks Elasticsearch for known songs
+  - Calls Genius API for missing songs
+  - Stores song-mood associations
+end note
+
+note right of Elasticsearch
+  Stores:
+  - Song records (name, SLink, lyrics, language)
+  - Artist metadata (name, genres, song count)
+  - Mood associations
+end note
+
+note bottom of GeniusAPI
+  External dependency.
+  Not an internal container service.
+end note
+
+@enduml

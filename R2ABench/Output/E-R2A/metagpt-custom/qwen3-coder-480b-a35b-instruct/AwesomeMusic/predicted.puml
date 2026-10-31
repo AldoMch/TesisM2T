@@ -1,0 +1,96 @@
+@startuml
+title AI Music Creation and Sharing Platform - Component/Deployment Diagram
+
+' Define Nodes for Deployment Context
+node "Web Tier" {
+    package "Web Frontend" {
+        component "Frontend UI" as frontendUI
+    }
+}
+
+node "Application Tier" {
+    package "Web Backend" {
+        component "User Management" as userMgmt
+        component "Score Management" as scoreMgmt
+        component "Authentication Service" as authService
+        component "Search Service" as searchService
+        component "Hot Charts Service" as chartsService
+    }
+
+    package "Algorithm Service" {
+        component "AI Generation Engine" as aiEngine
+        component "Model Training Service" as modelTrainer
+        component "Recommendation Engine" as recommender
+    }
+
+    package "Scheduling Layer" {
+        component "Task Scheduler" as taskScheduler
+    }
+}
+
+node "Data Tier" {
+    database "Database Storage" as db
+}
+
+cloud "External Systems" {
+    component "RabbitMQ" as rabbitmq
+    component "Apache Hadoop" as hadoop
+    component "etcd" as etcd
+}
+
+' Define Interfaces
+interface "User API" as userAPI
+interface "Score API" as scoreAPI
+interface "AI API" as aiAPI
+interface "Search API" as searchAPI
+interface "Charts API" as chartsAPI
+
+' Frontend connections
+frontendUI --> userAPI : authentication
+frontendUI --> scoreAPI : upload/download
+frontendUI --> aiAPI : request generation
+frontendUI --> searchAPI : search scores
+frontendUI --> chartsAPI : fetch charts
+
+' Web Backend internal connections
+authService .up.> userAPI
+userMgmt .up.> userAPI
+scoreMgmt .up.> scoreAPI
+searchService .up.> searchAPI
+chartsService .up.> chartsAPI
+aiEngine .up.> aiAPI
+
+' Data flows
+userMgmt --> db : reads/writes user data
+scoreMgmt --> db : reads/writes score data
+authService --> db : reads/writes auth data
+searchService --> db : reads search index
+chartsService --> db : reads chart data
+recommender --> db : reads user preferences
+modelTrainer --> db : reads model metadata
+
+' AI and scheduling flows
+userMgmt --> taskScheduler : enqueue training tasks
+scoreMgmt --> taskScheduler : enqueue generation tasks
+taskScheduler --> rabbitmq : queue tasks
+taskScheduler --> aiEngine : trigger generation
+taskScheduler --> modelTrainer : trigger training
+taskScheduler --> recommender : trigger recommendations
+taskScheduler --> etcd : coordination
+
+' Model and recommendation flows
+aiEngine --> modelTrainer : uses trained models
+recommender --> modelTrainer : fetches models
+recommender --> hadoop : reads user data
+modelTrainer --> hadoop : stores/trains models
+
+' Score processing flow
+scoreMgmt --> aiEngine : classify scores
+aiEngine --> scoreMgmt : return classifications
+
+' Return paths for status and results
+taskScheduler --> userMgmt : update task status
+userMgmt --> frontendUI : push status updates
+scoreMgmt --> frontendUI : serve downloads
+
+@enduml

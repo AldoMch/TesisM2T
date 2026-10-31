@@ -1,0 +1,90 @@
+@startuml
+
+!define RECTANGLE rectangle
+!define COMPONENT component
+
+' Core System Components
+COMPONENT "Stage Lister" as stage_lister
+COMPONENT "Connector Manager" as connector_manager
+COMPONENT "Deployment Metrics Collector" as deploy_metrics
+COMPONENT "PR Metrics Collector" as pr_metrics
+COMPONENT "Event Router" as event_router
+
+' Manual Operations (outside automation scope)
+RECTANGLE "Manual Operations" as manual_ops {
+    COMPONENT "SNS Subscription Manager" as sns_manager
+    note right of sns_manager
+        Manual configuration
+        (FR-004, NFR-002)
+    end note
+}
+
+' Event Processing
+COMPONENT "Event Filter" as event_filter
+note bottom of event_filter
+    Filtering criteria
+    (DR-003)
+end note
+
+' Metrics Output
+RECTANGLE "Metrics Output" as metrics_output {
+    COMPONENT "Failed Runs" as failed_runs
+    COMPONENT "Passed Runs" as passed_runs
+    COMPONENT "Avg Time to Merge" as avg_merge_time
+}
+
+' Configuration Storage
+database "Connector Definitions" as connector_defs
+database "Environment Values" as env_values
+
+' External Systems
+cloud "AWS Services" as aws_services
+cloud "GitHub" as github
+cloud "CMS BigMAC" as cms_bigmac
+cloud "Appian" as appian
+
+' AWS Components
+COMPONENT "AWS CLI" as aws_cli
+COMPONENT "AWS EventBridge" as eventbridge
+cloud "SNS Topic" as sns_topic
+
+' GitHub Components
+COMPONENT "Actions API" as actions_api
+COMPONENT "Pull Requests API" as pr_api
+
+' Prerequisite Note
+note "Onboarding Required\n(NFR-001, C-002)" as onboarding_note
+onboarding_note ..> stage_lister : "prerequisite"
+
+' Core Dependencies
+stage_lister --> aws_cli : "queries stages"
+connector_manager --> connector_defs : "reads definitions"
+connector_manager --> env_values : "uses (cluster, service)"
+connector_manager --> cms_bigmac : "configures connectors"
+connector_manager --> aws_cli : "restarts connectors"
+
+' Event Flow
+eventbridge --> event_filter : "sends events"
+event_filter --> event_router : "filtered events"
+event_router --> sns_topic : "publishes alerts"
+
+' Metrics Collection
+deploy_metrics --> actions_api : "queries deployments"
+pr_metrics --> pr_api : "queries pull requests"
+deploy_metrics --> metrics_output : "produces"
+pr_metrics --> metrics_output : "produces"
+
+' Manual Management
+sns_manager --> sns_topic : "manages subscriptions"
+
+' External Data Flow
+appian --> cms_bigmac : "triggers data changes"
+
+' System Relationships
+aws_cli -[hidden]d-> aws_services : "part of"
+eventbridge -[hidden]d-> aws_services : "part of"
+sns_topic -[hidden]d-> aws_services : "part of"
+actions_api -[hidden]d-> github : "part of"
+pr_api -[hidden]d-> github : "part of"
+
+@enduml

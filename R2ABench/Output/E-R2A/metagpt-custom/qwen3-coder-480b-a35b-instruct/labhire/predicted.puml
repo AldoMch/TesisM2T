@@ -1,0 +1,140 @@
+@startuml
+' LabHire Component/Deployment Diagram
+
+' Presentation Layer
+node "Presentation Layer" {
+    component "Mobile App" as MobileApp
+    component "Web Portal" as WebPortal
+}
+
+' Application Layer
+package "Application Layer" {
+    component "Project Management Service" as ProjectMgmtSvc
+    component "Community Service" as CommunitySvc
+    component "Personal Information Service" as PersonalInfoSvc
+    component "Administration Service" as AdminSvc
+    component "Resume Management Service" as ResumeMgmtSvc
+    component "Search Service" as SearchSvc
+    component "Favorite Management Service" as FavoriteMgmtSvc
+    component "Application Management Service" as ApplicationMgmtSvc
+    component "Mutual Evaluation Service" as MutualEvalSvc
+}
+
+' Service Layer
+package "Service Layer" {
+    component "User Authentication Service" as AuthSvc
+    component "Notification Service" as NotifySvc
+    component "Chat Service" as ChatSvc
+    component "Recommendation Engine" as RecEngine
+    component "Review/Risk-Control Module" as RiskControlMod
+    component "Enterprise Certification Service" as EnterpriseCertSvc
+}
+
+' Data Layer
+package "Data Layer" {
+    component "Database Interface" as DBInterface
+    database "System Database" as SysDB
+}
+
+' External Systems
+cloud "External Systems" {
+    component "Email Service Provider" as EmailProvider
+    component "SMS Service Provider" as SMSProvider
+    component "Enterprise Email Systems" as EntEmailSys
+    component "University Email Systems" as UniEmailSys
+}
+
+' Connections and Dependencies
+
+' Presentation to Application
+MobileApp --> ProjectMgmtSvc : uses
+MobileApp --> CommunitySvc : uses
+MobileApp --> PersonalInfoSvc : uses
+MobileApp --> AdminSvc : uses
+MobileApp --> ResumeMgmtSvc : uses
+MobileApp --> SearchSvc : uses
+MobileApp --> FavoriteMgmtSvc : uses
+MobileApp --> ApplicationMgmtSvc : uses
+MobileApp --> MutualEvalSvc : uses
+
+WebPortal --> ProjectMgmtSvc : uses
+WebPortal --> CommunitySvc : uses
+WebPortal --> PersonalInfoSvc : uses
+WebPortal --> AdminSvc : uses
+WebPortal --> ResumeMgmtSvc : uses
+WebPortal --> SearchSvc : uses
+WebPortal --> FavoriteMgmtSvc : uses
+WebPortal --> ApplicationMgmtSvc : uses
+WebPortal --> MutualEvalSvc : uses
+
+' Application to Service
+ProjectMgmtSvc --> AuthSvc : authenticates
+ProjectMgmtSvc --> RecEngine : recommends
+ProjectMgmtSvc --> NotifySvc : notifies
+ProjectMgmtSvc --> ChatSvc : communicates
+ProjectMgmtSvc --> DBInterface : persists/retrieves
+
+CommunitySvc --> AuthSvc : authenticates
+CommunitySvc --> NotifySvc : notifies
+CommunitySvc --> ChatSvc : communicates
+CommunitySvc --> DBInterface : persists/retrieves
+
+PersonalInfoSvc --> AuthSvc : authenticates
+PersonalInfoSvc --> RecEngine : provides user data
+PersonalInfoSvc --> DBInterface : persists/retrieves
+
+AdminSvc --> AuthSvc : authenticates
+AdminSvc --> RiskControlMod : reviews
+AdminSvc --> DBInterface : persists/retrieves
+
+ResumeMgmtSvc --> AuthSvc : authenticates
+ResumeMgmtSvc --> DBInterface : persists/retrieves
+
+SearchSvc --> DBInterface : queries
+
+FavoriteMgmtSvc --> AuthSvc : authenticates
+FavoriteMgmtSvc --> DBInterface : persists/retrieves
+
+ApplicationMgmtSvc --> AuthSvc : authenticates
+ApplicationMgmtSvc --> NotifySvc : notifies
+ApplicationMgmtSvc --> DBInterface : persists/retrieves
+
+MutualEvalSvc --> AuthSvc : authenticates
+MutualEvalSvc --> NotifySvc : notifies
+MutualEvalSvc --> DBInterface : persists/retrieves
+
+' Service to Service & External
+AuthSvc --> EmailProvider : sends verification codes
+AuthSvc --> SMSProvider : sends verification codes
+AuthSvc --> DBInterface : persists/retrieves
+
+RecEngine --> AuthSvc : reads user context
+RecEngine --> DBInterface : retrieves data
+
+NotifySvc --> EmailProvider : sends emails
+NotifySvc --> DBInterface : persists/retrieves
+
+ChatSvc --> DBInterface : persists/retrieves
+
+RiskControlMod --> NotifySvc : sends alerts
+RiskControlMod --> DBInterface : logs audits
+
+EnterpriseCertSvc --> AuthSvc : verifies enterprises
+EnterpriseCertSvc --> DBInterface : persists/retrieves
+
+' All Services to DB
+AuthSvc --> DBInterface
+NotifySvc --> DBInterface
+ChatSvc --> DBInterface
+RecEngine --> DBInterface
+RiskControlMod --> DBInterface
+EnterpriseCertSvc --> DBInterface
+
+' Database Interface to actual database
+DBInterface --> SysDB
+
+' External System Relationships
+EmailProvider --> EntEmailSys : delivers to enterprises
+EmailProvider --> UniEmailSys : delivers to universities
+
+@enduml

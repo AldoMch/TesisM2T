@@ -1,0 +1,151 @@
+@startuml LabHire_Architecture
+title LabHire - Layered Component Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ===================== Actors =====================
+actor "Student User" as Student
+actor "Enterprise-Certified\nStudent User" as EntStudent
+actor "Mentor (Teacher) User" as Mentor
+actor "Administrator" as Admin
+
+' ===================== Presentation Layer =====================
+package "Presentation Layer" {
+  component "Mobile Client\n(Android / iOS / WeChat)" as MobileUI
+  component "Desktop Web Client\n(Chrome / Firefox / Edge)" as WebUI
+
+  package "User-Facing Modules" {
+    component "Student Portal\n(Recommendation, Search, Favorites)" as StudentUI
+    component "Mentor Portal\n(Project Management, Applications)" as MentorUI
+    component "Community Portal\n(Posts, Comments, Popularity)" as CommunityUI
+    component "Profile & Resume UI" as ProfileUI
+  }
+}
+
+' ===================== API / Gateway Layer =====================
+package "API / Service Gateway Layer" {
+  component "API Gateway" as Gateway
+  component "Authentication &\nSession Manager" as AuthMgr
+  component "Authorization /\nPermission Control" as PermControl
+}
+
+' ===================== Application Service Layer =====================
+package "Application Service Layer" {
+  component "Identity & Certification Service\n(University / Enterprise Email + Code)" as IdentitySvc
+  component "User Profile & Resume Service" as ProfileSvc
+  component "Project Service\n(Publish, Manage, Detail)" as ProjectSvc
+  component "Project Search Service" as SearchSvc
+  component "Recommendation Service\n(Collaborative Filtering, Tag Match, Cold-Start)" as RecSvc
+  component "Application & Mutual\nEvaluation Service" as AppSvc
+  component "Favorite Service\n(Projects, Mentors, Posts)" as FavoriteSvc
+  component "Community Service\n(Posts, Comments, Popularity Sorting)" as CommunitySvc
+  component "Chat Service\n(Encrypted Messaging)" as ChatSvc
+  component "Notification Service\n(In-Site Msg, Email Push, Reminders)" as NotifySvc
+  component "Administration & Review Service\n(Identity / Enterprise / Content Review)" as ReviewSvc
+  component "Risk Control & Audit Service\n(Abnormal Behavior, Logs, Alerts)" as RiskSvc
+}
+
+' ===================== Data Layer =====================
+package "Data Layer" {
+  database "Back-End Database\n(Users, Projects, Posts,\nComments, Relationships,\nCertification, Audit)" as RDBMS
+  component "File / Object Storage\n(Resume Files, Uploads)" as FileStore
+  component "Search Index" as SearchStore
+  component "Risk-Control &\nAudit Log Store" as LogStore
+}
+
+' ===================== External Systems =====================
+cloud "External Systems" {
+  component "University Email\nService" as UniEmail
+  component "Enterprise Email\nService" as EntEmail
+  component "Email Push Provider" as EmailPush
+  component "SMS / Verification\nCode Provider" as SmsProvider
+}
+
+' ===================== Actor to Presentation =====================
+Student --> MobileUI
+Student --> WebUI
+EntStudent --> MobileUI
+EntStudent --> WebUI
+Mentor --> MobileUI
+Mentor --> WebUI
+Admin --> WebUI
+
+MobileUI --> StudentUI
+MobileUI --> MentorUI
+MobileUI --> CommunityUI
+MobileUI --> ProfileUI
+WebUI --> StudentUI
+WebUI --> MentorUI
+WebUI --> CommunityUI
+WebUI --> ProfileUI
+
+' ===================== Presentation to Gateway =====================
+StudentUI --> Gateway
+MentorUI --> Gateway
+CommunityUI --> Gateway
+ProfileUI --> Gateway
+
+' ===================== Gateway to Auth / Services =====================
+Gateway --> AuthMgr
+Gateway --> PermControl
+AuthMgr --> IdentitySvc
+PermControl --> IdentitySvc
+
+' ===================== Gateway to Application Services =====================
+Gateway --> ProfileSvc
+Gateway --> ProjectSvc
+Gateway --> SearchSvc
+Gateway --> RecSvc
+Gateway --> AppSvc
+Gateway --> FavoriteSvc
+Gateway --> CommunitySvc
+Gateway --> ChatSvc
+Gateway --> ReviewSvc
+
+' ===================== Service Collaborations =====================
+IdentitySvc --> UniEmail
+IdentitySvc --> EntEmail
+IdentitySvc --> SmsProvider
+IdentitySvc --> RiskSvc
+IdentitySvc --> NotifySvc
+
+ProfileSvc --> FileStore
+ProfileSvc --> RDBMS
+
+ProjectSvc --> NotifySvc
+ProjectSvc --> SearchStore
+ProjectSvc --> ChatSvc
+
+SearchSvc --> SearchStore
+SearchSvc --> RDBMS
+
+RecSvc --> RDBMS
+
+AppSvc --> RDBMS
+AppSvc --> NotifySvc
+AppSvc --> ProfileSvc
+
+FavoriteSvc --> RDBMS
+FavoriteSvc --> NotifySvc
+
+CommunitySvc --> ReviewSvc
+CommunitySvc --> NotifySvc
+
+ChatSvc --> RDBMS
+ChatSvc --> NotifySvc
+
+NotifySvc --> EmailPush
+NotifySvc --> RDBMS
+
+ReviewSvc --> RDBMS
+ReviewSvc --> NotifySvc
+ReviewSvc --> RiskSvc
+
+RiskSvc --> LogStore
+RiskSvc --> RDBMS
+
+' ===================== Services to Data =====================
+
+@enduml

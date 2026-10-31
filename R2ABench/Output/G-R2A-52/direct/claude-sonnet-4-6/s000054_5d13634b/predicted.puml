@@ -1,0 +1,146 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam arrow {
+  Color #333333
+}
+skinparam defaultFontSize 12
+
+title tokencard/contracts — System Architecture
+
+' ─── External Actors ───────────────────────────────────────────────────────────
+actor "Owner\n(Externally Owned Address)" as Owner
+actor "Controller Addresses\n(Service / Confirmation)" as Controller
+actor "Integrator / Developer\n(Go Binding Consumer)" as Integrator
+
+' ─── Ethereum Network Layer ────────────────────────────────────────────────────
+cloud "Ethereum Network" as Ethereum {
+
+  ' ─── ENS Subsystem ──────────────────────────────────────────────────────────
+  node "Ethereum Name Service (ENS)" as ENS {
+    component "ENS Resolver" as ENSResolver
+  }
+
+  ' ─── Core Smart Contracts ───────────────────────────────────────────────────
+  node "Consumer Contract Wallet" as WalletNode {
+    component "Wallet Core" as WalletCore
+    database "ETH Holdings" as ETHHoldings
+    database "ERC20 Token Holdings" as ERC20Holdings
+    WalletCore --> ETHHoldings
+    WalletCore --> ERC20Holdings
+  }
+
+  node "Controller Contract" as ControllerNode {
+    component "Controller Logic" as ControllerLogic
+    component "adminCount : uint256" as AdminCount
+    component "controllerCount : uint256" as ControllerCount
+    ControllerLogic --> AdminCount
+    ControllerLogic --> ControllerCount
+  }
+
+  node "Token Whitelist Contract" as WhitelistNode {
+    component "Whitelist Registry" as WhitelistRegistry
+    database "Token Entry\n(exchange rate,\nloadable, burnable)" as TokenEntry
+    WhitelistRegistry --> TokenEntry
+  }
+
+  node "Oracle / Rate Provider Contract" as OracleNode {
+    component "Exchange Rate Provider" as RateProvider
+    database "Exchange Rate Data" as RateData
+    RateProvider --> RateData
+  }
+
+  node "Licence Contract" as LicenceNode {
+    component "Licence Logic" as LicenceLogic
+  }
+
+  node "TKN Holder Contract" as TKNHolder {
+    component "Burn Eligibility Logic" as BurnLogic
+  }
+
+}
+
+' ─── Gas Tank (Off-Wallet) ─────────────────────────────────────────────────────
+node "Gas Tank\n(on Owner Address,\noutside Wallet Contract)" as GasTank
+
+' ─── Go Binding Layer ──────────────────────────────────────────────────────────
+node "Generated Go Bindings" as GoBIndingsNode {
+  component "Controller Binding" as ControllerBinding
+  component "Wallet Binding" as WalletBinding
+  component "Generic Binding\n(Call / Transact / Transfer)" as GenericBinding
+}
+
+' ─── ENS Resolution Flows ──────────────────────────────────────────────────────
+WalletCore ..> ENSResolver : resolve controller address\n(FR-002)
+WalletCore ..> ENSResolver : resolve token whitelist address\n(FR-002)
+WalletCore ..> ENSResolver : resolve oracle/licence address\n(FR-002)
+ENSResolver ..> ControllerNode : returns resolved address
+ENSResolver ..> WhitelistNode : returns resolved address
+ENSResolver ..> OracleNode : returns resolved address
+ENSResolver ..> LicenceNode : returns resolved address
+
+' ─── Wallet Internal Flows ─────────────────────────────────────────────────────
+WalletCore --> WhitelistRegistry : query token loadability,\nexchange rate, burnability\n(FR-003)
+WalletCore --> RateProvider : obtain exchange-rate data\n(FR-001)
+WalletCore --> ControllerLogic : controller / confirmation\noperations
+
+' ─── TKN Burn Flow ─────────────────────────────────────────────────────────────
+WhitelistRegistry --> BurnLogic : burnability status\n(FR-003)
+TKNHolder --> WhitelistNode : check burnable flag
+
+' ─── Gas Tank Segregation ──────────────────────────────────────────────────────
+Owner --> GasTank : funds gas-payment ETH\n(FR-005 / C-004)
+GasTank ..> Ethereum : pays gas for transactions
+GasTank -[hidden]-> WalletNode
+
+' ─── Owner Interactions ────────────────────────────────────────────────────────
+Owner --> WalletCore : deposit ETH / ERC20 assets\n(FR-004)
+Owner --> WalletCore : wallet operations
+
+' ─── Controller Interactions ───────────────────────────────────────────────────
+Controller --> ControllerLogic : service / confirmation\noperations (FR-006)
+
+' ─── Go Binding Interactions ───────────────────────────────────────────────────
+Integrator --> ControllerBinding : Call (adminCount, controllerCount)\nTransact / Transfer\n(FR-006, FR-007, FR-008)
+Integrator --> WalletBinding : wallet contract calls\n(FR-009)
+Integrator --> GenericBinding : Call (read-only)\nTransact / Transfer (paid)\n(FR-009)
+
+ControllerBinding --> ControllerLogic : read-only call / paid txn\n(NFR-003)
+WalletBinding --> WalletCore : contract interaction
+GenericBinding --> Ethereum : generic contract\nread/write operations
+
+' ─── Legend ────────────────────────────────────────────────────────────────────
+legend right
+  |= Symbol |= Meaning |
+  | --> | Direct invocation / data flow |
+  | ..> | ENS resolution / dependency |
+  | actor | External user role |
+  | node  | Deployed contract or runtime unit |
+  | component | Internal logic component |
+  | database  | Managed data store |
+  | cloud | External network infrastructure |
+endlegend
+
+@enduml

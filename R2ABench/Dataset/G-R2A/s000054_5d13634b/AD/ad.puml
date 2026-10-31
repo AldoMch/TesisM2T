@@ -1,0 +1,45 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "TokenCard Contracts\nHigh Level Architecture" as TokenCardContracts {
+    rectangle "Proxy.sol" as ProxySol
+
+    rectangle "Consumer Contract Wallet v3.3.1\nLibrary Contract\nwallet.sol" as WalletSol
+
+    rectangle "controller.sol" as ControllerSol
+    rectangle "tokenWhitelist.sol" as TokenWhitelistSol
+    rectangle "oracle.sol" as OracleSol
+    rectangle "license.sol" as LicenseSol
+    rectangle "walletDeployer.sol" as WalletDeployerSol
+    rectangle "walletCache.sol" as WalletCacheSol
+
+    rectangle "Gnosis MultiSig\ncryptofloat.tokencard.eth" as GnosisMultiSig
+    rectangle "TKN Holder Contract\nholder.sol" as TknHolderContract
+}
+
+ProxySol --> WalletSol : proxies
+WalletSol --> ControllerSol : resolves via ENS
+WalletSol --> TokenWhitelistSol : resolves via ENS\nwhitelist checks
+WalletSol --> OracleSol : resolves via ENS\nexchange rates
+WalletSol --> LicenseSol : resolves via ENS
+LicenseSol --> GnosisMultiSig : ENS
+LicenseSol --> TknHolderContract : ENS
+WalletDeployerSol --> WalletSol : deploys
+WalletDeployerSol --> WalletCacheSol : cache lookup
+@enduml

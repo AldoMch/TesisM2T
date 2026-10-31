@@ -1,0 +1,150 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontSize 13
+}
+skinparam component {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontSize 12
+}
+skinparam queue {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+  FontSize 12
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontSize 12
+}
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam arrow {
+  Color #444444
+  FontSize 11
+}
+skinparam defaultFontName Arial
+
+title AwesomeMusic — System Architecture Diagram
+
+actor "Music Enthusiast\n(General User)" as User
+actor "Composer" as Composer
+actor "Music Appreciator" as Appreciator
+
+cloud "External Network (HTTPS / TCP/IP)" as Internet {
+}
+
+node "VM-1: Gateway & Frontend" {
+  component "[Nginx 1.19.8\nReverse Proxy / Load Balancer\nExternal-Internal Isolation]" as Nginx
+  component "[Web Frontend\nHTML + CSS + JavaScript\n+ Bootstrap Framework]" as Frontend
+
+  note right of Nginx
+    NFR-020: isolates internal/external
+    NFR-025: load balancing (2000 QPS)
+  end note
+}
+
+node "VM-2: Web Backend" {
+  component "[Backend API Server\nGolang + Gin Framework]" as BackendAPI
+
+  rectangle "Core Backend Services" {
+    component "[Account Service\nRegister / Login\nFR-001, FR-002]" as AccountSvc
+    component "[Score Content Service\nUpload / Download / Search\nFavorite / Hot Chart\nFR-003, FR-006, FR-009\nFR-010, FR-011]" as ScoreSvc
+    component "[User Relationship Service\nFollow / Unfollow\nFR-004]" as RelationSvc
+    component "[Model Service\nFavorite Model\nFR-007]" as ModelSvc
+    component "[Recommendation Service\nHomepage Playlist\nHot Chart Update\nFR-008, FR-018]" as RecoSvc
+    component "[Score Generation Coordinator\nSubmit & Poll Generation Task\nFR-005, FR-017]" as GenCoordSvc
+    component "[Scheduling Module\nDaily 02:00 Trigger\nFR-016, FR-017]" as Scheduler
+  }
+}
+
+node "VM-3: Algorithm Service" {
+  rectangle "Online Service" {
+    component "[Score Generation Service\nGPT-2 per-user model\nMidi→Abc→Seeds→Score→Midi\nFR-013]" as AlgoGen
+  }
+  rectangle "Offline / Batch Service" {
+    component "[Model Training Service\nFine-tune GPT-2 per user\nFR-012]" as AlgoTrain
+    component "[Score Classification Service\nLSTM representations + labels\nFR-014]" as AlgoClassify
+    component "[Song Recommendation Service\nCosine similarity / user sim\nFR-015]" as AlgoReco
+  }
+}
+
+node "VM-4: Data & Middleware" {
+  database "Primary Database\n(3-replica, NFR-021)\n[User Accounts DR-001]\n[Score Data DR-004]\n[Favorite Records DR-002,DR-005]\n[Follow Relationships DR-003]\n[Score Labels DR-013]\n[Hot-Chart Data DR-016]\n[Task Metadata DR-014]" as DB
+
+  database "Model Parameter Store\n(Hadoop 3.2.2)\n[GPT-2 per-user params DR-011]\n[LSTM representations DR-012]\n[Midi / Abc files DR-008,DR-009]\n[Track Seeds DR-010]" as Hadoop
+
+  queue "Message Queue\nRabbitMQ 3.8.14\n[Training Tasks]\n[Classification Tasks]\n[Recommendation Tasks]\n[Generation Tasks]\nFR-016, FR-017" as MQ
+
+  component "[etcd 3.4.15\nDistributed Config &\nService Registry\nNFR-022]" as Etcd
+}
+
+' ── External access ──────────────────────────────────────────────
+User --> Internet
+Composer --> Internet
+Appreciator --> Internet
+Internet --> Nginx : HTTPS
+
+' ── Gateway to Frontend & Backend ────────────────────────────────
+Nginx --> Frontend : serve static assets
+Nginx --> BackendAPI : reverse proxy API calls\n(HTTPS / TCP/IP)
+
+' ── Frontend to Backend ──────────────────────────────────────────
+Frontend --> BackendAPI : REST API calls (HTTPS)
+
+' ── Backend API to internal services ─────────────────────────────
+BackendAPI --> AccountSvc
+BackendAPI --> ScoreSvc
+BackendAPI --> RelationSvc
+BackendAPI --> ModelSvc
+BackendAPI --> RecoSvc
+BackendAPI --> GenCoordSvc
+
+' ── Scheduler triggers ───────────────────────────────────────────
+Scheduler --> MQ : push Training / Classification\n/ Recommendation tasks\n(daily 02:00, FR-016)
+GenCoordSvc --> MQ : push Generation task\n(on user submit, FR-017)
+
+' ── MQ to Algorithm Service ──────────────────────────────────────
+MQ --> AlgoTrain : consume training task
+MQ --> AlgoClassify : consume classification task
+MQ --> AlgoReco : consume recommendation task
+MQ --> AlgoGen : consume generation task
+
+' ── Algorithm Service callbacks ──────────────────────────────────
+AlgoGen --> BackendAPI : task status / result callback\n(FR-013, FR-017)
+AlgoTrain --> BackendAPI : task status / exception callback\n(FR-012, FR-016)
+AlgoClassify --> BackendAPI : score labels / exception\n(FR-014)
+AlgoReco --> BackendAPI : recommendation lists\n(FR-015)
+
+' ── Backend to Data Layer ────────────────────────────────────────
+BackendAPI --> DB : CRUD user/score/favorite\n/follow/model/hot-chart data
+Scheduler --> DB : read task metadata\nwrite task status & logs (DR-014,DR-015)
+GenCoordSvc --> DB : poll task status (DR-015)
+
+' ── Algorithm to Data Layer ──────────────────────────────────────
+AlgoTrain --> Hadoop : read/write GPT-2 model params\nread midi playlists
+AlgoGen --> Hadoop : read GPT-2 model params\nread/write midi/abc/seeds
+AlgoClassify --> Hadoop : read/write LSTM representations\nread midi/abc files
+AlgoReco --> Hadoop : read LSTM representations
+AlgoTrain --> DB : write updated model params ref\nwrite score labels
+AlgoClassify --> DB : write score labels (DR-013)
+AlgoReco --> DB : write recommendation results
+
+' ── Service discovery & config ───────────────────────────────────
+BackendAPI ..> Etcd : service registry / config
+AlgoGen ..> Etcd : service registry
+AlgoTrain ..> Etcd : service registry
+Scheduler ..> Etcd : distributed coordination
+
+@enduml

@@ -1,0 +1,102 @@
+@startuml
+
+' Infrastructure Layer
+node "Infrastructure Layer" as infra {
+  component Nginx
+  component "Spring Gateway & Security" as spring_gateway
+}
+
+' Presentation Layer
+package "Presentation Layer" as presentation {
+  component "Vue Frontend" as vue_frontend
+}
+
+' Application/Service Layer
+package "Application/Service Layer" as application {
+  component "User Management Service" as user_service
+  component "Role Management Service" as role_service
+  component "Document Management Service" as doc_service
+  component "Annotation Service" as annotation_service
+  component "Mining Service" as mining_service
+  component "Statistics Service" as stats_service
+  component "Export Service" as export_service
+  component "Preset/Model Management Service" as preset_service
+  component "File Conversion Service" as conversion_service
+  component "Model Integration Service" as model_service
+  component "Message Queue Client" as mq_client
+}
+
+' Data Access Layer
+package "Data Access Layer" as data_access {
+  component "MyBatis Data Mapper" as mybatis
+  component "Object Storage Client" as object_storage_client
+  component "Cache Client" as cache_client
+}
+
+' External Systems
+cloud "Tencent Cloud" as tencent_cloud
+database MySQL
+database Minio
+database Redis
+queue RabbitMQ
+cloud "GPT API" as gpt_api
+cloud "BERT Model" as bert_model
+
+' Internal Dependencies
+annotation_service --> mining_service : provides annotated data
+user_service --> role_service : manages roles
+preset_service --> model_service : provides model configs
+doc_service --> conversion_service : requests conversion
+conversion_service --> mq_client : queues async tasks
+
+' Presentation to Service Layer
+vue_frontend --> spring_gateway : HTTP requests
+spring_gateway --> user_service : routes auth requests
+spring_gateway --> role_service : routes role requests
+spring_gateway --> doc_service : routes document requests
+spring_gateway --> annotation_service : routes annotation requests
+spring_gateway --> mining_service : routes mining requests
+spring_gateway --> stats_service : routes statistics requests
+spring_gateway --> export_service : routes export requests
+spring_gateway --> preset_service : routes model requests
+
+' Service to Data Access Layer
+user_service --> mybatis : persists user data
+role_service --> mybatis : persists role data
+doc_service --> mybatis : persists document metadata
+annotation_service --> mybatis : persists annotations
+mining_service --> mybatis : persists mining results
+stats_service --> mybatis : queries statistics
+export_service --> mybatis : queries export data
+preset_service --> mybatis : persists model configs
+
+doc_service --> object_storage_client : stores/retrieves documents
+annotation_service --> object_storage_client : stores annotation files
+mining_service --> object_storage_client : stores mining results
+export_service --> object_storage_client : retrieves export data
+
+user_service --> cache_client : caches user sessions
+role_service --> cache_client : caches role permissions
+preset_service --> cache_client : caches model configs
+model_service --> cache_client : caches model responses
+
+' Service to External Integration
+model_service --> gpt_api : API calls
+model_service --> bert_model : model inference
+conversion_service --> RabbitMQ : publishes tasks
+
+' Data Access to External Systems
+mybatis --> MySQL : SQL operations
+object_storage_client --> Minio : object storage
+cache_client --> Redis : cache operations
+
+' Infrastructure Connections
+Nginx --> spring_gateway : proxies requests
+
+' Deployment Context
+tencent_cloud -[#blue,dashed]-> infra : hosts
+tencent_cloud -[#blue,dashed]-> presentation : hosts
+tencent_cloud -[#blue,dashed]-> application : hosts
+tencent_cloud -[#blue,dashed]-> data_access : hosts
+
+@enduml

@@ -1,0 +1,72 @@
+@startuml
+title Help With COVID - Session and Task Workflow Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+
+actor "End User" as EndUser
+actor "Authenticated User" as AuthUser
+
+rectangle "External Systems" {
+    [Firebase Authentication] as FirebaseAuth
+    [Firebase Admin SDK] as FirebaseAdmin
+    [OnFleet] as OnFleet
+    [External User Channels] as ExtChannels
+}
+
+rectangle "Environment Configuration" {
+    [Environment Variables\n(FIREBASE_AUTH_DOMAIN,\nFIREBASE_DATABASE_URL,\nFIREBASE_PROJECT_ID,\nFIREBASE_PUBLIC_API_KEY)] as EnvVars
+}
+
+rectangle "Frontend Layer (Next.js)" {
+    [Next.js Application] as NextApp
+    [Frontend Form\n(Help Task Entry)] as FrontendForm
+    [Firebase Session Handler] as SessionHandler
+    [Firebase Runtime Config] as FirebaseConfig
+}
+
+rectangle "API / Middleware Layer (Next.js API Routes)" {
+    [Session Middleware] as SessionMiddleware
+    [Login API\n(/api/login)] as LoginAPI
+    [Logout API\n(/api/logout)] as LogoutAPI
+    [Task Request Middleware\n(Address/Neighborhood/\nService-Area Check)] as TaskMiddleware
+}
+
+rectangle "Backend Layer (Firebase Functions)" {
+    [Firebase Functions\n(Custom APIs)] as FirebaseFunctions
+    [OnFleet Task Handler] as TaskHandler
+}
+
+database "Server-Side Session Store" as SessionStore
+
+EnvVars --> FirebaseConfig : populates
+FirebaseConfig --> NextApp : initializes
+
+AuthUser --> SessionHandler : triggers login/logout
+EndUser --> FrontendForm : submits help-task request
+EndUser --> ExtChannels : submits help-task request
+
+SessionHandler --> FirebaseAuth : getIdToken()
+SessionHandler --> LoginAPI : POST /api/login\n(same-origin, JSON)
+SessionHandler --> LogoutAPI : POST /api/logout\n(same-origin)
+
+LoginAPI --> SessionMiddleware : wrapped by
+SessionMiddleware --> SessionStore : read/write session
+LoginAPI --> FirebaseAdmin : verifyIdToken()
+LoginAPI --> SessionStore : store decoded token + token
+LoginAPI --> LogoutAPI : (shared session middleware)
+
+FrontendForm --> TaskMiddleware : task request data
+ExtChannels --> TaskMiddleware : task request data
+
+TaskMiddleware --> TaskHandler : eligible task request
+TaskHandler --> OnFleet : create task
+
+FirebaseFunctions --> LoginAPI : hosts
+FirebaseFunctions --> LogoutAPI : hosts
+FirebaseFunctions --> TaskHandler : hosts
+
+NextApp --> FrontendForm : renders
+NextApp --> SessionHandler : uses
+@enduml

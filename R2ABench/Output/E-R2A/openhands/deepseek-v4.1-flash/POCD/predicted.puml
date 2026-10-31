@@ -1,0 +1,201 @@
+@startuml POCD_Architecture
+title POCD Persistent Object Consistency Detection - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #4A4A4A
+
+' ============================================================
+' Actors / External Users
+' ============================================================
+package "Users" {
+  actor "Unauthenticated\nUser" as Guest
+  actor "Logged-in User" as User
+  actor "New User" as NewUser
+  actor "Class Diagram\nManager" as Manager
+}
+
+' ============================================================
+' User Interface Layer (Front-end)
+' ============================================================
+package "User Interface Layer (Front-end)" {
+  component "Registration & Login\nInterface" as UI_Auth
+  component "File Management\nInterface" as UI_File
+  component "Detection Configuration\nInterface" as UI_Config
+  component "Detection Record\nInterface" as UI_Record
+  component "Report Export\nInterface" as UI_Report
+  component "Detection Result\nInterface" as UI_Result
+  component "Help & Case\nInterface" as UI_Help
+}
+
+' ============================================================
+' Business Logic Layer (Back-end)
+' ============================================================
+package "Business Logic Layer (Back-end)" {
+
+  component "Authentication &\nAccess Control Service" as SVC_Auth
+
+  package "File Management" {
+    component "File Upload/Download\nService" as SVC_File
+  }
+
+  package "Configuration & Records" {
+    component "Detection Rule\nConfiguration Service" as SVC_Rule
+    component "Detection Exception\nConfiguration Service" as SVC_Exception
+    component "Report Export\nService" as SVC_Export
+    component "Historical Record\nService" as SVC_History
+    component "Operation Log\nService" as SVC_Log
+  }
+
+  package "Help & Examples" {
+    component "Help Manual &\nCase Service" as SVC_Help
+  }
+
+  package "Parsing" {
+    component "Class Diagram\nParser" as SVC_CDParser
+    component "Database\nParser" as SVC_DBParser
+    component "Database Relationship\nExtractor" as SVC_RelExtract
+  }
+
+  package "Matching & Detection" {
+    component "Entity / Attribute /\nRelationship Matcher" as SVC_Matcher
+    component "Inconsistency\nDetection Engine" as SVC_Detect
+  }
+
+  package "Repair" {
+    component "Repair Suggestion\nGenerator" as SVC_RepairSuggest
+    component "Automatic\nClass Diagram Repair" as SVC_CDRepair
+    component "Automatic\nDatabase Repair" as SVC_DBRepair
+  }
+
+  component "Open API\nGateway" as API_Gateway
+}
+
+' ============================================================
+' Data Access Layer
+' ============================================================
+package "Data Access Layer" {
+  component "Data Access\nComponents" as DAL
+  component "JDBC Database\nConnector" as JDBC
+  component "MDJ File\nAccess" as MDJAccess
+  component "Jackson / JSON\nConverter" as Jackson
+}
+
+' ============================================================
+' Data Stores
+' ============================================================
+database "POCD\nDatabase" as DB {
+  artifact "User Accounts" as D_User
+  artifact "Files & Parsing Results" as D_Files
+  artifact "Configurations" as D_Config
+  artifact "Matching & Inconsistency\nReports" as D_Reports
+  artifact "Repair Suggestions\n& Results" as D_Repair
+  artifact "History & Operation Logs" as D_Logs
+  artifact "Help Manuals\n& Cases" as D_Help
+}
+
+database "MySQL\nDatabase" as MySQL
+folder "StarUML .mdj\nClass Diagram File" as MDJFile
+
+' ============================================================
+' External Systems
+' ============================================================
+cloud "Third-party\nApplication" as ThirdParty
+
+' ============================================================
+' Relationships
+' ============================================================
+
+' Users to UI
+Guest --> UI_Auth
+NewUser --> UI_Auth
+NewUser --> UI_Help
+User --> UI_File
+User --> UI_Config
+User --> UI_Record
+User --> UI_Report
+User --> UI_Result
+Manager --> UI_File
+Manager --> UI_Config
+Manager --> UI_Result
+Manager --> UI_Help
+
+' UI to Business logic
+UI_Auth --> SVC_Auth
+UI_File --> SVC_File
+UI_Config --> SVC_Rule
+UI_Config --> SVC_Exception
+UI_Record --> SVC_History
+UI_Record --> SVC_Export
+UI_Report --> SVC_Export
+UI_Result --> SVC_Detect
+UI_Result --> SVC_RepairSuggest
+UI_Help --> SVC_Help
+
+' Business logic internal flow
+SVC_Auth -right-> DAL
+SVC_File --> SVC_CDParser
+SVC_File --> SVC_DBParser
+SVC_CDParser --> SVC_Matcher
+SVC_DBParser --> SVC_RelExtract
+SVC_RelExtract --> SVC_Matcher
+SVC_Matcher --> SVC_Detect
+SVC_Detect --> SVC_RepairSuggest
+SVC_RepairSuggest --> SVC_CDRepair
+SVC_RepairSuggest --> SVC_DBRepair
+SVC_Detect --> SVC_History
+SVC_Export --> SVC_History
+SVC_Auth --> SVC_Log
+
+' Conversions
+SVC_CDParser --> Jackson
+SVC_DBParser --> Jackson
+Jackson --> SVC_Matcher : JSON
+
+' Data access
+SVC_File --> DAL
+SVC_Rule --> DAL
+SVC_Exception --> DAL
+SVC_History --> DAL
+SVC_Log --> DAL
+SVC_Help --> DAL
+SVC_Detect --> DAL
+SVC_CDRepair --> DAL
+SVC_DBRepair --> DAL
+
+DAL --> DB
+DAL --> MDJAccess
+MDJAccess --> MDJFile
+DAL --> JDBC
+JDBC --> MySQL : SQL over JDBC
+
+' Open API / external integration
+ThirdParty --> API_Gateway
+API_Gateway --> DAL
+API_Gateway --> SVC_Detect
+
+' Secure transmission note
+note right of API_Gateway
+  Sensitive data transmission
+  uses SSL encryption.
+  Role-based access control
+  enforced by Authentication &
+  Access Control Service.
+end note
+
+note bottom of JDBC
+  Database parsing input: MySQL
+  design files, scripts, or
+  connection info (address, port,
+  username, password, db name).
+end note
+
+note bottom of SVC_CDParser
+  Front-end / back-end separated.
+  Layers: User Interface,
+  Business Logic, Data Access.
+end note
+
+@enduml

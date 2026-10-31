@@ -1,0 +1,99 @@
+@startuml
+title Earth Defender — System Architecture
+
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam packageStyle rectangle
+left to right direction
+
+actor "Player" as Player
+
+package "Client Environment (Browser / Three.js)" {
+  component "Earth Defender Client" as Client {
+    component "Multiplayer Room UI\n(create room / join room)" as RoomUI
+    component "3D Scene && Ship Renderer" as Scene
+    component "WebSocket Session Manager" as WS
+    component "Message Codec\noutbound JSON [event, data]\ninbound JSON [action, data?]" as Codec
+    component "Heartbeat Timer\n60s ping (data=null)" as Heartbeat
+    component "Reconnect Handler\n(roomID, playerID, index)" as Reconnect
+    component "Server List Handler\nservers_list / servers_list_redirect" as ServerList
+    component "Room Player Count Tracker\nroom_players_number" as PlayerCount
+    component "Server Error Handler\nserver_error -> page reload" as ErrorHandler
+  }
+}
+
+component "DNS / Load Balancer" as DNS
+
+package "Web Tier" {
+  component "Static Web Server\nHTML / CSS / JavaScript / images" as WebServer
+}
+
+package "Erlang/OTP Game Server Cluster" {
+  node "Master Node" as MasterNode {
+    component "Master Game Server" as MasterSrv {
+      component "HTTP / WebSocket Endpoint" as Endpoint
+      component "Room Manager\n(create / join room)" as RoomMgr
+      component "Session && Player Registry" as Session
+      component "Game World && Ship State" as World
+      component "Server List Provider\nservers_list" as SrvList
+      component "Redirect Coordinator\nservers_list_redirect" as Redirect
+      component "Heartbeat / Pong Handler\nping / pong" as Pong
+      component "Reconnect Coordinator\ngame_reconnect" as ReconnSrv
+    }
+  }
+
+  node "Replica Node\n(fault tolerance)" as ReplicaNode {
+    component "Replica Game Server" as ReplicaSrv
+  }
+}
+
+Player --> Client : uses
+RoomUI --> Client
+Scene --> Client
+Codec --> WS
+Heartbeat --> WS
+Reconnect --> WS
+ServerList --> WS
+PlayerCount --> WS
+ErrorHandler --> WS
+
+Client --> DNS : resolve / route
+DNS --> WebServer : HTTP
+DNS --> Endpoint : HTTP / WebSocket route
+
+WS ..> WebServer : HTTP GET static game assets
+WS --> Endpoint : WebSocket over HTTP\nJSON [event, data]\n(ping, room actions)
+Endpoint --> WS : JSON [action, data?]\n(game_reconnect, room_players_number,\nservers_list, servers_list_redirect,\nserver_error, pong)
+
+Endpoint --> RoomMgr
+Endpoint --> Session
+Endpoint --> Pong
+Endpoint --> ReconnSrv
+Endpoint --> SrvList
+
+RoomMgr --> Session
+RoomMgr --> World
+Session --> World
+SrvList --> Redirect
+Redirect --> Session
+ReconnSrv --> World
+ReconnSrv --> Session
+Pong --> Session
+
+MasterSrv <..> ReplicaSrv : replication / failover\n(NFR-002)
+
+note bottom of Client
+  Constraints:
+  - Browser client initiates all server connections
+  - Client-to-client P2P is not supported (C-003)
+  - Runtime transport is WebSocket over HTTP (C-002)
+  - Client stack: Three.js; Server stack: Erlang/OTP (C-004)
+end note
+
+note bottom of MasterNode
+  Multiplayer room workflows:
+  create room, join room, player count updates,
+  server list updates, redirects, reconnection.
+end note
+
+@enduml

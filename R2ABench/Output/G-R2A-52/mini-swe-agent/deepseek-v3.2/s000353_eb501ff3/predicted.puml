@@ -1,0 +1,100 @@
+@startuml
+!define LAYERED
+!define COMPONENT
+
+title Turing System Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> White
+  BorderColor<<Layer>> Black
+  FontColor<<Layer>> Black
+}
+
+skinparam rectangle {
+  BackgroundColor<<External>> LightGray
+  BorderColor<<External>> DarkGray
+}
+
+package "Presentation Layer" <<Layer>> {
+  component "HTTP API Gateway" as api_gateway {
+    component "OpenAPI Router" as openapi_router
+    component "Middleware Layer" as middleware {
+      component "Authorization Middleware" as auth_middleware
+      component "Validation Middleware" as validation_middleware
+    }
+  }
+}
+
+package "Application Layer" <<Layer>> {
+  component "Turing API Service" as turing_service {
+    component "Router Management" as router_mgmt
+    component "Ensembler Management" as ensembler_mgmt
+  }
+  
+  component "PyFuncEnsembler Service" as pyfunc_service {
+    component "User-defined Ensemblers" as user_ensemblers
+    component "Webservice Runtime" as webservice_runtime
+  }
+}
+
+package "Infrastructure Layer" <<Layer>> {
+  component "Kubernetes Cluster" as k8s_cluster {
+    component "Router Deployments" as router_deployments
+    component "Container Orchestration" as container_orchestration
+  }
+  
+  component "Docker Registry" as docker_registry
+}
+
+package "External Systems" <<External>> {
+  component "MLflow Model Registry" as mlflow_registry
+  component "Jaeger Tracing" as jaeger_tracing
+  component "API Clients" as api_clients
+}
+
+' API Clients interact with HTTP API Gateway
+api_clients --> api_gateway : HTTP/JSON
+
+' Internal API flow
+api_gateway --> middleware : Request processing
+middleware --> turing_service : Validated requests
+
+' Turing Service interactions
+turing_service --> k8s_cluster : Deploy/Update/Delete routers
+turing_service --> pyfunc_service : Use ensemblers
+
+' PyFuncEnsembler Service dependencies
+pyfunc_service --> mlflow_registry : Download model artifacts
+pyfunc_service --> docker_registry : Build/store images
+
+' Observability
+turing_service --> jaeger_tracing : Request traces
+pyfunc_service --> jaeger_tracing : Request traces
+
+' Router deployments in Kubernetes
+router_deployments --> pyfunc_service : Call ensemblers
+
+note right of api_gateway
+  OpenAPI 3.0.3 specification
+  JSON payloads
+  Project-scoped endpoints
+end note
+
+note right of middleware
+  Configurable middleware:
+  - Authorization (when enabled)
+  - OpenAPI validation (when enabled)
+end note
+
+note right of pyfunc_service
+  User-defined ensemblers
+  Webservice runtime
+  Port 8080 (default)
+end note
+
+note right of k8s_cluster
+  Router deployment lifecycle
+  Container orchestration
+end note
+
+@enduml

@@ -1,0 +1,84 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 20
+skinparam ranksep 30
+
+title Model Evolution Version Management Visualization Tool - System Architecture
+
+rectangle "**Client Browser**" as Browser {
+  rectangle "Web UI" as UI
+  rectangle "JavaScript / Frontend Framework" as Frontend
+}
+
+rectangle "**Web Server / Backend**" as Backend {
+  rectangle "REST API / Controllers" as API
+  rectangle "Business Logic Layer" as BLL
+  rectangle "Authentication Service" as Auth
+  rectangle "Model Processing Service" as ModelProc
+  rectangle "Evolution Graph Service" as GraphService
+}
+
+rectangle "**Algorithm Support Module**" as Algorithm {
+  rectangle "ONNX Parser" as ONNXParser
+  rectangle "PyTorch Analyzer" as PyTorchAnalyzer
+  rectangle "Topology Generator" as TopologyGen
+  rectangle "Performance Evaluator" as PerfEval
+}
+
+rectangle "**Databases**" as DB {
+  database "Neo4j\n<size:10>[Evolution Graphs,\nLayer Reuse]</size>" as Neo4j
+  database "MySQL\n<size:10>[Users, Permissions,\nModel Metadata,\nDatasets]</size>" as MySQL
+  rectangle "Encrypted Storage\n(AES/DES)" as EncryptedStorage
+}
+
+rectangle "**External Interfaces**" as External {
+  rectangle "Python Libraries" as PythonLib
+  rectangle "OAuth 2.0 / 2FA Provider" as OAuth
+  cloud "Internet Protocols\n(HTTP/HTTPS, TCP/IP,\nFTP, SMTP, UDP)" as Protocols
+}
+
+' Connections
+Browser --> Backend : HTTP/HTTPS (UI Requests)
+Frontend --> API : REST API Calls
+
+API --> BLL : Delegates Requests
+BLL --> Auth : Authenticate / Authorize
+BLL --> ModelProc : Process Models
+BLL --> GraphService : Manage Evolution
+
+ModelProc --> Algorithm : Invokes Analysis
+GraphService --> Algorithm : Requests Visualization
+
+Algorithm --> ONNXParser : Parse Files
+Algorithm --> PyTorchAnalyzer : Analyze Code
+Algorithm --> TopologyGen : Generate Graphs
+Algorithm --> PerfEval : Calculate Metrics
+
+BLL --> MySQL : CRUD (Users, Metadata)
+BLL --> Neo4j : CRUD (Graph Relationships)
+ModelProc --> EncryptedStorage : Store/Retrieve Models (ONNX, Code)
+EncryptedStorage --> MySQL : Metadata Link
+EncryptedStorage --> Neo4j : Graph Link
+
+Auth --> OAuth : Two-Factor Authentication
+Backend --> Protocols : External Communication
+Algorithm --> PythonLib : Utilizes Libraries
+
+' User Roles (as notes)
+note top of Browser
+  <b>User Roles:</b>
+  Learner (Browse/Search)
+  Contributor (Upload/Edit)
+  Administrator (Manage Users)
+end note
+
+note right of External
+  <b>Constraints:</b>
+  B/S Architecture
+  Cross-Platform (Win/macOS/Linux)
+  TLS Encryption (PCI DSS)
+end note
+
+@enduml

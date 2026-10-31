@@ -1,0 +1,66 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Security Operator" as operator
+RECTANGLE "Plugin Developer" as developer
+RECTANGLE "Deployment Operator" as deployer
+RECTANGLE "Integrator" as integrator
+
+package "veinmind-tools" {
+    RECTANGLE "CLI Interface" as cli
+    RECTANGLE "Runner Execution" as runner
+    RECTANGLE "Authorization Routing" as auth_routing
+    RECTANGLE "IaC Scanning" as iac_scan
+    RECTANGLE "Image Scanning" as image_scan
+    RECTANGLE "Container Scanning" as container_scan
+    RECTANGLE "Plugin Packaging" as plugin_packaging
+    RECTANGLE "Reporting Data" as reporting
+}
+
+package "External Systems" {
+    RECTANGLE "Docker" as docker
+    RECTANGLE "veinmind-runner Image" as runner_image
+    RECTANGLE "Parallel Container Script" as startup_script
+    RECTANGLE "Python Runtime (veinmind/python3.6:1.3.1-stretch)" as python_runtime
+}
+
+operator --> cli : Uses
+developer --> plugin_packaging : Develops
+deployer --> docker : Configures
+integrator --> auth_routing : Integrates
+
+cli --> image_scan : Invokes
+cli --> container_scan : Invokes
+cli --> iac_scan : Invokes
+runner --> runner_image : Depends on
+runner --> startup_script : Uses
+auth_routing --> docker : Routes actions
+plugin_packaging --> python_runtime : Executes in
+reporting <-- image_scan : Generates from
+reporting <-- container_scan : Generates from
+reporting <-- iac_scan : Generates from
+
+image_scan --> docker : Scans
+container_scan --> docker : Scans
+
+note right of cli
+  Commands:
+  - scan-image
+  - scan-container
+  - scan-iac
+  - ./run.sh scan-host image
+end note
+
+note right of auth_routing
+  Actions:
+  - Classified Docker plugin actions
+  - NoneDockerPlugin fallback
+end note
+
+note right of reporting
+  Data Objects:
+  - MaliciousFileInfo
+  - ReportData
+  - IaC Alert Details
+end note
+@enduml

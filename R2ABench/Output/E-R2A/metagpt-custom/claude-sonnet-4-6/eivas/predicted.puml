@@ -1,0 +1,124 @@
+@startuml EIVAS_Architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam PackageBorderColor #555555
+skinparam PackageFontStyle bold
+skinparam PackageFontSize 13
+skinparam ComponentBorderColor #336699
+skinparam ComponentBackgroundColor #D6E8F7
+skinparam ComponentFontSize 11
+skinparam DatabaseBorderColor #336699
+skinparam DatabaseBackgroundColor #D6EED6
+skinparam ArrowColor #333333
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER
+' ─────────────────────────────────────────────
+package "Presentation Layer" #EAF2FB {
+
+  component [EpidemiologicalReportingForm\n(Data Entry: Case Info,\nImported-Case Fields DR-004)] as ERF
+  component [CaseManagementUI\n(Case List & Filters)] as CMUI
+  component [ItineraryAndAssociationUI\n(Map, Paths, Association\n& Relationship Graphs)] as IAUI
+  component [OutbreakOverviewUI\n(Heat Maps & Charts)] as OOUI
+
+}
+
+' ─────────────────────────────────────────────
+' APPLICATION / API LAYER
+' ─────────────────────────────────────────────
+package "Application / API Layer" #EAF7EA {
+
+  component [BackendInterface\n(Request Routing,\nEncryption NFR-004,\nRate-Limiting NFR-005)] as BI
+  component [CaseService\n(CRUD, Validation,\nStatus Tracking &\nImported-Case Handling DR-004)] as CS
+  component [ActivityLocationPromptService\n(Historical Itinerary Search\n& Prompt Generation FR-002)] as ALPS
+  component [AssociationQueryService\n(Threshold-Based\nProximity Queries FR-010)] as AQS
+  component [AlgorithmDispatchService\n(Data Quality Pre-Check DR-008\n& Algorithm Invocation)] as ADS
+
+}
+
+' ─────────────────────────────────────────────
+' ALGORITHM LAYER
+' ─────────────────────────────────────────────
+package "Algorithm Layer" #FEF9E7 {
+
+  component [AlgorithmModule\n(Risk Levels, Regional\nFlow Maps FR-012,\nClustering Graph FR-013,\nCase Relationship Graph FR-011)] as ALG
+
+}
+
+' ─────────────────────────────────────────────
+' DATA LAYER
+' ─────────────────────────────────────────────
+package "Data Layer" #F4ECF7 {
+
+  database "CaseRepository\n(Cases, Trajectories,\nImported-Case Fields DR-004,\nAssociations, Chart Data,\nTemperature & Humidity DR-007)" as CR
+
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SERVICE LAYER
+' ─────────────────────────────────────────────
+package "External Service Layer" #F2F3F4 {
+
+  cloud "MapService\n(Geographic Rendering\n& Itinerary Path Display\nAD-003/FR-003/FR-009)" as MS
+
+  cloud "ClimateDataSource\n(Temperature & Humidity\nFeed FR-015/DR-007)" as CDS
+
+}
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Presentation → Backend Interface
+' ─────────────────────────────────────────────
+ERF  --> BI : form submission\n(encrypted FR-001/NFR-004)
+CMUI --> BI : case list queries\n(encrypted C-004/NFR-004)
+IAUI --> BI : association, itinerary\n& relationship graph requests\n(FR-010/FR-011)
+OOUI --> BI : chart & analysis\ndata requests (FR-012/FR-013/FR-015)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Backend Interface → Services
+' ─────────────────────────────────────────────
+BI --> CS   : delegate CRUD &\ncase query logic
+BI --> ALPS : route activity-location\nprompt requests (FR-002)
+BI --> AQS  : route threshold-based\nassociation queries (FR-010)
+BI --> ADS  : route regional flow map,\nclustering & relationship\ngraph requests (FR-011/FR-012/FR-013)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Services → Data Layer
+' ─────────────────────────────────────────────
+CS   --> CR : persist & retrieve\ncase records incl.\nimported-case fields\n(AD-001/FR-001/FR-004/FR-005/DR-004)
+ALPS --> CR : query historical\nitinerary data\nfor prompt generation (FR-002)
+AQS  --> CR : read itinerary &\nlocation data\n(FR-010/DR-006)
+ADS  --> CR : validate data\ncompleteness pre-dispatch\n(DR-008/FR-012/FR-013)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Dispatch Service → Algorithm
+' ─────────────────────────────────────────────
+ADS  --> ALG : invoke risk calculation,\nclustering & relationship\ngraph generation\n(AD-002/FR-011/FR-012/FR-013)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Algorithm → Data Layer
+' ─────────────────────────────────────────────
+ALG --> CR : read case investigation\ndata (AD-002)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — External Climate Data → Repository
+' ─────────────────────────────────────────────
+CDS --> CR : ingest temperature &\nhumidity readings\n(FR-015/DR-007)
+
+' ─────────────────────────────────────────────
+' RETURN PATHS — Services → Presentation (bidirectional SRS §3)
+' ─────────────────────────────────────────────
+CS   --> ERF  : return saved/validated\ncase record response\n(FR-001/FR-004)
+CS   --> CMUI : return case list\n& status results\n(FR-004/FR-005)
+ALPS --> ERF  : return activity-location\nprompts (FR-002/FR-009)
+AQS  --> IAUI : return filtered\nassociation entries (FR-010)
+ALG  --> OOUI : deliver regional flow map,\nclustering chart &\ncase relationship graph\n(FR-011/FR-012/FR-013)
+CR   --> OOUI : return temperature &\nhumidity trend data\n(FR-015/DR-007)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — Presentation → Map Service
+' ─────────────────────────────────────────────
+IAUI --> MS : render itinerary paths\n& candidate locations\n(AD-003/FR-003/FR-009)
+
+@enduml

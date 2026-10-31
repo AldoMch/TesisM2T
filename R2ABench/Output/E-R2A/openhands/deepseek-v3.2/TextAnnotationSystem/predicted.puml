@@ -1,0 +1,280 @@
+@startuml
+!define AWSPColor #FF9900
+!define AzureColor #0078D4
+!define GCPColor #4285F4
+!define UserColor #87CEEB
+!define FrontendColor #FFE4E1
+!define BackendColor #E6E6FA
+!define GatewayColor #F0E68C
+!define DatabaseColor #90EE90
+!define QueueColor #FFD700
+!define MLColor #DDA0DD
+!define CloudColor #87CEFA
+
+skinparam component {
+  BackgroundColor<<User>> UserColor
+  BackgroundColor<<Frontend>> FrontendColor
+  BackgroundColor<<Backend>> BackendColor
+  BackgroundColor<<Gateway>> GatewayColor
+  BackgroundColor<<Database>> DatabaseColor
+  BackgroundColor<<Queue>> QueueColor
+  BackgroundColor<<ML>> MLColor
+  BackgroundColor<<Cloud>> CloudColor
+  BorderColor Black
+  FontSize 13
+}
+
+skinparam node {
+  borderColor Black
+  backgroundColor White
+  shadowing false
+}
+
+skinparam rectangle {
+  borderColor Black
+  backgroundColor White
+  shadowing false
+}
+
+title Intelligent Text Annotation System (ITAS) - System Architecture
+
+package "Tencent Cloud Deployment" <<Cloud>> {
+  package "Container Runtime" {
+    node "Docker Containers" as docker
+  }
+}
+
+rectangle "User Roles" <<User>> {
+  component "System Annotation\nAdministrator" as admin
+  component "Data Annotator" as annotator
+  component "Researcher" as researcher
+}
+
+package "Frontend Layer" <<Frontend>> {
+  component "Vue.js 3.0 Frontend" as vue_frontend {
+    component "Vue Router" as vue_router
+    component "Pinia Store" as pinia
+    component "Ant Design Vue" as antd
+    component "Axios HTTP Client" as axios
+  }
+}
+
+package "Gateway & Security" <<Gateway>> {
+  component "Nginx Reverse Proxy\n& Load Balancer" as nginx
+  component "Spring Cloud Gateway" as spring_gateway
+  component "Spring Security" as spring_security
+}
+
+package "Backend Services" <<Backend>> {
+  package "Annotation Subsystem" {
+    component "User Management\nService" as user_service
+    component "Project Management\nService" as project_service
+    component "Document Management\nService" as doc_service
+    component "Annotation Task\nService" as task_service
+    component "Tag Management\nService" as tag_service
+    component "Result Export\nService" as result_service
+  }
+  
+  package "Mining Subsystem" {
+    component "Document Upload\nService" as upload_service
+    component "Format Conversion\nService" as convert_service
+    component "Model Selection\nService" as model_service
+    component "Information Extraction\nService" as extraction_service
+  }
+}
+
+package "Message Queue" <<Queue>> {
+  component "RabbitMQ" as rabbitmq {
+    component "File Conversion\nQueue" as file_queue
+    component "Annotation Processing\nQueue" as annotation_queue
+    component "Mining Processing\nQueue" as mining_queue
+  }
+}
+
+package "Machine Learning Models" <<ML>> {
+  component "BERT Paragraph Model" as bert
+  component "GPT/GPT API\nEntity Model" as gpt
+  component "Few-Shot Learning\nExtraction Model" as fewshot
+  component "Paragraph Localization" as paragraph_loc
+  component "Entity Recognition" as entity_recog
+}
+
+package "Data Storage Layer" <<Database>> {
+  database "MySQL\nStructured Storage" as mysql {
+    component "User Tables" as user_tables
+    component "Project Tables" as project_tables
+    component "Document Metadata" as doc_metadata
+    component "Annotation Results" as annotation_tables
+    component "Task Management" as task_tables
+  }
+  
+  database "MinIO\nObject Storage" as minio {
+    component "PDF Documents" as pdf_storage
+    component "HTML Documents" as html_storage
+    component "TXT Documents" as txt_storage
+    component "Annotation Files" as annotation_files
+  }
+  
+  database "Redis Cache" as redis {
+    component "Session Cache" as session_cache
+    component "Document Cache" as doc_cache
+    component "Result Cache" as result_cache
+  }
+}
+
+package "External Services" {
+  component "GPT API / ChatGPT\nThird-party Interface" as gpt_api
+  component "Community Model\nRepository" as community_models
+}
+
+' User to Frontend connections
+admin --> vue_frontend : "Accesses"
+annotator --> vue_frontend : "Accesses"
+researcher --> vue_frontend : "Accesses"
+
+' Frontend to Gateway connections
+vue_frontend --> nginx : "HTTP Requests"
+axios --> nginx : "API Calls"
+
+' Gateway to Backend connections
+nginx --> spring_gateway : "Proxies Requests"
+spring_gateway --> spring_security : "Authentication/Authorization"
+
+' Security to Services connections
+spring_security --> user_service : "User Auth"
+spring_security --> project_service : "Project Access"
+spring_security --> task_service : "Task Access"
+
+' Annotation Subsystem internal flows
+user_service --> project_service : "Manages Users"
+project_service --> doc_service : "Assigns Documents"
+project_service --> task_service : "Creates Tasks"
+task_service --> tag_service : "Associates Tags"
+task_service --> result_service : "Generates Results"
+doc_service --> task_service : "Provides Documents"
+tag_service --> result_service : "Tags Results"
+
+' Mining Subsystem internal flows
+upload_service --> convert_service : "Uploads Documents"
+convert_service --> model_service : "Provides Converted Docs"
+model_service --> extraction_service : "Selects Models"
+extraction_service --> result_service : "Returns Results"
+
+' Services to Message Queue
+convert_service --> file_queue : "Async Conversion Tasks"
+task_service --> annotation_queue : "Async Annotation Tasks"
+extraction_service --> mining_queue : "Async Mining Tasks"
+
+' Message Queue to Services
+file_queue --> convert_service : "Processes Conversion"
+annotation_queue --> task_service : "Processes Annotations"
+mining_queue --> extraction_service : "Processes Mining"
+
+' Services to ML Models
+extraction_service --> bert : "Paragraph Analysis"
+extraction_service --> gpt : "Entity Extraction"
+extraction_service --> fewshot : "Few-Shot Learning"
+extraction_service --> paragraph_loc : "Paragraph Localization"
+extraction_service --> entity_recog : "Entity Recognition"
+
+' ML Models to External Services
+gpt --> gpt_api : "API Calls"
+fewshot --> community_models : "Model References"
+
+' Services to Databases
+user_service --> mysql : "CRUD Users"
+project_service --> mysql : "CRUD Projects"
+doc_service --> mysql : "CRUD Document Metadata"
+doc_service --> minio : "Stores/Retrieves Files"
+task_service --> mysql : "CRUD Tasks"
+tag_service --> mysql : "CRUD Tags"
+result_service --> mysql : "CRUD Results"
+upload_service --> minio : "Stores Uploaded Files"
+convert_service --> minio : "Stores Converted Formats"
+
+' Services to Cache
+user_service --> redis : "Caches Sessions"
+doc_service --> redis : "Caches Documents"
+result_service --> redis : "Caches Results"
+
+' Database relationships
+mysql --> minio : "References Object Storage"
+mysql --> redis : "Cache Invalidation"
+
+' Deployment context
+docker --> vue_frontend : "Hosts"
+docker --> nginx : "Hosts"
+docker --> spring_gateway : "Hosts"
+docker --> user_service : "Hosts"
+docker --> project_service : "Hosts"
+docker --> doc_service : "Hosts"
+docker --> task_service : "Hosts"
+docker --> upload_service : "Hosts"
+docker --> extraction_service : "Hosts"
+docker --> rabbitmq : "Hosts"
+docker --> mysql : "Connects to"
+docker --> minio : "Connects to"
+docker --> redis : "Connects to"
+
+note right of docker
+  Deployed on Tencent Cloud
+  Containerized with Docker
+  Microservice Architecture
+end note
+
+note top of vue_frontend
+  Vue.js 3.0 with:
+  - vue-router
+  - Pinia state management
+  - Ant Design Vue components
+  - Axios HTTP client
+end note
+
+note right of spring_gateway
+  Spring Cloud Gateway:
+  - Service discovery
+  - Load balancing
+  - Configuration management
+  - Inter-service communication
+end note
+
+note left of mysql
+  Structured Storage:
+  - User management
+  - Project metadata
+  - Document indexes
+  - Annotation results
+  - Task assignments
+end note
+
+note right of minio
+  Object Storage:
+  - PDF/HTML/TXT documents
+  - Annotation files
+  - Uploaded content
+  - Converted formats
+end note
+
+note left of rabbitmq
+  Asynchronous Processing:
+  - File format conversion
+  - Annotation processing
+  - Mining workflows
+  - Task queuing
+end note
+
+note bottom of bert
+  BERT Model for:
+  - Paragraph analysis
+  - Text understanding
+  - Context extraction
+end note
+
+note bottom of gpt
+  GPT/GPT API for:
+  - Entity recognition
+  - Natural language processing
+  - Text generation
+end note
+
+@enduml

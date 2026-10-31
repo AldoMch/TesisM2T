@@ -1,0 +1,160 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam rectangle {
+  BorderColor #555555
+  FontColor #111111
+}
+
+skinparam package {
+  BorderColor #444444
+  FontColor #111111
+  BackgroundColor #F0F4FF
+}
+
+skinparam node {
+  BorderColor #444444
+  BackgroundColor #FFFFF0
+}
+
+skinparam database {
+  BorderColor #444444
+  BackgroundColor #FFF0F0
+}
+
+skinparam cloud {
+  BorderColor #444444
+  BackgroundColor #F0FFF0
+}
+
+skinparam arrow {
+  Color #333333
+  FontColor #333333
+  FontSize 10
+}
+
+title User-in-the-box Simulator Framework — System Architecture
+
+'--------------------------------------------------
+' External Inputs
+'--------------------------------------------------
+rectangle "YAML Simulator\nConfiguration File" as YAML #E8F5E9 {
+}
+
+rectangle "MuJoCo XML\nBiomechanical Model\nDefinition" as MuJoCoXML_BM #E8F5E9 {
+}
+
+rectangle "MuJoCo XML\nInteraction Task\nEnvironment Definition" as MuJoCoXML_Task #E8F5E9 {
+}
+
+'--------------------------------------------------
+' Core Framework
+'--------------------------------------------------
+package "User-in-the-box Framework" as Framework {
+
+  package "Simulator Builder" as Builder {
+    rectangle "YAML Configuration\nParser" as YAMLParser
+    rectangle "MuJoCo XML\nIntegration Layer" as XMLIntegration
+    rectangle "Component\nInitializer" as CompInit
+  }
+
+  package "Biomechanical Model Modules" as BioModules {
+    rectangle "Biomechanical Model\nBase / Interface\n(action [-1,1] → control [0,1])" as BioBase
+    rectangle "Muscle-Actuated\nModel" as MuscleModel
+    rectangle "Motor Actuator\nModel" as MotorModel
+  }
+
+  package "Perception Modules" as PerceptionModules {
+    rectangle "Perception Base\nModule / Interface" as PerceptionBase
+    rectangle "Egocentric\nVision Module" as VisionModule
+    rectangle "Proprioception\nModule" as ProprioModule
+  }
+
+  package "Interaction Task Modules" as TaskModules {
+    rectangle "Interaction Task\nBase / Interface" as TaskBase
+    rectangle "HCI Task\nImplementations" as HCITask
+  }
+
+  rectangle "Standalone Simulator\nPackage\n(OpenAI Gym Interface)" as SimPackage #D6EAF8
+
+  package "Reinforcement Learning\nTraining Workflow" as RLWorkflow {
+    rectangle "RL Training\nRunner" as RLRunner
+    rectangle "Training Configuration\n(from YAML)" as RLConfig
+  }
+
+  package "Evaluation Runner" as EvalRunner {
+    rectangle "Evaluation\nOrchestrator" as EvalOrch
+    rectangle "Checkpoint\nLoader" as CheckpointLoader
+    rectangle "Action Logger" as ActionLogger
+  }
+
+}
+
+'--------------------------------------------------
+' Run Folder Artifacts (File System)
+'--------------------------------------------------
+node "Run Folder (File System)" as RunFolder {
+  database "checkpoints/\n(model checkpoint artifacts)" as CheckpointDir
+  database "evaluate/\n(evaluation output directory)" as EvaluateDir
+  database "training run\nartifacts" as TrainingArtifacts
+}
+
+database "Action Log File" as ActionLogFile #FFF3CD
+
+'--------------------------------------------------
+' External Consumer
+'--------------------------------------------------
+cloud "OpenAI Gym\nCompatible Runtime / Consumer" as GymConsumer
+
+'--------------------------------------------------
+' Relationships — Configuration & Build
+'--------------------------------------------------
+YAML --> YAMLParser : provides simulator\nbuild definition
+MuJoCoXML_BM --> XMLIntegration : biomechanical\nXML input
+MuJoCoXML_Task --> XMLIntegration : interaction task\nXML input
+
+YAMLParser --> CompInit : selected model,\ntask, perception config
+XMLIntegration --> CompInit : integrated\nstandalone MuJoCo XML
+
+CompInit --> BioBase : initialize\nbiomechanical model
+CompInit --> PerceptionBase : initialize\nperception wrapper
+CompInit --> TaskBase : initialize\ninteraction task
+
+BioBase <|-- MuscleModel
+BioBase <|-- MotorModel
+PerceptionBase <|-- VisionModule
+PerceptionBase <|-- ProprioModule
+TaskBase <|-- HCITask
+
+CompInit --> SimPackage : constructs\nstandalone simulator
+
+'--------------------------------------------------
+' Gym Interface
+'--------------------------------------------------
+SimPackage --> GymConsumer : exposes\nOpenAI Gym interface
+
+'--------------------------------------------------
+' RL Training
+'--------------------------------------------------
+YAML --> RLConfig : training configuration
+RLConfig --> RLRunner : configure RL algorithm
+SimPackage --> RLRunner : simulator instance
+RLRunner --> TrainingArtifacts : writes training run\nartifacts
+RLRunner --> CheckpointDir : writes model\ncheckpoint artifacts
+
+'--------------------------------------------------
+' Evaluation
+'--------------------------------------------------
+RunFolder --> EvalOrch : run folder path +\neval parameters
+CheckpointDir --> CheckpointLoader : load specified\nor latest checkpoint
+CheckpointLoader --> EvalOrch : loaded model\ncheckpoint
+EvalOrch --> SimPackage : load simulator\nfrom run folder
+EvalOrch --> EvaluateDir : ensure evaluate/\ndirectory exists
+EvalOrch --> ActionLogger : invoke when\nlogging enabled
+ActionLogger --> ActionLogFile : write action log
+ActionLogger --> EvaluateDir : write evaluation\noutputs
+
+@enduml

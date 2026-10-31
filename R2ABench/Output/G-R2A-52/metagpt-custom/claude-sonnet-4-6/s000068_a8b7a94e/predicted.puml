@@ -1,0 +1,134 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam nodeBackgroundColor #E8F5E9
+skinparam databaseBackgroundColor #FFF9C4
+skinparam cloudBackgroundColor #E3F2FD
+skinparam defaultFontSize 12
+skinparam padding 8
+skinparam ArrowColor #444444
+skinparam componentBorderColor #555555
+skinparam packageBorderColor #7986CB
+
+' ============================================================
+' FLIGHT TARGET LAYER
+' ============================================================
+package "Flight Target Layer\n(core-cpu1 Runtime)" as FlightTarget {
+
+    component "core-cpu1\n(cFS Target Executable)" as CoreCPU1
+
+    package "cFS Framework" as cFSFramework {
+        component "cFE\n(Core Flight Executive)" as cFE
+        component "OSAL\n(OS Abstraction Layer)" as OSAL
+        component "PSP\n(Platform Support Package)" as PSP
+    }
+
+    component "Framework Applications" as FrameworkApps
+}
+
+' ============================================================
+' HOST TOOLING LAYER
+' ============================================================
+package "Host Tooling Layer" as HostTooling {
+    component "cmdUtil\n(--pktid, --cmdcode,\n--endian, --uint32)" as CmdUtil
+    component "Telemetry Interface\n(Operator Network Endpoint\n127.0.0.1 / configured IP)" as TelemetryIF
+}
+
+' ============================================================
+' BUILD SYSTEM LAYER
+' ============================================================
+package "Build System Layer" as BuildSystem {
+    component "Makefile / Makefile.sample\n(make prep | make install)" as Makefile
+    component "sample_defs\n(Mission Configuration Assets)" as SampleDefs
+}
+
+' ============================================================
+' CI/CD AUTOMATION LAYER
+' ============================================================
+package "CI/CD Automation Layer\n(GitHub Actions Workflows)" as CICD {
+    component "CI Build & Test Workflow\n(debug + release variants\nubuntu-18.04 / 15-min timeout)" as CIBuildTest
+    component "Format Check Workflow\n(push | pull_request | workflow_call\nubuntu-18.04)" as FormatCheck
+    component "Changelog Generation Workflow\n(manual trigger / ubuntu-latest\nClosed issues, Breaking changes,\nFixed bugs, Enhancements, etc.)" as Changelog
+    component "Duplicate-Check Job\n(ubuntu-latest)" as DuplicateCheck
+    component "Reusable Workflows\n(workflow_call triggers\nFormat Check | Static Analysis | CodeQL)" as ReusableWorkflows
+    component "cFS Bundle Reusable Workflows\n(cFS & Submodule workflow_call\nFormat Check | Static Analysis | CodeQL)" as cFSBundleWorkflows
+}
+
+' ============================================================
+' ARTIFACT STORAGE
+' ============================================================
+package "Artifact Storage" as ArtifactStorage {
+    component "Changelog Artifact\n(uploaded output)" as ChangelogArtifact
+}
+
+' ============================================================
+' EXTERNAL LIBRARIES & TOOLS LAYER
+' ============================================================
+package "External Libraries & Tools Layer" as ExtLibs {
+    component "cFS_LIB" as cFSLib
+    component "cFS_IO_LIB" as cFSIOLib
+    component "SIL\n(Simulation Interface Layer)" as SIL
+    component "ECI\n(External Coding Interface)" as ECI
+    component "CCDD\n(Command & Data Dictionary)" as CCDD
+    component "Perfutils-java" as Perfutils
+    component "gen_sch_tbl" as GenSchTbl
+}
+
+' ============================================================
+' EXTERNAL SYSTEMS
+' ============================================================
+cloud "GitHub Actions\n(CI/CD Execution Platform\nubuntu-latest | ubuntu-18.04)" as GitHubActions
+
+package "Git Submodules\n(Source Checkout)" as GitSubmodules {
+    component "Submodule Sources" as SubmoduleSources
+}
+
+' ============================================================
+' FLIGHT TARGET INTERNAL DEPENDENCIES
+' ============================================================
+CoreCPU1 --> cFE        : depends on (core services)
+CoreCPU1 --> OSAL       : depends on (OS services)
+CoreCPU1 --> PSP        : depends on (platform init)
+FrameworkApps --> cFE   : hosted within / uses
+
+' ============================================================
+' HOST TOOLING -> FLIGHT TARGET
+' ============================================================
+CmdUtil --> CoreCPU1    : submits commands (network)
+CoreCPU1 --> TelemetryIF : produces telemetry output
+
+' ============================================================
+' BUILD SYSTEM INTERNAL
+' ============================================================
+Makefile --> SampleDefs : requires (mission config)
+
+' ============================================================
+' CI/CD -> BUILD SYSTEM
+' ============================================================
+CIBuildTest --> Makefile       : invokes make prep / install
+CIBuildTest --> SampleDefs     : requires as config input
+CIBuildTest --> GitSubmodules  : checkout with submodules (C-001)
+
+' ============================================================
+' CI/CD -> FLIGHT TARGET
+' ============================================================
+CIBuildTest --> CoreCPU1   : starts target before functional test
+CIBuildTest --> CmdUtil    : invokes (../host/cmdUtil) for test commands
+CIBuildTest --> TelemetryIF : observes telemetry (command counter)
+
+' ============================================================
+' CI/CD WORKFLOW COMPOSITION
+' ============================================================
+ReusableWorkflows --> FormatCheck       : invokes via workflow_call
+ReusableWorkflows --> CIBuildTest       : invokes via workflow_call
+cFSBundleWorkflows --> ReusableWorkflows : reuses via workflow_call
+cFSBundleWorkflows --> GitSubmodules    : reuses submodule workflows
+
+Changelog --> ChangelogArtifact         : uploads artifact (FR-006, DR-004)
+Changelog --> GitHubActions             : runs on ubuntu-latest runner
+FormatCheck --> GitHubActions           : runs on ubuntu-18.04 runner
+CIBuildTest --> GitHubActions           : runs on ubuntu-18.04 runner
+DuplicateCheck --> GitHubActions        : runs on ubuntu-latest runner
+
+@enduml

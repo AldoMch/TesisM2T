@@ -1,0 +1,137 @@
+@startuml
+!define RECTANGLE class
+
+skinparam rectangle {
+  BackgroundColor<<frontend>> #D6EAF8
+  BackgroundColor<<server>> #D5F5E3
+  BackgroundColor<<routing>> #FCF3CF
+  BackgroundColor<<handler>> #FDEBD0
+  BackgroundColor<<algorithm>> #E8DAEF
+  BackgroundColor<<data>> #FADBD8
+  BackgroundColor<<test>> #D5DBDB
+  BackgroundColor<<external>> #F2F3F4
+  BorderColor #555555
+  FontColor #222222
+}
+
+skinparam component {
+  BackgroundColor #FDFEFE
+  BorderColor #555555
+}
+
+skinparam node {
+  BackgroundColor #EAF2FF
+  BorderColor #2E86C1
+}
+
+skinparam database {
+  BackgroundColor #FADBD8
+  BorderColor #C0392B
+}
+
+skinparam arrow {
+  Color #333333
+  FontSize 10
+}
+
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam linetype ortho
+
+title Nobel Prize Laureates Autocomplete - System Architecture
+
+node "Client Environment\n(Web Browser)" <<external>> {
+  rectangle "Frontend Layer" <<frontend>> {
+    component "Search Input Field\n[UI Component]" as SearchInput
+    component "Suggestions / List Output\n[UI Component]" as SuggestionList
+    component "Frontend Helper\n[JS Module]" as FrontendHelper
+  }
+}
+
+node "Server Environment\n(Node.js / CommonJS)" <<server>> {
+
+  rectangle "HTTP Server\n[Entry Point / Start Script]" as HTTPServer
+
+  rectangle "Router Module\n[Routing Layer]" <<routing>> {
+    component "URL Substring Matcher\n(contains 'search'?)" as URLMatcher
+  }
+
+  rectangle "Handler Module\n[Request Handling Layer]" <<handler>> {
+    component "Home Page Handler\n(GET /)" as HomeHandler
+    component "Static Asset Handler\n(public files)" as StaticHandler
+    component "Not-Found Handler\n(404 HTML response)" as NotFoundHandler
+    component "Content-Type Mapper\n(html/css/js/jpg/ico)" as ContentTypeMapper
+  }
+
+  rectangle "Autocomplete / Search-Hint\nAlgorithm Module" <<algorithm>> {
+    component "Prefix Match Filter\n(max 10 results)" as PrefixFilter
+    component "Field Value Extractor\n(e.g. firstname)" as FieldExtractor
+  }
+
+  rectangle "Local Data Layer" <<data>> {
+    database "Local Laureate Data\n[JSON File]" as LaureateJSON
+  }
+
+  rectangle "Public Asset Directory\n[Filesystem]" <<data>> {
+    component "Static Files\n(HTML, CSS, JS, JPG, ICO)" as StaticFiles
+  }
+}
+
+node "Deployment Environment\n(Heroku)" <<external>> {
+  component "Node.js Start Script" as StartScript
+}
+
+rectangle "Test Suite" <<test>> {
+  component "Frontend Tests\n[Helper behavior]" as FrontendTests
+  component "Backend Tests\n[Autocomplete / Data behavior]" as BackendTests
+}
+
+' --- User interaction flows ---
+SearchInput -down-> FrontendHelper : user enters text\n(FR-001, DR-004)
+FrontendHelper -down-> SuggestionList : display laureate suggestions\n(FR-002)
+
+' --- Frontend to Server HTTP ---
+FrontendHelper -right-> HTTPServer : HTTP GET /\nor /search?q=...\nor static asset\n(HTTP request/response)
+
+' --- Server entry to router ---
+HTTPServer -down-> URLMatcher : all incoming\nHTTP requests
+
+' --- Router decisions ---
+URLMatcher -down-> HomeHandler : URL == '/'\n(FR-003)
+URLMatcher -right-> PrefixFilter : URL contains 'search'\n(FR-004, C-004)
+URLMatcher -down-> StaticHandler : other URLs\n(FR-005)
+
+' --- Handler internals ---
+HomeHandler -down-> StaticFiles : read home page file\n(A-001)
+HomeHandler -right-> NotFoundHandler : file read failure\n(FR-007)
+StaticHandler -down-> StaticFiles : read public asset\n(C-002)
+StaticHandler -right-> ContentTypeMapper : map extension\n(FR-006, NFR-002)
+StaticHandler -right-> NotFoundHandler : file read failure\n(FR-007)
+
+' --- Algorithm module internals ---
+PrefixFilter -down-> FieldExtractor : get laureate name array\n(FR-008)
+FieldExtractor -down-> LaureateJSON : read laureate data\n(DR-002, A-002)
+PrefixFilter -left-> SuggestionList : array of matching names\n(<= 10 results)\n(FR-002, FR-009)
+
+' --- Data ---
+LaureateJSON -up-> FieldExtractor : object field values\n(firstname, etc.)\n(DR-003)
+
+' --- Deployment ---
+StartScript -up-> HTTPServer : starts server\n(NFR-004, C-005)
+
+' --- Tests ---
+FrontendTests ..> FrontendHelper : verifies helper\nbehavior (NFR-001)
+BackendTests ..> PrefixFilter : verifies autocomplete\n(FR-009, NFR-001)
+BackendTests ..> FieldExtractor : verifies data\nextraction (FR-008)
+
+legend right
+  |= Color |= Layer |
+  |<#D6EAF8>  | Frontend (Browser) |
+  |<#FCF3CF>  | Routing |
+  |<#FDEBD0>  | Request Handling |
+  |<#E8DAEF>  | Autocomplete Algorithm |
+  |<#FADBD8>  | Local Data / Assets |
+  |<#D5DBDB>  | Test Suite |
+endlegend
+
+@enduml

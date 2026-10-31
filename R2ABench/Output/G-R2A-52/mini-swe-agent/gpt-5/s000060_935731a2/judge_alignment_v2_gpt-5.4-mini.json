@@ -1,0 +1,195 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Default Implementation (Optional)::KafkaPublisher\\n(Default EventPublisher)",
+        "External Systems::Kafka Topic\\n(Event Stream)"
+      ],
+      "gt_nodes": [
+        "Global::Kafka"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application Layer (JVM 11)::Integrating JVM Application\\n(Service using auditor)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Auditor Client Library (Kotlin/JVM)::Auditor Client API\\n(Generates AuditEvent from old/new)",
+        "Infrastructure Abstractions::AuditEventElementFilter",
+        "Infrastructure Abstractions::EventPublisher",
+        "Infrastructure Abstractions::LogProvider"
+      ],
+      "gt_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "Application Layer (JVM 11)::Integrating JVM Application\\n(Service using auditor)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Auditor Client Library (Kotlin/JVM)::Auditor Client API\\n(Generates AuditEvent from old/new)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Default Implementation (Optional)::KafkaPublisher\\n(Default EventPublisher)",
+      "reference_nodes": [
+        "Global::Kafka",
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::Downstream Consumers\\n(Out of scope)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Kafka Topic\\n(Event Stream)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Abstractions::AuditEventElementFilter",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Abstractions::EventPublisher",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Abstractions::LogProvider",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Default Implementation (Optional)::KafkaPublisher\\n(Default EventPublisher)",
+        "External Systems::Kafka Topic\\n(Event Stream)"
+      ],
+      "gt_node": "Global::Kafka"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (JVM 11)::Integrating JVM Application\\n(Service using auditor)",
+        "Auditor Client Library (Kotlin/JVM)::Auditor Client API\\n(Generates AuditEvent from old/new)",
+        "Default Implementation (Optional)::KafkaPublisher\\n(Default EventPublisher)",
+        "Infrastructure Abstractions::AuditEventElementFilter",
+        "Infrastructure Abstractions::EventPublisher",
+        "Infrastructure Abstractions::LogProvider"
+      ],
+      "gt_node": "Global::auditor-v1 app\\nserver"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (JVM 11)::Integrating JVM Application\\n(Service using auditor)",
+        "Auditor Client Library (Kotlin/JVM)::Auditor Client API\\n(Generates AuditEvent from old/new)",
+        "Infrastructure Abstractions::AuditEventElementFilter",
+        "Infrastructure Abstractions::EventPublisher",
+        "Infrastructure Abstractions::LogProvider"
+      ],
+      "gt_node": "application 1::auditor-v1 client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (JVM 11)::Integrating JVM Application\\n(Service using auditor)",
+        "Auditor Client Library (Kotlin/JVM)::Auditor Client API\\n(Generates AuditEvent from old/new)",
+        "Infrastructure Abstractions::AuditEventElementFilter",
+        "Infrastructure Abstractions::EventPublisher",
+        "Infrastructure Abstractions::LogProvider"
+      ],
+      "gt_node": "application 2::auditor-v1 client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (JVM 11)::Integrating JVM Application\\n(Service using auditor)",
+        "Auditor Client Library (Kotlin/JVM)::Auditor Client API\\n(Generates AuditEvent from old/new)",
+        "Infrastructure Abstractions::AuditEventElementFilter",
+        "Infrastructure Abstractions::EventPublisher",
+        "Infrastructure Abstractions::LogProvider"
+      ],
+      "gt_node": "application 3::auditor-v1 client"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 3760,
+      "completion_tokens": 462,
+      "total_tokens": 4222,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+  ],
+  "unmatched_predicted_nodes": [
+    "External Systems::Downstream Consumers\\n(Out of scope)"
+  ],
+  "_provenance": {
+    "fingerprint": "f92ea87680921b6dcf44566c8f171281e5c189f17ce85b51293354ffd95ff598",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

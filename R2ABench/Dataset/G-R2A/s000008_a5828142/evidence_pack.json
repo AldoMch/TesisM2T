@@ -1,0 +1,120 @@
+{
+  "candidate": {
+    "sample_id": "s000008_a5828142",
+    "repository_name": "domingo1021/Bunny-code",
+    "image_url": "https://github.com/domingo1021/Bunny-code/blob/main/Archives/System_architecture.png",
+    "source_ref": "931e3b780b390e26f32259cbfda3a7b5b565a59e",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 29521,
+    "document_count": 38,
+    "document_types": [
+      "code_api_route",
+      "deployment_config",
+      "readme",
+      "schema_model",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 157,
+      "user_scenario": 187,
+      "api_io": 69,
+      "deployment": 342,
+      "constraints": 162,
+      "non_functional": 59
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "test/project_test.js",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense",
+      "score": 0.04048640724946695,
+      "text": "cate user\\'s jwt token, return user info object if validated.', () => { it('input validated jwt', async () => { const userInfo = { id: 100, name: 'test_user', email: 'test_100@gamil.com', }; const exp = 36000; const jwtToken = await createJWTtoken(userInfo, exp); let authResult; try { authResult = await jwtAuthenticate( ); } catch (error) { authResult = error; } assert.deepEqual(authResult, userInfo); }); it('input empty token', async () => { const jwtToken = ''; try { authResult = await jwtAuthenticate(jwtToken); } catch (error) { authResult = error; } assert.isTrue(authResult instanceof APIException); }); it('input only Bearer', async () => { const jwtToken = ''; try { authResult = awai..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "socket/controllers/battle_controller.js",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense",
+      "score": 0.04031635031635032,
+      "text": "tion isolatedAcceptBattle(socketID, firstUserID) { checkCacheReady(); try { return await Cache.executeIsolated(async (isolatedClient) => { await isolatedClient.watch( ); const battle = await isolatedClient.HGETALL( ); await isolatedClient.HDEL( , ); return battle; }); } catch (error) { throw new SocketException( 'Battle accept timout, failed to create battle', , 400, 'battleFailed', 'isolatedAcceptBattle', ); } } async function acceptBattle(socket, emitObject) { const { socketID, firstUserID } = emitObject; checkCacheReady(); // isolated get battle object, and deal with race condition. const battleObject = await isolatedAcceptBattle(socketID, firstUserID); // battle invitation timeout, ba..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "Docker/Cache/redis_example.conf",
+      "doc_type": "deployment_config",
+      "section": "external_interfaces",
+      "retrievers": "bm25|dense|hyde",
+      "score": 0.042102524069737184,
+      "text": "uster_links' INFO field # and/or 'send-buffer-allocated' entries in the 'CLUSTER LINKS` command output continuously increase. # Minimum limit of 1gb is recommended so that cluster link buffer can fit in at least a single # PubSub message by default. (client-query-buffer-limit default value is 1gb) # # cluster-link-sendbuf-limit 0 # Clusters can configure their announced hostname using this config. This is a common use case for # applications that need to use TLS Server Name Indication (SNI) or dealing with DNS based # routing. By default this value is only shown as additional metadata in the CLUSTER SLOTS # command, but can be changed using 'cluster-preferred-endpoint-type' config. This v..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "socket/controllers/editor_controller.js",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense",
+      "score": 0.0417346636006231,
+      "text": "const Editor = require('../models/editor_model'); const Cache = require('../../utils/cache'); const pool = require('../../utils/rmdb'); const { checkCacheReady } = require('../services/service'); let ioServer; async function checkProjectAuth(socket, project) { socket.category = 'workspace'; let response = { readOnly: true, authorization: false, }; if (!project.versionID || !project.projectID) { console.log( ); socket.emit('statusChecked', response); return; } response = await Editor.checkProjectAtuh(socket.user.id, project.projectID, project.versionID); socket.versionID = ; if (!response.readOnly) { if (Cache.ready) { await Cache.set( , ); } } console.log( ); socket.emit('statusChecked',..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "Docker/Cache/redis_example.conf",
+      "doc_type": "deployment_config",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.052037904003484,
+      "text": "his makes the format more resistant to corruption but there is a performance # hit to pay (around 10%) when saving and loading RDB files, so you can disable it # for maximum performances. # # RDB files created with checksum disabled have a checksum of zero that will # tell the loading code to skip the check. rdbchecksum yes # Enables or disables full sanitization checks for ziplist and listpack etc when # loading an RDB or RESTORE payload. This reduces the chances of a assertion or # crash later on while processing commands. # Options: # no - Never perform full sanitization # yes - Always perform full sanitization # clients - Perform full sanitization only for user connections. # Excludes..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "Docker/Cache/redis_example.conf",
+      "doc_type": "deployment_config",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.050283722334338816,
+      "text": "plicas connected, having a lag less or equal than M seconds. # # The N replicas need to be in \"online\" state. # # The lag in seconds, that must be ... acl rules ... # # For example: # # user worker +@list +@connection ~jobs:* on >ffa9203c493aa99 # # The special username \"default\" is used for new connections. If this user # has the \"nopass\" rule, then new connections will be immediately authenticated # as the \"default\" user without the need of any password provided via the # AUTH command. Otherwise if the \"default\" user is not flagged with \"nopass\" # the connections will start in not authenticated state, and will require # AUTH (or the HELLO command AUTH option) in order to be authenticate..."
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam node {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+package "Flutter-based app" as FlutterApp #F8C8DC {
+    rectangle "Dart" as Dart
+    rectangle "Android" as Android
+    rectangle "iOS" as IOS
+    rectangle "Web" as Web
+    rectangle "MacOS" as MacOS
+}
+
+rectangle "Postman" as Postman #2EC7CC
+rectangle "Test Client 1\nNodeJS" as TestClient1 #8BD449
+rectangle "Test Client 2\nGolang" as TestClient2 #FFC928
+
+rectangle "gRPC Gateway\n(HTTP-gRPC Proxy)\nGolang" as GrpcGateway #FFC928
+
+node "Hosted in Azure Kubernetes Service" as Aks {
+    node "Docker container" as DockerContainer {
+        rectangle "Recipes Server\n(gRPC Server)\nGolang" as RecipesServer #FFC928
+    }
+}
+
+Dart ..> Android : auto-gen
+Dart ..> IOS : auto-gen
+Dart ..> Web : auto-gen
+Dart ..> MacOS : auto-gen
+
+Android --> RecipesServer : gRPC
+IOS --> RecipesServer : gRPC
+Web --> GrpcGateway : REST
+MacOS --> GrpcGateway : REST
+Postman --> GrpcGateway : REST
+
+GrpcGateway --> RecipesServer : gRPC
+TestClient1 --> RecipesServer : gRPC
+TestClient2 --> RecipesServer : gRPC
+@enduml

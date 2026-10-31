@@ -1,0 +1,116 @@
+@startuml
+title Foot365 - Layered AWS Architecture
+
+' ============ Client Layer ============
+package "Client Layer" {
+  [Football Enthusiast] as USER
+  [Chatbot User] as CHATUSER
+  [Reminder Requester] as REMUSER
+  [Application Maintainer] as MAINTAINER
+}
+
+' ============ Presentation / Frontend Layer ============
+package "Presentation Layer (Amazon S3)" {
+  component "Web Application\nHTML / CSS / Bootstrap / jQuery" as WEBAPP
+  component "Football Info Views\nfixtures, standings, schedules,\nresults, live scores, predictions" as INFOVIEW
+  component "Chatbot UI\nmessage input + response display" as CHATUI
+  component "Reminder Request UI" as REMUI
+}
+
+' ============ Security Layer ============
+package "Security Layer" {
+  component "Amazon Cognito\nAuthentication" as COGNITO
+  component "AWS IAM\nProtected Access / SigV4" as IAM
+}
+
+' ============ API / Routing Layer ============
+package "API Layer (Amazon API Gateway)" {
+  component "API Gateway\nexecute-api, SigV4, JSON default" as APIGW
+}
+
+' ============ Backend / Service Layer ============
+package "Backend Service Layer (AWS Lambda - Python / Node)" {
+  component "Match Information Service" as MATCHSVC
+  component "Prediction Service" as PREDSVC
+  component "Screening Recommendation Service" as SCREENSVC
+  component "Chatbot / Conversation Handler" as CHATSVC
+  component "Reminder Service" as REMSVC
+}
+
+' ============ Data Layer ============
+package "Data Layer" {
+  database "Amazon DynamoDB\nmatch results, stats, fixtures" as DYNAMO
+  database "Elasticsearch\nmatch data search / retrieval" as ELASTIC
+}
+
+' ============ ML / Prediction Layer ============
+package "Machine Learning Layer" {
+  component "Amazon SageMaker\nMatch Outcome Prediction\n(home win / draw / away win)" as SAGEMAKER
+}
+
+' ============ Notification Layer ============
+package "Notification Layer" {
+  queue "Amazon SQS\nReminder Queue" as SQS
+  component "Amazon SNS\nSMS Delivery" as SNS
+}
+
+' ============ Streaming Layer ============
+package "Streaming Layer (Amazon EC2)" {
+  component "Apache Kafka\nLive Score Topics" as KAFKA
+  component "Apache Avro\nScore Event Encoding" as AVRO
+}
+
+' ============ External Systems ============
+package "External Systems" {
+  [SMS Mobile Device] as MOBILE
+}
+
+' ---- Client to Frontend ----
+USER --> WEBAPP
+CHATUSER --> CHATUI
+REMUSER --> REMUI
+MAINTAINER --> APIGW
+
+' ---- Frontend internal ----
+WEBAPP --> INFOVIEW
+WEBAPP --> CHATUI
+WEBAPP --> REMUI
+
+' ---- Frontend to API / Auth ----
+INFOVIEW --> APIGW : JSON request
+CHATUI --> APIGW : chatbot message
+REMUI --> APIGW : reminder request
+WEBAPP --> COGNITO : authenticate
+APIGW --> IAM : authorize (SigV4 / execute-api)
+COGNITO --> IAM
+
+' ---- API Gateway to Backend ----
+APIGW --> MATCHSVC
+APIGW --> PREDSVC
+APIGW --> SCREENSVC
+APIGW --> CHATSVC
+APIGW --> REMSVC
+
+' ---- Backend to Data ----
+MATCHSVC --> DYNAMO : store / retrieve
+PREDSVC --> DYNAMO : prepared match data
+SCREENSVC --> ELASTIC : venue / location search
+CHATSVC --> ELASTIC : fixture / result / location lookup
+MATCHSVC --> ELASTIC : connect for retrieval
+DYNAMO --> ELASTIC : sync match data
+
+' ---- Backend to ML ----
+PREDSVC --> SAGEMAKER : prediction request
+SAGEMAKER --> PREDSVC : outcome probabilities
+
+' ---- Reminder flow ----
+REMSVC --> SQS : queue reminder
+SQS --> SNS : trigger notification
+SNS --> MOBILE : SMS delivery
+
+' ---- Streaming flow ----
+AVRO --> KAFKA : encode live score events
+KAFKA --> DYNAMO : persist live scores
+KAFKA --> MATCHSVC : live score updates
+
+@enduml

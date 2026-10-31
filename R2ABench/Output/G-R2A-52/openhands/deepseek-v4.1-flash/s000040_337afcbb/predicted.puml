@@ -1,0 +1,68 @@
+@startuml
+title PlugIt - Portable Micro-Service Integration Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "External User / System" as ExternalUser
+actor "Service Developer" as Developer
+actor "Operator / Administrator" as Operator
+
+package "PlugIt Proxy (Host Platform)" {
+  component "Shared User Experience" as SharedUX
+  component "PlugIt Proxy API Endpoint" as ProxyAPI
+  component "Standalone Proxy Mail Workflow" as MailWorkflow
+  database "Proxy Data Store" as ProxyDataStore
+}
+
+package "PlugIt Service (mutually isolated, 1..n)" {
+  component "Service Application" as ServiceApp
+  component "PlugIt API Client" as ApiClient
+  component "Service Configuration\n<project + local/private settings>" as ServiceConfig
+  component "Schema Upgrade Files\n(version-managed migrations)" as Migrations
+  database "Service Data Store" as ServiceDataStore
+}
+
+database "Database Technology\n<MySQL / SQLite>" as DBTech
+queue "Mailbox / Inbound Email" as Mailbox
+
+ExternalUser --> SharedUX : accesses services
+SharedUX ..> ProxyAPI
+ProxyAPI --> ProxyDataStore : reads/writes
+
+ExternalUser --> ProxyAPI : external-to-proxy access
+ProxyAPI --> ServiceApp : PlugIt protocol
+ProxyAPI ..> ApiClient : programmatic API
+
+ServiceApp --> ServiceConfig : reads API_URL, SQLALCHEMY_URL,\nDEBUG, PI_BASE_URL, PI_ALLOWED_NETWORKS
+ServiceConfig ..> ApiClient : provides main endpoint URL
+ServiceApp --> ApiClient : uses capabilities\n(users, tags, orgs, members, email, forum)
+ApiClient --> ProxyAPI : API requests to main endpoint
+
+ServiceApp --> ServiceDataStore : configured connection
+Migrations --> ServiceDataStore : applies schema upgrades
+ServiceDataStore --> DBTech
+
+Mailbox --> MailWorkflow : inbound email
+MailWorkflow --> MailWorkflow : validate routing token\ncheck auto-response\nsuppress / extract text
+MailWorkflow --> ServiceApp : invoke mail handler\n(decoded routing + payload)
+
+Developer --> ServiceConfig : defines settings and models
+Developer --> Migrations : generates upgrade files
+Operator --> ServiceConfig : maintains private local settings\n(excluded from source control)
+Operator --> DBTech : provisions and configures
+
+note right of MailWorkflow
+  Example / standalone proxy scope only.
+  Validates hash:data routing tokens using
+  SHA-512 digest slice [30:42] and mail secret;
+  drops auto-response messages; removes
+  successfully processed messages.
+end note
+
+note bottom of ServiceConfig
+  Private deployment settings live in local
+  configuration excluded from source control.
+end note
+
+@enduml

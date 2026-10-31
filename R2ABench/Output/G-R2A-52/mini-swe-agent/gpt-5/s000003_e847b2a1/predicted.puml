@@ -1,0 +1,64 @@
+@startuml
+title Prediction Cards Architecture (Layered Component View)
+
+actor "Prediction Participant" as User
+
+package "Presentation Layer" {
+  component "Frontend App" as Frontend
+}
+
+package "Wallet & SDK Layer" {
+  component "Aeternity Wallet Client" as Wallet
+  component "Aeternity SDK" as SDK
+}
+
+package "Backend Services Layer" {
+  component "Prediction-Processing Service" as PPS <<Scheduled>>
+  component "Oracle Service (Quarkus)" as Oracle <<Scheduled>>
+  folder "Runtime Configuration" as Config
+}
+
+package "Blockchain Layer (Aeternity)" {
+  node "Aeternity Blockchain" as Chain {
+    component "PredictionCards Contract" as Contract <<SmartContract>>
+    component "Oracle (Registered)" as ChainOracle <<Oracle>>
+    component "AENS Registry" as AENS
+  }
+}
+
+package "External Services & Storage" {
+  component "External Price Provider" as Price
+  database "Prediction Media Storage" as Media
+}
+
+package "Dev/Test (Local)" {
+  component "Integration-Test Proxy/CORS" as TestProxy <<Local>>
+}
+
+' Primary user interactions
+User --> Frontend : Create/View Predictions\nFund/Rent/Withdraw/Claim
+
+' Frontend integrations
+Frontend --> Wallet : Wallet connect
+Wallet --> SDK : Sign & submit contract calls
+SDK --> AENS : Resolve contract AENS name
+SDK --> Contract : Create/View/Fund/Withdraw/Claim
+Frontend --> Media : Load outcome NFT media
+
+' Backend service workflows
+PPS --> Contract : Initiate oracle query\nFinalize outcome processing
+Oracle --> ChainOracle : Check pending queries\nSubmit oracle responses
+Oracle --> Price : Fetch external price data
+
+' Scheduling & configuration
+PPS ..> Config : Read runtime config
+Oracle ..> Config : Read runtime config
+
+' On-chain components and name resolution
+AENS ..> Contract : Maps AENS name to address
+
+' Local integration-test environment (non-production)
+Frontend ..> TestProxy : CORS/proxy (local only)
+TestProxy ..> SDK : Forward local requests
+
+@enduml

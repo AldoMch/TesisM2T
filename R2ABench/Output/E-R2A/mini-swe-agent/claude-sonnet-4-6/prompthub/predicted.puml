@@ -1,0 +1,103 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+
+title PromptHub - Layered Architecture Diagram
+
+actor Visitor as visitor
+actor "Registered User" as user
+actor Administrator as admin
+
+rectangle "Client Layer" {
+  component "Web Browser (Chrome/Safari/Firefox)" as browser
+}
+
+rectangle "Front-End Layer" {
+  component "Vue.js / jQuery SPA" as frontend
+  component "Home and Browse Pages" as browse_ui
+  component "Upload and Review Pages" as upload_ui
+  component "User Profile Favorites Follow Pages" as profile_ui
+  component "Admin Panel" as admin_ui
+  component "Notification Center UI" as notif_ui
+}
+
+rectangle "Back-End Layer (Django)" {
+  component "User and Auth Service" as user_svc
+  component "Artwork Service" as artwork_svc
+  component "Review Service" as review_svc
+  component "Comment and Reply Service" as comment_svc
+  component "Favorites Service" as fav_svc
+  component "Follow and Relationship Service" as follow_svc
+  component "Notification Service" as notif_svc
+  component "Recommendation API" as rec_api
+  component "Search and Filter Service" as search_svc
+}
+
+rectangle "Algorithm Support Layer" {
+  component "Recommendation Engine (PyTorch/TensorFlow)" as rec_engine
+  component "Popular Ranking Module" as popular_module
+  component "Personalized Recommendation Module" as personalized_module
+}
+
+rectangle "Data Persistence Layer" {
+  database "SQLite Database" as sqlite
+  database "File Storage (AI Artwork Images)" as file_storage
+  database "Log Store" as log_store
+}
+
+rectangle "Infrastructure Layer" {
+  component "Docker Container Runtime" as docker
+  component "Email Alert Service" as email_alert
+  component "Disaster Recovery Backup" as backup
+}
+
+visitor --> browser
+user --> browser
+admin --> browser
+
+browser --> frontend
+
+frontend --> browse_ui
+frontend --> upload_ui
+frontend --> profile_ui
+frontend --> admin_ui
+frontend --> notif_ui
+
+browse_ui --> artwork_svc
+browse_ui --> search_svc
+browse_ui --> rec_api
+upload_ui --> artwork_svc
+upload_ui --> review_svc
+profile_ui --> user_svc
+profile_ui --> fav_svc
+profile_ui --> follow_svc
+admin_ui --> review_svc
+admin_ui --> user_svc
+admin_ui --> comment_svc
+notif_ui --> notif_svc
+
+artwork_svc --> notif_svc
+review_svc --> notif_svc
+comment_svc --> notif_svc
+rec_api --> rec_engine
+
+rec_engine --> popular_module
+rec_engine --> personalized_module
+
+user_svc --> sqlite
+artwork_svc --> sqlite
+artwork_svc --> file_storage
+review_svc --> sqlite
+comment_svc --> sqlite
+fav_svc --> sqlite
+follow_svc --> sqlite
+notif_svc --> sqlite
+search_svc --> sqlite
+rec_engine --> sqlite
+
+docker --> email_alert : on failure
+sqlite --> backup : offsite backup
+file_storage --> backup
+log_store --> backup
+
+@enduml

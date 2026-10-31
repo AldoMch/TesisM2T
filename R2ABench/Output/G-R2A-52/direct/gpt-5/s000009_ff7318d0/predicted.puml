@@ -1,0 +1,97 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+title Foot365 System Architecture (AWS-based Web Application)
+
+actor "Football Enthusiast" as UserFE
+actor "Chatbot User" as UserCB
+actor "Reminder Requester" as UserRR
+
+package "AWS Account" as AWS {
+  node "Amazon S3\nStatic Website\n(Web Frontend: HTML/CSS/Bootstrap/jQuery)" as S3UI
+
+  component "Amazon Cognito\n(User Pools)" as Cognito
+  component "AWS Identity and Access Management\n(IAM)" as IAM
+
+  component "Amazon API Gateway\n(REST APIs - execute-api)" as APIGW
+
+  package "AWS Lambda (Python/Node)\nBackend Functions" as Lambdas {
+    component "Data API" as LambdaData
+    component "Chatbot Handler" as LambdaChat
+    component "Prediction API" as LambdaPred
+    component "Reminder API" as LambdaRemReq
+    component "Reminder Processor\n(SQS -> SNS)" as LambdaRemProc
+  }
+
+  database "Amazon DynamoDB\n(Match Data Store)" as DDB
+  component "Amazon Elasticsearch\n(Search Index)" as ES
+
+  component "Amazon SageMaker\n(Prediction Endpoint)" as Sage
+
+  queue "Amazon SQS\nReminders Queue" as SQS
+  component "Amazon SNS\n(SMS Topic)" as SNS
+
+  node "Amazon EC2\nKafka Cluster" as EC2Kafka {
+    queue "Kafka Topic\nLive Scores (Apache Avro)" as KafkaTopic
+    component "Stream Processors\n(EC2 Consumers)" as EC2Consumers
+  }
+}
+
+cloud "External SMS Carrier / Phone Network" as SMSCarrier
+cloud "External Live Score Producers\n(Data Feeds)" as ScoreProducers
+
+' User interactions
+UserFE --> S3UI : HTTPS (Web UI)
+UserCB --> S3UI : HTTPS (Chatbot UI)
+UserRR --> S3UI : HTTPS (Reminder UI)
+
+' Authentication and protected access
+S3UI --> Cognito : Authenticate / Tokens\n(OAuth/JWT)
+IAM -[dotted]-> APIGW : Access Policies / Authorizers
+IAM -[dotted]-> Lambdas : Execution Roles & Policies
+
+' Frontend to backend API
+S3UI --> APIGW : API requests\nJSON (default)\nSigV4 (execute-api)
+
+' API Gateway to Lambda backends
+APIGW --> LambdaData : Invoke Data Endpoints\n(fixtures, standings, results, live scores)
+APIGW --> LambdaChat : Invoke Chatbot\n(recommendation endpoint)
+APIGW --> LambdaPred : Invoke Predictions
+APIGW --> LambdaRemReq : Invoke Reminders
+
+' Data services
+LambdaData --> DDB : Read/Write match data\n(results, statistics, fixtures)
+LambdaData --> ES : Search/Retrieve match data
+
+' Chatbot accesses football data
+LambdaChat --> DDB : Query data
+LambdaChat --> ES : Search data
+
+' Predictions
+LambdaPred --> Sage : Request prediction\n(home/draw/away probabilities)
+
+' Reminder workflow
+LambdaRemReq --> SQS : Enqueue reminder request
+SQS --> LambdaRemProc : Trigger (SQS event)
+LambdaRemProc --> SNS : Publish SMS notification
+SNS --> SMSCarrier : Deliver SMS
+
+' Live score streaming pipeline
+ScoreProducers --> KafkaTopic : Produce events\n(Avro-encoded)
+KafkaTopic --> EC2Consumers : Consume & Process\n(Live score updates)
+
+' Notes for key defaults and formats
+note top of APIGW
+Default content-type: application/json
+AWS Signature Version 4 (service: execute-api)
+end note
+
+note right of KafkaTopic
+Live score update payloads:
+Apache Avro encoding
+end note
+
+@enduml

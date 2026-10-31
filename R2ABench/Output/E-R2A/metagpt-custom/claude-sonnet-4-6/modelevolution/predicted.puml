@@ -1,0 +1,152 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam databaseBackgroundColor #FFF8E1
+skinparam cloudBackgroundColor #F3E5F5
+skinparam defaultFontSize 12
+skinparam arrowColor #333333
+skinparam packageBorderColor #5C6BC0
+skinparam componentBorderColor #1565C0
+
+title Model Evolution Version Management Visualization Tool — Architecture Diagram
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "External Systems" as EXT {
+    component [OAuth 2.0 Identity Provider] as OAuthIdP
+    component [Python Libraries\n(ONNX / PyTorch)] as PythonLibs
+    component [Browser Console] as BrowserConsole
+}
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER
+' ─────────────────────────────────────────────
+package "Presentation Layer" as PL {
+    component [AccountUI\n(Registration · Login · Password\n· Permission Application)] as AccountUI
+    component [ModelBrowserUI\n(Search Results · Attribute View\n· Metrics Display\n· Evolution Topology Graph\n· Evolution Detail Graph)] as ModelBrowserUI
+    component [ModelContributionUI\n(ONNX Upload · PyTorch Upload\n· Online PyTorch Editor\n· Profile Read · Modify · Delete)] as ModelContributionUI
+    component [EvolutionEditorUI\n(Add / Delete / Modify\nEvolution & Reuse Relations)] as EvolutionEditorUI
+    component [UserManagementUI\n(User Management · Delete Users\n· Review Permission Applications)] as UserManagementUI
+}
+
+' ─────────────────────────────────────────────
+' APPLICATION / BACKEND LAYER
+' ─────────────────────────────────────────────
+package "Application / Backend Layer" as ABL {
+    component [AuthService\n(Registration · Login · 2FA\n· OAuth 2.0 · Session · Logout\n· Password Modification)] as AuthService
+    component [PermissionService\n(RBAC: Learner · Contributor\n· Administrator · Permission\nChange Review)] as PermissionService
+    component [ModelService\n(ONNX & PyTorch Storage\n· Online Editing · Profile CRUD\n· Deletion · Approved-Model\nProtection · Metrics Read)] as ModelService
+    component [EvolutionRelationshipService\n(Create · Delete · Modify\nEvolution & Layer Reuse\nRelationships · Dataset Association)] as EvolRelService
+    component [UserManagementService\n(View · Update · Delete\nUser Accounts)] as UserMgmtService
+    component [SearchService\n(Query Processing\n· Filtered Model Results)] as SearchService
+    component [DatasetService\n(Dataset CRUD · Association\nwith Models & Evolutions)] as DatasetService
+    component [TrainedModelService\n(Trained Model Record Creation\n· Dataset · Code · Label\n· Source Model Linkage)] as TrainedModelService
+}
+
+' ─────────────────────────────────────────────
+' ALGORITHM SUPPORT LAYER
+' ─────────────────────────────────────────────
+package "Algorithm Support Layer" as ASL {
+    component [GraphVisualizationEngine\n(Multi-Model Evolution Topology\n· Two-Model Detail Topology\n· Operator / Parameter Diff)] as GraphVizEngine
+    component [ModelParser\n(ONNX File Parsing\n· PyTorch Source Parsing\n· Operator Graph Extraction\n· Layer Reuse Analysis)] as ModelParser
+}
+
+' ─────────────────────────────────────────────
+' SECURITY / CROSS-CUTTING LAYER
+' ─────────────────────────────────────────────
+package "Security / Cross-Cutting Layer" as SCL {
+    component [EncryptionService\n(AES/DES Model Encryption at Rest\n· PCI DSS Compliance)] as EncryptionService
+    component [ConcurrencyController\n(Concurrent Write Coordination\n· Conflict Prevention)] as ConcurrencyCtrl
+}
+
+' ─────────────────────────────────────────────
+' DATA LAYER
+' ─────────────────────────────────────────────
+package "Data Layer" as DL {
+    database "Neo4j\n(Graph Store)\n─────────────\nEvolution Relationships\nTopology Graph Data\nEvolution Details" as Neo4jRepo
+    database "MySQL\n(Relational Store)\n─────────────\nUsers · Roles · Permissions\nModel Attributes · Metrics\nDataset · Trained Model Records" as MySQLRepo
+}
+
+' ─────────────────────────────────────────────
+' LEGEND
+' ─────────────────────────────────────────────
+legend right
+  --> : Component Dependency
+  ..> : Debug / Logging (non-functional)
+endlegend
+
+' ─────────────────────────────────────────────
+' PRESENTATION → APPLICATION DEPENDENCIES
+' ─────────────────────────────────────────────
+AccountUI --> AuthService : "Authentication & Session Management"
+ModelBrowserUI --> SearchService : "Model Search Queries"
+ModelBrowserUI --> ModelService : "Model Attributes & Metrics Retrieval"
+ModelBrowserUI --> EvolRelService : "Topology Graph Requests"
+ModelContributionUI --> ModelService : "Upload · Read · Edit · Delete Model Operations"
+ModelContributionUI --> PermissionService : "Access Control Check Before Upload / Modify"
+EvolutionEditorUI --> EvolRelService : "Evolution Relationship Add / Delete / Modify"
+EvolutionEditorUI --> PermissionService : "Access Control Check Before Edit"
+UserManagementUI --> UserMgmtService : "User Admin Operations"
+UserManagementUI --> PermissionService : "Permission Review Actions"
+
+' ─────────────────────────────────────────────
+' APPLICATION INTER-SERVICE DEPENDENCIES
+' ─────────────────────────────────────────────
+AuthService --> PermissionService : "Supply Authenticated User Context for Role Resolution"
+ModelService --> PermissionService : "Authorization Check Before Upload / Modify / Delete"
+ModelService --> ModelParser : "Delegate ONNX / PyTorch Parsing on Upload"
+ModelService --> EncryptionService : "Encrypt Model Files Before Storage"
+ModelService --> ConcurrencyCtrl : "Concurrent Write Coordination"
+EvolRelService --> DatasetService : "Dataset Association Lookup"
+EvolRelService --> TrainedModelService : "Trigger Trained Model Record Creation"
+EvolRelService --> ConcurrencyCtrl : "Concurrent Write Coordination"
+UserMgmtService --> ConcurrencyCtrl : "Concurrent Write Coordination"
+
+' ─────────────────────────────────────────────
+' APPLICATION → EXTERNAL AUTH
+' ─────────────────────────────────────────────
+AuthService --> OAuthIdP : "OAuth 2.0 / 2FA Authentication Flow"
+
+' ─────────────────────────────────────────────
+' APPLICATION → DATA DEPENDENCIES
+' ─────────────────────────────────────────────
+AuthService --> MySQLRepo : "User Credentials · Sessions · Permission Records"
+ModelService --> MySQLRepo : "Model Attributes · Metrics · Dataset · Trained Records"
+EvolRelService --> Neo4jRepo : "Evolution & Reuse Relationship CRUD"
+EvolRelService --> MySQLRepo : "Dataset Association & Trained Model Record Writes"
+SearchService --> MySQLRepo : "Model Attribute Queries"
+SearchService --> Neo4jRepo : "Graph Lineage Traversal Queries"
+UserMgmtService --> MySQLRepo : "User Account CRUD"
+DatasetService --> MySQLRepo : "Dataset CRUD Operations"
+TrainedModelService --> MySQLRepo : "Trained Model Record CRUD"
+
+' ─────────────────────────────────────────────
+' ALGORITHM SUPPORT → DATA DEPENDENCIES
+' ─────────────────────────────────────────────
+GraphVizEngine --> Neo4jRepo : "Query Evolution Graph Data"
+GraphVizEngine --> MySQLRepo : "Retrieve Supplementary Model Attributes"
+
+' ─────────────────────────────────────────────
+' ALGORITHM SUPPORT → EXTERNAL
+' ─────────────────────────────────────────────
+ModelParser --> PythonLibs : "ONNX / PyTorch Library Interface"
+
+' ─────────────────────────────────────────────
+' SECURITY → DATA
+' ─────────────────────────────────────────────
+ConcurrencyCtrl --> Neo4jRepo : "Concurrent Write Coordination"
+ConcurrencyCtrl --> MySQLRepo : "Concurrent Write Coordination"
+
+' ─────────────────────────────────────────────
+' APPLICATION → BACKEND GRAPH VIZ ORCHESTRATION
+' ─────────────────────────────────────────────
+EvolRelService --> GraphVizEngine : "Orchestrate Topology Graph Rendering"
+
+' ─────────────────────────────────────────────
+' BROWSER CONSOLE (DEV / LOGGING)
+' ─────────────────────────────────────────────
+PL ..> BrowserConsole : "Client-side Logging (Dev / Debug)"
+
+@enduml

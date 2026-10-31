@@ -1,0 +1,128 @@
+@startuml
+!define RECTANGLE rectangle
+!define SQUARE square
+!define CIRCLE circle
+!define DIAMOND diamond
+
+skinparam component {
+  BackgroundColor<<Client>> #FFE5CC
+  BackgroundColor<<Gateway>> #CCE5FF
+  BackgroundColor<<API>> #D5E8D4
+  BackgroundColor<<External>> #F0F0F0
+  BackgroundColor<<Data>> #E1D5E7
+  BackgroundColor<<Infra>> #FFF2CC
+}
+
+title Book Service Backend Platform Architecture
+
+package "External Clients" {
+  component "Native Mobile Apps" <<Client>> as MobileApps
+  component "Administrative Web App" <<Client>> as AdminWebApp
+}
+
+package "GCP Infrastructure" {
+  component "Load Balancer" <<Infra>> as LoadBalancer
+  component "GKE Cluster" <<Infra>> as GKECluster
+  component "GCE Virtual Machines" <<Infra>> as GCEVMs
+  component "Object Storage" <<Infra>> as ObjectStorage
+}
+
+package "Gateway Layer" {
+  component "Gateway/BFF Layer" <<Gateway>> as GatewayBFF
+}
+
+package "Backend Services" {
+  component "Authentication API" <<API>> as AuthAPI
+  component "User Management API" <<API>> as UserAPI
+  component "Book Management API" <<API>> as BookAPI
+  component "EC Site API" <<API>> as ECAPI
+  component "Support API" <<API>> as SupportAPI
+  component "Notification Processing" <<API>> as NotificationAPI
+  component "Administration API" <<API>> as AdminAPI
+}
+
+package "Data Stores" {
+  database "MySQL Database" <<Data>> as MySQL
+  database "NoSQL Storage" <<Data>> as NoSQL
+  database "Firebase Auth" <<Data>> as FirebaseAuth
+}
+
+package "External Services" {
+  component "Book Search API" <<External>> as BookSearch
+  component "Stripe Payment" <<External>> as Stripe
+  component "Push Notification Service" <<External>> as PushNotification
+  component "Email Notification Service" <<External>> as EmailNotification
+}
+
+' Connections from clients to infrastructure
+MobileApps --> LoadBalancer : "API Requests"
+AdminWebApp --> LoadBalancer : "API Requests"
+
+' Infrastructure routing
+LoadBalancer --> GatewayBFF : "Route Requests"
+LoadBalancer --> GKECluster : "Container Traffic"
+LoadBalancer --> GCEVMs : "Admin Operations"
+
+' Gateway to services
+GatewayBFF --> AuthAPI : "Auth Requests"
+GatewayBFF --> UserAPI : "User Management"
+GatewayBFF --> BookAPI : "Book Management"
+GatewayBFF --> ECAPI : "EC Operations"
+GatewayBFF --> SupportAPI : "Support Requests"
+GatewayBFF --> AdminAPI : "Admin Functions"
+
+' Service to service communication
+AuthAPI --> UserAPI : "User Validation"
+UserAPI --> ECAPI : "User Context"
+BookAPI --> ECAPI : "Product Data"
+SupportAPI --> NotificationAPI : "Notifications"
+
+' Authentication flows
+AuthAPI --> FirebaseAuth : "Authenticate Users"
+FirebaseAuth --> AuthAPI : "Auth Results"
+
+' Data store connections
+UserAPI --> MySQL : "CRUD Operations"
+BookAPI --> MySQL : "CRUD Operations"
+ECAPI --> MySQL : "CRUD Operations"
+NotificationAPI --> NoSQL : "Message Storage"
+NotificationAPI --> ObjectStorage : "Thumbnail Storage"
+SupportAPI --> MySQL : "Support Data"
+SupportAPI --> NoSQL : "Message Data"
+
+' External service integrations
+BookAPI --> BookSearch : "Search Requests"
+BookSearch --> BookAPI : "Search Results"
+ECAPI --> Stripe : "Payment Processing"
+Stripe --> ECAPI : "Payment Results"
+NotificationAPI --> PushNotification : "Send Push"
+NotificationAPI --> EmailNotification : "Send Email"
+
+' Administration flows
+AdminAPI --> GKECluster : "Cluster Management"
+AdminAPI --> GCEVMs : "VM Operations"
+AdminAPI --> ObjectStorage : "Content Management"
+
+' Container deployment
+GKECluster ..> AuthAPI : "Hosts"
+GKECluster ..> UserAPI : "Hosts"
+GKECluster ..> BookAPI : "Hosts"
+GKECluster ..> ECAPI : "Hosts"
+GKECluster ..> SupportAPI : "Hosts"
+GKECluster ..> NotificationAPI : "Hosts"
+GKECluster ..> AdminAPI : "Hosts"
+
+' Certificate management
+GCEVMs --> GKECluster : "TLS Certificates\n(Let's Encrypt DNS-01)"
+GCEVMs --> LoadBalancer : "Certificate Provisioning"
+
+legend right
+  <color:Blue>External Clients</color>
+  <color:LightBlue>Gateway/BFF Layer</color>
+  <color:LightGreen>Backend Services</color>
+  <color:LightGrey>External Services</color>
+  <color:Plum>Data Stores</color>
+  <color:Yellow>GCP Infrastructure</color>
+endlegend
+
+@enduml

@@ -1,0 +1,154 @@
+@startuml
+title teamgram-server System Architecture
+
+left to right direction
+skinparam shadowing false
+skinparam componentStyle rectangle
+
+actor "Telegram-Compatible Client" as Client
+
+node "Teamgram Server (Go)" as Server {
+  package "Client Access Layer" {
+    [MTProto Gateway] as MTProto
+    [BFF / Edge Orchestrator] as BFF
+  }
+
+  package "Service Layer" {
+    [Auth Service] as Auth
+    [Session Service] as Session
+    [Salt Manager] as Salt
+    [Future Salts Handler] as FutureSalts
+    [Service Message Handler] as ServiceMsg
+    [Registration Service] as Registration
+    [Messaging Service] as Messaging
+    [Push Service] as Push
+    [Sync Service] as Sync
+  }
+
+  package "Adapters" {
+    [Verification Adapter] as VerifyAdapter
+    [Default None-Verifier\n(accepts code 12345)] as DefaultVerifier <<optional>>
+    [MySQL DAO] as MySQLDAO
+    [Redis Client] as RedisClient
+    [etcd Client] as EtcdClient
+    [Kafka Client] as KafkaClient
+    [MinIO Client] as MinIOClient
+    [Media Wrapper] as MediaWrapper <<optional>>
+  }
+}
+
+package "External Infrastructure & Integrations" {
+  database "MySQL" as MySQL
+  cloud "Redis" as Redis
+  cloud "etcd" as Etcd
+  queue "Kafka" as Kafka
+  cloud "MinIO" as MinIO
+  component "External Verification Service" as ExtVerify <<optional>>
+  component "FFmpeg / FFProbe" as FFmpeg <<optional>>
+}
+
+' Client entry
+Client --> MTProto : MTProto protocol\n(authorization, sessions,\nservice messages)
+
+' Gateway to edge orchestrator
+MTProto --> BFF
+
+' Edge orchestrator routes to services
+BFF --> Auth
+BFF --> Session
+BFF --> Registration
+BFF --> Messaging
+BFF --> ServiceMsg
+BFF --> FutureSalts
+
+' Internal service dependencies
+Auth --> Salt : server-salt handling
+Auth --> Session : bind auth key to session
+FutureSalts --> Salt : manage future salts
+ServiceMsg --> Session : session mgmt\n(drop/destroy)
+Registration --> VerifyAdapter : verify code
+Messaging --> KafkaClient : async events
+Push --> KafkaClient
+Sync --> KafkaClient
+
+' Storage and infra adapters
+Session --> RedisClient : session state\n(caches, nonces, salts)
+Salt --> RedisClient
+Auth --> MySQLDAO : users/auth keys
+Registration --> MySQLDAO : registration data
+Messaging --> MySQLDAO : message metadata
+Messaging --> MinIOClient : media objects
+Push --> RedisClient
+Sync --> RedisClient
+
+' Adapter to external services
+MySQLDAO --> MySQL
+RedisClient --> Redis
+EtcdClient --> Etcd
+KafkaClient --> Kafka
+MinIOClient --> MinIO
+
+' Verification strategies (one of)
+VerifyAdapter --> DefaultVerifier : default/test mode\n(accept 12345)
+VerifyAdapter --> ExtVerify : production mode\n(external provider)
+
+' Media wrapper integration (optional)
+MediaWrapper --> FFmpeg
+MediaWrapper --> MinIOClient
+Messaging --> MediaWrapper
+
+' Notes mapping to requirements
+note right of MTProto
+FR-001: MTProto-compatible server
+FR-003: Encrypted session transport
+NFR-002: Interoperable with Telegram-compatible clients
+end note
+
+note right of Salt
+FR-002: Server-salt handling in auth flows
+DR-002: Server salt data
+end note
+
+note bottom of FutureSalts
+FR-008: Future salts request handling
+- Respect requested count (<=)
+- Default to 32 when count==0
+DR-002: Future salts data
+end note
+
+note right of Session
+FR-003: Establish/use encrypted sessions
+FR-005: Create additional sessions via session_id
+FR-007: Support session replacement
+DR-003: Session and session_id
+end note
+
+note bottom of ServiceMsg
+FR-006: Acknowledge rpc_drop_answer
+FR-007: Handle destroy_session
+DR-005: Service-message data
+end note
+
+note right of Registration
+FR-004: Registration & phone verification
+DR-004: Registration/verification data
+end note
+
+note right of VerifyAdapter
+FR-009: Verification code handling
+- Default/none-verifier: accepts 12345
+- External service authoritative when enabled
+C-004: Constrained by external verifier in that mode
+end note
+
+note bottom of MediaWrapper
+NFR-004/C-005: Requires FFmpeg/FFProbe when enabled
+Optional media-processing path
+end note
+
+note top of Server
+NFR-001/C-001: Implemented in Go
+NFR-003/C-003: Deployable via Docker or manual install
+C-002: Depends on MySQL, Redis, etcd, Kafka, MinIO
+end note
+@enduml

@@ -1,0 +1,132 @@
+@startuml
+!pragma teoz true
+
+title Home Recipes - System Architecture
+
+skinparam component {
+  BackgroundColor #F0F8FF
+  BorderColor #4682B4
+  ArrowColor #4682B4
+  FontName Arial
+}
+
+skinparam rectangle {
+  BackgroundColor #FFFACD
+  BorderColor #DAA520
+}
+
+' ==== USER INTERFACE LAYER ====
+rectangle "User Platforms" as platforms {
+  component "Android\nDevice" as android
+  component "iOS\nDevice" as ios
+  component "Web\nBrowser" as web
+  component "macOS\nDesktop" as macos
+}
+
+' ==== CLIENT APPLICATION ====
+package "Home Recipes Client" as client {
+  component "Flutter/Dart\nApplication" as flutter_app
+  component "Generated\nDart Client Code" as dart_client
+  note right of dart_client: From .proto definitions
+}
+
+' ==== SHARED CONTRACT ====
+cloud "Protocol Buffers Contract" as proto {
+  component ".proto\nService Definitions" as proto_defs
+  component "Recipe/Ingredient\nMessage Schemas" as schemas
+}
+
+' ==== BACKEND SERVICES ====
+package "Backend Server Stack" as backend {
+  component "Go gRPC Server" as grpc_server {
+    component "Recipe Service" as recipe_svc
+    component "Ingredient Service" as ingredient_svc
+  }
+  
+  component "gRPC-Gateway\nMiddleware" as gateway {
+    component "HTTP Endpoints" as http_endpoints
+    component "Request Translation" as translation
+  }
+}
+
+' ==== API CONSUMERS ====
+rectangle "API Consumers & Testers" as api_consumers {
+  component "HTTP Clients\n(curl, Postman)" as http_clients
+  component "Automated Tests" as tests
+}
+
+' ==== DEPLOYMENT ENVIRONMENTS ====
+package "Deployment & Runtime" as deployment {
+  database "Local Docker\nContainer" as docker
+  cloud "Local Kubernetes\nCluster" as k8s_local
+  cloud "Azure Kubernetes\nService (AKS)" as aks
+}
+
+' ==== RELATIONSHIPS ====
+
+' User interfaces to client
+platforms --> flutter_app : "runs on"
+
+' Client communication
+flutter_app --> dart_client : "uses"
+dart_client --> grpc_server : "gRPC calls"
+
+' Code generation
+proto_defs --> dart_client : "generates\nDart code"
+proto_defs --> grpc_server : "generates\nGo code"
+proto_defs --> gateway : "annotated for\nHTTP mapping"
+
+' Backend internal
+gateway --> grpc_server : "translates HTTP to gRPC"
+grpc_server --> recipe_svc : "implements"
+grpc_server --> ingredient_svc : "implements"
+
+' API consumers
+http_clients --> http_endpoints : "HTTP requests"
+tests --> http_endpoints : "API validation"
+
+' HTTP endpoints exposed by gateway
+gateway ..> http_endpoints : "exposes"
+http_endpoints ..> [addRecipe] : "POST /add-recipe"
+http_endpoints ..> [listRecipes] : "GET /list-recipes"
+http_endpoints ..> [listHomeIngredients] : "GET /home-ingredients"
+http_endpoints ..> [getRecipeIngredients] : "POST /recipe-ingredients"
+
+' Deployment
+grpc_server --> docker : "packaged as"
+docker --> k8s_local : "deployed to"
+docker --> aks : "deployed to"
+k8s_local --> aks : "managed cloud\nversion"
+
+' ==== LEGEND AND NOTES ====
+note top of proto
+  <b>Central Contract</b>
+  Shared .proto definitions ensure
+  type safety across client,
+  server, and gateway
+end note
+
+note right of gateway
+  <b>HTTP Endpoints</b>
+  - addRecipe (FR-007)
+  - ListAllRecipes (FR-008)
+  - ListAllIngredientsAtHome (FR-009)
+  - GetAllIngredientsForRecipe (FR-010)
+end note
+
+note bottom of deployment
+  <b>Deployment Options</b>
+  - Docker container (FR-004)
+  - Local Kubernetes (FR-005)
+  - Azure Kubernetes Service (FR-006)
+end note
+
+legend right
+  | Color | Meaning |
+  |-------|---------|
+  | Light Blue | Components |
+  | Light Yellow | Deployment/Platform |
+  | Cloud | External/Cloud Services |
+end legend
+
+@enduml

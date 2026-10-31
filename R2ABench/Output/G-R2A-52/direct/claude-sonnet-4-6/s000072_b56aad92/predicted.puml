@@ -1,0 +1,206 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam nodesep 40
+skinparam ranksep 60
+
+skinparam rectangle {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #1a1a1a
+  FontSize 12
+}
+
+skinparam node {
+  BackgroundColor #EEF4DD
+  BorderColor #557722
+  FontColor #1a1a1a
+}
+
+skinparam component {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+  FontColor #1a1a1a
+}
+
+skinparam database {
+  BackgroundColor #F0E6FF
+  BorderColor #7744AA
+  FontColor #1a1a1a
+}
+
+skinparam cloud {
+  BackgroundColor #FFE8E8
+  BorderColor #CC3333
+  FontColor #1a1a1a
+}
+
+skinparam package {
+  BackgroundColor #FFFFFF
+  BorderColor #888888
+  FontStyle bold
+}
+
+title ParaStation/psmpi System Architecture\n(from SRS s000072_b56aad92)
+
+actor "Developer / Tester\n(hwloc verification)" as DEVTEST
+actor "Integrator\n(verbs build)" as INTEGRATOR
+actor "Comm-Subsystem\nMaintainer" as MAINTAINER
+
+package "Embedded hwloc Verification Subsystem\n[C-001, C-002, C-003, NFR-004]" as HWLOC_PKG {
+
+  component "run-embedded-tests.sh\n<tarball>\n[FR-001, C-002]" as RUN_TESTS {
+  }
+
+  component "Manual Autotools Workflow\nautogen.sh / configure / make\n[FR-002, C-003]" as MANUAL_WF {
+  }
+
+  note right of MANUAL_WF
+    Requires top-level dir
+    renamed to hwloc-tree/
+    [C-003]
+  end note
+
+  component "hwloc-tree/\n(Renamed Source Tree)\n[C-003]" as HWLOC_TREE {
+  }
+
+  RUN_TESTS --> HWLOC_TREE : executes against tarball\nconfigure, make,\nmake check,\nclean, distclean
+  MANUAL_WF --> HWLOC_TREE : builds from\nrenamed source
+}
+
+package "Communication Design Documentation\n[FR-003, FR-004, NFR-005]" as COMM_DESIGN_PKG {
+
+  rectangle "Communication Subsystem\nDesign Responsibilities" as COMM_RESP {
+  }
+
+  component "Lifecycle Operations\n[FR-003]" as LIFECYCLE {
+    portin "init"
+    portin "finalize"
+    portin "progress_advance"
+    portin "blocking_progress"
+    portin "connection_establish"
+  }
+
+  component "One-to-Many Transfer\n(Scatter-style)\n[FR-004]" as ONE_MANY {
+  }
+
+  COMM_RESP --> LIFECYCLE
+  COMM_RESP --> ONE_MANY
+}
+
+package "Send State-Machine (Design Note)\n[FR-005, FR-006, FR-007, FR-008]" as SEND_SM_PKG {
+
+  component "Flow-Control Check\n[FR-005, DR-005]" as FLOW_CHECK {
+  }
+
+  component "Flow-Control State\n[DR-005]" as FLOW_STATE {
+  }
+
+  component "Direct-Access Send Path\n(pinned user data)\n[FR-006, DR-002, DR-003]" as DIRECT_SEND {
+  }
+
+  component "Packet-Buffer Packing Path\n(from data descriptor DD)\n[FR-007, DR-001, DR-003]" as PKT_PACK {
+  }
+
+  component "Rendezvous Control-Field Handler\n[FR-008, DR-004]" as RNDV_CTRL {
+  }
+
+  database "Packet Buffer\n[DR-001, DR-004]" as PKT_BUF {
+  }
+
+  database "Network Send Descriptor\n[DR-002]" as NET_DESC {
+  }
+
+  database "User Data /\nData Descriptor (DD)\n[DR-003]" as USER_DD {
+  }
+
+  component "Network Device Interface\n[FR-005, FR-006, FR-007]" as NET_DEV {
+  }
+
+  FLOW_CHECK --> FLOW_STATE : reads flow state
+  FLOW_CHECK --> DIRECT_SEND : flow enabled +\ndirect access
+  FLOW_CHECK --> PKT_PACK : flow enabled +\nno direct access
+  FLOW_CHECK ..> NET_DEV : deferred if\nflow restricted
+
+  DIRECT_SEND --> NET_DESC : bind descriptor\nto pinned user data
+  DIRECT_SEND --> USER_DD : reference\npinned user data
+  DIRECT_SEND --> NET_DEV : post send
+
+  PKT_PACK --> USER_DD : read from DD
+  PKT_PACK --> PKT_BUF : pack payload\ninto packet buffer
+  PKT_PACK --> NET_DESC : prepare descriptor
+  PKT_PACK --> NET_DEV : post send
+
+  RNDV_CTRL --> PKT_BUF : rndv-rts:\n  envelope + LIBA(OD)\nrndv-cts:\n  two LIBAs\nrndv-data:\n  one LIBA
+
+  note bottom of RNDV_CTRL
+    Packet types:
+    rndv-rts, rndv-cts, rndv-data
+    [FR-008, DR-004]
+  end note
+}
+
+package "Embedded Libfabric Module\n[C-004, C-005, NFR-001, NFR-002, NFR-003]" as LIBFAB_PKG {
+
+  component "Embedded Libfabric\nVerbs Provider\n(optional / conditional build)\n[NFR-001, NFR-002]" as VERBS_PROV {
+  }
+
+  component "Build Configuration\nCFLAGS / LDFLAGS\n/ LD_LIBRARY_PATH\n[NFR-003]" as BUILD_CFG {
+  }
+
+  cloud "Linux Verbs API\n[C-004]" as VERBS_API {
+  }
+
+  cloud "libibverbs >= 1.1.8\n(control + data transfer)\n[C-004, C-005, NFR-001]" as LIBIBVERBS {
+  }
+
+  cloud "librdmacm >= 1.0.16\n(communication management)\n[C-004, C-005, NFR-001]" as LIBRDMACM {
+  }
+
+  VERBS_PROV --> VERBS_API : requires when enabled
+  VERBS_PROV --> LIBIBVERBS : depends on
+  VERBS_PROV --> LIBRDMACM : depends on
+  BUILD_CFG --> VERBS_PROV : supplies non-default\ninclude / lib paths
+}
+
+package "CH4 Network Module Integration\nContext" as CH4_PKG {
+
+  component "CH4 Network Module" as CH4 {
+  }
+
+  component "OFI / libfabric\nTransport" as OFI_TRANSPORT {
+  }
+
+  component "UCX Transport" as UCX_TRANSPORT {
+  }
+
+  CH4 --> OFI_TRANSPORT : optional
+  CH4 --> UCX_TRANSPORT : optional
+  OFI_TRANSPORT --> VERBS_PROV : may use embedded\nverbs provider
+}
+
+DEVTEST --> RUN_TESTS : invokes\n[FR-001]
+DEVTEST --> MANUAL_WF : invokes\n[FR-002]
+INTEGRATOR --> VERBS_PROV : enables / builds
+INTEGRATOR --> BUILD_CFG : configures
+MAINTAINER --> COMM_DESIGN_PKG : reviews
+MAINTAINER --> SEND_SM_PKG : reviews
+
+SEND_SM_PKG -[hidden]-> COMM_DESIGN_PKG
+
+note as LEGEND
+  Verification methods:
+  Demonstration: FR-001, FR-002, NFR-003, NFR-004
+  Inspection: FR-003..FR-008, NFR-001, NFR-002, NFR-005
+  --
+  Key data terms:
+  DD = Data Descriptor
+  OD = Object / Control Descriptor
+  LIBA = Rendezvous control-info identifier
+  envelope = communicator, source rank, tag, etc.
+end note
+
+@enduml

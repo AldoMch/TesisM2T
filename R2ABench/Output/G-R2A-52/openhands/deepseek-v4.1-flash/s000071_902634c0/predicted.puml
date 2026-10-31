@@ -1,0 +1,141 @@
+@startuml
+title ClearML Agent - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' Actors / External Users
+' ============================================================
+actor "Kubernetes Platform Operator" as K8sOp
+actor "ClearML User" as ClemlUser
+actor "Developer / Integrator" as Dev
+
+' ============================================================
+' Kubernetes / Docker Execution Environment
+' ============================================================
+package "Kubernetes Cluster Environment" as K8sEnv {
+
+  component "Long-Lasting Service Pod\n(clearml-agent Docker image)" as ServicePod
+  component "Sibling Docker Containers" as SiblingContainers
+  component "In-Pod Experiment Process\n(env install + start + monitor)" as ExpProc
+  component "Kubernetes Job" as K8sJob
+}
+
+' ============================================================
+' ClearML Agent Core
+' ============================================================
+package "ClearML Agent Runtime" as AgentRuntime {
+
+  component "Kubernetes Glue" as K8sGlue
+  component "Worker Runtime" as Worker
+  component "Worker Configuration" as WorkerConfig
+  component "Backend Service Client" as BackendClient
+  component "Session Request/Response\nHandling" as SessionHandler
+}
+
+' ============================================================
+' Backend Service Interfaces
+' ============================================================
+package "ClearML Backend Services" as BackendServices {
+
+  component "Events Service\n(v2.5)" as EventsService
+  component "Models Service\n(v2.4)" as ModelsService
+  component "Entity Service\n(create/get/get_all)" as EntityService
+}
+
+' ============================================================
+' Inputs
+' ============================================================
+artifact "ClearML Execution Queue Jobs" as QueueJobs
+artifact "Kubernetes YAML Template" as YamlTemplate
+
+' ============================================================
+' Relationships
+' ============================================================
+
+' Actors
+K8sOp --> ServicePod : deploys / operates
+ClemlUser --> QueueJobs : submits jobs
+Dev --> BackendClient : uses client abstractions
+
+' Queue / template inputs into Kubernetes Glue
+QueueJobs --> K8sGlue : jobs pulled from queue
+YamlTemplate --> K8sGlue : prepares Kubernetes job
+
+' Kubernetes Glue -> Kubernetes Job
+K8sGlue --> K8sJob : creates / prepares
+
+' Kubernetes Job -> in-pod experiment
+K8sJob --> ExpProc : runs experiment
+
+' Service pod
+ServicePod --> SiblingContainers : manages siblings via mapped Docker socket
+ServicePod ..> Worker : hosts worker runtime
+
+' Worker behavior
+Worker --> WorkerConfig : reads configuration
+Worker --> BackendClient : status reports / ping via
+Worker --> ExpProc : monitors
+
+' Backend client interactions
+BackendClient --> SessionHandler : session-based requests
+SessionHandler --> EntityService : create / get / get_by_id / get_all / get_all_ex
+SessionHandler --> EventsService : histogram requests
+SessionHandler --> ModelsService : model delete / model data
+
+' ============================================================
+' Notes
+' ============================================================
+note right of K8sGlue
+  Pulls jobs from ClearML execution queue
+  and prepares Kubernetes jobs from a
+  provided YAML template.
+  (FR-001, DR-005, DR-006, C-003)
+  Compatible with versioned backend
+  service interfaces (NFR-003).
+end note
+
+note right of Worker
+  Periodic status reporting
+  (default 2s) and server
+  connectivity ping (default 30s).
+  (FR-004, FR-005, NFR-001)
+end note
+
+note bottom of WorkerConfig
+  report_period_sec
+  ping_period_sec
+  log_stdout = true
+  report_global_mem_used
+  (DR-001, FR-006, NFR-002)
+end note
+
+note bottom of BackendClient
+  create / get / get_by_id /
+  get_all / get_all_ex
+  (FR-007)
+end note
+
+note bottom of EventsService
+  Histogram request/response:
+  task, samples, key
+  key = iter | iso_time | timestamp
+  (DR-002, NFR-003)
+end note
+
+note bottom of ModelsService
+  Model delete request: model, force
+  Model object: id, name, user,
+  company, created, task
+  (DR-003, DR-004, NFR-003)
+end note
+
+note top of ServicePod
+  Constraint: uses clearml-agent Docker image (C-001).
+  Sibling container management requires mapped
+  Docker socket (C-002); planned replacement by podman (C-005).
+end note
+
+@enduml

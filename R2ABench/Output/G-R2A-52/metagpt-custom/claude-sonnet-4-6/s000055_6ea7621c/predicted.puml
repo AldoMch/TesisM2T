@@ -1,0 +1,76 @@
+@startuml Nobel_Prize_Autocomplete_Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+cloud "Heroku Cloud Platform" as Heroku {
+
+  node "Node.js Runtime" as NodeJS {
+
+    package "HTTP Routing Layer" {
+      component [Router] as Router
+    }
+
+    package "Request Handling Layer" {
+      component [HomePageHandler] as HomePageHandler
+      component [StaticAssetHandler] as StaticAssetHandler
+      component [MIMETypeMapper\n(html, css, js, jpg, ico)] as MIMETypeMapper
+      component [NotFoundHandler] as NotFoundHandler
+    }
+
+    package "Search / Autocomplete Algorithm Layer" {
+      component [AutocompleteAlgorithm] as AutocompleteAlgorithm
+    }
+
+    package "Test Layer" {
+      component [FrontendTestSuite\n(NFR-001)] as FrontendTestSuite
+    }
+
+  }
+
+}
+
+node "Web Browser" as Browser {
+  component [SearchInputUI] as SearchInputUI
+}
+
+node "Local Filesystem" as LocalFS {
+  folder "Public Asset Directory\n(HTML, CSS, JS, JPG, ICO)" as PublicAssetDirectory
+  folder "Local JSON Laureate\nData File" as LocalJSONFile
+}
+
+' ── Client to Server ──────────────────────────────────────────────
+SearchInputUI --> Router : HTTP page load (GET /)
+SearchInputUI --> Router : HTTP search query (search)
+SearchInputUI --> Router : HTTP static asset request
+
+' ── Routing Layer to Request Handling ─────────────────────────────
+Router --> HomePageHandler : GET /
+Router --> StaticAssetHandler : static asset requests
+Router --> AutocompleteAlgorithm : URL contains "search"
+Router --> NotFoundHandler : unmatched routes
+
+' ── Request Handling: MIME mapping ────────────────────────────────
+StaticAssetHandler --> MIMETypeMapper : resolve Content-Type\nby file extension
+
+' ── Request Handling: file-read failures ──────────────────────────
+HomePageHandler --> NotFoundHandler : file read failure (FR-007)
+StaticAssetHandler --> NotFoundHandler : file read failure (FR-007)
+
+' ── Response paths back to client ─────────────────────────────────
+HomePageHandler --> Browser : 200 HTML response
+StaticAssetHandler --> Browser : 200 asset response
+AutocompleteAlgorithm --> Browser : 200 JSON suggestions
+NotFoundHandler --> Browser : 404 response
+
+' ── Search Algorithm: direct data access ──────────────────────────
+AutocompleteAlgorithm --> LocalJSONFile : read local laureate\nJSON data (DR-002)
+
+' ── Filesystem Dependencies ───────────────────────────────────────
+StaticAssetHandler --> PublicAssetDirectory : read asset files
+HomePageHandler --> PublicAssetDirectory : read index.html
+
+' ── Test Coverage ─────────────────────────────────────────────────
+FrontendTestSuite ..> AutocompleteAlgorithm : tests frontend\nhelper behavior (NFR-001)
+
+@enduml

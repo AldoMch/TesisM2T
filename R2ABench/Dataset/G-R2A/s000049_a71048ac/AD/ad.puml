@@ -1,0 +1,48 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "NLP4L User Interfaces and Integrations" as TopLayer {
+    rectangle "Interactive Shell\nfor NLP4L (REPL)" as Repl
+    rectangle "Index Schema\nBrowser (GUI/CUI)" as SchemaBrowser
+    rectangle "File based\nMahout/Spark\nconnector" as MahoutSparkConnector
+    rectangle "Applications" as Applications
+}
+
+rectangle "Scala High Level API\nfor convenience in text mining and stats" as HighLevelApi
+rectangle "Scala Driver for Lucene\nAnalyzer, Word-counter, FST dictionary" as ScalaLuceneDriver
+
+package "Lucene Layer" as LuceneLayer {
+    rectangle "Apache Lucene API" as LuceneApi
+    database "Index" as LuceneIndex
+}
+
+Repl --> HighLevelApi : interactive processing
+SchemaBrowser --> HighLevelApi : browse index schema
+MahoutSparkConnector --> HighLevelApi : document vector export
+Applications --> HighLevelApi : NLP/search features
+HighLevelApi --> ScalaLuceneDriver : Scala API calls
+ScalaLuceneDriver --> LuceneApi : Lucene access
+LuceneApi --> LuceneIndex : read and write index data
+MahoutSparkConnector --> LuceneIndex : LIBSVM-oriented data source
+@enduml

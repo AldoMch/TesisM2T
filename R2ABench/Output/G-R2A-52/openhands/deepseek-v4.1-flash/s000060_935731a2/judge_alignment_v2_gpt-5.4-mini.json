@@ -1,0 +1,238 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "Downstream Services\\n(out of scope)::Audit Persistence",
+        "Global::Audit Store"
+      ],
+      "gt_nodes": [
+        "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Kafka Event Stream\\n(topic)",
+        "lowes/auditor (Kotlin client library)::Kafka Event Publisher\\n(default implementation)"
+      ],
+      "gt_nodes": [
+        "Global::Kafka"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "JVM Application (host)::Calling Service",
+        "lowes/auditor (Kotlin client library)::Audit Comparator /\\nEvent Generator",
+        "lowes/auditor (Kotlin client library)::Audit Configuration\\nAuditorEventConfig",
+        "lowes/auditor (Kotlin client library)::AuditEvent\\n(JSON payload model)",
+        "lowes/auditor (Kotlin client library)::Auditing API",
+        "lowes/auditor (Kotlin client library)::Element Filter\\n(AuditEventElementFilter /\\nInclusionFilter)",
+        "lowes/auditor (Kotlin client library)::Event Publishing\\n(EventPublisher)",
+        "lowes/auditor (Kotlin client library)::Logging Support\\n(LogProvider)"
+      ],
+      "gt_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Integrating\\nApplication Developer"
+      ],
+      "match_type": "N:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "Downstream Services\\n(out of scope)::Audit Persistence",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Downstream Services\\n(out of scope)::Event Consumer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Audit Store",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Infrastructure\\nIntegrator",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Integrating\\nApplication Developer",
+      "reference_nodes": [
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Kafka Event Stream\\n(topic)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application (host)::Calling Service",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "lowes/auditor (Kotlin client library)::Audit Comparator /\\nEvent Generator",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "lowes/auditor (Kotlin client library)::Audit Configuration\\nAuditorEventConfig",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "lowes/auditor (Kotlin client library)::AuditEvent\\n(JSON payload model)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "lowes/auditor (Kotlin client library)::Auditing API",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "lowes/auditor (Kotlin client library)::Element Filter\\n(AuditEventElementFilter /\\nInclusionFilter)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "lowes/auditor (Kotlin client library)::Event Publishing\\n(EventPublisher)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "lowes/auditor (Kotlin client library)::Kafka Event Publisher\\n(default implementation)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "lowes/auditor (Kotlin client library)::Logging Support\\n(LogProvider)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Kafka Event Stream\\n(topic)",
+        "lowes/auditor (Kotlin client library)::Kafka Event Publisher\\n(default implementation)"
+      ],
+      "gt_node": "Global::Kafka"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "JVM Application (host)::Calling Service",
+        "lowes/auditor (Kotlin client library)::Audit Comparator /\\nEvent Generator",
+        "lowes/auditor (Kotlin client library)::Audit Configuration\\nAuditorEventConfig",
+        "lowes/auditor (Kotlin client library)::AuditEvent\\n(JSON payload model)",
+        "lowes/auditor (Kotlin client library)::Auditing API",
+        "lowes/auditor (Kotlin client library)::Element Filter\\n(AuditEventElementFilter /\\nInclusionFilter)",
+        "lowes/auditor (Kotlin client library)::Event Publishing\\n(EventPublisher)",
+        "lowes/auditor (Kotlin client library)::Logging Support\\n(LogProvider)"
+      ],
+      "gt_node": "Global::auditor-v1 app\\nserver"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Integrating\\nApplication Developer"
+      ],
+      "gt_node": "application 1::auditor-v1 client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Integrating\\nApplication Developer"
+      ],
+      "gt_node": "application 2::auditor-v1 client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Integrating\\nApplication Developer"
+      ],
+      "gt_node": "application 3::auditor-v1 client"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 3993,
+      "completion_tokens": 573,
+      "total_tokens": 4566,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 3328
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Downstream Services\\n(out of scope)::Event Consumer",
+    "Global::Infrastructure\\nIntegrator"
+  ],
+  "_provenance": {
+    "fingerprint": "5ef7ed90bc928e1080dfa657acd5e9eafc74e7ddf3281d2fcb3aa070c1c125b3",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

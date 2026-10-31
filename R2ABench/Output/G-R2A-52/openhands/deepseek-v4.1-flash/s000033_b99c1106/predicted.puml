@@ -1,0 +1,137 @@
+@startuml
+title Airflow Spark Docker Integration - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Data Engineer" as Engineer
+actor "Platform Engineer" as PlatformEngineer
+actor "Notebook User" as NotebookUser
+actor "Tester" as Tester
+
+rectangle "Host Machine" {
+
+  rectangle "Shared Mounted Directories" as Mounts {
+    folder "DAG directory" as DagDir
+    folder "Spark application directory" as AppDir
+    folder "Input data directory" as DataDir
+    folder "Notebook directory" as NoteDir
+  }
+
+  node "Docker Compose Network (format 3.7)" as ComposeNetwork {
+
+    node "Postgres Container\npostgres:9.6" as Postgres {
+      database "Airflow Metadata DB" as AirflowDB
+    }
+
+    node "Airflow Container\ndocker-airflow-spark:latest" as Airflow {
+      component "Airflow Webserver\n(LocalExecutor)" as Webserver
+      component "Airflow Scheduler" as Scheduler
+      component "SparkSubmitOperator" as SubmitOp
+      component "PySpark / spark-submit" as AirflowPySpark
+      component "spark_default connection" as SparkConn
+    }
+
+    node "Spark Master Container\nbitnami/spark:latest\nSPARK_MODE=master" as SparkMaster {
+      component "Spark Standalone Master\nspark://spark:7077" as MasterCore
+      component "Spark Master Web UI\n:8080 -> host 8181" as MasterUI
+    }
+
+    node "Spark Worker 1\nbitnami/spark:latest" as Worker1 {
+      component "Spark Worker" as W1Core
+    }
+    node "Spark Worker 2\nbitnami/spark:latest" as Worker2 {
+      component "Spark Worker" as W2Core
+    }
+    node "Spark Worker 3\nbitnami/spark:latest" as Worker3 {
+      component "Spark Worker" as W3Core
+    }
+
+    node "Jupyter Container\njupyter/pyspark-notebook" as Jupyter {
+      component "Jupyter Notebook Server" as JupyterServer
+      component "PySpark Kernel" as JupyterPySpark
+    }
+
+    node "Bundled Spark Distribution\nSpark 2.4.5 / Hadoop 2.6" as BundledSpark {
+      component "./bin/pyspark" as BinPySpark
+      component "./bin/run-example" as BinRunExample
+      component "Spark ML Examples (libsvm)" as SparkML
+    }
+  }
+}
+
+cloud "External Web Access" as WebAccess
+
+' Actor interactions with UIs
+Engineer --> Webserver : Airflow web UI :8282
+Engineer --> MasterUI : Spark master UI :8181
+Engineer --> Postgres : Postgres access :5432
+NotebookUser --> JupyterServer : Jupyter UI :8888
+Tester --> Webserver : inspect logs / DAGs
+Tester --> MasterUI : inspect applications
+PlatformEngineer --> Airflow : build image / operate Compose
+PlatformEngineer --> ComposeNetwork : docker compose up
+
+' UI / port exposure to host
+Webserver -up- WebAccess : exposes 8282
+MasterUI -up- WebAccess : exposes 8181
+JupyterServer -up- WebAccess : exposes 8888
+JupyterPySpark -up- WebAccess : Spark app UIs 4040-4080
+MasterCore -up- WebAccess : cluster endpoint 7077
+Postgres -up- WebAccess : 5432
+
+' Core relationships
+Airflow --> Postgres : CI-001 metadata persistence\n(DE-001)
+Webserver --> Scheduler
+Scheduler --> SubmitOp : triggers Spark test DAG
+SubmitOp --> SparkConn : uses
+SparkConn --> AirflowPySpark : invokes spark-submit
+AirflowPySpark --> MasterCore : CI-002 submit to spark://spark:7077
+MasterCore --> W1Core : CI-003 dispatch work
+MasterCore --> W2Core : CI-003 dispatch work
+MasterCore --> W3Core : CI-003 dispatch work
+W1Core ..> MasterCore : register
+W2Core ..> MasterCore : register
+W3Core ..> MasterCore : register
+MasterCore --> MasterUI : application state
+AirflowPySpark --> MasterUI : FR-006 job visibility
+
+' Jupyter interactions
+JupyterServer --> JupyterPySpark
+JupyterPySpark ..> MasterCore : interactive PySpark workloads
+JupyterPySpark ..> BundledSpark : bundled Spark runtime
+
+' Mounts usage
+Airflow ..> DagDir : API-001 load DAGs (DE-002)
+Airflow ..> AppDir : DE-003 Spark apps
+Airflow ..> DataDir : DE-004 input data
+Jupyter ..> NoteDir : DE-005 notebooks
+Jupyter ..> DataDir : DE-004 input data
+BundledSpark ..> DataDir : DE-004 / DE-009 libsvm
+SparkMaster ..> AppDir : DE-003 Spark apps
+
+' Bundled / inherited Spark capabilities
+BinPySpark --> BundledSpark : API-007 Python shell
+BinRunExample --> BundledSpark : API-008 example runner
+SparkML --> BundledSpark : API-009 libsvm reader
+
+' Observability
+Airflow --> AirflowDB : DR-007 task logs
+SubmitOp --> AirflowDB : DE-007 Spark task logs
+
+note right of ComposeNetwork
+  NFR-006 / C-008: RPC authentication,
+  RPC encryption, local storage encryption,
+  and SSL are disabled - local dev/test only.
+end note
+
+note bottom of BundledSpark
+  NFR-001 / C-004: Spark 2.4.5 built for Hadoop 2.6.
+  CI-005 / FR-013: MASTER selects targets
+  (local, local[N], spark://, mesos://, yarn).
+  C-007: mesos/yarn/generic targets are
+  inherited syntax unless infrastructure exists.
+end note
+
+@enduml

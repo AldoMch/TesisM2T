@@ -1,0 +1,65 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+title ClearML Agent Kubernetes Integration Architecture
+
+package "Kubernetes Cluster" {
+  node "Agent Service Pod\n(clearml-agent image)" as AgentPod {
+    component "Agent Runtime" as AgentRuntime
+    component "Kubernetes Glue" as KGlue
+    component "Worker Telemetry" as Telemetry
+    component "Backend Client" as BackendClient
+    artifact "Kubernetes Job Template (YAML)" as JobTemplate
+  }
+
+  cloud "Kubernetes API Server" as K8sAPI
+  node "Kubernetes Job Pods" as JobPods
+}
+
+node "Node Host" as Host {
+  component "Docker Engine\n(mapped Docker socket)" as DockerEngine
+}
+
+package "ClearML Server / Backend" as Backend {
+  component "API Endpoint" as API
+  queue "Execution Queue" as ExecQueue
+  component "Events Service v2.5" as Events
+  component "Models Service v2.4" as Models
+}
+
+AgentRuntime --> KGlue : orchestrate job preparation
+AgentRuntime --> Telemetry : start/monitor experiment process
+AgentRuntime --> BackendClient
+
+KGlue --> ExecQueue : pull queued jobs
+KGlue --> JobTemplate : read YAML template
+KGlue --> K8sAPI : create Kubernetes Jobs
+K8sAPI --> JobPods : schedule/launch jobs
+
+AgentPod ..> DockerEngine : sibling container mgmt\n(service-pod mode)
+
+BackendClient --> API : create/get/get_by_id\nget_all/get_all_ex
+Telemetry --> API : status reports (2s)\nconnectivity ping (30s)
+
+API --> Events
+API --> Models
+
+note right of Telemetry
+Default intervals:
+- report_period_sec = 2s
+- ping_period_sec = 30s
+end note
+
+note bottom of KGlue
+Requires provided YAML template
+for job preparation
+end note
+
+note bottom of DockerEngine
+Requires mapped Docker socket
+in service-pod mode
+end note
+
+@enduml

@@ -1,0 +1,103 @@
+@startuml
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam package {
+  BackgroundColor #F0F8FF
+  BorderColor #336699
+  FontStyle bold
+}
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+}
+
+title Java HTTP Proxy System - Layered Architecture Diagram
+
+'--- EXTERNAL SYSTEMS ---
+cloud "External Systems" {
+  [Upstream Server] as UpstreamServer
+  [Grizzly / Jersey HTTP Runtime] as GrizzlyJersey
+  [Async HTTP Client Library] as AsyncHttpClient
+}
+
+database "Local Filesystem" as LocalFS
+
+'--- INBOUND CLIENT ---
+actor "Inbound HTTP Client" as InboundClient
+
+'--- SHARED DATA / MODEL LAYER ---
+package "Shared Data / Model" {
+  [ResponseObject (code, msg, data)] as ResponseObject
+  [FilepathMap (filepath -> filename)] as FilepathMap
+}
+
+'--- PROXY CORE LAYER ---
+package "Proxy Core [SDK Module - Java 1.7]" {
+  [HttpProxy (retain and forward FullHttpRequest, gated on channel active)] as HttpProxy
+}
+
+'--- TEST SERVER LAYER ---
+package "Test Server [Java 1.8]" {
+  [TestServer (start / stop Grizzly-Jersey)] as TestServer
+  [FileDownloadEndpoint (GET /download -> octet-stream)] as FileDownloadEndpoint
+  [FileUploadHandler (POST upload -> filepath map)] as FileUploadHandler
+}
+
+'--- TEST CLIENT LAYER ---
+package "Test Client [Java 1.8]" {
+  [TestClient (50 threads x 1,000 GET requests, count HTTP 200)] as TestClient
+  [FixedThreadPoolExecutor (workload executor, shutdown after run)] as ThreadPool
+}
+
+'--- BUILD & RUNTIME INFRASTRUCTURE ---
+node "Build and Runtime Infrastructure" {
+  [Maven Multi-Module Build (Java 1.8 root/test-server, Java 1.7 proxy SDK)] as MavenModule
+}
+
+'--- INBOUND PATH ---
+InboundClient --> HttpProxy : sends FullHttpRequest
+
+'--- PROXY CORE -> UPSTREAM ---
+HttpProxy --> UpstreamServer : write and flush FullHttpRequest\n(after channel active)
+
+'--- TEST SERVER INTERNALS ---
+TestServer --> FileDownloadEndpoint : hosts
+TestServer --> FileUploadHandler : hosts
+FileUploadHandler --> FilepathMap : returns filepath map\nas upload response
+FileDownloadEndpoint --> LocalFS : reads target file\n(exists -> attachment;\nabsent -> no payload)
+
+'--- TEST SERVER -> RUNTIME ---
+TestServer --> GrizzlyJersey : requires Grizzly container\nand Jersey JAX-RS
+FileDownloadEndpoint --> GrizzlyJersey : deployed on
+FileUploadHandler --> GrizzlyJersey : deployed on
+
+'--- TEST CLIENT INTERNALS ---
+TestClient --> ThreadPool : submits tasks to\nfixed thread pool
+ThreadPool --> AsyncHttpClient : issues async GET requests\nper thread
+ThreadPool --> ThreadPool : shutdown after\nworkload completes
+AsyncHttpClient --> AsyncHttpClient : closed after\nworkload completes
+
+'--- TEST CLIENT -> CONFIGURABLE TARGET ---
+TestClient --> UpstreamServer : targets configurable\nbase URI
+
+'--- BUILD ---
+HttpProxy ..> MavenModule : build target
+TestServer ..> MavenModule : build target
+TestClient ..> MavenModule : build target
+ResponseObject ..> MavenModule : build target
+FilepathMap ..> MavenModule : build target
+
+@enduml

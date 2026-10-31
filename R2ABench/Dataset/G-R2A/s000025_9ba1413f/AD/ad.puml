@@ -1,0 +1,45 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+package "End user" as EndUserArea {
+    rectangle "Twilio Studio\nText + Call" as TwilioStudio
+    rectangle "Next.js\nFrontend form" as NextJsForm
+}
+
+package "Frontend" as FrontendArea {
+    rectangle "Create task request" as CreateTaskRequest
+}
+
+package "Middleware" as MiddlewareArea {
+    rectangle "Address-to-neighborhood\nsystem" as AddressNeighborhood
+    rectangle "Service-area\nEligibility Check" as ServiceAreaCheck
+}
+
+package "Backend" as BackendArea {
+    rectangle "OnFleet" as OnFleet
+    rectangle "Create\nTask" as CreateTask
+}
+
+TwilioStudio --> CreateTaskRequest : Create-task request
+NextJsForm --> CreateTaskRequest : Create-task request
+CreateTaskRequest --> AddressNeighborhood
+AddressNeighborhood --> ServiceAreaCheck
+ServiceAreaCheck --> CreateTask : eligible request
+CreateTask --> OnFleet
+@enduml

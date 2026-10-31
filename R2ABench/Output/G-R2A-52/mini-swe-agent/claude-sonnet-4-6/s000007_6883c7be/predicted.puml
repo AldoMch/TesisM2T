@@ -1,0 +1,61 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FAFAFA
+skinparam rectangleBorderColor #888888
+skinparam arrowColor #444444
+
+title HTTP Proxy System - Architecture Diagram
+
+actor "HTTP Client" as client
+
+package "HTTP Proxy Layer" {
+    component "HTTP Proxy\n(Netty-based)" as proxy
+    component "Request Forwarding Handler\n(FullHttpRequest Forwarding)" as forwardingHandler
+}
+
+package "Test Utilities Layer" {
+    component "Test Server\n(Grizzly/Jersey)" as testServer
+    component "Test Client\n(Async HTTP Client)" as testClient
+    component "File Download Endpoint\nGET /download" as downloadEndpoint
+    component "File Upload Handler\n(/upload, map payload)" as uploadHandler
+    component "Response Object\n(code, msg, data)" as responseObj
+    component "Async Workload Generator\n(50 threads, 1000 req/thread)" as workloadGen
+}
+
+package "Upstream / External Systems" {
+    component "Upstream Server\n(Server-side Channel)" as upstream
+}
+
+database "Local Filesystem" as fs {
+    artifact "Target File\n(for download)" as targetFile
+}
+
+package "Build & Runtime Environment" {
+    component "Maven Multi-Module Build\n(Java 1.8 / Java 1.7 targets)" as build
+    component "Debug Logger" as logger
+}
+
+client --> proxy : HTTP Request
+proxy --> forwardingHandler : retained FullHttpRequest
+forwardingHandler --> upstream : forward request\n(after channel activation)
+upstream --> client : HTTP Response
+
+testClient --> testServer : async GET requests (HTTP)
+testServer --> downloadEndpoint : GET /download
+testServer --> uploadHandler : file upload
+downloadEndpoint --> targetFile : read file\n(if exists)
+downloadEndpoint --> testClient : binary file response\n(Content-Disposition)
+uploadHandler --> testClient : map payload\n({filepath: filename})
+
+workloadGen --> testClient : spawn 50 threads\n1000 async GET requests each
+testClient --> workloadGen : count HTTP 200 responses
+
+responseObj --> testServer : structured response\n(code, msg, data)
+
+forwardingHandler --> logger : debug log\n(URI, headers, body)
+
+testServer --> build : Grizzly/Jersey dependency
+proxy --> build : Maven module (Java 1.7)
+testServer --> build : Maven module (Java 1.8)
+
+@enduml

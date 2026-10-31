@@ -1,0 +1,148 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<DataStore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title HypnoLog Server - Layered Architecture
+
+package "External Systems" <<Layer>> {
+  component "Logging Producers" <<External>> {
+    [Any Language Client]
+    [HTTP JSON POST]
+  }
+  
+  component "Web Browser" <<External>> {
+    [Browser UI]
+  }
+}
+
+package "Server Layer" <<Layer>> {
+  component "Node.js Runtime" <<Component>> {
+    [Express Application]
+    [HTTP Server]
+  }
+  
+  component "Logging API" <<Component>> {
+    [POST /logger/in]
+    [GET /logger/status]
+  }
+  
+  component "Web UI Server" <<Component>> {
+    [Static File Server]
+    [/client.html]
+  }
+  
+  component "Socket.IO Server" <<Component>> {
+    [Connection Manager]
+    [Notification Broadcaster]
+  }
+  
+  component "JSON Parser" <<Component>> {
+    [Body Parser]
+    [50MB Limit]
+  }
+}
+
+package "Browser Layer" <<Layer>> {
+  component "Socket.IO Client" <<Component>> {
+    [Connection Handler]
+    [Notification Listener]
+  }
+  
+  component "Validation Engine" <<Component>> {
+    [Ajv Validator]
+    [Schema Validation]
+    [Error Wrapper]
+  }
+  
+  component "Data Manager" <<Component>> {
+    [Received Data List]
+    [UI State Manager]
+  }
+  
+  component "Window Manager" <<Component>> {
+    [Window Registry]
+    [Object Dispatcher]
+  }
+  
+  component "Visualizer System" <<Component>> {
+    [Visualizer Loader]
+    [Configuration Manager]
+    [Visualizer Registry]
+  }
+  
+  component "Visualizer Plugins" <<Component>> {
+    [Visualizer 1]
+    [Visualizer 2]
+    [Visualizer N]
+  }
+  
+  component "DOM Renderer" <<Component>> {
+    [HTML Element Creator]
+    [UI Updater]
+  }
+}
+
+package "Data Model" <<Layer>> {
+  component "HypnoLog Data Object" <<DataStore>> {
+    [data: required]
+    [type: required]
+    [tags: optional]
+    [name: optional]
+  }
+  
+  component "Error Object" <<DataStore>> {
+    [HypnoLog-error]
+    [Validation Details]
+  }
+}
+
+'Logging Producers' --> "POST /logger/in" : HTTP JSON POST
+"POST /logger/in" --> "Body Parser" : JSON payload
+"Body Parser" --> "Notification Broadcaster" : parsed object
+"Notification Broadcaster" --> "Connection Handler" : Socket.IO notification
+"Connection Handler" --> "Ajv Validator" : received message
+"Ajv Validator" --> "Error Wrapper" : invalid → wrap
+"Ajv Validator" --> "Received Data List" : valid → store
+"Error Wrapper" --> "Received Data List" : error object → store
+"Received Data List" --> "UI State Manager" : update state
+"UI State Manager" --> "Object Dispatcher" : send to windows
+"Object Dispatcher" --> "Visualizer Loader" : for each window
+"Visualizer Loader" --> "Visualizer Registry" : load config
+"Visualizer Registry" --> "Visualizer 1" : canDisplay()?
+"Visualizer 1" --> "Visualizer 2" : if false, try next
+"Visualizer N" --> "HTML Element Creator" : display() → DOM
+"HTML Element Creator" --> "Browser UI" : render in window
+
+"Static File Server" --> "Browser UI" : serve /client.html
+"GET /logger/status" --> "Logging Producers" : status check
+
+note right of "Visualizer System"
+  Visualizers implement:
+  - canDisplay(object): boolean
+  - display(object, callback): DOM element
+end note
+
+note right of "HypnoLog Data Object"
+  Required fields: data, type
+  Optional fields: tags, name
+  Schema validation on browser side
+end note
+
+note right of "Node.js Runtime"
+  Default port: 7000
+  Configurable via CLI
+  Started via npm start or CLI aliases
+end note
+
+@enduml

@@ -1,0 +1,93 @@
+@startuml
+node "Telegram-compatible Clients" as Clients
+cloud "External verification-code service" as ExtVerify
+
+node "Deployment Environments" as DeployEnvs {
+  node "Docker Deployment Environment" as Docker
+  node "Manual Build/Install Environment" as Manual
+}
+
+node "Go Build/Runtime Environment" as GoEnv {
+  component "Go Toolchain / Build" as GoBuild
+  component "Go Runtime" as GoRuntime
+}
+
+node "Application Runtime" as AppRuntime {
+  package "Client Access Layer" {
+    component "Client Access Gateway" as ClientAccessGateway
+    component "MTProto Protocol Handler" as MTProtoHandler
+    component "Service Message Handler" as ServiceMessageHandler
+  }
+
+  package "BFF / Access-Facing Service Layer" {
+    component "BFF/Access-Facing Service" as BFF
+  }
+
+  package "Business / Service Layer" {
+    component "Messaging Service" as MessagingService
+    component "Registration/Verification Handler" as RegistrationHandler
+    component "Session/Authorization/Salt Manager" as SessionManager
+  }
+
+  package "Storage-Facing Layer" {
+    component "Storage-Facing Components" as StorageFacing
+  }
+
+  package "Asynchronous / Supporting Layer" {
+    component "Push Service" as PushService
+    component "Sync Service" as SyncService
+    component "Configuration & Service Discovery" as ConfigDiscovery
+    component "Media Wrapper" as MediaWrapper
+  }
+}
+
+database "MySQL" as MySQL
+database "Redis" as Redis
+database "etcd" as Etcd
+node "Kafka" as Kafka
+database "MinIO" as MinIO
+node "FFmpeg" as FFmpeg
+node "FFProbe" as FFProbe
+
+Clients --> ClientAccessGateway : MTProto client communication
+ClientAccessGateway --> MTProtoHandler : MTProto routing
+MTProtoHandler --> ServiceMessageHandler : protocol service messages
+ServiceMessageHandler --> MTProtoHandler : rpc_drop_answer acknowledgment
+MTProtoHandler --> SessionManager : keys/salts/sessions
+ServiceMessageHandler --> SessionManager : destroy_session
+
+BFF --> MessagingService : messaging operations
+BFF --> RegistrationHandler : registration/verification
+BFF --> SessionManager : session/authorization
+BFF --> PushService : push requests
+BFF --> SyncService : sync requests
+BFF --> ConfigDiscovery : configuration/service discovery
+
+MessagingService --> StorageFacing : storage access
+MessagingService --> PushService : message push triggers
+MessagingService --> SyncService : message sync updates
+MessagingService --> MediaWrapper : media processing (optional)
+
+RegistrationHandler --> StorageFacing : storage access
+RegistrationHandler --> ExtVerify : verification code (when enabled)
+
+SessionManager --> StorageFacing : session persistence
+SessionManager --> SyncService : session sync state
+
+StorageFacing --> MySQL : data
+StorageFacing --> Redis : cache/session
+StorageFacing --> MinIO : object storage
+
+ConfigDiscovery --> Etcd : configuration/service discovery
+
+PushService --> Kafka : push events
+SyncService --> Kafka : sync events
+
+MediaWrapper --> FFmpeg : media processing
+MediaWrapper --> FFProbe : media probe
+
+Docker --> AppRuntime : containerized deployment
+Manual --> AppRuntime : native build/install deployment
+GoBuild --> AppRuntime : compiles
+GoRuntime --> AppRuntime : executes
+@enduml

@@ -1,0 +1,103 @@
+@startuml
+title teamgram/teamgram-server - Architecture (MTProto Server)
+skinparam componentStyle rectangle
+left to right direction
+
+actor "Telegram-Compatible Client" as Client
+
+package "Access Layer" {
+  component "MTProto Gateway" as MTGateway
+  component "BFF / API Facade" as BFF
+}
+
+package "Service Layer" {
+  component "Auth Service" as Auth
+  component "Session Manager" as SessionMgr
+  component "Registration & Verification" as RegVerify
+  component "Service Message Handler\n(rpc_drop_answer, destroy_session)" as SvcMsg
+  component "Future Salts Service" as FutureSalts
+  component "Messaging Service" as Messaging
+  component "Push Service" as Push
+  component "Sync Service" as Sync
+  component "Media Wrapper" as Media
+}
+
+package "Infrastructure & External" {
+  database "MySQL" as MySQL
+  component "Redis" as Redis
+  component "etcd" as Etcd
+  component "Kafka" as Kafka
+  component "MinIO" as MinIO
+  component "External Verification Service" as ExtVerify
+  component "FFmpeg/FFProbe" as FFmpeg
+}
+
+Client --> MTGateway : MTProto
+MTGateway --> BFF
+
+BFF --> Auth
+BFF --> SessionMgr
+BFF --> RegVerify
+BFF --> SvcMsg
+BFF --> FutureSalts
+BFF --> Messaging
+BFF --> Push
+BFF --> Sync
+BFF --> Media
+
+Auth --> Redis : auth keys, salts cache
+Auth --> MySQL : auth/account data
+SessionMgr --> Redis : sessions, session_id
+SvcMsg --> SessionMgr
+FutureSalts --> Redis : future_salts
+Messaging --> MySQL
+Messaging --> Kafka : events
+Messaging --> MinIO : media objects
+Push --> Kafka
+Sync --> Kafka
+
+RegVerify --> ExtVerify : optional
+
+Media --> FFmpeg : optional
+
+Auth --> Etcd : config/discovery
+SessionMgr --> Etcd
+Messaging --> Etcd
+SvcMsg --> Etcd
+FutureSalts --> Etcd
+RegVerify --> Etcd
+Push --> Etcd
+Sync --> Etcd
+Media --> Etcd
+
+note right of RegVerify
+- Default/test mode uses fixed code 12345
+- When external verifier enabled, external code is authoritative
+end note
+
+note bottom of Auth
+Handles:
+- authorization keys
+- server salt during auth flows
+- encrypted-session establishment
+end note
+
+note bottom of SvcMsg
+Acknowledges rpc_drop_answer
+Supports destroy_session for old-session removal
+end note
+
+note bottom of FutureSalts
+Processes future_salts requests:
+- count > 0: return <= requested
+- count = 0: default request basis 32, may return fewer
+end note
+
+note bottom of Media
+Optional; uses FFmpeg/FFProbe when enabled
+end note
+
+note "Deployment via Docker and manual build/install documented" as N1
+N1 .. MTGateway
+
+@enduml

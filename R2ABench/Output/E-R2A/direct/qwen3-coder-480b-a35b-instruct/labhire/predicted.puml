@@ -1,0 +1,119 @@
+@startuml
+!define RECTANGLE class
+
+title LabHire System Architecture
+
+skinparam componentStyle rectangle
+
+package "User Interfaces" {
+  [Student Web UI]
+  [Mentor Web UI]
+  [Admin Web UI]
+  [Mobile App UI]
+}
+
+package "Application Layer" {
+  [Project Management Service]
+  [User Authentication Service]
+  [Community Service]
+  [Recommendation Engine]
+  [Notification Service]
+  [Chat Service]
+  [Admin Review Service]
+  [Enterprise Certification Service]
+  [Search Service]
+  [Profile Management Service]
+}
+
+package "Data Access Layer" {
+  [Database Interface]
+  [Email/SMS Gateway]
+  [File Storage Interface]
+}
+
+package "External Systems" {
+  [University Email Servers]
+  [Enterprise Email Servers]
+  [Cloud Storage]
+  [Third-party Messaging APIs]
+}
+
+package "Security & Compliance" {
+  [Access Control Module]
+  [Encryption Module]
+  [Risk Control & Audit Logs]
+}
+
+[Student Web UI] --> [User Authentication Service]
+[Student Web UI] --> [Project Management Service]
+[Student Web UI] --> [Community Service]
+[Student Web UI] --> [Search Service]
+[Student Web UI] --> [Profile Management Service]
+[Student Web UI] --> [Notification Service]
+
+[Mentor Web UI] --> [User Authentication Service]
+[Mentor Web UI] --> [Project Management Service]
+[Mentor Web UI] --> [Chat Service]
+[Mentor Web UI] --> [Profile Management Service]
+[Mentor Web UI] --> [Notification Service]
+
+[Admin Web UI] --> [Admin Review Service]
+[Admin Web UI] --> [User Authentication Service]
+
+[Mobile App UI] --> [User Authentication Service]
+[Mobile App UI] --> [Project Management Service]
+[Mobile App UI] --> [Community Service]
+[Mobile App UI] --> [Search Service]
+[Mobile App UI] --> [Profile Management Service]
+[Mobile App UI] --> [Notification Service]
+
+[Project Management Service] --> [Database Interface]
+[User Authentication Service] --> [Database Interface]
+[Community Service] --> [Database Interface]
+[Recommendation Engine] --> [Database Interface]
+[Notification Service] --> [Database Interface]
+[Chat Service] --> [Database Interface]
+[Admin Review Service] --> [Database Interface]
+[Enterprise Certification Service] --> [Database Interface]
+[Search Service] --> [Database Interface]
+[Profile Management Service] --> [Database Interface]
+
+[User Authentication Service] --> [Email/SMS Gateway]
+[Enterprise Certification Service] --> [Email/SMS Gateway]
+[Notification Service] --> [Email/SMS Gateway]
+[Notification Service] --> [Third-party Messaging APIs]
+[Chat Service] --> [Third-party Messaging APIs]
+
+[Profile Management Service] --> [File Storage Interface]
+
+[Database Interface] --> [Access Control Module]
+[Email/SMS Gateway] --> [Encryption Module]
+[Chat Service] --> [Encryption Module]
+[File Storage Interface] --> [Encryption Module]
+
+[Risk Control & Audit Logs] --> [Database Interface]
+
+[Database Interface] <--> [Cloud Storage]
+
+[Email/SMS Gateway] <--> [University Email Servers]
+[Email/SMS Gateway] <--> [Enterprise Email Servers]
+
+note right of [Recommendation Engine]
+  Uses collaborative filtering,
+  tag matching, and cold-start rules
+end note
+
+note right of [Access Control Module]
+  Enforces role-based permissions:
+  - Students view limited info
+  - Mentors see applicant resumes
+  - Admins have full access
+end note
+
+note bottom of [Risk Control & Audit Logs]
+  Tracks abnormal behavior,
+  supports manual analysis
+  and alerting
+end note
+
+@enduml

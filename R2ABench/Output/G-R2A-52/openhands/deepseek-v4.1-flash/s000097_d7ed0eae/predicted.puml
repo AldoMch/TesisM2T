@@ -1,0 +1,90 @@
+@startuml
+title BeeGreen System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =====================
+' Client Tier
+' =====================
+package "Client Tier" {
+    [React/TypeScript Website] as WebClient
+    [Chrome Browser Extension] as Extension
+}
+
+' =====================
+' Backend API Tier
+' =====================
+package "Backend API Tier (Node.js / LoopBack)" {
+    [UserController] as UserCtrl
+    [PingController] as PingCtrl
+
+    [UserRepository] as UserRepo
+    [InventoryItem Model] as InventoryModel
+
+    UserCtrl --> UserRepo : persists User via
+    UserCtrl ..> InventoryModel : relates to
+}
+
+' =====================
+' Data Tier
+' =====================
+package "Data Tier" {
+    database "Persistent Storage\n(Users / Products)" as DB
+    [Data Processing\n(Scoring & Recommendations)] as DataProc
+}
+
+' =====================
+' Cloud / External
+' =====================
+package "Supporting Services" {
+    [Cloud / Data-Processing Assets] as Cloud
+}
+
+' Client -> API (HTTP / JSON)
+WebClient --> UserCtrl : POST/GET/PATCH /users
+WebClient --> PingCtrl : GET /ping
+Extension --> UserCtrl : POST/GET/PATCH /users
+Extension --> PingCtrl : GET /ping
+
+' API -> Data
+UserRepo --> DB : reads/writes User
+DB --> InventoryModel : stores InventoryItem
+UserCtrl --> DataProc : scoring / recommendation workflows
+DataProc --> Cloud : uses
+UserRepo --> DataProc : uses
+
+' =====================
+' Data entities (notes)
+' =====================
+note right of UserCtrl
+  User entity fields:
+  - id (string, generated)
+  - ip (string)
+  - creationDate (date)
+  - purchaseIds (string[])
+  - username (string)
+  - region (string)
+end note
+
+note right of InventoryModel
+  InventoryItem entity fields:
+  - id (string, generated)
+  - stats (object)
+  - totalScore (number)
+  - category (string)
+  - details (string)
+  - comments (object[])
+  - name (string)
+  - associatedStores (string[])
+end note
+
+note bottom of PingCtrl
+  PingResponse:
+  - greeting (string)
+  - date (string)
+  - url (string)
+  - headers (object, additional properties allowed)
+end note
+
+@enduml

@@ -1,0 +1,109 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+skinparam node {
+  BackgroundColor #E8F4FC
+  BorderColor #2980B9
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #D4AC0D
+}
+skinparam cloud {
+  BackgroundColor #FDEDEC
+  BorderColor #C0392B
+}
+
+title HypnoLog Server - System Architecture
+
+actor "Logging Producer\n(any language)" as Producer
+actor "Visualization User" as User
+actor "Server Operator" as Operator
+
+node "Node.js Runtime" {
+
+  node "Express Application" {
+    rectangle "HTTP Server\n(port 7000 default)" as HTTPServer
+
+    rectangle "Logging Router\n(/logger)" {
+      rectangle "POST /logger/in\n(JSON ingestion, 50mb limit)" as LoggerIn
+      rectangle "GET /logger/status\n(health check)" as LoggerStatus
+    }
+
+    rectangle "Static File Server\n(public web directory)" as StaticServer
+    rectangle "JSON Body Parser\n(50mb limit)" as BodyParser
+  }
+
+  rectangle "Socket.IO Server\n(attached to HTTP server)" as SocketIOServer
+  rectangle "Connected Display Client List\n(add on connect, remove on disconnect)" as ClientList
+  rectangle "Startup Script\n(bin/www / npm start / CLI aliases)" as StartupScript
+}
+
+node "Browser Client" {
+  rectangle "Socket.IO Client\n(same-origin connection)" as SocketIOClient
+
+  rectangle "Schema Validator\n(Ajv / HypnoLog Data Object schema)" as SchemaValidator
+
+  rectangle "Received-Data List\n(client-side store)" as DataList
+
+  rectangle "Window Dispatcher" as WindowDispatcher
+
+  rectangle "Default Window" as DefaultWindow
+
+  rectangle "Visualizer Dispatcher" as VisualizerDispatcher
+
+  rectangle "Visualizer 1\n(canDisplay / display)" as Viz1
+  rectangle "Visualizer N\n(canDisplay / display)" as VizN
+  rectangle "Visualizer Config\n(user config / default config)" as VizConfig
+
+  rectangle "UI State\n(last-update, tag filter, tag display,\nvariable-name display)" as UIState
+}
+
+cloud "HypnoLog Data Object\n{data, type, [tags], [name]}" as DataObject
+cloud "HypnoLog-error Object\n{type: HypnoLog-error,\nerror, validatorErrors, original}" as ErrorObject
+
+Operator --> StartupScript : start server
+StartupScript --> HTTPServer : launch on configured port
+StartupScript --> UIState : print client URL\nattempt browser open
+
+Producer --> LoggerIn : HTTP POST /logger/in\nContent-Type: application/json
+LoggerIn --> BodyParser : parse JSON body
+BodyParser --> LoggerIn : parsed body
+LoggerIn --> SocketIOServer : emit parsed body
+LoggerIn --> Producer : HTTP 200
+
+Producer --> LoggerStatus : HTTP GET /logger/status
+LoggerStatus --> Producer : HTTP 200
+
+SocketIOServer --> ClientList : manage connections
+SocketIOServer --> SocketIOClient : Socket.IO notification event\n(log object broadcast)
+
+User --> StaticServer : HTTP GET /client.html
+StaticServer --> User : browser UI assets
+
+SocketIOClient --> SchemaValidator : validate received message\n(Ajv)
+SchemaValidator --> DataList : valid object
+SchemaValidator --> ErrorObject : invalid message → wrap as HypnoLog-error
+ErrorObject --> DataList : error object
+DataList --> UIState : update last-update
+DataList --> WindowDispatcher : dispatch object to all windows
+
+WindowDispatcher --> DefaultWindow : pass log object
+DefaultWindow --> VisualizerDispatcher : request DOM element
+
+VizConfig --> VisualizerDispatcher : load visualizers\n(user config or default)
+VisualizerDispatcher --> Viz1 : canDisplay(obj)?
+VisualizerDispatcher --> VizN : canDisplay(obj)? (if no prior match)
+Viz1 --> VisualizerDispatcher : display(obj, callback) → DOM element
+VizN --> VisualizerDispatcher : display(obj, callback) → DOM element
+VisualizerDispatcher --> DefaultWindow : DOM element
+
+DefaultWindow --> UIState : append DOM element\napply tag CSS / variable-name prefix
+
+DataObject ..> LoggerIn : schema shape\n(data, type required;\ntags, name optional)
+
+@enduml

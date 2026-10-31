@@ -1,0 +1,124 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam component {
+    BackgroundColor #E6F3FF
+    BorderColor #0066CC
+    FontColor #003366
+    ArrowColor #0066CC
+}
+skinparam node {
+    BackgroundColor #FFF0E6
+    BorderColor #CC6600
+    FontColor #663300
+}
+skinparam queue {
+    BackgroundColor #E6FFE6
+    BorderColor #009900
+    FontColor #006600
+}
+skinparam database {
+    BackgroundColor #FFE6E6
+    BorderColor #CC0000
+    FontColor #660000
+}
+skinparam cloud {
+    BackgroundColor #F0F0F0
+    BorderColor #666666
+    FontColor #333333
+}
+
+title macpro-appian-connector System Architecture
+
+cloud "AWS" as aws {
+    component "AWS CLI" as awscli
+    component "AWS EventBridge" as eventbridge
+    component "AWS SNS Topic" as sns
+    component "AWS Connector Management" as connector_mgmt
+    node "AWS Account/Region" as aws_account
+}
+
+cloud "GitHub" as github {
+    database "GitHub Actions API" as gh_actions
+    database "GitHub Pull Requests API" as gh_pr
+}
+
+component "macpro-appian-connector" as main_system {
+    component "Stage Listing Module" as stage_listing
+    component "Connector Configuration Handler" as connector_handler
+    component "Event Routing & Alerting" as event_alerting
+    component "Deployment Metrics Collector" as deploy_metrics
+    component "PR Metrics Collector" as pr_metrics
+    component "Onboarding & Script Execution" as onboarding
+}
+
+actor "Developer" as dev
+actor "Operator/DevOps" as ops
+actor "Repository Maintainer" as maintainer
+
+queue "Manual SNS Subscriptions" as manual_subs
+
+database "CMS BigMAC" as bigmac
+
+' User Interactions
+dev --> onboarding : "Onboarding"
+dev --> stage_listing : "Runs listRunningStages"
+ops --> awscli : "Provides Credentials"
+ops --> manual_subs : "Manages Subscriptions"
+maintainer --> connector_handler : "Manages Definitions"
+maintainer --> deploy_metrics : "Reviews Metrics"
+maintainer --> pr_metrics : "Reviews Metrics"
+
+' Internal System Dependencies
+onboarding --> stage_listing : "Prerequisite"
+stage_listing --> awscli : "Uses Credentials"
+
+' AWS Interactions
+stage_listing --> aws_account : "Queries Running Stages"
+connector_handler --> connector_mgmt : "Put/Delete/Restart Connectors"
+connector_mgmt --> bigmac : "Transfers Appian Data"
+event_alerting --> eventbridge : "Receives Matching Events"
+eventbridge --> sns : "Routes Events"
+sns --> manual_subs : "Publishes Events"
+
+' GitHub Interactions
+deploy_metrics --> gh_actions : "Queries deploy.yml Runs"
+pr_metrics --> gh_pr : "Queries Closed PRs"
+
+' Data Flows
+aws_account --> stage_listing : "runningStages=<list>"
+connector_handler --> connector_mgmt : "cluster, service, connectors"
+eventbridge --> event_alerting : "Service Events"
+gh_actions --> deploy_metrics : "Workflow Run Records"
+gh_pr --> pr_metrics : "Pull Request Records"
+deploy_metrics --> maintainer : "failedRuns, passedRuns"
+pr_metrics --> maintainer : "averageTimeToMerge"
+
+' Constraints and Notes
+note top of awscli
+    Constraint: Requires
+    credentials set
+end note
+
+note right of manual_subs
+    Constraint: Managed
+    manually, not via
+    deployment
+end note
+
+note left of gh_actions
+    Constraint: Paginated
+    API retrieval
+    (per_page: 100)
+end note
+
+note right of connector_mgmt
+    Constraint: Uses empty
+    deletion set in
+    current flow
+end note
+
+@enduml

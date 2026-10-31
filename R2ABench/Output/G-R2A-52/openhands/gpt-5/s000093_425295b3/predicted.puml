@@ -1,0 +1,45 @@
+@startuml
+skinparam componentStyle rectangle
+
+title VirtualMotionTracker Architecture
+
+package "VirtualMotionTracker" {
+  component "VMT Manager" as Manager
+  component "VMT Driver" as Driver
+  component "Shared Memory\n(JSON channels)" as ShMem
+  artifact "Legacy Controller Binding\nmycontroller.json" as Binding
+}
+
+rectangle "User Application" as UserApp <<External>>
+rectangle "SteamVR / OpenVR Runtime" as OpenVR <<External>>
+
+UserApp ..> Manager : OSC control input
+
+Manager --> ShMem : JSON\nmanager_to_driver
+ShMem --> Driver : JSON\nmanager_to_driver
+
+Driver --> ShMem : JSON\ndriver_to_manager
+ShMem --> Manager : JSON\ndriver_to_manager
+
+Driver --> OpenVR : OpenVR driver interface
+
+Binding ..> OpenVR : consumed by runtime
+Binding ..> Driver : packaged with driver
+
+note right of ShMem
+Bidirectional channels with control fields:
+- send_count
+- handshake_count
+- message_length
+end note
+
+note bottom of Binding
+- controller_type: "mycontroller"
+- right-hand mappings:
+  /user/hand/right/input/a -> /actions/legacy/in/right_axis1_press
+  /user/hand/right/input/c -> /actions/legacy/in/right_a_press
+  /user/hand/right/input/b -> /actions/legacy/in/right_grip_press
+- mode: "button", parameters.sub_mode: "complex"
+end note
+
+@enduml

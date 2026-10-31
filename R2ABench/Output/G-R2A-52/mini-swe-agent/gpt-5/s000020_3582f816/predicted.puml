@@ -1,0 +1,97 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam dpi 140
+
+title MyEMS Admin and REST API - Layered Architecture
+
+' External Integration Clients
+package "Integration Clients" {
+  component "MyEMS Components" as ExtMyEMS <<External>>
+  component "Third-Party Applications" as Ext3P <<External>>
+}
+
+' Presentation Layer (Browser Admin)
+package "Presentation Layer (Browser Admin)" {
+  actor "Administrator" as AdminUser
+  component "MyEMS Admin SPA" as AdminSPA <<Client>>
+  component "Routing & Lazy Loader" as Router
+  component "/user Route Module" as UserModule
+  component "/contact Route Module" as ContactModule
+  component "Tariff Settings Module" as TariffModule <<optional>>
+  component "Category Settings Module" as CategoryModule <<optional>>
+  component "API Base Path Resolver\n(same-origin + /api/)" as BasePath
+  component "HTTP Client" as HttpClient
+
+  AdminUser --> AdminSPA
+  AdminSPA --> Router
+  Router ..> UserModule : lazy-load
+  Router ..> ContactModule : lazy-load
+  Router ..> TariffModule : lazy-load (where configured)
+  Router ..> CategoryModule : lazy-load (where configured)
+  AdminSPA --> BasePath : compute
+  AdminSPA --> HttpClient
+}
+
+' Edge/Proxy Layer (optional)
+package "Edge/Proxy Layer" {
+  component "Reverse Proxy (e.g., Nginx)" as Proxy <<optional>>
+}
+
+' API Layer (Python REST Service)
+package "API Layer (Python REST Service)" {
+  component "WSGI Server" as WSGI
+  component "MyEMS REST API Service" as API
+  component "REST Framework & CORS" as RESTFW
+
+  WSGI --> API
+  API ..> RESTFW
+}
+
+' Data Layer
+package "Data Layer" {
+  database "MySQL Database" as MySQL <<optional>>
+}
+
+' Deployment & Ops Support
+package "Deployment & Ops Support" {
+  component "Python Dependencies\n(REST, CORS, WSGI, Spreadsheet/Image, MySQL Connector)" as PyDeps
+  component "Dev Quick-Run\n(Linux & Windows)" as DevRun
+  component "Docker-based Installation/Setup" as DockerSetup
+}
+
+' Runtime dependencies and configurations
+PyDeps -[hidden]-> API
+API ..> PyDeps : runtime deps
+API --> MySQL : JDBC/MySQL Connector <<optional>>
+
+' HTTP/S flows
+HttpClient --> Proxy : HTTP(S) /api/ (same-origin)
+Proxy --> WSGI : forward /api/
+' Direct same-origin path without reverse proxy
+HttpClient --> WSGI : HTTP(S) /api/ (direct)
+
+' External client integrations
+ExtMyEMS --> API : REST over HTTP(S)
+Ext3P --> API : REST over HTTP(S)
+
+' Setup/operations links
+DevRun ..> API : start in dev mode
+DockerSetup ..> API : containerized setup
+
+' Notes on base path computation
+note right of BasePath
+  Computes: {protocol}//{hostname}:{port}/api/
+  Ensures same-origin API access when deployed
+end note
+
+legend right
+- Admin SPA runs in browser, routes: /user, /contact
+- Route-specific modules are lazy-loaded
+- API accessed via same-origin /api/ path (direct or via reverse proxy)
+- API runs under WSGI with REST framework & CORS
+- Optional MySQL backing store where required
+- Dev quick-run and Docker-based setup supported
+end legend
+@enduml

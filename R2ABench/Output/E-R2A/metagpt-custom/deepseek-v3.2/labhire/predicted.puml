@@ -1,0 +1,124 @@
+@startuml
+!define RECTANGLE rectangle
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+' ========== LAYERS ==========
+package "Presentation Layer" {
+  component "Web Portal" as WEB <<application>>
+  component "Mobile App" as MOBILE <<application>>
+  component "Admin Interface" as ADMIN <<application>>
+}
+
+package "Application Layer" as APP_LAYER {
+  component "Project Management" as PROJ_MGMT <<service>>
+  component "User Management & Authentication" as USER_MGMT <<service>>
+  component "Recommendation Engine" as REC_ENGINE <<service>>
+  component "Community" as COMMUNITY <<service>>
+  component "Review & Moderation" as REVIEW_MOD <<service>>
+  component "Chat" as CHAT <<service>>
+  component "Resume Management" as RESUME_MGMT <<service>>
+  component "Mutual Evaluation" as MUTUAL_EVAL <<service>>
+  component "Search" as SEARCH <<service>>
+  component "Risk Control & Audit" as RISK_AUDIT <<service>>
+  component "Encryption Module" as ENCRYPTION <<service>>
+}
+
+package "Data Access Layer" as DATA_LAYER {
+  component "Data Persistence" as DATA_PERSIST <<component>>
+  database "Main Database" as DB <<database>>
+  database "Audit Logs" as AUDIT_DB <<database>>
+  component "File Storage Service" as FILE_STORAGE <<service>>
+}
+
+' ========== EXTERNAL SYSTEMS ==========
+cloud "Email Service Provider" as EMAIL_SVC <<external>>
+cloud "University & Enterprise Email Systems" as EMAIL_SYSTEMS <<external>>
+component "Verification Code Service" as VERIFY_CODE <<service>>
+
+' ========== DEPENDENCIES ==========
+' Presentation -> Application Layer
+WEB --> PROJ_MGMT
+WEB --> USER_MGMT
+WEB --> REC_ENGINE
+WEB --> COMMUNITY
+WEB --> REVIEW_MOD
+WEB --> CHAT
+WEB --> RESUME_MGMT
+WEB --> MUTUAL_EVAL
+WEB --> SEARCH
+
+MOBILE --> PROJ_MGMT
+MOBILE --> USER_MGMT
+MOBILE --> REC_ENGINE
+MOBILE --> COMMUNITY
+MOBILE --> REVIEW_MOD
+MOBILE --> CHAT
+MOBILE --> RESUME_MGMT
+MOBILE --> MUTUAL_EVAL
+MOBILE --> SEARCH
+
+ADMIN --> REVIEW_MOD
+ADMIN --> RISK_AUDIT
+ADMIN --> USER_MGMT
+
+' Application Layer Internal Dependencies
+REC_ENGINE --> PROJ_MGMT : "requires project data"
+REC_ENGINE --> USER_MGMT : "requires user profiles/tags"
+REC_ENGINE --> COMMUNITY : "requires post data"
+PROJ_MGMT --> USER_MGMT : "requires mentor/student data"
+COMMUNITY --> USER_MGMT : "requires user roles"
+COMMUNITY --> PROJ_MGMT : "internship referrals"
+REVIEW_MOD --> USER_MGMT : "requires user data"
+REVIEW_MOD --> COMMUNITY : "requires post/comment data"
+REVIEW_MOD --> PROJ_MGMT : "project certifications"
+CHAT --> USER_MGMT : "authentication & roles"
+SEARCH --> PROJ_MGMT : "project search"
+SEARCH --> USER_MGMT : "mentor search"
+SEARCH --> COMMUNITY : "post search"
+MUTUAL_EVAL --> PROJ_MGMT : "project completion data"
+MUTUAL_EVAL --> USER_MGMT : "evaluator/evaluatee data"
+RESUME_MGMT --> USER_MGMT : "student profiles"
+RISK_AUDIT --> USER_MGMT : "user behavior monitoring"
+RISK_AUDIT --> CHAT : "chat monitoring"
+RISK_AUDIT --> COMMUNITY : "content monitoring"
+
+' Encryption dependencies
+ENCRYPTION --> USER_MGMT : "login data protection"
+ENCRYPTION --> CHAT : "message encryption"
+
+' Application -> Data Access Layer
+PROJ_MGMT --> DATA_PERSIST
+USER_MGMT --> DATA_PERSIST
+REC_ENGINE --> DATA_PERSIST
+COMMUNITY --> DATA_PERSIST
+REVIEW_MOD --> DATA_PERSIST
+CHAT --> DATA_PERSIST
+RESUME_MGMT --> DATA_PERSIST
+MUTUAL_EVAL --> DATA_PERSIST
+SEARCH --> DATA_PERSIST
+RISK_AUDIT --> DATA_PERSIST
+
+' Data Access -> Storage
+DATA_PERSIST --> DB
+RISK_AUDIT --> AUDIT_DB : "stores audit logs"
+RESUME_MGMT --> FILE_STORAGE : "stores resume files"
+
+' Application -> External Services
+USER_MGMT --> EMAIL_SYSTEMS : "domain verification"
+USER_MGMT --> VERIFY_CODE : "email verification codes"
+VERIFY_CODE --> EMAIL_SVC : "sends verification emails"
+
+' Notification dependencies (embedded in components)
+PROJ_MGMT --> USER_MGMT : "project notifications"
+USER_MGMT --> USER_MGMT : "registration/verification notifications"
+REC_ENGINE --> USER_MGMT : "recommendation notifications"
+COMMUNITY --> USER_MGMT : "community notifications"
+REVIEW_MOD --> USER_MGMT : "moderation notifications"
+CHAT --> USER_MGMT : "chat notifications"
+MUTUAL_EVAL --> USER_MGMT : "evaluation notifications"
+
+@enduml

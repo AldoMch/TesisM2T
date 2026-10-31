@@ -1,0 +1,368 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Infrastructure Layer::ApiGatewayStack"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::API Gateway"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Authorization Layer::CognitoAuthorizer"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::Cognito-authorizer::hello-function"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Authentication Layer::CognitoUserPool"
+      ],
+      "gt_nodes": [
+        "Cognito Account::Cognito Hosted UI"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Authentication Layer::CognitoIdentityPool"
+      ],
+      "gt_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "API Gateway Account::Calls hello/GET with id_token in headers",
+        "API Gateway Account::Returns hello plus user name when authorized"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Integration Layer::WhoAmIMethod"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Integration Layer::EcsProxyMethod"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::auth-function"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::AWS IAM"
+      ],
+      "gt_nodes": [
+        "Global::User"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Authentication Layer::CognitoIdentityPool",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Authentication Layer::CognitoUserPool",
+      "reference_nodes": [
+        "Cognito Account::Cognito Hosted UI",
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Authentication Layer::UserPoolClient",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Authorization Layer::AuthRoleMapping",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool",
+        "Global::User"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Authorization Layer::CognitoAuthorizer",
+      "reference_nodes": [
+        "API Gateway Account::Cognito-authorizer::hello-function"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::API Gateway",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway",
+        "API Gateway Account::Calls hello/GET with id_token in headers",
+        "API Gateway Account::Cognito-authorizer::hello-function",
+        "API Gateway Account::Returns hello plus user name when authorized",
+        "API Gateway Account::auth-function"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::AWS Cognito",
+      "reference_nodes": [
+        "Cognito Account::Cognito Hosted UI",
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::AWS IAM",
+      "reference_nodes": [
+        "Global::User"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::AWS VPC",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::Amazon SQS",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::ECS",
+      "reference_nodes": [
+        "API Gateway Account::auth-function"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Authentication Layer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Authorization Layer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::External Systems",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Infrastructure Layer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Integration Layer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Networking Layer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::ApiGatewayStack",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway",
+        "API Gateway Account::Calls hello/GET with id_token in headers",
+        "API Gateway Account::Cognito-authorizer::hello-function",
+        "API Gateway Account::Returns hello plus user name when authorized",
+        "API Gateway Account::auth-function"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::CognitoStack",
+      "reference_nodes": [
+        "Cognito Account::Cognito Hosted UI",
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Layer::VpcEndpointTemplate",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Integration Layer::ApiStageDeployment",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway",
+        "API Gateway Account::Calls hello/GET with id_token in headers",
+        "API Gateway Account::Cognito-authorizer::hello-function",
+        "API Gateway Account::Returns hello plus user name when authorized"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Integration Layer::CallbackUrlOutput",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway",
+        "API Gateway Account::Calls hello/GET with id_token in headers",
+        "API Gateway Account::Returns hello plus user name when authorized"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Integration Layer::EcsProxyMethod",
+      "reference_nodes": [
+        "API Gateway Account::auth-function",
+        "API Gateway Account::Calls hello/GET with id_token in headers"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Integration Layer::VpcLink",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Integration Layer::WhoAmIMethod",
+      "reference_nodes": [
+        "API Gateway Account::Calls hello/GET with id_token in headers",
+        "API Gateway Account::Returns hello plus user name when authorized"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Networking Layer::SqsVpcEndpoint",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Networking Layer::VpcSecurityGroup",
+      "reference_nodes": []
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::API Gateway",
+        "Infrastructure Layer::ApiGatewayStack"
+      ],
+      "gt_node": "API Gateway Account::API Gateway"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "API Gateway Account::Calls hello/GET with id_token in headers"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Authorization Layer::CognitoAuthorizer"
+      ],
+      "gt_node": "API Gateway Account::Cognito-authorizer::hello-function"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Integration Layer::WhoAmIMethod"
+      ],
+      "gt_node": "API Gateway Account::Returns hello plus user name when authorized"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Integration Layer::EcsProxyMethod"
+      ],
+      "gt_node": "API Gateway Account::auth-function"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Authentication Layer::CognitoUserPool",
+        "External Systems::AWS Cognito",
+        "Infrastructure Layer::CognitoStack"
+      ],
+      "gt_node": "Cognito Account::Cognito Hosted UI"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Authentication Layer::CognitoUserPool",
+        "Authentication Layer::UserPoolClient",
+        "External Systems::AWS Cognito",
+        "Infrastructure Layer::CognitoStack"
+      ],
+      "gt_node": "Cognito Account::Cognito User Pool"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::AWS IAM"
+      ],
+      "gt_node": "Global::User"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 6045,
+      "completion_tokens": 880,
+      "total_tokens": 6925,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Authentication Layer::UserPoolClient",
+    "Authorization Layer::AuthRoleMapping",
+    "External Systems::API Gateway",
+    "External Systems::AWS Cognito",
+    "External Systems::AWS VPC",
+    "External Systems::Amazon SQS",
+    "External Systems::ECS",
+    "Global::Authentication Layer",
+    "Global::Authorization Layer",
+    "Global::External Systems",
+    "Global::Infrastructure Layer",
+    "Global::Integration Layer",
+    "Global::Networking Layer",
+    "Infrastructure Layer::CognitoStack",
+    "Infrastructure Layer::VpcEndpointTemplate",
+    "Integration Layer::ApiStageDeployment",
+    "Integration Layer::CallbackUrlOutput",
+    "Integration Layer::VpcLink",
+    "Networking Layer::SqsVpcEndpoint",
+    "Networking Layer::VpcSecurityGroup"
+  ],
+  "_provenance": {
+    "fingerprint": "428634a80939be64cf5411becd278bb25bfb9c5bbe4d00380c74474d5ea6b2dc",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

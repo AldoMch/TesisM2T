@@ -1,0 +1,57 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+title Home Recipes Architecture (G-R2A-52 s000010_87e6341f)
+
+actor "End User" as EndUser
+actor "API Consumer / Tester" as ApiUser
+
+package "Client Layer" {
+  component "Flutter/Dart\nHome Recipes Client" as Client <<client>>
+}
+
+package "API Gateway Layer" {
+  component "gRPC-Gateway\n(HTTP <-> gRPC)" as Gateway <<middleware>>
+}
+
+package "Service Layer" {
+  component "Go gRPC Server" as Server <<service>>
+  interface "RecipeService" as RecipeSvc
+  interface "IngredientService" as IngredientSvc
+  Server -down- RecipeSvc
+  Server -down- IngredientSvc
+}
+
+package "Contract Layer" {
+  artifact "Protocol Buffers\nService & Messages\n(.proto)" as Proto <<contract>>
+}
+
+'EndUser uses Client'
+EndUser --> Client : Use app
+
+'HTTP access for API consumers/testers'
+ApiUser --> Gateway : HTTP(S) requests
+
+'Primary client-to-server path via gRPC'
+Client --> Server : gRPC calls\n(Dart generated client)
+
+'Gateway maps HTTP to backend gRPC services'
+Gateway --> Server : gRPC calls
+
+'Design-time, contract-driven code generation dependencies'
+Client ..> Proto : Generate Dart client
+Server ..> Proto : Generate Go stubs
+Gateway ..> Proto : Generate gateway
+
+note right of Gateway
+- Exposes selected recipe/ingredient operations via HTTP
+- Preserves streaming where defined by RPCs
+end note
+
+note right of Server
+- Deployable locally, as Docker container
+- Deployable on Kubernetes and Azure Kubernetes Service (AKS)
+end note
+
+@enduml

@@ -1,0 +1,125 @@
+@startuml
+
+title HTTP Proxy System Architecture
+
+package "HTTP Proxy System" {
+  
+  component "HTTP Proxy" as Proxy {
+    [Forwarding Handler]
+    [Request Retention Buffer]
+    [Channel Activation Monitor]
+  }
+  
+  component "Test Server" as TestServer {
+    [Grizzly/Jersey HTTP Server]
+    [File Download Handler]
+    [File Upload Handler]
+    note right of TestServer
+      Port: dynamically assigned
+      Framework: Grizzly/Jersey
+    end note
+  }
+  
+  component "Test Client" as TestClient {
+    [Async HTTP Client]
+    [Workload Generator]
+    [Success Counter]
+    note right of TestClient
+      Threads: 50
+      Requests/thread: 1000
+      Total requests: 50,000
+    end note
+  }
+  
+  database "File System" as Files {
+    [Target Files]
+    [Uploaded Files]
+  }
+  
+  interface "HTTP Interface" as HTTP
+  
+}
+
+component "Upstream Server" as UpstreamServer {
+  [Server Application]
+  note right of UpstreamServer
+    External component
+    Accessed via server-side channel
+  end note
+}
+
+node "External Client" as Client {
+  [HTTP Client Application]
+  note right of Client
+    Initiates requests
+    Receives responses
+  end note
+}
+
+' ==== CONNECTIONS ====
+
+Client --> HTTP : "HTTP Requests"
+HTTP --> Proxy : "Inbound HTTP Traffic"
+Proxy --> UpstreamServer : "Forwarded Requests\n(after channel activation)"
+UpstreamServer --> Proxy : "HTTP Responses"
+
+Proxy --> TestServer : "Internal test traffic\n(optional)"
+TestServer --> HTTP : "Exposes endpoints"
+
+TestClient --> TestServer : "Async GET requests\n(workload generation)"
+TestServer --> TestClient : "HTTP Responses\n(status 200 counted)"
+
+TestServer --> Files : "File existence check"
+Files --> TestServer : "Binary file content"
+TestServer --> Files : "Store uploaded files"
+
+TestServer --> TestServer : "GET /download"
+TestServer --> TestServer : "File upload handling"
+
+Proxy ..> Proxy : "Retains FullHttpRequest\nuntil channel active"
+
+' ==== DATA FLOWS ====
+
+note top of Proxy
+  Forwards:
+  - URI
+  - Headers
+  - Body content
+  (no transformation)
+end note
+
+note top of TestServer
+  Endpoints:
+  - GET /download (file attachment)
+  - Upload handlers
+  Response formats:
+  - Structured response {code, msg, data}
+  - Map payload {filepath: filename}
+  - Binary octet-stream
+end note
+
+note top of TestClient
+  Workflow:
+  1. Generate async GET requests
+  2. Count responses with status 200
+  3. Shutdown executor & client
+end note
+
+' ==== CONSTRAINTS ====
+
+note bottom of Files
+  File download depends on
+  target file existence
+end note
+
+note bottom of Proxy
+  Forwarding only occurs after
+  upstream channel activation
+end note
+
+note bottom of TestClient
+  Uses fixed thread pool
+  for workload generation
+end note
+
+@enduml

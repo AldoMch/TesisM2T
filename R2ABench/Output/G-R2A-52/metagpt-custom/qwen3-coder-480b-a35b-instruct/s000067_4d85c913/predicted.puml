@@ -1,0 +1,60 @@
+@startuml
+title TraceLeft System Architecture
+
+' Define Layers as Packages
+package "User_Interface_Layer" {
+    component cli_entry_point [CLI Entry Point]
+    component trace_command_handler [Trace Command Handler]
+}
+
+package "Library_Core_Layer" {
+    component handler_code_generator [Handler Code Generator]
+}
+
+package "Kernel_Interface_Layer" {
+    component probe_manager [Probe Manager]
+    component event_handler_loader [Event Handler Loader]
+}
+
+' External Systems
+node "Linux_Kernel" {
+    component ebpf_runtime [eBPF Runtime]
+    component kprobe_kretprobe [kprobe/kretprobe]
+}
+
+cloud "External_Libraries" {
+    component gobpf_library [gobpf Library]
+}
+
+database "Event_Configuration_Metadata"
+
+' Key Internal Components
+collections "Handler_Maps" {
+    component handle_name_progs [handle_NAME_progs]
+    component handle_name_progs_ret [handle_NAME_progs_ret]
+}
+
+queue "Perf_Event_Queue" [
+  Perf Event Queue
+]
+
+' Dependencies and Data Flow
+cli_entry_point --> trace_command_handler : executes
+trace_command_handler --> probe_manager : initiates probe installation
+probe_manager --> event_handler_loader : loads handlers
+handler_code_generator --> event_handler_loader : provides generated code
+event_handler_loader --> handler_code_generator : reads configuration
+handler_code_generator --> Event_Configuration_Metadata : reads config
+
+' Handler Map Usage
+event_handler_loader --> handle_name_progs : loads entry probes
+event_handler_loader --> handle_name_progs_ret : loads return probes
+
+' Kernel Interface Interactions
+probe_manager --> kprobe_kretprobe : installs probes
+event_handler_loader --> ebpf_runtime : loads eBPF programs
+ebpf_runtime --> Perf_Event_Queue : emits events via perf
+Perf_Event_Queue --> event_handler_loader : delivers events to userspace
+gobpf_library --> ebpf_runtime : interacts with kernel
+
+@enduml

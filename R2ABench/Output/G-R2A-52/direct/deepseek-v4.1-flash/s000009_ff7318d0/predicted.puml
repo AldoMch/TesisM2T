@@ -1,0 +1,96 @@
+@startuml
+title Foot365 System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Football Enthusiast" as Fan
+actor "Chatbot User" as ChatUser
+actor "Reminder Requester" as ReminderUser
+
+cloud "AWS Cloud" {
+  package "Frontend" {
+    component "Foot365 Web Application\nHTML/CSS/Bootstrap/jQuery" as WebApp
+    component "Amazon S3\nStatic hosting / file storage" as S3
+  }
+
+  package "Security" {
+    component "Amazon Cognito" as Cognito
+    component "AWS IAM" as IAM
+  }
+
+  package "API & Backend" {
+    component "Amazon API Gateway\nHTTP API / execute-api /\nSigV4 / JSON defaults" as APIGW
+    component "AWS Lambda Backend\nPython / Node" as Lambda
+    component "Chatbot Recommendation Endpoint\nConversation Handler\n(fixtures, results, screening locations)" as Chatbot
+  }
+
+  package "Data" {
+    database "Amazon DynamoDB\nMatch results, statistics, fixtures" as DynamoDB
+    database "Elasticsearch\nMatch data retrieval/search" as Elasticsearch
+  }
+
+  package "Prediction" {
+    component "Amazon SageMaker\nMatch prediction" as SageMaker
+  }
+
+  package "Notification" {
+    queue "Amazon SQS\nReminder queue" as SQS
+    component "Amazon SNS\nSMS delivery" as SNS
+  }
+
+  package "Streaming" {
+    node "Amazon EC2" {
+      component "Kafka + Apache Avro\nLive score pipeline" as Kafka
+    }
+  }
+
+  package "External Interfaces" {
+    component "Live Score Event Source" as ScoreSource
+    component "SMS Network" as SMS
+  }
+}
+
+Fan --> WebApp : view fixtures, standings,\nschedules, results, live scores
+ChatUser --> WebApp : chatbot messages
+ReminderUser --> WebApp : request reminders
+
+WebApp --> S3 : hosted on / static assets
+WebApp --> APIGW : HTTP API requests\nJSON + SigV4 execute-api
+APIGW --> Lambda : routes/invokes backend
+Lambda --> Chatbot : recommendation endpoint /\nconversation handling
+Lambda --> Cognito : authentication
+Lambda --> IAM : protected access / security
+Lambda --> DynamoDB : persist/retrieve match data
+DynamoDB --> Elasticsearch : connect for retrieval
+Lambda --> Elasticsearch : retrieval/search queries
+Lambda --> SageMaker : match prediction generation
+Lambda --> SQS : queue reminder request
+SQS --> SNS : queued reminder handling
+SNS --> SMS : SMS reminder delivery
+SMS --> ReminderUser : SMS reminder
+
+ScoreSource --> Kafka : live score events\nAvro encoded
+Kafka ..> Lambda : updated live score stream [inferred]
+Kafka ..> DynamoDB : live score updates [inferred]
+Kafka ..> Elasticsearch : live score indexing [inferred]
+
+note right of APIGW
+  Explicit API requirements:
+  HTTP verb, path, query params,
+  headers, body; JSON defaults;
+  AWS Signature V4 with execute-api.
+end note
+
+note bottom of Kafka
+  Explicit streaming requirements:
+  Kafka with Apache Avro on EC2;
+  real-time live score update processing.
+end note
+
+legend right
+  Solid arrow = explicitly specified interaction
+  Dashed arrow = inferred / design-level relationship
+end legend
+
+@enduml

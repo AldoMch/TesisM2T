@@ -1,0 +1,136 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam monochrome true
+
+title cFS Bundle System Architecture (s000068_a8b7a94e)
+
+actor "Build User / Developer" as BuildUser
+actor "CI Maintainer" as Maintainer
+actor "Functional Tester" as Tester
+actor "Telemetry / Ground Operator" as Operator
+
+package "cFS Bundle Repository (nasa/cFS)" {
+  package "Framework Submodules" {
+    component "cFE" as cFE
+    component "OSAL" as OSAL
+    component "PSP" as PSP
+    component "Framework Applications" as Apps
+    component "Tools" as Tools
+  }
+
+  package "Build Assets" {
+    component "Makefile.sample" as MakefileSample
+    component "sample_defs" as SampleDefs
+    component "Generated Makefile" as GeneratedMakefile
+  }
+
+  package "Related Interfaces / Libraries / Tools" {
+    component "SIL" as SIL
+    component "ECI" as ECI
+    component "cFS_IO_LIB" as cFS_IO_LIB
+    component "cFS_LIB" as cFS_LIB
+    component "CCDD" as CCDD
+    component "Perfutils-java" as Perfutils
+    component "gen_sch_tbl" as GenSchTbl
+  }
+}
+
+package "cFS Runtime Environment" {
+  component "core-cpu1\nexecutable" as CoreCpu1
+  component "Command Interface" as CommandIface
+  component "Telemetry Interface" as TelemetryIface
+}
+
+package "Host-Side Environment" {
+  component "cmdUtil\nhost utility" as CmdUtil
+  component "Telemetry Display /\nOperator Console" as TelemetryConsole
+}
+
+package "CI / GitHub Actions" {
+  component "Build Workflow\n(debug / release)" as BuildWF
+  component "Functional Test Workflow\n(15-min timeout)" as FuncWF
+  component "Run Workflow" as RunWF
+  component "Changelog Workflow" as ChangelogWF
+  component "Format Check Workflow" as FormatWF
+  component "Duplicate Check Workflow" as DupWF
+  component "Reusable Workflows\n(workflow_call)" as ReuseWF
+  component "Static Analysis Workflow" as StaticWF
+  component "CodeQL Workflow" as CodeQLWF
+}
+
+package "External CI Platform" {
+  node "GitHub Actions" as GH
+  node "ubuntu-latest runner" as UbuntuLatest
+  node "ubuntu-18.04 runner" as Ubuntu1804
+}
+
+component "Changelog Artifact\n- Closed issues\n- Breaking changes\n- Implemented enhancements\n- Fixed bugs\n- Deprecated\n- Removed\n- Security fixes" as ChangelogArtifact
+
+BuildUser --> MakefileSample : copy to Makefile
+BuildUser --> SampleDefs : copy
+BuildUser --> GeneratedMakefile : make prep\nmake install
+GeneratedMakefile --> cFE
+GeneratedMakefile --> OSAL
+GeneratedMakefile --> PSP
+GeneratedMakefile --> Apps
+
+Tester --> CoreCpu1 : start
+Tester --> CmdUtil : invoke\n--pktid --cmdcode\n--endian --uint32
+CmdUtil --> CommandIface : send commands
+CommandIface --> CoreCpu1
+CoreCpu1 --> TelemetryIface : telemetry data
+Operator --> TelemetryConsole : enter IP\n(e.g. 127.0.0.1)
+TelemetryConsole --> TelemetryIface : connect to configured IP
+TelemetryIface --> TelemetryConsole : telemetry\nand command counters
+TelemetryConsole --> Operator : observe
+
+Maintainer --> ChangelogWF : manual trigger
+ChangelogWF --> ChangelogArtifact : generate / upload
+ChangelogWF --> UbuntuLatest
+DupWF --> UbuntuLatest
+FormatWF --> Ubuntu1804 : push / pull_request\nworkflow_call
+BuildWF --> Ubuntu1804
+RunWF --> Ubuntu1804
+FuncWF --> Ubuntu1804
+
+BuildWF ..> MakefileSample : uses
+BuildWF ..> SampleDefs : uses
+BuildWF ..> GeneratedMakefile : make prep / make install
+FuncWF ..> CoreCpu1 : execute
+FuncWF ..> CmdUtil : invoke
+
+ReuseWF ..> FormatWF : reuse
+ReuseWF ..> StaticWF : reuse
+ReuseWF ..> CodeQLWF : reuse
+ReuseWF ..> BuildWF : reuse
+ReuseWF ..> FuncWF : reuse
+
+GH --> UbuntuLatest
+GH --> Ubuntu1804
+
+note right of ReuseWF
+  workflow_call enables composition
+  across cFS bundle and submodule
+  repositories.
+end note
+
+note bottom of GeneratedMakefile
+  Constraints: source checkout includes
+  Git submodules; build uses provided
+  Makefile.sample and sample_defs.
+end note
+
+note bottom of FuncWF
+  Depends on core-cpu1 and
+  ../host/cmdUtil.
+end note
+
+note top of BuildWF
+  Reviewed build/test behaviors include
+  deprecated workflows; revalidate against
+  active workflows before long-term baseline.
+end note
+
+@enduml

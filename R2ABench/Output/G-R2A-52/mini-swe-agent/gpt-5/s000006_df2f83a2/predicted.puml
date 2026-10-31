@@ -1,0 +1,86 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+title User-in-the-box Simulator Framework - Layered Architecture
+
+package "Configuration Layer" {
+  [YAML Configuration Files] <<external>> as YAML
+  [MuJoCo XML Definitions] <<external>> as MJXML
+}
+
+package "Build & Composition Layer" {
+  [Simulator Builder] as Builder
+  [MuJoCo XML Integration] as XMLIntegr
+}
+
+package "Simulation Core" {
+  [Biomechanical Model Modules] as BioMods
+  [Perception Modules\n(vision, proprioception)] as PerceptMods
+  [Interaction Task Modules] as TaskMods
+  [Gym-compatible Simulator Package] as Simulator
+  [OpenAI Gym Interface] <<external>> as GymAPI
+  [MuJoCo Engine] <<external>> as MuJoCo
+}
+
+package "Training Workflow" {
+  [RL Training Workflow] as Trainer
+}
+
+package "Evaluation Workflow" {
+  [Evaluation Runner] as Evaluator
+}
+
+package "Storage & Artifacts" {
+  folder "Run Folder" as RunFolder
+  folder "checkpoints" as Checkpoints
+  folder "evaluate" as EvaluateDir
+  [Action Log] as ActionLog
+}
+
+' Layer connections and dependencies
+YAML --> Builder : read build config
+MJXML --> XMLIntegr : provide model/env XML
+Builder --> XMLIntegr : integrate XML assets
+Builder --> BioMods : select/init
+Builder --> PerceptMods : select/init
+Builder --> TaskMods : select/init
+
+XMLIntegr --> Simulator : assemble model + env
+BioMods --> Simulator
+PerceptMods --> Simulator
+TaskMods --> Simulator
+
+Simulator --> GymAPI : implements interface
+Simulator --> MuJoCo : uses physics engine
+
+Trainer --> Simulator : train
+Trainer --> RunFolder : write training artifacts
+Trainer --> Checkpoints : write model checkpoints
+RunFolder o-- Checkpoints
+RunFolder o-- EvaluateDir
+
+Evaluator --> RunFolder : read run artifacts
+Evaluator --> Checkpoints : load checkpoint
+Evaluator --> Simulator : run evaluation
+Evaluator --> EvaluateDir : write outputs
+Evaluator --> ActionLog : write action data (when enabled)
+ActionLog --> EvaluateDir
+
+note right of Simulator
+- Action inputs constrained to [-1, 1]
+- Actuator control outputs constrained to [0, 1]
+end note
+
+note bottom of PerceptMods
+Supports modality-specific data paths
+(e.g., egocentric vision, proprioception)
+end note
+
+note bottom of RunFolder
+Must contain artifacts for simulator loading,
+checkpoint loading, and evaluation outputs
+end note
+
+@enduml

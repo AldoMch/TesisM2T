@@ -1,0 +1,74 @@
+@startuml
+package "Frontend Layer" {
+  component "Next.js Frontend" as NextFrontend
+  component "Frontend Form Entry" as FrontendForm
+  component "Session Handler" as SessionHandler
+  component "Authenticated User Object" as UserObject
+}
+
+package "Entry Channel Layer" {
+  component "External User Channel Entry" as ChannelEntry
+}
+
+package "Middleware Layer" {
+  component "Session Middleware" as SessionMiddleware
+  component "Task Processing Middleware" as TaskMiddleware
+  component "Address-to-Neighborhood Handler" as AddressToNeighborhood
+  component "Service-Area Decision Logic" as ServiceAreaDecision
+}
+
+package "Backend Layer" {
+  node "Firebase Functions Backend" as FirebaseFunctionsBackend {
+    component "Login API" as LoginAPI
+    component "Logout API" as LogoutAPI
+    component "Firebase ID Token Verification" as IdTokenVerification
+  }
+  component "Backend Task Handling" as BackendTaskHandling
+  component "Server-side Session Store" as SessionStore
+}
+
+package "Configuration / Runtime Layer" {
+  component "Firebase Runtime Configuration" as FirebaseRuntimeConfig
+  component "Server Run Modes" as ServerRunModes
+  component "Build Configuration" as BuildConfiguration
+}
+
+cloud "Firebase Authentication" as FirebaseAuth
+cloud "OnFleet" as OnFleet
+cloud "End-user Channels\n(text/call)" as EndUserChannels
+node "Environment Variables" as EnvironmentVariables
+
+SessionHandler --> UserObject : getIdToken()
+SessionHandler --> SessionMiddleware : login/logout request
+SessionMiddleware --> LoginAPI : wrap login handling
+SessionMiddleware --> LogoutAPI : wrap logout handling
+SessionMiddleware --> SessionStore : manage session
+
+LoginAPI --> IdTokenVerification : verify ID token
+IdTokenVerification --> FirebaseAuth : verify against Firebase Auth
+LoginAPI --> SessionStore : write decoded token + original token
+LogoutAPI --> SessionStore : session teardown
+
+FrontendForm --> TaskMiddleware : help-task request
+ChannelEntry --> TaskMiddleware : channel task request
+EndUserChannels --> ChannelEntry : text/call interaction
+TaskMiddleware --> AddressToNeighborhood : resolve neighborhood
+TaskMiddleware --> ServiceAreaDecision : check operated area
+AddressToNeighborhood --> ServiceAreaDecision : neighborhood
+ServiceAreaDecision --> BackendTaskHandling : eligible task request
+BackendTaskHandling --> OnFleet : create task
+
+FirebaseRuntimeConfig --> EnvironmentVariables : maps FIREBASE_* variables
+FirebaseRuntimeConfig --> NextFrontend : runtime Firebase config
+FirebaseRuntimeConfig --> LoginAPI : initialize Firebase Admin
+FirebaseRuntimeConfig --> IdTokenVerification : verification config
+FirebaseRuntimeConfig --> FirebaseAuth : configure Firebase runtime
+
+ServerRunModes --> NextFrontend : frontend-only / both
+ServerRunModes --> LoginAPI : backend-only / both
+ServerRunModes --> LogoutAPI : backend-only / both
+ServerRunModes --> BackendTaskHandling : backend-only / both
+
+BuildConfiguration --> NextFrontend : CSS/Sass/static assets build
+
+@enduml

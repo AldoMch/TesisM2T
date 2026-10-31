@@ -1,0 +1,103 @@
+@startuml
+title GPSLogger System Architecture
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+rectangle "Build Environment" as build {
+  component "Gradle Build" as gradle
+  folder "~/.gradle/gradle.properties\n(OSM/Dropbox credentials)" as gradleprops
+  folder "project/local.properties\n(sdk.dir)" as localprops
+  artifact "Android SDK\n(Build Tools 19.0.3)" as sdk
+  component "Google Play Services\n(dependency)" as gpslib
+}
+
+node "Android Device / Emulator" as device {
+  package "GPSLogger App" as app {
+    component "Main Activity /\nFragments" as ui
+    component "Settings /\nSession" as settings
+    component "Event Bus" as bus
+    component "GPS Logging Service" as svc
+    component "Location Listeners\n(Android Location API / Fused)" as listeners
+    component "GPRMC Encoder" as gprmc
+    component "OpenGTS Uploader\n(UDP)" as gts
+    component "OpenGTS Transmission\nConfiguration" as gtscfg
+    package "Loggers" as logs {
+      component "GPX Logger" as gpx
+      component "KML Logger" as kml
+      component "Text Logger" as txt
+    }
+    component "OpenStreetMap\nIntegration" as osm
+    component "Dropbox\nUploader" as dropbox
+  }
+
+  folder "Device Storage" as storage {
+    artifact "GPX Files" as gpxfile
+    artifact "KML Files" as kmlfile
+    artifact "Text Logs" as txtfile
+  }
+
+  component "Google Play Services\n(Runtime)" as gpsruntime
+}
+
+cloud "External Services" as extern {
+  queue "OpenGTS Server\n(UDP Endpoint)" as gtsSrv
+  cloud "OpenStreetMap API" as osmApi
+  cloud "Dropbox API" as dropApi
+}
+
+' Build-time relations
+gradleprops --> gradle : read\nGPSLOGGER_OSM_CONSUMERKEY\nGPSLOGGER_OSM_CONSUMERSECRET\nGPSLOGGER_DROPBOX_APPKEY\nGPSLOGGER_DROPBOX_APPSECRET
+localprops --> gradle : read\nsdk.dir
+sdk --> gradle : compile/build
+gpslib --> gradle : dependency
+gradle --> app : inject credentials into\napp configuration\n(build-time)
+
+' Runtime: location acquisition and eventing
+gpsruntime --> listeners : location sources
+listeners --> svc : location updates
+svc --> bus : publish location events
+bus --> ui : deliver location updates
+ui --> svc : start/stop logging,\nview status
+settings --> svc : logging outputs,\nOpenGTS target,\nintervals, etc.
+
+' Logging outputs
+svc --> gpx : write location
+svc --> kml : write location
+svc --> txt : write location
+gpx --> gpxfile
+kml --> kmlfile
+txt --> txtfile
+
+' OpenGTS path (GPRMC over UDP)
+settings --> gtscfg : server, port,\nmethod, device id,\n(optional path)
+gtscfg --> gts : transmission target
+svc --> gprmc : SerializableLocation
+gprmc --> gts : GPRMC string
+gts --> gtsSrv : UDP datagram
+
+' Optional integrations
+svc --> osm : uses OSM credentials
+osm --> osmApi : authenticated requests
+
+svc --> dropbox : upload logs
+dropbox --> dropApi : API calls
+
+' Notes
+note right of gts
+Sends GPRMC-encoded location
+via UDP to configured server/port
+end note
+
+note bottom of gradle
+Credentials supplied as named
+Gradle properties and injected
+at build time
+end note
+
+note bottom of gpsruntime
+Some features depend on
+Google Play Services
+end note
+
+@enduml

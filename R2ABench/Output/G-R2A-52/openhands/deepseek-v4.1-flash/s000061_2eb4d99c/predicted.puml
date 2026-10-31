@@ -1,0 +1,104 @@
+@startuml
+title AWS IoT Device Simulator - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+
+actor "Administrator /\nOperator" as Admin
+actor "API Client" as ApiClient
+actor "AWS Deployment\nWorkflow" as Deployer
+
+package "AWS Cloud" {
+
+  package "Web Management Console" {
+    component "Web Console\n(Management UI)" as WebConsole
+    component "Console Hosting\n& Distribution" as Hosting
+    WebConsole --> Hosting
+  }
+
+  package "Identity & Access" {
+    component "Identity &\nAuthentication Service" as Identity
+  }
+
+  package "API Layer" {
+    component "API Gateway REST API\n[REGIONAL, stage: prod]" as APIGW
+    note right of APIGW
+      - Methods: GET, POST, PUT, DELETE, OPTIONS
+      - CORS preflight statusCode 200
+      - Allowed headers: Authorization,
+        Content-Type, X-Amz-Date,
+        X-Amz-Security-Token, X-Api-Key
+      - Request parameter & body validation
+      - JSON access logs (INFO), tracing enabled
+      - Exposes API endpoint + API ID
+    end note
+  }
+
+  package "Compute / Service Integrations" {
+    component "Management API\nLambda Handler" as MgmtLambda
+    component "Device Simulation\nExecution" as SimEngine
+    component "Route Data Loader\n(S3-backed)" as RouteLoader
+    component "CloudFormation\nCustom-Resource Handler" as CRHandler
+    component "Simulated Message\nPublisher" as Publisher
+  }
+
+  package "Persistence & Orchestration" {
+    database "Amazon DynamoDB" as DynamoDB
+    component "AWS Step Functions" as StepFunctions
+  }
+
+  package "Storage" {
+    database "Amazon S3\nRoute Bucket (ROUTE_BUCKET)" as RouteBucket
+    note bottom of RouteBucket
+      Route JSON object key resolved from
+      routeInfo.routeName or generated
+      default key route-{id}.json
+    end note
+  }
+
+  package "IoT & Messaging" {
+    component "AWS IoT\n(topics)" as IoT
+  }
+
+  package "Deployment" {
+    component "AWS CloudFormation\nCustom Resources" as CFN
+  }
+}
+
+' ---- User / Client interactions ----
+Admin --> WebConsole : uses
+ApiClient --> APIGW : REST calls over HTTPS
+WebConsole --> APIGW : REST calls
+WebConsole --> Identity : authenticate
+APIGW --> Identity : authorize request
+
+' ---- API layer to service integrations ----
+APIGW --> MgmtLambda : invokes (GET/POST/PUT/DELETE)
+MgmtLambda --> DynamoDB : read/write simulations\n& device types
+MgmtLambda --> StepFunctions : start/orchestrate\nsimulation execution
+StepFunctions --> SimEngine : execute simulated\ndevice behavior
+SimEngine --> RouteLoader : request route state
+RouteLoader --> RouteBucket : GetObject (ROUTE_BUCKET,\nresolved route key)
+RouteBucket ..> RouteLoader : route JSON (UTF-8)\n[error propagated on failure]
+RouteLoader --> RouteLoader : assemble route state\n(routeName, odometer, routeStage,\nburndown, burndownCalc, routeEnded,\nroute, randomTriggers)
+SimEngine --> Publisher : emit simulated\ndevice messages
+Publisher --> IoT : publish messages\nto AWS IoT topics
+SimEngine --> DynamoDB : update simulation\nstate
+
+' ---- Deployment interactions ----
+Deployer --> CFN : deploy stack
+CFN --> CRHandler : invoke custom resource
+CRHandler --> CRHandler : build CloudFormation\nresponse body from event,\nLambda context & solution config
+CRHandler --> DynamoDB : initialize supporting\nresources
+CRHandler --> IoT : provision IoT\nsupporting resources
+
+' ---- Deployment of console/API ----
+Hosting --> APIGW : serve console to API
+APIGW --> RouteBucket : access logs destination
+
+' ---- Custom resource response back ----
+CRHandler --> CFN : custom-resource\nresponse body
+
+@enduml

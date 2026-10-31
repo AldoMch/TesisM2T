@@ -1,0 +1,44 @@
+@startuml
+
+package "Client Layer (Vue.js SPA)" {
+  node "Google Chrome" as Chrome {
+    component "Vue.js Web Client" as Client
+  }
+}
+
+node "Local Computer" as Local {
+  component "API Gateway" as Gateway
+  component "User Management Service" as UserSvc
+  component "Project Management Service" as ProjectSvc
+  component "Requirements Management Service" as ReqSvc
+}
+
+node "High-Performance Server" as HPC {
+  component "Algorithm Service" as AlgoSvc
+}
+
+package "Data Layer" {
+  database "MongoDB Database" as Mongo
+}
+
+Client --> Gateway
+
+Gateway --> UserSvc
+Gateway --> ProjectSvc
+Gateway --> ReqSvc
+
+ProjectSvc --> ReqSvc : Baseline archive coordination
+ReqSvc --> AlgoSvc : NLP/ML analysis
+ProjectSvc --> UserSvc : Permission/role checks
+ReqSvc --> UserSvc : Permission/role checks
+
+UserSvc --> Mongo
+ProjectSvc --> Mongo
+ReqSvc --> Mongo
+AlgoSvc --> Mongo : Persist analysis results
+
+note right of AlgoSvc
+Uses internal NLP/ML libraries (e.g., PyTorch, word embeddings).
+end note
+
+@enduml

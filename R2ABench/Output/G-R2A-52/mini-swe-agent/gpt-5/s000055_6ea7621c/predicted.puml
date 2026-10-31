@@ -1,0 +1,51 @@
+@startuml
+title Nobel Laureates Autocomplete - Layered Architecture
+
+actor "End User" as User
+
+package "Client Layer" {
+  component "Browser UI\n(HTML/CSS/JS)\n- Search Input\n- Suggestions List" as Browser
+}
+
+package "Web/HTTP Layer" {
+  component "HTTP Server" as HttpServer
+  component "Router\n(URL contains 'search'?)" as Router
+}
+
+package "Application Layer" {
+  component "Home Page Handler\n(GET /)" as HomeHandler
+  component "Static Asset Handler\n(public assets, sets Content-Type)" as StaticHandler
+  component "Not Found Handler\n(404 HTML)" as NotFoundHandler
+  component "Autocomplete Service\n(prefix match, limit 10)" as Autocomplete
+  component "Value Extraction Utility\n(field values from objects)" as ValueUtil
+}
+
+package "Data Layer" {
+  component "Local Data Access\n(JSON reader)" as DataAccess
+  database "Laureate Data (JSON)" as LaureateJSON
+  folder "Public Assets\n(HTML, CSS, JS, JPG, ICO)" as PublicAssets
+}
+
+cloud "Heroku (PaaS)" as Heroku
+
+User --> Browser : Enter text
+Browser --> HttpServer : HTTP requests (/, search, static)
+HttpServer --> Router : route requests
+
+Router --> HomeHandler : GET /
+Router --> StaticHandler : static file requests
+Router --> Autocomplete : URL contains 'search'
+Router --> NotFoundHandler : no route/asset
+
+HomeHandler --> PublicAssets : read index.html
+StaticHandler --> PublicAssets : serve files
+StaticHandler --> HttpServer : responses with Content-Type
+NotFoundHandler --> HttpServer : 404 response
+
+Autocomplete --> DataAccess : request laureate names
+Autocomplete --> ValueUtil : extract field values
+DataAccess --> LaureateJSON : read JSON data
+
+HttpServer ..> Heroku : deployed on Node.js runtime
+
+@enduml

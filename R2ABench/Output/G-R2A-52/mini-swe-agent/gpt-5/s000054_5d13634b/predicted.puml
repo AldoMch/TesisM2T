@@ -1,0 +1,41 @@
+@startuml
+title TokenCard Contracts Architecture (Consumer Contract Wallet)
+
+actor "Owner (EOA)" as Owner
+actor "Controller Addresses" as Controllers
+
+node "Ethereum Network" as ETH
+cloud "Ethereum Name Service (ENS)" as ENS
+
+package "Client / Integration Layer" {
+  component "Go Contract Bindings\n- Read-only Call\n- Paid Transact / Transfer" as Bindings
+}
+
+package "Smart Contracts Layer" {
+  component "Consumer Contract Wallet" as Wallet
+  component "Controller Contracts" as Controller
+  database "Token Whitelist Contract\n- exchange rate\n- loadability\n- burnability" as Whitelist
+  component "Rate Oracle / Provider" as Oracle
+}
+
+rectangle "Gas Tank (Owner ETH for gas)\nOutside wallet security boundary" as GasTank
+
+note top of Wallet
+Holds user ETH and ERC20 assets
+end note
+
+Bindings --> ETH : Call / Transact / Transfer
+Owner --> ETH : Signed transactions
+Controllers --> ETH : Signed transactions
+
+ETH --> Wallet : Contract interactions
+ETH --> Controller : Contract interactions (adminCount, controllerCount)
+
+Wallet --> ENS : Resolve supporting contract addresses
+Wallet --> Whitelist : Token support & rate data
+Wallet --> Oracle : Exchange-rate data
+
+Owner --> GasTank : Holds gas-payment ETH
+GasTank ..x Wallet : Kept separate from protected wallet assets
+
+@enduml

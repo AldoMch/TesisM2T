@@ -1,0 +1,117 @@
+@startuml
+' Deployment nodes representing execution environments
+node "Python Runtime" {
+    node "MPI Process 1" as mpi_proc_1 {
+        package "API Layer" {
+            component "TaskSubmitter"
+            component "TaskWaiter"
+            component "TaskDescriptor"
+            component "MapAPI"            
+            component "AsCompletedAPI"
+        }
+
+        package "Runtime Management Layer" {
+            component "RuntimeController"
+        }
+
+        package "Task Execution Layer" {
+            component "WorkerScheduler"
+            component "CallbackExecutor"
+            component "WorkerThread" as WorkerThread1
+            component "WorkerThread" as WorkerThread2
+            component "WorkerThread" as WorkerThread3
+        }
+
+        package "Worker Management Layer" {
+            component "WorkerPool"
+            component "TaskQueueManager"
+        }
+
+        package "Communication Layer" {
+            component "TaskStealer"
+            component "MPICommunicator"
+        }
+        
+        package "Configuration Layer" {
+            component "EnvironmentConfig"
+        }
+    }
+
+    node "MPI Process 2" as mpi_proc_2 {
+        package "API Layer" {
+            component "TaskSubmitter" as submitter2
+            component "TaskWaiter" as waiter2
+            component "TaskDescriptor" as descriptor2
+            component "MapAPI" as map2
+            component "AsCompletedAPI" as ascompleted2
+        }
+
+        package "Runtime Management Layer" {
+            component "RuntimeController" as controller2
+        }
+
+        package "Task Execution Layer" {
+            component "WorkerScheduler" as scheduler2
+            component "CallbackExecutor" as executor2
+            component "WorkerThread" as WorkerThread4
+            component "WorkerThread" as WorkerThread5
+            component "WorkerThread" as WorkerThread6
+        }
+
+        package "Worker Management Layer" {
+            component "WorkerPool" as pool2
+            component "TaskQueueManager" as queue2
+        }
+
+        package "Communication Layer" {
+            component "TaskStealer" as stealer2
+            component "MPICommunicator" as comm2
+        }
+        
+        package "Configuration Layer" {
+            component "EnvironmentConfig" as env2
+        }
+    }
+
+    cloud "External Systems" {
+        component "mpi4py"
+        component "termcolor"
+        database "Optional Packages" {
+            component "numpy"
+            component "cma"
+            component "h5py"
+            component "pillow"
+        }
+    }
+}
+
+' Dependencies within first MPI process
+TaskSubmitter --> TaskDescriptor : creates futures
+TaskSubmitter --> WorkerScheduler : assigns tasks
+TaskSubmitter --> TaskQueueManager : places tasks
+TaskSubmitter --> MPICommunicator : sends remote tasks
+WorkerScheduler --> TaskQueueManager : retrieves queues
+WorkerPool --> WorkerScheduler : provides workers
+WorkerScheduler --> WorkerThread1 : dispatches work
+WorkerScheduler --> WorkerThread2 : dispatches work
+WorkerScheduler --> WorkerThread3 : dispatches work
+TaskDescriptor --> TaskQueueManager : accesses data
+CallbackExecutor --> TaskDescriptor : uses descriptor
+TaskStealer --> TaskQueueManager : steals tasks
+MPICommunicator --> TaskStealer : communicates
+RuntimeController --> WorkerPool : controls lifecycle
+RuntimeController --> TaskSubmitter : initializes API
+MapAPI --> TaskSubmitter : uses for execution
+AsCompletedAPI --> TaskDescriptor : consumes futures
+EnvironmentConfig ..> RuntimeController : provides settings
+
+' Cross-process communication
+MPICommunicator <--> comm2 : inter-process comms
+TaskStealer <--> stealer2 : task stealing
+
+' External dependencies
+WorkerPool ..> "mpi4py" : uses MPI primitives
+RuntimeController ..> "termcolor" : optional coloring
+CallbackExecutor ..> "Optional Packages" : optional processing
+
+@enduml

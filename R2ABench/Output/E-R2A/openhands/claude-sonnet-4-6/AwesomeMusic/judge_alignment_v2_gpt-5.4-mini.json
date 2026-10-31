@@ -1,0 +1,667 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::External Network",
+        "Global::Internal Network"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Infra Layer"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Internal Network::RabbitMQ\\n(Task Queue / MQ)"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Infra Layer::RabbitMQ"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Awesome Music System::Infra Layer::MySQL",
+        "Awesome Music System::Infra Layer::Prometheus",
+        "Awesome Music System::Infra Layer::Redis"
+      ],
+      "predicted_nodes": [
+        "Internal Network::Database\\n(3-Replica Storage)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Awesome Music System::Micro Service Layer::service-auth",
+        "Awesome Music System::Micro Service Layer::service-auth::auth1",
+        "Awesome Music System::Micro Service Layer::service-auth::auth2",
+        "Awesome Music System::Micro Service Layer::service-auth::auth3"
+      ],
+      "predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Account Service\\n(Register / Login)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Awesome Music System::Micro Service Layer::service-discovery",
+        "Awesome Music System::Micro Service Layer::service-discovery::discovery1",
+        "Awesome Music System::Micro Service Layer::service-discovery::discovery2",
+        "Awesome Music System::Micro Service Layer::service-discovery::discovery3"
+      ],
+      "predicted_nodes": [
+        "Internal Network::etcd\\n(Service Coordination &\\nDistributed Configuration)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler1",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler2",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler3"
+      ],
+      "predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Scheduling Module"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web",
+        "Awesome Music System::Micro Service Layer::service-web::web1",
+        "Awesome Music System::Micro Service Layer::service-web::web2",
+        "Awesome Music System::Micro Service Layer::service-web::web3"
+      ],
+      "predicted_nodes": [
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Awesome Music System::Security Critical Zone",
+        "Awesome Music System::Security Critical Zone::Nginx Cluster",
+        "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx1",
+        "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx2",
+        "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx3",
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway",
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway1",
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway2",
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway3"
+      ],
+      "predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Awesome Music System::Security Critical Zone::Static Resource Server",
+        "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server1",
+        "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server2",
+        "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server3"
+      ],
+      "predicted_nodes": [
+        "Internal Network::Apache Hadoop\\n(Distributed File Storage)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "External Network::Nginx\\n(Gateway / Load Balancer)",
+      "reference_nodes": [
+        "Awesome Music System::Security Critical Zone::Nginx Cluster",
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::External Network",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Internal Network",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Music Enthusiast\\n(Browser)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Algorithm Service",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Algorithm Service::Offline Model Training\\n(midi→abc→GPT-2 fine-tuning)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Algorithm Service::Online Score Generation\\n(midi→abc→5 seeds→GPT-2→abc→midi)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Algorithm Service::Score Classification\\n(midi→abc→LSTM representation→labels)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Algorithm Service::Song Recommendation\\n(Cosine similarity / User similarity)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Apache Hadoop\\n(Distributed File Storage)",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Database\\n(3-Replica Storage)",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::MySQL",
+        "Awesome Music System::Infra Layer::Prometheus",
+        "Awesome Music System::Infra Layer::Redis"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Database\\n(3-Replica Storage)::Favorite & Follow Records",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::MySQL",
+        "Awesome Music System::Infra Layer::RabbitMQ"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Database\\n(3-Replica Storage)::Hot Chart Data\\n(score & user popularity)",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::Prometheus"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Database\\n(3-Replica Storage)::Model Parameters\\n(per-user GPT-2 params)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Database\\n(3-Replica Storage)::Score Records\\n(score data / labels / attention)",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::MySQL",
+        "Awesome Music System::Infra Layer::Prometheus"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Database\\n(3-Replica Storage)::Task Metadata & Logs\\n(status / errors / retries)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Database\\n(3-Replica Storage)::User Accounts\\n(username / password / email)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-auth"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::RabbitMQ\\n(Task Queue / MQ)",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::RabbitMQ",
+        "Awesome Music System::Micro Service Layer::service-scheduler",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler1",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Backend\\n(Golang / Gin)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Backend\\n(Golang / Gin)::Account Service\\n(Register / Login)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-auth"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Backend\\n(Golang / Gin)::Favorite & Follow Service",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-auth"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Backend\\n(Golang / Gin)::Recommendation & Hot Chart Service",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Backend\\n(Golang / Gin)::Scheduling Module",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Backend\\n(Golang / Gin)::Score Service\\n(Upload / Download / Search)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Homepage UI\\n(Recommendations & Hot Charts)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Personal Center UI\\n(Favorites / Follows / Models)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Registration & Login UI",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Score Generation UI",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Search & List UI",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Song Detail UI\\n(Favorite / Download)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::etcd\\n(Service Coordination &\\nDistributed Configuration)",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-discovery"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Awesome Music System::Infra Layer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Database\\n(3-Replica Storage)"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer::MySQL"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Database\\n(3-Replica Storage)"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer::Prometheus"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::RabbitMQ\\n(Task Queue / MQ)"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer::RabbitMQ"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Database\\n(3-Replica Storage)"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer::Redis"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Algorithm Service",
+        "Internal Network::Algorithm Service::Offline Model Training\\n(midi→abc→GPT-2 fine-tuning)",
+        "Internal Network::Algorithm Service::Online Score Generation\\n(midi→abc→5 seeds→GPT-2→abc→midi)",
+        "Internal Network::Algorithm Service::Score Classification\\n(midi→abc→LSTM representation→labels)",
+        "Internal Network::Algorithm Service::Song Recommendation\\n(Cosine similarity / User similarity)",
+        "Internal Network::Web Backend\\n(Golang / Gin)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Account Service\\n(Register / Login)",
+        "Internal Network::Web Backend\\n(Golang / Gin)::Favorite & Follow Service"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-auth"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Account Service\\n(Register / Login)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-auth::auth1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Account Service\\n(Register / Login)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-auth::auth2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Account Service\\n(Register / Login)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-auth::auth3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::etcd\\n(Service Coordination &\\nDistributed Configuration)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-discovery"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::etcd\\n(Service Coordination &\\nDistributed Configuration)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-discovery::discovery1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::etcd\\n(Service Coordination &\\nDistributed Configuration)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-discovery::discovery2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::etcd\\n(Service Coordination &\\nDistributed Configuration)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-discovery::discovery3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Scheduling Module"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-scheduler"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Scheduling Module"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-scheduler::scheduler1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Scheduling Module"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-scheduler::scheduler2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)::Scheduling Module"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-scheduler::scheduler3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Backend\\n(Golang / Gin)",
+        "Internal Network::Web Backend\\n(Golang / Gin)::Score Service\\n(Upload / Download / Search)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Homepage UI\\n(Recommendations & Hot Charts)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Personal Center UI\\n(Favorites / Follows / Models)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Registration & Login UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Score Generation UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Search & List UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Song Detail UI\\n(Favorite / Download)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-web"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Homepage UI\\n(Recommendations & Hot Charts)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Personal Center UI\\n(Favorites / Follows / Models)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Registration & Login UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Score Generation UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Search & List UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Song Detail UI\\n(Favorite / Download)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-web::web1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Homepage UI\\n(Recommendations & Hot Charts)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Personal Center UI\\n(Favorites / Follows / Models)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Registration & Login UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Score Generation UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Search & List UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Song Detail UI\\n(Favorite / Download)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-web::web2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Homepage UI\\n(Recommendations & Hot Charts)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Personal Center UI\\n(Favorites / Follows / Models)",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Registration & Login UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Score Generation UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Search & List UI",
+        "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Song Detail UI\\n(Favorite / Download)"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-web::web3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Nginx Cluster"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Spring Cloud Gateway"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Network::Nginx\\n(Gateway / Load Balancer)"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway3"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Awesome Music System::Security Critical Zone::Static Resource Server"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server3"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 9673,
+      "completion_tokens": 1846,
+      "total_tokens": 11519,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Awesome Music System::Micro Service Layer"
+  ],
+  "unmatched_predicted_nodes": [
+    "Global::Music Enthusiast\\n(Browser)",
+    "Internal Network::Algorithm Service",
+    "Internal Network::Algorithm Service::Offline Model Training\\n(midi→abc→GPT-2 fine-tuning)",
+    "Internal Network::Algorithm Service::Online Score Generation\\n(midi→abc→5 seeds→GPT-2→abc→midi)",
+    "Internal Network::Algorithm Service::Score Classification\\n(midi→abc→LSTM representation→labels)",
+    "Internal Network::Algorithm Service::Song Recommendation\\n(Cosine similarity / User similarity)",
+    "Internal Network::Database\\n(3-Replica Storage)::Favorite & Follow Records",
+    "Internal Network::Database\\n(3-Replica Storage)::Hot Chart Data\\n(score & user popularity)",
+    "Internal Network::Database\\n(3-Replica Storage)::Model Parameters\\n(per-user GPT-2 params)",
+    "Internal Network::Database\\n(3-Replica Storage)::Score Records\\n(score data / labels / attention)",
+    "Internal Network::Database\\n(3-Replica Storage)::Task Metadata & Logs\\n(status / errors / retries)",
+    "Internal Network::Database\\n(3-Replica Storage)::User Accounts\\n(username / password / email)",
+    "Internal Network::Web Backend\\n(Golang / Gin)",
+    "Internal Network::Web Backend\\n(Golang / Gin)::Favorite & Follow Service",
+    "Internal Network::Web Backend\\n(Golang / Gin)::Recommendation & Hot Chart Service",
+    "Internal Network::Web Backend\\n(Golang / Gin)::Score Service\\n(Upload / Download / Search)",
+    "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Homepage UI\\n(Recommendations & Hot Charts)",
+    "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Personal Center UI\\n(Favorites / Follows / Models)",
+    "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Registration & Login UI",
+    "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Score Generation UI",
+    "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Search & List UI",
+    "Internal Network::Web Frontend\\n(HTML / CSS / JavaScript / Bootstrap)::Song Detail UI\\n(Favorite / Download)"
+  ],
+  "_provenance": {
+    "fingerprint": "bc520e0d2949200acbf76f8c5d7aae3aa0574c3cb6c9ebfa014f812af4d50e47",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

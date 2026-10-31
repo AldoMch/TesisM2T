@@ -1,0 +1,80 @@
+@startuml
+package "Web Client Layer" {
+  component "React" as ReactJS
+  component "React-Router" as ReactRouter
+  component "jQuery" as JQuery
+  component "A-Frame / aframe-react" as AFrame
+
+  component "Sign-up View" as SignUp
+  component "Sign-in View" as SignIn
+  component "Shared Client Credential Handlers" as CredentialHandlers
+  component "Shared Client Credential State\n(email/password)" as SharedCredentialState
+  component "Credential Submission Function" as CredentialSubmit
+  component "Auth/Registration Response Handler" as AuthResponseHandler
+  component "Authenticated Application Area" as AuthenticatedArea
+  component "Content Retrieval Client" as ContentRetrieval
+  component "Paragraph/Content Result State\n(accumulated results; final state)" as ParagraphResultState
+  component "Client Error Logger" as ErrorLogger
+  component "Error Display" as ErrorDisplay
+  component "Scene-Based Client Renderer" as SceneRenderer
+  component "Scene/Support Components\n(Lobby, SF, Louvre, Berlin, Milan, Rome, Hack, Camera, Sky, Plane, TextPlane)" as SceneComponents
+}
+
+package "Web Server Layer" {
+  component "Web Server Routing\n(Node.js/Express-style)" as WebServerRouting
+  component "User Controller" as UserController
+  component "User Model" as UserModel
+  component "Password Verification" as PasswordVerification
+  component "bcrypt-nodejs" as Bcrypt
+  component "Cache Service" as CacheService
+  component "Image Storage Service" as ImageStorageService
+}
+
+package "Data & External Services" {
+  database "MariaDB Relational Database\n(users, likes, photos, comments)" as MariaDB
+  database "Redis-style Cache" as RedisCache
+  cloud "AWS S3-style Image Storage" as S3
+}
+
+SignUp --> SignIn : navigate to sign-in
+SignIn --> SignUp : navigate to sign-up
+SignUp --> CredentialHandlers : invokes
+SignIn --> CredentialHandlers : invokes
+CredentialHandlers --> SharedCredentialState : updates email/password
+CredentialSubmit --> SharedCredentialState : reads email/password
+CredentialSubmit --> WebServerRouting : JSON POST to auth route
+WebServerRouting --> AuthResponseHandler : registration/auth response
+AuthResponseHandler --> ReactRouter : post-auth navigation on success
+AuthResponseHandler --> ErrorDisplay : displays auth failure
+AuthResponseHandler --> ErrorLogger : logs auth errors
+ReactRouter --> AuthenticatedArea : routes to authenticated area
+AuthenticatedArea --> SceneRenderer : renders authenticated application
+
+SignUp --> ReactRouter : navigation link
+SignIn --> ReactRouter : navigation link
+SignUp --> ReactJS : renders with React
+SignIn --> ReactJS : renders with React
+SceneRenderer --> ReactJS : renders with React
+ContentRetrieval --> JQuery : AJAX requests
+
+ContentRetrieval --> WebServerRouting : async title-based content requests
+WebServerRouting --> ContentRetrieval : content response
+ContentRetrieval --> ParagraphResultState : accumulates results and sets final state
+ContentRetrieval --> ErrorLogger : logs retrieval errors
+ContentRetrieval --> ErrorDisplay : displays visible failure indicator
+
+SceneRenderer --> SceneComponents : imports/renders
+SceneRenderer --> AFrame : imports A-Frame/aframe-react
+SceneComponents --> AFrame : scene components
+
+WebServerRouting --> UserController : routes authentication/registration
+UserController --> UserModel : create/save/retrieve-all/retrieve-one
+UserController --> PasswordVerification : verifies password
+PasswordVerification --> Bcrypt : compares password
+UserModel --> MariaDB : persists/retrieves user records
+WebServerRouting --> CacheService : delegates cache access
+CacheService --> RedisCache : reads/writes cache
+WebServerRouting --> ImageStorageService : delegates image storage/retrieval
+ImageStorageService --> S3 : stores/retrieves image/photo data
+
+@enduml

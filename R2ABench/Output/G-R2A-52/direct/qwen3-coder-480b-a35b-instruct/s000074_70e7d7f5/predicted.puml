@@ -1,0 +1,100 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "User" as user
+
+package "Tengine Lite System" {
+    RECTANGLE "Example Applications" as examples {
+        RECTANGLE "Classification" as classification
+        RECTANGLE "Detection" as detection
+        RECTANGLE "Segmentation" as segmentation
+        RECTANGLE "Pose Estimation" as pose
+        RECTANGLE "Landmark Detection" as landmark
+        RECTANGLE "Character Recognition" as ocr
+    }
+
+    package "API Layers" {
+        RECTANGLE "C API" as c_api
+        RECTANGLE "C++ API" as cpp_api
+        RECTANGLE "Python API" as python_api
+    }
+
+    package "Core Modules" {
+        RECTANGLE "Device Module" as device
+        RECTANGLE "Scheduler Module" as scheduler
+        RECTANGLE "Operator Module" as operator_module
+        RECTANGLE "Serializer Module" as serializer
+    }
+
+    package "Model Tooling" {
+        RECTANGLE "Linux Converter Tool" as linux_converter
+        RECTANGLE "WebAssembly Converter" as wasm_converter
+        RECTANGLE "Browser Interface" as browser_ui
+    }
+
+    package "Build System" {
+        RECTANGLE "CMake Build" as cmake
+    }
+
+    package "Data Assets" {
+        RECTANGLE "Model Files (.tmfile)" as model_files
+        RECTANGLE "Image Files" as image_files
+    }
+}
+
+user --> examples : runs
+user --> c_api : integrates via
+user --> cpp_api : consults
+user --> python_api : consults
+user --> browser_ui : uses
+
+examples --> c_api : uses
+examples --> model_files : consumes
+examples --> image_files : consumes
+
+c_api --> scheduler : interacts with
+c_api --> device : utilizes
+c_api --> operator_module : registers operators
+c_api --> serializer : decodes tmfile
+
+cpp_api --> c_api : wraps
+python_api --> c_api : wraps
+
+scheduler --> device : schedules on
+scheduler --> operator_module : executes operators
+scheduler --> serializer : manages model loading
+
+serializer --> model_files : reads
+serializer --> operator_module : initializes with params
+
+linux_converter --> model_files : converts
+wasm_converter --> model_files : converts locally
+browser_ui --> wasm_converter : hosts
+
+cmake --> device : compiles
+cmake --> scheduler : compiles
+cmake --> operator_module : compiles
+cmake --> serializer : compiles
+cmake --> c_api : compiles
+cmake --> cpp_api : compiles
+cmake --> python_api : compiles
+
+model_files ..> serializer : binary input
+image_files ..> examples : input data
+
+note right of serializer
+    Decodes binary .tmfile
+    into model parameters
+end note
+
+note right of wasm_converter
+    Executes locally in browser
+    via WebAssembly
+end note
+
+note bottom of cmake
+    Cross-platform compilation
+    using CMake build system
+end note
+
+@enduml

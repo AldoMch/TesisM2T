@@ -1,0 +1,26 @@
+@startuml  
+  
+actor "Epidemiological Form Filler" as filler  
+actor "Epidemiological Analyst" as analyst  
+  
+package "Web Application" {  
+  rectangle "Frontend UI" as frontend  
+  rectangle "Backend Services" as backend  
+}  
+  
+database "Database" as db  
+rectangle "Algorithm Module" as algo  
+rectangle "Map Service" as map  
+  
+filler --> frontend  
+analyst --> frontend  
+frontend --> backend  
+backend --> db  
+backend --> algo  
+algo --> db  
+algo --> map  
+map --> frontend  
+db --> backend  
+algo --> frontend  
+  
+@enduml 

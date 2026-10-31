@@ -1,0 +1,123 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    ArrowColor #333333
+    FontColor #333333
+}
+
+title hAFL2 System Architecture
+
+package "Host Environment" {
+    [Host Linux System] as HOST
+    [Python 3 / pytest] as PYTHON
+    [Bash Scripts] as BASH
+    [kAFL-Fuzzer Test Suite] as KAFL_TEST
+    [Standalone Test Runner] as TEST_RUNNER
+    [Linux Userspace Launch Scripts] as LAUNCH_SCRIPTS
+    [Shared Library Host Copy] as LIB_COPY
+    [Windows Binaries Compile Script] as COMPILE_SCRIPT
+}
+
+package "Linux Userspace Fuzzing Workflow" {
+    [Target Binary Selection] as TARGET_SELECT
+    [initrd Builder] as INITRD_BUILDER
+    [initrd Image] as INITRD
+    [Embedded Forkserver] as FORKSERVER
+    [Guest Execution] as GUEST_EXEC
+    [AFL-style Guest I/O] as AFL_IO
+    [Fuzzing Iteration / Coverage Feedback] as COVERAGE
+}
+
+package "Windows Hyper-V Fuzzing Workflow" {
+    package "Child Partition VM" {
+        [Child Partition VM] as CHILD_VM
+        [Windows Helper Binaries] as HELPER_BINS
+        [packet_sender.exe] as PACKET_SENDER
+        [loader.exe] as LOADER
+        [Harness Driver] as HARNESS_DRIVER
+        [Fuzzing Payload Sender] as PAYLOAD_SENDER
+    }
+
+    package "Root Partition VM" {
+        [Root Partition VM] as ROOT_VM
+        [Hyper-V Virtual Switch (vmswitch.sys)] as VMSWITCH
+        [Crash Monitoring Driver] as CRASH_MONITOR
+        [Crash Status] as CRASH_STATUS
+    }
+
+    [VMBus / netvsc Channel] as VMBUS
+}
+
+[Fuzzing Operator] as OPERATOR
+[Visual Studio Build] as VS_BUILD
+[Windows Build Offset Config] as OFFSET_CONFIG
+
+' External User
+OPERATOR --> TEST_RUNNER : invokes
+OPERATOR --> LAUNCH_SCRIPTS : runs
+OPERATOR --> COMPILE_SCRIPT : runs
+OPERATOR --> CHILD_VM : configures (DSE off, powered off)
+
+' Host Environment Connections
+HOST --> PYTHON : provides
+HOST --> BASH : provides
+PYTHON --> TEST_RUNNER : executes
+BASH --> LAUNCH_SCRIPTS : executes
+BASH --> COMPILE_SCRIPT : executes
+KAFL_TEST --> TEST_RUNNER : runs suites (random, deterministic, havoc)
+TEST_RUNNER --> KAFL_TEST : prints status
+
+' Linux Userspace Workflow
+LAUNCH_SCRIPTS --> TARGET_SELECT : selects binary
+TARGET_SELECT --> INITRD_BUILDER : provides binary
+LIB_COPY --> INITRD_BUILDER : copies shared libraries
+INITRD_BUILDER --> INITRD : builds
+INITRD --> GUEST_EXEC : launches
+GUEST_EXEC --> FORKSERVER : embeds
+FORKSERVER --> AFL_IO : maps kAFL hypercalls
+AFL_IO --> COVERAGE : provides feedback
+COVERAGE --> OPERATOR : observable results
+
+' Windows Binaries Preparation
+COMPILE_SCRIPT --> HELPER_BINS : compiles
+VS_BUILD --> HARNESS_DRIVER : compiles
+VS_BUILD --> CRASH_MONITOR : compiles
+OFFSET_CONFIG --> HELPER_BINS : updates source offset (if required)
+HELPER_BINS --> CHILD_VM : deploys
+
+' Child Partition Flow
+CHILD_VM --> LOADER : executes
+LOADER --> PACKET_SENDER : loads/executes
+PACKET_SENDER --> HARNESS_DRIVER : triggers IOCTL
+HARNESS_DRIVER --> PAYLOAD_SENDER : sends payloads
+PAYLOAD_SENDER --> VMBUS : transmits via channel
+
+' Root Partition Flow
+VMBUS --> VMSWITCH : delivers payloads
+VMSWITCH --> CRASH_MONITOR : monitored
+CRASH_MONITOR --> CRASH_STATUS : detects crash
+CRASH_STATUS --> OPERATOR : returns to hAFL2
+
+' Communication Path
+PAYLOAD_SENDER -[hidden]down-> VMBUS
+VMBUS -[hidden]down-> VMSWITCH
+
+note right of CHILD_VM
+  Constraints:
+  - DSE disabled
+  - VM powered off for config
+  - Windows-build offset config
+end note
+
+note right of ROOT_VM
+  Target: Hyper-V Virtual Switch
+  Path: VMBus / netvsc channels
+end note
+
+@enduml

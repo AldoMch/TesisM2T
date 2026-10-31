@@ -1,0 +1,178 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam rectangle {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+    FontColor Black
+}
+skinparam node {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+skinparam database {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+skinparam package {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+skinparam folder {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+skinparam cloud {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+skinparam actor {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+skinparam usecase {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+skinparam sequence {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    FontColor Black
+}
+
+title Core Flight System (cFS) Bundle - System Architecture
+
+package "External Actors" {
+  actor "Build User" as BuildUser
+  actor "CI Maintainer" as CIMaintainer
+  actor "Functional Tester" as FunctionalTester
+  actor "Telemetry Operator" as TelemetryOperator
+  actor "Workflow Operator" as WorkflowOperator
+}
+
+package "Host Environment" {
+  node "GitHub Actions Runner" as GHActionsRunner {
+    folder "CI Workflows" as CIWorkflows {
+      component "Changelog Generation" as ChangelogGen
+      component "Format Checker" as FormatChecker
+      component "Reusable Workflows" as ReusableWorkflows
+      component "Build & Test Workflow" as BuildTestWorkflow
+    }
+    
+    database "Repository" as Repo {
+      component "Make Assets" as MakeAssets
+      component "Source Code" as SourceCode
+      component "Git Submodules" as Submodules
+    }
+    
+    component "Build System" as BuildSystem
+    component "Host Utilities" as HostUtils {
+      component "cmdUtil" as cmdUtil
+    }
+  }
+}
+
+package "Target System" {
+  node "cFS Target Execution" as cFSTarget {
+    component "core-cpu1 Executable" as coreCPU1
+    component "Telemetry Interface" as TelemetryInterface
+    component "Command Interface" as CommandInterface
+  }
+}
+
+cloud "Network" as Network
+
+package "Outputs & Artifacts" {
+  database "Build Artifacts" as BuildArtifacts
+  database "Telemetry Data" as TelemetryData
+  database "Changelog Artifact" as ChangelogArtifact
+  database "Test Results" as TestResults
+}
+
+' External Actor Connections
+BuildUser --> Repo : "Checkout"
+BuildUser --> BuildSystem : "Invoke make prep, make install"
+CIMaintainer --> CIWorkflows : "Trigger workflows"
+FunctionalTester --> HostUtils : "Execute cmdUtil"
+FunctionalTester --> cFSTarget : "Start/Stop core-cpu1"
+TelemetryOperator --> TelemetryInterface : "Configure IP address"
+WorkflowOperator --> ReusableWorkflows : "Compose via workflow_call"
+
+' Host Environment Internal Connections
+Repo --> BuildSystem : "Provides source & assets"
+MakeAssets --> BuildSystem : "Makefile.sample, sample_defs"
+Submodules --> BuildSystem : "Required for build"
+BuildSystem --> BuildArtifacts : "Generates"
+BuildSystem --> coreCPU1 : "Produces executable"
+HostUtils --> CommandInterface : "Sends commands via network"
+cmdUtil --> CommandInterface : "Uses --pktid, --cmdcode, etc."
+
+' CI Workflow Connections
+CIWorkflows --> Repo : "Validates & processes"
+ChangelogGen --> ChangelogArtifact : "Generates categorized changelog"
+FormatChecker --> Repo : "Checks on push/PR/workflow_call"
+BuildTestWorkflow --> BuildSystem : "Executes build/test"
+BuildTestWorkflow --> HostUtils : "Uses for functional test"
+BuildTestWorkflow --> cFSTarget : "Tests execution"
+
+' Target System Connections
+coreCPU1 --> TelemetryInterface : "Produces"
+coreCPU1 --> CommandInterface : "Accepts commands"
+TelemetryInterface --> Network : "Streams to configured IP"
+CommandInterface --> Network : "Listens for commands"
+
+' Network Connections
+Network --> TelemetryData : "Delivers telemetry"
+Network --> CommandInterface : "Routes commands"
+
+' Output Connections
+TelemetryInterface --> TelemetryData : "Outputs visible data"
+CommandInterface --> TestResults : "Command counter increments"
+BuildTestWorkflow --> TestResults : "Produces"
+
+' Non-functional & Constraint Annotations
+note top of GHActionsRunner
+  **Runner Environment:**
+  - Changelog/Duplicate-check: ubuntu-latest
+  - Build/Run/Test/Format-check: ubuntu-18.04
+  **Build Variants:** debug, release
+  **Timeout:** 15-min for functional-test
+end note
+
+note right of Repo
+  **Constraints:**
+  - Includes Git submodules
+  - Uses provided Makefile.sample
+    and sample_defs
+  - Deprecated workflows need
+    revalidation
+end note
+
+note left of cFSTarget
+  **Functional Requirements:**
+  - FR-002: Runnable core-cpu1
+  - FR-004: Telemetry enablement
+  - FR-005: No-op command flow
+end note
+
+note right of CIWorkflows
+  **CI Requirements:**
+  - NFR-004: Automated format check
+  - NFR-005: Reusable workflows
+    via workflow_call
+end note
+
+@enduml

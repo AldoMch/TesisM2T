@@ -1,0 +1,45 @@
+@startuml
+title s000091_f459979d - Backend Architecture (LwM2M + Blockchain)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "API Layer" {
+  [User Management API (Spring HTTP)] as UserAPI
+}
+
+package "Application Services" {
+  [Auth/JWT Validation Utility] as JwtUtil
+  [User Service] as UserService
+  [Client/Bootstrap Service] as BCService
+  [LwM2M Node JSON Parsing Service] as LwM2MParser
+  [Fixed 32-byte Encoding/Decoding Utility] as EncodingUtil
+}
+
+package "Integration/Libraries" {
+  [Web3j (Ethereum Client Library)] as Web3j
+  [Leshan/LwM2M Model Library] as Leshan
+}
+
+package "External Systems" {
+  [Authenticated API Client] as ApiClient
+  [Ethereum-compatible Node (HTTP JSON-RPC)] as EthNode
+  [Smart Contract: Client/Bootstrap Registry] as Contract
+}
+
+ApiClient --> UserAPI : HTTP requests\n(Authorization header)
+UserAPI --> JwtUtil : validate token
+UserAPI --> UserService : user retrieval / creation
+
+' LwM2M parsing of node JSON
+LwM2MParser --> Leshan : model types / node structures
+LwM2MParser --> BCService : consume bootstrap info (when needed)
+
+' Blockchain-backed client/bootstrap operations
+BCService --> EncodingUtil : 32-byte ASCII encode/decode
+BCService --> Web3j : contract calls
+BCService --> Contract : add/retrieve client/bootstrap data
+Web3j --> EthNode : HTTP (JSON-RPC)
+Contract ..> EthNode : deployed on
+
+@enduml

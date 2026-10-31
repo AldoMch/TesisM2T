@@ -1,0 +1,95 @@
+@startuml
+
+cloud "Tencent Cloud" {
+  node "Docker Runtime" {
+    package "Presentation Layer" {
+      component "Vue Front End\n(Vue 3 + vue-router + Pinia + Ant Design + Axios)" as FE
+    }
+
+    package "Edge / Gateway Layer" {
+      component "Nginx Reverse Proxy" as NGINX
+      component "API Gateway & Security\n(Spring Gateway + Spring Security)" as GATEWAY
+    }
+
+    package "Services Layer" {
+      component "Annotation Service" as ANN
+      component "Mining Service" as MIN
+      component "User & Role Management Service" as URM
+      component "Preset & Model Registry Service" as PMR
+      component "Service Discovery & Config\n(Spring Cloud)" as SD
+    }
+
+    package "Asynchronous Processing Layer" {
+      component "Message Broker\n(RabbitMQ)" as MQ
+      component "Document Conversion Worker" as WORKER
+    }
+
+    package "Data Access Layer" {
+      component "ORM / Data Access\n(MyBatis / MyBatis-Plus)" as ORM
+    }
+
+    package "Data Layer" {
+      database "Relational Database\n(MySQL)" as MYSQL
+      node "Object Storage\n(Minio)" as MINIO
+      database "Cache\n(Redis)" as REDIS
+    }
+
+    package "Model Integration Layer" {
+      component "Paragraph Model\n(BERT)" as BERT
+    }
+  }
+}
+
+cloud "GPT API / ChatGPT-like Interface" as GPT
+
+interface "Public HTTPS Entry" as HTTPS
+
+' Entry and routing
+HTTPS --> NGINX
+FE --> NGINX
+NGINX --> GATEWAY
+
+' Gateway to services
+GATEWAY --> ANN
+GATEWAY --> MIN
+GATEWAY --> URM
+GATEWAY --> SD
+
+' Service discovery/config usage
+ANN --> SD
+MIN --> SD
+URM --> SD
+
+' Service-to-service dependencies
+ANN --> PMR
+MIN --> PMR
+MIN --> ANN
+
+' Data access via ORM
+ANN --> ORM
+MIN --> ORM
+URM --> ORM
+PMR --> ORM
+ORM --> MYSQL
+
+' Object storage and cache access
+ANN --> MINIO
+ANN --> REDIS
+
+MIN --> MINIO
+MIN --> REDIS
+
+URM --> REDIS
+
+' Asynchronous processing
+ANN --> MQ
+MIN --> MQ
+MQ --> WORKER
+WORKER --> MINIO
+WORKER --> MYSQL
+
+' Model integrations
+MIN --> BERT
+MIN --> GPT
+
+@enduml

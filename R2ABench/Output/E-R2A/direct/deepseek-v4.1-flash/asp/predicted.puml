@@ -1,0 +1,199 @@
+@startuml
+' =====================================================================
+' Zhiyan Tongjie (智研通界) Academic Achievement Sharing Platform
+' Layered System Architecture (Application / Support / Infrastructure)
+' =====================================================================
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam nodesep 14
+skinparam ranksep 26
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 11
+skinparam ArrowColor #4A6FA5
+skinparam ArrowThickness 1
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentBorderColor #4A6FA5
+skinparam componentFontSize 11
+skinparam databaseBackgroundColor #EAF1FB
+skinparam databaseBorderColor #2C5490
+skinparam cloudBackgroundColor #F3F0FA
+skinparam cloudBorderColor #6B5CA5
+skinparam packageBackgroundColor #F7F9FC
+skinparam packageBorderColor #97A9C4
+skinparam packageFontStyle bold
+skinparam noteBackgroundColor #FFFBE6
+skinparam noteBorderColor #D6B656
+skinparam noteFontSize 10
+
+top to bottom direction
+
+' ---------------------------------------------------------------------
+' Presentation Layer
+' ---------------------------------------------------------------------
+package "Presentation Layer — Browser Clients" as PL {
+  component "Account &\nPersonal Portal UI" as U_ACCT
+  component "Literature Discovery UI\nkeyword / natural language /\nconversational search, filters" as U_SEARCH
+  component "Achievement\nManagement UI" as U_ACH
+  component "Institution\nManagement UI" as U_INST
+  component "Academic\nCommunication UI" as U_COMM
+  component "Administration\nConsole UI" as U_ADMIN
+}
+
+note right of PL
+  Vue 3.3 SPA (C-002, C-005)
+  Chrome / Edge / Firefox on
+  Windows / Linux / macOS (NFR-008)
+  zh / en / ja / de text preserved (NFR-009)
+  Distinct states: empty, pending, failed, success
+end note
+
+' ---------------------------------------------------------------------
+' Application Layer
+' ---------------------------------------------------------------------
+package "Application Layer — Business Services (Python / Django 4.2 LTS)" as AL {
+  component "Account & Scholar\nCertification Service" as A_ACCT
+  component "Scholar Portal Service" as A_PORTAL
+  component "Literature Retrieval Service" as A_SEARCH
+  component "Recommendation &\nPersonalization Service" as A_REC
+  component "Achievement Claim Service" as A_CLAIM
+  component "Ownership Dispute Service\n(preliminary / expert / final)" as A_DISPUTE
+  component "Institution Management Service\n(hierarchy, membership)" as A_INST
+  component "Academic Communication Service\ncomments, Q&A, private messages,\nfollowing, annotations, report sharing" as A_COMM
+  component "Administration &\nModeration Service" as A_ADMIN
+  component "Collection & Synchronization\nCoordinator" as A_SYNC
+}
+
+note right of AL
+  C-001 Python / Django 4.2 LTS
+  C-004 application layer consumes
+  shared support services only
+  C-006 no implicit privilege escalation
+end note
+
+' ---------------------------------------------------------------------
+' Support Layer
+' ---------------------------------------------------------------------
+package "Support Layer — Shared Academic Services" as SL {
+  component "Semantic Processing Service\nerror correction, cross-language\nterm mapping, conversation context" as S_SEM
+  component "Profiling & Recommendation Engine\npresentation preferences,\ncross-discipline diversity rule" as S_PROF
+  component "Authorization & Access Control\nroles, institution scope, resource\npermissions, visibility & disclosure" as S_AUTH
+  component "Analysis Service\nhotspot reports, influence profiles,\nplagiarism & blacklist checks" as S_ANAL
+}
+
+' ---------------------------------------------------------------------
+' Infrastructure Layer
+' ---------------------------------------------------------------------
+package "Infrastructure Layer" as IL {
+  component "External Data Acquisition\ncrawler & API adapters" as I_ACQ
+  component "Normalization &\nDeduplication" as I_NORM
+  component "Daily Incremental\nSync Scheduler" as I_SCHED
+  component "Batch / Scheduled Compute" as I_COMPUTE
+  component "Persistence Gateway\nstructured + unstructured access" as I_PERSIST
+  database "MySQL 8.0 Cluster\naccounts, achievements, workflows,\nprovenance, logs, disclosure state" as I_DB
+  component "Unstructured Academic Content Store\nliterature content, reports, evidence" as I_BLOB
+  component "Backup & Restore Service\ndaily full + hourly incremental,\n30-day retention" as I_BACKUP
+  component "Encryption & Key Management\nAES-256 at rest, TLS in transit" as I_CRYPTO
+}
+
+' ---------------------------------------------------------------------
+' External Systems
+' ---------------------------------------------------------------------
+package "External Systems" as EXT {
+  cloud "Public Academic Databases\nscholar profiles, literature metadata" as E_DB
+  cloud "Academic Terminology &\nProcessing Model Resources" as E_TERM
+}
+
+' ---------------------------------------------------------------------
+' Presentation -> Application
+' ---------------------------------------------------------------------
+U_ACCT   --> A_ACCT
+U_ACCT   --> A_PORTAL
+U_SEARCH --> A_SEARCH
+U_SEARCH --> A_REC
+U_ACH    --> A_CLAIM
+U_ACH    --> A_DISPUTE
+U_INST   --> A_INST
+U_COMM   --> A_COMM
+U_ADMIN  --> A_ADMIN
+U_ADMIN  --> A_SYNC
+
+' ---------------------------------------------------------------------
+' Application -> Support
+' ---------------------------------------------------------------------
+A_ACCT    ..> S_AUTH
+A_PORTAL  ..> S_AUTH
+A_SEARCH  ..> S_SEM
+A_SEARCH  ..> S_PROF
+A_SEARCH  ..> S_AUTH
+A_REC     ..> S_PROF
+A_REC     ..> S_AUTH
+A_CLAIM   ..> S_AUTH
+A_DISPUTE ..> S_AUTH
+A_INST    ..> S_AUTH
+A_COMM    ..> S_AUTH
+A_ADMIN   ..> S_ANAL
+A_ADMIN   ..> S_AUTH
+A_SYNC    ..> S_AUTH
+A_SYNC    ..> S_ANAL
+
+' ---------------------------------------------------------------------
+' Application -> Infrastructure
+' ---------------------------------------------------------------------
+A_ACCT    --> I_PERSIST
+A_PORTAL  --> I_PERSIST
+A_SEARCH  --> I_PERSIST
+A_REC     --> I_PERSIST
+A_CLAIM   --> I_PERSIST
+A_DISPUTE --> I_PERSIST
+A_INST    --> I_PERSIST
+A_COMM    --> I_PERSIST
+A_ADMIN   --> I_PERSIST
+A_ADMIN   --> I_COMPUTE
+A_SYNC    --> I_SCHED
+
+' ---------------------------------------------------------------------
+' Infrastructure internals and external integrations
+' ---------------------------------------------------------------------
+I_SCHED   --> I_ACQ
+I_ACQ     --> E_DB
+I_ACQ     --> I_NORM
+I_NORM    --> I_PERSIST
+I_COMPUTE --> I_PERSIST
+I_PERSIST --> I_DB
+I_PERSIST --> I_BLOB
+S_SEM     ..> E_TERM
+S_ANAL    ..> E_TERM
+I_DB      --> I_BACKUP
+I_BLOB    --> I_BACKUP
+
+' ---------------------------------------------------------------------
+' Security / confidentiality cross-cutting concerns
+' ---------------------------------------------------------------------
+I_CRYPTO ..> I_DB     : encrypt at rest
+I_CRYPTO ..> I_BLOB   : encrypt at rest
+I_CRYPTO ..> I_BACKUP : protect backup sets
+
+note bottom of I_CRYPTO
+  NFR-003 salted one-way password hashing
+  NFR-004 AES-256 at rest; encrypted transport for
+  browser/backend and private messaging
+  NFR-005 authorization enforced backend-side for every
+  role, institution scope, resource and disclosure state
+end note
+
+note bottom of I_BACKUP
+  NFR-006 daily full + hourly incremental,
+  30-day retention, restores structured records
+  together with associated unstructured content
+  (DR-011, NFR-010)
+end note
+
+note bottom of S_AUTH
+  Enforces FR-013, FR-014, FR-015, FR-016, FR-026, FR-027
+  (scholar claim evidence, dispute stages,
+  institution scope, unpublished-content authorization,
+  three-month delayed disclosure)
+end note
+
+@enduml

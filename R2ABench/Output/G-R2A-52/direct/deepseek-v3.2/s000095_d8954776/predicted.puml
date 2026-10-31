@@ -1,0 +1,125 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam component {
+    BackgroundColor #E6F3FF
+    BorderColor #0066CC
+    FontColor #003366
+}
+skinparam node {
+    BackgroundColor #FFF0E6
+    BorderColor #CC6600
+    FontColor #663300
+}
+skinparam database {
+    BackgroundColor #E6FFE6
+    BorderColor #009900
+    FontColor #006600
+}
+skinparam queue {
+    BackgroundColor #F0E6FF
+    BorderColor #6600CC
+    FontColor #330066
+}
+skinparam interface {
+    BackgroundColor #FFFFE6
+    BorderColor #999900
+    FontColor #666600
+}
+
+title GPSLogger System Architecture
+
+package "Android Device" {
+  [GPS Hardware] as GPS
+  [Android OS] as OS
+  [Google Play Services] as GPServices
+}
+
+node "GPSLogger Application" {
+  component "Main Activity / Fragments" as UI
+  component "Event Bus" as Bus
+  component "GPS Logging Service" as Service
+  component "Location Listeners" as Listeners
+
+  component "Loggers" as Loggers {
+    component "GPX Logger"
+    component "KML Logger"
+    component "Text File Logger"
+  }
+
+  component "Uploaders / Jobs" as Uploaders {
+    component "OpenStreetMap Uploader" as OSM
+    component "Dropbox Uploader" as Dropbox
+    component "OpenGTS Sender" as GTS
+  }
+
+  component "Session / App Settings" as Settings
+}
+
+database "Local Storage" as Storage {
+  component "Log Files (GPX/KML/TXT)" as LogFiles
+  component "Application Preferences" as Prefs
+}
+
+cloud "External Services" {
+  node "OpenStreetMap API" as OSM_API
+  node "Dropbox API" as Dropbox_API
+  node "OpenGTS Server" as GTS_Server
+}
+
+node "Development / Build Environment" {
+  component "Gradle Properties" as GradleProps
+  component "local.properties" as LocalProps
+  component "Build Configuration" as BuildConfig
+}
+
+' Internal Application Connections
+UI --> Bus : Consumes location events
+Service --> Bus : Publishes location events
+Listeners --> Service : Provides location updates
+Service --> Loggers : Writes location data
+Service --> Uploaders : Triggers uploads/sends
+Settings --> Service : Provides configuration
+Settings --> Uploaders : Provides credentials/config
+Bus ..> UI : <<subscribes>>
+
+' Logger Connections
+Loggers --> LogFiles : Writes
+
+' Uploader Connections
+OSM --> OSM_API : Uploads (uses credentials)
+Dropbox --> Dropbox_API : Uploads (uses credentials)
+GTS --> GTS_Server : Sends UDP GPRMC
+
+' External Hardware/OS Connections
+GPS --> OS : Provides location
+OS --> Listeners : Delivers updates
+GPServices ..> Service : <<optional dependency>>
+
+' Build/Configuration Connections
+GradleProps --> BuildConfig : Provides OSM/Dropbox keys
+LocalProps --> BuildConfig : Provides sdk.dir
+BuildConfig --> Uploaders : Injects credentials at runtime
+BuildConfig --> Settings : Injects configuration
+
+' Data Flow Annotations
+note on link
+  Location data
+end note
+
+note on link
+  Configuration
+end note
+
+note on link
+  Credentials
+end note
+
+note on link
+  GPRMC UDP Packet
+end note
+
+@enduml

@@ -1,0 +1,58 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #5B8F35
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #D8EAFB
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "Client" as Client
+rectangle "SSO/IDM\n(Keycloak)" as Keycloak
+
+package "Activiti Cloud Infrastructure" as CloudInfrastructure {
+    rectangle "Gateway" as Gateway
+    rectangle "Registry\n(Kubernetes)" as Registry
+    rectangle "Config Maps\n(Kubernetes)" as ConfigMaps
+
+    package "Activiti Cloud Application" as CloudApplication {
+        rectangle "Query\nService" as QueryService
+        rectangle "Audit\nService" as AuditService
+        rectangle "Notification\nService" as NotificationService
+
+        package "Cloud Connectors" as CloudConnectors {
+            rectangle "Customer\nLogic" as CustomerLogic
+            rectangle "Out of the\nBox Services" as OutOfBoxServices
+        }
+
+        package "Runtime Bundle" as RuntimeBundle {
+            rectangle "Process\nRuntime" as ProcessRuntime
+            rectangle "BPMN, Form\nand Rule Defs" as BpmnFormRuleDefs
+        }
+    }
+}
+
+Client --> Gateway : WebFlow
+Keycloak --> Client : Direct Access Grant
+Gateway --> Keycloak : WebFlow
+Gateway --> CloudApplication : routed service access
+Gateway --> Registry : service discovery
+Registry --> ConfigMaps : configuration lookup
+ConfigMaps --> CloudConnectors : Kubernetes configuration
+QueryService --> RuntimeBundle : process queries
+AuditService --> RuntimeBundle : audit events
+NotificationService --> RuntimeBundle : notifications
+CloudConnectors --> RuntimeBundle : business integration
+ProcessRuntime --> BpmnFormRuleDefs : executes definitions
+RuntimeBundle --> Keycloak : identity and token validation
+@enduml

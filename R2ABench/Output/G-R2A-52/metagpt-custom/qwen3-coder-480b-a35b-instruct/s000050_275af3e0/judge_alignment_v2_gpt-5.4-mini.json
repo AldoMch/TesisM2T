@@ -1,0 +1,284 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::kAFL-Fuzzer"
+      ],
+      "gt_nodes": [
+        "Global::KVM (L0)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Fuzzing Execution Layer::Standalone Test Runner"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::hAFL2"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Child Partition VM"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Root Partition VM",
+        "Root Partition VM::Host Environment"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Child Partition VM::Guest Environment"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "VM Orchestration Layer::Child Partition Harness"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Monitoring & Feedback Layer::Root Partition Monitor"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Hyper-V Virtual Switch (vmswitch.sys)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::kAFL-Fuzzer"
+      ],
+      "gt_node": "Global::KVM (L0)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Child Partition VM",
+        "Global::Root Partition VM",
+        "Root Partition VM::Host Environment"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Child Partition VM::Guest Environment",
+        "VM Orchestration Layer::Child Partition Harness"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "VM Orchestration Layer::Child Partition Harness"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Root Partition VM",
+        "Root Partition VM::Host Environment"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Monitoring & Feedback Layer::Root Partition Monitor"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Hyper-V Virtual Switch (vmswitch.sys)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Fuzzing Execution Layer::Standalone Test Runner",
+        "Global::kAFL-Fuzzer"
+      ],
+      "gt_node": "KVM (L0)::hAFL2"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Child Partition VM::Guest Environment",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Fuzzing Execution Layer::Standalone Test Runner",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Child Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Hyper-V Virtual Switch (vmswitch.sys)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Root Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::VMBus/netvsc Channels",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::kAFL-Fuzzer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Interaction Layer::Embedded Forkserver",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Monitoring & Feedback Layer::Root Partition Monitor",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Root Partition VM::Host Environment",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Target Packaging Layer::InitRD Packager",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Target Packaging Layer::Linux Userspace Launcher",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Target Packaging Layer::Shared Library Copier",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "VM Orchestration Layer::Child Partition Harness",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Windows Workflow Layer::Loader (loader.exe)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Windows Workflow Layer::Packet Sender (packet_sender.exe)",
+      "reference_nodes": []
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1213,
+      "completion_tokens": 176,
+      "total_tokens": 1389,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Global::VMBus/netvsc Channels",
+    "Guest Interaction Layer::Embedded Forkserver",
+    "Target Packaging Layer::InitRD Packager",
+    "Target Packaging Layer::Linux Userspace Launcher",
+    "Target Packaging Layer::Shared Library Copier",
+    "Windows Workflow Layer::Loader (loader.exe)",
+    "Windows Workflow Layer::Packet Sender (packet_sender.exe)"
+  ],
+  "_provenance": {
+    "fingerprint": "a8788c164e8db33c6eb076bce68ac0d7636db76735509390d86dfcb619d4d812",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

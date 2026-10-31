@@ -1,0 +1,121 @@
+@startuml
+!define RECTANGLE class
+!define DATABASE rectangle
+!define COMPONENT component
+!define INTERFACE rectangle
+
+skinparam componentStyle rectangle
+
+title AI-Driven Text Adventure Game Architecture
+
+' Layers
+package "Frontend Layer" {
+  [Web Client] as web_client #lightblue
+  [Mobile Client] as mobile_client #lightblue
+}
+
+package "API Gateway & Load Balancer" {
+  [API Gateway] as api_gateway #lightyellow
+}
+
+package "Application Layer" {
+  package "Game Service" {
+    [Game Engine] as game_engine #lightgreen
+    [LLM Integration] as llm_integration #lightgreen
+    [Save Manager] as save_manager #lightgreen
+  }
+
+  package "Community Service" {
+    [Post Service] as post_service #lightcoral
+    [Comment Service] as comment_service #lightcoral
+  }
+
+  package "User Service" {
+    [Authentication] as auth_service #lightsalmon
+    [Profile Manager] as profile_service #lightsalmon
+  }
+
+  package "Admin Service" {
+    [Admin Panel] as admin_service #plum
+    [Content Moderation] as moderation_service #plum
+  }
+
+  package "Notification Service" {
+    [Notification Engine] as notification_service #lightpink
+    [Favorites Manager] as favorites_service #lightpink
+  }
+}
+
+package "Data Layer" {
+  [MySQL Database] as mysql_db #lightgray
+  [Cache Layer] as cache_layer #lightgray
+  [File Storage] as file_storage #lightgray
+}
+
+package "External Services" {
+  [Large Language Model] as llm_api #wheat
+  [Cloud Infrastructure] as cloud_infra #wheat
+}
+
+' Connections
+web_client --> api_gateway
+mobile_client --> api_gateway
+
+api_gateway --> game_engine
+api_gateway --> post_service
+api_gateway --> auth_service
+api_gateway --> admin_service
+api_gateway --> notification_service
+
+game_engine --> llm_integration
+game_engine --> save_manager
+llm_integration --> llm_api
+
+post_service --> comment_service
+post_service --> mysql_db
+comment_service --> mysql_db
+
+auth_service --> profile_service
+auth_service --> mysql_db
+profile_service --> mysql_db
+
+admin_service --> moderation_service
+moderation_service --> mysql_db
+
+notification_service --> favorites_service
+favorites_service --> mysql_db
+notification_service --> mysql_db
+
+save_manager --> mysql_db
+save_manager --> file_storage
+
+' Data connections
+mysql_db --> cache_layer
+
+' Infrastructure
+game_engine --> cloud_infra
+post_service --> cloud_infra
+mysql_db --> cloud_infra
+file_storage --> cloud_infra
+
+note right of llm_api
+  External AI Service
+end note
+
+note bottom of cloud_infra
+  Docker & Kubernetes
+end note
+
+legend
+  lightblue = Client Applications
+  lightyellow = API Gateway
+  lightgreen = Game Components
+  lightcoral = Community Components
+  lightsalmon = User Management
+  plum = Admin Components
+  lightpink = Notification Components
+  lightgray = Data Storage
+  wheat = External Services
+end legend
+
+@enduml

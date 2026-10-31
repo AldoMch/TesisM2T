@@ -1,0 +1,162 @@
+@startuml ReTool_Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam componentBackgroundColor #DBEAFE
+skinparam nodeBackgroundColor #FEF3C7
+skinparam databaseBackgroundColor #D1FAE5
+skinparam cloudBackgroundColor #FCE7F3
+skinparam interfaceBackgroundColor #FFF7ED
+skinparam ArrowColor #374151
+skinparam componentBorderColor #3B82F6
+skinparam packageBorderColor #6366F1
+skinparam nodeBorderColor #D97706
+skinparam databaseBorderColor #10B981
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+' ============================================================
+' CLIENT LAYER
+' ============================================================
+package "Client Layer\n[Browser: Windows 10 / Chrome 81+]" as ClientLayer #EEF2FF {
+    component "[Vue.js SPA]\nAuthentication View\nProject View\nRequirements View\nAnalysis View\nTracing View" as VueSPA
+}
+
+' ============================================================
+' GATEWAY LAYER
+' ============================================================
+package "Gateway Layer\n[Local Computer]" as GatewayLayer #FDF4FF {
+    component "[API Gateway]\nRequest Routing\nAccess Control\nSecurity Enforcement\n(NFR-010, NFR-015)" as APIGateway
+}
+
+' ============================================================
+' APPLICATION SERVICES LAYER
+' ============================================================
+package "Application Services Layer\n[Local Computer]" as AppServicesLayer #ECFDF5 {
+
+    component "[UserManagementService]\n[Flask Microservice]\nRegistration / Login / Logout\nPassword Management\nUser Role Assignment\nUser List Operations\n(FR-001 - FR-010)" as UserSvc
+
+    component "[ProjectManagementService]\n[Flask Microservice]\nProject CRUD\nProject Member Management\nProject Role Management\nBaseline Node Creation and Archiving\n(FR-011 - FR-024)" as ProjectSvc
+
+    component "[RequirementsManagementService]\n[Flask Microservice]\nRequirement Item CRUD\nTree Hierarchy Management\nWord Document Upload Coordination\nForward Tracing Storage\nAnalysis Result Persistence\n(FR-025 - FR-033, FR-039 - FR-041)" as ReqSvc
+}
+
+' ============================================================
+' DATA LAYER
+' ============================================================
+package "Data Layer\n[Local Computer]" as DataLayer #FFF7ED {
+    database "[MongoDB]\nUser Accounts and Roles\nProjects and Members\nBaselines\nRequirement Items\nTree Structures\nAnalysis Results\nForward Tracing\nWord Document Metadata\nAudit Logs\n(DR-001 - DR-016)" as MongoDB
+}
+
+' ============================================================
+' NETWORK BOUNDARY
+' ============================================================
+package "Network Boundary\n[Local <-> Remote]" as NetworkBoundary #FEE2E2 {
+    component "[Network Crossing Point]\nAD-003 / C-007:\nCross-network call to\nremote algorithm service" as NetBoundary
+}
+
+' ============================================================
+' ALGORITHM SERVICE LAYER (REMOTE)
+' ============================================================
+cloud "Remote Infrastructure\n[Amazon Web Services / Amazon EC2 t2.xlarge / Amazon Linux 2]" as AWSCloud #FCE7F3 {
+
+    package "Algorithm Service Layer\n[Remote Server]" as AlgoLayer #FEF3C7 {
+
+        component "[AlgorithmService]\n[Flask Microservice]\nRequirement Itemization\nStructuring (Heuristic Rules)\nConflict Detection (Heuristic Rules)\nCommon Identification (Word2vec)\nAssociation Analysis (Heuristic Rules)\n(FR-028, FR-035 - FR-038)" as AlgoSvc
+
+        component "[PyTorch / NLP Library Runtime]\nML Framework\nNLP Tooling" as PyTorchRuntime
+
+        component "[Word2vec Pretrained Model]\nCommon Requirement Identification\nModel Artifact\n(FR-036)" as Word2VecModel
+
+        interface "Inbound Service Port\n(C-007, AD-003)" as IF_AlgoInbound
+    }
+}
+
+' ============================================================
+' INTERFACES / PORTS
+' ============================================================
+interface "Client Interface" as IF_Client
+interface "User Service Interface" as IF_GW_User
+interface "Project Service Interface" as IF_GW_Project
+interface "Requirements Service Interface" as IF_GW_Req
+
+' ============================================================
+' KEY DEPENDENCIES / ARROWS
+' ============================================================
+
+' Client -> Gateway
+VueSPA --> IF_Client
+IF_Client --> APIGateway : "All Client Requests\n(No direct service access)"
+
+' Gateway -> Application Services
+APIGateway --> IF_GW_User
+IF_GW_User --> UserSvc : "Auth and User\nAdministration Requests"
+
+APIGateway --> IF_GW_Project
+IF_GW_Project --> ProjectSvc : "Project and Member\nManagement Requests"
+
+APIGateway --> IF_GW_Req
+IF_GW_Req --> ReqSvc : "Requirement Item and\nTracing Requests"
+
+' Gateway -> Audit Logging
+APIGateway --> MongoDB : "Security Event Logging\n(NFR-012, NFR-015)"
+
+' Application Services -> MongoDB (direct, no shared interface proxy)
+UserSvc --> MongoDB : "Persist User Data\n(DR-001 - DR-005)"
+ProjectSvc --> MongoDB : "Persist Project Data\n(DR-006 - DR-009)"
+ReqSvc --> MongoDB : "Persist Requirement and\nTracing Data\n(DR-010 - DR-015)"
+
+' Application Services -> Audit Logging
+UserSvc --> MongoDB : "Audit Log\n(NFR-019, DR-015)"
+ProjectSvc --> MongoDB : "Audit Log\n(NFR-019, DR-015)"
+ReqSvc --> MongoDB : "Audit Log\n(NFR-019, DR-015)"
+
+' RequirementsManagementService -> NetworkBoundary -> AlgorithmService (remote)
+ReqSvc --> NetBoundary : "Send Requirement Content\nfor NLP/ML Analysis\n(FR-028, FR-035 - FR-038)"
+NetBoundary --> IF_AlgoInbound : "Cross-network request\n(C-007, AD-003)"
+IF_AlgoInbound --> AlgoSvc : "Itemization, Structuring,\nConflict, Common,\nAssociation Analysis Tasks"
+
+' AlgorithmService returns results to RequirementsManagementService
+AlgoSvc --> IF_AlgoInbound : "Analysis Results\n(Return Path)"
+IF_AlgoInbound --> NetBoundary : "Results response\n(C-007, AD-003)"
+NetBoundary --> ReqSvc : "Receive Analysis Results\nfor Persistence\n(DR-010 - DR-013)"
+
+' Algorithm Service internal dependencies
+AlgoSvc --> PyTorchRuntime : "<<uses>>\nML / NLP Processing"
+AlgoSvc --> Word2VecModel : "<<uses>>\nCommon Identification"
+
+' ============================================================
+' NOTES
+' ============================================================
+note as NoteNetwork
+  AD-001 / C-008:
+  All functions depend on
+  network connectivity.
+  No offline operation supported.
+end note
+
+note as NoteAlgo
+  C-012 / C-013:
+  High-performance remote server
+  required for NLP/ML workloads.
+  Hardware: Amazon EC2 t2.xlarge
+  OS: Amazon Linux 2
+end note
+
+note as NoteProtocol
+  AD-003 / SRS Section 3:
+  No specific protocol (REST, RPC,
+  WebSocket, etc.) is mandated.
+  Protocol selection is deferred
+  to implementation.
+end note
+
+note as NoteFlask
+  SRS Section 3 - Software Interfaces:
+  Flask is the designated framework
+  for all server-side microservices
+  (Gateway, User, Project,
+  Requirements, Algorithm).
+end note
+
+@enduml

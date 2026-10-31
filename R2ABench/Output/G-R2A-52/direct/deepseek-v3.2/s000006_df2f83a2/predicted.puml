@@ -1,0 +1,109 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E6F3FF
+  BorderColor #0066CC
+  ArrowColor #0066CC
+  FontColor #003366
+}
+skinparam node {
+  BackgroundColor #FFE6CC
+  BorderColor #CC6600
+  FontColor #663300
+}
+skinparam database {
+  BackgroundColor #E6FFE6
+  BorderColor #009900
+  FontColor #006600
+}
+skinparam folder {
+  BackgroundColor #F0E6FF
+  BorderColor #6600CC
+  FontColor #330066
+}
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #666666
+  FontColor #000000
+}
+
+title User-in-the-box Simulator Framework - System Architecture
+
+rectangle "External Inputs" {
+  folder "YAML Simulator\nConfiguration" as YAML_CONFIG
+  database "MuJoCo XML\nBiomechanical Model" as MJC_MODEL_XML
+  database "MuJoCo XML\nInteraction Task" as MJC_TASK_XML
+}
+
+rectangle "Framework Core" {
+  component "Simulator Builder" as SIM_BUILDER
+  component "MuJoCo XML\nIntegration Layer" as MJC_INTEGRATION
+  component "OpenAI Gym\nInterface" as GYM_INTERFACE
+}
+
+rectangle "Modular Components" {
+  node "Biomechanical Model\nModules" as BIO_MODULES
+  node "Perception Modules\n(Vision, Proprioception)" as PERCEPT_MODULES
+  node "Interaction Task\nModules" as TASK_MODULES
+}
+
+rectangle "Training & Evaluation" {
+  component "Reinforcement Learning\nTraining Workflow" as RL_TRAINING
+  component "Evaluation Runner" as EVAL_RUNNER
+}
+
+rectangle "Outputs & Artifacts" {
+  component "Standalone Gym-Compatible\nSimulator Package" as SIM_PACKAGE
+  folder "Run Folder" as RUN_FOLDER {
+    folder "checkpoints" as CHECKPOINTS
+    folder "evaluate" as EVALUATE_OUT
+  }
+  file "Action Log File" as ACTION_LOG
+}
+
+' Data/Control Flows
+YAML_CONFIG --> SIM_BUILDER : "Configuration"
+MJC_MODEL_XML --> MJC_INTEGRATION : "Biomechanical XML"
+MJC_TASK_XML --> MJC_INTEGRATION : "Task Environment XML"
+SIM_BUILDER --> MJC_INTEGRATION : "Initiate Integration"
+MJC_INTEGRATION --> SIM_BUILDER : "Integrated MuJoCo XML"
+SIM_BUILDER --> BIO_MODULES : "Select & Initialize"
+SIM_BUILDER --> PERCEPT_MODULES : "Select & Initialize"
+SIM_BUILDER --> TASK_MODULES : "Select & Initialize"
+SIM_BUILDER --> SIM_PACKAGE : "Produce"
+SIM_PACKAGE --> GYM_INTERFACE : "Implements"
+GYM_INTERFACE --> RL_TRAINING : "Used for Training"
+SIM_BUILDER --> RL_TRAINING : "Built Simulator"
+RL_TRAINING --> RUN_FOLDER : "Produces\nTraining Artifacts"
+RUN_FOLDER --> EVAL_RUNNER : "Input Path"
+CHECKPOINTS --> EVAL_RUNNER : "Load Checkpoint"
+EVAL_RUNNER --> EVALUATE_OUT : "Ensure/Create Directory"
+EVAL_RUNNER --> ACTION_LOG : "Write (if logging enabled)"
+EVAL_RUNNER --> SIM_PACKAGE : "Load Simulator"
+
+' Extension/Modularity Links
+BIO_MODULES ..> MJC_INTEGRATION : "Conforms to XML Integration"
+PERCEPT_MODULES ..> SIM_BUILDER : "Follows Modality Contract"
+TASK_MODULES ..> MJC_INTEGRATION : "Conforms to XML Integration"
+
+note right of SIM_BUILDER
+  Integrates components from
+  YAML config to build
+  a complete simulator.
+end note
+
+note left of MJC_INTEGRATION
+  Merges biomechanical model XML
+  with task environment XML
+  to create standalone simulator XML.
+end note
+
+note bottom of RUN_FOLDER
+  Contains all artifacts for
+  a training/evaluation run.
+  Structure is a constraint (C-007).
+end note
+
+@enduml

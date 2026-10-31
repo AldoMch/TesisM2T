@@ -1,0 +1,102 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+
+title Foot365 - AWS-Based Football Information Web Application Architecture
+
+actor "Football Enthusiast" as user
+actor "Chatbot User" as chatbot_user
+actor "Reminder Requester" as reminder_user
+
+package "Frontend Layer" {
+    [Web Frontend\n(HTML/CSS/Bootstrap/jQuery)] as frontend
+    component "Amazon S3\n(Static Hosting)" as s3
+}
+
+package "API & Auth Layer" {
+    [Amazon API Gateway\n(execute-api)] as api_gateway
+    [Amazon Cognito\n(Authentication)] as cognito
+    [AWS IAM\n(Security Management)] as iam
+}
+
+package "Backend / Business Logic Layer" {
+    [AWS Lambda\n(Python / Node)] as lambda
+    [Match Info Service\n(Fixtures, Standings, Scores, Results)] as match_service
+    [Prediction Service] as prediction_service
+    [Screening Recommendation Service] as screening_service
+    [Chatbot Service] as chatbot_service
+    [Reminder Service] as reminder_service
+}
+
+package "Data Layer" {
+    database "Amazon DynamoDB\n(Match Data Storage)" as dynamodb
+    database "Amazon Elasticsearch\n(Match Data Search)" as elasticsearch
+}
+
+package "ML / Prediction Layer" {
+    [Amazon SageMaker\n(Match Outcome Prediction)] as sagemaker
+}
+
+package "Notification Layer" {
+    queue "Amazon SQS\n(Reminder Queue)" as sqs
+    [Amazon SNS\n(SMS Delivery)] as sns
+}
+
+package "Streaming / Live Score Layer" {
+    node "Amazon EC2" as ec2 {
+        [Apache Kafka\n(Live Score Streaming)] as kafka
+        [Apache Avro\n(Payload Serialization)] as avro
+    }
+}
+
+package "External Systems" {
+    [Football Data\nExternal API] as ext_football_api
+}
+
+' User interactions
+user --> frontend
+chatbot_user --> frontend
+reminder_user --> frontend
+
+' Frontend to static hosting
+s3 --> frontend : Serve static assets
+
+' Frontend to API Gateway
+frontend --> api_gateway : HTTPS/JSON
+
+' API Gateway to Auth
+api_gateway --> cognito : Auth validation
+api_gateway --> iam : Access control
+
+' API Gateway to Lambda
+api_gateway --> lambda : Invoke
+
+' Lambda to backend services
+lambda --> match_service
+lambda --> prediction_service
+lambda --> screening_service
+lambda --> chatbot_service
+lambda --> reminder_service
+
+' Services to Data Layer
+match_service --> dynamodb : Store/Retrieve
+match_service --> elasticsearch : Search
+prediction_service --> dynamodb : Read match data
+chatbot_service --> dynamodb : Query fixtures/results
+
+' Prediction workflow
+prediction_service --> sagemaker : Request predictions
+
+' Reminder workflow
+reminder_service --> sqs : Queue reminder
+sqs --> sns : Process queue
+sns --> reminder_user : SMS notification
+
+' Streaming workflow
+ext_football_api --> kafka : Live score events
+kafka --> avro : Serialize payload
+kafka --> dynamodb : Persist live scores
+kafka --> lambda : Trigger updates
+
+@enduml

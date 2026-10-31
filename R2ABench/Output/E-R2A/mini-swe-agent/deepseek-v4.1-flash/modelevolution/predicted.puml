@@ -1,0 +1,171 @@
+@startuml
+title Model Evolution Version Management Visualization Tool - Layered Architecture (B/S)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' Users / Clients
+' ============================================================
+actor "Learner" as Learner
+actor "Model Contributor" as Contributor
+actor "Administrator" as Admin
+
+' ============================================================
+' Presentation Layer (Browser-based client)
+' ============================================================
+package "Presentation Layer (Browser Client)" as Presentation {
+  component "Account Management UI\n(register / login / logout /\npassword change / permission request)" as UIAccount
+  component "Model Search & Viewing UI\n(text attributes + evolution views)" as UISearch
+  component "Model Contribution & Editing UI\n(ONNX upload, PyTorch source edit)" as UIContrib
+  component "Evolution Relationship Editing UI\n(version & layer reuse editing)" as UIEvolution
+  component "User Management UI\n(manage / delete / review permissions)" as UIUserMgmt
+  component "Topology Graph Rendering\n(evolution graph & detail graph)" as UIGraph
+  component "Navigation & Help UI" as UINav
+  component "Browser Console Interface" as Console
+}
+
+' ============================================================
+' Back-end Application Layer
+' ============================================================
+package "Back-end Application Layer" as Backend {
+  component "Web / API Gateway\n(HTTP-HTTPS, session, TLS termination)" as APIGateway
+  component "Authentication & Authorization Service\n(2FA, OAuth 2.0, RBAC)" as AuthService
+  component "Account Management Service" as AccountService
+  component "Model Management Service\n(upload / list / modify / delete)" as ModelService
+  component "Model Search & Query Service" as SearchService
+  component "Evolution Relationship Service\n(graph CRUD, version & layer reuse)" as EvolutionService
+  component "User Management Service\n(users, roles, permission review)" as UserService
+  component "Dataset & Training Record Service" as DatasetService
+  component "Visualization Service\n(topology orchestration)" as VizService
+  component "File Storage & Upload Handler" as FileHandler
+}
+
+' ============================================================
+' Algorithm Support Layer
+' ============================================================
+package "Algorithm Support Layer" as Algorithm {
+  component "ONNX Model Parser" as OnnxParser
+  component "PyTorch Source Parser / Online Editor Engine" as TorchParser
+  component "Model Structure & Layer Reuse Analyzer" as StructAnalyzer
+  component "Evolution Diff / Comparison Engine" as DiffEngine
+  component "Performance Metrics Evaluator\n(execution time, prediction accuracy)" as MetricsEval
+  component "Topology / Graph Layout Generator" as GraphLayout
+  component "Cryptography Module\n(AES / DES symmetric encryption)" as CryptoModule
+}
+
+' ============================================================
+' Data Layer
+' ============================================================
+package "Data Layer" as Data {
+  database "MySQL (relational)\nusers, roles, permissions, applications,\nmodel metadata, datasets, trained models, metrics" as MySQL
+  database "Neo4j (graph)\nmodel evolution relationships,\nversion & computational-layer reuse" as Neo4j
+  database "Encrypted Model & Source Store\n(ONNX files, PyTorch source, encrypted models)" as ModelStore
+}
+
+' ============================================================
+' External Systems & Interfaces
+' ============================================================
+package "External Systems & Interfaces" as External {
+  component "OAuth 2.0 / Identity Provider\n(2FA provider)" as IdP
+  component "SMTP / Email Service" as SMTP
+  component "Python Libraries" as PyLibs
+}
+
+' ============================================================
+' Actor -> Presentation
+' ============================================================
+Learner --> UISearch
+Learner --> UIAccount
+Contributor --> UISearch
+Contributor --> UIContrib
+Contributor --> UIEvolution
+Contributor --> UIAccount
+Admin --> UIUserMgmt
+Admin --> UISearch
+Admin --> UIContrib
+Admin --> UIEvolution
+Admin --> UIAccount
+UISearch --> UIGraph
+UIEvolution --> UIGraph
+UINav --> UISearch
+UINav --> UIAccount
+
+' ============================================================
+' Presentation -> Back-end (HTTPS / TLS)
+' ============================================================
+UIAccount --> APIGateway : HTTPS / TLS
+UISearch --> APIGateway : HTTPS / TLS
+UIContrib --> APIGateway : HTTPS / TLS
+UIEvolution --> APIGateway : HTTPS / TLS
+UIUserMgmt --> APIGateway : HTTPS / TLS
+UIGraph --> APIGateway : HTTPS / TLS
+APIGateway --> Console
+
+' ============================================================
+' Back-end internal dependencies
+' ============================================================
+APIGateway --> AuthService
+APIGateway --> AccountService
+APIGateway --> ModelService
+APIGateway --> SearchService
+APIGateway --> EvolutionService
+APIGateway --> UserService
+APIGateway --> DatasetService
+APIGateway --> VizService
+
+AuthService --> IdP : OAuth 2.0 / 2FA
+AccountService --> SMTP
+AccountService --> UserService
+UserService --> AuthService : roles & permissions
+ModelService --> FileHandler
+ModelService --> DatasetService
+ModelService --> VizService
+SearchService --> VizService
+EvolutionService --> VizService
+EvolutionService --> DatasetService
+
+' ============================================================
+' Back-end -> Algorithm Support
+' ============================================================
+FileHandler --> OnnxParser
+FileHandler --> TorchParser
+ModelService --> OnnxParser
+ModelService --> TorchParser
+ModelService --> MetricsEval
+VizService --> StructAnalyzer
+VizService --> DiffEngine
+VizService --> GraphLayout
+EvolutionService --> DiffEngine
+EvolutionService --> StructAnalyzer
+DatasetService --> MetricsEval
+OnnxParser --> PyLibs
+TorchParser --> PyLibs
+MetricsEval --> PyLibs
+
+' ============================================================
+' Algorithm Support -> Data Layer
+' ============================================================
+ModelService --> ModelStore
+FileHandler --> ModelStore
+CryptoModule --> ModelStore
+ModelStore --> CryptoModule
+OnnxParser --> ModelStore
+TorchParser --> ModelStore
+
+' ============================================================
+' Back-end -> Data Layer
+' ============================================================
+AccountService --> MySQL
+UserService --> MySQL
+ModelService --> MySQL
+SearchService --> MySQL
+DatasetService --> MySQL
+EvolutionService --> MySQL
+EvolutionService --> Neo4j
+VizService --> Neo4j
+SearchService --> Neo4j
+DatasetService --> Neo4j
+
+@enduml

@@ -1,0 +1,88 @@
+@startuml
+title Escape Application - System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 150
+
+node "Client (Browser)" as client {
+  package "Web Client (React)" as web_client {
+    component "Auth Views\n(Sign-up, Sign-in)" as auth_views
+    component "Shared Credential Handlers" as shared_handlers
+    component "Credential Submitter\n(JSON POST)" as cred_submitter
+    component "Content Retriever\n(title-based, sequential)" as content_retriever
+    component "Error Indicator UI" as error_ui
+    component "React-Router" as react_router
+    component "jQuery (aux)" as jquery
+
+    package "Scene Rendering\n(A-Frame, aframe-react)" as scene_pkg {
+      component "Lobby" as scene_Lobby
+      component "SF" as scene_SF
+      component "Louvre" as scene_Louvre
+      component "Berlin" as scene_Berlin
+      component "Milan" as scene_Milan
+      component "Rome" as scene_Rome
+      component "Hack" as scene_Hack
+      component "Camera" as scene_Camera
+      component "Sky" as scene_Sky
+      component "Plane" as scene_Plane
+      component "TextPlane" as scene_TextPlane
+    }
+  }
+}
+
+node "Server (Node.js/Express)" as server {
+  component "HTTP Router\n(Express-style)" as http_router
+  component "User Controller" as user_controller
+  component "Content Controller" as content_controller
+  component "User Model" as user_model
+  component "bcrypt-nodejs" as bcrypt <<library>>
+}
+
+database "Relational Database\n(MariaDB)" as db
+queue "Cache\n(Redis)" as cache
+cloud "Image Storage\n(S3-like)" as img_store
+
+' Client-side relationships
+auth_views --> shared_handlers : email/password onChange
+auth_views --> cred_submitter : onSubmit
+react_router ..> auth_views : navigation
+content_retriever --> error_ui : show error on failure
+
+' Client-server communication
+web_client --> server : HTTP(S) requests/responses
+
+' Server-side routing/controllers
+cred_submitter --> http_router : /auth register/login
+content_retriever --> http_router : /content?title=...
+http_router --> user_controller
+http_router --> content_controller
+
+' Server-side logic and persistence
+user_controller --> user_model : create/find users
+user_controller --> bcrypt : compare(plain, hash)
+user_model --> db : CRUD users
+content_controller --> db : query content
+content_controller --> cache : read-through/write-through
+content_controller --> img_store : fetch/store images
+user_controller --> cache : session/user cache
+
+' Data entities note
+note right of db
+  Entities:
+  - users
+  - likes
+  - photos
+  - comments
+end note
+
+' NFR notes
+note bottom of bcrypt
+  NFR-001: Password verification via bcrypt-nodejs
+end note
+
+note bottom of content_retriever
+  NFR-002: Sequential titles; single final state set
+end note
+
+@enduml

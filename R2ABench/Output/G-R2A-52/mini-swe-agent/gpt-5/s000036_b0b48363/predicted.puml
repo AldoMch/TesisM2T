@@ -1,0 +1,59 @@
+@startuml
+title HypnoLog Server - Architecture Overview
+skinparam componentStyle rectangle
+
+package "External Logging Producers" {
+  [Logging Producer]
+}
+
+package "Server (Node.js/Express)" {
+  [Startup Script (bin/www)]
+  [HTTP Server (port 7000, CLI override)]
+  [Express App]
+  [JSON Body Parser (50mb)]
+  [Logging Router (/logger)]
+  [Static Web Server (public dir)]
+  [Socket.IO Server]
+}
+
+package "Browser Client (UI)" {
+  [Browser UI (client.html)]
+  [Socket.IO Client]
+  [Ajv Validator]
+  database "Received Data List (in-memory)" as ReceivedData
+  [Window Dispatcher]
+  [Visualizer Dispatcher]
+  [Visualizers (canDisplay/display)]
+  [Windows]
+}
+
+' Server hosting relationships
+[Startup Script (bin/www)] --> [HTTP Server (port 7000, CLI override)] : start & open UI URL
+[HTTP Server (port 7000, CLI override)] --> [Express App]
+[HTTP Server (port 7000, CLI override)] --> [Socket.IO Server] : attach
+
+' Express app composition
+[Express App] --> [Static Web Server (public dir)] : serve public assets
+[Express App] --> [Logging Router (/logger)] : mount /logger
+[Logging Router (/logger)] --> [JSON Body Parser (50mb)] : parse JSON bodies
+
+' Logging producers submit logs
+[Logging Producer] --> [Logging Router (/logger)] : POST /logger/in (application/json)
+[Logging Producer] --> [Logging Router (/logger)] : GET /logger/status
+
+' Server broadcasts to browser clients
+[Logging Router (/logger)] --> [Socket.IO Server] : broadcast submitted objects
+[Socket.IO Client] <--> [Socket.IO Server] : real-time notifications
+
+' Browser UI loads from server
+[Browser UI (client.html)] --> [Static Web Server (public dir)] : GET /client.html & assets
+
+' Browser-side validation and rendering
+[Socket.IO Client] --> [Ajv Validator] : validate received messages
+[Ajv Validator] --> ReceivedData : store valid or wrapped HypnoLog-error objects
+[Ajv Validator] --> [Window Dispatcher] : forward display objects
+[Window Dispatcher] --> [Visualizer Dispatcher]
+[Visualizer Dispatcher] --> [Visualizers (canDisplay/display)] : select first matching
+[Visualizer Dispatcher] --> [Windows] : append rendered DOM elements
+
+@enduml

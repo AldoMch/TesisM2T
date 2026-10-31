@@ -1,0 +1,167 @@
+@startuml
+!theme plain
+skinparam linetype ortho
+skinparam rectangle {
+  BackgroundColor #F0F4FF
+  BorderColor #4A6FA5
+  FontColor #1A1A2E
+}
+skinparam component {
+  BackgroundColor #E8F4F8
+  BorderColor #2E86AB
+  FontColor #1A1A2E
+}
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontColor #1A1A2E
+}
+skinparam node {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontColor #1A1A2E
+}
+skinparam cloud {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #333333
+  FontColor #333333
+  FontSize 10
+}
+skinparam defaultFontSize 11
+skinparam defaultFontName Arial
+
+title PlugIt Framework — System Architecture Diagram
+
+cloud "External Access" as ExtAccess {
+  actor "External User /\nExternal System" as ExtUser
+  actor "Inbound Email\n(Standalone Proxy)" as InboundMail
+}
+
+rectangle "Internal Network" as InternalNetwork {
+
+  rectangle "PlugIt Proxy Host" as ProxyHost {
+    component "PlugIt Proxy\n(Host Platform)" as Proxy
+    component "Proxy API Endpoint\n(API_URL)" as ProxyAPI
+    component "Standalone Proxy\nMail Workflow" as MailWorkflow {
+      component "Mail Validator\n(Routing Token / Auto-Response)" as MailValidator
+      component "Mail Text Extractor\n(First Text Part)" as MailExtractor
+      component "Mail Handler\n(Decoded Routing + Payload)" as MailHandler
+    }
+    database "Proxy-Side\nData Store" as ProxyDB
+  }
+
+  rectangle "PlugIt Service A" as ServiceA {
+    component "Service A\nApplication" as SvcAApp
+    component "Service Config A\n(API_URL, DEBUG, PI_BASE_URL,\nPI_ALLOWED_NETWORKS)" as SvcAConfig
+    component "Local / Private Config A\n(SQLALCHEMY_URL, secrets)\n[excluded from source control]" as SvcALocalConfig
+    component "PlugIt API Client A\n(initialized with API_URL)" as SvcAAPIClient
+    component "Schema Migration\n(Alembic — versioned upgrade files)" as SvcAMigration
+    database "Service A\nData Store\n(MySQL / SQLite)" as SvcADB
+  }
+
+  rectangle "PlugIt Service B" as ServiceB {
+    component "Service B\nApplication" as SvcBApp
+    component "Service Config B\n(API_URL, DEBUG, PI_BASE_URL,\nPI_ALLOWED_NETWORKS)" as SvcBConfig
+    component "Local / Private Config B\n(SQLALCHEMY_URL, secrets)\n[excluded from source control]" as SvcBLocalConfig
+    component "PlugIt API Client B\n(initialized with API_URL)" as SvcBAPIClient
+    component "Schema Migration B\n(Alembic — versioned upgrade files)" as SvcBMigration
+    database "Service B\nData Store\n(MySQL / SQLite)" as SvcBDB
+  }
+
+}
+
+rectangle "PlugIt API Capability Categories" as APICapabilities {
+  component "Users" as CapUsers
+  component "Subscription Tags" as CapTags
+  component "Organizations" as CapOrgs
+  component "Project Members" as CapMembers
+  component "Email Sending" as CapEmail
+  component "Forum Topics" as CapForum
+}
+
+rectangle "Configuration & Source Control" as ConfigControl {
+  component "Project Config Files\n(publishable settings)" as ProjConfig
+  component "Local Config Files\n(private / excluded)" as LocalConfig
+  component "Source Control\n(excludes local config)" as SourceControl
+}
+
+' External user to proxy
+ExtUser -down-> Proxy : "Access via proxy\n(Unified UX)"
+
+' Inbound mail to standalone proxy
+InboundMail -down-> MailWorkflow : "Inbound email\nmessage"
+
+' Proxy components
+Proxy -right-> ProxyAPI : "exposes"
+Proxy -down-> ProxyDB : "reads/writes"
+Proxy -down-> MailWorkflow : "standalone proxy\nmail workflow"
+
+' Mail workflow internal
+MailValidator -right-> MailExtractor : "valid message\n(hash OK, not auto-response)"
+MailExtractor -right-> MailHandler : "decoded routing\n+ text payload"
+
+' Proxy to services via PlugIt protocol
+ProxyAPI -down-> SvcAApp : "PlugIt Protocol"
+ProxyAPI -down-> SvcBApp : "PlugIt Protocol"
+
+' Service A internals
+SvcAApp -right-> SvcAAPIClient : "uses"
+SvcAApp -down-> SvcADB : "reads/writes"
+SvcAConfig -up-> SvcAApp : "configures"
+SvcALocalConfig -up-> SvcAApp : "private settings"
+SvcAMigration -up-> SvcADB : "schema upgrades\n(versioned files)"
+
+' Service B internals
+SvcBApp -right-> SvcBAPIClient : "uses"
+SvcBApp -down-> SvcBDB : "reads/writes"
+SvcBConfig -up-> SvcBApp : "configures"
+SvcBLocalConfig -up-> SvcBApp : "private settings"
+SvcBMigration -up-> SvcBDB : "schema upgrades\n(versioned files)"
+
+' API clients to proxy API endpoint
+SvcAAPIClient -up-> ProxyAPI : "API requests\n(API_URL)"
+SvcBAPIClient -up-> ProxyAPI : "API requests\n(API_URL)"
+
+' API capabilities
+ProxyAPI -right-> APICapabilities : "supports\ncapability categories"
+
+' Configuration management
+ProjConfig -right-> SvcAConfig
+ProjConfig -right-> SvcBConfig
+LocalConfig -right-> SvcALocalConfig
+LocalConfig -right-> SvcBLocalConfig
+ProjConfig -up-> SourceControl : "published"
+LocalConfig ..> SourceControl : "excluded\n(NFR-003)"
+
+note bottom of MailWorkflow
+  <b>Standalone Proxy Scope Only (FR-006, FR-007, FR-008)</b>
+  1. Reject auto-response indicators
+     (x-auto-response-suppress, Auto-Autorespond,
+      auto-submitted, precedence, x-precedence)
+  2. Validate routing token: hash:data
+     SHA-512[30:42] vs computed hash
+  3. Extract first text part as payload
+  4. Pass decoded routing + payload to handler
+  5. On success: remove message from mailbox
+end note
+
+note right of APICapabilities
+  <b>FR-005 / DR-005</b>
+  Capabilities: Users, Subscription Tags,
+  Organizations, Project Members,
+  Email Sending, Forum Topics
+end note
+
+note bottom of SvcADB
+  <b>C-001 / DR-003</b>
+  External provisioning required.
+  Supports MySQL, SQLite (examples).
+  Schema managed via Alembic versioned
+  upgrade files.
+end note
+
+@enduml

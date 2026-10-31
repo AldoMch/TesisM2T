@@ -1,0 +1,82 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Vue Frontend" as frontend {
+  [Browser App]
+}
+
+RECTANGLE "Nginx Reverse Proxy" as nginx {
+  [Reverse Proxy]
+}
+
+RECTANGLE "Node.js Backend" as backend {
+  [Express Server]
+  [Socket.IO Service]
+  [Authentication Service]
+  [Project Management]
+  [Workspace Coordination]
+  [Code Execution Service]
+  [Replay Service]
+  [Battle Service]
+  [File Distribution]
+}
+
+RECTANGLE "Docker Sandbox" as sandbox {
+  [Code Executor]
+}
+
+RECTANGLE "MySQL" as mysql {
+  [Relational Data Store]
+}
+
+RECTANGLE "InfluxDB" as influxdb {
+  [Time-Series Records]
+}
+
+RECTANGLE "Redis" as redis {
+  [Cache & Coordination]
+}
+
+RECTANGLE "Object Storage (S3 Compatible)" as storage {
+  [File Storage]
+}
+
+RECTANGLE "CDN (CloudFront Style)" as cdn {
+  [Content Delivery]
+}
+
+frontend --> nginx : HTTP/WebSocket
+nginx --> backend : HTTP/WebSocket
+backend --> mysql : SQL
+backend --> influxdb : Time-Series Query
+backend --> redis : Cache Ops
+backend --> sandbox : Execute Code
+backend --> storage : File I/O
+storage --> cdn : Distribute Assets
+frontend --> cdn : Fetch Static Assets
+
+note right of backend
+  Core Services:
+  - REST API
+  - Socket Channels
+  - JWT Authentication
+  - Project CRUD
+  - Workspace Authorization
+  - Replay Query
+  - Battle Workflows
+  - File Upload/Download
+end note
+
+note right of sandbox
+  Isolated execution
+  of user-submitted code
+end note
+
+note top of storage
+  Stores:
+  - Code files
+  - Battle results
+  - User files
+  - Archives
+end note
+@enduml

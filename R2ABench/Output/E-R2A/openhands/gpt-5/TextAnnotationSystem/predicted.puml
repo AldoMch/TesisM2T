@@ -1,0 +1,111 @@
+@startuml
+title Intelligent Text Annotation System (ITAS) - Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "Web Layer" {
+  [Web Frontend (Vue.js + Ant Design, Axios)]
+}
+
+node "Tencent Cloud Deployment" {
+  node "Dockerized Services" {
+    [Nginx Reverse Proxy]
+    [API Gateway (Spring Gateway + Security)]
+    component "Spring Cloud Discovery/Config" as Discovery
+
+    package "Annotation Subsystem" {
+      [User/Auth Service]
+      [Project Service]
+      [Annotator Service]
+      [Document Service]
+      [Tag/Label Service]
+      [Task Service]
+      [Annotation Service]
+      [Mark/Result Service]
+      [Result Export Service]
+      [Statistics Service]
+    }
+
+    package "Intelligent Mining Subsystem" {
+      [Mining Service]
+      [Model Selection]
+      [Format Conversion Worker]
+    }
+  }
+
+  database "MySQL" as MySQL
+  folder "Minio Object Storage" as Minio
+  database "Redis (Cache)" as Redis
+  queue "RabbitMQ" as MQ
+  cloud "GPT API / Third-Party Interface" as GPT
+  component "Paragraph Model (BERT)" as BERT
+}
+
+[Web Frontend (Vue.js + Ant Design, Axios)] --> [Nginx Reverse Proxy]
+[Nginx Reverse Proxy] --> [API Gateway (Spring Gateway + Security)]
+
+' Gateway routes to subsystem services
+[API Gateway (Spring Gateway + Security)] --> [User/Auth Service]
+[API Gateway (Spring Gateway + Security)] --> [Project Service]
+[API Gateway (Spring Gateway + Security)] --> [Annotator Service]
+[API Gateway (Spring Gateway + Security)] --> [Document Service]
+[API Gateway (Spring Gateway + Security)] --> [Tag/Label Service]
+[API Gateway (Spring Gateway + Security)] --> [Task Service]
+[API Gateway (Spring Gateway + Security)] --> [Annotation Service]
+[API Gateway (Spring Gateway + Security)] --> [Mark/Result Service]
+[API Gateway (Spring Gateway + Security)] --> [Result Export Service]
+[API Gateway (Spring Gateway + Security)] --> [Statistics Service]
+[API Gateway (Spring Gateway + Security)] --> [Mining Service]
+[API Gateway (Spring Gateway + Security)] --> [Model Selection]
+
+' Data stores and cache
+[User/Auth Service] --> MySQL
+[Project Service] --> MySQL
+[Annotator Service] --> MySQL
+[Document Service] --> MySQL
+[Tag/Label Service] --> MySQL
+[Task Service] --> MySQL
+[Annotation Service] --> MySQL
+[Mark/Result Service] --> MySQL
+[Statistics Service] --> MySQL
+[Mining Service] --> MySQL
+
+[Document Service] --> Minio
+[Format Conversion Worker] --> Minio
+[Document Service] --> Redis
+[Task Service] --> Redis
+[Annotation Service] --> Redis
+[Mining Service] --> Redis
+[User/Auth Service] --> Redis
+
+' Asynchronous processing
+[Document Service] --> MQ : publish conversion tasks
+MQ --> [Format Conversion Worker] : consume
+[Format Conversion Worker] --> MySQL : update references
+
+' Models and external APIs
+[Annotation Service] --> BERT
+[Annotation Service] --> GPT
+[Mining Service] --> GPT
+
+' Use of annotated results by mining
+[Mining Service] ..> [Mark/Result Service] : uses stored annotations
+
+' Service discovery/configuration
+[User/Auth Service] --> Discovery
+[Project Service] --> Discovery
+[Annotator Service] --> Discovery
+[Document Service] --> Discovery
+[Tag/Label Service] --> Discovery
+[Task Service] --> Discovery
+[Annotation Service] --> Discovery
+[Mark/Result Service] --> Discovery
+[Result Export Service] --> Discovery
+[Statistics Service] --> Discovery
+[Mining Service] --> Discovery
+[Model Selection] --> Discovery
+[Format Conversion Worker] --> Discovery
+
+@enduml

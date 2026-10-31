@@ -1,0 +1,122 @@
+@startuml
+title Configuration Anomaly Detection (CAD) - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #888888
+}
+skinparam database {
+  BackgroundColor #FFFACD
+  BorderColor #888888
+}
+skinparam cloud {
+  BackgroundColor #E0F0FF
+  BorderColor #4488AA
+}
+skinparam node {
+  BackgroundColor #EEF5EE
+  BorderColor #448844
+}
+
+' External systems
+cloud "External Alert Sources" as AlertSrc {
+  [Alert Webhook Producer]
+}
+
+cloud "External Systems" {
+  [PagerDuty] as PD
+  [AWS] as AWS
+  [OCM (OpenShift Cluster Manager)] as OCM
+}
+
+' Container / Runtime Layer
+node "CAD Container Image\n(UBI Minimal Runtime)" as CADContainer {
+
+  package "cadctl CLI" as cadctl {
+    [cadctl Entry Point\n(/bin/cadctl)] as cadctlBin
+    [CHGM Workflow Handler] as chgm
+    [Anomaly Detection & Communication] as anomaly
+    [Mitigation & Disposition Handler] as mitigation
+  }
+
+  package "Integration Library (pkg)" as intLib {
+    [PagerDuty Integration] as pdInt
+    [AWS Integration] as awsInt
+    [OCM Integration] as ocmInt
+  }
+}
+
+' Tekton Execution Layer
+node "Tekton Execution Environment\n(configuration-anomaly-detection namespace)" as tektonEnv {
+
+  package "Event-Driven Path" as eventDriven {
+    [EventListener] as eventListener
+    [Trigger] as trigger
+  }
+
+  package "Pipeline Execution" as pipelineExec {
+    [cad-checks-pipeline] as cadPipeline
+    [PipelineRun (v1beta1)] as pipelineRun
+  }
+}
+
+' Deployment & Template Assets
+package "Deployment Assets & Template Utility" as deployAssets {
+  [Deployment YAML Manifests] as deployManifests
+  [Template Update Utility] as templateUtil
+  database "Deployment Template Artifact" as templateArtifact
+}
+
+' Build Layer
+package "Build Layer" as buildLayer {
+  [Go 1.17 Builder Image] as goBuilder
+}
+
+' --- Connections ---
+
+' External alert triggers Tekton EventListener
+AlertSrc --> eventListener : alert webhook (HTTP)
+
+' Event-driven path: EventListener -> Trigger -> PipelineRun
+eventListener --> trigger : event received
+trigger --> pipelineRun : creates PipelineRun
+
+' Skip-webhook direct path
+[Alert Webhook Producer] ..> pipelineRun : skip-webhook\ndirect creation\n(JSON payload with\nevent.data.id)
+
+' PipelineRun executes pipeline
+pipelineRun --> cadPipeline : executes
+
+' Pipeline runs cadctl CLI
+cadPipeline --> cadctlBin : invokes cadctl\nin container
+
+' cadctl CLI internal interactions
+cadctlBin --> chgm : CHGM workflow
+cadctlBin --> anomaly : anomaly detection
+cadctlBin --> mitigation : mitigation/disposition
+
+' CLI uses integration library
+chgm --> pdInt
+chgm --> awsInt
+chgm --> ocmInt
+anomaly --> pdInt
+anomaly --> awsInt
+anomaly --> ocmInt
+mitigation --> pdInt
+mitigation --> awsInt
+mitigation --> ocmInt
+
+' Integration library talks to external systems
+pdInt --> PD : PagerDuty API
+awsInt --> AWS : AWS API
+ocmInt --> OCM : OCM API
+
+' Template utility
+templateUtil --> templateArtifact : updates
+deployManifests --> tektonEnv : deployed to
+
+' Build
+goBuilder --> cadctlBin : builds
+
+@enduml

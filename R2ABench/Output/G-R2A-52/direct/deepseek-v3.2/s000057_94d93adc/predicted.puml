@@ -1,0 +1,96 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam component {
+    BackgroundColor #E6F3FF
+    BorderColor #0066CC
+    FontColor #003366
+    ArrowColor #0066CC
+}
+skinparam database {
+    BackgroundColor #FFF0E6
+    BorderColor #CC6600
+    FontColor #663300
+}
+skinparam cloud {
+    BackgroundColor #E6FFE6
+    BorderColor #009900
+    FontColor #006600
+}
+skinparam queue {
+    BackgroundColor #F0E6FF
+    BorderColor #6600CC
+    FontColor #330066
+}
+
+title Soundzone System Architecture
+
+cloud "User's Web Browser" as Browser {
+    component "React UI Components" as ReactUI
+    component "Redux Store" as ReduxStore
+    component "Audio Playback Engine" as AudioEngine
+    ReactUI -[#0066CC]-> ReduxStore : "Dispatches Actions\nManages State"
+    ReactUI -[#0066CC]-> AudioEngine : "Controls Playback\nHandles Waveform Clicks"
+    ReduxStore -[#0066CC]-> ReactUI : "State Updates"
+    AudioEngine -[#0066CC]-> ReactUI : "Playback State Events"
+}
+
+node "Frontend Server (Static Hosting)" as FrontendServer {
+    component "React Application Bundle" as ReactApp
+    ReactApp -[#0066CC,dashed]-> Browser : "Served via HTTP(S)"
+}
+
+node "Backend Server" as BackendServer {
+    component "Node.js Runtime" as NodeRuntime
+    component "Express Application" as ExpressApp
+    component "API Controllers" as APIControllers
+    component "Business Logic" as BusinessLogic
+    NodeRuntime .[#0066CC].> ExpressApp : "Hosts"
+    ExpressApp .[#0066CC].> APIControllers : "Routes Requests"
+    APIControllers -[#0066CC]-> BusinessLogic : "Calls"
+    BusinessLogic -[#0066CC]-> APIControllers : "Returns Data"
+}
+
+database "PostgreSQL Database" as PostgreSQL {
+    component "User Table" as UserTable
+    component "Sound Table" as SoundTable
+    component "Follow Table" as FollowTable
+    SoundTable -[#CC6600]-> UserTable : "Foreign Key"
+    FollowTable -[#CC6600]-> UserTable : "Foreign Keys"
+}
+
+cloud "Cloudinary Service" as Cloudinary {
+    component "Audio Storage" as AudioStorage
+    component "Image Storage" as ImageStorage
+    component "Upload API" as CloudinaryAPI
+    CloudinaryAPI -[#009900]-> AudioStorage : "Stores Files"
+    CloudinaryAPI -[#009900]-> ImageStorage : "Stores Files"
+}
+
+Browser -[#0066CC]-> ExpressApp : "1. HTTP API Calls\n(User, Follow, Feed, Sound)"
+note on link
+    Uses configured API Base URL
+end note
+
+Browser -[#009900]-> CloudinaryAPI : "2. Direct Media Upload\n(Audio, Images)"
+note on link
+    Uses Cloudinary URL & Upload Preset
+end note
+
+ExpressApp -[#CC6600]-> PostgreSQL : "3. CRUD Operations\n(Persists App Data & Media URLs)"
+BusinessLogic -[#CC6600]-> PostgreSQL : "Queries/Updates Data"
+
+CloudinaryAPI -[#009900,dashed]-> ExpressApp : "4. Returns Media URLs"
+note on link
+    URLs stored in PostgreSQL
+end note
+
+ReduxStore -[#0066CC,dashed]-> AudioEngine : "Centralized Playback State"
+note on link
+    Enables continuity across navigation
+end note
+
+@enduml

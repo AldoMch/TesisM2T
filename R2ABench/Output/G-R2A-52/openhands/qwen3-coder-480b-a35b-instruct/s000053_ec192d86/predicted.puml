@@ -1,0 +1,68 @@
+@startuml
+!theme plain
+skinparam rectangleLineWidth 1
+skinparam noteFontSize 10
+skinparam noteBackgroundColor #FFFFDD
+skinparam packageBackgroundColor #DDDDDD
+
+' Main system boundary
+rectangle "Configuration Anomaly Detection (CAD)" as cad_system {
+    
+    ' Core components
+    rectangle "CLI Tool\ncadctl" as cli_tool
+    
+    rectangle "Integration Library" as integration_lib {
+        rectangle "PagerDuty\nIntegration" as pagerduty
+        rectangle "AWS\nIntegration" as aws
+        rectangle "OCM\nIntegration" as ocm
+    }
+    
+    rectangle "Template Update\nUtility" as template_util
+    
+    ' Tekton components
+    rectangle "Tekton Pipeline\nExecution" as tekton_exec {
+        rectangle "EventListener" as event_listener
+        rectangle "Trigger" as trigger
+        rectangle "PipelineRun\n(cad-checks-pipeline)" as pipelinerun
+    }
+    
+    rectangle "Direct PipelineRun\n(skip-webhook path)" as direct_pipelinerun
+}
+
+' External systems
+rectangle "External Alert\nSystem" as alert_system
+rectangle "Cluster Owner/\nOperations Systems" as cluster_owner
+rectangle "Tekton\nEnvironment" as tekton_env
+
+' Data flows
+alert_system --> event_listener : Alert webhook
+event_listener --> trigger : Event
+trigger --> pipelinerun : Create
+cli_tool --> integration_lib : Uses
+cli_tool --> cluster_owner : Communications
+pipelinerun --> cli_tool : Executes
+direct_pipelinerun --> cli_tool : Executes
+cli_tool --> template_util : Uses
+
+note right of cad_system
+    Containerized CLI runtime
+    UBI minimal base image
+    Go 1.17 build environment
+end note
+
+note bottom of tekton_exec
+    Standard event-driven execution path
+    Namespace: configuration-anomaly-detection
+end note
+
+note right of direct_pipelinerun
+    Skip-webhook execution path
+    Bypasses EventListener
+end note
+
+note bottom of integration_lib
+    Package-level integration code
+    Used by CLI endpoints
+end note
+
+@enduml

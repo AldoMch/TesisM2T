@@ -1,0 +1,155 @@
+@startuml
+title Activiti 7 Guide-Documented Platform Examples - System Architecture
+
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+' ============================================================
+' Actors / User Classes
+' ============================================================
+package "User Classes" {
+  actor "Authenticated User" as AuthUser
+  actor "Task API User\n(ACTIVITI_USER /\nROLE_ACTIVITI_USER)" as TaskUser
+  actor "Human Participant" as HumanPart
+  actor "Cluster Operator" as ClusterOp
+  actor "Developer / Integrator" as Dev
+}
+
+' ============================================================
+' External Identity / Security
+' ============================================================
+package "Identity & Security" {
+  component "Keycloak\n(SSO / Identity Provider)" as Keycloak
+  component "Spring Boot Application Context" as SpringBoot
+  component "Spring Security\n(users, groups, roles,\nlogged-in user context)" as SpringSecurity
+}
+
+' ============================================================
+' Access / Edge
+' ============================================================
+package "External Access" {
+  component "NGINX Ingress Controller" as Ingress
+  component "Public IP" as PublicIP
+  component "Gateway / API Gateway\n(architecture background)" as Gateway
+}
+
+' ============================================================
+' Activiti Cloud Runtime
+' ============================================================
+package "Activiti Cloud Runtime" {
+  component "Example Runtime Bundle\n(deployed process definitions,\nprocess instance execution)" as RuntimeBundle
+
+  component "ProcessRuntime API" as ProcessRuntime
+  component "TaskRuntime API\n(requires logged-in user\nwith ACTIVITI_USER)" as TaskRuntime
+
+  component "Audit Service" as AuditService
+  component "Query Service\n(process execution info)" as QueryService
+
+  component "Notification Service\n(architecture background)" as NotificationService
+  component "Cloud Connectors\n(architecture background)" as CloudConnectors
+}
+
+' ============================================================
+' Deployment / Infrastructure
+' ============================================================
+package "Kubernetes / GKE" {
+  component "Kubernetes Registry /\nConfig Maps\n(architecture background)" as K8sConfig
+  component "Deployment Descriptors\n(input rate,\nreplica counts)" as DeployDescriptors
+}
+
+' ============================================================
+' Data Items
+' ============================================================
+database "Authentication Token\n(DE-001, time-limited)" as Token
+database "Process Definition Listing\n(DE-002)" as DefListing
+database "Process Instance Start Request\n(DE-003)" as StartReq
+database "Audit Event Records\n(DE-004)" as AuditEvents
+database "Process Execution Information\n(DE-005)" as ExecInfo
+database "User Role Information\n(DE-006)" as RoleInfo
+
+' ============================================================
+' Relationships - Users and identity
+' ============================================================
+AuthUser --> Keycloak : acquire token (API-001)
+Keycloak --> Token : issues (DR-001)
+AuthUser --> Token : supply token (CI-003)
+
+AuthUser --> SpringBoot : requests protected endpoint
+SpringBoot --> SpringSecurity : authorization context (CI-001, C-001)
+SpringSecurity --> RoleInfo : manages users/groups/roles (DR-006, API-007)
+RoleInfo --> TaskUser
+
+Dev --> AuthUser : follows guide examples
+Dev --> Dev : documented full example\n(ProcessRuntime + TaskRuntime\n+ human participant) (FR-006)
+
+' ============================================================
+' Relationships - External access / ingress
+' ============================================================
+ClusterOp --> Ingress : configure ingress (FR-007)
+ClusterOp --> DeployDescriptors : configure scalability (NFR-002)
+PublicIP --> Ingress
+Ingress --> AuthUser : routes external requests (CI-002, API-009, C-003)
+Ingress --> Gateway : routes into cloud services
+Gateway --> ProcessRuntime
+Gateway --> TaskRuntime
+
+' ============================================================
+' Relationships - Runtime interaction
+' ============================================================
+Token --> AuthUser : valid token accepted / invalid-rejected (FR-001, NFR-001)
+AuthUser --> ProcessRuntime : authenticated API call
+AuthUser --> TaskRuntime : authenticated API call
+
+ProcessRuntime --> RuntimeBundle : start / interact (FR-003)
+TaskRuntime --> RuntimeBundle : task interaction (FR-005, NFR-003)
+TaskRuntime --> SpringSecurity : checks logged-in user + role (C-002, AD-003)
+
+RuntimeBundle --> DefListing : exposes deployed definitions (FR-002, DR-002)
+ProcessRuntime --> StartReq : start SimpleProcess (FR-003, DR-003)
+StartReq --> RuntimeBundle : creates new instance
+RuntimeBundle --> AuditService : just-started instance events
+AuditService --> AuditEvents : displays events (FR-004, DR-004, API-005)
+RuntimeBundle --> QueryService : process execution state
+QueryService --> ExecInfo : exposes info (DR-005, API-006)
+
+HumanPart --> TaskRuntime : participates in process example (API-008)
+
+' ============================================================
+' Relationships - Deployment configuration
+' ============================================================
+DeployDescriptors --> K8sConfig : read parameters
+K8sConfig --> RuntimeBundle : scaling / input rate config (NFR-002, DR-007, AD-005)
+DeployDescriptors --> CloudConnectors : replica / input rate controls
+
+' ============================================================
+' Background components (no assigned functional behavior)
+' ============================================================
+NotificationService ..> RuntimeBundle : architecture background (C-006)
+CloudConnectors ..> RuntimeBundle : architecture background (C-006)
+
+' ============================================================
+' Compatibility / scope notes
+' ============================================================
+note right of SpringBoot
+  Compatibility context (C-004):
+  Activiti 7.0.0-EA-201802 aligned with
+  Spring Boot 2.0.0.RELEASE and
+  Spring Cloud Finchley.M8.
+  Point-in-time only, not an ongoing
+  build obligation for the guide.
+end note
+
+note bottom of RuntimeBundle
+  Scope (C-005, C-006): Requirements describe
+  platform behaviors demonstrated by the guide,
+  not a runtime implementation of Activiti,
+  Keycloak, Spring Security, or Kubernetes.
+  Background components (Gateway, Query,
+  Notification, Cloud Connectors, registry/
+  config maps) carry no mandatory behavior
+  unless assigned by a functional requirement.
+end note
+
+@enduml

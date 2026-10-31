@@ -1,0 +1,104 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+
+' ===== ACTORS =====
+actor "Human Participant" as human
+
+' ===== INFRASTRUCTURE/DEPLOYMENT LAYER =====
+node "Kubernetes/GKE Cluster" as k8s {
+  component "NGINX Ingress Controller" as ingress
+  component "Deployment Descriptors" as descriptors {
+    note right
+      Parameters:
+      - data input rate
+      - replica count
+    end note
+  }
+  cloud "Public IP" as publicIP
+}
+
+' ===== APPLICATION LAYER =====
+package "Spring Boot Application" as springApp {
+  component "Spring Security" as springSecurity
+}
+
+package "API Gateway Layer" {
+  component "Gateway/API Gateway" as gateway
+}
+
+package "Identity & Security Layer" {
+  component "Keycloak" as keycloak
+}
+
+package "Business Process Layer" {
+  component "Example Runtime Bundle" as runtimeBundle
+  interface "ProcessRuntime API" as processAPI
+  interface "TaskRuntime API" as taskAPI
+}
+
+package "Supporting Services Layer" {
+  component "Audit Service" as auditService
+  component "Query Service" as queryService
+  
+  rectangle "Background Components" as background {
+    component "Notification Service" as notificationService
+    component "Cloud Connectors" as cloudConnectors
+  }
+}
+
+package "Presentation/Client Layer" {
+  component "REST API Clients" as restClients
+  component "Command-line Tools" as cliTools
+}
+
+' ===== CONNECTIONS =====
+' External access
+publicIP --> ingress : "routes traffic"
+ingress --> gateway : "routes requests"
+ingress --> runtimeBundle : "routes requests"
+ingress --> auditService : "routes requests"
+ingress --> queryService : "routes requests"
+
+' Client connections
+human --> restClients : "uses"
+human --> cliTools : "uses"
+restClients --> gateway : "API requests"
+cliTools --> gateway : "API requests"
+
+' Security connections
+gateway --> springSecurity : "enforces\nauthorization"
+springSecurity --> keycloak : "validates tokens\n& manages roles"
+keycloak --> springApp : "identity provider"
+
+' API access
+gateway --> processAPI : "routes to"
+gateway --> taskAPI : "routes to"
+processAPI --> runtimeBundle : "executes\nprocesses"
+taskAPI --> runtimeBundle : "manages\ntasks"
+
+' Service connections
+auditService --> runtimeBundle : "consumes events"
+queryService --> runtimeBundle : "reads data"
+
+' Background component connections (informational only)
+note on link
+  Optional/informational
+end note
+notificationService ..> runtimeBundle
+cloudConnectors ..> runtimeBundle
+
+' Deployment connections
+descriptors --> k8s : "configures\nscalability"
+k8s --> springApp : "hosts"
+k8s --> runtimeBundle : "hosts & scales"
+k8s --> auditService : "hosts"
+k8s --> queryService : "hosts"
+
+' Security constraint annotation
+note on link
+  Requires ROLE_ACTIVITI_USER
+end note
+taskAPI ..> springSecurity
+
+@enduml

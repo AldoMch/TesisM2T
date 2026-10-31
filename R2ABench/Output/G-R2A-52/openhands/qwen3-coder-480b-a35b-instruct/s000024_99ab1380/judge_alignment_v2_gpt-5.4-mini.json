@@ -1,0 +1,419 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::OCI Tenancy"
+      ],
+      "gt_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::NAT Gateway"
+      ],
+      "gt_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::Load Balancer"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Security List"
+      ],
+      "predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::Bastion Host"
+      ],
+      "gt_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+      ],
+      "predicted_nodes": [
+        "Jenkins Deployment::Jenkins Slaves/Agents"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Jenkins Deployment::Jenkins Master"
+      ],
+      "gt_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Deployment Operator"
+      ],
+      "gt_nodes": [
+        "Global::Internet"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Configuration Layer::Cloud-Init Scripts",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Configuration Layer::SSH Keys",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Configuration Layer::terraform.tfvars",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Security List"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Bastion Host",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Load Balancer",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::NAT Gateway",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::OCI Compartment",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::OCI Tenancy",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::VCN with Subnets",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Security List",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Route Table",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Security List"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Deployment Operator",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::DevOps Engineer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Infrastructure Administrator",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Tester",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Jenkins Deployment::Jenkins Master",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Jenkins Deployment::Jenkins Slaves/Agents",
+      "reference_nodes": [
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+        "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Terraform Workflow::Terraform Apply",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Terraform Workflow::Terraform Init",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Terraform Workflow::Terraform Plan",
+      "reference_nodes": []
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Internet"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::OCI Tenancy"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::NAT Gateway"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::Load Balancer"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::Load Balancer"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Route Table"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Security List"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::Bastion Host"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Route Table"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Security List"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Jenkins Deployment::Jenkins Master",
+        "Jenkins Deployment::Jenkins Slaves/Agents"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Route Table"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Security List"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Jenkins Deployment::Jenkins Slaves/Agents"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Route Table"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Security List"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Jenkins Deployment::Jenkins Slaves/Agents"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Route Table"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::VCN with Subnets"
+      ],
+      "gt_node": "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Security List"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 6436,
+      "completion_tokens": 1149,
+      "total_tokens": 7585,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Configuration Layer::Cloud-Init Scripts",
+    "Configuration Layer::SSH Keys",
+    "Configuration Layer::terraform.tfvars",
+    "External Systems::OCI Compartment",
+    "Global::DevOps Engineer",
+    "Global::Infrastructure Administrator",
+    "Global::Tester",
+    "Terraform Workflow::Terraform Apply",
+    "Terraform Workflow::Terraform Init",
+    "Terraform Workflow::Terraform Plan"
+  ],
+  "_provenance": {
+    "fingerprint": "92adfa8ebd3469efb6713e2ce594ff492b1232e81688099d98350e5fdc8ec818",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

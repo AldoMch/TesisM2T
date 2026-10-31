@@ -1,0 +1,323 @@
+{
+  "requirements": [
+    {
+      "id": "TextAnnotationSystem-R001-A",
+      "description": "The system shall support account registration, authentication, login, logout, and personal information viewing."
+    },
+    {
+      "id": "TextAnnotationSystem-R001-B",
+      "description": "The system shall support system annotation administrators, data annotators, and researchers, and allow users to switch among authorized role and task contexts without losing the relevant workflow context."
+    },
+    {
+      "id": "TextAnnotationSystem-R002-A",
+      "description": "The system shall allow administrators to define and maintain configurable presets, rules, and templates for paragraph and entity annotation and extraction."
+    },
+    {
+      "id": "TextAnnotationSystem-R002-B",
+      "description": "The system shall allow administrators to create, update, list, and query annotation projects and add, remove, or query annotators assigned to each project."
+    },
+    {
+      "id": "TextAnnotationSystem-R003-A",
+      "description": "The system shall support uploading, deleting, viewing, and querying annotation documents by project, retain document metadata and file references, and allow users to download referenced files."
+    },
+    {
+      "id": "TextAnnotationSystem-R003-B",
+      "description": "The system shall support creating, editing, deleting, and querying annotation tags and querying tags associated with tasks or documents."
+    },
+    {
+      "id": "TextAnnotationSystem-R003-C",
+      "description": "The system shall allow administrators to assign annotation tasks, allow users to view task lists and details including their own tasks, allow annotators to mark assigned tasks as complete, and provide task-level statistics."
+    },
+    {
+      "id": "TextAnnotationSystem-R004",
+      "description": "The system shall allow annotators to create, view, modify, and delete annotation marks, persist results with content, remarks, tags, locations, offsets, creators, and timestamps, and return or export the results for downstream mining workflows."
+    },
+    {
+      "id": "TextAnnotationSystem-R005-A",
+      "description": "The mining subsystem shall accept uploaded documents, convert them automatically into supported representations as needed, retain PDF, HTML, and TXT references where conversion is performed, and process conversion tasks asynchronously."
+    },
+    {
+      "id": "TextAnnotationSystem-R005-B",
+      "description": "The mining subsystem shall allow researchers to select preset models, community-shared models, or third-party model interfaces, invoke the selected model workflow, and return located paragraphs, recognized entities, and other requested key information from documents."
+    },
+    {
+      "id": "TextAnnotationSystem-R006",
+      "description": "The system shall provide web pages for registration/login, profile management, mining, upload, result display, project creation/management, and task execution."
+    },
+    {
+      "id": "TextAnnotationSystem-R007-A",
+      "description": "The system shall persist structured user, project, task, and annotation records and unstructured document contents, and maintain indexes and references linking records to their stored files."
+    },
+    {
+      "id": "TextAnnotationSystem-R007-B",
+      "description": "The web client shall interact asynchronously with backend services, and the system shall cache data to improve access responsiveness."
+    },
+    {
+      "id": "TextAnnotationSystem-R007-C",
+      "description": "The system shall support service extension and deployment scaling and preserve runtime environment consistency and deployment portability."
+    },
+    {
+      "id": "TextAnnotationSystem-R010",
+      "description": "The mining workflow shall support few-shot learning for information extraction when annotated examples are scarce."
+    }
+  ],
+  "components": [
+    {
+      "id": "comp-web-client",
+      "name": "Single Page Web Application",
+      "type": "Frontend Application",
+      "description": "Provides UI for authentication, document upload, project and task administration, annotation workbench, and mining result visualization.",
+      "tracesTo": [
+        "TextAnnotationSystem-R001-A",
+        "TextAnnotationSystem-R001-B",
+        "TextAnnotationSystem-R006",
+        "TextAnnotationSystem-R007-B"
+      ]
+    },
+    {
+      "id": "comp-api-gateway",
+      "name": "API Gateway and Reverse Proxy",
+      "type": "Infrastructure Service",
+      "description": "Handles API routing, load balancing, SSL termination, and rate limiting for scalable deployments.",
+      "tracesTo": [
+        "TextAnnotationSystem-R007-B",
+        "TextAnnotationSystem-R007-C"
+      ]
+    },
+    {
+      "id": "comp-auth-service",
+      "name": "Authentication and Role Management Service",
+      "type": "Microservice",
+      "description": "Manages user registration, credential authentication, session tokens, user profile views, and role/context switching.",
+      "tracesTo": [
+        "TextAnnotationSystem-R001-A",
+        "TextAnnotationSystem-R001-B"
+      ]
+    },
+    {
+      "id": "comp-project-task-service",
+      "name": "Project and Task Management Service",
+      "type": "Microservice",
+      "description": "Administers annotation projects, rules, templates, presets, tag management, task assignment, progress tracking, and statistics.",
+      "tracesTo": [
+        "TextAnnotationSystem-R002-A",
+        "TextAnnotationSystem-R002-B",
+        "TextAnnotationSystem-R003-B",
+        "TextAnnotationSystem-R003-C"
+      ]
+    },
+    {
+      "id": "comp-document-service",
+      "name": "Document Management Service",
+      "type": "Microservice",
+      "description": "Handles document metadata, project association, file uploads/downloads, and delegates format transformation tasks.",
+      "tracesTo": [
+        "TextAnnotationSystem-R003-A",
+        "TextAnnotationSystem-R005-A",
+        "TextAnnotationSystem-R007-A"
+      ]
+    },
+    {
+      "id": "comp-annotation-service",
+      "name": "Annotation Core Service",
+      "type": "Microservice",
+      "description": "Processes CRUD operations for text marks (offsets, labels, remarks, metadata), handles state tracking, and formats annotation data for export.",
+      "tracesTo": [
+        "TextAnnotationSystem-R003-B",
+        "TextAnnotationSystem-R004",
+        "TextAnnotationSystem-R007-A"
+      ]
+    },
+    {
+      "id": "comp-mining-service",
+      "name": "Information Mining and Few-Shot Service",
+      "type": "Microservice",
+      "description": "Coordinates document information extraction, orchestrating inference workflows across preset models, third-party APIs, and few-shot learning modules.",
+      "tracesTo": [
+        "TextAnnotationSystem-R004",
+        "TextAnnotationSystem-R005-B",
+        "TextAnnotationSystem-R007-C",
+        "TextAnnotationSystem-R010"
+      ]
+    },
+    {
+      "id": "comp-async-conversion-worker",
+      "name": "Document Conversion Worker",
+      "type": "Worker Service",
+      "description": "Asynchronously converts uploaded documents into standardized PDF, HTML, and TXT representations, updating references and metadata.",
+      "tracesTo": [
+        "TextAnnotationSystem-R005-A",
+        "TextAnnotationSystem-R007-C"
+      ]
+    },
+    {
+      "id": "comp-message-broker",
+      "name": "Message and Event Broker",
+      "type": "Middleware",
+      "description": "Manages asynchronous queues and events for conversion pipelines and decoupling background computational workflows.",
+      "tracesTo": [
+        "TextAnnotationSystem-R005-A",
+        "TextAnnotationSystem-R007-B",
+        "TextAnnotationSystem-R007-C"
+      ]
+    },
+    {
+      "id": "comp-cache",
+      "name": "Distributed Cache Layer",
+      "type": "Data Store",
+      "description": "Provides high-speed caching for user sessions, active task contexts, frequently queried projects, and template configurations.",
+      "tracesTo": [
+        "TextAnnotationSystem-R001-B",
+        "TextAnnotationSystem-R007-B"
+      ]
+    },
+    {
+      "id": "comp-relational-db",
+      "name": "Relational Database",
+      "type": "Database",
+      "description": "Persists structured records including users, projects, tasks, document metadata, tags, and detailed annotation entries.",
+      "tracesTo": [
+        "TextAnnotationSystem-R007-A"
+      ]
+    },
+    {
+      "id": "comp-object-storage",
+      "name": "Object Storage Service",
+      "type": "Storage Service",
+      "description": "Stores unstructured files including uploaded source documents and converted representations (PDF, HTML, TXT).",
+      "tracesTo": [
+        "TextAnnotationSystem-R003-A",
+        "TextAnnotationSystem-R005-A",
+        "TextAnnotationSystem-R007-A"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn-client-to-gateway",
+      "source": "comp-web-client",
+      "target": "comp-api-gateway",
+      "type": "HTTPS/WSS",
+      "description": "Client asynchronous communication and event-driven updates via API Gateway."
+    },
+    {
+      "id": "conn-gateway-to-auth",
+      "source": "comp-api-gateway",
+      "target": "comp-auth-service",
+      "type": "gRPC/HTTP REST",
+      "description": "Routes authentication, registration, profile, and role-switching requests."
+    },
+    {
+      "id": "conn-gateway-to-project",
+      "source": "comp-api-gateway",
+      "target": "comp-project-task-service",
+      "type": "gRPC/HTTP REST",
+      "description": "Routes administration, template definition, project CRUD, and task management requests."
+    },
+    {
+      "id": "conn-gateway-to-document",
+      "source": "comp-api-gateway",
+      "target": "comp-document-service",
+      "type": "gRPC/HTTP REST",
+      "description": "Routes document upload, queries, and file download requests."
+    },
+    {
+      "id": "conn-gateway-to-annotation",
+      "source": "comp-api-gateway",
+      "target": "comp-annotation-service",
+      "type": "gRPC/HTTP REST",
+      "description": "Routes mark creation, update, deletion, and export requests."
+    },
+    {
+      "id": "conn-gateway-to-mining",
+      "source": "comp-api-gateway",
+      "target": "comp-mining-service",
+      "type": "gRPC/HTTP REST",
+      "description": "Routes model invocation, entity extraction, and few-shot mining tasks."
+    },
+    {
+      "id": "conn-auth-to-cache",
+      "source": "comp-auth-service",
+      "target": "comp-cache",
+      "type": "TCP/RESP",
+      "description": "Caches session authentication tokens and active contextual role state."
+    },
+    {
+      "id": "conn-services-to-cache",
+      "source": "comp-project-task-service",
+      "target": "comp-cache",
+      "type": "TCP/RESP",
+      "description": "Caches project configs, presets, and high-frequency task list queries."
+    },
+    {
+      "id": "conn-document-to-broker",
+      "source": "comp-document-service",
+      "target": "comp-message-broker",
+      "type": "AMQP/Kafka Protocol",
+      "description": "Publishes asynchronous document conversion events upon upload."
+    },
+    {
+      "id": "conn-broker-to-worker",
+      "source": "comp-message-broker",
+      "target": "comp-async-conversion-worker",
+      "type": "AMQP/Kafka Protocol",
+      "description": "Consumes conversion tasks to process formats asynchronously."
+    },
+    {
+      "id": "conn-worker-to-storage",
+      "source": "comp-async-conversion-worker",
+      "target": "comp-object-storage",
+      "type": "S3 API",
+      "description": "Stores converted representations (PDF, HTML, TXT) into object storage."
+    },
+    {
+      "id": "conn-worker-to-document",
+      "source": "comp-async-conversion-worker",
+      "target": "comp-document-service",
+      "type": "gRPC",
+      "description": "Notifies conversion completion and updates document references and status."
+    },
+    {
+      "id": "conn-document-to-storage",
+      "source": "comp-document-service",
+      "target": "comp-object-storage",
+      "type": "S3 API",
+      "description": "Persists and retrieves unstructured raw document files."
+    },
+    {
+      "id": "conn-annotation-to-mining",
+      "source": "comp-annotation-service",
+      "target": "comp-mining-service",
+      "type": "gRPC/HTTP REST",
+      "description": "Transfers exported annotations for few-shot learning and model refinement workflows."
+    },
+    {
+      "id": "conn-auth-to-db",
+      "source": "comp-auth-service",
+      "target": "comp-relational-db",
+      "type": "SQL Connection",
+      "description": "Persists user accounts, roles, and credential records."
+    },
+    {
+      "id": "conn-project-to-db",
+      "source": "comp-project-task-service",
+      "target": "comp-relational-db",
+      "type": "SQL Connection",
+      "description": "Persists project configurations, templates, task assignments, and tags."
+    },
+    {
+      "id": "conn-document-to-db",
+      "source": "comp-document-service",
+      "target": "comp-relational-db",
+      "type": "SQL Connection",
+      "description": "Persists document metadata and indexes linking records to file locations."
+    },
+    {
+      "id": "conn-annotation-to-db",
+      "source": "comp-annotation-service",
+      "target": "comp-relational-db",
+      "type": "SQL Connection",
+      "description": "Persists structured annotation marks, offsets, tags, remarks, and audit trails."
+    }
+  ]
+}

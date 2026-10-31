@@ -1,0 +1,22 @@
+@startuml
+component "Adaptive Training & Recommendation Engine" as compadaptiveplan
+component "Authentication & Authorization Service" as compauthrbac
+component "Mobile Application Presentation Component" as compmobileui
+component "Real-Time Computer Vision & Posture Scoring Engine" as compposetracker
+component "Server-Side Reporting & Media Generation Service" as compreportingservice
+component "LAN Discovery & Low-Latency Casting Service" as compscreencast
+component "Secure Data Access & Persistence Boundary" as compsecuredataaccess
+component "User Profile & Historical Records Service" as compuserprofilehistory
+compadaptiveplan --> compreportingservice : Transfers completed workout summaries and metric logs for server report and poster generation.
+compadaptiveplan --> compsecuredataaccess : Persists and queries training plans and standard video exercise catalogs.
+compauthrbac --> compsecuredataaccess : Queries credential records and role permissions securely without SQL injection vulnerability.
+compmobileui --> compadaptiveplan : Requests full plans, custom plan composition, and dynamic schedule updates.
+compmobileui --> compauthrbac : Transfers user credentials and retrieves authorization tokens and role definitions.
+compmobileui --> compposetracker : Initiates camera sessions and binds live workout evaluation visualization.
+compmobileui --> compreportingservice : Fetches generated posters and professional training charts for user viewing and sharing.
+compmobileui --> compscreencast : Manages device discovery queries, connection handshakes, and casting control commands.
+compmobileui --> compuserprofilehistory : Requests history views, monthly overviews, and updates to user preferences.
+compposetracker --> compadaptiveplan : Streams posture scores, fatigue signals, and completion states for dynamic set and rest adjustments.
+compposetracker --> compscreencast : Streams real-time visual frames and score overlays to the network casting pipeline.
+compuserprofilehistory --> compsecuredataaccess : Performs parameterized database transactions for history logs and personal profile data.
+@enduml

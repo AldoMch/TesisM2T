@@ -1,0 +1,91 @@
+@startuml
+title EIVAS System Architecture (Component View)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 200
+
+actor "Epidemiological Form Filler" as Filler
+actor "Epidemiological Analyst" as Analyst
+
+package "Client Tier" {
+  component "Front-end Pages" as FrontEnd
+  component "Map/Geographic Visualization Capability" as MapVis
+}
+
+package "Application Tier" {
+  component "Back-end API" as Backend
+  component "Association Analysis Service" as AssocSvc
+  component "Statistics Aggregator" as StatsAgg
+  component "Data Quality Checker" as DataQC
+  component "Rate Limiter" as RateLimiter
+  component "Encryption/Privacy Filter" as PrivacyFilter
+}
+
+package "Algorithm Module" {
+  component "Algorithm Module" as AlgoModule
+  component "Risk & Flow Calculator" as RiskCalc
+  component "Case Clustering Engine" as ClusterEng
+  AlgoModule -[hidden]-> RiskCalc
+  AlgoModule -[hidden]-> ClusterEng
+}
+
+database "Back-end Database" as DB
+
+Filler --> FrontEnd
+Analyst --> FrontEnd
+
+FrontEnd --> PrivacyFilter : API requests\n(encrypt personal info queries)
+PrivacyFilter --> RateLimiter : request flow control
+RateLimiter --> Backend : allowed requests
+
+Backend --> DB : read/write\ncases, itineraries, associations
+Backend --> AssocSvc : query associated cases\n(spatial & temporal thresholds)
+AssocSvc --> DB : read itinerary/location data
+
+Backend --> AlgoModule : analysis requests\n(flow map, clustering)
+AlgoModule --> RiskCalc
+AlgoModule --> ClusterEng
+RiskCalc --> DB : read case investigation data
+ClusterEng --> DB : read case investigation data
+
+Backend --> StatsAgg : compute\nheat map/temperature-humidity/age/occupation/transportation stats
+StatsAgg --> DB : read aggregated data
+
+FrontEnd --> MapVis : display\naddresses & itinerary paths
+
+Backend --> DataQC : check data quality
+DataQC --> Backend : errors/prompts or OK
+
+Backend --> FrontEnd : lists, associations,\ncharts, errors
+
+note right of FrontEnd
+- Epidemiological reporting
+- Case management (search/sort/filter)
+- Individual case analysis
+- Overall analysis & outbreak overview
+end note
+
+note right of DB
+Stores: basic case info, disease-related info,
+itinerary trajectory, imported-case info,
+associated case entries, data quality state.
+end note
+
+note top of RateLimiter
+Cools down frequent-query IPs (NFR-005)
+end note
+
+note top of PrivacyFilter
+Ensures encryption for personal info queries (NFR-004)
+end note
+
+note right of RiskCalc
+Generates regional flow maps (FR-012)
+end note
+
+note right of ClusterEng
+Generates case clustering graphs (FR-013)
+end note
+
+@enduml

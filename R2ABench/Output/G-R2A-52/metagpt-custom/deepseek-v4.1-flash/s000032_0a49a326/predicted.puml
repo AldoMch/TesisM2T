@@ -1,0 +1,80 @@
+@startuml
+package "User/API Interaction" {
+  component "Developer Actions / Example Code" as DevActions
+  component "REST/API Requests" as RestApi
+  component "User Endpoints" as UserEndpoints
+  component "Cluster Admin Commands" as ClusterAdmin
+  component "Human Participant" as HumanParticipant
+}
+
+package "Security and Identity" {
+  component "Keycloak (External Identity Provider)" as Keycloak
+  component "Spring Security (External Framework)" as SpringSecurity
+  component "Spring Boot Application Context (External Runtime)" as SpringBootCtx
+}
+
+package "Process and Task Runtime" {
+  component "ProcessRuntime" as ProcessRuntime
+  component "TaskRuntime" as TaskRuntime
+  component "Example Runtime Bundle" as RuntimeBundle
+  component "SimpleProcess" as SimpleProcess
+  component "Activiti / Activiti Cloud (External Runtime)" as ActivitiCloud
+}
+
+package "Audit and Query" {
+  component "Audit Service" as AuditService
+  component "Query Service" as QueryService
+}
+
+package "Deployment and Infrastructure" {
+  component "Deployment Descriptors" as DeploymentDescriptors
+  node "Public IP" as PublicIP
+  node "NGINX Ingress Controller (External)" as NginxIngress
+  cloud "Kubernetes / GKE (External)" as K8sGKE
+}
+
+package "Architecture Background" {
+  component "Gateway / API Gateway" as ApiGateway
+  component "Notification Service" as NotificationService
+  component "Cloud Connectors" as CloudConnectors
+  database "Kubernetes Registry / ConfigMaps" as K8sRegistry
+}
+
+DevActions --> RestApi : example API calls
+DevActions --> HumanParticipant : documented full example includes
+DevActions --> ProcessRuntime : documented full example uses
+DevActions --> TaskRuntime : documented full example uses
+
+RestApi --> UserEndpoints
+HumanParticipant --> UserEndpoints : user actions
+
+UserEndpoints --> Keycloak : obtain token
+UserEndpoints --> SpringSecurity : validate token / reject expired or invalid
+SpringSecurity --> SpringBootCtx : security / user / group / role context
+SpringSecurity --> TaskRuntime : logged-in user / ROLE_ACTIVITI_USER / role context
+
+UserEndpoints --> ProcessRuntime : process definition lookup / start process
+UserEndpoints --> RuntimeBundle : SimpleProcess start / process instance access
+UserEndpoints --> TaskRuntime : task API interaction
+UserEndpoints --> AuditService : inspect audit events
+UserEndpoints --> QueryService : query process execution information
+
+ProcessRuntime --> RuntimeBundle : process interaction
+TaskRuntime --> RuntimeBundle : task interaction
+RuntimeBundle --> SimpleProcess : process definition / instance
+
+ClusterAdmin --> K8sGKE : cluster administration
+DeploymentDescriptors --> K8sGKE : data input rate / replica counts
+
+PublicIP --> NginxIngress : public exposure
+NginxIngress --> ApiGateway : routes ingress
+ApiGateway --> UserEndpoints : routes API requests
+ApiGateway --> ProcessRuntime : routes selected process API
+ApiGateway --> RuntimeBundle : routes selected process service
+ApiGateway --> TaskRuntime : routes selected task service
+ApiGateway --> AuditService : routes selected audit service
+ApiGateway --> QueryService : routes selected query service
+
+SpringBootCtx --> ProcessRuntime : application context
+SpringBootCtx --> TaskRuntime : application context
+@enduml

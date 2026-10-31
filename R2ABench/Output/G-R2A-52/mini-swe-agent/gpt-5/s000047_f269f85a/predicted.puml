@@ -1,0 +1,84 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+title Archifiltre Docs - Export, Hash & Settings Subsystem Architecture
+
+package "Presentation / Controllers" {
+  [Workflow Controller] as Controller
+  [Settings Handler] as SettingsController
+}
+
+package "Domain Services" {
+  [Settings Sanitizer] as SettingsSanitizer
+  [Export Orchestrator] as ExportOrchestrator
+  component "Tree CSV Export Service" as TreeCsvService
+  component "RESIP Export Service" as ResipService
+  component "CSV Export Service" as CsvService
+  component "Excel Export Service" as ExcelService
+  [Hash Batch Processor] as HashProcessor
+}
+
+package "Infrastructure & Integration" {
+  [Background Worker / Child Process Executor] as WorkerExec
+  [Observable / Stream Channel] as StreamChannel
+  [Translation Module] as I18n
+  [File System] as FileSystem
+  node "Electron Runtime" as Electron {
+    [app.getPath('userData')] as UserDataPath
+  }
+}
+
+package "Data Stores & Artifacts" {
+  database "User Settings Store" as SettingsStore
+  folder "Export Outputs (CSV / RESIP / Excel)" as ExportOutputs
+  folder "Hash Debug Files\n(hash-result-debug, hash-error-debug)" as HashDebug
+}
+
+' Controller to services
+Controller --> ExportOrchestrator : trigger exports
+Controller --> HashProcessor : start hash computation
+SettingsController --> SettingsSanitizer : sanitize persisted settings
+
+' Settings flow
+SettingsStore --> SettingsController : persisted settings
+SettingsSanitizer --> SettingsController : normalized settings
+
+' Export orchestration and services
+ExportOrchestrator --> TreeCsvService
+ExportOrchestrator --> ResipService
+ExportOrchestrator --> CsvService
+ExportOrchestrator --> ExcelService
+
+' Worker-based execution and streams
+TreeCsvService --> WorkerExec : run in background
+ResipService --> WorkerExec : run in background
+CsvService --> WorkerExec : run in background
+ExcelService --> WorkerExec : run in background
+
+TreeCsvService ..> StreamChannel : progress/results
+ResipService ..> StreamChannel : progress/results
+CsvService ..> StreamChannel : results
+ExcelService ..> StreamChannel : results
+
+' Language dependency
+I18n --> TreeCsvService : current language
+I18n --> ResipService : current language
+I18n --> CsvService : current language
+I18n --> ExcelService : current language
+
+' Export outputs
+TreeCsvService --> ExportOutputs
+ResipService --> ExportOutputs
+CsvService --> ExportOutputs
+ExcelService --> ExportOutputs
+
+' Hash processing
+HashProcessor --> WorkerExec : batch processing
+HashProcessor ..> StreamChannel : processing stream
+HashProcessor --> FileSystem : read file paths
+Electron --> UserDataPath
+HashProcessor --> UserDataPath : resolve user data dir
+HashProcessor --> HashDebug : write debug outputs
+
+@enduml

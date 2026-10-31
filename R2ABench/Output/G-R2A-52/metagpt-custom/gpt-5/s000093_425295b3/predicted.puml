@@ -1,0 +1,56 @@
+@startuml
+
+package "External Control Input Layer" {
+  interface "OSC" as OSC
+  component "OSC Input Handler" as OSCHandler
+}
+
+package "Manager-Driver IPC Layer" {
+  component "VMT Manager" as VMTManager
+  component "Shared Memory Channel: Manager -> Driver" <<JSON>> as ShmM2D
+  component "Shared Memory Channel: Driver -> Manager" <<JSON>> as ShmD2M
+}
+
+package "Runtime Driver Integration Layer" {
+  component "VMT Driver" as VMTDriver
+  component "Legacy Binding JSON for mycontroller" as LegacyBinding
+  interface "OpenVR Driver Interface" as OpenVRInterface
+}
+
+cloud "User Application" as UserApp
+cloud "SteamVR/OpenVR Runtime" as SteamVR
+cloud "OpenVR SDK" as OpenVRSDK
+node "Host Shared-Memory IPC Facility" as HostIPC
+
+UserApp --> OSC
+OSC --> OSCHandler
+OSCHandler --> VMTManager
+
+VMTManager --> ShmM2D : JSON
+ShmM2D --> VMTDriver : JSON
+
+VMTDriver --> ShmD2M : JSON
+ShmD2M --> VMTManager : JSON
+
+VMTDriver ..|> OpenVRInterface
+SteamVR --> OpenVRInterface
+
+LegacyBinding --> SteamVR
+
+VMTDriver --> OpenVRSDK
+
+ShmM2D --> HostIPC
+ShmD2M --> HostIPC
+
+note as ShmMeta
+Shared-memory channel control metadata (FR-004):
+- send_count
+- handshake_count
+- message_length
+Messages on both channels are JSON (FR-002, NFR-002).
+end note
+
+ShmM2D .. ShmMeta
+ShmD2M .. ShmMeta
+
+@enduml

@@ -1,0 +1,133 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+title QAPM Android Component Architecture (Scheduling, Upload, and Apache HttpClient Instrumentation)
+
+package "Android Host App" {
+  [Host Application] as App
+}
+
+package "QAPM SDK (In Scope)" {
+  component "WorkHandlerManager\n(HandlerThread + Work Handler + Main Handler)" as WorkMgr
+  component "UploadManager\n(Scheduling + Upload Processing)" as UploadMgr
+  component "ConfigManager" as ConfigMgr
+  interface "Sender" as SenderIF
+  component "Logging" as Logging
+
+  package "Apache HttpClient Instrumentation" as ApacheInst {
+    component "ResponseHandlerWrapper" as RespWrapper
+    component "ResponseEntityWrapper\n(CountingEntity)" as EntityWrapper
+    component "TransactionState" as TxState
+    component "CountingInputStream" as CountIS
+  }
+}
+
+package "Android OS / Platform" {
+  component "HandlerThread/Looper/Handler" as AndroidHandlers
+  component "Context" as AndroidContext
+  component "Connectivity Service" as Connectivity
+}
+
+folder "Upload Directory" as UploadDir
+
+package "Apache HttpClient (Host App)" {
+  interface "ResponseHandler" as ResponseHandlerIF
+  component "HttpResponse" as HttpResponse
+  interface "HttpEntity" as HttpEntityIF
+}
+
+cloud "Network / Remote Endpoint" as Remote
+
+package "Out of Scope" {
+  component "APM Collection, Storage,\nReporting Pipeline" as OutPipeline
+}
+
+' Host app integration
+App --> UploadMgr : uses QAPM API
+
+' Work scheduling and handlers
+UploadMgr --> WorkMgr : post runnable/upload work\n(FR-002)
+WorkMgr --> AndroidHandlers : create/start HandlerThread,\nobtain background Looper/Handlers\n(FR-001, FR-010)
+
+' Upload processing dependencies
+UploadMgr --> AndroidContext : derive cParam,\npaths, environment
+UploadMgr --> Connectivity : check network\n(FR-003, NFR-002)
+UploadMgr --> UploadDir : enumerate & read files\nbParam (FR-005)
+UploadMgr --> ConfigMgr : obtain configured Sender\n(AD-003)
+ConfigMgr --> SenderIF
+
+' Sender invocation and callbacks
+UploadMgr --> SenderIF : submit bParam/cParam\n(FR-006)
+SenderIF --> Remote : send data
+SenderIF --> UploadMgr : callbacks: success/failure\n(FR-007)
+UploadMgr --> UploadDir : delete file on success\n(FR-007)
+UploadMgr --> Logging : log failure on send error\n(FR-007, NFR-005)
+
+' Forced-send storage pop (conceptual dependency)
+UploadMgr ..> Logging : trace storage pop & flow\n(FR-004)
+UploadMgr ..> UploadDir : pop stored pending data\nbefore scan (FR-004)
+
+' Apache HttpClient instrumentation usage in host app
+App --> RespWrapper : wrap ResponseHandler\n(FR-008)
+App --> EntityWrapper : wrap HttpEntity\n(FR-009)
+
+' Response handler wrapper interactions
+RespWrapper --> ResponseHandlerIF : delegate handleResponse\n(FR-008)
+RespWrapper --> TxState : inspect/instrument transaction\n(FR-008, DR-009)
+RespWrapper --> HttpResponse : response context
+
+' Response entity wrapper interactions
+EntityWrapper --> HttpEntityIF : delegate ops\n(writeTo)\n(FR-009, DR-011)
+EntityWrapper --> CountIS : getContent() returns\ncounting stream (FR-009, DR-010)
+
+' Context and platform constraints
+UploadMgr ..> AndroidHandlers : uses main-thread handler\nwhere needed (FR-010)
+WorkMgr ..> AndroidContext : main looper for main handler\n(FR-010)
+
+' Out-of-scope pipeline boundary (documented only)
+QAPM_SDK_Boundary <<node>> as QAPMBorder
+WorkMgr ..> OutPipeline : APM pipeline outside scope\n(C-004)
+UploadMgr ..> OutPipeline : collection/reporting out of scope\n(C-004)
+
+' Notes for key components with requirement mappings
+note right of WorkMgr
+- FR-001: Initialize background HandlerThread & work handler
+- FR-010: Provide default background & main-thread handlers
+- NFR-001: Post upload-related work to background
+- DR-001, DR-002: Maintain background & main-thread handlers
+end note
+
+note right of UploadMgr
+- FR-002: Schedule work asynchronously via WorkHandler
+- FR-003: Gate by network connectivity
+- FR-004: Pop stored data on forced send
+- FR-005: Discover/read upload files (bParam)
+- FR-006: Derive cParam from Context and send
+- FR-007: Success delete, failure log
+- NFR-002, NFR-005; DR-003..DR-008
+end note
+
+note right of RespWrapper
+- FR-008: Transaction-aware response handling
+- DR-009: Maintain transaction state
+- Delegates to wrapped ResponseHandler
+end note
+
+note right of EntityWrapper
+- FR-009: Wrap non-null HttpEntity
+- DR-010, DR-011: Counting getContent(); delegate writeTo
+- NFR-003: Reject null with IllegalArgumentException
+end note
+
+note bottom of Connectivity
+Network connectivity gate used by UploadManager
+(AD-001, C-003)
+end note
+
+note bottom of UploadDir
+Local upload storage; files remain until sender success
+(6.1 Storage)
+end note
+
+@enduml

@@ -1,0 +1,158 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "Presentation Layer" {
+  component "App Main Interface" as AppMain
+  component "Professional Report Interface" as ReportUI
+  component "Exercise History Interface" as HistoryUI
+  component "Personal Interface" as PersonalUI
+  component "Casting Operation Interface" as CastingUI
+  component "Exercise Interface Renderer" as Renderer
+}
+
+package "Device/Capture Layer" {
+  component "Camera Capture Interface" as Camera
+  component "Pose Evaluation Processing" as PoseEval
+  component "Pose Estimation Model / Runtime" as PoseModel
+}
+
+package "Application/Service Layer" {
+  component "Exercise State Monitor" as StateMonitor
+  component "Custom Plan Builder" as PlanBuilder
+  component "Training Plan Engine" as PlanEngine
+  component "Report and Poster Generator" as ReportGen
+  component "History and Personal Management" as HistoryMgmt
+  component "Voice Prompt / Audio Guidance Service" as VoiceGuide
+  component "Share/Save Poster Service" as PosterShare
+  component "Inter-Module Data Exchange Interface" as DataExchange
+  component "User Body / Training Profile" as UserProfile
+}
+
+package "Data Layer" {
+  database "Data Store / Static-Dynamic Data Model" as DataStore
+  component "Standard Movement Data Service" as StdMovement
+  component "SQL Data Access" as SQLAccess
+}
+
+package "Communication/Casting Layer" {
+  component "App-Server Interaction" as AppServer
+  component "Server-Side Processing Interface" as ServerProc
+  component "Casting Device Discovery and Connection" as CastDiscovery
+  component "Casting Video Streamer" as CastStreamer
+  component "Android Casting Control Channel" as CastControl
+}
+
+package "Security/Cross-cutting Layer" {
+  component "Identity and Permission Manager" as IdentityMgr
+  component "Data Leakage Protector" as LeakProtector
+  component "SQL Injection Protector" as SQLProtector
+}
+
+package "External Systems" {
+  node "Mobile Phone Camera" as ExtCamera
+  node "Android Casting Target Device (Same LAN)" as AndroidTarget
+  cloud "Same-LAN Android Devices" as LanDevices
+  database "SQL Database (Product Unspecified)" as SQLDB
+  cloud "Server-Side Services (Plan/Report Processing)" as ServerSide
+}
+
+' Presentation UI relations
+AppMain --> ReportUI : navigate
+AppMain --> HistoryUI : navigate
+AppMain --> PersonalUI : navigate
+AppMain --> CastingUI : navigate
+CastingUI --> CastDiscovery : start/search devices
+CastingUI --> CastControl : user control commands
+CastingUI --> CastStreamer : start/stop casting
+Renderer --> AppMain : render exercise interface
+Renderer --> CastStreamer : exercise interface video stream
+
+' Device/Capture relations
+Camera --> ExtCamera : uses
+Camera --> PoseEval : video stream
+PoseEval --> PoseModel : run pose estimation
+PoseModel --> PoseEval : keypoints/skeleton
+PoseEval --> Renderer : real-time score / skeleton / stick diagram
+PoseEval --> StdMovement : compare skeleton with standard
+StdMovement --> PoseEval : standard movement data
+StdMovement --> Renderer : standard movement
+Camera --> Renderer : user movement
+Camera --> StateMonitor : captured movement
+StateMonitor --> Renderer : remaining time / state
+
+' Application/Service relations
+StateMonitor --> PlanEngine : state / completion
+PlanEngine --> AppMain : plan preview / recommendation
+PlanBuilder --> StdMovement : selected standard videos
+PlanBuilder --> PlanEngine : custom plan
+PlanBuilder --> DataStore : save custom plan
+ReportGen --> DataStore : collect/process materials
+ReportGen --> ReportUI : report/poster display
+ReportGen --> PosterShare : save/share poster
+PosterShare --> AppMain : saved/shared poster
+HistoryMgmt --> HistoryUI : history/personal data
+HistoryMgmt --> PersonalUI : personal data
+HistoryMgmt --> DataStore : personal/history records
+UserProfile --> DataStore : persist profile
+DataStore --> UserProfile : retrieve profile
+UserProfile --> StateMonitor : profile/restrictions/goals
+UserProfile --> PlanEngine : goals/condition/restrictions/preferences
+DataStore --> StateMonitor : fitness standards/profile
+DataStore --> PlanEngine : fitness standards/history
+PoseEval --> StateMonitor : posture metrics
+PoseEval --> PlanEngine : training results
+PlanEngine --> VoiceGuide : prompt cues
+StateMonitor --> VoiceGuide : state-based prompts
+VoiceGuide --> AppMain : voice prompts/audio guidance
+
+' Inter-module data exchange interface
+StateMonitor --> DataExchange : state data
+PoseEval --> DataExchange : pose/evaluation data
+PlanEngine --> DataExchange : plan data
+ReportGen --> DataExchange : report/poster data
+HistoryMgmt --> DataExchange : history/personal data
+UserProfile --> DataExchange : profile data
+DataStore --> DataExchange : persistence exchange
+
+' Data layer relations
+DataStore --> SQLAccess : SQL-style access
+SQLAccess --> SQLDB : SQL queries
+StdMovement --> DataStore : standard movement data
+Camera --> DataStore : exercise video data
+PoseEval --> DataStore : skeleton/evaluation data
+DataStore --> PoseEval : retrieve video/skeleton
+
+' Communication/Server relations
+AppMain --> AppServer : app-server interaction
+PlanEngine --> AppServer : request server-side recommendation
+ReportGen --> AppServer : request server-side report/poster processing
+AppServer --> ServerProc : server-side processing request
+ServerProc --> ServerSide : forward processing
+ServerSide --> ServerProc : results
+ServerProc --> AppServer : results
+
+' Casting relations
+CastDiscovery --> CastStreamer : connection required
+CastStreamer --> CastControl : session coordination
+CastStreamer --> AndroidTarget : cast video stream
+CastControl --> AndroidTarget : control commands
+CastDiscovery --> LanDevices : discover/connect
+CastDiscovery --> AndroidTarget : connect
+
+' Security relations
+IdentityMgr --> AppMain : login/permission gate
+IdentityMgr --> UserProfile : verify/authorize
+IdentityMgr --> HistoryMgmt : permission enforcement
+IdentityMgr --> ReportGen : permission enforcement
+IdentityMgr --> Camera : camera permission
+SQLProtector --> SQLAccess : input check/binding/precompiled
+LeakProtector --> AppMain : leakage controls
+LeakProtector --> Camera : leakage controls
+LeakProtector --> PoseEval : leakage controls
+LeakProtector --> HistoryMgmt : leakage controls
+LeakProtector --> CastStreamer : leakage controls
+LeakProtector --> ReportGen : leakage controls
+LeakProtector --> DataStore : leakage controls
+
+@enduml

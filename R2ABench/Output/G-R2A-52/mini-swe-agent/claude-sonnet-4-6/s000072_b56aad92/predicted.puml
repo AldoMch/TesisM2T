@@ -1,0 +1,101 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<external>> LightYellow
+  BackgroundColor<<layer>> AliceBlue
+  BackgroundColor<<store>> LightGreen
+}
+
+title psmpi Architecture - Communication, Build, and Verification Components
+
+actor "Developer / Tester" as DevUser
+actor "Build Integrator" as BuildUser
+actor "Comm Maintainer" as CommUser
+
+rectangle "Build & Verification Layer" <<layer>> {
+  component "run-embedded-tests.sh" as RunTests
+  component "autogen.sh / configure / make" as BuildTools
+  component "hwloc-tree/ Source Tree" as HwlocTree
+  component "Embedded hwloc Module" as HwlocModule
+}
+
+rectangle "psmpi Communication Subsystem" <<layer>> {
+  component "CH4 Network Module" as CH4
+  component "Communication Lifecycle Manager\n(init / finalize / progress /\nblocking-progress / connection-establishment)" as CommLifecycle
+  component "One-to-Many Transfer Handler\n(scatter-style)" as OneToMany
+  component "Send State Machine (send-sm)" as SendSM
+
+  component "Flow-Control State\n(DR-005)" as FlowCtrl
+  component "Packet Buffer\n(DR-001)" as PacketBuf
+  component "Network Send Descriptor\n(DR-002)" as SendDesc
+}
+
+rectangle "Embedded Libfabric Module (optional)" <<layer>> {
+  component "OFI / Libfabric Provider" as OFI
+  component "Verbs Provider (optional)" as VerbsProv
+}
+
+database "User Data / Pinned Memory\n(DR-003)" as UserData <<store>>
+database "Rendezvous Control Fields\n(LIBA / OD - DR-004)" as RdvCtrl <<store>>
+
+rectangle "External Transport Libraries" <<external>> {
+  component "libibverbs >= 1.1.8" as LibIBVerbs
+  component "librdmacm >= 1.0.16" as LibRDMACM
+  component "Linux Verbs API" as LinuxVerbs
+  component "UCX (optional)" as UCX
+}
+
+rectangle "Network Hardware" <<external>> {
+  component "Network Device" as NetDev
+}
+
+' Build & Verification relationships
+DevUser --> RunTests : invokes (FR-001)
+DevUser --> BuildTools : invokes manually (FR-002)
+BuildTools --> HwlocTree : processes (hwloc-tree/)
+RunTests --> HwlocModule : verifies tarball (configure/make/check/clean)
+HwlocTree --> HwlocModule : provides source
+
+' psmpi comm subsystem relationships
+CommUser --> CommLifecycle : reviews design docs
+CH4 --> CommLifecycle : delegates lifecycle ops
+CH4 --> OneToMany : one-to-many scatter transfer (FR-004)
+CH4 --> SendSM : send path
+
+SendSM --> FlowCtrl : checks flow before posting (FR-005)
+SendSM --> PacketBuf : prepares packet buffer (DR-001)
+SendSM --> SendDesc : prepares send descriptor (DR-002)
+SendSM --> UserData : direct-access pinned data (FR-006)
+SendDesc --> UserData : binds to pinned user data
+PacketBuf --> UserData : packed payload (FR-007)
+PacketBuf --> RdvCtrl : holds LIBA/OD fields (FR-008)
+
+' Transport layer integration
+CH4 --> OFI : uses OFI/libfabric transport
+CH4 --> UCX : uses UCX transport (optional)
+OFI --> VerbsProv : verbs provider (optional)
+
+' External library dependencies
+VerbsProv --> LibIBVerbs : depends on (>= 1.1.8, NFR-001)
+VerbsProv --> LibRDMACM : depends on (>= 1.0.16, NFR-001)
+LibIBVerbs --> LinuxVerbs : implements
+LibRDMACM --> LinuxVerbs : implements
+
+' Network hardware
+SendDesc --> NetDev : posts send to network device
+OFI --> NetDev : transport I/O
+UCX --> NetDev : transport I/O
+
+BuildUser --> VerbsProv : enables/builds (NFR-002, NFR-003)
+
+note bottom of VerbsProv
+  Requires CFLAGS, LDFLAGS, LD_LIBRARY_PATH
+  for non-default library/header paths (NFR-003)
+end note
+
+note bottom of HwlocModule
+  Tests are manual only (C-001, NFR-004)
+  Not part of make check
+end note
+
+@enduml

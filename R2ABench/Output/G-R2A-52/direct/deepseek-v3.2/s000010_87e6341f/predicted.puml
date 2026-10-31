@@ -1,0 +1,63 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+title Home Recipes System Architecture
+
+package "Client Tier" {
+    [Flutter/Dart Client\n(Android, iOS, Web, macOS)] as CLIENT
+}
+
+package "Protocol Buffers Contract" {
+    file ".proto Files\n(Service & Message Definitions)" as PROTO
+}
+
+package "Server Tier" {
+    component "gRPC-Gateway\nMiddleware" as GATEWAY
+    component "Go gRPC Server" as SERVER
+}
+
+package "Deployment & Runtime" {
+    node "Docker Runtime" as DOCKER
+    database "Local Kubernetes\nCluster" as K8S_LOCAL
+    cloud "Azure Kubernetes\nService (AKS)" as AKS
+}
+
+' Core System Connections
+CLIENT --> PROTO : "generates\nDart client code"
+PROTO --> SERVER : "generates\nGo server code"
+PROTO --> GATEWAY : "generates\ngateway code"
+CLIENT -[#blue]--> SERVER : "gRPC calls\n(Protocol Buffers)"
+CLIENT -[#green]--> GATEWAY : "HTTP calls\n(for testing)"
+GATEWAY -[#green]--> SERVER : "translates HTTP\nto gRPC"
+
+' Gateway Endpoints (as ports/notes)
+note top of GATEWAY
+  <b>Exposed HTTP Endpoints:</b>
+  - POST /addRecipe
+  - GET /ListAllRecipes
+  - POST /ListAllIngredientsAtHome
+  - POST /GetAllIngredientsForRecipe
+end note
+
+' Deployment Connections
+SERVER --> DOCKER : "packaged as\ncontainer image"
+DOCKER --> K8S_LOCAL : "deployed via\nmanifests"
+DOCKER --> AKS : "deployed via\nAKS manifests"
+
+' External Entities
+actor "End User" as USER
+actor "API Consumer/Tester" as TESTER
+actor "Developer" as DEV
+actor "Operator" as OPS
+
+USER --> CLIENT : "uses"
+TESTER --> GATEWAY : "invokes HTTP\nendpoints"
+DEV ..> PROTO : "defines & maintains"
+OPS ..> DOCKER : "builds & runs"
+OPS ..> K8S_LOCAL : "deploys to"
+OPS ..> AKS : "deploys to"
+
+@enduml

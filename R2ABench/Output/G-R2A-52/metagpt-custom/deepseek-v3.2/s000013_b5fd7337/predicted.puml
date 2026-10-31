@@ -1,0 +1,28 @@
+@startuml
+
+actor "End User" as user
+actor "Data Inspector" as inspector
+
+package "Presentation Layer" {
+    component "Browser" as browser
+    component "Kibana" as kibana
+}
+
+package "Application Layer" {
+    component "FastAPI Backend" as backend
+}
+
+package "Data Layer" {
+    database "Elasticsearch" as es
+}
+
+cloud "Genius API" as genius
+
+user --> browser : "accesses"
+browser --> backend : "API-001\nsong lookup"
+backend --> es : "API-002\nquery/write"
+backend --> genius : "API-003\nsearch"
+inspector --> kibana : "uses"
+kibana --> es : "API-004\ninspect"
+
+@enduml

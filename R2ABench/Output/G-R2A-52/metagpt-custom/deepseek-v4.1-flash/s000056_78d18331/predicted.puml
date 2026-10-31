@@ -1,0 +1,65 @@
+@startuml
+
+cloud "HTTP Clients" as HTTPClients
+cloud "Kubescape Security Posture Assessment" as Kubescape
+node "Kubernetes Cluster" as K8sCluster {
+  node "Privileged DaemonSet: host-scanner" as HostScannerDS {
+    package "Interface/API Layer" {
+      component "HTTP API" as HTTP_API
+      interface "HTTP Endpoints" as HTTPEndpoints
+    }
+
+    package "Runtime Resolution Layer" {
+      component "CNI Configuration Directory Resolver" as CNIResolver
+      component "Runtime/Process Configuration Input Adapter" as ConfigInputAdapter
+    }
+
+    package "Sanitization/Data Processing Layer" {
+      component "Control-Plane JSON Sanitizer" as JSONSanitizer
+      interface "JSON Processing Interface" as JSONProcIface
+    }
+
+    artifact "Collected Kubernetes Node Host Information" as NodeHostInfo
+  }
+}
+
+node "Kubelet" as Kubelet
+node "containerd" as Containerd
+node "CRI-O" as CRIO
+node "Linux Host/Runtime Filesystem" as LinuxFS
+cloud "Go Build/Test Environment" as GoBuildEnv
+
+package "Test Support Layer" {
+  component "Provider-Specific E2E Test Support" as E2ETestSupport
+}
+
+package "Build-Tag Mechanism" {
+  component "Go build-tag mechanism" as GoBuildTags
+}
+
+HTTPClients --> HTTPEndpoints : HTTP requests
+Kubescape --> HTTPEndpoints : consumes host info
+HTTP_API -- HTTPEndpoints
+HTTPEndpoints --> HTTPClients : 404 for unknown GET /doesnotexist
+HTTPEndpoints --> HTTPClients : sanitized host info response
+
+ConfigInputAdapter --> CNIResolver : runtime type, config content, CLI args
+CNIResolver --> LinuxFS : reads /etc/cni, /var/lib/cni, config-derived subpaths
+
+JSONSanitizer --> JSONProcIface : sanitized JSON
+HTTP_API --> JSONProcIface : consumes sanitized JSON
+
+E2ETestSupport --> HTTPEndpoints : verifies unknown GET /doesnotexist returns 404
+E2ETestSupport --> GoBuildTags : provider build tags
+
+HostScannerDS --> Kubelet : collects host/runtime information
+HostScannerDS --> Containerd : collects runtime information
+HostScannerDS --> CRIO : collects runtime information
+HostScannerDS --> LinuxFS : reads host/runtime paths
+HostScannerDS --> NodeHostInfo : aggregates collected host information
+HTTP_API --> NodeHostInfo : serves collected host information
+
+GoBuildEnv ..> E2ETestSupport : builds/tests
+GoBuildEnv ..> GoBuildTags : uses
+
+@enduml

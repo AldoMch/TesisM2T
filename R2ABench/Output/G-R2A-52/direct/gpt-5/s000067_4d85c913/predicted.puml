@@ -1,0 +1,93 @@
+@startuml
+title TraceLeft System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+
+node "Linux Host (Target)" {
+  node "User Space" {
+    component "TraceLeft CLI" as CLI
+    package "TraceLeft Library" as Lib {
+      component "Probe Loader" as ProbeLoader
+      component "Userspace Tracer" as Tracer
+      component "Handler Map Manager" as MapMgr
+      component "Event Dispatcher" as Dispatcher
+      component "Generator" as Generator
+      component "Config Parser" as ConfigParser
+      component "gobpf Integration" as GoBPF
+    }
+    artifact "Event Registration\n{ProgramID, Pids, ELFPath}" as EventReg
+    file "Event Config Metadata\n(Proto/JSON: position, type, name, suffix, hash_func)" as ConfigMeta
+    artifact "Generated eBPF Handler Source" as GenSource
+    artifact "Common Event Header Definition" as CommonHdr
+  }
+
+  node "Kernel Space (Linux Kernel >= 4.11)" {
+    component "eBPF Main Program" as BPFMain
+    component "Handler eBPF Programs" as Handlers
+    collections "Handler Maps\nhandle_NAME_progs\nhandle_NAME_progs_ret" as HandlerMaps
+    collections "Return Program Maps\n(keyed by process context)" as ReturnMaps
+    interface "kprobe/kretprobe hooks" as Kprobes
+    queue "perf event channel" as Perf
+  }
+}
+
+CLI --> ConfigParser : parse CLI args
+ConfigParser --> EventReg
+CLI --> ProbeLoader : execute 'trace' command
+EventReg --> ProbeLoader : register programs/processes
+EventReg --> Tracer : start session for PIDs
+
+ConfigMeta --> Generator : read configuration
+Generator --> GenSource : generate handler source
+
+ProbeLoader --> GoBPF : load BPF object, maps\nattach probes
+MapMgr --> GoBPF : update handler maps\n(default and process-specific)
+Tracer --> GoBPF : subscribe/read perf events
+
+GoBPF --> BPFMain : load & attach to hooks
+GoBPF --> Handlers : load handler programs
+GoBPF --> HandlerMaps : create/update maps
+GoBPF --> ReturnMaps : create/update maps
+GoBPF --> Kprobes : attach kprobe/kretprobe
+
+BPFMain --> HandlerMaps : select handler program
+BPFMain --> ReturnMaps : select return handler
+Handlers --> Perf : emit events
+Perf --> Tracer : deliver events
+Tracer --> Dispatcher : dispatch by common header
+
+Dispatcher ..> CommonHdr : uses for userspace dispatch
+Handlers ..> CommonHdr : prepend to emitted events
+
+ProbeLoader ..> GenSource : consume generated handlers (optional)
+
+note right of Perf
+perf-based event channel for kernel->userspace events
+end note
+
+note right of HandlerMaps
+Handler naming:
+- maps: handle_NAME_progs, handle_NAME_progs_ret
+end note
+
+note right of Kprobes
+Probe naming:
+- kprobe/handle_NAME
+- kretprobe/handle_NAME
+end note
+
+note bottom of BPFMain
+No handler set => return 0 (no-op)
+end note
+
+note top of GoBPF
+Implementation remains based on 'gobpf'
+end note
+
+note right of Handlers
+Event types: syscall, file, network
+Default and process-specific handlers supported
+Each event includes the common leading section
+end note
+@enduml

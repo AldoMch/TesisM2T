@@ -1,0 +1,176 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+package "Clients" {
+  [Student Web/Mobile] as StudentApp
+  [Mentor Web/Mobile] as MentorApp
+  [Admin Portal] as AdminPortal
+}
+
+package "API & Gateway" {
+  [API Gateway / BFF] as BFF
+  [Auth & Session] as Auth
+  [RBAC / Policy Enforcement] as RBAC
+  [Rate Limiter & Anti-Abuse] as RateLimiter
+}
+
+package "Application Services" {
+  [Project Service] as ProjectSvc
+  [Search Service] as SearchSvc
+  [Recommendation Service] as RecoSvc
+  [Application Management Service] as ApplySvc
+  [Favorites Service] as FavSvc
+  [Profile & Resume Service] as ProfileSvc
+  [Mentor Directory Service] as MentorSvc
+  [Community / Post Service] as PostSvc
+  [Comment Service] as CommentSvc
+  [Notification Service (In-site + Email)] as NotifySvc
+  [Chat Service] as ChatSvc
+  [Certification & Review Workflow] as ReviewSvc
+  [Admin Management Service] as AdminSvc
+  [Mutual Evaluation Service] as EvalSvc
+  [Popularity Ranking Service] as RankSvc
+}
+
+package "Infrastructure" {
+  queue "Message Queue" as MQ
+  [Email/SMS Adapter] as EmailAdapter
+  [Object Storage (Resumes)] as ObjStore
+  [Risk-Control & Audit] as AuditSvc
+  [Logging & Monitoring] as Observability
+  [Cache] as Cache
+}
+
+package "Data Layer" {
+  database "Main Relational DB" as MainDB
+  database "Community DB" as CommDB
+  database "Audit Logs DB" as AuditDB
+}
+
+package "External Services" {
+  cloud "Email Provider" as EmailProvider
+  cloud "SMS Gateway" as SMSProvider
+}
+
+' Client entry points
+StudentApp --> BFF
+MentorApp --> BFF
+AdminPortal --> BFF
+
+' Edge controls
+BFF --> RateLimiter
+BFF --> Auth
+BFF --> RBAC
+
+' Core flows from BFF to domain services
+BFF --> ProjectSvc
+BFF --> SearchSvc
+BFF --> RecoSvc
+BFF --> ApplySvc
+BFF --> FavSvc
+BFF --> ProfileSvc
+BFF --> MentorSvc
+BFF --> PostSvc
+BFF --> CommentSvc
+BFF --> NotifySvc
+BFF --> ChatSvc
+BFF --> ReviewSvc
+BFF --> AdminSvc
+BFF --> EvalSvc
+BFF --> RankSvc
+
+' Service-to-data/storage
+ProjectSvc --> MainDB
+SearchSvc --> MainDB
+RecoSvc --> MainDB
+ApplySvc --> MainDB
+FavSvc --> MainDB
+ProfileSvc --> MainDB
+MentorSvc --> MainDB
+ReviewSvc --> MainDB
+AdminSvc --> MainDB
+EvalSvc --> MainDB
+RankSvc --> MainDB
+
+PostSvc --> CommDB
+CommentSvc --> CommDB
+
+ProfileSvc --> ObjStore
+
+' Messaging/notifications
+NotifySvc --> MQ
+PostSvc --> MQ
+CommentSvc --> MQ
+FavSvc --> MQ
+ApplySvc --> MQ
+
+MQ --> NotifySvc
+NotifySvc --> EmailAdapter
+EmailAdapter --> EmailProvider
+EmailAdapter --> SMSProvider
+
+' Observability & risk control
+BFF --> Observability
+ProjectSvc --> Observability
+SearchSvc --> Observability
+RecoSvc --> Observability
+ApplySvc --> Observability
+FavSvc --> Observability
+ProfileSvc --> Observability
+MentorSvc --> Observability
+PostSvc --> Observability
+CommentSvc --> Observability
+NotifySvc --> Observability
+ChatSvc --> Observability
+ReviewSvc --> Observability
+AdminSvc --> Observability
+EvalSvc --> Observability
+RankSvc --> Observability
+
+AuditSvc --> AuditDB
+RateLimiter --> AuditSvc
+BFF --> AuditSvc
+
+' Caching for hot paths
+SearchSvc --> Cache
+RecoSvc --> Cache
+PostSvc --> Cache
+
+' Notes for key constraints
+note right of Auth
+- University email verification codes for registration
+- Enterprise email verification for referral permission
+end note
+
+note right of ChatSvc
+- Encrypt chat content; algorithm unspecified in SRS
+end note
+
+note right of ReviewSvc
+- First-round university identity review (<=72h)
+- Second-round enterprise qualification review
+end note
+
+note right of AdminSvc
+- Admin accounts assigned by DB; no registration entry
+- Post/comment moderation
+end note
+
+note right of RecoSvc
+- Collaborative filtering, tag matching, cold-start rules
+end note
+
+note right of ProfileSvc
+- Resume upload (<=10 MB), permission-controlled access
+end note
+
+note right of RBAC
+- Students, mentors, admins access control boundaries
+end note
+
+note right of RankSvc
+- Popularity sorting by likes, comments, views, time decay
+end note
+
+@enduml

@@ -1,0 +1,46 @@
+@startuml
+title Configuration Anomaly Detection (CAD) - Component/Deployment Diagram
+
+' Define Nodes for Architecture Layers
+node "CLI Layer" {
+    component "cadctl" as cli
+}
+
+node "Integration Layer" {
+    component "Integration Library" as integrations
+}
+
+node "Execution Layer" {
+    component "Tekton EventListener" as eventlistener
+    component "Tekton PipelineRun" as pipelinerun
+    component "Skip-Webhook Executor" as skipwebhook
+}
+
+node "Deployment Layer" {
+    component "Template Update Utility" as templateutil
+    database "Deployment Template Artifacts" as templates
+}
+
+cloud "External Systems" {
+    component "PagerDuty" as pagerduty
+    component "AWS" as aws
+    component "OCM" as ocm
+}
+
+component "Tekton Pipeline (cad-checks-pipeline)" as tektonpipeline
+
+' Define Dependencies
+cli --> integrations : uses
+cli --> templateutil : manages templates
+integrations --> pagerduty : integrates
+integrations --> aws : integrates
+integrations --> ocm : integrates
+
+pagerduty --> eventlistener : sends alert (webhook)
+eventlistener --> pipelinerun : creates
+pipelinerun --> tektonpipeline : executes
+skipwebhook --> tektonpipeline : direct execution
+cli --> skipwebhook : invokes (--skip-webhook)
+templateutil --> templates : manages
+
+@enduml

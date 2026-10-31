@@ -1,0 +1,165 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6CC
+!define DATA_COLOR #E6FFE6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Data>> DATA_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title JSeats Electoral Seat Allocation System Architecture
+
+package "External Interfaces" <<Layer>> {
+  component "Java API" <<Component>> {
+    [Caller-facing Allocation API]
+    [Tally Filtering API]
+    [Result Decoration API]
+  }
+  
+  component "Command Line Interface (CLI)" <<Component>> {
+    [CLI Launcher]
+    [CLI Parser]
+    [CLI Output Handler]
+  }
+  
+  component "External Systems" <<External>> {
+    [Java Runtime Environment]
+    [Command Line Shell]
+  }
+}
+
+package "Core Processing Layer" <<Layer>> {
+  component "Allocation Processor" <<Component>> {
+    [Processor Configuration Manager]
+    [Workflow Orchestrator]
+  }
+  
+  component "Tally Management" <<Component>> {
+    [Tally Data Model]
+    [Tally XML Loader]
+    [Protected Tally View]
+  }
+  
+  component "Filtering Module" <<Component>> {
+    [Tally Filter Interface]
+    [Built-in Filters]
+  }
+  
+  component "Allocation Engine" <<Component>> {
+    [Allocation Method Contract]
+    [Method Registry]
+    [Tie-breaking Rules]
+  }
+  
+  component "Decoration Module" <<Component>> {
+    [Result Decorator Interface]
+    [Built-in Decorators]
+  }
+}
+
+package "Allocation Methods" <<Layer>> {
+  component "Majority Methods" <<Component>> {
+    [Simple Majority]
+    [Qualified Majority]
+    [Absolute Majority]
+  }
+  
+  component "Ranked Methods" <<Component>> {
+    [By Votes Ranking]
+  }
+  
+  component "Equal Proportions" <<Component>> {
+    [Huntington-Hill]
+  }
+  
+  component "Largest Remainder" <<Component>> {
+    [Hare]
+    [Droop]
+    [Imperiali]
+  }
+  
+  component "Highest Averages" <<Component>> {
+    [D'Hondt]
+    [Sainte-Lague/Webster]
+    [Imperiali]
+    [Danish]
+  }
+}
+
+package "Data Storage" <<Layer>> {
+  component "Configuration Data" <<Data>> {
+    [Processor Properties]
+    [Method Parameters]
+  }
+  
+  component "Input Data" <<Data>> {
+    [Tally Data]
+    [Candidate Vote Counts]
+  }
+  
+  component "Output Data" <<Data>> {
+    [Allocation Results]
+    [Result Objects]
+  }
+}
+
+' External Systems connections
+"Java Runtime Environment" --> "Java API" : provides runtime
+"Command Line Shell" --> "CLI Launcher" : executes commands
+
+' External Interfaces to Core Processing
+"Java API" --> "Allocation Processor" : submits allocation requests
+"CLI Launcher" --> "Allocation Processor" : invokes via CLI
+"CLI Parser" --> "Processor Configuration Manager" : parses CLI args
+"CLI Output Handler" --> "Allocation Results" : writes output files
+
+' Core Processing internal flow
+"Processor Configuration Manager" --> "Workflow Orchestrator" : provides configuration
+"Workflow Orchestrator" --> "Tally Management" : processes tally data
+"Workflow Orchestrator" --> "Filtering Module" : applies pre-processing
+"Workflow Orchestrator" --> "Allocation Engine" : executes allocation
+"Workflow Orchestrator" --> "Decoration Module" : applies post-processing
+
+' Tally Management connections
+"Tally XML Loader" --> "Tally Data Model" : loads from XML
+"Protected Tally View" --> "Allocation Engine" : provides immutable view
+
+' Allocation Engine to Methods
+"Allocation Method Contract" --> "Method Registry" : defines interface
+"Method Registry" --> "Majority Methods" : dispatches to methods
+"Method Registry" --> "Ranked Methods" : dispatches to methods
+"Method Registry" --> "Equal Proportions" : dispatches to methods
+"Method Registry" --> "Largest Remainder" : dispatches to methods
+"Method Registry" --> "Highest Averages" : dispatches to methods
+
+' Data flow
+"Input Data" --> "Tally Management" : provides tally data
+"Configuration Data" --> "Processor Configuration Manager" : provides parameters
+"Allocation Engine" --> "Output Data" : generates results
+"Decoration Module" --> "Output Data" : decorates results
+
+' Error handling
+"Allocation Engine" --> "Java API" : raises SeatAllocationException
+"Allocation Engine" --> "CLI Output Handler" : reports errors
+
+note right of "Allocation Method Contract"
+  Each method receives protected
+  tally view and configuration
+  properties, returns result
+  or reports error
+end note
+
+note bottom of "Workflow Orchestrator"
+  Configurable workflow:
+  1. Tally filtering (optional)
+  2. Seat allocation
+  3. Result decoration (optional)
+end note
+
+@enduml

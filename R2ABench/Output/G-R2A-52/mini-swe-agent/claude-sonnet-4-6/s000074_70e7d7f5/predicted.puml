@@ -1,0 +1,131 @@
+@startuml
+title Tengine Lite - System Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #EFEFEF
+  BorderColor #888888
+}
+skinparam component {
+  BackgroundColor #D5E8D4
+  BorderColor #82B366
+}
+skinparam database {
+  BackgroundColor #DAE8FC
+  BorderColor #6C8EBF
+}
+skinparam cloud {
+  BackgroundColor #FFF2CC
+  BorderColor #D6B656
+}
+
+' ─── User / External ───
+actor "C API Integrator" as CUser
+actor "C++ API User" as CppUser
+actor "Python API User" as PyUser
+actor "Example User" as ExUser
+actor "Tool User" as ToolUser
+
+rectangle "External Assets" {
+  [Local Model Files] as ModelFiles
+  [Local Image Files] as ImageFiles
+}
+
+' ─── API Layer ───
+rectangle "API Layer" {
+  [C API\n(Tengine-compatible)] as CAPI
+  [C++ API] as CppAPI
+  [Python API] as PyAPI
+}
+
+' ─── Example Applications Layer ───
+rectangle "Example Applications" {
+  [Classification Example] as ExClassify
+  [Object Detection Example\n(SSD)] as ExDetect
+  [Segmentation Example] as ExSeg
+  [Pose Estimation Example] as ExPose
+  [Facial Landmark Detection\nExample] as ExLandmark
+  [OCR / Character Recognition\nExample] as ExOCR
+}
+
+' ─── Core Engine Layer ───
+rectangle "Tengine Lite Core Engine" {
+  [Scheduler\n(NNIR / Computation Graph /\nHW Resources / Serializer)] as Scheduler
+  [Operator Module\n(Register & Initialize NN Operators)] as OperatorMod
+  [Serializer Module\n(tmfile Decoder)] as Serializer
+  [Device Module\n(NN Operators Backend)] as Device
+}
+
+' ─── Build System ───
+rectangle "Build System" {
+  [CMake Build\n(Cross-platform)] as CMake
+}
+
+' ─── Model Conversion Tools ───
+rectangle "Model Conversion Tooling" {
+  [Linux Pre-compiled\nConversion Tool] as LinuxTool
+  [Online WebAssembly\nConverter\n(Browser-local)] as WasmTool
+}
+
+' ─── Data Stores ───
+database "tmfile Binary\nModel Store" as TmfileDB
+database "Converted Model\nArtifacts" as ConvertedDB
+
+' ─── External Environments ───
+cloud "Web Browser\n(WebAssembly Runtime)" as Browser
+
+' ─── Connections: Users → APIs ───
+CUser --> CAPI
+CppUser --> CppAPI
+PyUser --> PyAPI
+ExUser --> ExClassify
+ExUser --> ExDetect
+ExUser --> ExSeg
+ExUser --> ExPose
+ExUser --> ExLandmark
+ExUser --> ExOCR
+ToolUser --> LinuxTool
+ToolUser --> WasmTool
+
+' ─── APIs → Core ───
+CAPI --> Scheduler
+CppAPI --> Scheduler
+PyAPI --> Scheduler
+
+' ─── Examples → APIs ───
+ExClassify --> CAPI
+ExDetect --> CAPI
+ExSeg --> CAPI
+ExPose --> CAPI
+ExLandmark --> CAPI
+ExOCR --> CAPI
+
+' ─── Examples consume assets ───
+ExClassify --> ModelFiles
+ExClassify --> ImageFiles
+ExDetect --> ModelFiles
+ExDetect --> ImageFiles
+
+' ─── Core Module Dependencies ───
+Scheduler --> OperatorMod
+Scheduler --> Serializer
+Scheduler --> Device
+Serializer --> TmfileDB : reads tmfile
+
+' ─── Model Conversion ───
+LinuxTool --> ModelFiles : reads input models
+LinuxTool --> ConvertedDB : produces tmfile
+WasmTool --> ModelFiles : reads input models
+WasmTool --> ConvertedDB : produces converted artifacts
+WasmTool --> Browser : executes in
+
+' ─── Build System ───
+CMake --> CAPI : builds
+CMake --> CppAPI : builds
+CMake --> PyAPI : builds
+CMake --> Scheduler : builds
+CMake --> OperatorMod : builds
+CMake --> Serializer : builds
+CMake --> Device : builds
+
+@enduml

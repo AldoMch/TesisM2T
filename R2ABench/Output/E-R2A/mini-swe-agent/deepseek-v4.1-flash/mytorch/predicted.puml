@@ -1,0 +1,116 @@
+@startuml MyTorch_Architecture
+title MyTorch - Layered Architecture (Visual Training/Inference System)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ===================== Users =====================
+package "Users" as Users {
+  actor "Deep Learning Beginner" as Beginner
+  actor "Developer / Team Member" as Developer
+}
+
+' ===================== Presentation Layer =====================
+package "Presentation Layer (Visual Front End)" as FrontEnd {
+  component "Main Interface" as UIMain
+  component "Configuration Interface" as UIConfig
+  component "Training Interface" as UITrain
+  component "Inference Interface" as UIInfer
+  component "Real-time Feedback & Visualization" as UIViz
+}
+
+' ===================== Back-End Service Layer =====================
+package "Back-End Service Layer" as BackEnd {
+  component "Model Configuration Service" as SvcConfig
+  component "Data Loading Service" as SvcData
+  component "Model Initialization Service" as SvcInit
+  component "Training Engine / Service" as SvcTrain
+  component "Inference Service (Inferencer)" as SvcInfer
+  component "Model Management Service" as SvcModel
+  component "Logging & History Service" as SvcLog
+  component "Fault Handling & Monitoring Service" as SvcFault
+  component "Database Backup/Recovery Service" as SvcBackup
+}
+
+' ===================== MyTorch / NNE Framework Layer =====================
+package "MyTorch / NNE Framework Layer" as Framework {
+  component "NNE API (Existing Base Code)" as NNE
+  component "Model Zoo (ResNet / VGG / Transformer)" as ModelZoo
+  component "Weight Initialization (He / Lecun / Xavier)" as WeightInit
+  component "Dataset Loaders & Preprocessing / Augmentation" as DataLoader
+  component "Loss Functions / Optimizers / Learning Rate" as Optim
+  component "Tensor / Matrix Operations" as Tensor
+  component "GPU Acceleration Module (CPU/GPU Async)" as GPU
+  component "GPU Resource Manager" as GPUManager
+}
+
+' ===================== Data Layer =====================
+package "Data Persistence Layer (Local)" as Data {
+  database "SQLite Local Database" as SQLite {
+    component "Models" as DModels
+    component "Training Datasets" as DDatasets
+    component "Training / Inference Logs & History" as DLogs
+    component "User & Config Data" as DUser
+  }
+  component "Backup / Recovery Files" as BackupStore
+}
+
+' ===================== External Systems & Hardware =====================
+package "External Systems & Hardware" as External {
+  component "Preset Dataset Sources\n(CIFAR/ImageNet/COCO/Fashion-MNIST/...)" as DatasetSrc
+  component "Compute Hardware\n(CPU + GPU)" as Hardware
+  component "Python 3.8+ Runtime / requirements.txt" as Runtime
+}
+
+' ===================== Dependencies =====================
+Beginner --> UIMain
+Developer --> UIMain
+Developer --> NNE
+
+UIMain --> UIConfig
+UIMain --> UITrain
+UIMain --> UIInfer
+UIViz ..> UITrain : feedback
+UIViz ..> UIInfer : feedback
+
+UIConfig --> SvcConfig
+UIConfig --> SvcInit
+UITrain --> SvcTrain
+UITrain --> SvcData
+UIInfer --> SvcInfer
+UIInfer --> SvcModel
+
+SvcConfig --> NNE
+SvcData --> DataLoader
+SvcInit --> WeightInit
+SvcInit --> ModelZoo
+SvcTrain --> NNE
+SvcTrain --> Optim
+SvcInfer --> NNE
+SvcModel --> NNE
+
+NNE --> Tensor
+NNE --> ModelZoo
+Tensor --> GPU
+NNE --> WeightInit
+GPU --> GPUManager
+
+SvcTrain --> SvcFault
+SvcInfer --> SvcFault
+SvcFault --> SvcLog
+SvcModel --> SvcLog
+SvcBackup --> SQLite
+
+SvcTrain --> SQLite
+SvcInfer --> SQLite
+SvcModel --> SQLite
+SvcLog --> SQLite
+SQLite --> BackupStore : backup / restore
+
+DataLoader --> DatasetSrc : download / load
+GPUManager --> Hardware : allocate
+GPU --> Hardware : async compute / memory copy
+NNE --> Runtime
+
+@enduml

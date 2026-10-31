@@ -1,0 +1,218 @@
+@startuml
+title DeepCode - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 12
+skinparam ranksep 16
+skinparam arrowColor #4A4A4A
+skinparam ArrowFontSize 10
+
+actor "Unregistered User\n/ Visitor" as Visitor
+actor "Registered User" as User
+actor "Administrator" as Admin
+actor "AI Service" as AIService
+actor "Judging Service" as JudgeSvc
+
+' ============================================================
+' CLIENT LAYER
+' ============================================================
+package "Client Layer (HTML5 Browsers)" as ClientLayer {
+  component "DeepCode Web Client\n(Vue 3, TypeScript, Vuex,\nvue-router, Ant Design Vue)" as WebClient
+  component "Code Editor\n(CodeMirror)" as CodeEditor
+  component "Rich Text Editor\n(wangEditor)" as RichEditor
+  component "Charts / Dashboard\n(ECharts)" as Charts
+  component "HTTP Client\n(Axios)" as Axios
+}
+
+' ============================================================
+' EDGE / PROXY LAYER
+' ============================================================
+package "Edge & Proxy Layer" as ProxyLayer {
+  component "DNS Service\n(Domain Resolution)" as DNS
+  component "CDN\n(Static Resources: Images, CSS, JS)" as CDN
+  component "Nginx Reverse Proxy\n(HTTPS Termination)" as Nginx
+}
+
+' ============================================================
+' PRESENTATION LAYER
+' ============================================================
+package "Presentation Layer" as PresentationLayer {
+  component "Auth Controller\n(Register / Login / JWT)" as AuthCtrl
+  component "User Controller\n(Profile / Activity / Admin User Mgmt)" as UserCtrl
+  component "Problem Controller\n(Problem / Solution / Review)" as ProblemCtrl
+  component "Submission Controller\n(Submit / Records)" as SubCtrl
+  component "Forum Controller\n(Posts / Comments / Likes / Reports)" as ForumCtrl
+  component "AI Controller\n(Recommend / Analyze / Explain)" as AICtrl
+  component "Swagger API Documentation" as Swagger
+}
+
+' ============================================================
+' SECURITY / CROSS-CUTTING LAYER
+' ============================================================
+package "Security & Cross-Cutting Layer" as SecurityLayer {
+  component "Authentication Filter\n(JWT / OAuth 2.0)" as AuthFilter
+  component "Permission Interceptor\n(Authorization)" as PermInterceptor
+  component "Input Validation\n(Password, Image, Sensitive Words,\nXSS / SQL Injection)" as InputValidation
+  component "Global Exception Handler\n(Transaction Rollback, Logging)" as ExceptionHandler
+}
+
+' ============================================================
+' BUSINESS LAYER
+' ============================================================
+package "Business Layer (Spring Boot 3.1.2 / JDK 21-LTS)" as BusinessLayer {
+  component "User Module\n(Registration, Login, Profile,\nBan / Unban, Permissions)" as UserModule
+  component "Problem & Solution Module\n(Browse, Upload, Edit, Soft-Delete)" as ProblemModule
+  component "Submission & Judging Module\n(Submit, Schedule, Records)" as SubmissionModule
+  component "Forum Module\n(Posts, Comments, Likes, Replies, Reports, Drafts)" as ForumModule
+  component "AI Assistance Module\n(Recommend, Analysis, Explanation,\nReview Suggestion, @AI Reply)" as AIModule
+  component "Review & Moderation Module\n(Problem Review, Content Management)" as ReviewModule
+  component "Notification Module\n(SMTP Email)" as NotifyModule
+}
+
+' ============================================================
+' AI / LLM INTEGRATION
+' ============================================================
+package "LLM Integration" as LLMLayer {
+  component "LangChain4j Adapter\n(Prompt Assembly, Retry / Timeout)" as LangChain4j
+}
+
+' ============================================================
+' JUDGING SUBSYSTEM
+' ============================================================
+package "Judging Subsystem" as JudgingLayer {
+  component "JudgeHost\n(Task Scheduling, Thread Pool,\nTask Queue, Busy Handling)" as JudgeHost
+  component "JudgeCore\n(Sandbox Execution, Resource Limits,\nseccomp, Output Comparison)" as JudgeCore
+  component "Docker Sandbox Containers\n(CPU / Memory / Output Limits)" as DockerSandbox
+}
+
+' ============================================================
+' ACCESS / DATA LAYER
+' ============================================================
+package "Access Layer (Data & Infrastructure)" as AccessLayer {
+  database "MySQL 5.7.44\n(Users, Questions, Solutions,\nDiscussions, Records, Tags)" as MySQL
+  database "Redis 7.4.6\n(Session / Hot Data Cache)" as Redis
+  database "MinIO\n(Images, Test Cases, Files)" as MinIO
+}
+
+' ============================================================
+' OBSERVABILITY LAYER
+' ============================================================
+package "Observability & Operations" as OpsLayer {
+  component "Prometheus\n(Metrics Collection)" as Prometheus
+  component "Grafana\n(Metric Visualization)" as Grafana
+  component "Alerting\n(PagerDuty / DingTalk Robot)" as Alerting
+  component "Backup Service\n(Daily DB Backup, Offsite)" as Backup
+}
+
+' ============================================================
+' DEPLOYMENT / CI-CD LAYER
+' ============================================================
+package "Deployment & CI/CD" as DeploymentLayer {
+  component "GitLab CI/CD\n(Build, Test, Package)" as GitLabCI
+  component "Docker Image Registry\n(Private Registry)" as Registry
+  component "Kubernetes\n(Deploy, Autoscale, Rollback)" as K8s
+}
+
+' ============================================================
+' ACTOR RELATIONSHIPS
+' ============================================================
+Visitor --> WebClient
+User --> WebClient
+Admin --> WebClient
+AIService --> LangChain4j
+JudgeSvc --> JudgeHost
+
+' ============================================================
+' CLIENT -> EDGE
+' ============================================================
+WebClient --> Axios
+WebClient --> CodeEditor
+WebClient --> RichEditor
+WebClient --> Charts
+Axios --> DNS : HTTPS
+Axios --> CDN : static assets
+Axios --> Nginx : HTTPS / RESTful API
+
+' ============================================================
+' EDGE -> PRESENTATION
+' ============================================================
+Nginx --> AuthFilter
+Nginx --> PermInterceptor
+Nginx --> Swagger
+
+' ============================================================
+' PRESENTATION -> SECURITY -> BUSINESS
+' ============================================================
+AuthFilter --> InputValidation
+PermInterceptor --> InputValidation
+InputValidation --> AuthCtrl
+InputValidation --> UserCtrl
+InputValidation --> ProblemCtrl
+InputValidation --> SubCtrl
+InputValidation --> ForumCtrl
+InputValidation --> AICtrl
+
+AuthCtrl --> UserModule
+UserCtrl --> UserModule
+ProblemCtrl --> ProblemModule
+ProblemCtrl --> ReviewModule
+SubCtrl --> SubmissionModule
+ForumCtrl --> ForumModule
+AICtrl --> AIModule
+
+' ============================================================
+' BUSINESS INTERNAL RELATIONSHIPS
+' ============================================================
+ReviewModule --> ProblemModule
+ReviewModule --> ForumModule
+ProblemModule --> NotifyModule
+UserModule --> NotifyModule
+ExceptionHandler ..> BusinessLayer : rollback / log
+
+' ============================================================
+' BUSINESS -> LLM
+' ============================================================
+AIModule --> LangChain4j
+LangChain4j --> AIService : LLM API
+
+' ============================================================
+' BUSINESS -> JUDGING
+' ============================================================
+SubmissionModule --> JudgeHost : HTTP
+JudgeHost --> JudgeCore
+JudgeCore --> DockerSandbox
+JudgeHost --> MinIO : read test cases
+
+' ============================================================
+' BUSINESS -> ACCESS
+' ============================================================
+UserModule --> MySQL
+UserModule --> Redis
+ProblemModule --> MySQL
+ProblemModule --> MinIO
+SubmissionModule --> MySQL
+SubmissionModule --> Redis
+ForumModule --> MySQL
+AIModule --> MySQL : store AI results
+NotifyModule --> MySQL
+
+' ============================================================
+' OBSERVABILITY RELATIONSHIPS
+' ============================================================
+Prometheus --> BusinessLayer : scrape metrics
+Prometheus --> MySQL : DB metrics
+Prometheus --> JudgeHost : judging metrics
+Prometheus --> Grafana
+Prometheus --> Alerting
+Backup --> MySQL : daily backup
+
+' ============================================================
+' DEPLOYMENT RELATIONSHIPS
+' ============================================================
+GitLabCI --> Registry : push images
+Registry --> K8s : pull images
+K8s --> BusinessLayer : deploy / scale / rollback
+
+@enduml

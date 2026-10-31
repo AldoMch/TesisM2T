@@ -1,0 +1,82 @@
+@startuml
+
+package "Command-line Interface" {
+  component "CLI Controller" as CLI
+}
+
+package "Data Parsing" {
+  component "Input Parser" as Parser
+}
+
+package "Core Kangaroo Solving" {
+  component "Kangaroo Engine" as Engine
+  component "Distinguished-Point Criterion" as DPCriterion
+}
+
+package "In-memory DP/Hash Storage" {
+  component "HashTableStore" as HashTable
+}
+
+package "Persistence and Workfile Management" {
+  component "Workfile Manager" as WorkMgr
+  component "Wsplit Backup Manager" as WsplitMgr
+}
+
+package "Distributed Coordination" {
+  node "Server Host" as ServerHost {
+    component "Distributed Server" as Server
+  }
+  node "Client Host" as ClientHost {
+    component "Distributed Client" as Client
+  }
+}
+
+package "Offline Merge/Analysis" {
+  component "Offline Merger" as Merger
+}
+
+package "GPU Acceleration" {
+  component "GPU Executor" as GPUExec
+}
+
+database "File System" as FS
+cloud "Operator-managed Network" as Net
+node "GPU Hardware/Runtime" as GPUHW
+
+CLI --> Parser : load ASCII input
+CLI --> WorkMgr : configure save/resume
+CLI --> Server : start server
+CLI --> Client : start clients (GPU options)
+CLI --> DPCriterion : configure DP bits
+
+Parser --> Engine : supply interval ECDLP
+Engine --> DPCriterion : DP selection
+Engine --> HashTable : store/find distinguished points
+Engine --> WorkMgr : persist solver state
+
+WorkMgr --> HashTable : serialize/deserialize DP and state
+WorkMgr --> Engine : restore kangaroo state (and parameters)
+WsplitMgr --> HashTable : reset after each backup
+WsplitMgr --> WorkMgr : trigger prefixed backup write
+
+Client --> Server : participate in distributed run
+Server --> WorkMgr : emit work/hash/result files
+Server --> HashTable : manage DP/hash artifacts
+Server --> WsplitMgr : configure/trigger backup cycle
+Client --> Engine : perform kangaroo computation
+Client --> GPUExec : accelerate with GPU
+Client --> WorkMgr : write local work/resume data (optional)
+
+Merger --> WorkMgr : merge work files / detect results
+
+Parser --> FS : read input files
+WorkMgr --> FS : read/write work/results
+Merger --> FS : read/write consolidated files
+Server --> FS : read config
+
+Server --> Net
+Client --> Net
+
+GPUExec --> GPUHW
+
+@enduml

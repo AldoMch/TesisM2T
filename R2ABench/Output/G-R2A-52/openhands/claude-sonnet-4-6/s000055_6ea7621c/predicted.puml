@@ -1,0 +1,46 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+skinparam defaultFontSize 13
+skinparam padding 6
+
+actor "End User" as user
+
+node "Web Browser" as browser {
+    component "Search Input Field" as input
+    component "Suggestions List" as suggestions
+}
+
+node "Node.js Server (Heroku)" as server {
+    component "HTTP Router" as router
+    component "Handler Module" as handler
+    component "Autocomplete /\nSearch-Hint Algorithm" as autocomplete
+}
+
+node "Public Asset Directory" as assets {
+    component "HTML / CSS / JS /\nJPG / ICO Files" as staticfiles
+}
+
+database "Local Laureate Data\n(JSON)" as laureatedata
+
+user --> input : enters search text
+input --> browser : captures input value
+browser --> router : HTTP Request\n(GET /)
+browser --> router : HTTP Request\n(URL contains 'search')
+browser --> router : HTTP Request\n(static asset)
+
+router --> handler : GET / or\nfile not found
+router --> autocomplete : URL contains\n'search'
+router --> handler : non-search,\nnon-home request
+
+handler --> staticfiles : reads file\n(home page / static asset)
+handler --> browser : HTTP 200 (HTML/CSS/JS/JPG/ICO)\nor HTTP 404 (not found)
+
+autocomplete --> laureatedata : reads laureate names
+autocomplete --> browser : array of prefix-matched\nlaureate names (max 10)
+
+staticfiles --> handler : file contents
+
+browser --> suggestions : displays laureate\nsuggestions
+
+@enduml

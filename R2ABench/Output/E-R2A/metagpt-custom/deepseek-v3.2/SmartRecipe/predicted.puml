@@ -1,0 +1,108 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+left to right direction
+
+' ========== LAYER 1: MOBILE APP LAYER ==========
+rectangle "Mobile App Layer" as MobileLayer {
+    component "User Interface\n(Mobile App)" as UI <<component>>
+    component "Image Preprocessing\nComponent" as ImagePreprocess <<component>>
+    
+    note bottom of UI
+        Renders screens
+        Captures photos & inputs
+        Android & iOS
+    end note
+    
+    note bottom of ImagePreprocess
+        Local image preprocessing
+        Food validity checks
+        Before server upload
+    end note
+    
+    UI --> ImagePreprocess : "processes images"
+}
+
+' ========== LAYER 2: BACKEND SERVICE LAYER ==========
+rectangle "Backend Service Layer" as BackendLayer {
+    
+    package "Control Layer" {
+        component "Authentication\nComponent" as Auth <<component>>
+        component "Administration\nComponent" as Admin <<component>>
+    }
+    
+    package "Business Layer" {
+        component "Recipe Management\nComponent" as RecipeMgmt <<component>>
+        component "Health Analysis\nComponent" as HealthAnalysis <<component>>
+        component "Community\nComponent" as Community <<component>>
+        component "Recommendation\nEngine" as Recommendation <<component>>
+        component "Merchant Location\nComponent" as MerchantLocation <<component>>
+        component "Catering Data\nComponent" as CateringData <<component>>
+    }
+    
+    package "Service Layer" {
+        component "Image Recognition\nService" as ImageRecognition <<component>>
+        component "Flask Model\nInference Service" as FlaskService <<component>>
+        component "User Feedback\nHandler" as FeedbackHandler <<component>>
+    }
+    
+    package "Data Access Layer" {
+        component "Data Access\nComponent" as DataAccess <<component>>
+    }
+}
+
+' ========== LAYER 3: DATA LAYER ==========
+rectangle "Data Layer" as DataLayer {
+    database "MySQL\n(Primary Store)" as MySQL <<database>>
+    database "Nutrition Database" as NutritionDB <<database>>
+    database "Redis\n(Cache)" as Redis <<database>>
+}
+
+' ========== DEPENDENCIES ==========
+' Mobile to Backend
+UI --> Auth : "authenticates via"
+ImagePreprocess --> ImageRecognition : "uploads processed images to"
+UI --> RecipeMgmt : "searches & retrieves from"
+UI --> HealthAnalysis : "requests analysis from"
+UI --> Community : "shares & interacts with"
+UI --> Recommendation : "gets suggestions from"
+UI --> MerchantLocation : "requests locations from"
+UI --> CateringData : "accesses catering info"
+
+' Backend Layer Dependencies
+' Control Layer to Business Layer
+Auth --> RecipeMgmt : "authorizes access to"
+Auth --> HealthAnalysis : "authorizes access to"
+Auth --> Community : "authorizes access to"
+Auth --> Recommendation : "authorizes access to"
+Admin --> Community : "reviews content for"
+Admin --> RecipeMgmt : "adds recipes to"
+Admin --> FeedbackHandler : "handles user feedback"
+
+' Business Layer to Service Layer
+ImageRecognition --> FlaskService : "uses model inference from"
+RecipeMgmt --> ImageRecognition : "matches images to recipes"
+HealthAnalysis --> RecipeMgmt : "requires recipe data"
+HealthAnalysis --> NutritionDB : "fetches nutrition data"
+Recommendation --> Community : "analyzes sharing records"
+Recommendation --> RecipeMgmt : "analyzes recipe data"
+MerchantLocation --> RecipeMgmt : "links recipes to merchants"
+CateringData --> RecipeMgmt : "manages catering recipes"
+
+' Service Layer to Data Access Layer
+ImageRecognition --> DataAccess : "stores/retrieves image data"
+RecipeMgmt --> DataAccess : "accesses recipe data"
+HealthAnalysis --> DataAccess : "accesses health data"
+Community --> DataAccess : "accesses community data"
+Recommendation --> DataAccess : "accesses user history"
+MerchantLocation --> DataAccess : "accesses merchant data"
+CateringData --> DataAccess : "accesses catering data"
+FeedbackHandler --> DataAccess : "accesses feedback data"
+
+' Data Access Layer to Data Layer
+DataAccess --> MySQL : "persists/retrieves data"
+DataAccess --> NutritionDB : "accesses nutrition data"
+DataAccess --> Redis : "caches data"
+
+@enduml

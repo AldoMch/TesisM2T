@@ -1,0 +1,105 @@
+@startuml
+
+package "MPI Process (Rank 0)" {
+    component "Primary Application Task" as primary_app
+    component "torc.start()" as torc_start
+    component "torc.init()" as torc_init
+    component "torc.launch()" as torc_launch
+    component "torc.shutdown()" as torc_shutdown
+    component "torc.enable_stealing()" as enable_steal
+    component "torc.disable_stealing()" as disable_steal
+}
+
+package "MPI Process (Rank N)" {
+    component "Worker Thread Pool" as worker_pool
+    component "Worker Queue" as worker_queue
+    component "Task Stealing Manager" as task_stealing_mgr
+}
+
+package "Task Management" {
+    component "torc.submit()" as torc_submit
+    component "torc.wait()" as torc_wait
+    component "torc.map()" as torc_map
+    component "torc.query()" as torc_query
+    component "Task Scheduler" as task_scheduler
+    component "Callback Handler" as callback_handler
+}
+
+package "Execution" {
+    component "SPMD Executor" as spmd_executor
+    component "Image Preprocessing" as image_preproc
+    component "HDF5 Output" as hdf5_output
+}
+
+package "Data Storage" {
+    database "Task Descriptor Storage" as task_desc_store
+    component "task.input()" as task_input
+    component "task.result()" as task_result
+}
+
+node "Environment Configuration" {
+    component "Environment Variables" as env_vars
+    component "TORC_WORKERS" as torc_workers
+    component "TORC_STEALING" as torc_stealing
+    component "TORC_STEALING_CHUNK" as torc_stealing_chunk
+}
+
+cloud "MPI Runtime" as mpi_runtime
+database "mpi4py" as mpi4py
+database "termcolor" as termcolor
+
+' MPI Process Structure
+primary_app --> worker_pool : "manages"
+worker_pool --> worker_queue : "has"
+worker_pool --> task_stealing_mgr : "coordinates with"
+
+' Task Submission Flow
+torc_submit --> task_scheduler : "submits tasks"
+task_scheduler --> worker_queue : "assigns tasks\n(cyclic/directed)"
+torc_map --> torc_submit : "maps and submits"
+torc_wait --> task_scheduler : "awaits completion"
+
+' Task Execution Flow
+worker_queue --> worker_pool : "provides tasks"
+worker_pool --> callback_handler : "notifies completion"
+callback_handler --> task_desc_store : "accesses results"
+
+' Task Descriptor Access
+task_input --> task_desc_store : "reads input"
+task_result --> task_desc_store : "reads result"
+
+' Task Stealing
+task_stealing_mgr --> worker_queue : "steals tasks\nbetween processes"
+task_stealing_mgr --> mpi_runtime : "uses MPI for\nstealing coordination"
+
+' SPMD Execution
+spmd_executor --> mpi_runtime : "executes across\nall MPI processes"
+torc_launch --> spmd_executor : "launches SPMD"
+
+' Image Processing
+image_preproc --> hdf5_output : "writes results"
+
+' MPI Communication
+mpi_runtime --> mpi_runtime : "MPI communication\nbetween processes"
+
+' Environment Configuration
+env_vars --> torc_workers : "reads"
+env_vars --> torc_stealing : "reads"
+env_vars --> torc_stealing_chunk : "reads"
+torc_workers --> worker_pool : "configures size"
+torc_stealing --> task_stealing_mgr : "enables/disables"
+
+' API Initialization/Control
+torc_start --> primary_app : "starts runtime"
+torc_init --> mpi_runtime : "initializes MPI"
+torc_shutdown --> worker_pool : "terminates workers"
+enable_steal --> task_stealing_mgr : "enables stealing"
+disable_steal --> task_stealing_mgr : "disables stealing"
+torc_query --> env_vars : "queries configuration"
+
+' Dependencies
+spmd_executor --> mpi4py : "uses"
+primary_app --> mpi4py : "uses"
+termcolor --> primary_app : "optional dependency"
+
+@enduml

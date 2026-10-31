@@ -1,0 +1,45 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #6A00FF
+skinparam ArrowThickness 1.5
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #888888
+    BorderThickness 1
+}
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #AAAAAA
+    BorderThickness 1
+}
+
+rectangle "Data Engineer" as DataEngineer
+
+package "Docker Compose Environment" as ComposeEnvironment {
+    rectangle "Postgres" as Postgres
+    rectangle "Airflow\n(Spark Driver)" as Airflow
+    rectangle "Jupyter Notebook\n(Spark)" as JupyterNotebook
+    rectangle "Cluster Manager\n(Spark Standalone)" as ClusterManager
+
+    package "Spark Workers" as SparkWorkers {
+        rectangle "Worker 1" as Worker1
+        rectangle "Worker 2" as Worker2
+        rectangle "Worker 3" as Worker3
+        rectangle "Worker N" as WorkerN
+    }
+}
+
+DataEngineer --> Postgres : access
+DataEngineer --> Airflow : schedule and observe DAGs
+DataEngineer --> JupyterNotebook : interactive notebooks
+Airflow <--> Postgres : metadata
+Airflow --> ClusterManager : Spark job submission
+ClusterManager --> Worker1 : dispatch workloads
+ClusterManager --> Worker2 : dispatch workloads
+ClusterManager --> Worker3 : dispatch workloads
+ClusterManager --> WorkerN : dispatch workloads
+@enduml

@@ -1,0 +1,88 @@
+@startuml
+package "Manual Verification Layer" {
+  component "Embedded hwloc Test Runner" as HwlocTestRunner
+  component "Manual hwloc Build Workflow" as ManualHwlocBuild
+  component "hwloc source tree" as HwlocSourceTree
+}
+
+package "Build and Integration Layer" {
+  component "Libfabric Verbs Provider Build Integration" as VerbsBuild
+  component "CFLAGS/LDFLAGS/LD_LIBRARY_PATH" as BuildVars
+}
+
+package "Communication Design Layer" {
+  component "Communication Design Documentation" as CommDesign
+  component "Communication Lifecycle/Progress Responsibilities" as CommLifecycle
+  component "Initialization" as Init
+  component "Finalization" as Finalize
+  component "Progress Advancement" as ProgressAdvance
+  component "Blocking Progress" as BlockingProgress
+  component "Connection Establishment" as ConnEstablish
+  component "One-to-Many Scatter-Style Transfer Responsibility" as ScatterTransfer
+  component "CH4 Network-Module Integration Context" as CH4Integration
+}
+
+package "Send State-Machine Layer" {
+  component "Send State-Machine Design" as SendSM
+  component "Flow-Control State" as FlowControl
+  component "Packet Buffer" as PacketBuffer
+  component "Network Send Descriptor" as NetSendDesc
+  component "Data Descriptor" as DataDesc
+  component "Pinned User Data" as PinnedUserData
+  package "Rendezvous Control Fields" {
+    component "Rendezvous Envelope" as RndvEnvelope
+    component "LIBA(OD)" as LibaOD
+    component "One LIBA" as OneLiba
+    component "Two LIBAs" as TwoLibas
+  }
+}
+
+package "Transport/Dependency Layer" {
+  component "Linux Verbs API" as LinuxVerbsAPI
+  cloud "OFI/libfabric" as OFILibfabric
+  cloud "UCX" as UCX
+}
+
+package "External Systems" {
+  component "libibverbs" as Libibverbs
+  component "librdmacm" as Librdmacm
+  cloud "hwloc distribution tarball" as HwlocTarball
+  component "Network Device" as NetworkDevice
+}
+
+HwlocTarball --> HwlocTestRunner : verification input
+HwlocTestRunner --> HwlocSourceTree : make check/clean/distclean
+ManualHwlocBuild --> HwlocSourceTree : autogen.sh/configure/make
+
+CommDesign ..> CommLifecycle : defines lifecycle/progress responsibilities
+CommLifecycle --> Init : includes initialization
+CommLifecycle --> Finalize : includes finalization
+CommLifecycle --> ProgressAdvance : includes progress advancement
+CommLifecycle --> BlockingProgress : includes blocking progress
+CommLifecycle --> ConnEstablish : includes connection establishment
+CommDesign ..> ScatterTransfer : defines one-to-many scatter-style transfer
+CommDesign ..> CH4Integration : communication-stack context
+CommDesign ..> SendSM : documents send-path responsibilities
+
+CH4Integration ..> OFILibfabric : integrates
+CH4Integration ..> UCX : integrates
+
+SendSM --> FlowControl : checks flow state and defers sends
+SendSM --> PacketBuffer : control info and packed payload
+SendSM --> NetSendDesc : posted sends
+SendSM --> DataDesc : payload for packet-buffer packing
+SendSM --> PinnedUserData : pinned user data
+SendSM --> RndvEnvelope : rndv-rts uses envelope
+SendSM --> LibaOD : rndv-rts uses LIBA(OD)
+SendSM --> TwoLibas : rndv-cts uses two LIBAs
+SendSM --> OneLiba : rndv-data uses one LIBA
+SendSM --> NetworkDevice : interacts with network device
+
+VerbsBuild --> LinuxVerbsAPI : uses when enabled
+VerbsBuild --> Libibverbs : >= 1.1.8 with matching headers
+VerbsBuild --> Librdmacm : >= 1.0.16 with matching headers
+VerbsBuild --> BuildVars : non-default header and library paths
+
+LinuxVerbsAPI --> Libibverbs : control/data transfer interface
+LinuxVerbsAPI --> Librdmacm : communication management interface
+@enduml

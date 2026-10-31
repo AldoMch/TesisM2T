@@ -1,0 +1,125 @@
+@startuml
+!define RECTANGLE rectangle
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam ArrowColor #333333
+skinparam ActorBackgroundColor #E6F3FF
+skinparam ComponentBackgroundColor #F5F5F5
+skinparam DatabaseBackgroundColor #FFF0F5
+skinparam QueueBackgroundColor #F0FFF0
+skinparam AgentBackgroundColor #FFF8E1
+
+title System Architecture: kubescape/host-scanner
+
+package "Kubernetes Cluster" {
+  package "Node 1" {
+    component "host-scanner Pod" as host_scanner_pod {
+      component "HTTP Server" as http_server #lightblue
+      component "CNI Config Resolver" as cni_resolver #lightgreen
+      component "JSON Sanitizer" as json_sanitizer #lightyellow
+      
+      http_server --> cni_resolver : "resolves\nCNI directory"
+      http_server --> json_sanitizer : "sanitizes\nJSON data"
+    }
+    
+    database "Host Filesystem" as host_fs {
+      folder "/etc/cni/" as etc_cni
+      folder "/var/lib/cni/" as var_lib_cni
+      folder "/etc/kubernetes/" as etc_k8s
+      file "Configuration Files" as config_files
+    }
+    
+    cni_resolver --> etc_cni : "reads"
+    cni_resolver --> var_lib_cni : "reads"
+    json_sanitizer --> etc_k8s : "reads control-plane\ndata"
+  }
+  
+  package "Node 2" {
+    component "host-scanner Pod" as host_scanner_pod2 {
+      component "HTTP Server" as http_server2
+      component "CNI Config Resolver" as cni_resolver2
+      component "JSON Sanitizer" as json_sanitizer2
+    }
+    
+    database "Host Filesystem" as host_fs2 {
+      folder "/etc/cni/" as etc_cni2
+      folder "/var/lib/cni/" as var_lib_cni2
+    }
+  }
+  
+  package "Node N" {
+    component "host-scanner Pod" as host_scanner_podN {
+      component "HTTP Server" as http_serverN
+      component "CNI Config Resolver" as cni_resolverN
+      component "JSON Sanitizer" as json_sanitizerN
+    }
+  }
+}
+
+agent "HTTP Client" as http_client
+agent "Test Engineer" as test_engineer
+agent "Kubernetes Operator" as k8s_operator
+
+cloud "External Systems" {
+  component "Kubescape Framework" as kubescape_framework
+  component "Security Assessment" as security_assessment
+}
+
+package "Development Environment" {
+  component "Go Test Framework" as go_test_framework {
+    component "Provider-specific Tests" as provider_tests
+    component "End-to-end Tests" as e2e_tests
+    component "Unit Tests" as unit_tests
+  }
+  
+  database "Build Configuration" as build_config {
+    component "Go Build Tags" as go_build_tags
+  }
+}
+
+' Connections
+http_client --> http_server : "HTTP GET requests\n(FR-001: /doesnotexist → 404)"
+http_server --> http_client : "HTTP responses\nwith host information"
+
+k8s_operator --> host_scanner_pod : "deploys as\nprivileged DaemonSet"
+k8s_operator --> host_scanner_pod2 : "deploys as\nprivileged DaemonSet"
+
+host_scanner_pod --> kubescape_framework : "provides host data"
+kubescape_framework --> security_assessment : "performs security\nposture assessment"
+
+test_engineer --> go_test_framework : "executes tests"
+go_test_framework --> http_server : "end-to-end tests"
+go_test_framework --> cni_resolver : "unit tests"
+go_test_framework --> json_sanitizer : "unit tests"
+
+provider_tests --> go_build_tags : "selects via\n//go:build <provider>"
+build_config --> go_test_framework : "provides build\nconfiguration"
+
+' Data flows
+cni_resolver ..> config_files : "reads runtime config\n& command-line args\n(FR-002)"
+json_sanitizer ..> etc_k8s : "reads control-plane JSON\nremoves encryption secrets\n(FR-003)"
+
+note right of host_scanner_pod
+  <b>Key Functions:</b>
+  1. HTTP endpoint handling
+  2. CNI directory resolution
+  3. JSON secret sanitization
+  4. Provider test support
+end note
+
+note right of go_test_framework
+  <b>Test Support:</b>
+  • Provider-specific expected data
+  • Go build tag selection
+  • End-to-end & unit tests
+end note
+
+legend right
+  | Component | Responsibility |
+  | HTTP Server | Handles API requests |
+  | CNI Resolver | Resolves CNI config paths |
+  | JSON Sanitizer | Removes encryption secrets |
+  | Go Tests | Provider-specific validation |
+end legend
+
+@enduml

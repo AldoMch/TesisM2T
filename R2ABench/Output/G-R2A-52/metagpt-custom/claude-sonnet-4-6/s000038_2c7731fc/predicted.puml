@@ -1,0 +1,153 @@
+@startuml IceFireDB Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam componentBackgroundColor #DBEAFE
+skinparam nodeBackgroundColor #FEF9C3
+skinparam databaseBackgroundColor #DCFCE7
+skinparam cloudBackgroundColor #FCE7F3
+skinparam defaultFontName Arial
+skinparam arrowColor #374151
+skinparam packageBorderColor #6366F1
+skinparam componentBorderColor #3B82F6
+skinparam nodeBorderColor #CA8A04
+skinparam databaseBorderColor #16A34A
+
+' ─────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────
+
+cloud "External Clients" as ExtClients {
+    component [Redis-based\nApplication Client] as AppClient
+}
+
+cloud "libp2p / IPFS Peer Network" as LibP2PCloud {
+    component [DHT / libp2p\nPeer Infrastructure\n(peer discovery, routing\n& NAT traversal)] as LibP2PPeer
+}
+
+cloud "MySQL/SQLite Protocol\nData Source" as MySQLSource {
+    component [Packetized MySQL-Protocol\nResult Data] as PacketizedData
+}
+
+' ─────────────────────────────────────────
+' CLIENT INTERFACE LAYER
+' ─────────────────────────────────────────
+
+package "Client Interface Layer" as ClientLayer {
+    () "Redis Protocol API" as RedisAPI
+    () "Redis Pub/Sub API" as PubSubAPI
+}
+
+' ─────────────────────────────────────────
+' DECENTRALIZED MIDDLEWARE LAYER
+' ─────────────────────────────────────────
+
+package "Decentralized Middleware Layer" as MiddlewareLayer {
+    component [RedisProxyAgent\n\nSupported command categories:\nString, Set, List, Hash,\nSorted Set, Stream,\nBasic Control Commands] as RedisProxyAgent
+    component [AgentSyncNetwork] as AgentSyncNetwork
+    component [PubSubNode] as PubSubNode
+}
+
+' ─────────────────────────────────────────
+' P2P NETWORK LAYER
+' ─────────────────────────────────────────
+
+package "P2P Network Layer" as P2PLayer {
+    component [PeerDiscoveryRouter\n(Kademlia DHT / libp2p)] as PeerDiscoveryRouter
+}
+
+' ─────────────────────────────────────────
+' STORAGE BACKEND LAYER
+' ─────────────────────────────────────────
+
+package "Storage Backend Layer" as StorageLayer {
+    component [RedisStandaloneAdapter] as RedisStandaloneAdapter
+    component [RedisClusterAdapter] as RedisClusterAdapter
+}
+
+' ─────────────────────────────────────────
+' INTERNAL PROTOCOL HANDLING LAYER
+' ─────────────────────────────────────────
+
+package "Internal Protocol Handling Layer" as InternalLayer {
+    component [SQLiteResultParser\n(MySQL-Protocol Parser)] as SQLiteResultParser
+    note right of SQLiteResultParser
+        Parses: field metadata,
+        field-name mappings,
+        result rows, warning
+        counts, status values
+    end note
+}
+
+' ─────────────────────────────────────────
+' EXTERNAL STORAGE NODES
+' ─────────────────────────────────────────
+
+node "Redis Standalone Instance" as RedisStandalone {
+    database "Redis\nSingle-Node Store" as RedisDB
+}
+
+node "Redis Cluster" as RedisClusterNode {
+    database "Redis Cluster\nStore (multi-node)" as RedisClusterDB
+}
+
+' ─────────────────────────────────────────
+' CLIENT → INTERFACE CONNECTIONS
+' ─────────────────────────────────────────
+
+AppClient --> RedisAPI : Redis commands\n(String/Set/List/Hash/\nSortedSet/Stream/Control)
+AppClient --> PubSubAPI : Pub/Sub publish\n& subscribe operations
+
+' ─────────────────────────────────────────
+' INTERFACE → MIDDLEWARE CONNECTIONS
+' ─────────────────────────────────────────
+
+RedisAPI --> RedisProxyAgent : validated Redis commands
+PubSubAPI --> PubSubNode : Pub/Sub commands
+
+' ─────────────────────────────────────────
+' MIDDLEWARE INTERNAL CONNECTIONS
+' ─────────────────────────────────────────
+
+RedisProxyAgent --> AgentSyncNetwork : propagate instructions\nto peer agents
+AgentSyncNetwork --> RedisProxyAgent : synchronized instructions\nfrom peer agents
+AgentSyncNetwork --> PeerDiscoveryRouter : decentralized agent\nnetwork transport
+
+' ─────────────────────────────────────────
+' MIDDLEWARE → STORAGE CONNECTIONS
+' ─────────────────────────────────────────
+
+RedisProxyAgent --> RedisStandaloneAdapter : forwarded writes\n(standalone mode)
+RedisProxyAgent --> RedisClusterAdapter : forwarded writes\n(cluster mode)
+
+AgentSyncNetwork --> RedisStandaloneAdapter : synchronized writes\n(standalone mode)
+AgentSyncNetwork --> RedisClusterAdapter : synchronized writes\n(cluster mode)
+
+' ─────────────────────────────────────────
+' PUB/SUB NODE CONNECTIONS
+' ─────────────────────────────────────────
+
+PubSubNode --> PeerDiscoveryRouter : peer discovery\n& message routing
+PubSubNode --> AppClient : delivered messages\nto subscribers
+PubSubNode --> PubSubNode : inter-node message\ndissemination via P2P layer
+
+' ─────────────────────────────────────────
+' P2P LAYER → EXTERNAL NETWORK
+' ─────────────────────────────────────────
+
+PeerDiscoveryRouter --> LibP2PPeer : DHT peer discovery\n& routing (libp2p/IPFS)
+
+' ─────────────────────────────────────────
+' STORAGE ADAPTERS → EXTERNAL STORES
+' ─────────────────────────────────────────
+
+RedisStandaloneAdapter --> RedisDB : read / write
+RedisClusterAdapter --> RedisClusterDB : cluster-aware\nread / write / failover
+
+' ─────────────────────────────────────────
+' INTERNAL LAYER CONNECTIONS
+' ─────────────────────────────────────────
+
+PacketizedData --> SQLiteResultParser : consumes packetized\nMySQL-protocol results
+
+@enduml

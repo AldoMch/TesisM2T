@@ -1,0 +1,81 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+
+title cFS Bundle (subset) - Layered Architecture Overview
+
+' Users
+actor "Developer/Build User" as Dev
+actor "Functional Tester / Telemetry Operator" as Operator
+actor "CI Maintainer" as CIM
+
+' Source repository
+package "cFS Bundle Repository" as Repo {
+  [Source + Submodules]
+  [Build Assets (Makefile.sample, sample_defs)] as BuildAssets
+}
+
+' CI/CD layer
+package "CI/CD (GitHub Actions)" as CI {
+  [Build & Install Job <<ubuntu-18.04>>] as BuildJob
+  [Functional Test Job <<ubuntu-18.04>>] as TestJob
+  [Format Check Workflow <<ubuntu-18.04>>] as FormatWF
+  [Changelog Generation <<ubuntu-latest>>] as ChangelogWF
+  [Reusable Workflows (workflow_call)] as ReuseWF
+  [Static Analysis (CodeQL)] as CodeQL
+  database "Artifact Store (Changelog)" as ArtifactStore
+}
+
+' Host-side tools
+package "Host Tools" as Host {
+  [cmdUtil (Host Command Utility)] as CmdUtil
+}
+
+' Network
+cloud "IP Network (Operator-entered address)" as Net
+
+' Runtime target
+node "cFS Target (core-cpu1)" as Target {
+  [cFE Core] as cFE
+  [OSAL] as OSAL
+  [PSP] as PSP
+  [Framework Applications] as Apps
+  [Command & Telemetry Interface] as CTI
+}
+
+' Internal structure dependencies
+cFE --> OSAL
+cFE --> PSP
+cFE --> Apps
+CTI --> cFE
+
+' CI/CD relationships
+Dev --> BuildJob : trigger/commit
+CIM --> ChangelogWF : manual trigger
+CIM --> ReuseWF
+
+Repo --> BuildJob : checkout (with submodules)
+BuildAssets --> BuildJob : uses
+BuildJob --> CodeQL : optional invoke
+BuildJob --> ReuseWF : compose
+FormatWF --> ReuseWF : compose
+ChangelogWF --> ReuseWF : compose
+ChangelogWF --> ArtifactStore : upload changelog
+
+' Functional test job orchestrates runtime and host tool
+TestJob --> Target : start core-cpu1
+TestJob --> CmdUtil : invoke command sender
+
+' Command and telemetry flows
+CmdUtil --> Net : command packets
+Net --> CTI : commands
+CTI --> Net : telemetry stream
+Net --> Operator : telemetry observation
+Operator --> CTI : configure destination IP
+
+' Additional associations
+BuildJob ..> Target : build/install artifacts
+FormatWF ..> Repo : check formatting
+CodeQL ..> Repo : analyze source
+
+@enduml

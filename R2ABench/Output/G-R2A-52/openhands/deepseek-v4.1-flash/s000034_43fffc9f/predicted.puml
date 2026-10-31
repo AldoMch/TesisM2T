@@ -1,0 +1,263 @@
+@startuml
+title torc_py - Task-Based Parallelism Library Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+
+' ============================================================
+' Application Layer
+' ============================================================
+package "Application Layer" as APP {
+  [Python Application] as PYAPP
+  [HPC Application] as HPCAPP
+  [MPI Application] as MPIAPP
+  [Image Preprocessing App] as IMGAPP
+
+  package "Example Suite" as EXAMPLES {
+    [Master-Worker Example] as EX_MW
+    [SPMD Switching Example] as EX_SPMD
+    [Numerical Optimization Example] as EX_OPT
+    [Image Preprocessing Example] as EX_IMG
+    [Task Stealing Example] as EX_STEAL
+  }
+}
+
+' ============================================================
+' Python-Facing torc API
+' ============================================================
+package "torc Python API (import torc)" as API {
+  package "Task Submission & Results" as API_TASK {
+    [submit(f, *args, qid=-1, callback=None)] as API_SUBMIT
+    [wait(tasks=None)] as API_WAIT
+    [as_completed(tasks=None)] as API_AC
+    [map(f, *seq, chunksize=1)] as API_MAP
+    [Task Descriptor\ninput() / result()] as API_DESC
+  }
+
+  package "Lifecycle Management" as API_LIFE {
+    [start(f)] as API_START
+    [init()] as API_INIT
+    [launch(f)] as API_LAUNCH
+    [shutdown()] as API_SHUTDOWN
+  }
+
+  package "Execution Modes & Config" as API_MODE {
+    [spmd(f, *args)] as API_SPMD
+    [enable_stealing()] as API_EN_STEAL
+    [disable_stealing()] as API_DIS_STEAL
+    [gettime()] as API_GETTIME
+  }
+
+  package "Runtime Queries" as API_QUERY {
+    [worker_id() / num_workers()] as API_WORKER
+    [node_id() / num_nodes()] as API_NODE
+  }
+}
+
+' ============================================================
+' Runtime Configuration
+' ============================================================
+package "Runtime Configuration" as CONFIG {
+  [TORC_WORKERS\n(default 1)] as ENV_WORKERS
+  [TORC_STEALING\n(default False)] as ENV_STEAL
+  [TORC_SERVER_YIELDTIME] as ENV_SERVER
+  [TORC_WORKER_YIELDTIME] as ENV_WORKER
+  [Environment Variable Reader] as ENV_READER
+}
+
+' ============================================================
+' Parallel Execution Runtime
+' ============================================================
+package "Parallel Execution Runtime" as RUNTIME {
+
+  package "Scheduling Core" as CORE {
+    [Task Manager / Server] as SERVER
+    [Cyclic Scheduler\n(qid = -1)] as CYCLIC
+    [Directed Router\n(qid >= 0)] as DIRECTED
+    [Task Stealing Coordinator] as STEAL_MGR
+    [Callback Dispatcher] as CALLBACK
+    [Task Descriptor Registry] as REGISTRY
+  }
+
+  package "MPI Process Domain" as MPI_DOMAIN {
+    [MPI Rank 0\nPrimary Application Task] as RANK0
+    [MPI Rank 1..N] as RANKN
+    [Internal MPI Communicator] as MPI_COMM
+    [SPMD Executor] as SPMD_EXEC
+  }
+
+  package "Per-Process Worker Pool" as WORKERS {
+    [Worker Thread 1] as W1
+    [Worker Thread 2] as W2
+    [Worker Thread N] as WN
+    [Local Worker Queue] as LQUEUE
+    [Thread Scheduler] as TSCHED
+  }
+}
+
+' ============================================================
+' Data & External Dependencies
+' ============================================================
+package "Data Artifacts" as DATA {
+  [Function Arguments\n(DE-001)] as D_ARGS
+  [Function Return Values\n(DE-002)] as D_RET
+  [Task Descriptor\n(DE-003/DR-001)] as D_DESC
+  [Worker Queue Entries\n(DE-005/DR-005)] as D_QENTRY
+  [Image Files by Label\n(DE-006/DR-006)] as D_IMG
+  [HDF5 Output File\n(DE-007/DR-007)] as D_HDF5
+}
+
+package "External Dependencies" as DEPS {
+  [MPI Runtime / mpi4py] as MPI_LIB
+  [Python Multithreading] as THREAD_LIB
+  [termcolor] as TERMCOLOR
+  [numpy] as NUMPY
+  [cma] as CMA
+  [h5py] as H5PY
+  [pillow] as PILLOW
+  [mpirun] as MPIRUN
+}
+
+package "Platforms" as PLATFORMS {
+  [Shared-Memory Platform] as PLAT_SHARED
+  [Distributed-Memory / Cluster] as PLAT_DIST
+}
+
+' ============================================================
+' Relationships - Applications to API
+' ============================================================
+PYAPP --> API_TASK
+HPCAPP --> API_TASK
+HPCAPP --> API_MODE
+MPIAPP --> API_SPMD
+IMGAPP --> API_MAP
+
+EX_MW ..> API_SUBMIT
+EX_SPMD ..> API_SPMD
+EX_OPT ..> API_MAP
+EX_IMG ..> API_MAP
+EX_STEAL ..> API_EN_STEAL
+
+' ============================================================
+' Relationships - API internals
+' ============================================================
+API_SUBMIT --> SERVER : create task
+API_WAIT --> SERVER
+API_AC --> SERVER
+API_MAP --> API_SUBMIT
+API_DESC --> REGISTRY
+API_START --> API_INIT
+API_START --> API_LAUNCH
+API_START --> API_SHUTDOWN
+API_INIT --> SERVER
+API_LAUNCH --> RANK0
+API_LAUNCH --> RANKN
+API_SPMD --> SPMD_EXEC
+API_EN_STEAL --> STEAL_MGR
+API_DIS_STEAL --> STEAL_MGR
+API_WORKER --> TSCHED
+API_NODE --> MPI_COMM
+
+' ============================================================
+' Relationships - Configuration
+' ============================================================
+ENV_READER --> ENV_WORKERS
+ENV_READER --> ENV_STEAL
+ENV_READER --> ENV_SERVER
+ENV_READER --> ENV_WORKER
+ENV_READER --> TSCHED : configure worker count
+ENV_READER --> STEAL_MGR : configure stealing
+ENV_READER --> SERVER : idle yield
+ENV_READER --> W1 : idle yield
+
+' ============================================================
+' Relationships - Scheduling core
+' ============================================================
+SERVER --> CYCLIC
+SERVER --> DIRECTED
+SERVER --> REGISTRY
+SERVER --> CALLBACK
+CYCLIC --> LQUEUE : round-robin assign
+DIRECTED --> LQUEUE : target qid
+STEAL_MGR --> LQUEUE : steal request
+STEAL_MGR --> MPI_COMM : inter-process steal
+CALLBACK --> API_DESC : completed descriptor
+
+' ============================================================
+' Relationships - MPI domain and workers
+' ============================================================
+RANK0 --> SERVER
+RANKN --> SERVER
+RANK0 <--> MPI_COMM
+RANKN <--> MPI_COMM
+MPI_COMM <--> MPI_LIB
+SPMD_EXEC --> MPI_LIB : app-level MPI routines
+SPMD_EXEC --> RANK0
+SPMD_EXEC --> RANKN
+TSCHED --> W1
+TSCHED --> W2
+TSCHED --> WN
+W1 --> LQUEUE
+W2 --> LQUEUE
+WN --> LQUEUE
+W1 --> THREAD_LIB
+W2 --> THREAD_LIB
+WN --> THREAD_LIB
+
+' ============================================================
+' Relationships - Data
+' ============================================================
+API_SUBMIT --> D_ARGS
+API_DESC --> D_DESC
+API_DESC --> D_RET
+LQUEUE --> D_QENTRY
+EX_IMG --> D_IMG
+D_IMG --> D_HDF5
+EX_IMG --> H5PY
+EX_IMG --> PILLOW
+EX_OPT --> CMA
+EX_IMG --> NUMPY
+
+' ============================================================
+' Relationships - Dependencies and platforms
+' ============================================================
+SERVER --> TERMCOLOR
+MPI_LIB --> MPIRUN
+RUNTIME --> PLAT_SHARED
+RUNTIME --> PLAT_DIST
+DEPS --> PLATFORMS
+
+' ============================================================
+' Notes
+' ============================================================
+note top of API
+  Single Python-facing programming model
+  (import torc) over MPI + multithreading.
+  Hides internal MPI details (NFR-002).
+end note
+
+note right of STEAL_MGR
+  FR-008 / NFR-004: idle workers issue
+  steal requests when local queue empty
+  and stealing is enabled.
+end note
+
+note bottom of CYCLIC
+  FR-005: qid = -1 distributes tasks
+  cyclically across available workers.
+end note
+
+note bottom of DIRECTED
+  FR-006: explicit qid routes task to
+  the target worker queue; invalid ids rejected.
+end note
+
+note right of CALLBACK
+  FR-007: callback runs on the rank that
+  spawned the parent, after results return,
+  and receives the completed task descriptor.
+end note
+
+@enduml

@@ -1,0 +1,48 @@
+@startuml
+!define RECTANGLE class
+
+title hAFL2 System Architecture
+
+skinparam componentStyle rectangle
+
+package "hAFL2 System" {
+  [Standalone Test Runner] as standalone
+  [Linux Userspace Workflow] as linux_workflow
+  [Windows Hyper-V Workflow] as windows_workflow
+  [kAFL Fuzzer Core] as kafl_core
+}
+
+package "Guest Environment" {
+  [Embedded Forkserver] as forkserver
+  [Target Binary] as target_binary
+  [InitRD] as initrd
+}
+
+package "Windows Environment" {
+  [Child Partition VM] as child_vm
+  [Root Partition VM] as root_vm
+  [Packet Sender] as packet_sender
+  [Loader] as loader
+  [Harness Driver] as harness
+  [Crash Monitor] as crash_monitor
+}
+
+standalone --> kafl_core : uses
+linux_workflow --> kafl_core : uses
+windows_workflow --> kafl_core : uses
+
+linux_workflow --> forkserver : configures
+forkserver --> target_binary : launches
+target_binary --> initrd : packaged in
+
+child_vm --> packet_sender : runs
+child_vm --> loader : runs
+loader --> packet_sender : loads/executes
+child_vm --> harness : uses
+
+root_vm --> harness : receives payloads
+root_vm --> crash_monitor : runs
+crash_monitor --> windows_workflow : reports crashes
+
+child_vm --> root_vm : sends fuzzing payloads
+@enduml

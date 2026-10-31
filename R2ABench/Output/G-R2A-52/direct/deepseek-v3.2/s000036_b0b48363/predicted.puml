@@ -1,0 +1,127 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam ArrowColor #333333
+skinparam BorderColor #333333
+skinparam ComponentBorderColor #333333
+skinparam ComponentBackgroundColor #FFFFFF
+skinparam ComponentFontStyle bold
+skinparam ComponentFontSize 13
+skinparam InterfaceBackgroundColor #E6F3FF
+skinparam InterfaceBorderColor #0066CC
+skinparam InterfaceFontColor #0066CC
+skinparam DatabaseBackgroundColor #FFF0E6
+skinparam DatabaseBorderColor #CC6600
+skinparam DatabaseFontColor #CC6600
+skinparam QueueBackgroundColor #F0F0F0
+skinparam QueueBorderColor #666666
+skinparam QueueFontColor #666666
+
+title HypnoLog Server System Architecture
+
+package "External Environment" {
+    [Logging Producer Client] as Producer
+    [Web Browser] as Browser
+    [Node.js Runtime] as NodeRuntime
+}
+
+package "HypnoLog Server" {
+    component "Express HTTP Server" as ExpressServer {
+        component "Static File Server" as StaticServer
+        component "JSON Body Parser" as JSONParser
+        component "Router: /logger" as LoggerRouter {
+            component "POST /logger/in" as LogEndpoint
+            component "GET /logger/status" as StatusEndpoint
+        }
+    }
+
+    component "Socket.IO Server" as SocketIOServer {
+        component "Connection Manager" as ConnManager
+        component "Notification Broadcaster" as Broadcaster
+    }
+
+    database "Connected Clients List" as ClientList
+    database "HypnoLog Data Object Schema" as DataSchema
+}
+
+package "Browser Client (UI)" {
+    component "Socket.IO Client" as SocketIOClient
+    component "Ajv Schema Validator" as AjvValidator
+    component "Message Handler" as MsgHandler
+    component "Error Wrapper" as ErrorWrapper
+    database "Received Data List" as DataList
+    component "UI State Manager" as UIState
+    component "Window Dispatcher" as WindowDispatcher
+    component "Default Window" as DefaultWindow
+    component "Visualizer Dispatcher" as VizDispatcher
+    database "Visualizer Configuration" as VizConfig
+    component "Visualizer Module" as VizModule
+    component "DOM Renderer" as DOMRenderer
+}
+
+' External Interfaces
+Producer --> LogEndpoint : HTTP POST JSON\n(CI-001, API-001)
+Browser --> StaticServer : HTTP GET /client.html\n(UI-002)
+Browser --> SocketIOClient : WebSocket/Transport\n(CI-003, API-004)
+NodeRuntime --> ExpressServer : Hosts Application\n(RT-001)
+
+' Server Internal Flows
+LogEndpoint --> JSONParser : Parses Request Body\n(RT-010)
+JSONParser --> Broadcaster : Forwards Parsed Object\n(FR-004)
+Broadcaster --> ClientList : Gets Connected Clients\n(RT-009)
+ClientList --> Broadcaster : Client List
+Broadcaster --> SocketIOServer : Emits 'notification'\n(API-005)
+SocketIOServer --> SocketIOClient : Real-time Event\n(CI-003)
+
+' Browser Internal Flows
+SocketIOClient --> MsgHandler : Receives 'notification'\n(FR-005)
+MsgHandler --> AjvValidator : Validates Message\n(FR-006)
+AjvValidator --> DataSchema : References Schema\n(DR-003)
+AjvValidator --> ErrorWrapper : On Validation Fail\n(FR-007)
+ErrorWrapper --> DataList : Stores HypnoLog-error\n(DR-008)
+AjvValidator --> DataList : On Validation Success\n(DR-007)
+DataList --> UIState : Updates State\n(FR-008)
+UIState --> WindowDispatcher : Dispatches Object\n(FR-009)
+WindowDispatcher --> DefaultWindow : To Default Window\n(FR-010)
+DefaultWindow --> VizDispatcher : For Visualization\n(FR-010)
+VizDispatcher --> VizConfig : Loads Visualizers\n(API-006, NFR-006)
+VizConfig --> VizModule : Instantiates Module\n(API-007)
+VizModule --> VizDispatcher : canDisplay() / display()\n(C-006)
+VizDispatcher --> DOMRenderer : Creates DOM Element\n(DE-007)
+DOMRenderer --> DefaultWindow : Appends to UI\n(FR-010)
+
+' Supporting Flows
+StatusEndpoint --> Producer : HTTP 200 Response\n(FR-015)
+StaticServer --> Browser : Serves UI Assets\n(RT-007)
+ConnManager --> ClientList : Manages Connections\n(RT-009)
+VizDispatcher --> VizDispatcher : Selects First Matching\nVisualizer (C-007)
+
+' Notes and Constraints
+note top of Producer
+  Language-agnostic client
+  (NFR-001, FR-002)
+end note
+
+note right of DataSchema
+  Required fields: data, type
+  Optional: tags, name
+  (DR-002, DR-003, DR-004, DR-005)
+end note
+
+note left of VizModule
+  Implements contract:
+  canDisplay(obj)
+  display(obj, callback)
+  (API-007, C-006)
+end note
+
+note bottom of ExpressServer
+  Default Port: 7000
+  Configurable via CLI
+  (RT-004, RT-005)
+end note
+
+@enduml

@@ -1,0 +1,45 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam node {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+node "KVM (L0)" as KvmL0 {
+    rectangle "hAFL2" as Hafl2
+
+    node "Hyper-V (L1) - Host" as HyperVHost {
+        node "Root Partition\nHost OS (L2)" as RootPartition {
+            rectangle "vmswitch.sys" as VmSwitch
+            rectangle "CrashMonitoring.sys" as CrashMonitoring
+        }
+
+        node "Child Partition\nGuest VM (L2)" as ChildPartition {
+            rectangle "harness.sys" as Harness
+        }
+    }
+}
+
+Hafl2 ..> HyperVHost : fuzzing control
+Hafl2 ..> Harness : guest execution control
+Harness --> VmSwitch : packet path
+CrashMonitoring ..> Hafl2 : crash feedback
+HyperVHost ..> Hafl2 : VM state feedback
+@enduml

@@ -1,0 +1,51 @@
+@startuml
+skinparam componentStyle rectangle
+title hAFL2 / kAFL Hypervisor Fuzzing Architecture (s000050_275af3e0)
+
+package "Orchestration" {
+  [Standalone Test Runner (Python CLI)] as Runner
+  [kAFL-Fuzzer] as KF
+  Runner --> KF : run test suites / manage fuzzing
+}
+
+package "Linux Userspace Fuzzing Workflow" {
+  node "Host (Linux)" as HostLinux {
+    [Initrd Builder (bash scripts)] as InitrdBuilder
+    artifact "Shared Libraries" as Libs
+    database "initrd" as Initrd
+  }
+  node "Guest VM (Linux)" as GuestLinux {
+    [Target Binary] as Target
+    [Embedded Forkserver] as Fork
+  }
+  Runner --> InitrdBuilder : launch userspace target
+  InitrdBuilder --> Initrd : package target & libs
+  Libs --> Initrd : copy required libs
+  Initrd --> GuestLinux : boot with packaged target
+  KF --> Fork : kAFL hypercalls / control
+  Fork --> KF : coverage feedback
+  Fork -down- Target : AFL-style I/O mapping
+}
+
+package "Windows Hyper-V Fuzzing Workflow" {
+  node "Child Partition VM (Windows)" as Child {
+    [loader.exe] as Loader
+    [packet_sender.exe] as Packet
+    [Harness Driver] as Harness
+  }
+  node "Root Partition (Windows)" as Root {
+    [Hyper-V VMSwitch (vmswitch.sys)] as VMSwitch
+    [Crash Monitoring Driver] as CrashMon
+  }
+  [VMBus/netvsc Channel] as VMBus
+
+  KF --> Loader : trigger snapshot load/exec
+  Loader --> Packet : prepare execution
+  Packet --> Harness : IOCTL (send packet)
+  Harness --> VMBus : fuzzing payloads
+  VMBus --> VMSwitch
+  VMSwitch --> CrashMon : crash events
+  CrashMon --> KF : crash status/results
+}
+
+@enduml

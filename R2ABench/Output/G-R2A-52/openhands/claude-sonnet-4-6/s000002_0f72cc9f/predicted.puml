@@ -1,0 +1,98 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam package {
+  BackgroundColor #F5FAFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam database {
+  BackgroundColor #FFF8DC
+  BorderColor #CC8800
+}
+skinparam storage {
+  BackgroundColor #F0FFF0
+  BorderColor #228B22
+}
+
+package "Web Client (Browser)" {
+
+  package "React Application" {
+
+    component "App\n(Shared Credential State\n& Submission Handler)" as App
+
+    package "Authentication Views" {
+      component "SignUp View\n(Escape Signup)" as SignUp
+      component "SignIn View\n(Escape Signin)" as SignIn
+    }
+
+    package "Scene Client (A-Frame / aframe-react)" {
+      package "Scene Components" {
+        component "Lobby" as Lobby
+        component "SF" as SF
+        component "Louvre" as Louvre
+        component "Berlin" as Berlin
+        component "Milan" as Milan
+        component "Rome" as Rome
+        component "Hack" as Hack
+      }
+      package "Support Components" {
+        component "Camera" as Camera
+        component "Sky" as Sky
+        component "Plane" as Plane
+        component "TextPlane" as TextPlane
+      }
+    }
+
+    component "Content Retrieval\n(jQuery async / title-based)" as ContentRetrieval
+    component "Error Display" as ErrorDisplay
+
+  }
+
+  component "React-Router" as Router
+
+}
+
+package "Web Server (Node.js / Express)" {
+  component "Express Router\n(Auth & Content Routes)" as ExpressRouter
+  component "User Controller" as UserController
+  component "User Model" as UserModel
+  component "bcrypt-nodejs\n(Password Verification)" as Bcrypt
+}
+
+database "Database\n(MariaDB)\nusers, likes,\nphotos, comments" as DB
+database "Cache\n(Redis)" as Cache
+storage "Image Storage\n(AWS S3)" as S3
+
+' Authentication view internal wiring
+SignUp --> App : email/password input\n(shared handlers)
+SignIn --> App : email/password input\n(shared handlers)
+SignUp --> Router : navigate to SignIn
+SignIn --> Router : navigate to SignUp
+App --> Router : navigate on auth success
+
+' Content retrieval wiring
+ContentRetrieval --> ErrorDisplay : on retrieval failure
+
+' Client to server (HTTP)
+App --> ExpressRouter : POST credentials\n(JSON: email, password)
+ContentRetrieval --> ExpressRouter : GET content\n(title query)
+
+' Server internal
+ExpressRouter --> UserController : delegate auth request
+UserController --> UserModel : create / find user
+UserController --> Bcrypt : compare passwords
+UserModel --> DB : persist / query users
+
+' Server to infrastructure
+ExpressRouter --> Cache : cache read / write
+ExpressRouter --> S3 : image storage access
+
+@enduml

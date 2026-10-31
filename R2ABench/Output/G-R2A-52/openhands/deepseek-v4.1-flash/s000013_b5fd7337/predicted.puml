@@ -1,0 +1,54 @@
+@startuml
+title Song Mood Storage, Retrieval and Search System - Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam actorStyle awesome
+
+actor "End User" as EndUser
+actor "Operator / Data Inspector" as Inspector
+
+rectangle "Dockerized Application Stack" {
+
+  component "React Frontend\n[container: frontend]\nUI-001, C-001" as Frontend
+  component "FastAPI Backend\n[container: backend]\nC-002" as Backend
+  database "Elasticsearch\n[container: elasticsearch]\nAuthoritative song & mood store\nC-003, NFR-004" as Elasticsearch
+  component "Kibana\n[container: kibana]\nAuxiliary data UI\nUI-002, C-004" as Kibana
+
+  Frontend --> Backend : "API-001: song lookup requests\n(HTTP/JSON)"
+  Backend --> Elasticsearch : "API-002: query & write\nsong-mood data"
+  Kibana --> Elasticsearch : "API-004: inspect stored data"
+  Backend ..> Kibana : "internal service network (COM-002)"
+}
+
+cloud "Genius API\n[external service - not a container]\nC-005, C-007" as Genius
+
+EndUser --> Frontend : "COM-001: browser access\nFR-001, UI-001"
+Inspector --> Kibana : "FR-006: inspect stored data"
+
+Backend --> Genius : "API-003: search missing songs\nCOM-003, FR-003"
+
+note right of Elasticsearch
+  DEF-001 Song record:
+  name, SLink, lyrics, language
+  DEF-003 Mood association:
+  song identity + mood value
+  DR-001, DR-003
+end note
+
+note bottom of Backend
+  FR-002 known song -> return stored mood
+  FR-003 missing song -> Genius search
+  FR-004 store song-mood association
+  FR-005 fast retrieval of stored moods
+  C-009 no runtime classifier / model server assumed
+end note
+
+note left of EndUser
+  DR-004 / C-008 dataset scope:
+  English songs only
+  (no runtime language rejection)
+end note
+
+@enduml

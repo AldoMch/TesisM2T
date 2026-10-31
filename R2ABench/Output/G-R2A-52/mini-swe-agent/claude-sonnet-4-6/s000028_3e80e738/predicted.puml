@@ -1,0 +1,91 @@
+@startuml
+title PN Infra - Cognito, API Gateway, and VPC Endpoint Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<aws>> #FF9900
+  BorderColor<<aws>> #232F3E
+}
+
+actor "API Client" as apiClient
+actor "Infrastructure Operator" as operator
+
+rectangle "CloudFormation / Installation Layer" {
+  component "CloudFormation Templates\n(YAML, format 2010-09-09)" as cfnTemplates
+  component "Installation Scripts\n& AWS CLI Profiles" as installScripts
+}
+
+rectangle "Cognito Account (AWS)" {
+  component "Cognito User Pool" as userPool {
+    component "User Pool Client\n(custom:Role, email)" as userPoolClient
+    component "Token Validity Config\n(days/hours/minutes/seconds)" as tokenConfig
+  }
+  component "Cognito Identity Pool" as identityPool {
+    component "Authenticated Role Mapping" as authRole
+    component "Unauthenticated Role Mapping" as unauthRole
+  }
+  component "IAM Roles\n(Authenticated & Unauthenticated)" as iamRoles
+  database "Cognito User Store" as cognitoStore
+}
+
+rectangle "API Gateway Account (AWS)" {
+  component "API Gateway" as apiGW {
+    component "Cognito User Pool Authorizer\n(uses User Pool ARN)" as cognitoAuth
+    component "WhoAmI Method\n(x-pagopa-pn-cx-role header)" as whoAmI
+    component "ECS Proxy Method\n(forwards x-pagopa-pn-cx-role)" as ecsMethod
+    component "API Deployment\n(Stage + CallbackURL output)" as apiDeployment
+  }
+  component "VPC Link\n(Network Load Balancer)" as vpcLink
+  component "ECS Service\n(backend proxy target)" as ecsService
+}
+
+rectangle "VPC / Network Layer (AWS)" {
+  component "VPC Interface Endpoint\n(Amazon SQS, private DNS enabled)" as sqsEndpoint
+  component "Endpoint Security Group\n(TCP ingress restricted to VPC CIDR)" as endpointSG
+  component "Subnets" as subnets
+}
+
+cloud "AWS Services" {
+  component "Amazon SQS" as sqs
+  component "AWS IAM" as iam
+  component "AWS CloudFormation" as cfn
+}
+
+' Installation flow
+operator --> installScripts : run installation\n(env name, AWS profile,\nDNS/domain, API keys)
+installScripts --> cfnTemplates : deploys via AWS CLI
+cfnTemplates --> cfn : submit stacks
+
+' Cognito Account provisioning
+cfn --> userPool : create
+cfn --> identityPool : create
+cfn --> iamRoles : create
+userPool --> cognitoStore : stores user data
+identityPool --> iamRoles : attaches roles\n(authenticated & unauthenticated)
+identityPool --> userPool : binds via ClientId\n& ProviderName
+
+' Cross-account ARN flow
+userPool ..> cognitoAuth : provides User Pool ARN\n(cross-account input)
+
+' API Gateway Account provisioning
+cfn --> apiGW : create
+apiGW --> cognitoAuth : protects methods
+apiClient --> apiGW : HTTPS requests
+cognitoAuth --> whoAmI : authorize
+cognitoAuth --> ecsMethod : authorize
+whoAmI --> apiDeployment : method dependency
+ecsMethod --> vpcLink : integrates via VPC link
+vpcLink --> ecsService : proxies to ECS
+
+' VPC Endpoint
+cfn --> sqsEndpoint : create
+cfn --> endpointSG : create
+sqsEndpoint --> endpointSG : secured by
+sqsEndpoint --> subnets : deployed in
+sqsEndpoint --> sqs : private DNS enabled\nregional SQS endpoint
+ecsService --> sqsEndpoint : private SQS access
+
+' IAM
+iamRoles --> iam : uses STS AssumeRoleWithWebIdentity\n(cognito-identity.amazonaws.com)
+
+@enduml

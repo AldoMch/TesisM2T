@@ -1,0 +1,119 @@
+{
+  "candidate": {
+    "sample_id": "s000038_2c7731fc",
+    "repository_name": "IceFireDB/IceFireDB",
+    "image_url": "https://github.com/IceFireDB/IceFireDB/blob/main/imgs/Application_architecture_based_on_IceFireDB.png",
+    "source_ref": "80a568fdb7f7cbde63084e9d74bcf617830a747e",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 21013,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 65,
+      "user_scenario": 83,
+      "api_io": 72,
+      "deployment": 128,
+      "constraints": 10,
+      "non_functional": 15
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "IceFireDB-Redis-Proxy/README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|dense|hyde",
+      "score": 0.041143054019838796,
+      "text": "# IceFireDB-Redis-proxy IceFireDB-Redis-proxy database proxy adds decentralization wings to traditional redis databases. Provide a convenient mechanism to build a globally distributed storage system with automatic networking. The instructions are automatically synchronized between the networked redis agents, and the redis agent writes data to the cluster or single-point redis storage. Through the decentralized middleware network proxy, decentralized data synchronization can be enabled for the Redis database commonly used in web2 applications. 1. Complete data source mode support: stand-alone, cluster mode 2. Rich command support 3. Excellent cluster state management and failover 4. Excell..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "IceFireDB-PubSub/README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|dense|hyde",
+      "score": 0.039852059351337156,
+      "text": "# IceFireDB-PubSub IceFireDB-PubSub is a high performance, high availability and decentralized subscription system. It can seamlessly migrate web2 applications using redis publish and subscribe into a decentralized p2p subscription network. ## How does it work? ### scene introduction ### system structure The application works with multiple nodes on the same network or on different networks. Nodes behind a NAT on a private network can communicate with each other. Peer discovery and routing using Kademlia DHT and IPFs network discovery. By supporting the redis pub-sub protocol, a globally distributed Web3 publish-subscribe system is constructed. You can use it just like redis publish subscr..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "IceFireDB-Redis-Proxy/pkg/router/redisNode/router.go",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05062981794325078,
+      "text": "/* * * * Licensed to the Apache Software Foundation (ASF) under one or more * * contributor license agreements. See the NOTICE file distributed with * * this work for additional information regarding copyright ownership. * * The ASF licenses this file to You under the Apache License, Version 2.0 * * (the \"License\"); you may not use this file except in compliance with * * the License. You may obtain a copy of the License at * * * * * * * * Unless required by applicable law or agreed to in writing, software * * distributed under the License is distributed on an \"AS IS\" BASIS, * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * * See the License for the specific la..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "IceFireDB-PubSub/pkg/router/redisNode/router.go",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.050027179821700365,
+      "text": "/* * * * Licensed to the Apache Software Foundation (ASF) under one or more * * contributor license agreements. See the NOTICE file distributed with * * this work for additional information regarding copyright ownership. * * The ASF licenses this file to You under the Apache License, Version 2.0 * * (the \"License\"); you may not use this file except in compliance with * * the License. You may obtain a copy of the License at * * * * * * * * Unless required by applicable law or agreed to in writing, software * * distributed under the License is distributed on an \"AS IS\" BASIS, * * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. * * See the License for the specific la..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "IceFireDB-SQLite/pkg/mysql/client/resp.go",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05248696770226266,
+      "text": "sult.Fields) { err = ErrMalformPacket } return } if result.Fields[i] == nil { result.Fields[i] = &Field{} } err = result.Fields[i].Parse(data) if err != nil { return } result.FieldNames[hack.String(result.Fields[i].Name)] = i i++ } } func (c *Conn) readResultRows(result *Result, isBinary bool) (err error) { var data []byte for { rawPkgLen := len(result.RawPkg) result.RawPkg, err = c.ReadPacketReuseMem(result.RawPkg) if err != nil { return } data = result.RawPkg[rawPkgLen:] // EOF Packet if c.isEOFPacket(data) { if c.capability&CLIENT_PROTOCOL_41 > 0 { result.Warnings = binary.LittleEndian.Uint16(data[1:]) // todo add strict_mode, warning will be treat as error result.Status = binary.Littl..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05093840384162965,
+      "text": "# IceFireDB - Decentralized Database Infrastructure - IceFireDB - Decentralized Database Infrastructure - Decentralized database engine - Documentation center - Project composition - IceFireDB-SQLite - IceFireDB-SQLProxy - IceFireDB-Redis-Proxy - IceFireDB-PubSub - IceFireDB-NoSQL - NoSQL Command support - System Design - Quick Start - Performance - Project direction - Thanks support Based on cutting-edge computer science, the IceFireDB project integrates new ideas and research in the fields of message passing, event instruction processing, data consistency and replication, decentralized network, reliable data storage, high-performance network framework, etc.The team of researchers and en..."
+    }
+  ]
+}

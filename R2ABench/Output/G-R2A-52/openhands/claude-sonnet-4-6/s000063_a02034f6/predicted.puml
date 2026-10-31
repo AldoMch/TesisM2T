@@ -1,0 +1,98 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+
+title teamgram-server System Architecture
+
+actor "Telegram-Compatible\nClient" as Client
+
+package "Client Access Layer" {
+    component [MTProto Gateway] as MTProtoGW
+    component [Authorization Key\nHandler] as AuthKeyHandler
+    component [Session Manager] as SessionMgr
+    component [Server Salt\nHandler] as SaltHandler
+    component [Service Message\nProcessor] as SvcMsgProc
+}
+
+package "BFF / Access Service Layer" {
+    component [BFF Service] as BFF
+    component [Verification Service\n(Code: 12345 / External)] as VerifySvc
+    component [Registration Handler] as RegHandler
+}
+
+package "Business / Service Layer" {
+    component [Messaging Service] as MsgSvc
+    component [Sync Service] as SyncSvc
+    component [Push Service] as PushSvc
+    component [Future Salts\nService] as FutureSaltSvc
+}
+
+package "Storage Facade" {
+    component [Data Access\nComponent] as DAC
+}
+
+package "Optional Media" {
+    component [Media Wrapper] as MediaWrapper
+    component [FFmpeg / FFProbe] as FFmpeg
+}
+
+package "Infrastructure Services" {
+    database "MySQL" as MySQL
+    database "Redis" as Redis
+    database "MinIO\n(Object Storage)" as MinIO
+    queue "Kafka\n(Message Broker)" as Kafka
+    component [etcd\n(Service Registry/Config)] as Etcd
+}
+
+package "Deployment" {
+    component [Docker / Manual\nBuild & Install] as Deploy
+}
+
+Client --> MTProtoGW : MTProto\n(encrypted sessions)
+
+MTProtoGW --> AuthKeyHandler : auth key creation\n& exchange
+MTProtoGW --> SessionMgr : session_id\ncreate / destroy_session
+MTProtoGW --> SaltHandler : server salt\n& future salts
+MTProtoGW --> SvcMsgProc : rpc_drop_answer\ndestroy_session
+
+MTProtoGW --> BFF : authenticated RPC
+
+BFF --> VerifySvc : phone number\nverification
+BFF --> RegHandler : registration data
+BFF --> MsgSvc : messaging operations
+
+VerifySvc ..> Etcd : external verifier\nconfig lookup
+
+SaltHandler --> FutureSaltSvc : future salts\nrequest (count / 32 default)
+
+MsgSvc --> SyncSvc : message sync
+MsgSvc --> PushSvc : push notifications
+SyncSvc --> Kafka : async events
+PushSvc --> Kafka : push events
+
+MsgSvc --> DAC
+RegHandler --> DAC
+VerifySvc --> DAC
+SessionMgr --> DAC
+AuthKeyHandler --> DAC
+FutureSaltSvc --> DAC
+
+DAC --> MySQL : persistent data\n(auth keys, sessions,\nregistration, salts)
+DAC --> Redis : cache / session state
+DAC --> MinIO : object / media storage
+
+BFF --> MediaWrapper : media processing\n(optional)
+MediaWrapper --> FFmpeg : transcode / probe
+
+MTProtoGW ..> Etcd : service discovery
+BFF ..> Etcd : service discovery
+
+Deploy ..> MTProtoGW : hosts
+Deploy ..> BFF : hosts
+Deploy ..> MsgSvc : hosts
+Deploy ..> SyncSvc : hosts
+Deploy ..> PushSvc : hosts
+Deploy ..> DAC : hosts
+
+@enduml

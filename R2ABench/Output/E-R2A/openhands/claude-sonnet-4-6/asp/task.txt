@@ -1,0 +1,268 @@
+Run the following architecture-generation prompt. Save the PlantUML source ONLY to:
+_analysis/asp_rerun_20261001/retry_work/openhands/case_2/asp/predicted.puml
+
+Do not edit files outside:
+_analysis/asp_rerun_20261001/retry_work/openhands/case_2/asp
+
+Prompt:
+
+You are an experienced software architect.
+
+Task: Generate a system architecture diagram directly from the provided Software Requirements Specification (SRS).
+
+Return ONLY PlantUML source. Begin with @startuml and end with @enduml. Do not wrap the answer in Markdown fences and do not add explanations. Do not generate sequence, class, or use-case diagrams.
+
+SRS:
+
+# Software Requirements Specification (SRS)
+
+## 1. Introduction
+
+### Purpose
+This SRS defines the requirements for the "Zhiyan Tongjie" (智研通界) Academic Achievement Sharing Platform. It specifies the platform's business functions, external interfaces, data requirements, quality attributes, and technical constraints, and provides a basis for architecture design, implementation, and acceptance testing.
+
+### Product scope
+The platform provides researchers, scholars, and academic institutions with an integrated environment for discovering, managing, sharing, and discussing academic achievements. It combines literature retrieval with scholarly portals, verified achievement ownership, institution management, and academic communication.
+
+The scope includes:
+- Account registration, authentication, scholar certification, and profile management.
+- Multidimensional and multilingual literature retrieval, conversational search, filtering, and ranking.
+- Personalized literature presentation and cross-disciplinary recommendations.
+- Academic achievement classification, verified claiming, and ownership dispute resolution.
+- Institution creation, membership approval, and hierarchical organization management.
+- Comments, questions, private messages, scholar following, collaborative annotations, and report sharing.
+- Academic data collection, normalization, daily incremental synchronization, and analysis.
+- Access authorization, delayed disclosure, academic misconduct detection, persistent storage, and backup.
+
+### Intended audience
+- Researchers and institutional stakeholders validating platform behavior.
+- Product managers and analysts maintaining the requirements.
+- Architects and developers designing and implementing the platform.
+- Test engineers verifying functionality, performance, security, and recoverability.
+
+### Definitions
+- **Academic achievement:** A scholarly output, including a publication or literature record, with author, institution, classification, and visibility information.
+- **Certified scholar:** A registered user whose scholar identity application has been approved.
+- **Achievement claim:** A request to associate a certified scholar with an existing achievement after identity and authorship verification.
+- **Unpublished achievement:** An achievement whose protected content requires institutional authorization for access.
+- **Delayed disclosure:** A restriction preventing public release of designated sensitive information for three calendar months after its generation date.
+
+## 2. Overall Description
+
+### Product perspective
+The platform is a browser-based academic resource sharing and management system. It obtains scholar and literature data from public academic databases through crawlers and APIs, maintains normalized records, and exposes discovery, management, and communication functions through a web interface.
+
+The system separates user-facing business logic in an application layer, shared academic services in a support layer, and computing, acquisition, and persistence responsibilities in an infrastructure layer. The application layer uses common semantic processing, profiling, authorization, and analysis services to deliver consistent behavior across business functions.
+
+### Product functions summary
+- Maintain accounts, certified scholar identities, personal portals, and institutional affiliations.
+- Search literature by keywords, disciplines, institutions, and authors using semantic correction, cross-language mapping, and conversational context.
+- Filter and rank results, adapt presentation to user profiles, and recommend researchers across disciplines.
+- Classify achievements, verify author claims, and resolve ownership disputes through preliminary, expert, and management review.
+- Manage institution applications and university, institute, and laboratory relationships.
+- Support moderated discussions, verified private messaging, following, annotations, and report sharing.
+- Collect and normalize external data, synchronize incremental updates daily, and generate academic analysis outputs.
+- Enforce access and disclosure policies, protect data, detect potential misconduct, and maintain recoverable backups.
+
+### User classes
+
+| User class | Responsibilities and access |
+|---|---|
+| Visitor | Browse and search public academic content and register an account. |
+| Registered user | Authenticate, use permitted interaction and personalization functions, and apply for scholar certification. |
+| Certified scholar | Maintain a scholarly profile, claim achievements, and apply for institution membership in addition to registered-user functions. |
+| Institution administrator | Review membership applications, verify institutional associations, and authorize access to unpublished achievements within the assigned institution. |
+| Expert reviewer | Examine assigned escalated academic disputes and record review findings. |
+| System administrator | Review scholar certification and institution creation requests, administer classifications and institutional structures, moderate content, and perform final dispute handling. |
+
+### Operating environment
+- Users access the platform through Chrome, Edge, or Firefox on Windows, Linux, or macOS.
+- The frontend uses Vue 3.3, and the backend uses Python with Django 4.2 LTS.
+- Structured persistence uses MySQL 8.0 with cluster support, complemented by storage for unstructured academic content.
+- Server-side deployment supports Linux or Windows.
+
+### Assumptions and dependencies
+- External academic databases provide crawler or API access to scholar profiles and literature metadata.
+- Scholar and institutional verification depend on supporting information and authorized reviewers.
+- Semantic search, translation, profiling, and misconduct detection use academic terminology resources and configured processing rules or models.
+- Imported metadata, self-edited profile information, and verified ownership or membership relationships remain distinguishable throughout processing.
+
+## 3. External Interface Requirements
+
+### User interfaces
+
+| Interface | Required interactions and displayed information |
+|---|---|
+| Account and personal portal | Registration and login; certification submission and status; editable profile information; scholar achievements and cooperation networks. |
+| Literature discovery | Keyword and natural-language input; conversational follow-up input; discipline, institution, and author criteria; filter and sort controls; result lists, achievement details, and recommendations. |
+| Achievement management | Classification browsing; claim submission and status; verification information; ownership objections and dispute decisions. |
+| Institution management | Institution creation and membership requests; application decisions; viewing and authorized editing of institution hierarchies. |
+| Academic communication | Comments and moderation status; questions and replies; private conversations; follow/unfollow actions; collaborative annotations and shared reports. |
+| Administration | Certification and institution review queues; content moderation; dispute handling; access authorization; collection and synchronization status. |
+
+Forms shall identify missing or invalid required input. Restricted operations shall indicate the required authorization. Empty search results, pending reviews, failed requests, and successful operations shall have distinguishable states.
+
+### Software/API interfaces
+- External acquisition interfaces shall retrieve scholar profiles and literature metadata through academic database APIs and crawlers, preserving source identifiers for normalization and incremental updates.
+- The browser/backend interface shall support account, retrieval, achievement, institution, interaction, and administrative operations and enforce the corresponding authorization rules.
+- Semantic processing interfaces shall accept query text, language, and applicable conversational context and provide interpreted terms or retrieval signals for search and recommendation.
+- Persistence interfaces shall support structured records and associated unstructured academic content.
+- Backup and restore interfaces shall preserve both stored content and its relationships with structured records.
+
+### Communication interfaces
+Authenticated browser/backend communication and private-message transport shall use encrypted channels. Private conversations shall be accessible only to authorized participants. External acquisition interfaces shall handle connection failures without reporting incomplete retrieval as a successful synchronization.
+
+### Data exchange formats
+Academic data exchange shall preserve source identifiers, original language, bibliographic metadata, and applicable visibility information. Text input, transfer, storage, and display shall preserve Chinese, English, Japanese, and German characters. Translated content shall retain an association with its original record.
+
+## 4. Functional Requirements
+
+### Accounts and scholarly portals
+
+| ID | Requirement | Trigger, system behavior, and output |
+|---|---|---|
+| FR-001 | Account registration | When a visitor submits a username, password, and required personal information, the system shall validate the input and create a registered-user account. Missing required fields or an existing username shall prevent creation and produce a validation message. |
+| FR-002 | Authentication and session management | When a user submits valid credentials, the system shall authenticate the user and grant access according to assigned roles. Invalid credentials shall not establish a session. Logout shall invalidate the user's active session. |
+| FR-003 | Scholar certification | When a logged-in user submits scholar verification information, the system shall create an application, route it to an administrator, and display its status and decision. Scholar permissions shall be granted only after approval. |
+| FR-004 | Profile management | When a scholar edits nickname, email, or affiliation information, the system shall validate and save permitted changes. Editing affiliation text shall not itself approve institutional membership or achievement ownership. |
+| FR-005 | Scholar portal viewing | When a user opens a scholar's portal, the system shall display permitted basic information, academic achievements, and cooperation networks, applying the visibility rules of the underlying records. |
+
+### Literature retrieval and recommendations
+
+| ID | Requirement | Trigger, system behavior, and output |
+|---|---|---|
+| FR-006 | Multidimensional retrieval | When a user supplies keyword, discipline, institution, or author criteria, the system shall search across the supplied criteria and display matching permitted literature. A valid query without matches shall return an explicit empty result. |
+| FR-007 | Semantic and multilingual retrieval | For keyword and natural-language queries, the system shall apply semantic error correction and cross-language academic term mapping. It shall support Chinese, English, Japanese, and German literature retrieval and translation-assisted presentation while preserving original records. |
+| FR-008 | Multi-turn search | When a user submits a follow-up request, the system shall use the active search conversation's prior turns to interpret the request and refine results. Starting a new conversation shall clear prior conversational constraints. |
+| FR-009 | Filtering and ranking | When a user changes filters or sorting, the system shall refresh results using the selected criteria. It shall support relevance, citation count, publication time, and academic credibility ranking. Restricted records shall remain excluded. |
+| FR-010 | Personalized presentation and recommendation | The system shall use user profiles to personalize content and presentation, including deductive, inductive, and visual preferences. Users without an established profile shall receive a default presentation and retain ordinary search access. |
+| FR-011 | Cross-disciplinary discovery | When repeated same-field searches satisfy the configured diversity rule, the system shall include potentially relevant researchers from other disciplines in recommendations while preserving the user's explicit search criteria. |
+
+### Academic achievements and institutions
+
+| ID | Requirement | Trigger, system behavior, and output |
+|---|---|---|
+| FR-012 | Academic classification | The system shall allow authorized administrators to maintain multilevel academic field classifications and achievement associations. It shall preserve valid references and reject cyclic parent relationships. Users shall be able to retrieve achievements through the classifications. |
+| FR-013 | Achievement claiming | When a certified scholar claims an existing achievement, the system shall verify identity, authorship, and any institutional association used as evidence before binding an approved claim. Failed or disputed claims shall not overwrite verified relationships. An achievement shall support multiple legitimate coauthors. |
+| FR-014 | Ownership disputes | When a user or scholar submits an ownership objection, the system shall record supporting information and support preliminary, expert, and management final review, escalating cases that remain unresolved. It shall preserve evidence, stage decisions, and the final outcome. Ownership changes shall be traceable to an authorized decision. |
+| FR-015 | Institution applications | When a user requests institution creation or a certified scholar requests membership, the system shall verify eligibility and route the request to the appropriate system or institution administrator. Only approved applications shall create active institutions or membership relationships. Applicants shall be able to view status and decisions. |
+| FR-016 | Institution hierarchy management | The system shall allow authorized administrators to maintain the university/institute/laboratory hierarchy and approved memberships. It shall reject cyclic relationships and modifications outside the administrator's institutional scope. |
+
+### Academic interaction and collaboration
+
+| ID | Requirement | Trigger, system behavior, and output |
+|---|---|---|
+| FR-017 | Moderated comments | When a registered user or scholar submits a comment on an achievement, the system shall store it for moderation and publicly display it only after approval. Pending or rejected comments shall not appear as approved public comments. |
+| FR-018 | Academic questions and replies | When a user asks an author a question from a literature detail page, the system shall associate it with the achievement and addressed author and allow that author to reply. Questions and replies shall remain linked as a discussion. |
+| FR-019 | Verified private messaging | Before enabling private messaging, the system shall verify that both participants satisfy identity requirements. It shall transmit messages through an encrypted channel and restrict conversation access to participants. Failed verification shall block sending and provide an explanation. |
+| FR-020 | Scholar following | When a logged-in user follows or unfollows a scholar, the system shall persist or remove the relationship and prevent duplicate relationships between the same user and scholar. |
+| FR-021 | Collaborative annotations and report sharing | The system shall support annotations associated with academic resources and sharing of analysis reports. It shall enforce participant and resource permissions; collaboration and sharing shall not bypass restrictions on underlying content. |
+
+### Academic data acquisition and analysis
+
+| ID | Requirement | Trigger, system behavior, and output |
+|---|---|---|
+| FR-022 | External data acquisition | Scheduled collection processes shall obtain scholar profiles and literature records from configured public academic databases through crawlers and APIs. The system shall retain source provenance and record collection results and failures. |
+| FR-023 | Data normalization and deduplication | The system shall standardize, deduplicate, and structure collected data before incorporating it into the corpus. Reprocessing a source record shall not duplicate a logical achievement or erase verified scholar associations. Invalid records shall be identifiable for correction. |
+| FR-024 | Daily incremental synchronization | The system shall synchronize new and updated academic records daily and record each run's outcome. Failed or incomplete runs shall be identifiable, and retries shall not duplicate previously imported records. |
+| FR-025 | Academic analysis | Scheduled analysis shall generate research hotspot reports and scholar influence profiles from collected academic data. Outputs shall identify the summarized data period and follow visibility and disclosure rules when displayed or shared. |
+
+### Data protection and academic integrity
+
+| ID | Requirement | Trigger, system behavior, and output |
+|---|---|---|
+| FR-026 | Unpublished achievement authorization | When a user requests unpublished content, the system shall require authorization from the responsible institution administrator. It shall enforce this rule on direct requests, portal views, search results, and shared resources without disclosing protected content to unauthorized users. |
+| FR-027 | Delayed disclosure | The system shall prevent public disclosure of designated sensitive information, including influence rankings, until three calendar months after its generation date. Expiry of the delay shall not override separate resource access restrictions. |
+| FR-028 | Academic misconduct detection | The system shall support draft plagiarism checking and blacklist filtering and associate results with the checked items. Flagged results shall be available to authorized reviewers. A failed check shall remain distinguishable from a completed clean result. |
+
+## 5. Non-Functional Requirements
+
+| ID | Requirement | Quality attribute | Verification |
+|---|---|---|---|
+| NFR-001 | Interactive operations shall respond within 3 seconds; literature retrieval/search shall respond within 1.5 seconds; result lists shall update within 500 ms after a filter change. The most specific applicable target shall take precedence. | Performance | Measure from user submission to the corresponding visible response using representative operations and data. |
+| NFR-002 | The platform shall support up to 2,000 concurrent users performing representative account, search, portal, and communication operations while meeting NFR-001. | Capacity | Run a documented workload with up to 2,000 concurrent users and record response times and failures. |
+| NFR-003 | Passwords shall use salted, one-way password hashing and shall not be stored or logged in plaintext or reversibly encrypted form. | Credential security | Inspect credential records, authentication behavior, and application logs. |
+| NFR-004 | User data and academic achievement information shall be encrypted at rest, with AES-256 protection for sensitive data. Authenticated web communication and private-message transport shall use encrypted channels. Backups and protected derived data shall receive equivalent protection. Passwords shall follow NFR-003. | Confidentiality | Inspect storage, backup, and transport protection and verify representative protected records. |
+| NFR-005 | Backend authorization shall enforce user roles, institution scope, resource permissions, and disclosure state across all interfaces. Direct requests shall not bypass a denied user-interface operation. | Access control | Test unauthorized requests across roles, institutions, resources, and disclosure states. |
+| NFR-006 | The system shall perform daily full backups and hourly incremental backups and retain them for 30 days. Retained backup sets shall support restoration of structured records and associated unstructured content. | Recoverability | Inspect backup schedules and retention and restore a valid backup chain. |
+| NFR-007 | Persistence shall support relational and unstructured data, including literature records and user behavior logs, and accommodate hundreds of millions of Chinese and English literature entries through expandable storage capacity. | Storage scalability | Review the sizing model and validate ingestion, retrieval, and persistence with a documented large-corpus workload. |
+| NFR-008 | Core account, search, portal, claim, institution, and communication workflows shall operate on Chrome, Edge, and Firefox across Windows, Linux, and macOS. | Compatibility | Execute the core workflow suite on the supported browser and operating-system matrix. |
+| NFR-009 | Input, transfer, storage, retrieval, and display shall preserve Chinese, English, Japanese, and German text without character corruption. Original-language metadata shall remain accessible when translated presentation is used. | Language compatibility | Round-trip multilingual records and queries through storage, retrieval, and display. |
+| NFR-010 | Approvals, claims, membership changes, and synchronization shall preserve consistent records when interrupted or retried. Pending or failed operations shall not appear as completed, and retries shall not duplicate approved relationships or imported records. | Reliability and integrity | Inject operation failures and retries and inspect resulting records and visible status. |
+
+## 6. Data Requirements
+
+| ID | Data entity / object | Requirement |
+|---|---|---|
+| DR-001 | User account and authorization | Store a unique account identifier, username, password hash, profile references, roles, and institution scope. Credential data shall not be exposed through public profiles. |
+| DR-002 | Scholar profile and certification | Store scholar identity information, nickname, email, stated affiliation, certification evidence references, application status, reviewer decisions, and approved institutional associations separately from self-edited profile text. |
+| DR-003 | Academic achievement | Store a stable identifier, available source identifiers, title, authors, institution links, original language, publication metadata, discipline classifications, available citation information, and content references. Missing metadata shall remain distinguishable from actual values. |
+| DR-004 | Classification and institution hierarchy | Store node identifiers, node types, parent relationships, institution administrators, and membership links. Relationships shall remain valid after authorized changes and shall not form cycles. |
+| DR-005 | Claims, applications, and disputes | Store the target record, applicant, supporting evidence references, workflow state, processing authority, decision reason, and timestamps. Claims shall support multiple verified coauthors, and disputes shall preserve review-stage history. |
+| DR-006 | Academic interactions | Store comments and moderation state, questions and replies, conversations and participants, following relationships, annotations and target-resource references, and report-sharing permissions. |
+| DR-007 | Personalization and search context | Store presentation preferences and behavior information needed for recommendations and diversity rules. Associate active search context with the correct user/session and prevent cross-user disclosure. |
+| DR-008 | Collection and synchronization | Store source provenance, external record identifiers, collection/update times, normalization outcomes, synchronization progress, and processing failures sufficient to retry without duplicating records. |
+| DR-009 | Analysis and misconduct results | Store hotspot reports, influence profiles, analysis periods, plagiarism-check results, blacklist matches, and processing status, preserving associations with the relevant data or checked items. |
+| DR-010 | Visibility and disclosure | Store the responsible institution, visibility state, authorization records, sensitivity designation, generation date, and release eligibility date required to enforce access and delayed disclosure. |
+| DR-011 | Backup and recovery metadata | Store backup type, creation time, covered data scope, incremental-chain relationships, completion status, and retention deadline so that a valid restoration set can be selected. |
+
+### Data lifecycle and consistency
+- Certification and institution applications shall distinguish pending, approved, and rejected states and retain their decisions.
+- Claims shall distinguish unverified requests from approved author associations. Rejecting a claim shall not delete an existing approved coauthor relationship.
+- Imported metadata, self-edited profile text, and administrator-verified relationships shall remain distinguishable. Imports shall not silently replace approval decisions.
+- Access restrictions shall apply consistently to stored content and derived views, including search results, recommendations, reports, annotations, and backups.
+- Daily full and hourly incremental backups shall preserve a usable restoration chain throughout the 30-day retention period.
+
+## 7. Constraints
+
+| ID | Constraint |
+|---|---|
+| C-001 | The backend shall use Python and Django 4.2 LTS. |
+| C-002 | The web frontend shall use Vue 3.3. |
+| C-003 | Structured persistence shall use MySQL 8.0 with cluster support. The storage design shall also support associated unstructured academic content. |
+| C-004 | The architecture shall separate application, support, and infrastructure responsibilities. The application layer shall use shared support services for semantic processing, profiling, security, and analysis; infrastructure shall provide computing, acquisition, and persistence. |
+| C-005 | The platform shall provide browser-based access on the supported desktop operating systems and browsers. |
+| C-006 | Registration and login shall not grant scholar, institution administrator, expert reviewer, or system administrator privileges without the corresponding authorization. |
+| C-007 | External data ingestion and analysis shall preserve verified ownership and membership decisions and comply with the platform's access and disclosure rules. |
+
+## 8. Verification and Acceptance
+
+### Functional acceptance
+
+| Requirement ID | Verification method | Acceptance basis |
+|---|---|---|
+| FR-001, FR-002 | Functional and negative tests | Valid registration creates one ordinary account; invalid and duplicate input is rejected; valid credentials grant only assigned access; failed authentication and logged-out sessions cannot access protected operations. |
+| FR-003, FR-004, FR-005 | Workflow and authorization tests | Approval grants scholar permissions; pending/rejected applications do not; permitted profile changes persist; portals show permitted achievements and cooperation data; profile edits cannot approve membership. |
+| FR-006, FR-007, FR-008, FR-009 | Retrieval scenarios | Representative keyword, natural-language, multilingual, combined-filter, sorting, and follow-up queries return expected fixture results. New conversations clear old constraints; empty matches are explicit; restricted records remain hidden. |
+| FR-010, FR-011 | Recommendation scenarios | Profiles affect presentation and recommendations; users without profiles retain working search; the configured same-field trigger produces cross-disciplinary recommendations without replacing explicit search criteria. |
+| FR-012, FR-016 | Hierarchy and access tests | Authorized changes persist and can be traversed; cycles and out-of-scope changes are rejected; valid existing resource links remain intact. |
+| FR-013 | Claim verification scenarios | Approved claims produce traceable scholar-achievement associations; failed or incomplete verification produces none; legitimate coauthors can be associated without replacing one another. |
+| FR-014 | Dispute workflow scenarios | Objections retain evidence and review history; unresolved cases can progress through preliminary, expert, and final review; ownership changes link to authorized decisions. |
+| FR-015 | Institution application scenarios | Eligible requests reach the appropriate reviewer; only approved requests create active records; applicants can view pending, approved, or rejected status. |
+| FR-017, FR-018 | Discussion scenarios | Comments remain nonpublic until approved; questions reach the addressed author; replies retain the correct achievement and discussion association. |
+| FR-019 | Messaging and access tests | Verified participants exchange messages through encrypted transport; failed identity prerequisites block sending; unrelated users cannot read conversations. |
+| FR-020, FR-021 | Collaboration scenarios | Follow/unfollow persists without duplicates; permitted participants annotate and share reports; unauthorized users cannot obtain protected content through shared references. |
+| FR-022, FR-023, FR-024 | Integration and retry tests | APIs/crawlers supply attributable records; normalization handles duplicates and invalid input; daily runs apply updates; failures remain visible; retries preserve approved associations and avoid duplicates. |
+| FR-025 | Analysis scenarios | Periodic processing generates hotspot reports and influence profiles associated with their data periods and applies access and disclosure restrictions. |
+| FR-026, FR-027 | Authorization and date-boundary tests | Unpublished content requires institutional authorization. Sensitive information is hidden from public access before the three-month eligibility date and becomes eligible afterward only when other restrictions permit. |
+| FR-028 | Integrity-check scenarios | Known plagiarism and blacklist fixtures produce reviewable results for the correct items; failed checks remain distinguishable from completed clean checks. |
+
+### Non-functional acceptance
+
+| Requirement ID | Verification method | Acceptance basis |
+|---|---|---|
+| NFR-001, NFR-002 | Performance and load tests | A documented workload with up to 2,000 concurrent users satisfies the 3-second operation, 1.5-second search, and 500-ms filter-update limits. Test data, environment, and results are recorded. |
+| NFR-003, NFR-004, NFR-005 | Security inspection and negative tests | Passwords use salted one-way hashing; data and transport encryption is present; direct requests cannot bypass role, institution, resource, or disclosure restrictions. |
+| NFR-006 | Backup inspection and restore exercise | Daily full and hourly incremental backups follow 30-day retention, and a valid chain restores consistent records and associated content. |
+| NFR-007 | Design inspection and capacity validation | Hybrid persistence and documented sizing and capacity validation demonstrate support for the required corpus scale. |
+| NFR-008, NFR-009 | Compatibility and multilingual tests | Core workflows operate across the supported browser/OS matrix, and representative text in all four languages survives input, storage, retrieval, and display. |
+| NFR-010 | Failure and retry tests | Interrupted approvals, claims, membership changes, and synchronization preserve consistent state without false success or duplicates on retry. |
+
+### Data and constraint acceptance
+
+| Requirement ID | Verification method | Acceptance basis |
+|---|---|---|
+| DR-001 through DR-011 | Logical-model inspection and persistence tests | Required records can be stored and retrieved; identifiers, references, decisions, provenance, access states, and backup chains remain consistent across the corresponding functional scenarios. |
+| C-001 through C-007 | Dependency, deployment, architecture, and authorization inspection | The specified framework/database baseline, browser access, and three-layer responsibilities are present; role assignments and ingestion preserve business authorization rules. |
+
+Acceptance shall cover successful operations, invalid input, unauthorized access, pending decisions, and recoverable failures wherever applicable. Each result shall identify the requirement tested, test conditions, expected behavior, observed behavior, and pass/fail outcome.

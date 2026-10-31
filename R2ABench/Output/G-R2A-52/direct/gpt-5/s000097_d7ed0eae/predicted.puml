@@ -1,0 +1,98 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+title BeeGreen System Architecture - Backend API Focus
+
+package "Client Tier" {
+  component "Website Client" as Website <<React/TypeScript>>
+  component "Chrome Extension" as Extension <<Chrome>>
+}
+
+node "Backend Tier" as Backend {
+  node "Backend API" as API <<Node.js / LoopBack>> {
+    component "Users API" as UsersAPI
+    interface "POST /users\nCreate User" as ICreate
+    interface "GET /users\nList Users" as IList
+    interface "PATCH /users\nBulk Update Users" as IUpdate
+    interface "GET /users/{id}\nGet User by ID" as IGetById
+
+    UsersAPI - ICreate
+    UsersAPI - IList
+    UsersAPI - IUpdate
+    UsersAPI - IGetById
+
+    component "Ping API" as PingAPI
+    interface "GET /ping\nPing" as IPing
+    PingAPI - IPing
+
+    component "UserRepository" as UserRepo
+  }
+}
+
+database "Persistent Storage" as DB {
+  component "Users Collection" as UsersTable
+  component "InventoryItems Collection" as InventoryTable
+}
+
+cloud "Data Processing / Scoring Services" as Scoring
+
+Website --> ICreate : HTTP/JSON
+Website --> IList : HTTP/JSON
+Website --> IUpdate : HTTP/JSON
+Website --> IGetById : HTTP/JSON
+Website --> IPing : HTTP/JSON
+
+Extension --> ICreate : HTTP/JSON
+Extension --> IList : HTTP/JSON
+Extension --> IUpdate : HTTP/JSON
+Extension --> IGetById : HTTP/JSON
+Extension --> IPing : HTTP/JSON
+
+UsersAPI --> UserRepo : persistence operations
+UserRepo --> UsersTable : CRUD
+API ..> Scoring : sustainability scoring data flows (broader system)
+
+note right of UsersAPI
+FR-001: Create user (POST /users)
+FR-002: List users (GET /users) with optional filter
+FR-003: Bulk update users (PATCH /users) with optional where
+FR-004: Get user by id (GET /users/{id})
+Media type: application/json
+end note
+
+note right of PingAPI
+FR-005: Ping (GET /ping)
+Returns JSON: greeting, date, url, headers
+Headers allow additional properties
+end note
+
+note bottom of UsersTable
+Data entity: User
+- id: string (generated)
+- ip: string
+- creationDate: date
+- purchaseIds: string[]
+- username: string
+- region: string
+end note
+
+note bottom of InventoryTable
+Data entity: InventoryItem
+- id: string (generated)
+- stats: object
+- totalScore: number
+- category: string
+- details: string
+- comments: object[]
+- name: string
+- associatedStores: string[]
+(No external API in this scope)
+end note
+
+note top of API
+Constraints:
+- Node.js + LoopBack REST/repository
+- Documented endpoints use application/json
+end note
+@enduml

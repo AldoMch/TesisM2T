@@ -1,0 +1,124 @@
+@startuml
+
+title Model Evolution Version Management Visualization Tool - Architecture
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam rectangle {
+  BorderColor #444
+  BackgroundColor #F8F8F8
+}
+skinparam packageBorderColor #777
+skinparam defaultTextAlignment center
+
+actor Learner
+actor "Model Contributor" as Contributor
+actor Administrator
+
+boundary "Web Browser\n(Mainstream browsers)" as Browser
+
+Learner --> Browser
+Contributor --> Browser
+Administrator --> Browser
+
+package "Front End (SPA / UI)" as FrontEnd {
+  component "Account UI" as FE_Account
+  component "Models & Search UI" as FE_Search
+  component "Evolution Graph Viewer" as FE_Evolution
+  component "Contributor Editor\n(PyTorch / ONNX)" as FE_Editor
+  component "Admin Console" as FE_Admin
+}
+
+package "Back End (Web API)" as BackEnd {
+  component "Auth & Session\n(OAuth2 + 2FA)" as BE_Auth
+  component "Account Mgmt" as BE_Account
+  component "Model Registry\n(Upload/Edit/Delete)" as BE_Model
+  component "Search Service" as BE_Search
+  component "Evolution Service\n(Relationships & Details)" as BE_Evolution
+  component "User Mgmt" as BE_User
+}
+
+package "Algorithm Support\n(Python libraries)" as Algo {
+  component "ONNX Handler" as AS_ONNX
+  component "PyTorch Source Handler" as AS_PT
+  component "Evolution Diff Engine" as AS_Diff
+  component "Metrics Evaluator" as AS_Metrics
+}
+
+database "Neo4j\n(Evolution graphs)" as Neo4j
+
+database "MySQL\n(Users, Model Meta,\nEncrypted Models, Datasets,\nTrained Models)" as MySQL
+
+cloud "Auth Provider\n(OAuth 2.0 / 2FA)" as Auth
+
+' User access
+Browser --> FrontEnd : HTTPS/TLS
+FrontEnd --> BackEnd : HTTPS/TLS (REST/JSON)
+
+' Front-end feature routing
+FE_Account --> BE_Account
+FE_Search  --> BE_Search
+FE_Evolution --> BE_Evolution
+FE_Editor --> BE_Model
+FE_Admin  --> BE_User
+
+' Back end integrations
+BackEnd --> Neo4j : Graph queries
+BackEnd --> MySQL : SQL over TCP/IP
+BackEnd --> Algo  : Python library calls / service API
+BackEnd --> Auth  : OAuth2 flows (2FA)
+
+' Algorithm support intra-calls (conceptual)
+BE_Model --> AS_ONNX : Parse/validate ONNX
+BE_Model --> AS_PT   : Store/edit source
+BE_Evolution --> AS_Diff : Compute evolution details
+BE_Evolution --> AS_Metrics : Retrieve metrics
+
+' Data protection and access control
+note bottom of MySQL
+NFR-011/012: TLS in transit; models stored encrypted (AES/DES)
+DR-003/DR-012: Data security policy compliance
+end note
+
+note right of BackEnd
+NFR-013/014: Access control & privilege constraints
+- Pre-login: no modify operations
+- Non-admin: cannot delete/modify approved models
+end note
+
+note top of Auth
+NFR-010: Two-factor authentication via OAuth 2.0 or similar
+end note
+
+note as Perf
+NFR-001..004 (targets)
+- 50 concurrent users
+- 10 mod req/s, 50 query req/s
+- Static page <= 1s
+- Add model -> results <= 1 min
+end note
+BackEnd .. Perf
+
+note as Protocols
+Communication interfaces (declared): HTTP, HTTPS, TCP/IP, FTP, SMTP, UDP
+Specific business use/ports not expanded in SRS
+end note
+FrontEnd .. Protocols
+
+note as Roles
+User roles: Learner, Contributor, Administrator
+- Permissions drive model modification/deletion and user management
+end note
+Browser .. Roles
+
+note as Views
+Front end provides:
+- Account mgmt, search/view models
+- Evolution topology and detail graphs
+- Contributor upload/edit (ONNX/PyTorch)
+- Admin user/permission management
+end note
+FrontEnd .. Views
+
+@enduml

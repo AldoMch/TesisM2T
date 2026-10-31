@@ -1,0 +1,72 @@
+@startuml
+title GKE Pub/Sub WebSocket Adapter - System Architecture
+
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam linetype ortho
+left to right direction
+
+actor "Web Client" as WebClient
+actor "Deployment / Kubernetes Operator" as Operator
+actor "GCP Project Admin" as GCPAdmin
+
+package "GCP Project" {
+  component "Google Cloud Pub/Sub" as PubSub
+  component "Configured Topic\nprojects/PROJECT_ID/topics/TOPIC_NAME" as Topic
+  component "Pub/Sub Subscription\none per adapter instance" as Subscription
+}
+
+node "GKE Cluster" {
+  component "Kubernetes Service\nType: LoadBalancer\nExposes TCP port 80" as LBService
+
+  package "Kubernetes Deployment\nWebSocket Adapter" as Deployment {
+    package "Adapter Pod\nreplicas 1..2" as Pod {
+      package "Adapter Container" as Container {
+        component "exec.sh\nentrypoint" as Exec
+        component "Node.js pulltop\nprocess" as Pulltop
+        component "websocketd\nlistens on :8080" as Websocketd
+        component "Recent message cache\nlast 10 messages" as Cache
+        artifact "SYMBOL\nenvironment variable" as SymbolEnv
+      }
+    }
+  }
+
+  component "ConfigMap\nitem: topic" as ConfigMap
+  component "HorizontalPodAutoscaler\nmin replicas 1, max replicas 2\nCPU target 80%" as HPA
+}
+
+WebClient --> LBService : WebSocket connection
+LBService --> Websocketd : TCP 80 to adapter port 8080
+Websocketd --> Pulltop : streams runtime output
+Pulltop --> Subscription : pulls messages
+Topic --> Subscription : publishes messages
+Pulltop --> Cache : stores last 10
+Cache --> Websocketd : replays cached messages
+ConfigMap --> SymbolEnv : injects topic value
+SymbolEnv --> Exec : provides SYMBOL
+Exec --> Pulltop : starts with topic parameter
+HPA --> Deployment : scales replicas
+Operator --> Deployment : configures and deploys
+Operator --> ConfigMap : sets topic
+GCPAdmin --> PubSub : enables billing, grants topic read and subscription create
+PubSub --> Topic : hosts
+PubSub --> Subscription : manages
+
+note right of Deployment
+  Each deployment instance binds one externally
+  reachable WebSocket endpoint to one configured
+  Pub/Sub topic. Multiple topics require multiple
+  independently configured deployment instances.
+end note
+
+note right of Subscription
+  Subscription consumption scales with running
+  adapter instances (N), not connected clients (M).
+end note
+
+note bottom of WebClient
+  Clients use only the WebSocket endpoint;
+  no direct Pub/Sub API or SDK access is required.
+end note
+
+@enduml

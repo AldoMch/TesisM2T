@@ -1,0 +1,147 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATABASE_COLOR #F0FFF0
+!define BLOCKCHAIN_COLOR #F5F0FF
+
+title Prediction Cards System Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<DataStore>> DATABASE_COLOR
+  BackgroundColor<<Blockchain>> BLOCKCHAIN_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+package "User Layer" <<Layer>> {
+  component "Frontend Application" <<Component>> {
+    [Wallet Integration]
+    [Prediction UI]
+    [Outcome NFT Operations]
+  }
+  
+  actor "Prediction Participant" as user
+  actor "Service Operator" as operator
+  actor "Test Operator" as tester
+}
+
+package "Application Layer" <<Layer>> {
+  component "Prediction Processing Service" <<Component>> {
+    [Closed Prediction Handler]
+    [Result Processing Driver]
+  }
+  
+  component "Oracle Service" <<Component>> {
+    [Oracle Registration Manager]
+    [Query Checker]
+    [Price Comparator]
+    [Response Submitter]
+  }
+}
+
+package "Blockchain Layer" <<Layer>> {
+  component "Aeternity Blockchain" <<Blockchain>> {
+    component "PredictionCards Smart Contract" <<Component>> {
+      [Prediction State]
+      [Outcome NFT State]
+      [Oracle Query Interface]
+    }
+    
+    component "AENS Registry" <<Component>> {
+      [Contract Name Resolution]
+    }
+  }
+  
+  component "Aeternity Wallet SDK" <<Component>> {
+    [Wallet Client]
+    [Contract Interaction]
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "Prediction Media Storage" <<DataStore>> {
+    [Outcome NFT Media]
+  }
+  
+  component "Oracle Service Configuration" <<DataStore>> {
+    [Runtime Properties]
+    [Oracle Keys]
+    [Network Settings]
+  }
+}
+
+package "External Systems" <<External>> {
+  component "External Price Provider" <<External>> {
+    [Price Data API]
+  }
+  
+  component "Local Test Environment" <<External>> {
+    [Aeternity Node]
+    [Compiler Service]
+    [Test Proxy/CORS]
+  }
+}
+
+' User interactions
+user --> [Wallet Integration] : Connects wallet
+user --> [Prediction UI] : Creates/views predictions
+user --> [Outcome NFT Operations] : Funds/claims rewards
+operator --> [Oracle Registration Manager] : Configures service
+tester --> [Local Test Environment] : Runs integration tests
+
+' Frontend to blockchain
+[Wallet Integration] --> [Wallet Client] : Uses SDK
+[Prediction UI] --> [Contract Interaction] : Submits predictions
+[Outcome NFT Operations] --> [Contract Interaction] : Performs operations
+
+' Services to blockchain
+[Closed Prediction Handler] --> [Oracle Query Interface] : Initiates queries
+[Result Processing Driver] --> [Oracle Query Interface] : Processes results
+[Response Submitter] --> [Oracle Query Interface] : Submits responses
+
+' Contract location
+[Contract Interaction] --> [Contract Name Resolution] : Resolves via AENS
+[Closed Prediction Handler] --> [Contract Name Resolution] : Resolves via AENS
+[Response Submitter] --> [Contract Name Resolution] : Resolves via AENS
+
+' Oracle service workflow
+[Query Checker] --> [Oracle Query Interface] : Checks pending queries
+[Price Comparator] --> [Price Data API] : Fetches price data
+[Oracle Registration Manager] --> [Oracle Service Configuration] : Reads config
+
+' Media access
+[Prediction UI] --> [Outcome NFT Media] : Loads media
+[Outcome NFT Operations] --> [Outcome NFT Media] : References media
+
+' Contract state management
+[Prediction State] --> [Outcome NFT State] : Manages outcomes
+[Oracle Query Interface] --> [Prediction State] : Updates results
+
+' Test environment
+[Local Test Environment] --> [Aeternity Node] : Connects to node
+[Local Test Environment] --> [Compiler Service] : Compiles contracts
+[Local Test Environment] --> [Test Proxy/CORS] : Handles CORS
+
+note right of [Oracle Service]
+  Quarkus-based implementation
+  Scheduled periodic execution
+  Complete runtime config required
+end note
+
+note right of [PredictionCards Smart Contract]
+  Sophia smart contract runtime
+  Maintains prediction/outcome state
+  Exposes reward-claiming path
+end note
+
+note right of [Prediction Processing Service]
+  Drives closed predictions
+  Coordinates oracle workflow
+  Completes result processing
+end note
+
+@enduml

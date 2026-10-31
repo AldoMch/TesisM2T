@@ -1,0 +1,97 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+
+' High-level components
+package "QAPM Android Component" {
+  [Application\nIntegrator] as App
+  [QAPM SDK] as SDK
+  
+  package "Background Handling" {
+    [Work Handler\nManager] as WorkHandler
+    [Handler Thread] as HandlerThread
+    [Main Thread\nHandler] as MainHandler
+  }
+  
+  package "Upload Processing" {
+    [Upload Scheduler] as UploadScheduler
+    [Network Gate] as NetworkGate
+    [File Processor] as FileProcessor
+    [Parameter Deriver] as ParamDeriver
+    [Sender Interface] as Sender
+  }
+  
+  package "HTTP Instrumentation" {
+    [Response Handler\nWrapper] as RespHandlerWrap
+    [Response Entity\nWrapper] as RespEntityWrap
+    [Transaction State] as TransState
+    [Counting Stream] as CountStream
+  }
+}
+
+' External dependencies
+database "Local Storage" as Storage
+node "Network" as Network
+[Apache HttpClient] as HttpClient
+
+' Relationships
+App --> SDK : uses
+SDK --> WorkHandler : initializes
+WorkHandler --> HandlerThread : creates/manages
+WorkHandler --> MainHandler : maintains
+HandlerThread --> WorkHandler : provides looper
+MainHandler --> WorkHandler : for main-thread dispatch
+
+SDK --> UploadScheduler : contains
+UploadScheduler --> NetworkGate : checks connectivity
+NetworkGate --> Network : queries status
+UploadScheduler --> FileProcessor : processes files
+FileProcessor --> Storage : reads upload files
+FileProcessor --> ParamDeriver : derives cParam
+ParamDeriver --> SDK : uses Android Context
+FileProcessor --> Sender : submits bParam/cParam
+Sender --> UploadScheduler : reports success/failure
+UploadScheduler --> Storage : deletes on success
+UploadScheduler --> SDK : logs failures
+
+SDK --> RespHandlerWrap : provides
+RespHandlerWrap --> TransState : maintains
+RespHandlerWrap --> HttpClient : wraps ResponseHandler
+RespHandlerWrap <-- HttpClient : delegates handling
+
+SDK --> RespEntityWrap : provides
+RespEntityWrap --> CountStream : uses
+RespEntityWrap --> HttpClient : wraps HttpEntity
+RespEntityWrap <-- HttpClient : delegates operations
+
+note right of WorkHandler
+  FR-001: Initialize background work handling
+  FR-002: Schedule work asynchronously
+  FR-010: Provide default QAPM handlers
+end note
+
+note right of UploadScheduler
+  FR-003: Gate upload processing by network connectivity
+  FR-004: Pop stored data for forced send
+  FR-005: Discover and read upload files
+  FR-006: Derive and send upload parameters
+  FR-007: Handle upload sender callbacks
+end note
+
+note right of RespHandlerWrap
+  FR-008: Perform transaction-aware response handling
+end note
+
+note right of RespEntityWrap
+  FR-009: Wrap HTTP entities for content buffering
+end note
+
+note bottom of NetworkGate
+  NFR-002: Skip processing when network unavailable
+end note
+
+note bottom of HandlerThread
+  NFR-001: Reduce main-thread blocking
+end note
+
+@enduml

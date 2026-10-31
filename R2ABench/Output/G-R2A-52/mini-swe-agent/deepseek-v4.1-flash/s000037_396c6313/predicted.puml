@@ -1,0 +1,134 @@
+@startuml
+title veinmind-tools - Layered Container Security Scanning Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' Presentation / Interface Layer
+' ============================================================
+package "Presentation & Interface Layer" as PRES {
+
+  component "CLI Interface\n(scan-image / scan-container / scan-iac)" as CLI
+  component "Quick-Start Workflow\n./run.sh scan-host image" as QUICKSTART
+  component "Parallel-Container\nStartup Scripts" as STARTSCRIPTS
+  component "Python Example Package\n/tool/entrypoint.sh -> python scan.py" as PYEXAMPLE
+
+  interface "CLI-001..003" as I_CLI
+  interface "CLI-004" as I_QUICK
+}
+
+' ============================================================
+' Service / Application Layer
+' ============================================================
+package "Scanning & Execution Service Layer" as SVC {
+
+  component "Image Scanner Service" as IMGSCAN
+  component "Container Scanner Service" as CTNSCAN
+  component "IaC Scanner Service\n(load policies, run scanner,\nmerge groups, build alerts,\npublish report event)" as IACSCAN
+  component "Runner Execution Service\n(parallel container mode)" as RUNNER
+  component "Docker Authorization\nRouting Component" as AUTHRT
+
+  interface "API-003 report event" as I_REPORT
+}
+
+' ============================================================
+' SDK / Integration Layer
+' ============================================================
+package "SDK / Integration Layer" as SDK {
+  component "veinmind-sdk" as SDK1
+  component "libveinmind" as SDK2
+  interface "API-001 scan command\nintegration model" as I_SDKAPI
+}
+
+' ============================================================
+' Data / Reporting Layer
+' ============================================================
+package "Report Data Layer" as DATA {
+
+  package "Malicious-File Report Data" as MDATA {
+    component "ReportData\n(ScanImageCount, MaliciousFileCount,\nScanSpendTime, ScanStartTime,\nScanFileCount, ScanImageResult)" as RPT
+    component "ReportImage\n(ImageName, ImageID,\nMaliciousFileCount, ScanFileCount,\nImageCreatedAt, Layers)" as RIMG
+    component "ReportLayer\n(ImageID, LayerID,\nMaliciousFileInfos)" as RLAY
+    component "MaliciousFileInfo\n(Engine, ImageID, LayerID,\nRelativePath, FileName, FileSize,\nFileMd5, FileSha256, FileCreated)" as MFI
+  }
+
+  package "IaC Alert Data" as IDATA {
+    component "IaC Rule Metadata\n(Id, Name, Description,\nReference, Severity, Solution, Type)" as IACRULE
+    component "IaC File-Location Detail\n(StartLine, EndLine,\nFilePath, Original)" as IACLOC
+    component "IaC Alert Detail" as IACALERT
+  }
+
+  component "Report Event Mechanism" as REPORTEVT
+}
+
+' ============================================================
+' External Systems
+' ============================================================
+package "External Systems & Runtime" as EXT {
+  component "Docker Engine\n(Daemon / CLI)" as DOCKER
+  component "Containerd" as CONTAINERD
+  component "Image Registries\n(DockerHub, Docker Registry, Harbor)" as REGISTRY
+  component "Runner Image\n(veinmind-runner)" as RUNNERIMG
+  component "Base Image\nveinmind/python3.6:1.3.1-stretch" as BASEIMG
+  component "Target Images\n& Containers" as TARGETS
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+' Presentation -> Service
+CLI ..> I_CLI
+I_CLI --> IMGSCAN
+I_CLI --> CTNSCAN
+I_CLI --> IACSCAN
+QUICKSTART ..> I_QUICK
+I_QUICK --> STARTSCRIPTS
+STARTSCRIPTS --> RUNNER
+STARTSCRIPTS --> IMGSCAN
+PYEXAMPLE --> IACSCAN
+
+' Runner execution
+RUNNER --> DOCKER
+RUNNER --> RUNNERIMG
+
+' Service -> SDK
+IMGSCAN --> I_SDKAPI
+CTNSCAN --> I_SDKAPI
+IACSCAN --> I_SDKAPI
+I_SDKAPI --> SDK1
+I_SDKAPI --> SDK2
+SDK1 --> SDK2
+
+' Authorization routing
+AUTHRT --> AUTHRT : match method+URI\nagainst route patterns
+AUTHRT ..> DOCKER : return plugin action /\nNoneDockerPlugin fallback
+
+' Service -> Data
+IMGSCAN --> RPT
+IMGSCAN --> RIMG
+IMGSCAN --> RLAY
+IMGSCAN --> MFI
+RPT --> RIMG
+RIMG --> RLAY
+RLAY --> MFI
+IACSCAN --> IACRULE
+IACSCAN --> IACLOC
+IACSCAN --> IACALERT
+IACRULE --> IACALERT
+IACLOC --> IACALERT
+IACSCAN ..> I_REPORT
+I_REPORT --> REPORTEVT
+
+' External dependencies
+IMGSCAN --> DOCKER
+CTNSCAN --> DOCKER
+CTNSCAN --> CONTAINERD
+IMGSCAN --> TARGETS
+CTNSCAN --> TARGETS
+DOCKER --> TARGETS
+REGISTRY --> DOCKER : image pull / compatibility
+PYEXAMPLE --> BASEIMG
+DOCKER --> CONTAINERD
+
+@enduml

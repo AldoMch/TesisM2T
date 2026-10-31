@@ -1,0 +1,604 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "Client Layer::Client Terminal",
+        "Client Layer::Cloud DNS",
+        "Global::Client Layer"
+      ],
+      "predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Global::Network / Gateway Layer",
+        "Network / Gateway Layer::Machine 01",
+        "Network / Gateway Layer::Machine 01::LVS - Linux Virtual Server",
+        "Network / Gateway Layer::Machine 01::Nginx",
+        "Network / Gateway Layer::Machine 02",
+        "Network / Gateway Layer::Machine 02::LVS - Linux Virtual Server",
+        "Network / Gateway Layer::Machine 02::Nginx",
+        "Network / Gateway Layer::Machine 03",
+        "Network / Gateway Layer::Machine 03::LVS - Linux Virtual Server",
+        "Network / Gateway Layer::Machine 03::Nginx"
+      ],
+      "predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Global::Service / Backend Layer"
+      ],
+      "predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::API Gateway / BFF"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Service / Backend Layer::Django Service Clusters"
+      ],
+      "predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Global::Storage / Database Layer"
+      ],
+      "predicted_nodes": [
+        "Infrastructure Layer::Persistence & Storage::Object Storage\\n(Unstructured Content)"
+      ],
+      "is_boundary_correct": false,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Storage / Database Layer::Elasticsearch"
+      ],
+      "predicted_nodes": [
+        "Infrastructure Layer::Persistence & Storage::Search Index Store"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Storage / Database Layer::MySQL Database"
+      ],
+      "predicted_nodes": [
+        "Infrastructure Layer::Persistence & Storage::MySQL 8.0 Cluster"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Service / Backend Layer::Back-office Management"
+      ],
+      "predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Admin & Moderation Service",
+        "Support Services Layer::Authorization & Policy Engine"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Service / Backend Layer::Literature Service"
+      ],
+      "predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Search & Retrieval Service"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Service / Backend Layer::Socializing Service"
+      ],
+      "predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Communication Service\\n(Comments/Q&A/PM/Follow/Annotations)",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Conversation Context Service",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Recommendation Orchestrator",
+        "Support Services Layer::Profiling & Recommendation Service"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Service / Backend Layer::User Information Service"
+      ],
+      "predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Account & Auth Service",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Profile Service",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Scholar Certification Service"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Storage / Database Layer::Redis Cache"
+      ],
+      "predicted_nodes": [
+        "Infrastructure Layer::Security & Keys::Key Management / Encryption Config"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)",
+      "reference_nodes": [
+        "Global::Service / Backend Layer",
+        "Service / Backend Layer::Django Service Clusters"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::API Gateway / BFF",
+      "reference_nodes": [
+        "Global::Service / Backend Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Account & Auth Service",
+      "reference_nodes": [
+        "Service / Backend Layer::User Information Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Achievement Management Service",
+      "reference_nodes": [
+        "Service / Backend Layer::Back-office Management",
+        "Service / Backend Layer::Literature Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Admin & Moderation Service",
+      "reference_nodes": [
+        "Service / Backend Layer::Back-office Management"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Claim & Dispute Workflow Service",
+      "reference_nodes": [
+        "Network / Gateway Layer::Machine 03::LVS - Linux Virtual Server",
+        "Service / Backend Layer::Back-office Management"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Communication Service\\n(Comments/Q&A/PM/Follow/Annotations)",
+      "reference_nodes": [
+        "Service / Backend Layer::Socializing Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Conversation Context Service",
+      "reference_nodes": [
+        "Service / Backend Layer::Socializing Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Institution Management Service",
+      "reference_nodes": [
+        "Service / Backend Layer::Back-office Management"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Profile Service",
+      "reference_nodes": [
+        "Service / Backend Layer::User Information Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Recommendation Orchestrator",
+      "reference_nodes": [
+        "Service / Backend Layer::Socializing Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Scholar Certification Service",
+      "reference_nodes": [
+        "Service / Backend Layer::User Information Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer (Django 4.2)::Backend (Django 4.2)::Search & Retrieval Service",
+      "reference_nodes": [
+        "Service / Backend Layer::Literature Service"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::Public Academic Databases\\n(APIs & Sites)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Layer::Acquisition & Scheduling::Crawler Engine",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Layer::Acquisition & Scheduling::External API Connectors",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Layer::Acquisition & Scheduling::Scheduler",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Layer::Persistence & Storage::Backup Service",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Layer::Persistence & Storage::Backup Storage",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::Persistence & Storage::MySQL 8.0 Cluster",
+      "reference_nodes": [
+        "Global::Storage / Database Layer",
+        "Storage / Database Layer::MySQL Database"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Layer::Persistence & Storage::Object Storage\\n(Unstructured Content)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::Persistence & Storage::Search Index Store",
+      "reference_nodes": [
+        "Storage / Database Layer::Elasticsearch",
+        "Global::Storage / Database Layer"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Layer::Security & Keys::Key Management / Encryption Config",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation Layer::User Browser (Chrome/Edge/Firefox)",
+      "reference_nodes": [
+        "Client Layer::Client Terminal",
+        "Client Layer::Cloud DNS",
+        "Global::Client Layer"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Presentation Layer::User Browser (Chrome/Edge/Firefox)::Web UI (Vue 3.3)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Analysis Service\\n(Hotspots & Influence)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Authorization & Policy Engine",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Cross-language Mapping / Translation Service",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Indexing Service",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Message Broker / Event Bus",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Misconduct Detection Service\\n(Plagiarism/Blacklist)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Normalization & Deduplication Service",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Profiling & Recommendation Service",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Support Services Layer::Semantic Processing Service",
+      "reference_nodes": []
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)"
+      ],
+      "gt_node": "Client Layer::Client Terminal"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)"
+      ],
+      "gt_node": "Client Layer::Cloud DNS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)"
+      ],
+      "gt_node": "Global::Client Layer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Global::Network / Gateway Layer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::API Gateway / BFF"
+      ],
+      "gt_node": "Global::Service / Backend Layer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Layer::Persistence & Storage::MySQL 8.0 Cluster"
+      ],
+      "gt_node": "Global::Storage / Database Layer"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 01"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 01::LVS - Linux Virtual Server"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 01::Nginx"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 02"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 02::LVS - Linux Virtual Server"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 02::Nginx"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 03"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 03::LVS - Linux Virtual Server"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Presentation Layer::User Browser (Chrome/Edge/Firefox)::HTTPS"
+      ],
+      "gt_node": "Network / Gateway Layer::Machine 03::Nginx"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Admin & Moderation Service"
+      ],
+      "gt_node": "Service / Backend Layer::Back-office Management"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)"
+      ],
+      "gt_node": "Service / Backend Layer::Django Service Clusters"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Search & Retrieval Service"
+      ],
+      "gt_node": "Service / Backend Layer::Literature Service"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Communication Service\\n(Comments/Q&A/PM/Follow/Annotations)",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Conversation Context Service",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Recommendation Orchestrator"
+      ],
+      "gt_node": "Service / Backend Layer::Socializing Service"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Account & Auth Service",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Profile Service",
+        "Application Layer (Django 4.2)::Backend (Django 4.2)::Scholar Certification Service"
+      ],
+      "gt_node": "Service / Backend Layer::User Information Service"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Layer::Persistence & Storage::Search Index Store"
+      ],
+      "gt_node": "Storage / Database Layer::Elasticsearch"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Layer::Persistence & Storage::MySQL 8.0 Cluster"
+      ],
+      "gt_node": "Storage / Database Layer::MySQL Database"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Layer::Security & Keys::Key Management / Encryption Config"
+      ],
+      "gt_node": "Storage / Database Layer::Redis Cache"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 9004,
+      "completion_tokens": 1449,
+      "total_tokens": 10453,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "_ownership_repair": {
+    "decisions": {
+      "layer_flags": {
+        "g0": true,
+        "g1": true,
+        "g10": true,
+        "g11": true,
+        "g2": true,
+        "g3": true,
+        "g4": false,
+        "g5": true,
+        "g6": true,
+        "g7": true,
+        "g8": true,
+        "g9": true
+      },
+      "owners": {
+        "p1": "g3",
+        "p20": "g6",
+        "p22": "g5"
+      }
+    },
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1874,
+      "completion_tokens": 92,
+      "total_tokens": 1966,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Application Layer (Django 4.2)::Backend (Django 4.2)::Achievement Management Service",
+    "Application Layer (Django 4.2)::Backend (Django 4.2)::Claim & Dispute Workflow Service",
+    "Application Layer (Django 4.2)::Backend (Django 4.2)::Institution Management Service",
+    "External Systems::Public Academic Databases\\n(APIs & Sites)",
+    "Infrastructure Layer::Acquisition & Scheduling::Crawler Engine",
+    "Infrastructure Layer::Acquisition & Scheduling::External API Connectors",
+    "Infrastructure Layer::Acquisition & Scheduling::Scheduler",
+    "Infrastructure Layer::Persistence & Storage::Backup Service",
+    "Infrastructure Layer::Persistence & Storage::Backup Storage",
+    "Presentation Layer::User Browser (Chrome/Edge/Firefox)::Web UI (Vue 3.3)",
+    "Support Services Layer::Analysis Service\\n(Hotspots & Influence)",
+    "Support Services Layer::Cross-language Mapping / Translation Service",
+    "Support Services Layer::Indexing Service",
+    "Support Services Layer::Message Broker / Event Bus",
+    "Support Services Layer::Misconduct Detection Service\\n(Plagiarism/Blacklist)",
+    "Support Services Layer::Normalization & Deduplication Service",
+    "Support Services Layer::Semantic Processing Service"
+  ],
+  "_provenance": {
+    "fingerprint": "bb9c38e93d3dcd3f559a7751f2e2bc2c4ea80a5aebbb14a45cb886de3238b64a",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

@@ -1,0 +1,72 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #DDDDDD
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam queue {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Alert Source" as AlertSource {
+    rectangle "deadmanssnitch" as Deadmanssnitch
+    rectangle "app-sre\nalertmanager" as AppSreAlertmanager
+    rectangle "cluster\nalertmanager" as ClusterAlertmanager
+}
+
+package "Alerts" as Alerts {
+    queue "CHGM" as ChgmAlert
+    queue "CPD" as CpdAlert
+    queue "all cluster\nalerts" as AllClusterAlerts
+}
+
+package "PagerDuty Team" as PagerDutyTeam {
+    rectangle "prod-deadmanssnitch" as ProdDeadmanssnitch
+    rectangle "app-sre-alertmanager" as PagerDutyAppSre
+    rectangle "<cluster>.openshiftapps.com-\nhive-cluster" as HiveClusterService
+}
+
+rectangle "Tekton\nEvent\nListener" as TektonEventListener
+rectangle "Tekton Interceptor:\nAlert investigation\nimplemented in CAD?" as TektonInterceptor
+
+package "cadctl" as Cadctl {
+    rectangle "switch(alerttype)" as SwitchAlertType
+    rectangle "CHGM investigation" as ChgmInvestigation
+    rectangle "CPD investigation" as CpdInvestigation
+    rectangle "Future investigations" as FutureInvestigations
+}
+
+rectangle "Update Incident\nNotes" as UpdateIncidentNotes
+rectangle "Escalate alert to\non-call SRE" as EscalateOnCallSre
+
+Deadmanssnitch --> ChgmAlert
+AppSreAlertmanager --> CpdAlert
+ClusterAlertmanager --> AllClusterAlerts
+ChgmAlert --> ProdDeadmanssnitch
+CpdAlert --> PagerDutyAppSre
+AllClusterAlerts --> HiveClusterService
+PagerDutyTeam --> TektonEventListener : webhook
+TektonEventListener --> TektonInterceptor
+TektonInterceptor --> Cadctl : yes\ntekton pipeline run\ncadctl investigate --payload
+TektonInterceptor --> EscalateOnCallSre : no
+Cadctl --> SwitchAlertType
+SwitchAlertType --> ChgmInvestigation
+SwitchAlertType --> CpdInvestigation
+SwitchAlertType --> FutureInvestigations
+Cadctl --> UpdateIncidentNotes
+UpdateIncidentNotes --> EscalateOnCallSre
+@enduml

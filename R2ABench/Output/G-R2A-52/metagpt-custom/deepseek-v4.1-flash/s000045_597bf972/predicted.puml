@@ -1,0 +1,99 @@
+@startuml
+
+package "Scheduling Layer" {
+  component "Work-Handler Manager" as WHManager
+  component "Work Handler" as WorkHandler
+  component "Main-Thread Handler" as MainHandler
+  component "QAPM Handler-Thread Component" as HandlerThreadComp
+}
+
+package "Upload Processing Layer" {
+  component "Network Connectivity Gate" as NetworkGate
+  component "Forced-Send Storage Popper" as StoragePopper
+  component "Upload File Scanner/Reader" as FileScanner
+  component "Context Parameter Deriver" as ContextDeriver
+  component "Sender Invoker" as SenderInvoker
+  component "Upload Callback Handler" as CallbackHandler
+  component "Upload Failure Logger" as FailureLogger
+}
+
+package "HTTP Instrumentation Layer" {
+  component "Response Handler Wrapper" as ResponseWrapper
+  component "Transaction State" as TransactionState
+  component "Content-Buffering Response Entity" as BufferingEntity
+  component "Counting Input Stream" as CountingStream
+  component "Null-Entity Rejection" as NullEntityRejection
+}
+
+package "Storage/File Access Layer" {
+  database "Local Upload Storage" as LocalUploadStorage
+}
+
+package "Configuration/Integration Layer" {
+  component "QAPM Configuration Manager" as ConfigManager
+  interface "Configured Sender" as ConfiguredSender
+}
+
+node "Android Runtime" as AndroidRuntime {
+  component "HandlerThread / Looper" as AndroidLooper
+  component "Main Looper" as AndroidMainLooper
+  component "Context" as AndroidContext
+}
+
+cloud "Network State Environment" as NetworkState
+node "Local File Environment / Upload Directory" as LocalFileEnv
+
+node "Apache HttpClient Environment" as ApacheHttpEnv {
+  component "ResponseHandler" as ApacheResponseHandler
+  component "HttpResponse" as ApacheHttpResponse
+  component "HttpEntity" as ApacheHttpEntity
+}
+
+node "Host Android Application" as HostApp
+node "Configured Data Sender" as ConfiguredDataSender
+
+WHManager --> AndroidLooper : creates/starts background HandlerThread
+WHManager --> WorkHandler : creates from HandlerThread looper
+WorkHandler --> AndroidLooper : bound to background looper
+MainHandler --> AndroidMainLooper : bound to main looper
+HandlerThreadComp --> WorkHandler : maintains default work handler
+HandlerThreadComp --> MainHandler : maintains main-thread handler
+HandlerThreadComp --> AndroidLooper : maintains background HandlerThread
+
+HostApp --> WorkHandler : posts runnable/upload work
+WorkHandler --> NetworkGate : executes upload work
+NetworkGate --> NetworkState : checks connectivity
+NetworkGate --> StoragePopper : proceeds when online
+NetworkGate --> WorkHandler : skips upload-file processing when offline
+StoragePopper --> LocalUploadStorage : invokes pop for forced send
+StoragePopper --> FileScanner : before scan when forced
+FileScanner --> LocalUploadStorage : enumerates and reads upload files
+FileScanner --> LocalFileEnv : reads upload directory
+LocalUploadStorage --> LocalFileEnv : persists upload files
+FileScanner --> ContextDeriver : provides bParam
+ContextDeriver --> AndroidContext : derives cParam
+ContextDeriver --> SenderInvoker : provides cParam
+SenderInvoker --> ConfigManager : obtains configured sender
+SenderInvoker --> ConfiguredSender : submits bParam / cParam
+SenderInvoker --> CallbackHandler : success / failure callback
+CallbackHandler --> LocalUploadStorage : deletes file after sender success
+CallbackHandler --> FailureLogger : logs send failure
+
+ResponseWrapper --> TransactionState : inspects and instruments state
+ResponseWrapper --> ApacheResponseHandler : delegates response handling
+ResponseWrapper --> ApacheHttpResponse : instruments HttpResponse transaction state
+TransactionState --> ApacheHttpResponse : tracks/instruments response
+BufferingEntity --> ApacheHttpEntity : wraps non-null entity and delegates writeTo
+BufferingEntity --> CountingStream : getContent returns or reuses
+CountingStream --> ApacheHttpEntity : counts underlying content
+BufferingEntity --> NullEntityRejection : rejects null entity (IllegalArgumentException)
+ResponseWrapper --> ApacheHttpEnv : instruments HttpClient response flow
+BufferingEntity --> ApacheHttpEnv : wraps HttpClient entity
+
+ConfigManager --> ConfiguredSender : provides configured sender
+ConfiguredSender --> ConfiguredDataSender : configured sender
+
+HostApp --> AndroidRuntime : uses Android runtime
+HostApp --> ApacheHttpEnv : uses HttpClient
+
+@enduml

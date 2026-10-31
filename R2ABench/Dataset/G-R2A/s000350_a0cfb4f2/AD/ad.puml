@@ -1,0 +1,55 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam queue {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "Web UI\nindex.html" as WebUi
+rectangle "HTTP API\nSession and attack requests" as Api
+rectangle "Socket.io\nWebSocket result channel" as SocketIo
+queue "Redis\nCommand and reporting queues" as Redis
+rectangle "Workers\nCommand consumers" as Workers
+rectangle "Squatm3\nDomain generation engine" as Squatm3
+cloud "GoDaddy API\nDomain availability" as GoDaddyApi
+
+WebUi --> Api : HTTP requests\ncreate session and queue job
+Api --> WebUi : rendered page\nplain-text errors
+WebUi <--> SocketIo : progress and results\nsession socket
+
+Api --> Redis : enqueue job\nsession key / job UUID
+SocketIo <--> Redis : read reporting queue\nWORKER#JOB#MESSAGE
+Redis <--> Workers : command jobs\nworker reports
+
+Workers --> Squatm3 : attack options\nhomoglyph / flip / add / replace
+Squatm3 --> Workers : generated domains
+Workers --> GoDaddyApi : optional availability check\nsso-key auth
+GoDaddyApi --> Workers : availability result
+@enduml

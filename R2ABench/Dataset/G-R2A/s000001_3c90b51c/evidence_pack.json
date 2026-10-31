@@ -1,0 +1,116 @@
+{
+  "candidate": {
+    "sample_id": "s000001_3c90b51c",
+    "repository_name": "pau-minoves/jseats",
+    "image_url": "https://github.com/pau-minoves/jseats/blob/master/src/site/resources/jseats_architecture.png",
+    "source_ref": "3e4c0686a09ed12b6024d264168e317eebe678a4",
+    "total_score": 93,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 6025,
+    "document_count": 39,
+    "document_types": [
+      "config",
+      "readme",
+      "schema_model",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 19,
+      "user_scenario": 2,
+      "api_io": 6,
+      "deployment": 8,
+      "constraints": 2
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 12,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 93
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "src/test/java/org/jseats/unit/ExampleProcessorTest.java",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05369600080863962,
+      "text": "package org.jseats.unit; import static org.junit.Assert.*; import org.jseats.SeatAllocatorProcessor; import org.jseats.model.Candidate; import org.jseats.model.Result; import org.jseats.model.Tally; import org.jseats.model.Result.ResultType; import org.jseats.model.SeatAllocationException; import org.junit.Test; public class ExampleProcessorTest { @Test public void exampleProcessor() throws SeatAllocationException { // Create a processor SeatAllocatorProcessor processor = new SeatAllocatorProcessor(); // Get a tally Tally tally = new Tally(); // Put some data in // (Alternatively, you could use Tally.fromXML() to load from disk tally.addCandidate(new Candidate(\"Green Party\",100)); tally.a..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "src/main/java/org/jseats/model/SeatAllocationMethod.java",
+      "doc_type": "schema_model",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05082485706892728,
+      "text": "package org.jseats.model; import java.util.Properties; public interface SeatAllocationMethod { public abstract Result process(InmutableTally tally, Properties properties) throws SeatAllocationException; }"
+    },
+    {
+      "evidence_id": "E003",
+      "path": "src/main/java/org/jseats/model/ResultDecorator.java",
+      "doc_type": "schema_model",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05505695315319853,
+      "text": "package org.jseats.model; public interface ResultDecorator { Result decorate(Result result); }"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05490502211813687,
+      "text": "JSeats ====== JSeats is a java implementation of common electoral seat allocation algorithms. ## Getting started * Example usage * BDD stories ## Supported methods * Majority Method * Simple * Qualified * Absolute * Ranked Method * By votes. * Equal Proportions Method (aka Huntington-Hill) * Largest Remainder Method * Hare * Droop * Imperiali * Highest Averages Method * D'Hondt * Sainte-Lagu� (Webster) * Supports user provided first divisor (Modified Sainte-Lagu�) * Imperiali * Danish ## Usage Currently JSeats provides both a clean java API and a command line launcher. A web interface is planned. The command line looks like this:"
+    },
+    {
+      "evidence_id": "E005",
+      "path": "src/main/java/org/jseats/model/methods/AbsoluteMajorityMethod.java",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.04937728937728938,
+      "text": "package org.jseats.model.methods; import java.util.Properties; import javax.xml.bind.annotation.XmlRootElement; import org.jseats.model.InmutableTally; import org.jseats.model.Result; import org.jseats.model.SeatAllocationException; @XmlRootElement public class AbsoluteMajorityMethod extends QualifiedMajorityMethod { @Override public Result process(InmutableTally tally, Properties properties) throws SeatAllocationException { // TODO this requires more testing for rounding errors. int minimumVotes = (tally.getPotentialVotes() / 2) + 1; properties.setProperty(\"minimumVotes\", Integer.toString(minimumVotes)); return super.process(tally, properties); } }"
+    },
+    {
+      "evidence_id": "E006",
+      "path": "src/main/java/org/jseats/model/methods/HighestAveragesMethod.java",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.046565029173724834,
+      "text": "package org.jseats.model.methods; import java.util.Properties; import org.jseats.model.InmutableTally; import org.jseats.model.Result; import org.jseats.model.SeatAllocationException; import org.jseats.model.SeatAllocationMethod; import org.jseats.model.Result.ResultType; import org.slf4j.Logger; import org.slf4j.LoggerFactory; public abstract class HighestAveragesMethod implements SeatAllocationMethod { static Logger log = LoggerFactory.getLogger(HighestAveragesMethod.class); public abstract double nextDivisor(int round); @Override public Result process(InmutableTally tally, Properties properties) throws SeatAllocationException { int numberOfCandidates = tally.getNumberOfCandidates(); in..."
+    }
+  ]
+}

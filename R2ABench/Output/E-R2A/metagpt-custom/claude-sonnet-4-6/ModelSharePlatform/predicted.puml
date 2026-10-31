@@ -1,0 +1,170 @@
+@startuml Deep_Learning_Model_Sharing_Platform
+
+skinparam backgroundColor #FAFAFA
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam package {
+  BackgroundColor #F5F5FF
+  BorderColor #7777CC
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #555599
+}
+
+' ─────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────
+cloud "External Systems" {
+  component [Email Service Provider] as EmailProvider
+}
+
+' ─────────────────────────────────────────
+' PRESENTATION LAYER
+' ─────────────────────────────────────────
+package "Presentation Layer" {
+  component [VueFrontend] as VueFrontend
+  note right of VueFrontend
+    Account | Q&A | Blog | Model
+    Dataset | Follow | Admin
+  end note
+
+  component [I18nModule\n(ZH/EN Switch - NFR-012)] as I18nModule
+}
+
+' ─────────────────────────────────────────
+' APPLICATION / API LAYER
+' ─────────────────────────────────────────
+package "Application / API Layer" {
+  component [SpringBootBackend\n(NFR-001, NFR-002, NFR-003)] as APIGateway
+  component [SecurityFilter\n(Injection Prevention\nMulti-Mechanism Security)] as SecurityFilter
+  component [AuthGuard\n(Session Validation | Role Check\nAD-001, AD-002)] as AuthGuard
+  component [EmailNotificationService\n(Password Recovery Emails - FR-003)] as EmailService
+}
+
+' ─────────────────────────────────────────
+' DOMAIN SERVICE LAYER
+' ─────────────────────────────────────────
+package "Domain Service Layer" {
+  component [AccountService\n(Register | Login | Logout\nPassword Recovery | Profile | Roles)] as AccountService
+  component [QAService\n(Questions | Answers\nCreate | Edit | Delete)] as QAService
+  component [BlogService\n(Articles | Comments\nValidation FR-015)] as BlogService
+  component [ModelService\n(Upload | Metadata | Download\nDelete | Modify | Online Invocation FR-022)] as ModelService
+  component [ModelReviewService\n(Review Workflow | State Transition\nFR-018, DR-006)] as ModelReviewService
+  component [DatasetService\n(Upload | Download | Delete\nNaming Validation AD-004)] as DatasetService
+  component [FollowService\n(Follow | Unfollow\nFollow Lists DR-008)] as FollowService
+  component [PaymentService\n(Purchase | Balance Check\nTransaction Records AD-005)] as PaymentService
+  component [RecommendationService\n(Personalized Model Pools\nNFR-015, AD-003, DR-009)] as RecommendService
+  component [AdminGovernanceService\n(Cancel Accounts | Delete Illegal Content\nFR-031, FR-032, DR-010)] as AdminService
+}
+
+' ─────────────────────────────────────────
+' DATA ACCESS LAYER
+' ─────────────────────────────────────────
+package "Data Access Layer" {
+  component [UserRepository\n(User entity SQL)] as UserRepo
+  component [ModelRepository\n(Model entity SQL)] as ModelRepo
+  component [DatasetRepository\n(Dataset entity SQL)] as DatasetRepo
+  component [BlogRepository\n(Blog and Comment entity SQL)] as BlogRepo
+  component [QARepository\n(Question and Answer entity SQL)] as QARepo
+  component [FollowRepository\n(Follow relationship SQL)] as FollowRepo
+  component [BrowsingHistoryRepository\n(User browsing events - DR-009)] as HistoryRepo
+}
+
+' ─────────────────────────────────────────
+' PERSISTENCE LAYER
+' ─────────────────────────────────────────
+package "Persistence Layer" {
+  database "MySQL Database\n(>10,000 users | 1,000 req/s\nNFR-009, NFR-010\nC-001, DR-001 to DR-010)" as MySQLDB
+
+  component [File Storage Service\n(Model Binaries | Dataset Files\nFR-018, FR-019, FR-025, FR-026\nNFR-009, C-004)] as FileStorage
+}
+
+' ─────────────────────────────────────────
+' ARROWS — Presentation Layer internal
+' ─────────────────────────────────────────
+VueFrontend --> I18nModule : Language switch (NFR-012)
+
+' ─────────────────────────────────────────
+' ARROWS — Presentation → API Layer
+' ─────────────────────────────────────────
+VueFrontend --> APIGateway : HTTP Requests (C-001)
+
+' ─────────────────────────────────────────
+' ARROWS — API Layer internal (linear security chain)
+' ─────────────────────────────────────────
+APIGateway --> SecurityFilter : All inbound requests
+SecurityFilter --> AuthGuard : Post-filter auth check
+
+' ─────────────────────────────────────────
+' ARROWS — API Gateway → Domain Services
+' ─────────────────────────────────────────
+APIGateway --> AccountService : Account flows
+APIGateway --> QAService : Q&A operations
+APIGateway --> BlogService : Blog operations
+APIGateway --> ModelService : Model operations
+APIGateway --> DatasetService : Dataset operations
+APIGateway --> FollowService : Follow operations
+APIGateway --> PaymentService : Purchase requests (FR-024)
+APIGateway --> RecommendService : Recommendation requests
+APIGateway --> AdminService : Admin governance actions
+
+' ─────────────────────────────────────────
+' ARROWS — Domain Service inter-dependencies
+' ─────────────────────────────────────────
+AccountService --> EmailService : Dispatch verification email (FR-003)
+ModelService --> ModelReviewService : Submit for review (FR-018, DR-006)
+ModelService --> PaymentService : Authorize purchase (FR-024)
+ModelService --> HistoryRepo : Record browsing event (DR-009)
+RecommendService --> UserRepo : Registration data (AD-003)
+RecommendService --> HistoryRepo : Read browsing history (DR-009)
+AdminService --> UserRepo : Account cancellation (FR-031, DR-010)
+AdminService --> QARepo : Delete illegal Q&A (FR-032)
+AdminService --> BlogRepo : Delete illegal blogs and comments (FR-032)
+AdminService --> ModelRepo : Delete illegal models (FR-032)
+AdminService --> DatasetRepo : Delete illegal datasets (FR-032)
+
+' ─────────────────────────────────────────
+' ARROWS — Domain Services → Repositories
+' ─────────────────────────────────────────
+AccountService --> UserRepo
+QAService --> QARepo
+BlogService --> BlogRepo
+ModelService --> ModelRepo
+ModelReviewService --> ModelRepo : Update review state (DR-006)
+DatasetService --> DatasetRepo : Existence check and CRUD (AD-004, DR-007)
+FollowService --> FollowRepo
+PaymentService --> UserRepo : Balance and purchase records
+PaymentService --> ModelRepo : Update purchased list
+
+' ─────────────────────────────────────────
+' ARROWS — Domain Services → File Storage
+' ─────────────────────────────────────────
+ModelService --> FileStorage : Store and retrieve model files (FR-018, FR-019)
+DatasetService --> FileStorage : Store and retrieve dataset files (FR-025, FR-026)
+
+' ─────────────────────────────────────────
+' ARROWS — Repositories → MySQL
+' ─────────────────────────────────────────
+UserRepo --> MySQLDB : SQL reads/writes
+ModelRepo --> MySQLDB : SQL reads/writes
+DatasetRepo --> MySQLDB : SQL reads/writes
+BlogRepo --> MySQLDB : SQL reads/writes
+QARepo --> MySQLDB : SQL reads/writes
+FollowRepo --> MySQLDB : SQL reads/writes
+HistoryRepo --> MySQLDB : SQL reads/writes
+
+' ─────────────────────────────────────────
+' ARROWS — Internal → External Systems
+' ─────────────────────────────────────────
+EmailService --> EmailProvider : SMTP / Email API
+
+@enduml

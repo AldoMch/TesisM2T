@@ -1,0 +1,121 @@
+@startuml
+title Kangrand - Layered Architecture (SECP256K1 Pollard's Kangaroo ECDLP Solver)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Local Operator" as LocalOp
+actor "Distributed Operator" as DistOp
+actor "Offline Analyst" as Analyst
+
+package "Client / Presentation Layer" {
+  component "Command-Line Interface\n(input, -w, -wi, -i, -ws, -d,\nwsplit, server/client, GPU options)" as CLI
+}
+
+package "Solver Core Layer" {
+  component "Input Parser\n(hex values, compressed/\nuncompressed public keys)" as Parser
+  component "Pollard's Kangaroo Engine\n(tame & wild herds)" as Kangaroo
+  component "Distinguished-Point Selector\n(-d bit count)" as DP
+  component "Collision Hash Table\n(distinguished points only)" as HashTable
+  component "GPU Compute Backend\n(GPU command-line options)" as GPU
+}
+
+package "Persistence & Merge Layer" {
+  component "Work File Manager\n(-w, -wi periodic save / -i resume)" as WorkFileMgr
+  component "Kangaroo State Serializer\n(-ws)" as StateSerializer
+  component "Work File Inspector\n(-info retrieval)" as Inspector
+  component "Offline Merger\n(master work / hash-table merge)" as Merger
+  component "Wsplit Backup Manager\n(prefixed backups, hash-table reset)" as Wsplit
+}
+
+package "Distributed Layer" {
+  component "Distributed Server\n(backup interval, DP setting,\nconfig file; no authentication)" as Server
+  component "Distributed Client\n(connects to server,\nlocal kangaroo/work output)" as Client
+}
+
+package "Data / Storage Layer" {
+  database "Input ASCII Files" as InputFiles
+  database "Work Files\n(kangaroo state, split backups)" as WorkFiles
+  database "Server Configuration File" as ServerConfig
+  database "Master Work / Merged Hash Table" as MasterData
+  database "Result Files" as ResultFiles
+}
+
+package "External Systems / Environment" {
+  component "GPU Hardware" as GPUHW
+  component "Operator-Managed Network\n(no authentication)" as Network
+  component "Host File System" as FileSystem
+}
+
+' Operator interactions
+LocalOp --> CLI
+DistOp --> CLI
+Analyst --> CLI
+
+' CLI to core
+CLI --> Parser
+CLI --> Kangaroo
+CLI --> WorkFileMgr
+CLI --> Server
+CLI --> Client
+CLI --> Merger
+CLI --> Inspector
+
+' Solver core internals
+Parser --> Kangaroo
+Kangaroo --> DP
+Kangaroo --> HashTable
+Kangaroo --> GPU
+GPU --> GPUHW
+
+' Persistence flows
+Kangaroo --> WorkFileMgr
+WorkFileMgr --> StateSerializer
+Kangaroo --> Wsplit
+Inspector --> WorkFileMgr
+Merger --> WorkFileMgr
+Merger --> MasterData
+Merger --> ResultFiles
+
+' File interfaces
+Parser --> InputFiles
+WorkFileMgr --> WorkFiles
+Wsplit --> WorkFiles
+StateSerializer --> WorkFiles
+Inspector --> WorkFiles
+Server --> ServerConfig
+Server --> ResultFiles
+Client --> ResultFiles
+
+' Distributed flows
+Client --> Network
+Server --> Network
+Server --> WorkFiles
+Client --> Kangaroo
+
+' File system access
+InputFiles --> FileSystem
+WorkFiles --> FileSystem
+ServerConfig --> FileSystem
+ResultFiles --> FileSystem
+MasterData --> FileSystem
+
+note right of Server
+  NFR-004 / C-003: no built-in
+  authentication; operator-controlled
+  network exposure
+end note
+
+note bottom of Wsplit
+  FR-009 / NFR-003: reset in-memory
+  hash table after each backup cycle
+end note
+
+note bottom of Merger
+  FR-008 / FR-012: offline merge of
+  multiple work files into master
+  work or hash-table; may reveal key
+end note
+
+@enduml

@@ -1,0 +1,165 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATABASE_COLOR #F0FFF0
+
+title Teamgram Server - Layered Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Database>> DATABASE_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+package "Client Layer" <<Layer>> {
+  [Telegram-Compatible Clients] <<External>>
+}
+
+package "Access Layer" <<Layer>> {
+  component "MTProto Server Interface" <<Component>> {
+    component "Client Connection Handler"
+    component "Protocol Message Parser"
+  }
+  
+  component "Session Management" <<Component>> {
+    component "Authorization Handler"
+    component "Session Controller"
+    component "Salt Manager"
+  }
+}
+
+package "Service Layer" <<Layer>> {
+  component "Service Message Handler" <<Component>> {
+    component "rpc_drop_answer Handler"
+    component "destroy_session Handler"
+  }
+  
+  component "Verification Service" <<Component>> {
+    component "Default Verifier (12345)"
+    component "External Verifier Adapter"
+  }
+  
+  component "Business Services" <<Component>> {
+    component "Messaging Service"
+    component "Registration Service"
+    component "Phone Verification Service"
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "Data Access Components" <<Component>> {
+    component "Session Repository"
+    component "User Repository"
+    component "Message Repository"
+  }
+  
+  component "Async Processing" <<Component>> {
+    component "Kafka Consumer"
+    component "Push Service"
+    component "Sync Service"
+  }
+  
+  component "Media Wrapper" <<Component>> {
+    component "FFmpeg Interface"
+    component "FFProbe Interface"
+  }
+}
+
+package "External Systems" <<Layer>> {
+  database "MySQL" <<Database>> {
+    component "User Data"
+    component "Message Data"
+    component "Session Data"
+  }
+  
+  database "Redis" <<Database>> {
+    component "Cache Store"
+    component "Session Cache"
+  }
+  
+  database "etcd" <<Database>> {
+    component "Configuration Store"
+    component "Service Discovery"
+  }
+  
+  queue "Kafka" <<External>> {
+    component "Message Queue"
+    component "Event Stream"
+  }
+  
+  database "MinIO" <<Database>> {
+    component "Media Storage"
+    component "File Storage"
+  }
+  
+  component "External Verification Service" <<External>>
+}
+
+' Client Layer to Access Layer connections
+[Telegram-Compatible Clients] --> "MTProto Server Interface" : MTProto Protocol
+[Telegram-Compatible Clients] --> "Session Management" : Authorization/Session Flows
+
+' Access Layer to Service Layer connections
+"MTProto Server Interface" --> "Service Message Handler" : Service Messages
+"Session Management" --> "Verification Service" : Verification Requests
+"Session Management" --> "Business Services" : Business Operations
+
+' Service Layer to Data Layer connections
+"Service Message Handler" --> "Data Access Components" : Data Operations
+"Verification Service" --> "Data Access Components" : Verification Data
+"Business Services" --> "Data Access Components" : Business Data
+"Business Services" --> "Async Processing" : Async Tasks
+"Business Services" --> "Media Wrapper" : Media Processing
+
+' Data Layer to External Systems connections
+"Data Access Components" --> "MySQL" : Persistent Storage
+"Data Access Components" --> "Redis" : Caching
+"Async Processing" --> "Kafka" : Message Queue
+"Async Processing" --> "etcd" : Configuration
+"Media Wrapper" --> "MinIO" : Media Storage
+"Verification Service" --> "External Verification Service" : External Verification
+
+' Internal dependencies
+"Session Management" --> "Data Access Components" : Session Data
+"MTProto Server Interface" --> "Session Management" : Session Context
+
+note right of "MTProto Server Interface"
+  Handles:
+  - MTProto client-server communication
+  - Encrypted session communication
+  - Protocol message parsing
+end note
+
+note right of "Session Management"
+  Manages:
+  - Authorization keys
+  - Server salts & future salts
+  - Session IDs
+  - Session creation/replacement
+end note
+
+note right of "Service Message Handler"
+  Processes:
+  - rpc_drop_answer
+  - destroy_session
+  - Other MTProto service messages
+end note
+
+note right of "Verification Service"
+  Supports:
+  - Default code: 12345
+  - External verification service
+  - Phone number verification
+end note
+
+note bottom of "Media Wrapper"
+  Optional component
+  Requires FFmpeg/FFProbe
+  Used for media processing
+end note
+
+@enduml

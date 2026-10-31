@@ -1,0 +1,87 @@
+@startuml
+title Kangrand Distributed ECDLP Solver - Architecture
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "Operator" as operator
+
+node "Operator Workstation" as workstation {
+  component "Kangrand CLI" as cli
+  component "Input Parser" as parser
+  component "Solver Engine\n(Pollard's Kangaroo)" as engine
+  database "DP Hash Table\n(In-memory)" as dptable
+  component "Work File Manager" as wfmanager
+
+  cli --> parser
+  cli --> engine
+  engine --> dptable : store distinguished points
+  wfmanager --> dptable : checkpoint state
+  cli --> wfmanager : save/resume
+
+  artifact "Input ASCII File" as inputfile
+  artifact "Work File (.work)" as workfile
+  artifact "Result File" as resultfile
+
+  parser --> inputfile : reads
+  wfmanager --> workfile : read/write
+  engine --> resultfile : write when solved
+}
+
+cloud "Network" as net
+
+node "Distributed Server" as server {
+  component "Kangrand Server\n(wsplit-enabled)" as srv
+  database "Server DP Hash\n(In-memory)" as srvhash
+  component "WSplit/Backup Manager" as wsplit
+  artifact "Server Config File" as cfg
+  artifact "Server Work Files" as srvwork
+  artifact "Server Result File" as srvres
+
+  srv --> srvhash
+  srv --> wsplit
+  wsplit -down-> srvhash : reset after backup
+  srv --> cfg : reads
+  wsplit --> srvwork : writes
+  srv --> srvres : writes
+
+  note right of srv
+    No built-in authentication;\n    operator-controlled deployment.
+  end note
+}
+
+node "Client Worker" as client1 {
+  component "Kangrand Client" as client
+  component "Compute Kernel\n(CPU/GPU, optional)" as compute
+  client --> compute
+}
+
+node "Client Worker" as client2 {
+  component "Kangrand Client" as clientb
+  component "Compute Kernel\n(CPU/GPU, optional)" as computeb
+  clientb --> computeb
+}
+
+client -down- net
+clientb -down- net
+net -down- srv : client/server protocol
+
+operator --> cli : start local run, set options
+operator --> srv : start server with config
+
+node "Offline Merge Host" as mergehost {
+  component "Work-File Merger" as merger
+  artifact "Work Files\n(from clients/servers)" as mergedinputs
+  artifact "Master Work File/\nHash Table" as masterwork
+  artifact "Result File" as mergeres
+
+  merger --> mergedinputs : reads
+  merger --> masterwork : writes
+  merger --> mergeres : writes
+  note right of merger
+    May discover solving results\n    during merge.
+  end note
+}
+
+workfile ..> mergedinputs : provide
+srvwork ..> mergedinputs : provide
+@enduml

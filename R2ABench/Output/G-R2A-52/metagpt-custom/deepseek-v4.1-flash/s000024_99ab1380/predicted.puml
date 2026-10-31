@@ -1,0 +1,151 @@
+@startuml
+
+package "Configuration and Input Layer" {
+  component "Terraform Variable Files" as TFVars
+  component "JSON Input Files" as JsonInputs
+  component "OCI Access Configuration" as OCIAccessCfg
+  component "SSH Access Configuration" as SSHAccessCfg
+  component "Jenkins Cluster Configuration" as JenkinsClusterCfg
+  component "Jenkins Master Configuration" as MasterCfg
+  component "Jenkins Slave/Agent Configuration" as SlaveCfg
+  component "Bastion Access Configuration" as BastionCfg
+  component "Cloud-Init Data" as CloudInit
+  component "Load Balancer Public Address Data" as LBPublicAddrCfg
+}
+
+package "Terraform Orchestration Layer" {
+  component "Terraform Workflow" as TFWorkflow
+  component "Existing-Infrastructure Deployment Workflow" as ExistingInfraWorkflow
+  component "Jenkins Master Provisioning Module" as MasterModule
+  component "Jenkins Slave/Agent Provisioning Module" as SlaveModule
+}
+
+cloud "Oracle Cloud Infrastructure (OCI)" as OCI {
+  package "OCI Infrastructure Layer" {
+    component "OCI Tenancy / Compartment / Region / ADs" as OCIIdentity
+    component "VCN" as VCN
+    component "Master Public Subnet" as MasterPublicSubnet
+    component "Slave Private Subnets" as SlavePrivateSubnets
+    component "Route Tables" as RouteTables
+    component "DHCP Options" as DHCPOptions
+    component "Security Lists" as SecurityLists
+    component "VNIC" as VNIC
+    component "OCI VNIC-capable Compute Instances" as OCICompute
+  }
+
+  package "Jenkins Cluster Layer" {
+    component "Jenkins Master Instance" as JenkinsMaster
+    component "Jenkins Slave/Agent Instances" as JenkinsSlaves
+  }
+
+  package "Access and Connectivity Layer" {
+    component "Private-Network Prerequisites" as PrivateNetPrereq
+    component "NAT-enabled Node Subnets" as NATSubnets
+    component "Bastion Host" as BastionHost
+    component "Load Balancer" as LoadBalancer
+  }
+}
+
+package "External Execution Environment" {
+  component "Terraform CLI / Execution Environment" as TerraformCLI
+  component "Deployment Operator / DevOps / Infra Admin / Tester" as Operator
+}
+
+Operator --> TFVars : supplies deployment values
+Operator --> JsonInputs : may supply test/example values
+Operator --> LBPublicAddrCfg : supplies load-balancer public address
+Operator --> TFWorkflow : runs init/plan/apply
+
+TFWorkflow --> TerraformCLI : uses
+TFWorkflow --> TFVars : consumes
+TFWorkflow --> OCIAccessCfg : uses OCI identifiers/credentials
+TFWorkflow --> SSHAccessCfg : uses SSH key material
+TFWorkflow --> LBPublicAddrCfg : consumes load-balancer public address
+TFWorkflow --> BastionCfg : uses bastion access inputs
+TFWorkflow --> MasterModule : invokes
+TFWorkflow --> SlaveModule : invokes
+TFWorkflow --> ExistingInfraWorkflow : optionally deploys against existing infra
+
+ExistingInfraWorkflow --> TFVars : consumes updated values
+ExistingInfraWorkflow --> VCN : targets pre-existing VCN
+ExistingInfraWorkflow --> MasterPublicSubnet : targets pre-existing public subnet
+ExistingInfraWorkflow --> SlavePrivateSubnets : targets pre-existing private subnets
+ExistingInfraWorkflow --> RouteTables : targets pre-existing route tables
+ExistingInfraWorkflow --> DHCPOptions : targets pre-existing DHCP options
+ExistingInfraWorkflow --> SecurityLists : targets pre-existing security lists
+ExistingInfraWorkflow --> LBPublicAddrCfg : consumes load-balancer public address
+
+VCN --> MasterPublicSubnet : contains
+VCN --> SlavePrivateSubnets : contains
+VCN --> RouteTables : contains
+VCN --> DHCPOptions : contains
+VCN --> SecurityLists : contains
+
+MasterPublicSubnet --> RouteTables : uses
+MasterPublicSubnet --> DHCPOptions : uses
+MasterPublicSubnet --> SecurityLists : uses
+SlavePrivateSubnets --> RouteTables : uses
+SlavePrivateSubnets --> DHCPOptions : uses
+SlavePrivateSubnets --> SecurityLists : uses
+
+NATSubnets --> SlavePrivateSubnets : enables outbound NAT
+VNIC --> MasterPublicSubnet : attached to master public subnet
+VNIC --> SlavePrivateSubnets : attached to slave private subnets
+
+MasterModule --> MasterCfg : uses master AD/subnet/name/image/shape
+MasterModule --> CloudInit : uses master_user_data
+MasterModule --> SSHAccessCfg : uses authorized_keys/private_key
+MasterModule --> VCN : uses
+MasterModule --> MasterPublicSubnet : places master in public subnet
+MasterModule --> RouteTables : configures
+MasterModule --> DHCPOptions : configures
+MasterModule --> SecurityLists : configures
+MasterModule --> VNIC : attaches master via VNIC
+MasterModule --> JenkinsMaster : provisions
+
+SlaveModule --> SlaveCfg : uses slave count/ADs/subnets/name/image/shape
+SlaveModule --> CloudInit : uses slave_user_data
+SlaveModule --> SSHAccessCfg : uses authorized_keys/private_key
+SlaveModule --> VCN : uses
+SlaveModule --> SlavePrivateSubnets : places slaves in private subnets
+SlaveModule --> NATSubnets : uses NAT-enabled outbound
+SlaveModule --> RouteTables : configures
+SlaveModule --> DHCPOptions : configures
+SlaveModule --> SecurityLists : configures
+SlaveModule --> VNIC : attaches slaves via VNIC
+SlaveModule --> JenkinsMaster : receives master address/service ports
+SlaveModule --> JenkinsSlaves : provisions
+
+BastionCfg --> MasterModule : provides bastion_host/user/private_key
+BastionCfg --> SlaveModule : provides bastion_host/user/private_key
+BastionCfg --> PrivateNetPrereq : provides bastion_host/user/private_key
+
+JenkinsMaster --> OCICompute : runs on
+JenkinsSlaves --> OCICompute : run on
+JenkinsMaster --> VNIC : uses
+JenkinsSlaves --> VNIC : use
+JenkinsMaster --> MasterPublicSubnet : placed in public subnet
+JenkinsSlaves --> SlavePrivateSubnets : placed in private subnets
+JenkinsMaster --> SecurityLists : protected by
+JenkinsSlaves --> SecurityLists : protected by
+JenkinsMaster --> RouteTables : routed by
+JenkinsSlaves --> RouteTables : routed by
+JenkinsMaster --> DHCPOptions : uses DHCP options
+JenkinsSlaves --> DHCPOptions : use DHCP options
+JenkinsMaster --> JenkinsClusterCfg : uses ports/plugins/password
+JenkinsSlaves --> JenkinsMaster : uses master address/ports for JNLP/HTTP
+JenkinsMaster --> JenkinsSlaves : JNLP/HTTP Jenkins communication
+
+PrivateNetPrereq --> NATSubnets : requires outbound NAT
+PrivateNetPrereq --> LoadBalancer : requires public address
+PrivateNetPrereq --> JenkinsMaster : enables private-network access
+PrivateNetPrereq --> JenkinsSlaves : enables private-network access
+BastionHost --> JenkinsMaster : SSH access
+BastionHost --> JenkinsSlaves : SSH access
+LoadBalancer --> JenkinsMaster : public Jenkins entry
+LBPublicAddrCfg --> LoadBalancer : provides public address
+LBPublicAddrCfg --> PrivateNetPrereq : provides public address data
+
+OCIAccessCfg --> OCIIdentity : targets tenancy/compartment/region/AD
+
+@enduml

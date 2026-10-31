@@ -1,0 +1,120 @@
+@startuml
+!theme plain
+skinparam rectangle {
+    borderColor black
+    borderWidth 1
+}
+skinparam component {
+    borderColor black
+    borderWidth 1
+}
+skinparam interface {
+    borderColor black
+}
+skinparam note {
+    borderColor black
+}
+
+' Main system boundary
+package "JSeats System" {
+    rectangle "Java API Entry Point" as api_entry <<component>> #LightBlue
+    rectangle "Command-Line Interface" as cli <<component>> #LightGreen
+    
+    package "Core Allocation Engine" {
+        rectangle "Allocation Processor" as processor <<component>> #LightYellow
+        rectangle "Method Registry" as registry <<component>> #LightYellow
+        
+        package "Allocation Methods" {
+            rectangle "Majority Methods" as majority <<component>>
+            rectangle "Ranked Methods" as ranked <<component>>
+            rectangle "Equal Proportions\n(Huntington-Hill)" as hill <<component>>
+            rectangle "Largest Remainder\n(Hare, Droop, Imperiali)" as remainder <<component>>
+            rectangle "Highest Averages\n(D'Hondt, Sainte-Lague,\nImperiali, Danish)" as averages <<component>>
+        }
+        
+        package "Support Components" {
+            rectangle "Tally Filter Framework" as filter <<component>> #LightCyan
+            rectangle "Result Decorator Framework" as decorator <<component>> #LightCyan
+            rectangle "Configuration Manager" as config <<component>> #LightCyan
+            rectangle "Exception Handler" as exception <<component>> #LightCyan
+        }
+    }
+    
+    rectangle "Tally Data Model" as tally <<component>> #LightPink
+    rectangle "Result Data Model" as result <<component>> #LightPink
+    rectangle "XML Handler" as xml <<component>> #LightPink
+    
+    rectangle "Properties Configuration" as properties <<component>> #LightGray
+}
+
+' External entities
+actor "Java Developer" as dev
+actor "CLI User" as user
+
+' Relationships
+dev --> api_entry : Uses
+user --> cli : Executes
+api_entry --> processor : Invokes
+cli --> processor : Invokes
+processor --> registry : Queries
+registry --> majority : Instantiates
+registry --> ranked : Instantiates
+registry --> hill : Instantiates
+registry --> remainder : Instantiates
+registry --> averages : Instantiates
+processor --> filter : Applies
+processor --> decorator : Applies
+processor --> config : Uses
+processor --> exception : Throws
+processor --> tally : Processes
+processor --> result : Produces
+tally --> xml : Loads from
+result --> xml : Exports to
+api_entry --> properties : Accepts
+cli --> properties : Parses
+filter --> tally : Transforms
+decorator --> result : Enhances
+config --> properties : Manages
+
+note right of api_entry
+    Main entry point for Java developers
+    - Accepts tally data
+    - Receives method selection
+    - Takes configuration parameters
+end note
+
+note right of cli
+    Command-line interface for terminal users
+    - Lists available methods
+    - Accepts file/candidate input
+    - Supports XML import/export
+    - Provides output options
+end note
+
+note right of processor
+    Central allocation processor
+    - Coordinates allocation workflow
+    - Applies filters and decorators
+    - Manages configuration
+    - Handles exceptions
+end note
+
+note right of registry
+    Registry of allocation methods
+    - Factory for method instances
+    - Maintains method metadata
+end note
+
+note bottom of filter
+    Pre-processing framework
+    - Transforms tally data before allocation
+    - Configurable filtering rules
+end note
+
+note bottom of decorator
+    Post-processing framework
+    - Enhances results after allocation
+    - Configurable decoration rules
+end note
+
+@enduml

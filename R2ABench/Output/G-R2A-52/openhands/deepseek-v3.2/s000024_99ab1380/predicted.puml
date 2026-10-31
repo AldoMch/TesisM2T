@@ -1,0 +1,185 @@
+@startuml
+
+!define PRIVATE_NETWORK #FFF0F0
+!define PUBLIC_NETWORK #F0F8FF
+!define JENKINS_SYSTEM #FFFFF0
+!define TERRAFORM #F0FFF0
+!define EXTERNAL #F5F5F5
+
+title OCI Jenkins Terraform Deployment - System Architecture
+
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+  FontSize 12
+}
+
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+
+' === EXTERNAL ENTITIES ===
+rectangle "Deployment Operator" as operator <<External>> {
+  rectangle "Terraform CLI" as terraform_cli
+  rectangle "SSH Client" as ssh_client
+  rectangle "Web Browser" as web_browser
+}
+
+rectangle "OCI APIs" as oci_apis <<External>>
+rectangle "Internet" as internet <<External>>
+
+' === TERRAFORM CONFIGURATION LAYER ===
+package "Terraform Configuration" as terraform_config <<TERRAFORM>> {
+  rectangle "Main Configuration" as terraform_main
+  rectangle "Variables File\n(terraform.tfvars)" as terraform_vars
+  rectangle "JSON Input Files" as json_inputs
+  rectangle "Modules" as terraform_modules {
+    rectangle "Jenkins Master" as module_master
+    rectangle "Jenkins Slaves" as module_slaves
+    rectangle "Network Configuration" as module_network
+  }
+}
+
+' === OCI INFRASTRUCTURE LAYER ===
+package "Oracle Cloud Infrastructure" as oci <<Cloud>> {
+  package "Tenancy & Compartment" as compartment {
+    rectangle "Tenancy\n(tenancy_ocid)" as tenancy
+    rectangle "Compartment\n(compartment_ocid)" as compartment_entity
+  }
+  
+  package "Virtual Cloud Network" as vcn <<VCN>> {
+    rectangle "VCN Configuration" as vcn_config
+    rectangle "Route Tables" as route_tables
+    rectangle "Security Lists" as security_lists
+    rectangle "DHCP Options" as dhcp_options
+    
+    package "Public Subnet" as public_subnet <<PUBLIC_NETWORK>> {
+      rectangle "Jenkins Master Instance" as jenkins_master {
+        rectangle "Jenkins Service\n(HTTP:8080, JNLP:50000)" as jenkins_service
+        rectangle "Cloud-Init\nConfiguration" as master_cloudinit
+        rectangle "SSH Daemon" as master_ssh
+      }
+      
+      rectangle "Load Balancer\n(Optional)" as load_balancer
+    }
+    
+    package "Private Subnets" as private_subnets <<PRIVATE_NETWORK>> {
+      rectangle "Bastion Host" as bastion_host {
+        rectangle "SSH Proxy" as bastion_ssh
+      }
+      
+      rectangle "NAT Gateway" as nat_gateway
+      
+      rectangle "Jenkins Slave 1" as slave1 {
+        rectangle "Jenkins Agent" as agent1
+        rectangle "SSH Daemon" as slave1_ssh
+        rectangle "Cloud-Init\nConfiguration" as slave1_cloudinit
+      }
+      
+      rectangle "Jenkins Slave 2" as slave2 {
+        rectangle "Jenkins Agent" as agent2
+        rectangle "SSH Daemon" as slave2_ssh
+      }
+      
+      rectangle "Jenkins Slave N" as slaveN {
+        rectangle "Jenkins Agent" as agentN
+        rectangle "SSH Daemon" as slaveN_ssh
+      }
+    }
+  }
+}
+
+' === DATA FLOW AND RELATIONSHIPS ===
+
+' Terraform workflow
+operator --> terraform_cli : "executes"
+terraform_cli --> terraform_config : "reads configuration"
+terraform_config --> terraform_main : "contains"
+terraform_config --> terraform_vars : "contains variables"
+terraform_config --> json_inputs : "contains examples"
+terraform_config --> terraform_modules : "organizes as"
+
+terraform_modules --> module_master : "provisions"
+terraform_modules --> module_slaves : "provisions"
+terraform_modules --> module_network : "configures"
+
+' OCI API interactions
+terraform_cli --> oci_apis : "calls via OCI Provider"
+oci_apis --> oci : "manages infrastructure"
+
+' Jenkins cluster communication
+jenkins_service --> agent1 : "JNLP communication\n(port 50000)"
+jenkins_service --> agent2 : "JNLP communication"
+jenkins_service --> agentN : "JNLP communication"
+
+jenkins_service --> web_browser : "HTTP/Web UI\n(port 8080)"
+
+' Network connectivity
+public_subnet --> internet : "public access"
+private_subnets --> nat_gateway : "outbound traffic"
+nat_gateway --> internet : "NAT translation"
+
+' SSH access patterns
+ssh_client --> jenkins_master : "SSH access\n(public key auth)"
+ssh_client --> bastion_host : "SSH proxy access"
+bastion_host --> slave1 : "bastion-mediated SSH"
+bastion_host --> slave2 : "bastion-mediated SSH"
+bastion_host --> slaveN : "bastion-mediated SSH"
+
+' Load balancer access (optional)
+load_balancer --> jenkins_master : "load balances"
+internet --> load_balancer : "public access"
+
+' Configuration inputs
+terraform_vars --> jenkins_master : "configures via\nmaster variables"
+terraform_vars --> slave1 : "configures via\nslave variables"
+terraform_vars --> slave2 : "configures via\nslave variables"
+terraform_vars --> slaveN : "configures via\nslave variables"
+
+' Cloud-Init configuration
+terraform_vars --> master_cloudinit : "provides\nbase64 encoded data"
+terraform_vars --> slave1_cloudinit : "provides\nbase64 encoded data"
+
+' Security configuration
+security_lists --> jenkins_master : "controls access"
+security_lists --> slave1 : "controls access"
+security_lists --> slave2 : "controls access"
+security_lists --> slaveN : "controls access"
+
+' SSH key configuration
+operator --> terraform_vars : "provides\nssh_authorized_keys\nssh_private_key"
+terraform_vars --> jenkins_master : "configures SSH keys"
+terraform_vars --> slave1 : "configures SSH keys"
+terraform_vars --> slave2 : "configures SSH keys"
+terraform_vars --> slaveN : "configures SSH keys"
+
+' OCI credentials
+operator --> terraform_vars : "provides\nOCI credentials"
+terraform_vars --> terraform_cli : "authenticates to OCI"
+
+' Existing infrastructure support
+route_tables --> jenkins_master : "existing route tables"
+dhcp_options --> jenkins_master : "existing DHCP options"
+
+' Legend and notes
+note right of terraform_config
+  <b>Terraform Configuration Includes:</b>
+  - OCI access credentials
+  - SSH key configuration
+  - Jenkins cluster parameters
+  - Master/slave configuration
+  - Bastion access values
+  - Existing network IDs
+end note
+
+note right of private_subnets
+  <b>Private Network Prerequisites:</b>
+  - NAT-enabled subnets
+  - Bastion host prepared
+  - Load balancer (if needed)
+  - Security lists configured
+end note
+
+@enduml

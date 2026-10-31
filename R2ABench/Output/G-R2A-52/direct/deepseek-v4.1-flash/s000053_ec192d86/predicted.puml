@@ -1,0 +1,108 @@
+@startuml
+title Configuration Anomaly Detection (CAD) - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam nodesep 30
+skinparam ranksep 30
+left to right direction
+
+actor "SRE / Operations User" as SRE
+actor "Deployment Engineer" as DE
+actor "Developer / Contributor" as DEV
+
+rectangle "External Systems" {
+  component "Alert Source\n(Webhook)" as ALERT
+  component "PagerDuty" as PD
+  component "AWS" as AWS
+  component "OCM" as OCM
+  component "Managed Cluster" as CLUSTER
+  component "Operations Systems" as OPS
+}
+
+node "Build Environment" as BUILD {
+  component "Go 1.17 Builder Image" as BUILDER
+}
+
+node "Containerized CLI Runtime\n(UBI minimal)" as RUNTIME {
+  component "cadctl CLI\n/bin/cadctl" as CADCTL
+
+  package "Integration Library" as INTLIB {
+    component "PagerDuty Integration" as INT_PD
+    component "AWS Integration" as INT_AWS
+    component "OCM Integration" as INT_OCM
+  }
+
+  component "CHGM Workflow" as CHGM
+  component "Anomaly Detection &\nCommunication" as ANOM
+  component "Mitigation &\nDisposition Handler" as MIT
+}
+
+node "Tekton Deployment Namespace\nconfiguration-anomaly-detection" as TEKTON {
+  component "EventListener" as EL
+  component "Trigger" as TRIG
+  component "PipelineRun\n(Tekton v1beta1)" as PR
+  component "cad-checks-pipeline" as PIPE
+}
+
+component "Template Update Utility" as TPL
+component "Deployment Template Artifacts\n(YAML)" as TPL_ART
+
+' User interactions
+SRE --> CADCTL : invokes
+DE --> TEKTON : operates
+DEV --> TPL : maintains
+
+' Event-driven Tekton path
+ALERT --> EL : alert webhook (DR-005)
+EL --> TRIG : event
+TRIG --> PR : creates
+PR --> PIPE : references (C-005)
+PIPE --> CADCTL : executes CAD checks
+
+' Skip-webhook direct execution path
+DE --> PR : direct skip-webhook\nsubmit PipelineRun (FR-006/C-006)
+PR .> EL : bypasses event listener
+
+' CLI workflows
+CADCTL --> CHGM : CHGM alerts (FR-002)
+CADCTL --> ANOM : anomaly detection (FR-003)
+CADCTL --> MIT : mitigation/disposition (FR-004)
+CADCTL --> INTLIB : uses (FR-009)
+
+' Named integrations
+INTLIB --> PD
+INTLIB --> AWS
+INTLIB --> OCM
+
+' Investigation and disposition actions
+ANOM --> CLUSTER : investigates
+ANOM --> OPS : sends communications (FR-003)
+MIT --> PD : silence/escalate (FR-004)
+MIT --> OCM : support status (FR-004)
+MIT --> AWS : follow-up handling (FR-004)
+MIT --> OPS : records follow-up (FR-004)
+
+' Template maintenance
+TPL --> TPL_ART : updates (FR-010)
+
+' Build and runtime constraints
+BUILDER --> RUNTIME : builds image (NFR-002)
+
+note right of PR
+  Direct execution payload:
+  - payload: JSON text (DR-001/FR-008)
+  - event.data.id (DR-002)
+  Target:
+  - pipeline cad-checks-pipeline
+  - namespace configuration-anomaly-detection
+end note
+
+note bottom of RUNTIME
+  NFR-001: UBI minimal runtime image with /bin/cadctl
+  NFR-003: image labels for vendor, name, description,
+  display name, version, build date, VCS ref, Dockerfile path
+  NFR-004: integrations organized as package library
+end note
+
+@enduml

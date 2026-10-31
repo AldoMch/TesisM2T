@@ -1,0 +1,103 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+title Java HTTP Proxy System with Bundled Test Utilities
+
+package "External Clients" {
+  cloud "HTTP Client\n(external)" as ExtClient
+}
+
+package "Proxy Module (Java)" {
+  component "HTTP Proxy" as Proxy
+  component "Upstream Channel Adapter\n(Netty)" as NettyAdapter
+  Proxy -[hidden]down- NettyAdapter
+}
+
+package "Upstream Server (external)" {
+  cloud "Upstream Server" as Upstream
+}
+
+package "Test Server Module\n(Grizzly/Jersey)" {
+  node "Test Server" as TestServer {
+    component "REST API" as RestAPI
+    component "Download Endpoint\nGET /download" as DownloadEP
+    component "Upload Handler\nreturns map{filepath -> filename}" as UploadEP
+  }
+  database "Local File System" as FileSystem
+  DownloadEP --> FileSystem : read target file\n(C-004)
+  RestAPI -[hidden]- DownloadEP
+  RestAPI -[hidden]- UploadEP
+}
+
+package "Test Client Module" {
+  node "Test Client" as TestClient {
+    component "Workload Runner\nFixed Thread Pool" as Workload
+    component "Async HTTP Client" as AsyncClient
+    component "Success Counter" as SuccessCounter
+  }
+  Workload --> AsyncClient : schedule async GETs\n(C-003)
+  AsyncClient --> SuccessCounter : increment on HTTP 200\n(FR-006, DR-006)
+}
+
+rectangle "Structured Response Object\n{ code: Integer, msg: String, data: Object }" as StructuredResponse
+
+' Primary HTTP flow through proxy
+ExtClient --> Proxy : HTTP request\n(URI, headers, body)\n(COM-001, DEF-001)
+Proxy --> Upstream : Forward retained FullHttpRequest\n(after upstream channel active)\n(FR-002, FR-003, C-002)
+Proxy .. NettyAdapter : uses Netty channel\n(writeAndFlush on activation)
+
+' Test client traffic (can target proxy path or test server directly)
+AsyncClient --> Proxy : HTTP GET workload\n(as configured)
+AsyncClient --> TestServer : HTTP GETs to base URI\n(FR-001, API-001)
+
+' Test server endpoints and behaviors
+ExtClient --> TestServer : HTTP requests\n(COM-001)
+AsyncClient --> DownloadEP : GET /download\n(API-003, FR-004, FR-005)
+DownloadEP --> AsyncClient : 200 + application/octet-stream\n+ Content-Disposition: attachment; filename=...\n(if file exists)\n(COM-002, DEF-004, DR-003, DR-004)
+DownloadEP --> AsyncClient : 404/204 (no file payload)\n(no Content-Disposition)\n(if file absent)\n(FR-005)
+
+AsyncClient --> UploadEP : file upload
+UploadEP --> AsyncClient : map payload { filepath: <fileName> }\n(API-004, FR-007, DEF-005, DR-005)
+
+' Structured response usage (generic responses)
+TestServer ..> StructuredResponse : returns structured responses\n(DEF-003)
+Upstream ..> StructuredResponse : may return structured responses\n(DEF-003)
+Proxy ..> StructuredResponse : passes through without modification\n(FR-003)
+
+' Notes and constraints
+note right of Proxy
+- Forwards retained FullHttpRequest (URI, headers, body)
+- No header/body modification required (FR-003)
+- Debug logging (when enabled) exposes URI, headers, body (NFR-002)
+- Forwards only after upstream Netty channel activation (C-002)
+end note
+
+note top of TestServer
+- Programmatic startup exposes base URI (FR-001, API-001)
+- Grizzly/Jersey HTTP server stack (C-001)
+- GET /download returns binary attachment when file exists (FR-004)
+- No attachment payload if file absent (FR-005)
+end note
+
+note right of DownloadEP
+- Content-Type: application/octet-stream
+- Content-Disposition includes filename on success (COM-002, DR-004)
+- Depends on file existence in Local File System (C-004)
+end note
+
+note bottom of TestClient
+- Workload: 50 threads x 1,000 async GETs = 50,000 total (NFR-001)
+- Success counter increments on HTTP 200 only (FR-006)
+- Releases resources: shutdown executor, close async client (NFR-003)
+end note
+
+note bottom
+Build & Compatibility:
+- Maven multi-module baseline (C-005)
+- Java targets: root/test-server Java 1.8; proxy SDK Java 1.7 (NFR-004)
+- Test server baseline compatible with declared Jersey version (C-006)
+end note
+
+@enduml

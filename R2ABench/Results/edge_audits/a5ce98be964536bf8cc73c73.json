@@ -1,0 +1,748 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "7e2da5c9bd861a0e73dd24f5b9bcbdeda4d522530e74bf2e57d293cb2859d284",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "0724f0bba075789de2ce989548b3de2ae816bd56d47194833cf606ed09a6948a",
+  "predicted_edges_sha256": "f5f3ecfbc1dd3a5814894482c8b0dd305fc68d24adccba9807acd903385aef83",
+  "precision": 0.2,
+  "recall": 0.6,
+  "f1": 0.3,
+  "reference_edges": [
+    [
+      "Global::Internet",
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway",
+      "Global::Internet"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "Deployment Inputs::Agent Inputs\\n- slave_count\\n- slave_ads\\n- slave_subnet_ids\\n- slave_display_name\\n- slave_image_id\\n- slave_shape\\n- slave_user_data (base64)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Bastion Inputs (private deployment)\\n- bastion_host (canonical)\\n- bastion_user\\n- bastion_private_key",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Jenkins Cluster Inputs\\n- label_prefix\\n- jenkins_version\\n- jenkins_password\\n- http_port\\n- jnlp_port\\n- plugins",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Master Inputs\\n- master_ad\\n- master_subnet_id\\n- master_display_name\\n- master_image_id\\n- master_shape\\n- master_user_data (base64)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::OCI Credential Inputs\\n- tenancy_ocid\\n- compartment_ocid\\n- user_ocid\\n- region\\n- fingerprint\\n- private_key_path",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::SSH Access Inputs\\n- ssh_authorized_keys\\n- ssh_private_key",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Global::Deployment Operator",
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Bastion Host (Optional)\\nControlled SSH access"
+    ],
+    [
+      "Global::Deployment Operator",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "Global::Deployment Operator",
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)"
+    ],
+    [
+      "Global::DevOps Engineer",
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)"
+    ],
+    [
+      "Global::Infrastructure Admin",
+      "OCI::Tenancy::Compartment::VCN"
+    ],
+    [
+      "Global::OCI",
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Jenkins Agents x N\\nCompute Instances"
+    ],
+    [
+      "Global::OCI",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Bastion Host (Optional)\\nControlled SSH access",
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Jenkins Agents x N\\nCompute Instances"
+    ],
+    [
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Bastion Host (Optional)\\nControlled SSH access",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Jenkins Agents x N\\nCompute Instances",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Load Balancer (Optional)\\nPublic endpoint for Jenkins",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Agent Inputs\\n- slave_count\\n- slave_ads\\n- slave_subnet_ids\\n- slave_display_name\\n- slave_image_id\\n- slave_shape\\n- slave_user_data (base64)"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Bastion Inputs (private deployment)\\n- bastion_host (canonical)\\n- bastion_user\\n- bastion_private_key"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Jenkins Cluster Inputs\\n- label_prefix\\n- jenkins_version\\n- jenkins_password\\n- http_port\\n- jnlp_port\\n- plugins"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Master Inputs\\n- master_ad\\n- master_subnet_id\\n- master_display_name\\n- master_image_id\\n- master_shape\\n- master_user_data (base64)"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::OCI Credential Inputs\\n- tenancy_ocid\\n- compartment_ocid\\n- user_ocid\\n- region\\n- fingerprint\\n- private_key_path"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::SSH Access Inputs\\n- ssh_authorized_keys\\n- ssh_private_key"
+    ],
+    [
+      "Terraform Configuration::Jenkins Agent Module\\n- slave_* variables\\n- jnlp_port\\n- label_prefix",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Terraform Configuration::Jenkins Master Module\\n- master_* variables\\n- http_port, jnlp_port\\n- label_prefix",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Terraform Configuration::OCI Provider",
+      "Global::OCI"
+    ],
+    [
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'",
+      "Terraform Configuration::Jenkins Agent Module\\n- slave_* variables\\n- jnlp_port\\n- label_prefix"
+    ],
+    [
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'",
+      "Terraform Configuration::Jenkins Master Module\\n- master_* variables\\n- http_port, jnlp_port\\n- label_prefix"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "Global::OCI",
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Jenkins Agents x N\\nCompute Instances"
+    ],
+    [
+      "Global::OCI",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Bastion Host (Optional)\\nControlled SSH access",
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Jenkins Agents x N\\nCompute Instances"
+    ],
+    [
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Bastion Host (Optional)\\nControlled SSH access",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Load Balancer (Optional)\\nPublic endpoint for Jenkins",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "Terraform Configuration::OCI Provider",
+      "Global::OCI"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "Global::Internet",
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway",
+      "Global::Internet"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "Deployment Inputs::Agent Inputs\\n- slave_count\\n- slave_ads\\n- slave_subnet_ids\\n- slave_display_name\\n- slave_image_id\\n- slave_shape\\n- slave_user_data (base64)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Bastion Inputs (private deployment)\\n- bastion_host (canonical)\\n- bastion_user\\n- bastion_private_key",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Jenkins Cluster Inputs\\n- label_prefix\\n- jenkins_version\\n- jenkins_password\\n- http_port\\n- jnlp_port\\n- plugins",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Master Inputs\\n- master_ad\\n- master_subnet_id\\n- master_display_name\\n- master_image_id\\n- master_shape\\n- master_user_data (base64)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::OCI Credential Inputs\\n- tenancy_ocid\\n- compartment_ocid\\n- user_ocid\\n- region\\n- fingerprint\\n- private_key_path",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::SSH Access Inputs\\n- ssh_authorized_keys\\n- ssh_private_key",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Global::Deployment Operator",
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Bastion Host (Optional)\\nControlled SSH access"
+    ],
+    [
+      "Global::Deployment Operator",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "Global::Deployment Operator",
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)"
+    ],
+    [
+      "Global::DevOps Engineer",
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)"
+    ],
+    [
+      "Global::Infrastructure Admin",
+      "OCI::Tenancy::Compartment::VCN"
+    ],
+    [
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Jenkins Agents x N\\nCompute Instances",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Agent Inputs\\n- slave_count\\n- slave_ads\\n- slave_subnet_ids\\n- slave_display_name\\n- slave_image_id\\n- slave_shape\\n- slave_user_data (base64)"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Bastion Inputs (private deployment)\\n- bastion_host (canonical)\\n- bastion_user\\n- bastion_private_key"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Jenkins Cluster Inputs\\n- label_prefix\\n- jenkins_version\\n- jenkins_password\\n- http_port\\n- jnlp_port\\n- plugins"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Master Inputs\\n- master_ad\\n- master_subnet_id\\n- master_display_name\\n- master_image_id\\n- master_shape\\n- master_user_data (base64)"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::OCI Credential Inputs\\n- tenancy_ocid\\n- compartment_ocid\\n- user_ocid\\n- region\\n- fingerprint\\n- private_key_path"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::SSH Access Inputs\\n- ssh_authorized_keys\\n- ssh_private_key"
+    ],
+    [
+      "Terraform Configuration::Jenkins Agent Module\\n- slave_* variables\\n- jnlp_port\\n- label_prefix",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Terraform Configuration::Jenkins Master Module\\n- master_* variables\\n- http_port, jnlp_port\\n- label_prefix",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'",
+      "Terraform Configuration::Jenkins Agent Module\\n- slave_* variables\\n- jnlp_port\\n- label_prefix"
+    ],
+    [
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'",
+      "Terraform Configuration::Jenkins Master Module\\n- master_* variables\\n- http_port, jnlp_port\\n- label_prefix"
+    ]
+  ],
+  "internal_reference_edges": [
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)"
+    ]
+  ],
+  "internal_predicted_edges": [],
+  "reference_witnesses": [
+    {
+      "edge_index": 1,
+      "counterpart_index": 27,
+      "source_group": 4,
+      "target_group": 5
+    },
+    {
+      "edge_index": 2,
+      "counterpart_index": 27,
+      "source_group": 4,
+      "target_group": 1
+    },
+    {
+      "edge_index": 4,
+      "counterpart_index": 12,
+      "source_group": 5,
+      "target_group": 2
+    },
+    {
+      "edge_index": 5,
+      "counterpart_index": 12,
+      "source_group": 5,
+      "target_group": 2
+    },
+    {
+      "edge_index": 6,
+      "counterpart_index": 12,
+      "source_group": 1,
+      "target_group": 2
+    },
+    {
+      "edge_index": 7,
+      "counterpart_index": 11,
+      "source_group": 1,
+      "target_group": 3
+    },
+    {
+      "edge_index": 8,
+      "counterpart_index": 11,
+      "source_group": 1,
+      "target_group": 3
+    },
+    {
+      "edge_index": 11,
+      "counterpart_index": 11,
+      "source_group": 2,
+      "target_group": 3
+    },
+    {
+      "edge_index": 12,
+      "counterpart_index": 11,
+      "source_group": 2,
+      "target_group": 3
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 11,
+      "counterpart_index": 7,
+      "source_group": 1,
+      "target_group": 3
+    },
+    {
+      "edge_index": 12,
+      "counterpart_index": 6,
+      "source_group": 1,
+      "target_group": 2
+    },
+    {
+      "edge_index": 13,
+      "counterpart_index": 7,
+      "source_group": 1,
+      "target_group": 3
+    },
+    {
+      "edge_index": 14,
+      "counterpart_index": 6,
+      "source_group": 1,
+      "target_group": 2
+    },
+    {
+      "edge_index": 16,
+      "counterpart_index": 4,
+      "source_group": 5,
+      "target_group": 2
+    },
+    {
+      "edge_index": 27,
+      "counterpart_index": 2,
+      "source_group": 4,
+      "target_group": 1
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "Global::Internet": [],
+    "Global::Oracle Cloud Infrastructure (Region)": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway": [
+      0
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)": [
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)": [
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)": [
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Route Table": [],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Security List": [],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)": [
+      1
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost": [
+      1
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Route Table": [],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Security List": [],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)": [
+      2,
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck": [],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController": [
+      2
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Route Table": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Security List": [],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)": [
+      3,
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)": [
+      3
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Route Table": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Security List": [],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)": [
+      3,
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)": [
+      3
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Route Table": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Security List": []
+  },
+  "predicted_endpoint_anchors": {
+    "Deployment Inputs::Agent Inputs\\n- slave_count\\n- slave_ads\\n- slave_subnet_ids\\n- slave_display_name\\n- slave_image_id\\n- slave_shape\\n- slave_user_data (base64)": [],
+    "Deployment Inputs::Bastion Inputs (private deployment)\\n- bastion_host (canonical)\\n- bastion_user\\n- bastion_private_key": [],
+    "Deployment Inputs::Jenkins Cluster Inputs\\n- label_prefix\\n- jenkins_version\\n- jenkins_password\\n- http_port\\n- jnlp_port\\n- plugins": [],
+    "Deployment Inputs::Master Inputs\\n- master_ad\\n- master_subnet_id\\n- master_display_name\\n- master_image_id\\n- master_shape\\n- master_user_data (base64)": [],
+    "Deployment Inputs::OCI Credential Inputs\\n- tenancy_ocid\\n- compartment_ocid\\n- user_ocid\\n- region\\n- fingerprint\\n- private_key_path": [],
+    "Deployment Inputs::SSH Access Inputs\\n- ssh_authorized_keys\\n- ssh_private_key": [],
+    "Global::Deployment Inputs": [],
+    "Global::Deployment Operator": [],
+    "Global::DevOps Engineer": [],
+    "Global::Infrastructure Admin": [],
+    "Global::OCI": [
+      0,
+      1,
+      2,
+      3,
+      5
+    ],
+    "Global::Operator Environment": [],
+    "Global::Terraform Configuration": [
+      4
+    ],
+    "OCI::Tenancy": [
+      0,
+      1,
+      2,
+      3,
+      5
+    ],
+    "OCI::Tenancy::Compartment": [
+      0,
+      1,
+      2,
+      3,
+      5
+    ],
+    "OCI::Tenancy::Compartment::VCN": [
+      0,
+      1,
+      2,
+      3,
+      5
+    ],
+    "OCI::Tenancy::Compartment::VCN::NAT Gateway\\n(Outbound only for private nodes)": [
+      0
+    ],
+    "OCI::Tenancy::Compartment::VCN::Private Subnet(s)": [
+      1,
+      3
+    ],
+    "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Bastion Host (Optional)\\nControlled SSH access": [
+      1
+    ],
+    "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Jenkins Agents x N\\nCompute Instances": [
+      3
+    ],
+    "OCI::Tenancy::Compartment::VCN::Public Subnet": [
+      2,
+      5
+    ],
+    "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance": [
+      2
+    ],
+    "OCI::Tenancy::Compartment::VCN::Public Subnet::Load Balancer (Optional)\\nPublic endpoint for Jenkins": [
+      5
+    ],
+    "Operator Environment::Terraform CLI\\n(init, plan, apply)": [],
+    "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)": [],
+    "Terraform Configuration::Jenkins Agent Module\\n- slave_* variables\\n- jnlp_port\\n- label_prefix": [],
+    "Terraform Configuration::Jenkins Master Module\\n- master_* variables\\n- http_port, jnlp_port\\n- label_prefix": [],
+    "Terraform Configuration::OCI Provider": [
+      4
+    ],
+    "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'": []
+  },
+  "reference_unanchored_edges": [
+    [
+      "Global::Internet",
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway",
+      "Global::Internet"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck"
+    ]
+  ],
+  "predicted_unanchored_edges": [
+    [
+      "Deployment Inputs::Agent Inputs\\n- slave_count\\n- slave_ads\\n- slave_subnet_ids\\n- slave_display_name\\n- slave_image_id\\n- slave_shape\\n- slave_user_data (base64)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Bastion Inputs (private deployment)\\n- bastion_host (canonical)\\n- bastion_user\\n- bastion_private_key",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Jenkins Cluster Inputs\\n- label_prefix\\n- jenkins_version\\n- jenkins_password\\n- http_port\\n- jnlp_port\\n- plugins",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::Master Inputs\\n- master_ad\\n- master_subnet_id\\n- master_display_name\\n- master_image_id\\n- master_shape\\n- master_user_data (base64)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::OCI Credential Inputs\\n- tenancy_ocid\\n- compartment_ocid\\n- user_ocid\\n- region\\n- fingerprint\\n- private_key_path",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Deployment Inputs::SSH Access Inputs\\n- ssh_authorized_keys\\n- ssh_private_key",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Global::Deployment Operator",
+      "OCI::Tenancy::Compartment::VCN::Private Subnet(s)::Bastion Host (Optional)\\nControlled SSH access"
+    ],
+    [
+      "Global::Deployment Operator",
+      "OCI::Tenancy::Compartment::VCN::Public Subnet::Jenkins Master\\nCompute Instance"
+    ],
+    [
+      "Global::Deployment Operator",
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)"
+    ],
+    [
+      "Global::DevOps Engineer",
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)"
+    ],
+    [
+      "Global::Infrastructure Admin",
+      "OCI::Tenancy::Compartment::VCN"
+    ],
+    [
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Operator Environment::Terraform CLI\\n(init, plan, apply)",
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Agent Inputs\\n- slave_count\\n- slave_ads\\n- slave_subnet_ids\\n- slave_display_name\\n- slave_image_id\\n- slave_shape\\n- slave_user_data (base64)"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Bastion Inputs (private deployment)\\n- bastion_host (canonical)\\n- bastion_user\\n- bastion_private_key"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Jenkins Cluster Inputs\\n- label_prefix\\n- jenkins_version\\n- jenkins_password\\n- http_port\\n- jnlp_port\\n- plugins"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::Master Inputs\\n- master_ad\\n- master_subnet_id\\n- master_display_name\\n- master_image_id\\n- master_shape\\n- master_user_data (base64)"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::OCI Credential Inputs\\n- tenancy_ocid\\n- compartment_ocid\\n- user_ocid\\n- region\\n- fingerprint\\n- private_key_path"
+    ],
+    [
+      "Operator Environment::terraform.tfvars / JSON\\n(variable-file configuration)",
+      "Deployment Inputs::SSH Access Inputs\\n- ssh_authorized_keys\\n- ssh_private_key"
+    ],
+    [
+      "Terraform Configuration::Jenkins Agent Module\\n- slave_* variables\\n- jnlp_port\\n- label_prefix",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Terraform Configuration::Jenkins Master Module\\n- master_* variables\\n- http_port, jnlp_port\\n- label_prefix",
+      "Terraform Configuration::OCI Provider"
+    ],
+    [
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'",
+      "Terraform Configuration::Jenkins Agent Module\\n- slave_* variables\\n- jnlp_port\\n- label_prefix"
+    ],
+    [
+      "Terraform Configuration::Variable Mapping & Validation\\n- maps inputs to modules\\n- enforces base64 for Cloud-Init\\n- ensures canonical 'bastion_host'",
+      "Terraform Configuration::Jenkins Master Module\\n- master_* variables\\n- http_port, jnlp_port\\n- label_prefix"
+    ]
+  ]
+}

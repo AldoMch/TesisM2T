@@ -1,0 +1,49 @@
+@startuml
+' Refined Layered Component/Deployment Diagram for Model Evolution Version Management Visualization Tool
+
+' Presentation Layer
+node "Presentation Layer" {
+    component "Browser Client" as browser
+    component "Frontend Module" as frontend
+    component "Account Management UI" as accountUI
+    component "Model Search & Viewing UI" as searchUI
+    component "Model Upload & Editing UI" as uploadUI
+    component "Evolution Relationship Editing UI" as evolutionUI
+    component "User Management UI" as userUI
+}
+
+' Application Layer
+node "Application Layer" {
+    component "Backend Module" as backend
+    component "Security Module" as security
+    component "Encryption Module" as encryption
+    component "Access Control Module" as accessControl
+    component "Algorithm Support Module" as algoModule
+}
+
+' Data Layer
+node "Data Layer" {
+    database "Neo4j Graph Database" as neo4j
+    database "MySQL Relational Database" as mysql
+}
+
+' External Systems
+cloud "External Systems" {
+    component "Python Libraries" as pythonLibs
+    component "Console Interface" as console
+}
+
+' Dependencies
+browser --> frontend : HTTPS
+frontend --> backend : HTTPS
+backend --> neo4j : Bolt Protocol
+backend --> mysql : JDBC over TLS
+backend --> algoModule : Function Calls
+algoModule --> pythonLibs : Library Import
+frontend --> algoModule : HTTPS (AD-003)
+security --> backend : OAuth 2.0 Integration
+encryption --> backend : TLS 1.3 / AES-256
+accessControl --> backend : Policy Enforcement
+console --> backend : UDP / SMTP
+
+@enduml

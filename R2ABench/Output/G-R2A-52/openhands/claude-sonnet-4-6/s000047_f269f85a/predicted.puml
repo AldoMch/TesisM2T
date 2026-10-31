@@ -1,0 +1,101 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #336699
+}
+skinparam database {
+  BackgroundColor #FFF5CC
+  BorderColor #CC9900
+}
+skinparam node {
+  BackgroundColor #EEF8EE
+  BorderColor #336688
+}
+
+node "Electron Desktop Application" {
+
+  package "Settings Module" {
+    [Settings Sanitizer] as SettingsSanitizer
+  }
+
+  package "Translation Module" {
+    [Language Provider] as LangProvider
+  }
+
+  package "Export Controllers" {
+    [Tree CSV Export Controller] as TreeCtrl
+    [RESIP Export Controller] as ResipCtrl
+    [CSV Export Controller] as CsvCtrl
+    [Excel Export Controller] as ExcelCtrl
+  }
+
+  package "Hash Processing" {
+    [Hash Computation Controller] as HashCtrl
+    [Batch Hash Processor] as BatchHash
+  }
+
+  package "Background Workers" {
+    [Tree CSV Export Worker] as TreeWorker
+    [RESIP Export Worker] as ResipWorker
+    [CSV Export Worker] as CsvWorker
+    [Excel Export Worker] as ExcelWorker
+    [Hash Worker] as HashWorker
+  }
+
+  package "Observable / Stream Layer" {
+    [Result Stream Dispatcher] as StreamDispatch
+  }
+
+  database "Persisted User Settings" as PersistedSettings
+
+  folder "Application User Data Directory" as UserDataDir {
+    [hash-result-debug] as HashResultDebug
+    [hash-error-debug] as HashErrorDebug
+  }
+}
+
+actor "End User" as User
+actor "Operator / Integrator" as Operator
+
+User --> PersistedSettings : stores preferences
+PersistedSettings --> SettingsSanitizer : raw settings input\n({}, "", undefined, or invalid values)
+SettingsSanitizer --> User : normalized settings\n(isTrackingEnabled, isMonitoringEnabled, language)
+
+Operator --> TreeCtrl : submit files-and-folders map
+Operator --> ResipCtrl : submit files, metadata,\naliases, comments, tags
+Operator --> CsvCtrl : submit aliases, comments,\nfiles, metadata, tags, hashes
+Operator --> ExcelCtrl : submit CsvExporterData
+Operator --> HashCtrl : submit paths + basePath
+
+LangProvider --> TreeCtrl : current language value
+LangProvider --> CsvCtrl : current language value
+LangProvider --> ExcelCtrl : current language value
+
+TreeCtrl --> TreeWorker : dispatch background worker\n(files-and-folders map + language)
+ResipCtrl --> ResipWorker : dispatch background worker\n(files, metadata, aliases, comments, tags)
+CsvCtrl --> CsvWorker : dispatch background worker\n(export data + language)
+ExcelCtrl --> ExcelWorker : dispatch background worker\n(CsvExporterData + language)
+
+HashCtrl --> BatchHash : invoke batch processing\n(paths + basePath)
+BatchHash --> HashWorker : batch hash requests
+
+TreeWorker --> StreamDispatch : progress updates +\nfinal tree CSV string
+ResipWorker --> StreamDispatch : progress results\n(counts, RESIP CSV) +\nfinal RESIP CSV
+CsvWorker --> StreamDispatch : CSV export result
+ExcelWorker --> StreamDispatch : Excel export result
+HashWorker --> StreamDispatch : hash processing stream\n+ merged hash maps
+
+StreamDispatch --> Operator : Observable / stream-based\nasynchronous results
+
+HashCtrl --> HashResultDebug : write buffered debug output
+HashCtrl --> HashErrorDebug : write buffered debug output
+
+@enduml

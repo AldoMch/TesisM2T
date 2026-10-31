@@ -1,0 +1,32 @@
+@startuml
+component "Annotation Core Service" as compannotationservice
+component "API Gateway and Reverse Proxy" as compapigateway
+component "Document Conversion Worker" as compasyncconversionworker
+component "Authentication and Role Management Service" as compauthservice
+component "Distributed Cache Layer" as compcache
+component "Document Management Service" as compdocumentservice
+component "Message and Event Broker" as compmessagebroker
+component "Information Mining and Few-Shot Service" as compminingservice
+component "Object Storage Service" as compobjectstorage
+component "Project and Task Management Service" as compprojecttaskservice
+component "Relational Database" as comprelationaldb
+component "Single Page Web Application" as compwebclient
+compannotationservice --> compminingservice : gRPC/HTTP REST
+compannotationservice --> comprelationaldb : SQL Connection
+compapigateway --> compannotationservice : gRPC/HTTP REST
+compapigateway --> compauthservice : gRPC/HTTP REST
+compapigateway --> compdocumentservice : gRPC/HTTP REST
+compapigateway --> compminingservice : gRPC/HTTP REST
+compapigateway --> compprojecttaskservice : gRPC/HTTP REST
+compasyncconversionworker --> compdocumentservice : gRPC
+compasyncconversionworker --> compobjectstorage : S3 API
+compauthservice --> compcache : TCP/RESP
+compauthservice --> comprelationaldb : SQL Connection
+compdocumentservice --> compmessagebroker : AMQP/Kafka Protocol
+compdocumentservice --> compobjectstorage : S3 API
+compdocumentservice --> comprelationaldb : SQL Connection
+compmessagebroker --> compasyncconversionworker : AMQP/Kafka Protocol
+compprojecttaskservice --> compcache : TCP/RESP
+compprojecttaskservice --> comprelationaldb : SQL Connection
+compwebclient --> compapigateway : HTTPS/WSS
+@enduml

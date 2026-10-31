@@ -1,0 +1,134 @@
+@startuml
+title AwesomeMusic System Architecture
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+
+rectangle "External Network" as ext {
+  actor user as "User (Browser)"
+}
+
+rectangle "DMZ / Edge" as dmz {
+  node "Gateway VM\nUbuntu 18.04" as gateway {
+    component nginx as "Nginx 1.19.8\n- HTTPS termination\n- Static frontend\n- Reverse proxy"
+    component fe as "Web Frontend\nHTML/CSS/JS/Bootstrap"
+  }
+}
+
+rectangle "Internal Network" as internal {
+  node "App VM(s)\nUbuntu 18.04" as app {
+    component backA as "Web Backend API\n(Golang/Gin) - Instance A"
+    component backB as "Web Backend API\n(Golang/Gin) - Instance B"
+    component sched as "Scheduler\n- Daily 02:00 tasks (FR-016)\n- User-submitted generation tasks (FR-017)\n- Poll task status & retries\n- Log errors"
+  }
+
+  node "AI VM(s)\nUbuntu 18.04" as ai {
+    component genw as "Algorithm Service\nGeneration Worker (FR-013)"
+    component trainw as "Algorithm Service\nTraining Worker (FR-012)"
+    component classw as "Algorithm Service\nClassification Worker (FR-014)"
+    component recow as "Algorithm Service\nRecommendation Worker (FR-015)"
+  }
+
+  node "Infrastructure VM(s)\nUbuntu 18.04" as infra {
+    component mq as "RabbitMQ 3.8.14\nTask Queue (MQ)"
+    component etcd as "etcd 3.4.15\nConfig / Coordination"
+    node hdfs as "Hadoop 3.2.2\nHDFS: Scores (abc), MIDI, Models"
+    database db as "Metadata Store\nUser, Scores, Favorites, Follows,\nModel favorites, Recommendations,\nHot charts, Task status, Logs"
+  }
+}
+
+' External access and edge
+user --> nginx : HTTPS (UI, API, Download)
+nginx --> fe : Serve static assets
+user <-- nginx : HTML/JS/CSS
+nginx --> backA : Reverse proxy API (HTTPS/TCP)
+nginx --> backB : Reverse proxy API (HTTPS/TCP)
+
+' Backend to storage and infra
+backA --> db : CRUD\n(Accounts, scores, relations,\nreco lists, hot charts,\ntask status, logs)
+backB --> db : CRUD
+backA --> hdfs : File I/O\n(abc, MIDI, generated scores,\nmodel artifacts)
+backB --> hdfs : File I/O
+backA --> mq : Enqueue tasks / Poll status
+backB --> mq : Enqueue tasks / Poll status
+sched --> mq : Enqueue daily batches\n(training, classification,\nrecommendation) at 02:00
+
+' Algorithm workers and data flows
+mq --> genw : Generation tasks\n(seed, model ID)
+mq --> trainw : Training tasks\n(user IDs, playlists)
+mq --> classw : Classification tasks\n(score IDs)
+mq --> recow : Recommendation tasks\n(user IDs, song lists)
+
+genw --> hdfs : Read seed (abc/MIDI)\nRead/Write models\nWrite generated MIDI/abc
+trainw --> hdfs : Read playlists (MIDI/abc)\nWrite updated user models
+classw --> hdfs : Read scores (abc/MIDI)\nWrite score labels
+recow --> hdfs : Read score representations\nWrite recommendation results
+
+genw --> mq : Status / Results\n(success, retries, exceptions)
+trainw --> mq : Status
+classw --> mq : Status
+recow --> mq : Status
+
+' Coordination/config
+backA --> etcd : Config / Service registry
+backB --> etcd : Config / Service registry
+genw --> etcd : Config / Coordination
+trainw --> etcd : Config / Coordination
+classw --> etcd : Config / Coordination
+recow --> etcd : Config / Coordination
+
+' Notes mapping requirements and qualities
+note right of nginx
+- Isolates external/internal boundary (NFR-020)
+- Load balances Backend instances (NFR-025)
+- Serves static Web Frontend
+end note
+
+note bottom of app
+Backend responsibilities:
+- Accounts & Auth (FR-001, FR-002)
+- Favorites & Follows (FR-003, FR-004, FR-007)
+- Score Upload/Download/Search (FR-006, FR-009, FR-011)
+- Recommendations & Hot charts (FR-008, FR-010, FR-018)
+- Web-side score generation orchestration (FR-005)
+Non-functional targets:
+- Page response <= 1s (C-003)
+- >=2000 QPS (NFR-016), >=100 TPS (NFR-017)
+end note
+
+note bottom of ai
+Algorithm service:
+- Daily model training per user (FR-012)
+- Online score generation with retries (FR-013)
+- Daily classification and recommendation (FR-014, FR-015)
+Performance:
+- Training <= 1.5h avg (NFR-012, C-004)
+- Generation <= 1min avg (NFR-013, C-007)
+- Daily classification/reco <= 1.5h avg (NFR-014, NFR-015)
+end note
+
+note top of infra
+Infrastructure:
+- RabbitMQ for reliable task delivery (FR-016, FR-017)
+- Hadoop HDFS for files/models (abc, MIDI, params)
+- etcd for coordination/config
+- Metadata Store for structured data and task logs (DR-001..DR-016)
+Replication & availability:
+- Important data 3 replicas (NFR-021)
+- Survive partial failures (NFR-022)
+end note
+
+legend left
+Modules:
+- Web Frontend (HTML/CSS/JS/Bootstrap)
+- Web Backend (Golang/Gin) [scalable instances]
+- Scheduler (batch & on-demand tasks)
+- Algorithm Service (workers for gen/train/classify/reco)
+- Infrastructure: Nginx, RabbitMQ, etcd, Hadoop HDFS, Metadata Store
+Protocols:
+- HTTPS and TCP/IP (C-012)
+endlegend
+
+@enduml

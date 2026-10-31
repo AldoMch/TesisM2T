@@ -1,0 +1,450 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API/Integration Layer::Amazon API Gateway\\n(execute-api, AWS SigV4, HTTP/JSON)"
+      ],
+      "gt_nodes": [
+        "Global::API Gateway"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Security/Authentication Layer::Amazon Cognito",
+        "Security/Authentication Layer::AWS IAM"
+      ],
+      "gt_nodes": [
+        "Global::Cognito"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Hosting/Infrastructure Layer::Amazon S3\\n(static frontend / files)"
+      ],
+      "gt_nodes": [
+        "Global::S3"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Hosting/Infrastructure Layer::Amazon EC2"
+      ],
+      "gt_nodes": [
+        "Live Score Pipeline::EC2"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Streaming/Real-time Layer::Kafka with Apache Avro"
+      ],
+      "gt_nodes": [
+        "Live Score Pipeline::EC2::Kafka"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Streaming/Real-time Layer::Live Score Events"
+      ],
+      "gt_nodes": [
+        "Live Score Pipeline::live_score\\nLambda"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Notification Service::SNS",
+        "Notification Service::SQS"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Notification/Messaging Layer::Amazon SQS\\n(reminder queue)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Prediction Service::DynamoDB\\nPredictions",
+        "Prediction Service::Elasticsearch",
+        "Standing Service::DynamoDB\\nStandings",
+        "Standing Service::Elasticsearch"
+      ],
+      "predicted_nodes": [
+        "Data/Persistence and Search Layer::Amazon DynamoDB\\n(match/venue/location data)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Prediction/ML Layer::Amazon SageMaker\\n(match probabilities)"
+      ],
+      "gt_nodes": [
+        "Prediction Service::SageMaker"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Recommendation Service::Lex",
+        "Recommendation Service::recommendation\\nLambda"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Backend/Application Layer::Nearby Live Match-Screening\\nRecommendation Endpoint"
+      ],
+      "match_type": "N:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "API/Integration Layer::Amazon API Gateway\\n(execute-api, AWS SigV4, HTTP/JSON)",
+      "reference_nodes": [
+        "Global::API Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend/Application Layer::Chatbot Recommendation Endpoint",
+      "reference_nodes": [
+        "Recommendation Service::Lex",
+        "Recommendation Service::recommendation\\nLambda"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend/Application Layer::Conversation Handler\\n(intent handling)",
+      "reference_nodes": [
+        "Recommendation Service::Lex",
+        "Recommendation Service::recommendation\\nLambda"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend/Application Layer::Lambda Backend Services\\n(Python / Node)",
+      "reference_nodes": [
+        "Fixtures Service::fixtures\\nLambda",
+        "Live Score Pipeline::live_score\\nLambda",
+        "Prediction Service::prediction\\nLambda",
+        "Recommendation Service::recommendation\\nLambda",
+        "Standing Service::standing\\nLambda"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend/Application Layer::Nearby Live Match-Screening\\nRecommendation Endpoint",
+      "reference_nodes": [
+        "Recommendation Service::Lex",
+        "Recommendation Service::recommendation\\nLambda"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data/Persistence and Search Layer::Amazon DynamoDB\\n(match/venue/location data)",
+      "reference_nodes": [
+        "Live Score Pipeline::DynamoDB\\nLive Scores",
+        "Prediction Service::DynamoDB\\nPredictions",
+        "Standing Service::DynamoDB\\nStandings"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data/Persistence and Search Layer::Elasticsearch\\n(search/retrieval)",
+      "reference_nodes": [
+        "Live Score Pipeline::Elasticsearch",
+        "Prediction Service::Elasticsearch",
+        "Standing Service::Elasticsearch"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Hosting/Infrastructure Layer::Amazon EC2",
+      "reference_nodes": [
+        "Live Score Pipeline::EC2",
+        "Live Score Pipeline::EC2::M4",
+        "Live Score Pipeline::EC2::foot app"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Hosting/Infrastructure Layer::Amazon S3\\n(static frontend / files)",
+      "reference_nodes": [
+        "Global::S3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Notification/Messaging Layer::Amazon SNS\\n(SMS delivery)",
+      "reference_nodes": [
+        "Notification Service::SNS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Notification/Messaging Layer::Amazon SQS\\n(reminder queue)",
+      "reference_nodes": [
+        "Notification Service::SQS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Prediction/ML Layer::Amazon SageMaker\\n(match probabilities)",
+      "reference_nodes": [
+        "Prediction Service::SageMaker"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation Layer::Web Application\\n(HTML, CSS, Bootstrap, jQuery)",
+      "reference_nodes": [
+        "Global::User"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Security/Authentication Layer::AWS IAM",
+      "reference_nodes": [
+        "Global::Cognito"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Security/Authentication Layer::Amazon Cognito",
+      "reference_nodes": [
+        "Global::Cognito"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Streaming/Real-time Layer::Kafka with Apache Avro",
+      "reference_nodes": [
+        "Live Score Pipeline::EC2::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Streaming/Real-time Layer::Live Score Events",
+      "reference_nodes": [
+        "Live Score Pipeline::live_score\\nLambda"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Fixtures Service::SQS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Backend/Application Layer::Lambda Backend Services\\n(Python / Node)"
+      ],
+      "gt_node": "Fixtures Service::fixtures\\nLambda"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API/Integration Layer::Amazon API Gateway\\n(execute-api, AWS SigV4, HTTP/JSON)"
+      ],
+      "gt_node": "Global::API Gateway"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Security/Authentication Layer::AWS IAM",
+        "Security/Authentication Layer::Amazon Cognito"
+      ],
+      "gt_node": "Global::Cognito"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Hosting/Infrastructure Layer::Amazon S3\\n(static frontend / files)"
+      ],
+      "gt_node": "Global::S3"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::User"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data/Persistence and Search Layer::Amazon DynamoDB\\n(match/venue/location data)"
+      ],
+      "gt_node": "Live Score Pipeline::DynamoDB\\nLive Scores"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Hosting/Infrastructure Layer::Amazon EC2"
+      ],
+      "gt_node": "Live Score Pipeline::EC2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Streaming/Real-time Layer::Kafka with Apache Avro"
+      ],
+      "gt_node": "Live Score Pipeline::EC2::Kafka"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Live Score Pipeline::EC2::M4"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Live Score Pipeline::EC2::foot app"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data/Persistence and Search Layer::Elasticsearch\\n(search/retrieval)"
+      ],
+      "gt_node": "Live Score Pipeline::Elasticsearch"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Streaming/Real-time Layer::Live Score Events"
+      ],
+      "gt_node": "Live Score Pipeline::live_score\\nLambda"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Notification/Messaging Layer::Amazon SNS\\n(SMS delivery)"
+      ],
+      "gt_node": "Notification Service::SNS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Notification/Messaging Layer::Amazon SQS\\n(reminder queue)"
+      ],
+      "gt_node": "Notification Service::SQS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data/Persistence and Search Layer::Amazon DynamoDB\\n(match/venue/location data)"
+      ],
+      "gt_node": "Prediction Service::DynamoDB\\nPredictions"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data/Persistence and Search Layer::Elasticsearch\\n(search/retrieval)"
+      ],
+      "gt_node": "Prediction Service::Elasticsearch"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Prediction/ML Layer::Amazon SageMaker\\n(match probabilities)"
+      ],
+      "gt_node": "Prediction Service::SageMaker"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Prediction Service::prediction\\nLambda"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Backend/Application Layer::Chatbot Recommendation Endpoint",
+        "Backend/Application Layer::Conversation Handler\\n(intent handling)",
+        "Backend/Application Layer::Nearby Live Match-Screening\\nRecommendation Endpoint"
+      ],
+      "gt_node": "Recommendation Service::Lex"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Backend/Application Layer::Chatbot Recommendation Endpoint",
+        "Backend/Application Layer::Conversation Handler\\n(intent handling)",
+        "Backend/Application Layer::Nearby Live Match-Screening\\nRecommendation Endpoint"
+      ],
+      "gt_node": "Recommendation Service::recommendation\\nLambda"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data/Persistence and Search Layer::Amazon DynamoDB\\n(match/venue/location data)"
+      ],
+      "gt_node": "Standing Service::DynamoDB\\nStandings"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data/Persistence and Search Layer::Elasticsearch\\n(search/retrieval)"
+      ],
+      "gt_node": "Standing Service::Elasticsearch"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Backend/Application Layer::Lambda Backend Services\\n(Python / Node)"
+      ],
+      "gt_node": "Standing Service::standing\\nLambda"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5775,
+      "completion_tokens": 1105,
+      "total_tokens": 6880,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Fixtures Service::SQS",
+    "Fixtures Service::fixtures\\nLambda",
+    "Global::User",
+    "Live Score Pipeline::DynamoDB\\nLive Scores",
+    "Live Score Pipeline::EC2::M4",
+    "Live Score Pipeline::EC2::foot app",
+    "Live Score Pipeline::Elasticsearch",
+    "Prediction Service::prediction\\nLambda",
+    "Standing Service::standing\\nLambda"
+  ],
+  "unmatched_predicted_nodes": [
+    "Backend/Application Layer::Chatbot Recommendation Endpoint",
+    "Backend/Application Layer::Conversation Handler\\n(intent handling)",
+    "Backend/Application Layer::Lambda Backend Services\\n(Python / Node)",
+    "Data/Persistence and Search Layer::Elasticsearch\\n(search/retrieval)",
+    "Notification/Messaging Layer::Amazon SNS\\n(SMS delivery)",
+    "Presentation Layer::Web Application\\n(HTML, CSS, Bootstrap, jQuery)"
+  ],
+  "_provenance": {
+    "fingerprint": "72978fd537d5616f7e2b5686991ae76a7877179ed311e35e645d5a107d6c43bd",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

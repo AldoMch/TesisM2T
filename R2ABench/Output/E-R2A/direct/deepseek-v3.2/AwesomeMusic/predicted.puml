@@ -1,0 +1,143 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+title AwesomeMusic System Architecture
+
+rectangle "External User" as user #white
+
+rectangle "Load Balancer\n(Nginx 1.19.8)" as lb #lightblue
+
+package "Web Frontend" {
+    rectangle "User Interface\n(HTML/CSS/JS, Bootstrap)" as ui #lightgreen
+    note right of ui
+        Registration/Login
+        Homepage (Recommendations/Hot Charts)
+        Search & List
+        Song Detail
+        Song Generation
+        Personal Center
+    end note
+}
+
+package "Web Backend" {
+    rectangle "API Gateway\n(Golang, Gin)" as gateway #orange
+    rectangle "User Service" as usersvc #orange
+    rectangle "Score Service" as scoresvc #orange
+    rectangle "Model Service" as modelsvc #orange
+    rectangle "Recommendation Service" as recsvc #orange
+    rectangle "Hot Chart Service" as hotchartsvc #orange
+    rectangle "Task Service" as tasksvc #orange
+}
+
+package "Algorithm Service" {
+    rectangle "Model Training Service" as training #pink
+    rectangle "Score Generation Service" as generation #pink
+    rectangle "Score Classification Service" as classification #pink
+    rectangle "Song Recommendation Service" as recommendation #pink
+    rectangle "Music Processing Engine" as musicproc #pink
+    note right of musicproc
+        MIDI ↔ ABC Conversion
+        Track Seed Extraction
+        GPT-2 / LSTM Models
+    end note
+}
+
+package "Scheduling & Messaging" {
+    rectangle "Scheduler" as scheduler #violet
+    rectangle "Message Queue\n(RabbitMQ 3.8.14)" as mq #violet
+}
+
+package "Data Storage" {
+    rectangle "User Database" as userdb #lightgray
+    rectangle "Score Database" as scoredb #lightgray
+    rectangle "Model Database" as modeldb #lightgray
+    rectangle "Hot Chart Database" as hotdb #lightgray
+    rectangle "Task Database" as taskdb #lightgray
+    rectangle "File Storage\n(MIDI, ABC, Seeds)" as filestore #lightgray
+    rectangle "Distributed Storage\n(Hadoop 3.2.2)" as hadoop #lightgray
+}
+
+rectangle "Service Discovery\n(etcd 3.4.15)" as etcd #silver
+
+' User interactions
+user -> lb : HTTPS
+lb -> ui : HTTP/HTTPS
+ui -> gateway : API Calls (HTTPS)
+
+' Frontend to Backend flows
+gateway -> usersvc : Auth, User Mgmt
+gateway -> scoresvc : Upload, Download, Search, Favorite
+gateway -> modelsvc : Model Favorite, List
+gateway -> recsvc : Get Recommendations
+gateway -> hotchartsvc : Get Hot Charts
+gateway -> tasksvc : Submit Generation Task
+
+' Backend to Algorithm flows
+tasksvc -> mq : Push Task Metadata
+scheduler -> mq : Poll / Push Scheduled Tasks
+mq -> generation : Consume Generation Task
+mq -> training : Consume Training Task
+mq -> classification : Consume Classification Task
+mq -> recommendation : Consume Recommendation Task
+
+' Algorithm internal flows
+generation -> musicproc : MIDI→ABC, Seed Extract, Generate
+training -> musicproc : MIDI→ABC, Model Fine-tune
+classification -> musicproc : MIDI→ABC, Generate Representation
+recommendation -> musicproc : MIDI→ABC, Similarity Calc
+
+' Data access flows
+usersvc -> userdb : User Accounts, Follows
+scoresvc -> scoredb : Score Metadata, Favorites
+scoresvc -> filestore : Score Files (MIDI/ABC)
+modelsvc -> modeldb : Model Metadata, Favorites
+recsvc -> scoredb : Score Data for Recs
+recsvc -> userdb : User Data for Recs
+hotchartsvc -> hotdb : Hot Chart Data
+tasksvc -> taskdb : Task Metadata, Status
+musicproc -> filestore : Read/Write Music Files
+musicproc -> hadoop : Store Model Params, Representations
+training -> modeldb : Update User Model Params
+classification -> scoredb : Update Score Labels
+
+' Service discovery
+gateway ..> etcd : Discover Services
+usersvc ..> etcd
+scoresvc ..> etcd
+modelsvc ..> etcd
+recsvc ..> etcd
+hotchartsvc ..> etcd
+tasksvc ..> etcd
+
+' Scheduled flows
+scheduler -> tasksvc : Trigger Daily Tasks (02:00)
+scheduler -> training : Trigger Training
+scheduler -> classification : Trigger Classification
+scheduler -> recommendation : Trigger Recommendation
+
+' Non-functional elements
+note top of lb
+    **Load Balancing**
+    Concurrent Access: 2000 QPS
+    Transaction Throughput: 100 TPS
+end note
+
+note right of gateway
+    **Security Boundary**
+    Internal/External Isolation
+end note
+
+note left of filestore
+    **Data Reliability**
+    3-Replica Storage
+end note
+
+note bottom of mq
+    **Reliable Messaging**
+    Task Queue for Async Processing
+end note
+
+@enduml

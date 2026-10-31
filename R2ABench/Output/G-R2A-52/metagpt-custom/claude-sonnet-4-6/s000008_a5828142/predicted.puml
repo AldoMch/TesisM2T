@@ -1,0 +1,171 @@
+@startuml BunnyCode_Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #5566AA
+  FontColor #222244
+  FontStyle bold
+}
+skinparam database {
+  BackgroundColor #FFF8E8
+  BorderColor #AA8833
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #7788BB
+}
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER
+' ─────────────────────────────────────────────
+package "Presentation Layer" as PL {
+  component "Vue Frontend Application\n(Workspace Editor /\nPlayback View / Battle View)" as VueFE
+}
+
+' ─────────────────────────────────────────────
+' API GATEWAY / REVERSE PROXY LAYER
+' ─────────────────────────────────────────────
+package "API Gateway / Reverse Proxy Layer" as AGPL {
+  component "Nginx Reverse Proxy\n(HTTP & WebSocket Termination\n/ Static Asset Serving)" as Nginx
+}
+
+' ─────────────────────────────────────────────
+' APPLICATION LAYER
+' ─────────────────────────────────────────────
+package "Application Layer" as AL {
+  component "Express REST API Server\n(Auth / Project / Execution /\nPlayback / File Endpoints)" as ExpressAPI
+  component "JWT Authentication Middleware\n(Token Validation / User Resolution)" as JWTMiddleware
+  component "Code Execution Service\n(Submission Coordinator)" as CodeExecSvc
+  component "Coding-Process Recorder\n(Event Capture & Playback Query)" as CodingRecorder
+  component "Project & Version Manager\n(Project / Version / File CRUD)" as ProjVersionMgr
+  component "File Upload & Distribution Manager\n(Upload / Metadata Persistence /\nCDN URL Generation)" as FileDistMgr
+}
+
+' ─────────────────────────────────────────────
+' REAL-TIME COMMUNICATION LAYER
+' ─────────────────────────────────────────────
+package "Real-Time Communication Layer\n(Socket.IO — co-located within App Process)" as RTCL {
+  component "Workspace Socket Handler\n(Auth / Editing State / Disconnect)" as WorkspaceSock
+  component "Battle Socket Handler\n(Invitation / Sync / Judge / Outcome)" as BattleSock
+}
+
+' ─────────────────────────────────────────────
+' EXECUTION LAYER
+' ─────────────────────────────────────────────
+package "Execution Layer" as EL {
+  component "Docker Sandbox\n(Isolated Container Runtime\nCompile & Execute)" as DockerSandbox
+}
+
+' ─────────────────────────────────────────────
+' CACHING LAYER
+' ─────────────────────────────────────────────
+package "Caching Layer" as CCL {
+  database "Redis\n(Socket Mappings / Battle State /\nTTL Invitations / Concurrency Control)" as RedisDB
+}
+
+' ─────────────────────────────────────────────
+' RELATIONAL DATA LAYER
+' ─────────────────────────────────────────────
+package "Relational Data Layer" as RDL {
+  database "MySQL Database\n(Users / Projects / Versions /\nBattle Records / Problem Data)" as MySQLDB
+}
+
+' ─────────────────────────────────────────────
+' TIME-SERIES DATA LAYER
+' ─────────────────────────────────────────────
+package "Time-Series Data Layer" as TSDL {
+  database "InfluxDB\n(Coding-Process Events /\nTime-Range Queryable)" as InfluxDB
+}
+
+' ─────────────────────────────────────────────
+' OBJECT STORAGE & DISTRIBUTION LAYER
+' ─────────────────────────────────────────────
+package "Object Storage & Distribution Layer" as OSDL {
+  component "S3-Compatible Object Storage\n(Code Files / Battle Results /\nUser Files / Archives)" as S3Storage
+  component "CDN Distribution Service\n(CloudFront-Style / Distributable URLs)" as CDN
+}
+
+' ─────────────────────────────────────────────
+' DEPLOYMENT / INFRASTRUCTURE LAYER
+' ─────────────────────────────────────────────
+package "Deployment / Infrastructure Layer" as DIL {
+  component "Automated Deployment Scripts\n(Service Config & Wiring)" as DeployScripts
+}
+
+' ═════════════════════════════════════════════
+' DEPENDENCY ARROWS
+' ═════════════════════════════════════════════
+
+' --- Presentation -> Gateway ---
+VueFE --> Nginx : REST API calls (HTTPS)
+VueFE --> Nginx : Socket.IO events (WebSocket)
+
+' --- CDN -> Presentation (M-001: asset delivery to browser) ---
+CDN --> VueFE : static asset delivery
+
+' --- Gateway -> Application / Real-Time ---
+Nginx --> ExpressAPI : HTTP proxy (REST)
+Nginx --> ExpressAPI : WebSocket upgrade (Socket.IO)
+
+' --- Application Layer internals ---
+ExpressAPI --> JWTMiddleware     : gates protected REST routes
+ExpressAPI --> CodeExecSvc       : code submission requests
+ExpressAPI --> CodingRecorder    : playback queries / writes
+ExpressAPI --> ProjVersionMgr    : project / version ops
+ExpressAPI --> FileDistMgr       : file upload / URL ops
+
+' --- JWT Middleware -> Socket handlers (M-002: socket auth) ---
+JWTMiddleware --> WorkspaceSock : validates socket connection auth
+JWTMiddleware --> BattleSock    : validates socket connection auth
+
+' --- Application -> Execution ---
+CodeExecSvc --> DockerSandbox : delegate compile & run
+
+' --- Application -> Time-Series ---
+CodingRecorder --> InfluxDB : event writes & playback queries
+
+' --- CodingRecorder -> Relational (M-003: project/version context) ---
+CodingRecorder --> MySQLDB : resolve / validate project & version context
+
+' --- Application -> Relational ---
+ProjVersionMgr --> MySQLDB : project / version / file CRUD
+ExpressAPI     --> MySQLDB : user auth reads / writes
+
+' --- Application -> Object Storage ---
+FileDistMgr --> S3Storage : upload files & archives
+FileDistMgr --> CDN       : generate distributable URLs
+
+' --- FileDistMgr -> MySQL (DE-004: file metadata persistence) ---
+FileDistMgr --> MySQLDB : persist file metadata for URL retrieval
+
+' --- Real-Time -> Caching ---
+WorkspaceSock --> RedisDB : readiness-gated socket/version\nmappings & conditional cache writes
+BattleSock    --> RedisDB : invitation TTL / battle state\nwatched concurrency control
+
+' --- Real-Time -> Relational ---
+BattleSock --> MySQLDB : battle record & outcome writes
+BattleSock --> MySQLDB : problem / answer data reads (DE-002)
+
+' --- WorkspaceSock -> ProjVersionMgr for authorization (M-005) ---
+WorkspaceSock --> ProjVersionMgr : project authorization lookup
+
+' --- BattleSock -> FileDistMgr for battle result uploads (M-004) ---
+BattleSock --> FileDistMgr : battle result file upload
+
+' --- S3 -> CDN ---
+S3Storage --> CDN : origin for static assets & archives
+
+' --- Deployment -> All Services ---
+DeployScripts ..> Nginx         : configures
+DeployScripts ..> ExpressAPI    : configures
+DeployScripts ..> VueFE         : configures
+DeployScripts ..> RedisDB       : configures
+DeployScripts ..> MySQLDB       : configures
+DeployScripts ..> InfluxDB      : configures
+DeployScripts ..> DockerSandbox : configures
+DeployScripts ..> S3Storage     : configures
+DeployScripts ..> CDN           : configures
+
+@enduml

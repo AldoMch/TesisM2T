@@ -1,0 +1,137 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam packageBorderColor #5570B0
+skinparam packageFontStyle bold
+skinparam componentBackgroundColor #DDEEFF
+skinparam componentBorderColor #3355AA
+skinparam nodeBackgroundColor #EAF4EA
+skinparam nodeBorderColor #3A7A3A
+skinparam databaseBackgroundColor #FFF5DD
+skinparam databaseBorderColor #B08030
+skinparam cloudBackgroundColor #FFF0F5
+skinparam cloudBorderColor #AA3366
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "External Systems" {
+  [PagerDuty] as PD
+  [AWS] as AWS
+  [OCM (OpenShift Cluster Manager)] as OCM
+  [External Alert Source / Webhook Sender] as AlertSource
+}
+
+' ─────────────────────────────────────────────
+' TEKTON ENGINE — node to avoid cloud-in-cloud issue
+' ─────────────────────────────────────────────
+node "Tekton Pipeline Engine (OpenShift / Kubernetes Cluster)" as TektonEngine {
+
+  interface "Webhook Endpoint\n[Alert webhook payload — DR-005]" as WHEndpoint
+
+  ' ─────────────────────────────────────────────
+  ' PIPELINE ORCHESTRATION LAYER
+  ' ─────────────────────────────────────────────
+  package "Pipeline Orchestration Layer [namespace: configuration-anomaly-detection]" {
+    [TektonEventListener] as TEL
+    [TektonTrigger] as TTR
+    [CADChecksPipeline (cad-checks-pipeline)] as CCP
+  }
+
+  WHEndpoint --> TEL
+
+}
+
+' ─────────────────────────────────────────────
+' DEPLOYMENT & TEMPLATE LAYER
+' ─────────────────────────────────────────────
+package "Deployment & Template Layer [Repository Assets]" {
+  [TemplateUpdateUtility] as TUU
+  [ContainerBuildAssets (Go 1.17 builder + UBI minimal)] as CBA
+  [DeploymentTemplateArtifacts (YAML manifests)] as DTA
+}
+
+' ─────────────────────────────────────────────
+' CLI LAYER
+' ─────────────────────────────────────────────
+package "CLI Layer [cadctl container — UBI minimal runtime]" {
+  note as CLINote
+    Entry point: /bin/cadctl (NFR-001, C-001)
+    Image labels: vendor, name, description, etc. (NFR-003)
+  end note
+
+  [cadctl (/bin/cadctl)] as CADCTL
+
+  ' ─────────────────────────────────────────────
+  ' CLI SUB-COMMANDS / MODULES
+  ' ─────────────────────────────────────────────
+  package "cadctl Sub-Commands" {
+    [CHGMWorkflow (cluster-has-gone-missing)] as CHGM
+    [AnomalyDetectionAndComms\n(detect anomaly, dispatch comms,\nsilence/escalate, record disposition)] as ADAC
+  }
+
+  CADCTL --> CHGM : invokes (FR-002)
+  CADCTL --> ADAC : invokes (FR-003, FR-004)
+}
+
+' ─────────────────────────────────────────────
+' INTEGRATION LIBRARY LAYER
+' (package-level code organisation — NFR-004)
+' ─────────────────────────────────────────────
+package "Integration Library Layer [Go package library — NFR-004]" {
+  [PagerDutyIntegration] as PDI
+  [AWSIntegration] as AWSI
+  [OCMIntegration] as OCMI
+}
+
+' ─────────────────────────────────────────────
+' INTERFACES TO EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+interface "PD API" as PDAPI
+interface "AWS API" as AWSAPI
+interface "OCM API" as OCMAPI
+
+' ─────────────────────────────────────────────
+' DEPENDENCY ARROWS
+' ─────────────────────────────────────────────
+
+' External alert source triggers EventListener via webhook payload (DR-005)
+AlertSource --> WHEndpoint : Alert webhook payload (DR-005)
+
+' Standard webhook-driven path
+TEL --> TTR : triggers
+TTR --> CCP : creates PipelineRun v1beta1 (DR-003, C-004)
+
+' Direct operator-submitted PipelineRun path (FR-007, C-005)
+' Operator submits PipelineRun manifest directly targeting cad-checks-pipeline
+' in namespace configuration-anomaly-detection (bypasses EventListener & Trigger)
+AlertSource ..> CCP : [operator direct submit]\nPipelineRun v1beta1\ntargeting cad-checks-pipeline\n(FR-007, C-005)
+
+' Pipeline executes cadctl container
+CCP --> CADCTL : executes /bin/cadctl container binary
+
+' cadctl sub-commands use integration library packages (NFR-004)
+CHGM --> PDI : uses package (NFR-004)
+CHGM --> AWSI : uses package (NFR-004)
+CHGM --> OCMI : uses package (NFR-004)
+
+ADAC --> PDI : uses package (FR-003, FR-004, NFR-004)
+ADAC --> AWSI : uses package (FR-003, NFR-004)
+ADAC --> OCMI : uses package (FR-004, NFR-004)
+
+' Integration library packages connect to external system APIs
+PDI --> PDAPI
+PDAPI --> PD : alert silencing / escalation / follow-up (FR-004)
+
+AWSI --> AWSAPI
+AWSAPI --> AWS : infrastructure queries (FR-003)
+
+OCMI --> OCMAPI
+OCMAPI --> OCM : support-status / owner comms (FR-004)
+
+' Deployment & Template Layer
+TUU --> DTA : updates YAML manifests (FR-010, DR-004)
+CBA --> CADCTL : builds & packages cadctl container image (NFR-001, NFR-002, NFR-003)
+
+@enduml

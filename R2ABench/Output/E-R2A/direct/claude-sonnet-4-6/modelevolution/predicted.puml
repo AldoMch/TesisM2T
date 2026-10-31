@@ -1,0 +1,174 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+
+skinparam database {
+  BackgroundColor #FFF0CC
+  BorderColor #CC8800
+}
+
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+}
+
+title Model Evolution Version Management Visualization Tool\nSystem Architecture Diagram
+
+actor Learner as LRN
+actor "Model Contributor" as CNT
+actor Administrator as ADM
+
+node "Client Layer\n(Browser)" {
+  component [Firefox / Chrome / 360 Browser\n(Responsive Web UI)] as BROWSER
+
+  rectangle "UI Modules" {
+    component [Account Management UI\n(Register / Login / Logout\nPassword / Permission Apply)] as UI_ACCOUNT
+    component [Model Search & Viewing UI\n(Search / Basic Info / Evolution Graph\nEvolution Detail Topology)] as UI_SEARCH
+    component [Model Contribution & Edit UI\n(ONNX Upload / PyTorch Upload\nOnline Editor / Profile Edit\nModel Delete)] as UI_CONTRIB
+    component [Evolution Relationship Edit UI\n(Add / Delete / Modify Relationships\nLayer Reuse Edit)] as UI_EVOL
+    component [User Management UI\n(Manage Users / Delete Users\nPermission Review)] as UI_ADMIN
+  }
+}
+
+LRN --> BROWSER
+CNT --> BROWSER
+ADM --> BROWSER
+
+BROWSER --> UI_ACCOUNT
+BROWSER --> UI_SEARCH
+BROWSER --> UI_CONTRIB
+BROWSER --> UI_EVOL
+BROWSER --> UI_ADMIN
+
+node "Back-End Layer" {
+  rectangle "API Gateway / Security Layer" {
+    component [OAuth 2.0 / Two-Factor Auth\nTLS Encryption (PCI DSS)\nAccess Control & Privilege Control\nSpoofing / Tamper Protection] as SEC
+  }
+
+  rectangle "Business Service Modules" {
+    component [Account Service\n(Register / Login / Logout\nPassword Modify / Permission Apply)] as SVC_ACCOUNT
+    component [Model Service\n(Upload ONNX / Upload PyTorch\nOnline Edit / Profile Modify\nModel Delete / Search / View)] as SVC_MODEL
+    component [Evolution Service\n(Add / Delete / Modify\nEvolution Relationships\nLayer Reuse Relationships\nDataset & Trained Model Records)] as SVC_EVOL
+    component [Visualization Service\n(Topology Graph Generation\nEvolution Detail Graphs\nPerformance Metrics Display)] as SVC_VIZ
+    component [User Management Service\n(Manage Users / Delete Users\nPermission Review)] as SVC_USER
+  }
+
+  rectangle "Algorithm Support Module" {
+    component [Model Parser\n(ONNX / PyTorch Structure Analysis)] as ALG_PARSE
+    component [Graph Layout Engine\n(Evolution Topology Computation)] as ALG_GRAPH
+    component [Performance Analyzer\n(Execution Time / Accuracy Metrics)] as ALG_PERF
+    component [Encryption Module\n(AES / DES Symmetric Encryption\nModel Data Encryption)] as ALG_ENC
+  }
+}
+
+UI_ACCOUNT --> SEC
+UI_SEARCH --> SEC
+UI_CONTRIB --> SEC
+UI_EVOL --> SEC
+UI_ADMIN --> SEC
+
+SEC --> SVC_ACCOUNT
+SEC --> SVC_MODEL
+SEC --> SVC_EVOL
+SEC --> SVC_VIZ
+SEC --> SVC_USER
+
+SVC_MODEL --> ALG_PARSE
+SVC_EVOL --> ALG_GRAPH
+SVC_MODEL --> ALG_PERF
+SVC_MODEL --> ALG_ENC
+SVC_EVOL --> ALG_ENC
+
+SVC_VIZ --> ALG_GRAPH
+
+node "Data Layer" {
+  database "MySQL\n(Relational Data)\n- Users & Roles\n- Permissions & Applications\n- Model Basic Attributes\n- Performance Metrics\n- Dataset Info\n- Trained Model Records" as MYSQL
+
+  database "Neo4j\n(Graph Data)\n- Model Evolution Relationships\n- Evolution Method / Details\n- Operator / Layer Connections\n- Computational Layer Reuse\n- Topology Graph Data" as NEO4J
+
+  database "File / Object Storage\n- ONNX Files (Encrypted)\n- PyTorch Source Code\n- Model Files (AES/DES Encrypted)" as FILESTORAGE
+}
+
+SVC_ACCOUNT --> MYSQL
+SVC_USER --> MYSQL
+SVC_MODEL --> MYSQL
+SVC_MODEL --> FILESTORAGE
+SVC_EVOL --> NEO4J
+SVC_EVOL --> MYSQL
+SVC_VIZ --> NEO4J
+SVC_VIZ --> MYSQL
+ALG_PERF --> MYSQL
+ALG_ENC --> FILESTORAGE
+
+cloud "External Interfaces & Protocols" {
+  component [Python Libraries\n(Algorithm / ML Support)] as EXT_PYTHON
+  component [Browser Console\n(Debug / Monitoring)] as EXT_CONSOLE
+  component [Communication Protocols\nHTTP / HTTPS / TCP / IP\nFTP / SMTP / UDP] as EXT_PROTO
+}
+
+SVC_MODEL --> EXT_PYTHON
+ALG_PARSE --> EXT_PYTHON
+ALG_PERF --> EXT_PYTHON
+BROWSER --> EXT_CONSOLE
+BROWSER --> EXT_PROTO
+EXT_PROTO --> SEC
+
+rectangle "Cross-Cutting Concerns" {
+  component [Concurrency & Load Manager\n(50 concurrent users\n10 modify req/s / 50 query req/s)] as NFR_CONC
+  component [Availability & Failover\n(7x24 uptime / <30h downtime/yr\nFailover <0.5h / MTBF>=4000h)] as NFR_AVAIL
+  component [Logging & Maintainability\n(Fault location / MTTR<=0.5h\nCode consistency / HTML+CSS separation)] as NFR_MAINT
+  component [Privacy & Compliance\n(Privacy Policy / User Consent\nOpen-Source License Compliance\nPCI DSS / Local Regulations)] as NFR_PRIV
+}
+
+SEC --> NFR_CONC
+NFR_CONC --> NFR_AVAIL
+NFR_AVAIL --> NFR_MAINT
+NFR_MAINT --> NFR_PRIV
+
+note right of SEC
+  NFR-010: OAuth 2.0 / Two-Factor Auth
+  NFR-011: TLS Encryption (PCI DSS)
+  NFR-012: AES/DES Model Encryption
+  NFR-013: Block unauthenticated modifications
+  NFR-014: Block non-admin approved model delete/modify
+  NFR-015: Spoofing detection
+  NFR-016: Tamper protection
+end note
+
+note right of MYSQL
+  DR-001: Users & Roles (Learner/Contributor/Admin)
+  DR-002: Permission-change applications
+  DR-006: Model basic attributes
+  DR-007: Performance metrics
+  DR-008: Dataset name & type
+  DR-009: Trained model records
+end note
+
+note right of NEO4J
+  DR-010: Evolution relationships
+  DR-011: Evolution method/details
+  (operator add/delete, param adjust,
+   connection modes, layer reuse)
+end note
+
+@enduml

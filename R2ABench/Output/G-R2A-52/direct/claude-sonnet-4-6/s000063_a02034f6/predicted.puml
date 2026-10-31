@@ -1,0 +1,167 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A252F
+}
+
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #D4AC0D
+}
+
+skinparam node {
+  BackgroundColor #EBF5FB
+  BorderColor #1A5276
+}
+
+skinparam rectangle {
+  BackgroundColor #F9EBEA
+  BorderColor #C0392B
+}
+
+skinparam cloud {
+  BackgroundColor #F0F3F4
+  BorderColor #717D7E
+}
+
+title Teamgram Server - System Architecture Diagram
+
+node "Telegram-Compatible Clients" as clients {
+  component [Mobile / Desktop Clients] as telegramClients
+}
+
+node "Teamgram Server (Go Runtime)" as serverNode {
+
+  node "Client Access Layer" as accessLayer {
+    component [MTProto Gateway\n(FR-001, NFR-002)] as mtprotoGateway
+    component [Authorization Key Handler\n(FR-002, DR-001)] as authKeyHandler
+    component [Encrypted Session Manager\n(FR-003, DR-003)] as sessionManager
+    component [Server Salt / Future Salt Handler\n(FR-002, FR-008, DR-002)] as saltHandler
+    component [Service Message Processor\nrpc_drop_answer | destroy_session\n(FR-006, FR-007, DR-005)] as serviceMsgProcessor
+  }
+
+  node "BFF / Access-Facing Service Layer" as bffLayer {
+    component [Registration & Phone\nVerification Handler\n(FR-004, DR-004)] as regVerifyHandler
+    component [Verification Code Service\n(FR-009)] as verifyCodeService
+    component [Session ID Manager\n(FR-005, DR-003)] as sessionIdManager
+    component [RPC Dispatcher] as rpcDispatcher
+  }
+
+  node "Business / Service Layer" as serviceLayer {
+    component [Messaging Service] as messagingService
+    component [Account & Auth Service] as accountService
+    component [User & Contact Service] as userService
+    component [Channel & Group Service] as channelService
+  }
+
+  node "Storage-Facing & Async Components" as storageLayer {
+    component [Data Access Layer\n(MySQL Adapter)] as mysqlAdapter
+    component [Cache Manager\n(Redis Adapter)] as redisAdapter
+    component [Service Registry\n(etcd Client)] as etcdClient
+    component [Message Queue Producer/Consumer\n(Kafka Adapter)] as kafkaAdapter
+    component [Object Store Client\n(MinIO Adapter)] as minioAdapter
+    component [Push & Sync Service] as pushSyncService
+  }
+
+  node "Optional Media Processing" as mediaNode {
+    component [FFmpeg/FFProbe Wrapper\n(NFR-004, C-005)] as ffmpegWrapper
+  }
+}
+
+node "Infrastructure Services" as infraNode {
+  database "MySQL\n(Persistent Storage)" as mysql
+  database "Redis\n(Cache / Session Store)" as redis
+  component [etcd\n(Service Discovery)] as etcd
+  database "Kafka\n(Message Broker)" as kafka
+  database "MinIO\n(Object Storage)" as minio
+}
+
+cloud "External Services" as externalCloud {
+  component [External Verification\nCode Service\n(FR-009, C-004)] as externalVerifyService
+}
+
+node "Deployment Infrastructure\n(NFR-003, C-003)" as deployNode {
+  component [Docker-Based Startup] as dockerDeploy
+  component [Manual Build / Install] as manualDeploy
+}
+
+' Client to Access Layer
+telegramClients --> mtprotoGateway : MTProto Protocol\n(Encrypted / Unencrypted)
+
+' Access Layer internal flows
+mtprotoGateway --> authKeyHandler : Auth Key Exchange
+mtprotoGateway --> sessionManager : Session Establishment
+mtprotoGateway --> saltHandler : Salt Requests / Responses
+mtprotoGateway --> serviceMsgProcessor : Service Messages
+mtprotoGateway --> rpcDispatcher : RPC Calls
+
+' Access Layer to BFF Layer
+authKeyHandler --> regVerifyHandler : Post-Auth Registration Flow
+sessionManager --> sessionIdManager : Session ID Management
+serviceMsgProcessor --> sessionIdManager : destroy_session / session replacement
+
+' BFF Layer internal
+rpcDispatcher --> regVerifyHandler
+rpcDispatcher --> verifyCodeService : Verification Code Lookup
+rpcDispatcher --> messagingService
+rpcDispatcher --> accountService
+rpcDispatcher --> userService
+rpcDispatcher --> channelService
+
+' BFF Layer to Service Layer
+regVerifyHandler --> accountService : Registration / Auth
+sessionIdManager --> sessionManager : Session CRUD
+
+' Service Layer to Storage
+messagingService --> mysqlAdapter
+messagingService --> kafkaAdapter
+accountService --> mysqlAdapter
+accountService --> redisAdapter
+userService --> mysqlAdapter
+userService --> redisAdapter
+channelService --> mysqlAdapter
+channelService --> kafkaAdapter
+
+' Storage adapters to Async
+kafkaAdapter --> pushSyncService : Async Events
+pushSyncService --> redisAdapter : Sync State
+
+' Optional Media
+bffLayer --> ffmpegWrapper : Media Processing Requests (optional)
+ffmpegWrapper ..> minioAdapter : Store Media Objects
+
+' Storage-Facing to Infrastructure
+mysqlAdapter --> mysql
+redisAdapter --> redis
+etcdClient --> etcd
+kafkaAdapter --> kafka
+minioAdapter --> minio
+
+' Service discovery
+bffLayer --> etcdClient : Service Registration / Discovery
+serviceLayer --> etcdClient : Service Registration / Discovery
+
+' External verification
+verifyCodeService --> externalVerifyService : External Code Verification\n(when enabled)
+
+' Deployment
+deployNode ..> serverNode : Deploys
+
+legend right
+  |= Symbol |= Meaning |
+  | --> | Synchronous call / data flow |
+  | ..> | Optional / async interaction |
+  | node | Logical runtime grouping |
+  | component | Software component |
+  | database | Persistent data store |
+endlegend
+
+@enduml

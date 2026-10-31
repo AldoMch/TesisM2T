@@ -1,0 +1,67 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #4A5D66
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "User\nShopping at online stores" as Shopper
+rectangle "User\nVisiting BeeGreen site" as SiteVisitor
+
+package "Browser Extension" as BrowserExtension {
+    rectangle "React UI\nExtension" as ExtensionReact
+    rectangle "TypeScript\nExtension code" as ExtensionTypescript
+}
+
+package "Website" as Website {
+    rectangle "React UI\nBeeGreen site" as WebsiteReact
+    rectangle "TypeScript\nWebsite code" as WebsiteTypescript
+}
+
+package "IBM Cloud" as IbmCloud {
+    rectangle "Node.js Runtime" as NodeRuntime
+    rectangle "Express App" as ExpressApp
+    rectangle "LoopBack Generated Code" as LoopbackCode
+    database "Cloudant\nUser and API data" as Cloudant
+    rectangle "CSV File\nExport / training data" as CsvFile
+    cloud "Object Storage" as ObjectStorage
+    rectangle "Watson Studio" as WatsonStudio
+}
+
+Shopper --> ExtensionReact : browser interaction
+ExtensionReact <--> ExtensionTypescript : UI logic
+ExtensionReact --> NodeRuntime : REST API requests
+
+SiteVisitor --> WebsiteReact : site interaction
+WebsiteReact <--> WebsiteTypescript : UI logic
+WebsiteReact --> NodeRuntime : REST API requests
+
+NodeRuntime <--> ExpressApp : Node.js service host
+ExpressApp --> LoopbackCode : generated REST controllers
+ExpressApp <--> Cloudant : persistence access
+Cloudant <--> CsvFile : export data
+CsvFile <--> ObjectStorage : store CSV artifacts
+ObjectStorage --> WatsonStudio : analytics input
+@enduml

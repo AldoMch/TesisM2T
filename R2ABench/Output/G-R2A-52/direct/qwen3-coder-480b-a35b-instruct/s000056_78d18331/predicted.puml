@@ -1,0 +1,54 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "HTTP Client" as HttpClient {
+}
+
+RECTANGLE "host-scanner Service" as HostScanner {
+    + HTTP API
+    + CNI Directory Resolution Logic
+    + JSON Sanitization Logic
+    + Provider-Specific Test Support
+}
+
+RECTANGLE "Kubernetes Node" as K8sNode {
+    + Host Information
+    + Filesystem Access (/etc, /run, /var/lib)
+    + Container Runtimes (containerd, CRI-O)
+    + Kubelet Process
+}
+
+RECTANGLE "Test Environment" as TestEnv {
+    + End-to-End Tests
+    + Unit Tests
+    + Go Build Tags
+}
+
+HttpClient --> HostScanner : HTTP Requests\n(GET /doesnotexist etc.)
+HostScanner --> K8sNode : Collects Host Info,\nAccesses Config Files
+HostScanner --> HostScanner : Processes JSON,\nRemoves Secrets
+TestEnv --> HostScanner : Validates Behavior\nvia HTTP & Logic Paths
+
+note right of HostScanner
+  - Runs as Privileged DaemonSet
+  - Exposes HTTP Endpoints
+  - Resolves CNI Dir from Runtime Inputs
+  - Sanitizes Control-Plane JSON
+  - Supports Provider-Specific Testing
+end note
+
+note right of K8sNode
+  - Provides runtime config files
+  - Host-level directories:
+    /etc/cni/, /var/lib/cni/
+  - Kubelet/containerd/cri-o processes
+end note
+
+note right of TestEnv
+  - Verifies 404 for unknown endpoints
+  - Validates CNI dir resolution
+  - Checks secret removal in JSON
+  - Uses //go:build <provider> tags
+end note
+
+@enduml

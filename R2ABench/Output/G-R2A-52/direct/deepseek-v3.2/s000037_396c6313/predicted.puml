@@ -1,0 +1,104 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam rectangle {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+
+title veinmind-tools System Architecture
+
+package "External Systems" {
+  [Docker Runtime] as DOCKER
+  [Container Registry\n(DockerHub/Registry/Harbor)] as REGISTRY
+  [Containerd Runtime] as CONTAINERD
+  [IaC Input Files] as IAC_INPUT
+}
+
+package "User Interface Layer" {
+  [CLI Interface] as CLI
+  [Quick-Start Script\n(run.sh)] as STARTUP_SCRIPT
+}
+
+package "Core Scanning Engine" {
+  [Scan Orchestrator] as ORCHESTRATOR
+  [Image Scanner] as IMAGE_SCANNER
+  [Container Scanner] as CONTAINER_SCANNER
+  [IaC Scanner] as IAC_SCANNER
+  [Report Generator] as REPORT_GEN
+}
+
+package "Plugin & SDK Layer" {
+  [veinmind-sdk / libveinmind] as SDK
+  [Python Example Plugin] as PYTHON_PLUGIN
+  [Plugin Registry] as PLUGIN_REG
+}
+
+package "Runner & Execution Environment" {
+  [veinmind-runner Image] as RUNNER
+  [Parallel Container\nExecution] as PARALLEL_EXEC
+}
+
+package "Security & Authorization" {
+  [Docker Auth Router] as AUTH_ROUTER
+  [Plugin Action Classifier] as ACTION_CLASS
+}
+
+package "Data Layer" {
+  [Malicious File Reports] as MAL_REPORTS
+  [IaC Alert Reports] as IAC_REPORTS
+  [Scan Metadata] as SCAN_META
+}
+
+' User interactions
+CLI --> ORCHESTRATOR : invoke scan commands
+STARTUP_SCRIPT --> PARALLEL_EXEC : initiate quick-start
+PARALLEL_EXEC --> ORCHESTRATOR : execute in container
+
+' Core scanning flows
+ORCHESTRATOR --> IMAGE_SCANNER : scan image
+ORCHESTRATOR --> CONTAINER_SCANNER : scan container
+ORCHESTRATOR --> IAC_SCANNER : scan IaC
+
+' Scanner dependencies
+IMAGE_SCANNER --> DOCKER : access images
+IMAGE_SCANNER --> REGISTRY : pull images
+CONTAINER_SCANNER --> DOCKER : inspect containers
+CONTAINER_SCANNER --> CONTAINERD : inspect containers
+IAC_SCANNER --> IAC_INPUT : read files
+
+' Plugin integration
+IMAGE_SCANNER --> SDK : use SDK capabilities
+CONTAINER_SCANNER --> SDK : use SDK capabilities
+IAC_SCANNER --> SDK : use SDK capabilities
+PYTHON_PLUGIN --> SDK : implement scanning
+PLUGIN_REG --> PYTHON_PLUGIN : register plugins
+ORCHESTRATOR --> PLUGIN_REG : discover plugins
+
+' Authorization flow
+DOCKER --> AUTH_ROUTER : authorization requests
+AUTH_ROUTER --> ACTION_CLASS : classify requests
+ACTION_CLASS --> AUTH_ROUTER : return actions
+
+' Reporting flows
+IMAGE_SCANNER --> REPORT_GEN : malicious file findings
+CONTAINER_SCANNER --> REPORT_GEN : malicious file findings
+IAC_SCANNER --> REPORT_GEN : IaC alert details
+REPORT_GEN --> MAL_REPORTS : store file reports
+REPORT_GEN --> IAC_REPORTS : store IaC reports
+REPORT_GEN --> SCAN_META : store metadata
+
+' Data relationships
+MAL_REPORTS --> SCAN_META : link to scan context
+IAC_REPORTS --> SCAN_META : link to scan context
+
+' Runner execution
+RUNNER --> PARALLEL_EXEC : provide execution environment
+PYTHON_PLUGIN --> RUNNER : execute in runner
+
+note top of SDK : Provides scanning capabilities\nand plugin integration framework
+note right of AUTH_ROUTER : Returns NoneDockerPlugin\nwhen no route matches
+note left of REPORT_GEN : Generates structured reports\nwith relationships preserved
+note bottom of PARALLEL_EXEC : Supports independent\ncontainer environments
+@enduml

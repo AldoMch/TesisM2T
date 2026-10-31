@@ -1,0 +1,72 @@
+@startuml
+title GKE Pub/Sub WebSocket Adapter - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<external>> LightYellow
+  BackgroundColor<<gcp>> LightBlue
+  BackgroundColor<<k8s>> LightGreen
+  BackgroundColor<<container>> LightCyan
+}
+
+actor "Web Clients" as clients
+
+rectangle "Google Cloud Platform (GCP)" <<gcp>> {
+
+  rectangle "Google Cloud Pub/Sub" <<external>> {
+    component [Pub/Sub Topic] as pubsub_topic
+    component [Pub/Sub Subscription] as pubsub_sub
+  }
+
+  rectangle "Google Kubernetes Engine (GKE Cluster)" <<k8s>> {
+
+    rectangle "Kubernetes Control Plane" {
+      component [ConfigMap\n(topic identifier)] as configmap
+      component [Horizontal Pod Autoscaler\n(HPA: min=1, max=2, CPU=80%)] as hpa
+    }
+
+    rectangle "Kubernetes Networking" {
+      component [LoadBalancer Service\n(TCP port 80 → 8080)] as lb_service
+    }
+
+    rectangle "Adapter Deployment (Pods)" <<container>> {
+      component [exec.sh\n(entrypoint)] as exec_sh
+      component [pulltop\n(Node.js, Pub/Sub pull)] as pulltop
+      component [websocketd\n(port 8080, WS bridge)] as websocketd
+      component [Message Cache\n(last 10 messages)] as msg_cache
+    }
+  }
+}
+
+clients -right-> lb_service : "WebSocket\n(ws://... port 80)"
+lb_service -right-> websocketd : "TCP port 8080"
+
+configmap -down-> exec_sh : "SYMBOL env var\n(topic identifier)"
+exec_sh -right-> pulltop : "invokes with\nSYMBOL param"
+pulltop -down-> pubsub_sub : "pull messages"
+pubsub_sub -right-> pubsub_topic : "subscription"
+pulltop -right-> msg_cache : "cache up to\nlast 10 messages"
+pulltop -up-> websocketd : "stdout stream\n(topic messages)"
+websocketd -left-> clients : "WebSocket messages"
+
+hpa -down-> websocketd : "scales Deployment\n(CPU-based)"
+
+note right of lb_service
+  Kubernetes LoadBalancer
+  External TCP port: 80
+  Internal adapter port: 8080
+end note
+
+note bottom of pulltop
+  Node.js process
+  Pulls from configured
+  Pub/Sub topic via SYMBOL env var
+end note
+
+note bottom of msg_cache
+  Retains last 10
+  published messages
+  for client continuity
+end note
+
+@enduml

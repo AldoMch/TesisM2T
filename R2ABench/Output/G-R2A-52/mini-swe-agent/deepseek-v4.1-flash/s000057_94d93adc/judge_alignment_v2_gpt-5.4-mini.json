@@ -1,0 +1,292 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::Cloudinary\\n(hosted audio and image assets)",
+        "Client Layer (Browser)::Cloudinary Upload Client\\n(direct media upload)"
+      ],
+      "gt_nodes": [
+        "Global::Cloudinary\\n- stores audio files\\n- stores images\\n- returns file URLs"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Server Layer (Node/Express)::Express Application / Router",
+        "Server Layer (Node/Express)::Database Access Layer\\n(PostgreSQL client)",
+        "Server Layer (Node/Express)::Backend API Services::Feed API\\n(follow feeds, user sound lists)",
+        "Server Layer (Node/Express)::Backend API Services::Follow API\\n(follow / unfollow)",
+        "Server Layer (Node/Express)::Backend API Services::Sound API\\n(detail, create, delete)",
+        "Server Layer (Node/Express)::Backend API Services::User / Auth API\\n(register, login, user info)"
+      ],
+      "gt_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::PostgreSQL\\n(user records, sound records,\\nfollow relationships,\\nCloudinary URL references)"
+      ],
+      "gt_nodes": [
+        "Global::PostgreSQL Database\\n- stores users and sounds\\n- stores Cloudinary URL references"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Client Layer (Browser)::React SPA",
+        "Client Layer (Browser)::Redux State and Action Layer::Redux Store\\n(user, sound, follow,\\nplayback state)",
+        "Client Layer (Browser)::Redux State and Action Layer::Actions / Thunks\\n(fetch request flows)",
+        "Client Layer (Browser)::User Interface Components::Audio Playback UI",
+        "Client Layer (Browser)::User Interface Components::Follow / Feed UI\\n(follow lists, following feed)",
+        "Client Layer (Browser)::User Interface Components::Form UI\\n(validation + errors)",
+        "Client Layer (Browser)::User Interface Components::Upload UI\\n(audio + image)",
+        "Client Layer (Browser)::User Interface Components::Waveform Navigation UI\\n(click-to-scrub)",
+        "Client Layer (Browser)::Centralized Playback Manager\\n(single current track, continuity\\nacross navigation)",
+        "Client Layer (Browser)::Frontend Runtime Config\\n(API base URL, Cloudinary URL,\\nupload preset)",
+        "Client Layer (Browser)::HTTP API Client\\n(fetch-based)"
+      ],
+      "gt_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::Centralized Playback Manager\\n(single current track, continuity\\nacross navigation)",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::Cloudinary Upload Client\\n(direct media upload)",
+      "reference_nodes": [
+        "Global::Cloudinary\\n- stores audio files\\n- stores images\\n- returns file URLs",
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::Frontend Runtime Config\\n(API base URL, Cloudinary URL,\\nupload preset)",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback",
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::HTTP API Client\\n(fetch-based)",
+      "reference_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests",
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::React SPA",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::Redux State and Action Layer::Actions / Thunks\\n(fetch request flows)",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback",
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::Redux State and Action Layer::Redux Store\\n(user, sound, follow,\\nplayback state)",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::User Interface Components::Audio Playback UI",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::User Interface Components::Follow / Feed UI\\n(follow lists, following feed)",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback",
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::User Interface Components::Form UI\\n(validation + errors)",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::User Interface Components::Upload UI\\n(audio + image)",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback",
+        "Global::Cloudinary\\n- stores audio files\\n- stores images\\n- returns file URLs"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer (Browser)::User Interface Components::Waveform Navigation UI\\n(click-to-scrub)",
+      "reference_nodes": [
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Cloudinary\\n(hosted audio and image assets)",
+      "reference_nodes": [
+        "Global::Cloudinary\\n- stores audio files\\n- stores images\\n- returns file URLs"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::PostgreSQL\\n(user records, sound records,\\nfollow relationships,\\nCloudinary URL references)",
+      "reference_nodes": [
+        "Global::PostgreSQL Database\\n- stores users and sounds\\n- stores Cloudinary URL references"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer (Node/Express)::Application / Domain Logic\\n(media URL references,\\nrecord coordination)",
+      "reference_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests",
+        "Global::PostgreSQL Database\\n- stores users and sounds\\n- stores Cloudinary URL references"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer (Node/Express)::Backend API Services::Feed API\\n(follow feeds, user sound lists)",
+      "reference_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer (Node/Express)::Backend API Services::Follow API\\n(follow / unfollow)",
+      "reference_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests",
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer (Node/Express)::Backend API Services::Sound API\\n(detail, create, delete)",
+      "reference_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests",
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer (Node/Express)::Backend API Services::User / Auth API\\n(register, login, user info)",
+      "reference_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests",
+        "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer (Node/Express)::Database Access Layer\\n(PostgreSQL client)",
+      "reference_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests",
+        "Global::PostgreSQL Database\\n- stores users and sounds\\n- stores Cloudinary URL references"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer (Node/Express)::Express Application / Router",
+      "reference_nodes": [
+        "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::Cloudinary\\n(hosted audio and image assets)",
+        "Client Layer (Browser)::Cloudinary Upload Client\\n(direct media upload)"
+      ],
+      "gt_node": "Global::Cloudinary\\n- stores audio files\\n- stores images\\n- returns file URLs"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Server Layer (Node/Express)::Express Application / Router",
+        "Server Layer (Node/Express)::Database Access Layer\\n(PostgreSQL client)",
+        "Server Layer (Node/Express)::Backend API Services::Feed API\\n(follow feeds, user sound lists)",
+        "Server Layer (Node/Express)::Backend API Services::Follow API\\n(follow / unfollow)",
+        "Server Layer (Node/Express)::Backend API Services::Sound API\\n(detail, create, delete)",
+        "Server Layer (Node/Express)::Backend API Services::User / Auth API\\n(register, login, user info)"
+      ],
+      "gt_node": "Global::Express Server\\n- fetches data with Sequelize\\n- serves React frontend\\n- handles backend API requests"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::PostgreSQL\\n(user records, sound records,\\nfollow relationships,\\nCloudinary URL references)"
+      ],
+      "gt_node": "Global::PostgreSQL Database\\n- stores users and sounds\\n- stores Cloudinary URL references"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Client Layer (Browser)::React SPA",
+        "Client Layer (Browser)::Redux State and Action Layer::Redux Store\\n(user, sound, follow,\\nplayback state)",
+        "Client Layer (Browser)::Redux State and Action Layer::Actions / Thunks\\n(fetch request flows)",
+        "Client Layer (Browser)::User Interface Components::Audio Playback UI",
+        "Client Layer (Browser)::User Interface Components::Follow / Feed UI\\n(follow lists, following feed)",
+        "Client Layer (Browser)::User Interface Components::Form UI\\n(validation + errors)",
+        "Client Layer (Browser)::User Interface Components::Upload UI\\n(audio + image)",
+        "Client Layer (Browser)::User Interface Components::Waveform Navigation UI\\n(click-to-scrub)",
+        "Client Layer (Browser)::Centralized Playback Manager\\n(single current track, continuity\\nacross navigation)",
+        "Client Layer (Browser)::Frontend Runtime Config\\n(API base URL, Cloudinary URL,\\nupload preset)",
+        "Client Layer (Browser)::HTTP API Client\\n(fetch-based)"
+      ],
+      "gt_node": "Global::React Frontend\\n- Redux state management\\n- uploads images and audio\\n- controls and visualizes playback"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4687,
+      "completion_tokens": 716,
+      "total_tokens": 5403,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Server Layer (Node/Express)::Application / Domain Logic\\n(media URL references,\\nrecord coordination)"
+  ],
+  "_provenance": {
+    "fingerprint": "b5a73cbae797e2759aca3c2977670456737b633fb7272c1dc8c30d35b40b8079",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

@@ -1,0 +1,319 @@
+{
+  "requirements": [
+    {
+      "id": "deepcode-R001",
+      "description": "The system shall provide authenticated user account access, including visitor registration, login, personal information and activity-status retrieval, and profile editing."
+    },
+    {
+      "id": "deepcode-R002",
+      "description": "The system shall provide an administrative user-management capability for banning, unbanning, and granting permissions."
+    },
+    {
+      "id": "deepcode-R003",
+      "description": "The system shall allow users to browse problem details and solution entries, require login to access solutions, and show submission records to logged-in users."
+    },
+    {
+      "id": "deepcode-R004-A",
+      "description": "The system shall allow registered users to upload problems for administrator review; approval shall make a problem available to users, rejection shall record a reason and notify the submitter, and withdrawal shall terminate the review."
+    },
+    {
+      "id": "deepcode-R004-B",
+      "description": "The system shall allow authorized users to edit problems and solutions, and shall allow authorized problem deletion only when associated activities do not prevent it; deletion shall soft-delete the problem and hide its related solutions and submission records."
+    },
+    {
+      "id": "deepcode-R005-A",
+      "description": "The system shall accept code submissions from authenticated users, validate the target problem, persist submission and judging results, and use a judging service to compile and execute the code against test cases and compare actual with expected output; tasks shall wait when execution capacity is unavailable, and new tasks shall be rejected as busy when the queue is full."
+    },
+    {
+      "id": "deepcode-R005-B",
+      "description": "The judging service shall execute submitted code in an isolated environment, enforce execution-time, memory, and output limits, and restrict prohibited system calls."
+    },
+    {
+      "id": "deepcode-R006",
+      "description": "The system shall support public forum browsing and authenticated posting, commenting, liking, replying, and reporting; it shall save comment drafts when the network is interrupted and allow authorized authors or administrators to soft-delete content with its associated comments, replies, and interactions as applicable."
+    },
+    {
+      "id": "deepcode-R007-A",
+      "description": "The system shall use an LLM service to recommend problems by difficulty and tags based on user history and knowledge points after the user has completed at least five problems, and shall provide beginner recommendations otherwise."
+    },
+    {
+      "id": "deepcode-R007-B",
+      "description": "The system shall use an LLM service to analyze problems and explain submitted code, store and display the results, and retrieve an existing historical result when available."
+    },
+    {
+      "id": "deepcode-R007-C",
+      "description": "The system shall allow administrators to request LLM-generated problem review suggestions."
+    },
+    {
+      "id": "deepcode-R007-D",
+      "description": "The system shall respond to forum comments that mention @AI by sending the post context to an LLM service and publishing the generated reply through the AI account, subject to a cooldown of at least 10 minutes."
+    },
+    {
+      "id": "deepcode-R009-A",
+      "description": "The system shall persist business records and files such as images and test cases, and cache temporary or frequently accessed data."
+    },
+    {
+      "id": "deepcode-R009-B",
+      "description": "The system shall store passwords and other sensitive information in non-plaintext form."
+    },
+    {
+      "id": "deepcode-R009-C",
+      "description": "The system shall maintain consistency among related business records and roll back transactions when database operations fail."
+    },
+    {
+      "id": "deepcode-R010-A",
+      "description": "The system shall collect infrastructure, application, and database metrics and trigger alerts when CPU or memory usage exceeds 80%, interface error rate exceeds 1%, or database query latency exceeds 15 seconds."
+    },
+    {
+      "id": "deepcode-R010-B",
+      "description": "The system shall back up the database daily and store backup copies offsite."
+    },
+    {
+      "id": "deepcode-R011",
+      "description": "The system shall support automated builds, containerized deployment, automatic scaling, and rapid rollback."
+    },
+    {
+      "id": "deepcode-R012",
+      "description": "The system shall validate untrusted user input and minimize exposed network ports to defend against injection, XSS, and unnecessary external access."
+    },
+    {
+      "id": "deepcode-R013",
+      "description": "The web client shall support HTML5-compatible mainstream browsers, including Microsoft Edge, Chrome, Opera, Safari, and Firefox."
+    },
+    {
+      "id": "deepcode-R016",
+      "description": "The system shall persist user-follow relationships, recording the follower, followed user, and follow date."
+    },
+    {
+      "id": "deepcode-R021",
+      "description": "The backend shall provide email delivery through an SMTP service."
+    }
+  ],
+  "components": [
+    {
+      "id": "CMP_WEB_CLIENT",
+      "name": "Web Frontend Client",
+      "layer": "presentation",
+      "responsibility": "Proveer la interfaz de usuario web compatible con navegadores HTML5 estándar y gestionar almacenamiento local de borradores ante fallos de red.",
+      "tracesTo": ["deepcode-R006", "deepcode-R013"]
+    },
+    {
+      "id": "CMP_API_GATEWAY",
+      "name": "API Gateway & Security Filter",
+      "layer": "entrypoint",
+      "responsibility": "Enrutar peticiones, validar entradas no confiables contra XSS e inyecciones, gestionar autenticación perimetral y exponer únicamente puertos estrictamente requeridos.",
+      "tracesTo": ["deepcode-R012"]
+    },
+    {
+      "id": "CMP_USER_SERVICE",
+      "name": "User & Social Management Service",
+      "layer": "business",
+      "responsibility": "Gestionar cuentas, registro, login, tokens de autenticación, hash de contraseñas, permisos, baneos, perfiles y relaciones de seguimiento de usuarios.",
+      "tracesTo": ["deepcode-R001", "deepcode-R002", "deepcode-R009-B", "deepcode-R016"]
+    },
+    {
+      "id": "CMP_PROBLEM_SERVICE",
+      "name": "Problem & Solution Service",
+      "layer": "business",
+      "responsibility": "Gestionar el ciclo de vida de problemas, soluciones, flujo de revisión y aprobación administrativa, y borrado lógico con verificación de dependencias.",
+      "tracesTo": ["deepcode-R003", "deepcode-R004-A", "deepcode-R004-B"]
+    },
+    {
+      "id": "CMP_FORUM_SERVICE",
+      "name": "Community Forum Service",
+      "layer": "business",
+      "responsibility": "Gestionar publicaciones, comentarios, respuestas, reacciones, reportes, detección de menciones @AI y borrado lógico en cascada.",
+      "tracesTo": ["deepcode-R006", "deepcode-R007-D"]
+    },
+    {
+      "id": "CMP_SUBMISSION_SERVICE",
+      "name": "Submission Orchestration Service",
+      "layer": "business",
+      "responsibility": "Recibir y validar envíos de código, gestionar la cola de tareas de evaluación, rechazar peticiones por sobrecarga y almacenar estados de ejecución.",
+      "tracesTo": ["deepcode-R003", "deepcode-R005-A"]
+    },
+    {
+      "id": "CMP_JUDGING_ENGINE",
+      "name": "Isolated Judging Engine",
+      "layer": "execution",
+      "responsibility": "Compilar y ejecutar código en entornos aislados y seguros, restringiendo llamadas de sistema y aplicando límites de tiempo, memoria y salida.",
+      "tracesTo": ["deepcode-R005-A", "deepcode-R005-B"]
+    },
+    {
+      "id": "CMP_LLM_INTEGRATION_SERVICE",
+      "name": "LLM Integration Service",
+      "layer": "business",
+      "responsibility": "Coordinar recomendaciones personalizadas, explicaciones de código/problemas, sugerencias de revisión para administradores y respuestas automatizadas con cooldown.",
+      "tracesTo": ["deepcode-R007-A", "deepcode-R007-B", "deepcode-R007-C", "deepcode-R007-D"]
+    },
+    {
+      "id": "CMP_NOTIFICATION_SERVICE",
+      "name": "Notification & Email Service",
+      "layer": "integration",
+      "responsibility": "Enviar notificaciones del sistema y despachar correos electrónicos salientes mediante protocolo SMTP.",
+      "tracesTo": ["deepcode-R004-A", "deepcode-R021"]
+    },
+    {
+      "id": "CMP_RELATIONAL_DB",
+      "name": "Relational Database Management System",
+      "layer": "data",
+      "responsibility": "Garantizar la persistencia de datos transaccionales con propiedades ACID, transacciones atómicas con rollback y soporte de respaldos automáticos fuera del sitio.",
+      "tracesTo": ["deepcode-R009-A", "deepcode-R009-B", "deepcode-R009-C", "deepcode-R010-B", "deepcode-R016"]
+    },
+    {
+      "id": "CMP_OBJECT_STORAGE",
+      "name": "Object Storage Service",
+      "layer": "data",
+      "responsibility": "Almacenar archivos no estructurados, casos de prueba masivos e imágenes asociadas a la plataforma.",
+      "tracesTo": ["deepcode-R009-A"]
+    },
+    {
+      "id": "CMP_CACHE_BROKER",
+      "name": "Cache & Task Queue Broker",
+      "layer": "data",
+      "responsibility": "Almacenar datos temporales o de acceso frecuente y gestionar el encolamiento de envíos y cooldowns de tareas asíncronas.",
+      "tracesTo": ["deepcode-R005-A", "deepcode-R007-D", "deepcode-R009-A"]
+    },
+    {
+      "id": "CMP_MONITORING_ALERTING",
+      "name": "Monitoring & Alerting System",
+      "layer": "cross-cutting",
+      "responsibility": "Recolectar métricas de infraestructura, contenedores, base de datos y latencia/errores de API, emitiendo alertas automatizadas según umbrales.",
+      "tracesTo": ["deepcode-R010-A"]
+    },
+    {
+      "id": "CMP_ORCHESTRATION_PLATFORM",
+      "name": "Container Orchestration & CI/CD Platform",
+      "layer": "infrastructure",
+      "responsibility": "Gestionar compilaciones automatizadas, despliegue de contenedores, autoescalado de réplicas y políticas de rollback ágil.",
+      "tracesTo": ["deepcode-R011"]
+    }
+  ],
+  "connectors": [
+    {
+      "source": "CMP_WEB_CLIENT",
+      "target": "CMP_API_GATEWAY",
+      "type": "https"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_USER_SERVICE",
+      "type": "rest"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_PROBLEM_SERVICE",
+      "type": "rest"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_FORUM_SERVICE",
+      "type": "rest"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_SUBMISSION_SERVICE",
+      "type": "rest"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_LLM_INTEGRATION_SERVICE",
+      "type": "rest"
+    },
+    {
+      "source": "CMP_USER_SERVICE",
+      "target": "CMP_RELATIONAL_DB",
+      "type": "sql"
+    },
+    {
+      "source": "CMP_PROBLEM_SERVICE",
+      "target": "CMP_RELATIONAL_DB",
+      "type": "sql"
+    },
+    {
+      "source": "CMP_PROBLEM_SERVICE",
+      "target": "CMP_OBJECT_STORAGE",
+      "type": "storage-api"
+    },
+    {
+      "source": "CMP_PROBLEM_SERVICE",
+      "target": "CMP_NOTIFICATION_SERVICE",
+      "type": "event"
+    },
+    {
+      "source": "CMP_PROBLEM_SERVICE",
+      "target": "CMP_LLM_INTEGRATION_SERVICE",
+      "type": "rpc"
+    },
+    {
+      "source": "CMP_FORUM_SERVICE",
+      "target": "CMP_RELATIONAL_DB",
+      "type": "sql"
+    },
+    {
+      "source": "CMP_FORUM_SERVICE",
+      "target": "CMP_LLM_INTEGRATION_SERVICE",
+      "type": "event"
+    },
+    {
+      "source": "CMP_FORUM_SERVICE",
+      "target": "CMP_CACHE_BROKER",
+      "type": "cache"
+    },
+    {
+      "source": "CMP_SUBMISSION_SERVICE",
+      "target": "CMP_PROBLEM_SERVICE",
+      "type": "rpc"
+    },
+    {
+      "source": "CMP_SUBMISSION_SERVICE",
+      "target": "CMP_CACHE_BROKER",
+      "type": "queue"
+    },
+    {
+      "source": "CMP_SUBMISSION_SERVICE",
+      "target": "CMP_RELATIONAL_DB",
+      "type": "sql"
+    },
+    {
+      "source": "CMP_JUDGING_ENGINE",
+      "target": "CMP_CACHE_BROKER",
+      "type": "queue-consumer"
+    },
+    {
+      "source": "CMP_JUDGING_ENGINE",
+      "target": "CMP_OBJECT_STORAGE",
+      "type": "storage-api"
+    },
+    {
+      "source": "CMP_JUDGING_ENGINE",
+      "target": "CMP_SUBMISSION_SERVICE",
+      "type": "callback"
+    },
+    {
+      "source": "CMP_LLM_INTEGRATION_SERVICE",
+      "target": "CMP_RELATIONAL_DB",
+      "type": "sql"
+    },
+    {
+      "source": "CMP_LLM_INTEGRATION_SERVICE",
+      "target": "CMP_CACHE_BROKER",
+      "type": "cache"
+    },
+    {
+      "source": "CMP_MONITORING_ALERTING",
+      "target": "CMP_RELATIONAL_DB",
+      "type": "metrics"
+    },
+    {
+      "source": "CMP_MONITORING_ALERTING",
+      "target": "CMP_API_GATEWAY",
+      "type": "metrics"
+    },
+    {
+      "source": "CMP_ORCHESTRATION_PLATFORM",
+      "target": "CMP_JUDGING_ENGINE",
+      "type": "container-management"
+    }
+  ]
+}

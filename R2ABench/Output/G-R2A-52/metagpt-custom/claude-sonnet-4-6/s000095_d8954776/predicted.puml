@@ -1,0 +1,155 @@
+@startuml GPSLogger_Architecture
+
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam packageBorderColor #4466AA
+skinparam packageFontColor #222244
+skinparam packageFontStyle bold
+skinparam componentBackgroundColor #DDEEFF
+skinparam componentBorderColor #3355AA
+skinparam componentFontColor #111133
+skinparam nodeBackgroundColor #EEF8EE
+skinparam nodeBorderColor #336633
+skinparam nodeFontColor #113311
+skinparam databaseBackgroundColor #FFF8DD
+skinparam databaseBorderColor #AA8800
+skinparam cloudBackgroundColor #F8F0FF
+skinparam cloudBorderColor #774499
+skinparam interfaceBackgroundColor #FFFFFF
+skinparam interfaceBorderColor #888888
+skinparam arrowColor #334466
+skinparam arrowFontColor #334466
+
+' ─────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────
+cloud "External Systems" {
+  [Google Play Services] as GPLAY_EXT
+  [OpenGTS Server\n(UDP)] as OGTS_EXT
+}
+
+' ─────────────────────────────────────────
+' PLATFORM / BUILD LAYER
+' ─────────────────────────────────────────
+package "Platform / Build Layer" {
+  component [GradleBuildConfig\n(Build-time Credential Injector)] as GradleBuild
+  database "~/.gradle/\ngradle.properties\n(Credential Store)" as GradleProps
+  database "local.properties\n(sdk.dir / SDK Path)" as LocalProps
+}
+
+' ─────────────────────────────────────────
+' CONFIGURATION / SESSION LAYER
+' ─────────────────────────────────────────
+package "Configuration / Session Layer" {
+  component [AppSettings /\nSessionState] as AppSettings
+  interface "User Configuration\nInput" as UserConfigInput
+}
+
+' ─────────────────────────────────────────
+' SERVICE LAYER
+' ─────────────────────────────────────────
+package "Service Layer" {
+  component [GPSLoggingService\n(Background Android Service)] as GPSService
+  component [LocationListeners\n(Android Location Callbacks)] as LocListeners
+}
+
+' ─────────────────────────────────────────
+' DATA ENTITIES
+' ─────────────────────────────────────────
+package "Data Entities" {
+  component [SerializableLocation\n(Location Data Structure)] as SerializableLoc
+}
+
+' ─────────────────────────────────────────
+' EVENT BUS LAYER
+' ─────────────────────────────────────────
+package "Event Bus Layer" {
+  component [EventBus\n(In-Process Pub/Sub)] as EventBus
+}
+
+' ─────────────────────────────────────────
+' LOGGING / OUTPUT LAYER
+' ─────────────────────────────────────────
+package "Logging / Output Layer" {
+  component [GPXLogger\n(GPX Format Writer)] as GPXLogger
+  component [KMLLogger\n(KML Format Writer)] as KMLLogger
+  component [TextFileLogger\n(Plain Text Writer)] as TxtLogger
+}
+
+' ─────────────────────────────────────────
+' INTEGRATION / UPLOAD LAYER
+' ─────────────────────────────────────────
+package "Integration / Upload Layer" {
+  component [OpenGTSUploader\n(UDP Datagram Sender)] as OGTSUploader
+  component [GPRMCEncoder\n(NMEA GPRMC Formatter)] as GPRMCEnc
+  component [DropboxCredentialConfig\n(Build-time Credential Holder)] as DBCred
+  component [OSMCredentialConfig\n(Build-time Credential Holder)] as OSMCred
+}
+
+' ─────────────────────────────────────────
+' PRESENTATION LAYER
+' ─────────────────────────────────────────
+package "Presentation Layer" {
+  component [MainActivityFragments\n(UI Fragments / Main Activity)] as UIFragments
+}
+
+' ═══════════════════════════════════════════
+' DEPENDENCIES & ARROWS
+' ═══════════════════════════════════════════
+
+' Build layer reads from properties files
+GradleProps --> GradleBuild : reads credential\nproperties
+LocalProps --> GradleBuild : provides sdk.dir\n& toolchain paths
+
+' Build-time credential injection into AppSettings/config
+GradleBuild --> AppSettings : injects Dropbox\napp key / secret\nat build time
+GradleBuild --> AppSettings : injects OSM\nconsumer key / secret\nat build time
+
+' AppSettings wires credential holders (build-time wiring)
+AppSettings --> DBCred : provides Dropbox\ncredentials
+AppSettings --> OSMCred : provides OSM\ncredentials
+
+' User configuration feeds AppSettings
+UserConfigInput --> AppSettings : user sets server,\nport, device ID,\ncomm method, path,\nlogging preferences
+
+' Platform → Service (runtime framework)
+GPLAY_EXT --> GPSService : runtime framework\ndependency
+
+' Service Layer: ownership and callback
+GPSService --> LocListeners : registers /\nowns callbacks
+LocListeners --> GPSService : forwards valid\nlocation callbacks
+
+' Service → Event Bus
+GPSService --> EventBus : publishes\nlocation events
+
+' Event Bus → Presentation
+EventBus --> UIFragments : delivers\nlocation events\n(subscribe)
+
+' Service → SerializableLocation (data passing)
+GPSService --> SerializableLoc : produces\nlocation data
+
+' Service → Logging (user-config gated)
+GPSService --> GPXLogger : triggers with\nvalid location data
+GPSService --> KMLLogger : triggers with\nvalid location data
+GPSService --> TxtLogger : triggers with\nvalid location data
+
+' AppSettings → Loggers (user configuration gates output selection)
+AppSettings --> GPXLogger : user config\ngates output
+AppSettings --> KMLLogger : user config\ngates output
+AppSettings --> TxtLogger : user config\ngates output
+
+' Service → OpenGTS uploader
+GPSService --> OGTSUploader : invokes upload
+
+' SerializableLocation → GPRMCEncoder
+SerializableLoc --> GPRMCEnc : accepted as\ninput type
+
+' Integration internals
+OGTSUploader --> GPRMCEnc : encodes location\nto GPRMC string
+OGTSUploader --> AppSettings : reads server, port,\ndevice ID, comm method,\noptional path
+
+' Integration → External Systems
+OGTSUploader --> OGTS_EXT : sends UDP\ndatagrams
+
+@enduml

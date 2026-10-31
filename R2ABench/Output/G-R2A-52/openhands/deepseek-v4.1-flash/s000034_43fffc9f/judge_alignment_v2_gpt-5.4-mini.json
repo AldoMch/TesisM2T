@@ -1,0 +1,837 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Parallel Execution Runtime::MPI Process Domain::Internal MPI Communicator",
+        "Parallel Execution Runtime::MPI Process Domain::MPI Rank 0\\nPrimary Application Task",
+        "Parallel Execution Runtime::MPI Process Domain::MPI Rank 1..N"
+      ],
+      "gt_nodes": [
+        "Compute node::MPI Process"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Parallel Execution Runtime::Scheduling Core::Task Manager / Server"
+      ],
+      "gt_nodes": [
+        "Compute node::MPI Process::Server\\nThread"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Parallel Execution Runtime::Per-Process Worker Pool::Local Worker Queue",
+        "Parallel Execution Runtime::Scheduling Core::Cyclic Scheduler\\n(qid = -1)",
+        "Parallel Execution Runtime::Scheduling Core::Directed Router\\n(qid >= 0)",
+        "Parallel Execution Runtime::Scheduling Core::Task Stealing Coordinator"
+      ],
+      "gt_nodes": [
+        "Compute node::MPI Process::Task Queue"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Parallel Execution Runtime::Per-Process Worker Pool::Thread Scheduler",
+        "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread 1",
+        "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread 2",
+        "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread N"
+      ],
+      "gt_nodes": [
+        "Compute node::MPI Process::Worker\\nThread"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Dependencies::MPI Runtime / mpi4py"
+      ],
+      "gt_nodes": [
+        "Global::MPI"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry",
+        "torc Python API (import torc)::Task Submission & Results::Task Descriptor\\ninput() / result()"
+      ],
+      "gt_nodes": [
+        "Task Queue (in detail)::..."
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2",
+        "Task Queue (in detail)::Level 0",
+        "Task Queue (in detail)::Level 1",
+        "Task Queue (in detail)::Level 2",
+        "Task Queue (in detail)::Level 3",
+        "Task Queue (in detail)::Level 4",
+        "Task Queue (in detail)::Level 5"
+      ],
+      "predicted_nodes": [
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Example Suite::Image Preprocessing Example",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Example Suite::Master-Worker Example",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Example Suite::Numerical Optimization Example",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Example Suite::SPMD Switching Example",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Example Suite::Task Stealing Example",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Application Layer::HPC Application",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Image Preprocessing App",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Application Layer::MPI Application",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Python Application",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Compute node::MPI Process::Server\\nThread",
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Artifacts::Function Arguments\\n(DE-001)",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Artifacts::Function Return Values\\n(DE-002)",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Data Artifacts::HDF5 Output File\\n(DE-007/DR-007)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Data Artifacts::Image Files by Label\\n(DE-006/DR-006)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Artifacts::Task Descriptor\\n(DE-003/DR-001)",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2",
+        "Task Queue (in detail)::Level 0",
+        "Task Queue (in detail)::Level 1",
+        "Task Queue (in detail)::Level 2",
+        "Task Queue (in detail)::Level 3",
+        "Task Queue (in detail)::Level 4",
+        "Task Queue (in detail)::Level 5"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Dependencies::MPI Runtime / mpi4py",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Dependencies::Python Multithreading",
+      "reference_nodes": [
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Dependencies::cma",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Dependencies::h5py",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Dependencies::mpirun",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Dependencies::numpy",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Dependencies::pillow",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Dependencies::termcolor",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::MPI Process Domain::Internal MPI Communicator",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::MPI Process Domain::MPI Rank 0\\nPrimary Application Task",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Parallel Execution Runtime::MPI Process Domain::MPI Rank 1..N",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::MPI Process Domain::SPMD Executor",
+      "reference_nodes": [
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Per-Process Worker Pool::Local Worker Queue",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Per-Process Worker Pool::Thread Scheduler",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread 1",
+      "reference_nodes": [
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread 2",
+      "reference_nodes": [
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread N",
+      "reference_nodes": [
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Scheduling Core::Callback Dispatcher",
+      "reference_nodes": [
+        "Compute node::MPI Process::Server\\nThread",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Scheduling Core::Cyclic Scheduler\\n(qid = -1)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Scheduling Core::Directed Router\\n(qid >= 0)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2",
+        "Task Queue (in detail)::Level 0",
+        "Task Queue (in detail)::Level 1",
+        "Task Queue (in detail)::Level 2",
+        "Task Queue (in detail)::Level 3",
+        "Task Queue (in detail)::Level 4",
+        "Task Queue (in detail)::Level 5"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Scheduling Core::Task Manager / Server",
+      "reference_nodes": [
+        "Compute node::MPI Process::Server\\nThread",
+        "Compute node::MPI Process::Task Queue",
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Parallel Execution Runtime::Scheduling Core::Task Stealing Coordinator",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Platforms::Distributed-Memory / Cluster",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Platforms::Shared-Memory Platform",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Runtime Configuration::Environment Variable Reader",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Compute node::MPI Process::Server\\nThread",
+        "Compute node::MPI Process::Task Queue",
+        "Compute node::MPI Process::Worker\\nThread",
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Runtime Configuration::TORC_SERVER_YIELDTIME",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Runtime Configuration::TORC_STEALING\\n(default False)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Runtime Configuration::TORC_WORKERS\\n(default 1)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Runtime Configuration::TORC_WORKER_YIELDTIME",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Execution Modes & Config::disable_stealing()",
+      "reference_nodes": [
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Execution Modes & Config::enable_stealing()",
+      "reference_nodes": [
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "torc Python API (import torc)::Execution Modes & Config::gettime()",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Execution Modes & Config::spmd(f, *args)",
+      "reference_nodes": [
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Lifecycle Management::init()",
+      "reference_nodes": [
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Lifecycle Management::launch(f)",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Lifecycle Management::shutdown()",
+      "reference_nodes": [
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Lifecycle Management::start(f)",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Runtime Queries::node_id() / num_nodes()",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Runtime Queries::worker_id() / num_workers()",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Task Submission & Results::Task Descriptor\\ninput() / result()",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Task Submission & Results::as_completed(tasks=None)",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Task Submission & Results::map(f, *seq, chunksize=1)",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Task Submission & Results::submit(f, *args, qid=-1, callback=None)",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "torc Python API (import torc)::Task Submission & Results::wait(tasks=None)",
+      "reference_nodes": [
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Parallel Execution Runtime::MPI Process Domain::Internal MPI Communicator",
+        "Parallel Execution Runtime::MPI Process Domain::MPI Rank 0\\nPrimary Application Task",
+        "Parallel Execution Runtime::MPI Process Domain::MPI Rank 1..N"
+      ],
+      "gt_node": "Compute node::MPI Process"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Parallel Execution Runtime::Scheduling Core::Task Manager / Server"
+      ],
+      "gt_node": "Compute node::MPI Process::Server\\nThread"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Parallel Execution Runtime::Per-Process Worker Pool::Local Worker Queue",
+        "Parallel Execution Runtime::Scheduling Core::Cyclic Scheduler\\n(qid = -1)",
+        "Parallel Execution Runtime::Scheduling Core::Directed Router\\n(qid >= 0)",
+        "Parallel Execution Runtime::Scheduling Core::Task Stealing Coordinator"
+      ],
+      "gt_node": "Compute node::MPI Process::Task Queue"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Parallel Execution Runtime::Per-Process Worker Pool::Thread Scheduler",
+        "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread 1",
+        "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread 2",
+        "Parallel Execution Runtime::Per-Process Worker Pool::Worker Thread N"
+      ],
+      "gt_node": "Compute node::MPI Process::Worker\\nThread"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Dependencies::MPI Runtime / mpi4py",
+        "Parallel Execution Runtime::MPI Process Domain::Internal MPI Communicator",
+        "Parallel Execution Runtime::MPI Process Domain::SPMD Executor"
+      ],
+      "gt_node": "Global::MPI"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Task Descriptor\\n(DE-003/DR-001)",
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Per-Process Worker Pool::Local Worker Queue",
+        "Parallel Execution Runtime::Scheduling Core::Cyclic Scheduler\\n(qid = -1)",
+        "Parallel Execution Runtime::Scheduling Core::Directed Router\\n(qid >= 0)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry",
+        "torc Python API (import torc)::Task Submission & Results::Task Descriptor\\ninput() / result()",
+        "torc Python API (import torc)::Task Submission & Results::as_completed(tasks=None)",
+        "torc Python API (import torc)::Task Submission & Results::map(f, *seq, chunksize=1)",
+        "torc Python API (import torc)::Task Submission & Results::submit(f, *args, qid=-1, callback=None)",
+        "torc Python API (import torc)::Task Submission & Results::wait(tasks=None)"
+      ],
+      "gt_node": "Task Queue (in detail)::..."
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Task Descriptor\\n(DE-003/DR-001)",
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry",
+        "torc Python API (import torc)::Task Submission & Results::Task Descriptor\\ninput() / result()",
+        "torc Python API (import torc)::Task Submission & Results::as_completed(tasks=None)",
+        "torc Python API (import torc)::Task Submission & Results::map(f, *seq, chunksize=1)",
+        "torc Python API (import torc)::Task Submission & Results::submit(f, *args, qid=-1, callback=None)",
+        "torc Python API (import torc)::Task Submission & Results::wait(tasks=None)"
+      ],
+      "gt_node": "Task Queue (in detail)::A1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Task Descriptor\\n(DE-003/DR-001)",
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry",
+        "torc Python API (import torc)::Task Submission & Results::Task Descriptor\\ninput() / result()",
+        "torc Python API (import torc)::Task Submission & Results::as_completed(tasks=None)",
+        "torc Python API (import torc)::Task Submission & Results::map(f, *seq, chunksize=1)",
+        "torc Python API (import torc)::Task Submission & Results::submit(f, *args, qid=-1, callback=None)",
+        "torc Python API (import torc)::Task Submission & Results::wait(tasks=None)"
+      ],
+      "gt_node": "Task Queue (in detail)::A2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Task Descriptor\\n(DE-003/DR-001)",
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry",
+        "torc Python API (import torc)::Task Submission & Results::Task Descriptor\\ninput() / result()",
+        "torc Python API (import torc)::Task Submission & Results::as_completed(tasks=None)",
+        "torc Python API (import torc)::Task Submission & Results::map(f, *seq, chunksize=1)",
+        "torc Python API (import torc)::Task Submission & Results::submit(f, *args, qid=-1, callback=None)",
+        "torc Python API (import torc)::Task Submission & Results::wait(tasks=None)"
+      ],
+      "gt_node": "Task Queue (in detail)::A3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Task Descriptor\\n(DE-003/DR-001)",
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry",
+        "torc Python API (import torc)::Task Submission & Results::Task Descriptor\\ninput() / result()",
+        "torc Python API (import torc)::Task Submission & Results::as_completed(tasks=None)",
+        "torc Python API (import torc)::Task Submission & Results::map(f, *seq, chunksize=1)",
+        "torc Python API (import torc)::Task Submission & Results::submit(f, *args, qid=-1, callback=None)",
+        "torc Python API (import torc)::Task Submission & Results::wait(tasks=None)"
+      ],
+      "gt_node": "Task Queue (in detail)::B1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Task Descriptor\\n(DE-003/DR-001)",
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry",
+        "torc Python API (import torc)::Task Submission & Results::Task Descriptor\\ninput() / result()",
+        "torc Python API (import torc)::Task Submission & Results::as_completed(tasks=None)",
+        "torc Python API (import torc)::Task Submission & Results::map(f, *seq, chunksize=1)",
+        "torc Python API (import torc)::Task Submission & Results::submit(f, *args, qid=-1, callback=None)",
+        "torc Python API (import torc)::Task Submission & Results::wait(tasks=None)"
+      ],
+      "gt_node": "Task Queue (in detail)::B2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 0"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 4"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Artifacts::Worker Queue Entries\\n(DE-005/DR-005)",
+        "Parallel Execution Runtime::Scheduling Core::Task Descriptor Registry"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 5"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 7963,
+      "completion_tokens": 2254,
+      "total_tokens": 10217,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Application Layer::Example Suite::Image Preprocessing Example",
+    "Application Layer::Example Suite::Master-Worker Example",
+    "Application Layer::Example Suite::Numerical Optimization Example",
+    "Application Layer::Example Suite::SPMD Switching Example",
+    "Application Layer::Example Suite::Task Stealing Example",
+    "Application Layer::HPC Application",
+    "Application Layer::Image Preprocessing App",
+    "Application Layer::MPI Application",
+    "Application Layer::Python Application",
+    "Data Artifacts::Function Arguments\\n(DE-001)",
+    "Data Artifacts::Function Return Values\\n(DE-002)",
+    "Data Artifacts::HDF5 Output File\\n(DE-007/DR-007)",
+    "Data Artifacts::Image Files by Label\\n(DE-006/DR-006)",
+    "Data Artifacts::Task Descriptor\\n(DE-003/DR-001)",
+    "External Dependencies::Python Multithreading",
+    "External Dependencies::cma",
+    "External Dependencies::h5py",
+    "External Dependencies::mpirun",
+    "External Dependencies::numpy",
+    "External Dependencies::pillow",
+    "External Dependencies::termcolor",
+    "Parallel Execution Runtime::MPI Process Domain::SPMD Executor",
+    "Parallel Execution Runtime::Scheduling Core::Callback Dispatcher",
+    "Platforms::Distributed-Memory / Cluster",
+    "Platforms::Shared-Memory Platform",
+    "Runtime Configuration::Environment Variable Reader",
+    "Runtime Configuration::TORC_SERVER_YIELDTIME",
+    "Runtime Configuration::TORC_STEALING\\n(default False)",
+    "Runtime Configuration::TORC_WORKERS\\n(default 1)",
+    "Runtime Configuration::TORC_WORKER_YIELDTIME",
+    "torc Python API (import torc)::Execution Modes & Config::disable_stealing()",
+    "torc Python API (import torc)::Execution Modes & Config::enable_stealing()",
+    "torc Python API (import torc)::Execution Modes & Config::gettime()",
+    "torc Python API (import torc)::Execution Modes & Config::spmd(f, *args)",
+    "torc Python API (import torc)::Lifecycle Management::init()",
+    "torc Python API (import torc)::Lifecycle Management::launch(f)",
+    "torc Python API (import torc)::Lifecycle Management::shutdown()",
+    "torc Python API (import torc)::Lifecycle Management::start(f)",
+    "torc Python API (import torc)::Runtime Queries::node_id() / num_nodes()",
+    "torc Python API (import torc)::Runtime Queries::worker_id() / num_workers()",
+    "torc Python API (import torc)::Task Submission & Results::as_completed(tasks=None)",
+    "torc Python API (import torc)::Task Submission & Results::map(f, *seq, chunksize=1)",
+    "torc Python API (import torc)::Task Submission & Results::submit(f, *args, qid=-1, callback=None)",
+    "torc Python API (import torc)::Task Submission & Results::wait(tasks=None)"
+  ],
+  "_provenance": {
+    "fingerprint": "3aa301f593cac3fcd932036ed391bf690954b40ec798dff4186e97f9c34f3140",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 3
+  }
+}

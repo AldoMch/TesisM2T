@@ -1,0 +1,57 @@
+@startuml
+title LwM2M Device Management Backend Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #444444
+skinparam backgroundColor #FAFAFA
+
+rectangle "Client Layer" as CL {
+    component [Authenticated API Client\n(HTTP + Authorization Header)] as APIClient
+    component [LwM2M Service Component] as LwM2MClient
+}
+
+rectangle "Spring Backend Layer" as SBL {
+    component [User Management Controller\n(Spring HTTP Controller)] as UserController
+    component [JWT Token Validator\n(JwtUtility.isValidToken)] as JWTValidator
+    component [User Service] as UserService
+    database [User Data Store] as UserDB
+}
+
+rectangle "Blockchain Integration Layer" as BIL {
+    component [Blockchain Service\n(Web3j HTTP Client)] as BlockchainService
+    component [Bootstrap Data Encoder/Decoder\n(Fixed 32-byte ASCII)] as Encoder
+    component [Smart Contract Interface\n(getAllClients / addClient / getClientByEndpoint)] as SmartContractIface
+}
+
+rectangle "LwM2M Processing Layer" as LPL {
+    component [LwM2M Node Deserializer\n(Leshan/LwM2M JSON Parser)] as NodeDeserializer
+    component [Bootstrap Configuration Builder] as BootstrapBuilder
+}
+
+rectangle "External Systems" as EXT {
+    database [Ethereum-Compatible\nBlockchain Node\n(HTTP endpoint)] as EthNode
+    component [Deployed Smart Contract\n(Client/Bootstrap Storage)] as SmartContract
+}
+
+APIClient --> UserController : HTTP GET / POST /add\n(Authorization Header)
+APIClient --> BlockchainService : Retrieve client/bootstrap info\nSubmit bootstrap data
+
+UserController --> JWTValidator : Validate token
+JWTValidator --> UserController : result (0/1/2/other)
+UserController --> UserService : CRUD on User
+UserService --> UserDB : Read/Write Users
+
+BlockchainService --> Encoder : Encode string fields\n(to 32-byte ASCII)
+Encoder --> SmartContractIface : Encoded payload
+SmartContractIface --> BlockchainService : Security info collection /\nTransaction receipt / Bootstrap config
+BlockchainService --> Encoder : Decode returned fields\n(from 32-byte ASCII)
+
+SmartContractIface --> EthNode : Web3j HTTP Transport
+EthNode --> SmartContract : Invoke contract methods
+
+LwM2MClient --> NodeDeserializer : JSON payload
+NodeDeserializer --> BootstrapBuilder : Typed LwM2M node structures
+BlockchainService --> BootstrapBuilder : Decoded bootstrap fields
+BootstrapBuilder --> LwM2MClient : Bootstrap configuration
+
+@enduml

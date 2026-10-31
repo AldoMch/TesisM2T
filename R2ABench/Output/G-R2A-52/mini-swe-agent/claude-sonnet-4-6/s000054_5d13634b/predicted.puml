@@ -1,0 +1,106 @@
+@startuml
+title tokencard/contracts - Ethereum Smart Contract System Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2C7BB6
+}
+skinparam database {
+  BackgroundColor #FFF3CD
+  BorderColor #F0A500
+}
+skinparam cloud {
+  BackgroundColor #E8F8E8
+  BorderColor #28A745
+}
+
+actor "Owner\n(Externally Owned Address)" as Owner
+actor "Controller\n(Service Addresses)" as Controller
+actor "Integrator / Developer" as Integrator
+
+cloud "Ethereum Network" as Ethereum {
+  component "Consumer Contract Wallet" as Wallet {
+    component "ETH & ERC20 Asset Holdings" as Assets
+    component "Wallet Operations\n(load, burn, transfer)" as WalletOps
+  }
+
+  component "Controller Contract" as ControllerContract {
+    component "adminCount / controllerCount\n(read-only)" as CounterOps
+    component "Controller Management\n(Transact / Transfer)" as ControllerOps
+  }
+
+  component "Token Whitelist Contract" as TokenWhitelist {
+    database "Whitelist Data\n(exchange rate, loadable, burnable)" as WhitelistData
+  }
+
+  component "Oracle / Licence Contract" as Oracle {
+    database "Exchange Rate Data" as ExchangeRates
+  }
+
+  component "ENS (Ethereum Name Service)" as ENS {
+    database "ENS Registry\n(contract address mappings)" as ENSRegistry
+  }
+
+  component "TKN Holder Contract" as TKNHolder
+}
+
+component "Gas Tank\n(ETH on Owner Address,\noutside Wallet)" as GasTank
+
+package "Go Binding Layer" as GoBindings {
+  component "Contract Bindings\n(generated Go code)" as Bindings {
+    component "Call\n(read-only)" as CallOp
+    component "Transact / Transfer\n(paid)" as TransactOp
+  }
+}
+
+' Owner interactions
+Owner --> Wallet : owns / controls
+Owner --> GasTank : holds gas ETH
+
+' Controller interactions
+Controller --> ControllerContract : service & confirmation ops
+
+' Integrator uses Go bindings
+Integrator --> GoBindings : invokes contract interactions
+
+' Go bindings talk to Ethereum contracts
+GoBindings --> Wallet : interact via Call/Transact/Transfer
+GoBindings --> ControllerContract : interact via Call/Transact/Transfer
+
+' Wallet resolves supporting contracts via ENS
+Wallet --> ENS : resolve controller, whitelist, oracle addresses
+ENS --> ENSRegistry : lookup
+
+' Wallet uses resolved contracts
+Wallet --> ControllerContract : controller operations (ENS-resolved)
+Wallet --> TokenWhitelist : token whitelist checks (ENS-resolved)
+Wallet --> Oracle : exchange rate lookup (ENS-resolved)
+
+' Oracle provides exchange rates to whitelist
+Oracle --> TokenWhitelist : provides exchange rate updates
+
+' Token whitelist interactions
+TokenWhitelist --> TKNHolder : burnability decisions
+
+' Wallet operations depend on whitelist and rates
+WalletOps --> WhitelistData : check loadable / burnable status
+WalletOps --> ExchangeRates : use for amount conversion
+
+' Gas tank remains outside wallet security
+GasTank .. Wallet : outside wallet security boundary
+
+note right of GasTank
+  Gas-payment ETH is kept outside
+  the Consumer Contract Wallet
+  and its security protections.
+end note
+
+note bottom of ENS
+  All supporting contract addresses
+  (controller, whitelist, oracle/licence)
+  are resolved via ENS before use.
+end note
+
+@enduml

@@ -1,0 +1,52 @@
+@startuml
+title macpro-appian-connector – Repository-Supported Architecture (Requirements View)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 220
+
+rectangle "Local Environment" as Local {
+  component "Stage Listing Procedure\n(run listRunningStages)" as StageList
+  component "Connector Config Handler" as ConnectorConfig
+  component "Deployment Metrics Collector\n(from GitHub Actions)" as DeployMetrics
+  component "PR Metrics Collector\n(from GitHub PRs)" as PRMetrics
+}
+
+cloud "AWS Account (current region)" as AWS {
+  component "Project Service\n(runtime events)" as ProjectService
+  component "EventBridge Rule\n(event filtering criteria)" as EventBridge
+  component "SNS Topic\n(notification topic)" as SNSTopic
+  component "Target Cluster & Service\n(cluster=${cluster}, service=${service})" as TargetCluster
+}
+
+cloud "GitHub" as GH {
+  component "Actions API\n(deploy.yml workflow runs)" as ActionsAPI
+  component "Pull Requests API\n(closed PRs for base branch)" as PullReqAPI
+}
+
+database "Connector Definitions\n(defined connectors collection)" as ConnectorDefs
+folder "Subscription Targets\n(manually managed)" as SubTargets
+
+' Flows
+StageList -down-> AWS : Query running stages\n(requires onboarding + AWS CLI creds)\nOutput: runningStages=<comma-separated stages>
+ConnectorConfig --> ConnectorDefs : Consume definitions
+ConnectorConfig --> TargetCluster : Put connectors\nCall delete with empty set\nRestart configured connectors
+ProjectService --> EventBridge : Matching runtime events
+EventBridge --> SNSTopic : Route events to topic
+SNSTopic --> SubTargets : Distribute notifications\n(manual subscription management)
+
+DeployMetrics --> ActionsAPI : List workflow runs (per_page=100)\nAggregate paginated results
+PRMetrics --> PullReqAPI : List closed PRs for base branch\nAggregate paginated results
+
+note right of DeployMetrics
+Output: failedRuns, passedRuns
+Rule: failed = (conclusion != success)
+passed = total - failed
+end note
+
+note right of PRMetrics
+Output: averageTimeToMerge (hours)
+Whole-hour differences; default 0 if none
+end note
+
+@enduml

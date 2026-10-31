@@ -1,0 +1,115 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define COMPONENT component
+!define INTERFACE interface
+
+title Prediction Cards System Architecture
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+' User Frontend
+RECTANGLE "User Frontend\n(React + Wallet)" as Frontend {
+    [Wallet Integration]
+    [Prediction Creation UI]
+    [Prediction Viewing UI]
+    [Outcome NFT Operations UI]
+}
+
+' Smart Contract Layer
+DATABASE "Aeternity Blockchain" as Blockchain {
+    component "PredictionCards\nSmart Contract" as SmartContract
+    component "AENS Name Service" as AENS
+}
+
+' Services
+COMPONENT "Oracle Service\n(Quarkus)" as OracleService {
+    [Price Comparison Logic]
+    [Oracle Registration Management]
+    [Query Processing]
+}
+
+COMPONENT "Prediction Processing\nService" as PredictionProcessing {
+    [Closed Prediction Detection]
+    [Result Processing Workflow]
+}
+
+' External Systems
+RECTANGLE "External Price Provider" as PriceProvider
+RECTANGLE "Prediction Media Storage\n(IPFS Compatible)" as MediaStorage
+RECTANGLE "Local Test Environment" as TestEnv {
+    [CORS Proxy]
+    [Aeternity Node]
+    [Compiler Service]
+}
+
+' Data Flows
+Frontend --> SmartContract : Wallet-mediated\nContract Calls
+SmartContract --> AENS : Resolve Contract Address
+PredictionProcessing --> SmartContract : Initiate Oracle Queries
+OracleService --> SmartContract : Submit Oracle Responses
+OracleService --> PriceProvider : Fetch Price Data
+Frontend --> MediaStorage : Load NFT Media
+SmartContract --> MediaStorage : Reference NFT Media
+OracleService --> PredictionProcessing : Query Status Updates
+PredictionProcessing --> OracleService : Request Price Check
+Frontend --> TestEnv : Local Testing
+TestEnv --> Frontend : CORS-enabled Access
+
+' Interfaces
+interface "Wallet API" as WalletAPI
+interface "AENS API" as AENSAPI
+interface "Oracle API" as OracleAPI
+interface "Media API" as MediaAPI
+interface "Test Proxy API" as TestProxyAPI
+
+Frontend -- WalletAPI
+WalletAPI -- SmartContract
+AENS -- AENSAPI
+SmartContract -- AENSAPI
+OracleService -- OracleAPI
+PriceProvider -- OracleAPI
+MediaStorage -- MediaAPI
+Frontend -- MediaAPI
+TestEnv -- TestProxyAPI
+Frontend -- TestProxyAPI
+
+note right of Frontend
+  - Wallet connection
+  - Prediction creation/viewing
+  - NFT fund/rent/withdrawal
+  - Reward claiming
+end note
+
+note right of SmartContract
+  - Prediction state management
+  - Outcome NFT state
+  - Oracle query initiation
+  - Result processing
+end note
+
+note right of OracleService
+  - Oracle registration/maintenance
+  - Price comparison
+  - Query response submission
+end note
+
+note right of PredictionProcessing
+  - Closed prediction detection
+  - Workflow orchestration
+  - Result finalization
+end note
+
+note bottom of MediaStorage
+  - NFT image/animations
+  - IPFS or compatible storage
+end note
+
+note bottom of TestEnv
+  - Local contract testing
+  - CORS proxy support
+  - Aeternity node simulation
+end note
+
+@enduml

@@ -1,0 +1,170 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+skinparam node {
+  BackgroundColor #EAF7EA
+  BorderColor #27AE60
+  FontColor #1A1A1A
+}
+skinparam package {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+  FontColor #1A1A1A
+}
+skinparam database {
+  BackgroundColor #F5EEF8
+  BorderColor #8E44AD
+  FontColor #1A1A1A
+}
+skinparam rectangle {
+  BackgroundColor #FDEDEC
+  BorderColor #E74C3C
+  FontColor #1A1A1A
+}
+skinparam arrow {
+  Color #2C3E50
+  FontColor #2C3E50
+}
+skinparam linetype ortho
+
+title Kubescape host-scanner System Architecture
+
+node "Kubernetes Cluster" {
+  node "Kubernetes Node (DaemonSet Pod)" {
+
+    package "host-scanner Service" {
+
+      component "HTTP Server\n(FR-001, NFR-003)" as HTTPServer {
+      }
+
+      component "Endpoint Router\n(FR-001)" as Router {
+      }
+
+      component "Known Endpoint Handlers\n(DR-001, DR-002)" as KnownHandlers {
+      }
+
+      component "Unknown Endpoint Handler\n(FR-001)\nReturns HTTP 404" as UnknownHandler {
+      }
+
+      package "Core Logic" {
+
+        component "CNI Config Directory Resolver\n(FR-002, DR-003, DR-004)" as CNIResolver {
+        }
+
+        component "Runtime Type Detector\n(C-002)" as RuntimeDetector {
+        }
+
+        component "Config File Parser\n(DR-003)" as ConfigParser {
+        }
+
+        component "CLI Argument Parser\n(DR-003)" as CLIParser {
+        }
+
+        component "Encryption Secret Sanitizer\n(FR-003, NFR-001, DR-005, DR-006)" as Sanitizer {
+        }
+
+      }
+
+      package "Host Information Collector" {
+        component "Node Host Info Collector\n(C-004)" as HostCollector {
+        }
+      }
+
+    }
+
+    package "Host Filesystem Access" {
+      database "/etc/cni/\n(DR-004 default path)" as EtcCNI
+      database "/var/lib/cni/\n(DR-004 explicit path)" as VarLibCNI
+      database "/run/ and other\nhost paths" as HostPaths
+      database "Runtime Config Files\n(DR-003)" as RuntimeConfig
+    }
+
+  }
+
+  node "Kubernetes Control Plane" {
+    component "API Server / Node Info\n(Operator managed)" as K8sAPI {
+    }
+  }
+}
+
+package "External Actors" {
+  actor "HTTP Client\n(FR-001, NFR-003)" as HTTPClient
+  actor "Operator\n(C-004)" as Operator
+  actor "Integrator\n(FR-002, DR-003)" as Integrator
+}
+
+package "Test Environment (Go)" {
+  component "End-to-End Test Suite\n(FR-001, FR-002, FR-003)" as E2ETests {
+  }
+  component "Provider-Specific Test Files\n//go:build <provider>\n(NFR-002, DR-007, C-001)" as ProviderTests {
+  }
+  component "Unit Tests\n(FR-002, FR-003)" as UnitTests {
+  }
+}
+
+' HTTP flow
+HTTPClient --> HTTPServer : "HTTP GET requests\n(DR-001)"
+HTTPServer --> Router : "Route request"
+Router --> KnownHandlers : "Known path"
+Router --> UnknownHandler : "Unknown path\n(e.g. /doesnotexist)"
+UnknownHandler --> HTTPServer : "HTTP 404 (FR-001)"
+KnownHandlers --> HostCollector : "Collect host info"
+KnownHandlers --> Sanitizer : "Sanitize JSON output\n(DR-005)"
+HTTPServer --> HTTPClient : "HTTP response\n(DR-002)"
+
+' CNI resolution flow
+Integrator --> CNIResolver : "Runtime type, config-file\ncontent, CLI args (DR-003)"
+CNIResolver --> RuntimeDetector : "Detect runtime\n(kubelet/containerd/CRI-O)"
+CNIResolver --> ConfigParser : "Parse config file"
+CNIResolver --> CLIParser : "Parse CLI args"
+CNIResolver --> EtcCNI : "Resolves to /etc/cni/\n(default scenario)"
+CNIResolver --> VarLibCNI : "Resolves to /var/lib/cni/\n(explicit arg scenario)"
+ConfigParser --> RuntimeConfig : "Read runtime config"
+
+' Sanitization flow
+Sanitizer --> KnownHandlers : "Sanitized JSON\n(DR-006, NFR-001)"
+
+' Host collection
+HostCollector --> HostPaths : "Read host filesystem"
+HostCollector --> K8sAPI : "Node host info"
+
+' Operator
+Operator --> K8sAPI : "Deploy DaemonSet\n(C-004)"
+
+' Test interactions
+E2ETests --> HTTPServer : "HTTP GET /doesnotexist\n→ expect 404 (FR-001)"
+E2ETests --> CNIResolver : "Supply runtime inputs\n→ verify resolved path (FR-002)"
+E2ETests --> Sanitizer : "Supply JSON with secrets\n→ verify sanitized output (FR-003)"
+E2ETests --> ProviderTests : "Select via //go:build <provider>\n(NFR-002, C-001)"
+ProviderTests --> E2ETests : "Provider-specific\nexpected data (DR-007)"
+UnitTests --> CNIResolver : "Unit verify CNI resolution"
+UnitTests --> Sanitizer : "Unit verify secret removal"
+
+note right of Sanitizer
+  Removes encryption provider
+  configuration secrets from
+  control-plane JSON data
+  (FR-003, NFR-001, DR-006)
+end note
+
+note right of CNIResolver
+  Resolves CNI config dir:
+  - /etc/cni/ (kubelet/containerd default)
+  - /var/lib/cni/ (explicit CLI arg)
+  - Config-derived subpaths
+  (FR-002, DR-004, C-002)
+end note
+
+note bottom of ProviderTests
+  //go:build <provider>
+  declarations per file
+  (NFR-002, DR-007, C-001)
+end note
+
+@enduml

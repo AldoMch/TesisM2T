@@ -1,0 +1,176 @@
+@startuml
+
+package "Client / Presentation Layer" {
+  node "WebSocket-capable Browser\n(Chrome, Firefox, Safari, Edge)" as BrowserNode {
+    component "Browser UI" as BrowserUI
+    component "LaTeX Editor" as LaTeXEditor
+    component "Registration/Login/\nPassword Recovery UI" as AuthUI
+    component "Project/Group\nBrowsing UI" as BrowseUI
+    component "Version Tree UI" as VersionTreeUI
+    component "Comment UI" as CommentUI
+  }
+}
+
+package "API / Communication Layer" {
+  component "HTTP/REST External API" as ExternalAPI
+  component "Internal APIs" as InternalAPI
+  component "WebSocket Communication" as WebSocket
+}
+
+package "Application / Service Layer" {
+  component "User Management / Authentication" as UserMgmt
+  component "Project / Workspace Management" as ProjectMgmt
+  component "Group / Collaboration Management" as CollabMgmt
+  component "File Processing / Storage" as FileProc
+  component "Structured File Parser / Converter\n(CSV, Excel, PDF)" as StructuredParser
+  component "Version Control" as VersionCtrl
+  component "Comment Management" as CommentMgmt
+  component "Export" as Export
+  component "Security / Privacy Controls" as Security
+  component "Format Handling / Data Exchange\n(Inputs: JPG, PNG, PDF, CSV, XLSX, BMP, hand-drawn\nOutputs: LaTeX code, rendered preview, PDF, LaTeX source, PNG, JPEG)" as FormatHandling
+}
+
+package "AI Recognition and Conversion Layer" {
+  component "AI Recognition\n(images/handwritten/formulas)" as AIRecog
+  component "LaTeX Generation" as LaTeXGen
+}
+
+package "Rendering Layer" {
+  component "Rendering" as Rendering
+}
+
+package "Data / Persistence Layer" {
+  node "Relational DBMS\n(MySQL 8.0+, PostgreSQL 12+)" as DBMSNode {
+    database "Persistence / Database" as DB
+  }
+}
+
+package "Infrastructure / Runtime Layer" {
+  node "Web Server\n(Apache 2.4+, Nginx 1.18+)" as WebServer
+  node "Runtime\n(Python 3.8+, Node.js 14.x+)" as Runtime
+  component "LaTeX Engine Adapter" as LaTeXAdapter
+}
+
+cloud "External Systems" {
+  cloud "External HTTP/REST Consumers\n(implied by C-011)" as ExtAPIConsumers
+  cloud "Existing User Authentication\n(C-004)" as ExistingAuth
+  cloud "Compatible LaTeX Engine\n(TeX Live, MiKTeX)" as LaTeXEngine
+  cloud "Mainstream LaTeX Editors\n(Overleaf, TeXstudio)" as LatexEditors
+}
+
+BrowserUI --> ExternalAPI : HTTP/REST
+BrowserUI --> WebSocket : real-time
+LaTeXEditor --> ExternalAPI : edit/submit
+LaTeXEditor --> WebSocket : real-time editing/preview
+AuthUI --> ExternalAPI : registration/login/recovery
+BrowseUI --> ExternalAPI : project/group browsing
+VersionTreeUI --> ExternalAPI : version tree
+CommentUI --> ExternalAPI : comments
+CommentUI --> WebSocket : collaborative comments
+
+ExternalAPI --> InternalAPI
+ExternalAPI --> UserMgmt
+ExternalAPI --> ProjectMgmt
+ExternalAPI --> CollabMgmt
+ExternalAPI --> FileProc
+ExternalAPI --> Rendering
+ExternalAPI --> VersionCtrl
+ExternalAPI --> CommentMgmt
+ExternalAPI --> Export
+ExternalAPI --> FormatHandling
+
+InternalAPI --> UserMgmt : user verification
+InternalAPI --> FileProc : file storage
+InternalAPI --> AIRecog : image recognition
+InternalAPI --> StructuredParser : structured conversion
+InternalAPI --> LaTeXGen : LaTeX generation
+InternalAPI --> Rendering : rendering
+InternalAPI --> CollabMgmt : collaboration
+InternalAPI --> VersionCtrl : version control
+InternalAPI --> CommentMgmt : comments
+InternalAPI --> Export : export
+InternalAPI --> FormatHandling : format handling
+
+WebSocket --> Rendering : real-time preview
+WebSocket --> CollabMgmt : collaborative updates
+WebSocket --> CommentMgmt : live comments
+
+FileProc --> AIRecog : image/handwritten inputs
+FileProc --> StructuredParser : CSV/Excel/PDF inputs
+FileProc --> FormatHandling : supported input formats
+
+AIRecog --> LaTeXGen : recognized content
+AIRecog --> DB : recognized content records
+AIRecog --> FileProc : recognized content/artifacts
+
+StructuredParser --> LaTeXGen : parsed structured content
+StructuredParser --> DB : parsed content records
+StructuredParser --> FileProc : parsed structured content
+
+LaTeXGen --> Rendering : generated LaTeX
+LaTeXGen --> FormatHandling : LaTeX code/source
+LaTeXGen --> DB : generated LaTeX records
+LaTeXGen --> FileProc : generated LaTeX source
+
+Rendering --> LaTeXAdapter : compile/render
+Rendering --> FormatHandling : preview/PDF/PNG/JPEG
+Rendering --> DB : rendered preview metadata
+Rendering --> FileProc : rendered previews/artifacts
+
+Export --> LaTeXAdapter : PDF export
+Export --> LaTeXGen : LaTeX source export
+Export --> Rendering : PNG/JPEG export
+Export --> FileProc : store/retrieve exported artifacts
+Export --> DB : exported artifact records/metadata
+Export --> FormatHandling : output formats
+
+UserMgmt --> DB : user data
+ProjectMgmt --> DB : project/workspace data
+CollabMgmt --> DB : group/member data
+CollabMgmt --> UserMgmt : permission check
+CollabMgmt --> ProjectMgmt : shared/team projects
+VersionCtrl --> DB : versions/branches/comments
+VersionCtrl --> ProjectMgmt : project version trees
+VersionCtrl --> FileProc : versioned files/edits/downloads
+CommentMgmt --> DB : comments
+CommentMgmt --> VersionCtrl : version comments
+FileProc --> DB : file paths/parsed content
+
+Security --> DB : encrypted storage
+Security --> ExternalAPI : input validation/auth
+Security --> UserMgmt : encryption/permissions
+Security --> FileProc : uploaded file security
+Security --> AIRecog : image/formula privacy
+Security --> StructuredParser : input validation
+Security --> ProjectMgmt : project data access
+Security --> CollabMgmt : collaboration permissions
+Security --> VersionCtrl : version access
+Security --> CommentMgmt : comment privacy
+Security --> Export : export controls
+Security --> FormatHandling : format handling controls
+
+LaTeXAdapter --> LaTeXEngine : uses
+
+WebServer --> ExternalAPI : hosts
+WebServer --> WebSocket : hosts/terminates
+Runtime --> ExternalAPI : executes backend logic
+Runtime --> InternalAPI : executes internal services
+Runtime --> UserMgmt : executes
+Runtime --> ProjectMgmt : executes
+Runtime --> CollabMgmt : executes
+Runtime --> FileProc : executes
+Runtime --> StructuredParser : executes
+Runtime --> VersionCtrl : executes
+Runtime --> CommentMgmt : executes
+Runtime --> Export : executes
+Runtime --> Security : executes
+Runtime --> AIRecog : executes
+Runtime --> LaTeXGen : executes
+Runtime --> Rendering : executes
+Runtime --> LaTeXAdapter : executes
+
+ExtAPIConsumers --> ExternalAPI : HTTP/REST
+UserMgmt --> ExistingAuth : external auth dependency
+LaTeXGen --> LatexEditors : generated LaTeX compatible with
+
+@enduml

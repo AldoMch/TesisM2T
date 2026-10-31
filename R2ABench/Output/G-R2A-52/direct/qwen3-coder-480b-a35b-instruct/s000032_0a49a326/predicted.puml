@@ -1,0 +1,60 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Authenticated User" as user
+RECTANGLE "Keycloak" as keycloak
+RECTANGLE "API Gateway" as gateway
+RECTANGLE "Example Runtime Bundle" as runtimeBundle
+RECTANGLE "ProcessRuntime API" as processRuntime
+RECTANGLE "TaskRuntime API" as taskRuntime
+RECTANGLE "Audit Service" as auditService
+RECTANGLE "Query Service" as queryService
+RECTANGLE "NGINX Ingress Controller" as ingress
+RECTANGLE "Kubernetes/GKE Cluster" as kubernetes
+RECTANGLE "Deployment Descriptors" as deploymentDescriptors
+
+' Main flows
+user --> keycloak : Obtain authentication token
+user --> gateway : Access protected endpoints\n(with token)
+gateway --> runtimeBundle : Route requests
+runtimeBundle --> processRuntime : Execute process operations
+runtimeBundle --> taskRuntime : Execute task operations
+runtimeBundle --> auditService : Log audit events
+runtimeBundle --> queryService : Provide query data
+ingress --> kubernetes : Route external traffic
+kubernetes --> runtimeBundle : Host services
+deploymentDescriptors --> kubernetes : Configure scalability
+
+' Security and auth dependencies
+gateway ..> keycloak : Validate tokens
+taskRuntime ..> keycloak : Check user roles
+processRuntime ..> keycloak : Validate access
+
+' Background components (dotted connections indicate architectural context)
+RECTANGLE "Notification Service" as notificationService
+RECTANGLE "Cloud Connectors" as cloudConnectors
+RECTANGLE "Registry/Config Maps" as registry
+
+notificationService ..> runtimeBundle : (background)
+cloudConnectors ..> runtimeBundle : (background)
+registry ..> kubernetes : (background)
+
+note right of user
+  - Authenticated user obtains token from Keycloak
+  - Uses token to access protected endpoints via Gateway
+end note
+
+note right of runtimeBundle
+  - Hosts process definitions and instances
+  - Contains ProcessRuntime and TaskRuntime APIs
+  - Generates audit events
+  - Provides query capabilities
+end note
+
+note bottom of kubernetes
+  - Hosts all cloud services
+  - Configured via deployment descriptors
+  - Exposes services through NGINX ingress
+end note
+
+@enduml

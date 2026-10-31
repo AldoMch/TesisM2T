@@ -1,0 +1,86 @@
+@startuml
+' PlugIt Architecture Overview
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+
+' Network boundary to reflect PI_ALLOWED_NETWORKS
+frame "Network Boundary (controlled by PI_ALLOWED_NETWORKS)" as NET {
+  actor "External User /\nSystem" as External
+  component "PlugIt API Client\n(init with API_URL)" as APIClient
+
+  node "PlugIt Proxy" as Proxy {
+    component "Proxy Core" as ProxyCore
+    database "Proxy Data Store" as ProxyDB
+
+    package "Mail Intake <<example/standalone>>" as MailIntake {
+      component "Auto-response\nFilter" as AutoFilter
+      component "Routing Token\nValidator\n(SHA-512 slice [30:42])" as TokenValidator
+      component "Text Payload\nExtractor" as TextExtractor
+      component "Mail Handler" as MailHandler
+    }
+  }
+}
+
+' Example mail processing flow (structural dataflow, not a sequence diagram)
+cloud "Inbound Email" as InboundMail
+InboundMail --> AutoFilter : message
+AutoFilter --> TokenValidator : if not auto-response
+TokenValidator --> TextExtractor : if hash valid
+TextExtractor --> MailHandler : payload + routing data
+MailHandler --> InboundMail : ack & delete on success
+
+External --> ProxyCore : UI/API access via Proxy
+APIClient --> ProxyCore : HTTP(S) requests\nProxy API endpoint
+ProxyCore --> ProxyDB : read/write
+
+' Services side
+frame "PlugIt Services (N)" as Services {
+  package "Service A" as SA {
+    component "PlugIt Service A" as ServiceA
+    database "Service A DB" as DBA
+  }
+  package "Service B" as SB {
+    component "PlugIt Service B" as ServiceB
+    database "Service B DB" as DBB
+  }
+}
+
+' Proxy-to-service communication through the PlugIt protocol
+ProxyCore --> ServiceA : PlugIt protocol
+ProxyCore --> ServiceB : PlugIt protocol
+
+' Each service uses its own configured database connection
+ServiceA --> DBA : SQLALCHEMY_URL
+ServiceB --> DBB : SQLALCHEMY_URL
+
+' Migration tooling and upgrade files for schema evolution
+artifact "Upgrade Files\n(migrations)" as UpgradeFiles
+component "Alembic Migration\nTool" as Alembic
+UpgradeFiles -down- Alembic
+Alembic -down-> DBA : apply upgrades
+Alembic -down-> DBB : apply upgrades
+
+' Configuration sources
+folder "Project Config\n(API_URL, SQLALCHEMY_URL,\nDEBUG, PI_BASE_URL,\nPI_ALLOWED_NETWORKS)" as CfgProject
+folder "Local/Private Config\n(excluded from VCS)" as CfgLocal
+
+CfgProject --> ServiceA : service settings
+CfgProject --> ServiceB : service settings
+CfgLocal --> ServiceA : private overrides
+CfgLocal --> ServiceB : private overrides
+CfgProject --> ProxyCore : network & proxy settings
+
+note right of ProxyCore
+- Exposes Proxy API endpoint
+- Enforces PI_ALLOWED_NETWORKS
+- Communicates with services via PlugIt protocol
+end note
+
+note bottom of Services
+Each PlugIt Service is isolated and maintains its
+own datastore and migrations.
+end note
+
+@enduml

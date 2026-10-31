@@ -1,0 +1,91 @@
+@startuml
+title IceFireDB Decentralized Database Infrastructure - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Redis Application" as RedisApp
+actor "Redis Pub/Sub Application" as PubSubApp
+actor "Deployment / PubSub Operator" as Operator
+
+package "IceFireDB-Redis-Proxy" {
+  component "Redis Command/Proxy Interface" as RedisProxyInterface
+  component "Redis Command Category Support\n(String, Set, List, Hash,\nSorted Set, Stream, Control)" as RedisCmdCategories
+  component "Decentralized Redis Agent Sync" as RedisSync
+  component "Redis Storage Forwarding" as RedisForward
+  component "Cluster-aware Proxy Routing" as ClusterRouting
+}
+
+package "IceFireDB-PubSub" {
+  component "Redis Pub/Sub Protocol Interface" as PubSubInterface
+  component "Decentralized Pub/Sub Engine" as PubSubEngine
+  component "Peer Discovery & Routing\n(Kademlia DHT / libp2p-IPFS style)" as PeerDiscovery
+  component "NAT/Private Network Communication" as NatComm
+}
+
+package "Internal SQL/MySQL Result Handling\n(SQLite-related, internal only)" {
+  component "Packetized Result Parser" as SQLParser
+  component "Field Metadata / Field-name Mapping" as SQLFields
+  component "Rows, Warnings, Status Extraction" as SQLRows
+}
+
+database "Redis Standalone Storage" as RedisStandalone
+database "Redis Cluster Storage" as RedisCluster
+
+cloud "Decentralized Redis Agent Network" as RedisAgentNet
+cloud "Decentralized P2P Pub/Sub Network\n(Same/Cross network, NAT/private)" as PubSubNet
+
+component "Packetized SQL/MySQL Result Data" as SQLPackets
+
+RedisApp --> RedisProxyInterface : Redis commands / application traffic
+Operator --> RedisProxyInterface : configure / operate
+
+RedisProxyInterface --> RedisCmdCategories
+RedisProxyInterface --> RedisSync
+RedisProxyInterface --> RedisForward
+RedisProxyInterface --> ClusterRouting
+
+RedisSync --> RedisAgentNet : synchronize Redis instructions
+RedisAgentNet --> RedisSync : synchronized instructions
+RedisForward --> RedisStandalone : write / read
+RedisForward --> RedisCluster : write / read (cluster-aware)
+ClusterRouting --> RedisCluster : cluster state / node changes
+RedisCmdCategories ..> RedisForward : supported command forwarding
+
+PubSubApp --> PubSubInterface : Redis publish / subscribe operations
+Operator --> PubSubInterface : deploy / monitor
+
+PubSubInterface --> PubSubEngine
+PubSubEngine --> PeerDiscovery
+PubSubEngine --> NatComm
+PubSubEngine --> PubSubNet : publish / subscribe messages
+PubSubNet --> PubSubEngine : message delivery
+PeerDiscovery --> PubSubNet : peer discovery / routing data
+NatComm --> PubSubNet : NAT/private-network communication
+
+SQLParser --> SQLFields
+SQLParser --> SQLRows
+SQLParser ..> SQLPackets : parse packetized result data
+
+note right of RedisProxyInterface
+  Covers FR-001..FR-004, FR-010, FR-011
+  Supports standalone and clustered Redis,
+  decentralized Redis instruction sync,
+  and Redis command category proxying.
+end note
+
+note right of PubSubEngine
+  Covers FR-005..FR-009, NFR-002, NFR-004
+  Redis-compatible publish/subscribe over
+  a decentralized P2P network using
+  Kademlia DHT with libp2p/IPFS-style routing (C-003).
+end note
+
+note bottom of SQLParser
+  Internal data handling only; not a top-level
+  product feature unless separately specified
+  (C-005, C-006).
+end note
+
+@enduml

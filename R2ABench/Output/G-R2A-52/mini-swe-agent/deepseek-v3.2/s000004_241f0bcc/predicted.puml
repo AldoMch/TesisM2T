@@ -1,0 +1,144 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor COMPONENT_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+skinparam node {
+  BackgroundColor LAYER_COLOR
+  BorderColor #333333
+}
+
+skinparam database {
+  BackgroundColor DATASTORE_COLOR
+  BorderColor #333333
+}
+
+skinparam rectangle {
+  BackgroundColor EXTERNAL_COLOR
+  BorderColor #333333
+}
+
+title EMBC ESS Application Architecture
+
+package "Presentation Layer" {
+  [Web Browser] as Browser
+  [Angular ClientApp] as ClientApp
+  [NgRx Store] as NgRxStore
+  [Service Wrappers] as ServiceWrappers
+  [Auth/Routing Components] as AuthRouting
+  
+  Browser --> ClientApp : "Hosts"
+  ClientApp --> AuthRouting : "Uses"
+  ClientApp --> ServiceWrappers : "Uses"
+  ClientApp --> NgRxStore : "Manages State"
+}
+
+package "API Layer" {
+  [.NET Core WebAPI] as WebAPI
+  [API Controllers] as Controllers
+  [HTTP API Gateway] as APIGateway
+  
+  APIGateway --> WebAPI : "Routes"
+  WebAPI --> Controllers : "Hosts"
+}
+
+package "Business Layer" {
+  [Domain Services] as DomainServices
+  [C# Domain Classes] as DomainClasses
+  
+  Controllers --> DomainServices : "Calls"
+  DomainServices --> DomainClasses : "Uses"
+}
+
+package "Data Access Layer" {
+  [Entity Framework] as EF
+  [DbContext] as DbContext
+  
+  DomainServices --> EF : "Uses"
+  EF --> DbContext : "Manages"
+}
+
+package "Data Layer" {
+  database "MS SQL Database" as MSSQL
+  [Persistent Entities] as Entities
+  [Repository SQL Scripts] as SQLScripts
+  
+  DbContext --> Entities : "Maps"
+  Entities --> MSSQL : "Stored in"
+  SQLScripts --> MSSQL : "Executes on"
+}
+
+package "External Systems" {
+  [SiteMinder Auth] as SiteMinder
+  [External URLs] as ExternalURLs
+  
+  AuthRouting --> SiteMinder : "Respects"
+  AuthRouting --> ExternalURLs : "Redirects to"
+}
+
+package "Development Environment" {
+  [Development Back Door] as DevBackDoor
+  [Role-paired Tokens] as DevTokens
+  [Proxy Configuration] as ProxyConfig
+  
+  DevBackDoor --> WebAPI : "Enabled in Dev"
+  ClientApp --> DevTokens : "Uses in Dev"
+  ClientApp --> ProxyConfig : "Uses in Dev"
+}
+
+' Communication flows
+ServiceWrappers --> APIGateway : "HTTP Requests"
+APIGateway --> ServiceWrappers : "HTTP Responses"
+Controllers --> DomainServices : "Business Logic Calls"
+EF --> MSSQL : "Data Operations"
+SQLScripts --> MSSQL : "Data Maintenance"
+AuthRouting --> SiteMinder : "Authentication"
+AuthRouting --> ExternalURLs : "External Navigation"
+
+' State management
+NgRxStore --> ServiceWrappers : "Caches Data"
+ServiceWrappers --> NgRxStore : "Updates State"
+
+' Development flows
+DevTokens --> APIGateway : "Authentication"
+DevBackDoor --> Controllers : "Bypass Auth"
+
+note right of ClientApp
+  - Role-based routing
+  - Login/session handling
+  - HTTP request interception
+  - Module import diagnostics
+end note
+
+note right of ServiceWrappers
+  - Evacuee service
+  - Incident-task service
+  - Organization service
+  - Referral service
+  - Registration service
+  - Notification queue
+  - Controlled-list loader
+  - Cookie service
+end note
+
+note right of DomainServices
+  - Business logic
+  - PDF collection capability
+  - Domain operations
+end note
+
+note right of SQLScripts
+  - Volunteer deactivation
+  - Data maintenance
+  - Transaction safety
+  - Backup required
+end note
+
+@enduml

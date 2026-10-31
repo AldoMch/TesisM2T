@@ -1,0 +1,92 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define COMPONENT component
+!define INTERFACE interface
+
+title EasyLaTex System Architecture
+
+skinparam componentStyle rectangle
+
+' Browser Client
+RECTANGLE "Browser Client" as BrowserClient {
+    [User Interface] as UI
+}
+
+' Frontend Layer
+RECTANGLE "Frontend Layer" as Frontend {
+    [Web Application] as WebApp
+}
+
+' Backend Layer
+RECTANGLE "Backend Layer" as Backend {
+    [API Gateway] as APIGateway
+    [Authentication Service] as AuthService
+    [User Management] as UserManager
+    [Project Management] as ProjectManager
+    [File Processing Service] as FileProcessor
+    [AI Recognition Engine] as AIEngine
+    [Rendering Engine] as Renderer
+    [Collaboration Service] as Collaboration
+    [Version Control] as VersionControl
+    [Export Service] as ExportService
+}
+
+' Data Layer
+RECTANGLE "Data Layer" as DataLayer {
+    DATABASE "Relational Database" as DB
+    [File Storage] as FileStorage
+}
+
+' External Systems
+RECTANGLE "External Systems" as External {
+    [LaTeX Engine] as LaTeXEngine
+    [OCR/AI Models] as AIModels
+}
+
+' Connections
+BrowserClient --> Frontend : HTTP/WebSocket
+Frontend --> Backend : REST API
+APIGateway --> AuthService
+APIGateway --> UserManager
+APIGateway --> ProjectManager
+APIGateway --> FileProcessor
+APIGateway --> AIEngine
+APIGateway --> Renderer
+APIGateway --> Collaboration
+APIGateway --> VersionControl
+APIGateway --> ExportService
+
+AuthService --> DB
+UserManager --> DB
+ProjectManager --> DB
+FileProcessor --> FileStorage
+FileProcessor --> AIEngine
+AIEngine --> AIModels
+Renderer --> LaTeXEngine
+Collaboration --> DB
+VersionControl --> DB
+ExportService --> FileStorage
+
+DB --> DataLayer
+FileStorage --> DataLayer
+
+LaTeXEngine --> External
+AIModels --> External
+
+note right of Backend
+    Microservices Architecture
+    Separation of Concerns
+end note
+
+note bottom of DataLayer
+    Persistent Storage
+    Encrypted Data
+end note
+
+note top of External
+    Third-party Dependencies
+    AI & LaTeX Processing
+end note
+
+@enduml

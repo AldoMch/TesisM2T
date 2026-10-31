@@ -1,0 +1,90 @@
+@startuml
+title PlugIt Framework - Architecture Overview
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<external>> #LightYellow
+  BackgroundColor<<proxy>> #LightBlue
+  BackgroundColor<<service>> #LightGreen
+  BackgroundColor<<datastore>> #LightGray
+  BackgroundColor<<config>> #LightCoral
+}
+
+actor "External User / System" as ExtUser <<external>>
+
+rectangle "External Systems" <<external>> {
+  component "Inbound Mail Server" as MailServer <<external>>
+  database "MySQL / SQLite\n(External DB)" as ExtDB <<datastore>>
+}
+
+rectangle "Internal Network" {
+
+  rectangle "PlugIt Proxy Layer" <<proxy>> {
+    component "PlugIt Proxy" as Proxy {
+      component "Proxy API Endpoint" as ProxyAPI
+      component "Standalone Mail Workflow\n(Example Scope)" as MailWorkflow {
+        component "Mail Validator\n(Hash & Auto-response)" as MailValidator
+        component "Mail Payload Extractor" as MailExtractor
+        component "Mail Handler" as MailHandler
+      }
+    }
+    database "Proxy-Side Data Store" as ProxyDS <<datastore>>
+    component "Proxy Configuration\n(API_URL, PI_ALLOWED_NETWORKS)" as ProxyConfig <<config>>
+  }
+
+  rectangle "PlugIt Service Layer" <<service>> {
+    rectangle "PlugIt Service A" <<service>> {
+      component "Service Logic A" as SvcLogicA
+      component "PlugIt API Client A" as APIClientA
+      component "Schema Migration\n(Versioned Upgrade Files)" as MigrationA
+      database "Service Data Store A" as ServiceDSA <<datastore>>
+      component "Service Config A\n(API_URL, SQLALCHEMY_URL,\nDEBUG, PI_BASE_URL)" as SvcConfigA <<config>>
+      component "Local / Private Config A\n(Excluded from VCS)" as PrivConfigA <<config>>
+    }
+
+    rectangle "PlugIt Service B" <<service>> {
+      component "Service Logic B" as SvcLogicB
+      component "PlugIt API Client B" as APIClientB
+      component "Schema Migration B" as MigrationB
+      database "Service Data Store B" as ServiceDSB <<datastore>>
+      component "Service Config B" as SvcConfigB <<config>>
+      component "Local / Private Config B" as PrivConfigB <<config>>
+    }
+  }
+}
+
+' External access
+ExtUser --> ProxyAPI : HTTP Request\n(via PI_ALLOWED_NETWORKS)
+MailServer --> MailWorkflow : Inbound Email
+
+' Proxy to services (PlugIt protocol)
+ProxyAPI --> SvcLogicA : PlugIt Protocol
+ProxyAPI --> SvcLogicB : PlugIt Protocol
+
+' Proxy internal
+Proxy --> ProxyDS : Read/Write
+ProxyConfig --> Proxy : Configure
+
+' Mail workflow internals
+MailWorkflow --> MailValidator : route token\n(SHA-512 [30:42] hash check)
+MailValidator --> MailExtractor : valid mail
+MailExtractor --> MailHandler : text payload\n+ routing data
+
+' Service internals
+APIClientA --> ProxyAPI : API Requests\n(users, tags, orgs,\nmembers, email, forum)
+SvcLogicA --> ServiceDSA : Read/Write
+MigrationA --> ServiceDSA : Schema Upgrade
+SvcConfigA --> SvcLogicA : Configure
+PrivConfigA --> SvcLogicA : Private Settings
+
+APIClientB --> ProxyAPI : API Requests
+SvcLogicB --> ServiceDSB : Read/Write
+MigrationB --> ServiceDSB : Schema Upgrade
+SvcConfigB --> SvcLogicB : Configure
+PrivConfigB --> SvcLogicB : Private Settings
+
+' External DB provisioning
+ExtDB ..> ServiceDSA : provisioned as\n(MySQL/SQLite)
+ExtDB ..> ServiceDSB : provisioned as\n(MySQL/SQLite)
+
+@enduml

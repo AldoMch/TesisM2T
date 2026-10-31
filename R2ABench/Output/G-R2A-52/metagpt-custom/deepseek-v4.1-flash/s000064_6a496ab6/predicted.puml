@@ -1,0 +1,119 @@
+@startuml
+
+actor "End User" as EndUser
+actor "Administrator" as Administrator
+actor "Operations Engineer" as OpsEngineer
+actor "External Service Integrator" as ExtServiceIntegrator
+
+package "Client Layer" {
+  component "Native Mobile Applications" as Mobile
+  component "Administrative Web Application" as AdminWeb
+}
+
+package "Access/Gateway Layer" {
+  component "Gateway/BFF" as Gateway
+}
+
+package "Backend API/Service Layer" {
+  component "Authentication API" as AuthAPI
+  component "User Management API" as UserAPI
+  component "Book Management API" as BookAPI
+  component "EC Site API" as ECAPI
+  component "Support Information API" as SupportAPI
+  component "Administration Service" as AdminService
+  component "Notification Processing" as NotifService <<internal>>
+}
+
+package "Data Layer" {
+  component "Message Management Data Domain" as MsgDomain
+  database "MySQL" as MySQL
+  database "NoSQL Storage" as NoSQL
+  database "Object Storage" as ObjectStorage
+  database "Firebase Authentication" as FirebaseAuth
+}
+
+package "Infrastructure/Operations Layer" {
+  cloud "GCP Platform" as GCP {
+    node "GCP Load Balancing" as GCPLB
+    node "Container-based Deployment (GKE)" as ContainerDeploy
+    node "GKE Cluster Operations" as GKECluster
+    node "GCE VM" as GCEVM {
+      component "Cloud SDK" as CloudSDK
+      component "TLS Certificate Tooling (Let's Encrypt DNS-01)" as TLSCertTooling
+    }
+  }
+}
+
+package "External Integration Layer" {
+  cloud "Book-search API" as BookSearchAPI
+  cloud "Stripe" as Stripe
+  cloud "Push Notification Provider" as PushProvider
+  cloud "Email Notification Provider" as EmailProvider
+}
+
+package "Interface/Contract Layer" {
+  component "Protocol Buffers/API Definitions" as ProtoDefs
+  interface "Request/Response Contracts" as APIContracts
+}
+
+EndUser --> Mobile : uses
+Administrator --> AdminWeb : uses
+ExtServiceIntegrator --> Gateway : integrates via APIs
+OpsEngineer --> GKECluster : credentialed access
+OpsEngineer --> GCEVM : provisions TLS
+OpsEngineer --> CloudSDK : uses for GCE VM setup
+OpsEngineer --> TLSCertTooling : uses for TLS
+
+Mobile --> GCPLB : accesses
+AdminWeb --> GCPLB : accesses
+GCPLB --> Gateway : routes
+
+Gateway --> AuthAPI : routes
+Gateway --> UserAPI : routes
+Gateway --> BookAPI : routes
+Gateway --> ECAPI : routes
+Gateway --> SupportAPI : routes
+Gateway --> AdminService : routes
+
+AuthAPI --> FirebaseAuth : authenticates via
+UserAPI --> MySQL : stores user data
+BookAPI --> MySQL : stores book data
+BookAPI --> BookSearchAPI : queries
+BookAPI --> ObjectStorage : stores thumbnails/object data
+ECAPI --> MySQL : stores EC data
+ECAPI --> Stripe : processes payments
+ECAPI --> NotifService : triggers order notifications
+AuthAPI --> NotifService : triggers auth notifications
+AdminService --> NotifService : triggers admin notifications
+NotifService --> PushProvider : sends push
+NotifService --> EmailProvider : sends email
+NotifService --> MsgDomain : records notification messages
+SupportAPI --> MsgDomain : reads/writes support messages
+SupportAPI --> MySQL : stores support metadata
+MsgDomain --> NoSQL : stores messages
+
+AdminService --> UserAPI : manages users
+AdminService --> BookAPI : manages books
+AdminService --> ECAPI : manages EC
+AdminService --> MySQL : admin audit data
+
+AuthAPI ..> ProtoDefs : defined by
+UserAPI ..> ProtoDefs : defined by
+BookAPI ..> ProtoDefs : defined by
+ECAPI ..> ProtoDefs : defined by
+SupportAPI ..> ProtoDefs : defined by
+AdminService ..> ProtoDefs : defined by
+NotifService ..> ProtoDefs : defined by
+ProtoDefs --> APIContracts : describes
+
+UserAPI --> ContainerDeploy : deployed as container
+BookAPI --> ContainerDeploy : deployed as container
+ECAPI --> ContainerDeploy : deployed as container
+AuthAPI --> ContainerDeploy : deployed as container
+SupportAPI --> ContainerDeploy : deployed as container
+AdminService --> ContainerDeploy : deployed as container
+NotifService --> ContainerDeploy : deployed as container
+Gateway --> ContainerDeploy : deployed as container
+ContainerDeploy --> GKECluster : runs on
+
+@enduml

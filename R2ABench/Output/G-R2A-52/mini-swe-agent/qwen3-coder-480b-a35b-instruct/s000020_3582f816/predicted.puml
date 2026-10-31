@@ -1,0 +1,36 @@
+@startuml
+' MyEMS REST API and Admin Application Architecture
+
+skinparam componentStyle rectangle
+
+' Layers
+package "Browser Environment" {
+  [Admin Application] as admin_app
+}
+
+package "Server Environment" {
+  [MyEMS REST API Service] as api_service
+  database "MySQL Database" as mysql_db
+}
+
+' External Systems
+cloud "Third-Party Applications" as third_party
+
+' Major Components and Dependencies
+admin_app --> api_service : Same-origin /api/ calls
+api_service --> mysql_db : Database access (MySQL)
+third_party --> api_service : RESTful API integration
+
+' Notes
+note right of admin_app
+  Lazy-loaded modules
+  Routes: /user, /contact
+end note
+
+note right of api_service
+  Python-based REST service
+  Docker-supported deployment
+  Cross-origin support via reverse proxy (optional)
+end note
+
+@enduml

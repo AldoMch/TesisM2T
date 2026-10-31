@@ -1,0 +1,391 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowScheduler\\n(LocalExecutor Mode)",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowWebserver\\nWeb UI - port 8282",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::PySpark Runtime\\n(pyspark package)\\nenables spark-submit",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkDefaultConnection\\nspark://spark:7077",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)"
+      ],
+      "gt_nodes": [
+        "Docker Compose Environment::Airflow\\n(Spark Driver)"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+      ],
+      "gt_nodes": [
+        "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions"
+      ],
+      "gt_nodes": [
+        "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+      ],
+      "gt_nodes": [
+        "Docker Compose Environment::Postgres"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+      ],
+      "gt_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker 1"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+      ],
+      "gt_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker 2"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+      ],
+      "gt_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker 3"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+      ],
+      "gt_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker N"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Host Machine"
+      ],
+      "gt_nodes": [
+        "Global::Data Engineer"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::Docker Compose v3.7",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::Dockerfile + Requirements\\n(docker-airflow-spark build context)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::jupyter/pyspark-notebook Image (Docker Hub)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::postgres:9.6 Image (Docker Hub)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::External Systems",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Host Machine",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)",
+      "reference_nodes": [
+        "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master",
+      "reference_nodes": [
+        "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)",
+      "reference_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker N"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "reference_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker 1",
+        "Docker Compose Environment::Spark Workers::Worker N"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)",
+      "reference_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker N"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "reference_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker 2",
+        "Docker Compose Environment::Spark Workers::Worker N"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)",
+      "reference_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker N"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "reference_nodes": [
+        "Docker Compose Environment::Spark Workers::Worker 3",
+        "Docker Compose Environment::Spark Workers::Worker N"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)",
+      "reference_nodes": [
+        "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions",
+      "reference_nodes": [
+        "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432",
+      "reference_nodes": [
+        "Docker Compose Environment::Postgres"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)",
+      "reference_nodes": [
+        "Docker Compose Environment::Airflow\\n(Spark Driver)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowScheduler\\n(LocalExecutor Mode)",
+      "reference_nodes": [
+        "Docker Compose Environment::Airflow\\n(Spark Driver)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowWebserver\\nWeb UI - port 8282",
+      "reference_nodes": [
+        "Docker Compose Environment::Airflow\\n(Spark Driver)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::PySpark Runtime\\n(pyspark package)\\nenables spark-submit",
+      "reference_nodes": [
+        "Docker Compose Environment::Airflow\\n(Spark Driver)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkDefaultConnection\\nspark://spark:7077",
+      "reference_nodes": [
+        "Docker Compose Environment::Airflow\\n(Spark Driver)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)",
+      "reference_nodes": [
+        "Docker Compose Environment::Airflow\\n(Spark Driver)"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)",
+      "reference_nodes": []
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowScheduler\\n(LocalExecutor Mode)",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowWebserver\\nWeb UI - port 8282",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::PySpark Runtime\\n(pyspark package)\\nenables spark-submit",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkDefaultConnection\\nspark://spark:7077",
+        "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)"
+      ],
+      "gt_node": "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+      ],
+      "gt_node": "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)",
+        "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions"
+      ],
+      "gt_node": "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+      ],
+      "gt_node": "Docker Compose Environment::Postgres"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+      ],
+      "gt_node": "Docker Compose Environment::Spark Workers::Worker 1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+      ],
+      "gt_node": "Docker Compose Environment::Spark Workers::Worker 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+      ],
+      "gt_node": "Docker Compose Environment::Spark Workers::Worker 3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)",
+        "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+        "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+        "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+      ],
+      "gt_node": "Docker Compose Environment::Spark Workers::Worker N"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Host Machine"
+      ],
+      "gt_node": "Global::Data Engineer"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 7240,
+      "completion_tokens": 946,
+      "total_tokens": 8186,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 5888
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "External Systems::Docker Compose v3.7",
+    "External Systems::Dockerfile + Requirements\\n(docker-airflow-spark build context)",
+    "External Systems::bitnami/spark:latest Image (Docker Hub)",
+    "External Systems::jupyter/pyspark-notebook Image (Docker Hub)",
+    "External Systems::postgres:9.6 Image (Docker Hub)",
+    "Global::External Systems",
+    "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)",
+    "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+    "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)",
+    "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+    "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+  ],
+  "_provenance": {
+    "fingerprint": "690122ac888c76872283ca1f39a6416ac94c0ab0513a9ea04e7b5305b50e9b91",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

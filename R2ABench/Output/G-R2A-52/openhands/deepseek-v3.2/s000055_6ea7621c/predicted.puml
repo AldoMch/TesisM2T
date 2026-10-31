@@ -1,0 +1,144 @@
+@startuml
+!define RECTANGLE rectangle
+!define COMPONENT component
+!define DATABASE database
+!define ACTOR actor
+!define ARROW ->
+
+title Nobel Prize Laureates Autocomplete Web Application - System Architecture
+
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #F5F5F5
+  BorderColor #333333
+  FontSize 14
+  FontName Helvetica
+}
+
+skinparam database {
+  BackgroundColor #E8F4FD
+  BorderColor #1E88E5
+}
+
+skinparam actor {
+  BackgroundColor #FFEBEE
+  BorderColor #D32F2F
+  FontColor #333333
+}
+
+' === Actors ===
+ACTOR "End User" as User
+ACTOR "Developer/Tester" as Developer
+ACTOR "Deployer/Operator" as Operator
+
+' === External Systems ===
+DATABASE "Local File System\n(public assets)" as Filesystem {
+  RECTANGLE "HTML Files\n(home page, not-found)" as HTML
+  RECTANGLE "CSS Files" as CSS
+  RECTANGLE "JavaScript Files" as JS
+  RECTANGLE "JPG Images" as JPG
+  RECTANGLE "ICO Icons" as ICO
+}
+
+DATABASE "Local Data Source\n(JSON)" as LaureateData
+
+' === Frontend Components ===
+COMPONENT "Web Browser" as Browser {
+  RECTANGLE "Search Input Field" as InputField
+  RECTANGLE "Suggestions/List Output" as Suggestions
+}
+
+' === Backend Components ===
+COMPONENT "Node.js Server" as Server {
+  COMPONENT "HTTP Router" as Router
+  COMPONENT "Handler Module" as Handler
+  COMPONENT "Autocomplete/Search-hint\nAlgorithm Module" as Autocomplete
+  COMPONENT "Local Data Access" as DataAccess
+}
+
+' === Communication Interfaces ===
+COMPONENT "HTTP Interface" as HTTP
+
+' === Deployment Environment ===
+COMPONENT "Heroku Platform" as Heroku
+
+' === Relationships and Data Flows ===
+
+' User interactions
+User -> Browser : "Enters search text"
+Browser -> InputField : "Captures text input"
+InputField -> HTTP : "Sends HTTP request with 'search' in URL"
+Browser -> Suggestions : "Displays laureate names"
+
+' HTTP routing flows
+HTTP -> Router : "HTTP Requests"
+Router -> Handler : "GET / (home page)"
+Router -> Handler : "Non-home, non-search requests\n(static assets)"
+Router -> Autocomplete : "URL contains 'search' substring"
+
+' Handler module flows
+Handler -> Filesystem : "Reads files"
+Filesystem -> Handler : "Returns file content/error"
+Handler -> Browser : "Serves home page (FR-003)"
+Handler -> Browser : "Serves static assets (FR-005)"
+Handler -> Browser : "Returns 404 for not-found (FR-007)"
+
+' Autocomplete flows
+Autocomplete -> DataAccess : "Requests laureate data"
+DataAccess -> LaureateData : "Reads JSON data"
+LaureateData -> DataAccess : "Returns laureate objects"
+DataAccess -> Autocomplete : "Extracts field values (FR-008)"
+Autocomplete -> Autocomplete : "Filters by prefix match\nLimits to ≤10 results (FR-009)"
+Autocomplete -> Browser : "Returns array of laureate names (FR-002)"
+
+' Content type mapping
+Handler -> Browser : "Sets Content-Type based on\nextension mapping (FR-006)"
+
+' Development and deployment flows
+Developer -> Server : "Writes tests\n(FR-001..FR-009, NFR-001..NFR-004)"
+Operator -> Heroku : "Deploys application (C-005)"
+Heroku -> Server : "Hosts Node.js runtime"
+Server -> Filesystem : "Accesses public directory (C-002)"
+Server -> LaureateData : "Accesses JSON data (A-002)"
+
+' === Notes and Constraints ===
+note right of Router
+  Search routing by URL substring
+  matching "search" (C-004)
+end note
+
+note right of Handler
+  Supports file extensions:
+  html, css, js, jpg, ico (C-003)
+end note
+
+note right of Server
+  JavaScript/CommonJS environment
+  Module import/export patterns (C-001)
+end note
+
+note right of Autocomplete
+  Prefix matching algorithm
+  Max 10 results (FR-002, FR-009)
+end note
+
+note right of DataAccess
+  Extracts field values from
+  object-based data (DR-003)
+end note
+
+note bottom of Browser
+  Captures search input for
+  laureate search processing (FR-001)
+end note
+
+' === Legend ===
+legend bottom
+  | Color | Meaning |
+  | <color:#FFEBEE> | Actor/User Role |
+  | <color:#F5F5F5> | Software Component |
+  | <color:#E8F4FD> | Data Store |
+  | Arrow | Data/Control Flow |
+end legend
+
+@enduml

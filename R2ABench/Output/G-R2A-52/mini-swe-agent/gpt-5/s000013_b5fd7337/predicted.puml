@@ -1,0 +1,40 @@
+@startuml
+title Song Mood Storage/Retrieval Web App - Deployment Architecture
+
+actor "End User" as EndUser
+actor "Data Inspector/Operator" as Inspector
+
+cloud "Genius API (External)" as Genius
+
+node "Docker Host" as Host {
+  node "Frontend Container\nReact" as Frontend
+  node "Backend Container\nFastAPI" as Backend
+  node "Elasticsearch Container" as Elasticsearch
+  node "Kibana Container" as Kibana
+}
+
+EndUser --> Frontend : HTTP/S\nSong mood lookup
+Frontend --> Backend : HTTP/S\nREST API
+Backend --> Elasticsearch : TCP/HTTP\nIndex/Search songs & moods
+Inspector --> Kibana : HTTP/S\nData inspection UI
+Kibana --> Elasticsearch : TCP/HTTP\nRead/Explore data
+Backend --> Genius : HTTPS\nSearch missing songs
+
+note bottom of Backend
+- Retrieves/stores song records and mood associations in Elasticsearch
+- Invokes Genius API when song not found in storage
+end note
+
+note bottom of Elasticsearch
+Authoritative persistent store for song records and mood associations
+end note
+
+note top of Host
+Dockerized multi-tier deployment with separate container services:
+- frontend (React)
+- backend (FastAPI)
+- elasticsearch
+- kibana
+end note
+
+@enduml

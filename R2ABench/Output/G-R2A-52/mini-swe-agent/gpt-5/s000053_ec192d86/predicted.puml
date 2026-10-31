@@ -1,0 +1,76 @@
+@startuml
+title Configuration Anomaly Detection (CAD) - Layered Architecture
+
+actor "SRE / Operations User" as SRE
+actor "Deployment Engineer" as DE
+actor "Alert Source" as Alert
+
+package "Interface Layer" {
+  component "cadctl CLI\n(/bin/cadctl)" as CLI
+  component "Template Update Utility" as TemplUtil
+}
+
+package "Integration Library Layer" {
+  component "Integration Library" as IntegrLib
+}
+
+package "Execution & Orchestration (Tekton)" {
+  component "EventListener" as EL
+  component "Trigger" as TR
+  component "PipelineRun" as PR
+  component "Pipeline: cad-checks-pipeline" as PIPE
+}
+
+package "Runtime Artifact" {
+  component "CAD Container Image\n(UBI minimal runtime)" as Image
+}
+
+package "External Systems" {
+  component "PagerDuty API" as PD
+  component "AWS Services" as AWS
+  component "OCM API" as OCM
+}
+
+package "Data & Artifacts" {
+  database "Deployment Template Assets" as Templates
+  file "Direct Execution JSON Payload\n(event.data.id)" as Payload
+}
+
+package "Build Environment" {
+  component "Go 1.17 Builder" as Builder
+}
+
+' User interactions '
+SRE --> CLI : Run CAD workflows
+DE --> PR : Create PipelineRun (skip-webhook)
+
+' Webhook-driven execution path '
+Alert --> EL : Alert webhook
+EL --> TR : Trigger
+TR --> PR : Create PipelineRun
+PR --> PIPE : Reference pipeline
+PR --> Image : Run CAD container
+
+' CLI and integrations '
+CLI --> IntegrLib : Use
+IntegrLib --> PD : Notify / escalate
+IntegrLib --> AWS : Query / actions
+IntegrLib --> OCM : Cluster status / actions
+
+' Data and artifacts '
+TemplUtil --> Templates : Update templates
+Payload ..> PR : payload param
+
+' Build and runtime constraints '
+Builder --> Image : Build container
+Image --> CLI : Contains binary
+note right of Image
+- UBI minimal runtime base
+- Includes /bin/cadctl
+end note
+note right of PR
+References pipeline "cad-checks-pipeline" in
+namespace "configuration-anomaly-detection"
+end note
+
+@enduml

@@ -1,0 +1,191 @@
+@startuml
+title POCD Persistent Object Consistency Detection - System Architecture
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #555555
+skinparam defaultFontName Arial
+skinparam package {
+  BackgroundColor #F8F8F8
+  BorderColor #999999
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #666666
+}
+left to right direction
+
+actor "Class Diagram Manager\n(Technical User)" as TechUser
+actor "Unauthenticated User" as Guest
+actor "Third-Party App" as ThirdParty
+
+package "User Interface Layer (Front-end SPA)" as UILayer {
+  component "Registration / Login UI" as UIAuth
+  component "File Management UI" as UIFile
+  component "Detection Config UI" as UIConfig
+  component "Detection Records UI" as UIRecords
+  component "Detection Results & Repair UI" as UIResults
+  component "Report Export UI" as UIExport
+  component "Help & Cases UI" as UIHelp
+}
+
+package "Business Logic Layer (Back-end Services)" as BLL {
+  component "API Gateway / REST Controller\n(HTTPS, JSON)" as APIGW
+  component "Open API Endpoints" as OpenAPI
+  component "Auth & RBAC Service" as Auth
+  component "File Management Service" as FileSvc
+  component "Config Service\n(Detection Rules & Exceptions)" as ConfigSvc
+  component "Help & Case Service" as HelpSvc
+
+  package "Parsing Services" as Parsing {
+    component "MDJ Parser\n(StarUML)" as MDJParser
+    component "DB Parser\n(MySQL via JDBC)" as DBParser
+    component "Relationship Extractor\n(FKs, triggers)" as RelExtractor
+    component "Jackson / JSON Converter" as Jackson
+  }
+
+  package "Matching & Detection" as MatchDetect {
+    component "Matcher Service\n(Entities/Attributes/Relationships)" as Matcher
+    component "Detection Engine\n(Fields, Types, Attr/Col, Class/Table,\nMultiplicity, Relationship Type, Missing/Extra)" as DetectEngine
+  }
+
+  package "Repair Services" as Repair {
+    component "Class Diagram Repair Service" as CDRepair
+    component "Database Repair Service" as DBRepair
+  }
+
+  component "Report Service\n(Generate/Export Reports)" as ReportSvc
+  component "History Service\n(Detections & Modifications)" as HistorySvc
+
+  package "Asynchronous Processing" as Async {
+    component "Task Orchestrator" as Orchestrator
+    component "Task Queue" as TaskQueue <<queue>>
+    component "Worker Pool" as Workers
+  }
+
+  component "Logging & Audit Service" as LogSvc
+}
+
+package "Data Access Layer" as DAL {
+  database "Metadata DB\n(Users, Files, Parsing Models,\nMatching Results, Reports, History, RBAC,\nRules, Exceptions)" as MetaDB
+  folder "File Storage\n(Uploads, Repaired MDJ, Exports,\nHelp Manuals, Sample Cases)" as FileStore
+  database "Operation Log Store" as LogStore
+}
+
+package "External Systems" as External {
+  database "Target MySQL Database" as TargetMySQL
+  cloud "SSL/TLS Network" as SSLNet
+}
+
+' User interactions
+TechUser --> UIAuth
+TechUser --> UIFile
+TechUser --> UIConfig
+TechUser --> UIRecords
+TechUser --> UIResults
+TechUser --> UIExport
+TechUser --> UIHelp
+Guest --> UIAuth
+Guest --> UIHelp
+ThirdParty --> OpenAPI : Integrate via Open API
+
+' Front-end to API (HTTPS)
+UIAuth -[#blue]-> SSLNet
+UIFile -[#blue]-> SSLNet
+UIConfig -[#blue]-> SSLNet
+UIRecords -[#blue]-> SSLNet
+UIResults -[#blue]-> SSLNet
+UIExport -[#blue]-> SSLNet
+UIHelp -[#blue]-> SSLNet
+OpenAPI -[#blue]-> SSLNet
+
+SSLNet -[#blue]-> APIGW : HTTPS (SSL)
+
+' API routing to services
+APIGW --> Auth : Authenticate / Authorize
+APIGW --> FileSvc : File CRUD, Download
+APIGW --> ConfigSvc : Rules & Exceptions
+APIGW --> HelpSvc : Help, Cases
+APIGW --> ReportSvc : Generate / Export
+APIGW --> HistorySvc : Query histories
+APIGW --> Orchestrator : Submit long-running jobs
+APIGW --> LogSvc : Operation logs
+
+' Parsing services and converters
+FileSvc --> FileStore : Store / Retrieve files
+MDJParser --> Jackson : JSON conversion
+DBParser --> Jackson : JSON conversion
+RelExtractor --> MetaDB
+MDJParser --> MetaDB : Persist parsing model
+DBParser --> MetaDB : Persist parsing model
+DBParser --> TargetMySQL : JDBC read (schema)
+RelExtractor --> TargetMySQL : Read FKs/triggers
+
+' Matching and detection workflows
+Matcher --> MetaDB : Read models / Write matches
+DetectEngine --> MetaDB : Read models & matches / Write detection results
+
+' Repair services
+CDRepair --> MetaDB : Read issues / Write repair plan
+CDRepair --> FileStore : Write repaired MDJ
+DBRepair --> MetaDB : Read issues / Write repair results
+DBRepair --> TargetMySQL : JDBC DDL/DML (apply fixes)
+
+' Reporting and history
+ReportSvc --> MetaDB : Read detection results / Write report metadata
+ReportSvc --> FileStore : Write exported reports
+HistorySvc --> MetaDB
+
+' Async processing
+Orchestrator --> TaskQueue : Enqueue jobs
+Workers --> TaskQueue : Dequeue jobs
+Workers --> MDJParser
+Workers --> DBParser
+Workers --> RelExtractor
+Workers --> Matcher
+Workers --> DetectEngine
+Workers --> CDRepair
+Workers --> DBRepair
+Workers --> ReportSvc
+Workers --> LogSvc
+
+' Security, logging, and data access
+Auth --> MetaDB : Users, Sessions, Roles, Permissions
+LogSvc --> LogStore
+
+' UI downloads/uploads via API and storage
+FileSvc --> MetaDB : File metadata
+APIGW --> FileStore : Stream downloads (via FileSvc)
+
+' Notes capturing constraints and NFRs
+note right of APIGW
+All sensitive data over HTTPS (SSL/TLS)
+Open API exposed via same gateway
+Role-Based Access Control enforced
+end note
+
+note right of Workers
+Asynchronous processing for heavy tasks
+Resource limits: CPU <= 30%, Memory <= 2 GB
+Supports large models (thousands of entities)
+end note
+
+note bottom of Parsing
+Inputs:
+- StarUML .mdj files
+- MySQL design files/scripts
+- Live DB via JDBC
+Outputs converted to JSON for core algorithms
+end note
+
+note bottom of DAL
+Persistent data:
+- Accounts, RBAC
+- Uploads, parsing models
+- Matching results, detection reports
+- Repair suggestions/results
+- Histories, logs
+- Rules, exceptions, help, cases
+end note
+
+@enduml

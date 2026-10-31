@@ -1,0 +1,61 @@
+@startuml
+title Earth Defender - Distributed Multiplayer Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+actor "Player" as Player
+
+package "Client Layer" {
+  node "Browser Client\n(Three.js)" as Client {
+    component "Game UI\n3D Renderer" as UI
+    component "WebSocket Client\n(JSON [event,data])" as WSClient
+    component "Reconnect Handler\n(ping/pong, game_reconnect)" as Reconn
+  }
+}
+
+package "Delivery Layer" {
+  cloud "DNS / Load Balancer" as DNS
+  node "Web Server\n(Static Assets)" as Web {
+    artifact "HTML/CSS/JS/Images" as Assets
+  }
+}
+
+package "Server Layer" {
+  node "Game Server Master\n(Erlang/OTP)" as Master {
+    component "WS Endpoint\n(Session/Conn Handling)" as WSEndp
+    component "Room Manager\n(Create/Join Rooms)" as RoomMgr
+    component "Server List Service\n(servers_list, redirect)" as SrvList
+  }
+  node "Replica Node\n(Erlang/OTP)" as Replica {
+    component "Failover / Replica" as Failover
+  }
+}
+
+'Player' --> Client : Play\nCreate/Join Rooms
+Client --> Web : HTTP/HTTPS\nFetch static assets
+Web --> DNS : Registration / Address
+DNS --> Client : Resolve web address
+
+Client --> Master : WebSocket over HTTP\nJSON arrays [event,data]\n- gameplay/control messages\n- ping -> pong\n- reconnect context
+Master <--> Replica : Inter-node sync / heartbeat\nFailover / fault tolerance
+
+UI -down- WSClient
+WSClient -down- Reconn
+WSEndp -down- RoomMgr
+WSEndp -down- SrvList
+
+note right of Client
+- Sends periodic ping; accepts pong
+- On disconnect, attempts reconnect with roomId, playerId, index
+- No client-to-client P2P; client initiates all connections
+end note
+
+note right of Master
+- Provides room workflows and server list
+- Issues servers_list_redirect when needed
+- Soft real-time processing
+end note
+
+@enduml

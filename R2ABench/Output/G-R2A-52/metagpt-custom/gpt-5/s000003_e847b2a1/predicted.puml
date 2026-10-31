@@ -1,0 +1,83 @@
+@startuml
+
+package "Presentation Layer" {
+  component "User Frontend (React + Wallet UI)" as Frontend
+  component "Frontend Prediction API/Provider" as FEProvider
+}
+
+package "Integration/Connectivity Layer" {
+  component "Aeternity Wallet Client" as Wallet
+  component "Aeternity SDK Contract Adapter" as SDK
+  component "AENS Resolver" as AENSResolver
+}
+
+package "On-chain Contract Layer" {
+  component "PredictionCards Smart Contract" as Contract
+}
+
+package "Off-chain Services Layer" {
+  component "Prediction-Processing Service" as Processing
+  component "Oracle Service (Quarkus)" as OracleSvc
+}
+
+package "Storage/Media Layer" {
+  database "Prediction Media Storage (IPFS-compatible)" as Media
+}
+
+package "External Data Providers Layer" {
+  cloud "External Price Provider" as PriceProvider
+}
+
+package "Blockchain Platform Layer" {
+  node "Aeternity Blockchain Runtime" as AEChain
+  component "Aeternity Oracle" as AEOracle
+  component "AENS Name Service" as AENS
+  node "Aeternity Node" as AENode
+  node "Aeternity Compiler Service" as AECompiler
+}
+
+package "Test/Tooling Layer" {
+  node "Local Aeternity Node" as LocalNode
+  node "Local Aeternity Compiler" as LocalCompiler
+  node "Local Aeternity Index" as LocalIndex
+  node "Local Debug Endpoint" as LocalDebug
+  node "Local Test Proxy/CORS" as LocalCORS
+}
+
+/' Presentation flows '/
+Frontend --> FEProvider
+Frontend --> Media
+FEProvider --> Wallet
+FEProvider --> SDK
+FEProvider --> AENSResolver
+
+/' Off-chain services flows '/
+Processing --> Contract
+Processing --> AENSResolver
+OracleSvc --> AEOracle
+OracleSvc --> PriceProvider
+OracleSvc --> AENode
+OracleSvc --> AECompiler
+
+/' Integration to platform '/
+AENSResolver --> AENS
+Wallet --> AEChain
+SDK --> AEChain
+
+/' On-chain elements on platform '/
+Contract --> AEChain
+AEOracle --> AEChain
+AENS --> AEChain
+
+/' Oracle query lifecycle '/
+Contract --> AEOracle
+Processing --> AEChain
+OracleSvc --> AEChain
+
+/' Test/Tooling proxy flows '/
+LocalCORS --> LocalNode
+LocalCORS --> LocalCompiler
+LocalCORS --> LocalIndex
+LocalCORS --> LocalDebug
+
+@enduml

@@ -1,0 +1,111 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+title Archifiltre-docs - Scoped System Architecture
+
+actor "End User" as EndUser
+actor "Operator / Integrator" as Operator
+
+package "Electron Desktop Application" {
+  package "Settings" {
+    component "Settings Sanitizer" as Sanitizer
+  }
+
+  package "Translation" {
+    component "Translation Module" as I18n
+  }
+
+  package "Controllers" {
+    component "Settings Controller" as SettingsCtl
+    component "Tree CSV Export Controller" as TreeCtl
+    component "RESIP Export Controller" as ResipCtl
+    component "CSV Export Controller" as CsvCtl
+    component "Excel Export Controller" as ExcelCtl
+    component "Hash Computation Controller" as HashCtl
+  }
+
+  package "Background Processing" {
+    component "Tree CSV Export Worker" as TreeWorker
+    component "RESIP Export Worker" as ResipWorker
+    component "CSV Export Worker" as CsvWorker
+    component "Excel Export Worker" as ExcelWorker
+    component "Batch Hash Processor" as HashBatch
+  }
+
+  component "Observable / Stream Delivery" as Observable
+}
+
+database "Persisted User Settings" as SettingsStore
+database "Application User Data Directory\n(app.getPath userData)" as UserData
+component "Hash Debug Files\nhash-result-debug\nhash-error-debug" as DebugFiles
+
+artifact "Tree CSV" as TreeOut
+artifact "RESIP Export" as ResipOut
+artifact "CSV Export" as CsvOut
+artifact "Excel Export" as ExcelOut
+artifact "Hash Maps" as HashOut
+
+EndUser --> SettingsStore : preferences
+SettingsStore --> Sanitizer : persisted settings\n(empty, undefined, invalid)
+Sanitizer --> SettingsCtl : normalized settings\n{isTrackingEnabled, isMonitoringEnabled, language}
+
+Operator --> TreeCtl : files-and-folders map
+Operator --> ResipCtl : files/folders, metadata, aliases, comments, tags
+Operator --> CsvCtl : aliases, comments, files/folders,\nmetadata, tags, hashes
+Operator --> ExcelCtl : CsvExporterData
+Operator --> HashCtl : paths, basePath
+
+I18n --> TreeCtl : current language
+I18n --> ResipCtl : current language
+I18n --> CsvCtl : current language
+I18n --> ExcelCtl : current language
+
+TreeCtl --> TreeWorker : files-and-folders map + language
+ResipCtl --> ResipWorker : RESIP inputs
+CsvCtl --> CsvWorker : CSV data + language
+ExcelCtl --> ExcelWorker : CsvExporterData + language
+HashCtl --> HashBatch : paths + basePath
+
+TreeWorker --> Observable : progress, then final CSV string
+ResipWorker --> Observable : progress counts + empty RESIP CSV,\nthen final RESIP CSV
+CsvWorker --> Observable : async CSV result
+ExcelWorker --> Observable : async Excel result
+HashBatch --> Observable : hash processing stream,\nmerged hash map
+
+Observable --> TreeOut
+Observable --> ResipOut
+Observable --> CsvOut
+Observable --> ExcelOut
+Observable --> HashOut
+
+HashBatch --> UserData : resolve user data path
+UserData --> DebugFiles : contains
+HashBatch --> DebugFiles : buffered writers
+
+note right of TreeWorker
+  FR-003, FR-004, NFR-001
+end note
+
+note right of ResipWorker
+  FR-005
+end note
+
+note right of CsvWorker
+  FR-006
+end note
+
+note right of ExcelWorker
+  FR-007
+end note
+
+note right of HashBatch
+  FR-008, FR-009, NFR-002, NFR-004
+end note
+
+note bottom of Sanitizer
+  FR-001, FR-002, NFR-003
+end note
+
+@enduml

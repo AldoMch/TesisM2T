@@ -1,0 +1,88 @@
+@startuml
+
+package "Configuration Input Layer" {
+  interface "Variable File Interface"
+  interface "JSON Input Interface"
+}
+
+package "Orchestration Layer" {
+  component "Terraform Runner"
+}
+
+package "Infrastructure Integration Layer" {
+  component "Existing-Infrastructure Targeting"
+  component "OCI Credential Mapper"
+  component "Network Attachment Manager"
+}
+
+package "Jenkins Provisioning Layer" {
+  component "Jenkins Cluster Configuration Handler"
+  component "Jenkins Master Module"
+  component "Jenkins Agent Module"
+}
+
+package "Access and Communication Layer" {
+  component "Jenkins Communication Configurator"
+  component "SSH Key Configurator"
+  component "Bastion Access Handler"
+}
+
+package "Encoding and Data Handling Layer" {
+  component "Cloud-Init Validator"
+}
+
+package "Prerequisites and External Connectivity Layer" {
+  component "Private-Network Prerequisite Recorder"
+}
+
+package "External Systems" {
+  cloud "Oracle Cloud Infrastructure (OCI)"
+  component "Terraform CLI"
+  node "Bastion Host"
+  cloud "NAT Connectivity for Private Subnets"
+  cloud "Load Balancer (Public Access to Jenkins)"
+  cloud "Cloud-Init"
+}
+
+"JSON Input Interface" -> "Variable File Interface"
+"Variable File Interface" -> "Terraform Runner"
+
+"OCI Credential Mapper" -> "Terraform Runner"
+"Terraform Runner" -> "Terraform CLI"
+"Terraform Runner" -> "Jenkins Master Module"
+"Terraform Runner" -> "Jenkins Agent Module"
+
+"Existing-Infrastructure Targeting" -> "Network Attachment Manager"
+"Network Attachment Manager" -> "Jenkins Master Module"
+"Network Attachment Manager" -> "Jenkins Agent Module"
+
+"Jenkins Cluster Configuration Handler" -> "Jenkins Master Module"
+"Jenkins Cluster Configuration Handler" -> "Jenkins Agent Module"
+
+"Jenkins Communication Configurator" -> "Jenkins Master Module"
+"Jenkins Communication Configurator" -> "Jenkins Agent Module"
+
+"SSH Key Configurator" -> "Jenkins Master Module"
+"SSH Key Configurator" -> "Jenkins Agent Module"
+
+"Bastion Access Handler" -> "Jenkins Master Module"
+"Bastion Access Handler" -> "Jenkins Agent Module"
+
+"Cloud-Init Validator" -> "Jenkins Master Module"
+"Cloud-Init Validator" -> "Jenkins Agent Module"
+
+"Private-Network Prerequisite Recorder" -> "Bastion Access Handler"
+"Private-Network Prerequisite Recorder" -> "Jenkins Communication Configurator"
+
+"Terraform CLI" -> "Oracle Cloud Infrastructure (OCI)"
+
+"Bastion Access Handler" -> "Bastion Host"
+"Private-Network Prerequisite Recorder" -> "NAT Connectivity for Private Subnets"
+"Private-Network Prerequisite Recorder" -> "Load Balancer (Public Access to Jenkins)"
+
+"Jenkins Agent Module" -> "Jenkins Master Module"
+
+"Jenkins Master Module" -> "Cloud-Init"
+"Jenkins Agent Module" -> "Cloud-Init"
+
+@enduml

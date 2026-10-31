@@ -1,0 +1,170 @@
+@startuml
+title ITAS - System Architecture
+
+actor "System Annotation Administrator" as Admin
+actor "Data Annotator" as Annotator
+actor "Researcher" as Researcher
+
+boundary "ITAS Web UI\n(Vue 3 + Ant Design + Axios)" as WebUI
+
+Admin --> WebUI
+Annotator --> WebUI
+Researcher --> WebUI
+
+node "Tencent Cloud / Docker" as Cloud {
+  node "Edge / Proxy" {
+    component "Nginx\nReverse Proxy & Static Assets" as Nginx
+  }
+
+  package "Backend (Spring Boot / Spring Cloud Microservices)" as Backend {
+    component "API Gateway\n(Spring Cloud Gateway + Spring Security)" as Gateway
+    component "Service Discovery & Config\n(Spring Cloud)" as Registry
+
+    package "Annotation Subsystem" {
+      component "User & Auth Service\n(Registration, Login, Profile, Roles)" as UserSvc
+      component "Project Service" as ProjectSvc
+      component "Document Service" as DocSvc
+      component "Tag Service" as TagSvc
+      component "Task Service" as TaskSvc
+      component "Annotation Mark & Result Service" as MarkSvc
+      component "Export Service" as ExportSvc
+    }
+
+    package "Mining Subsystem" {
+      component "Mining Orchestrator Service\n(Upload, Model Selection, Extraction)" as MiningSvc
+      component "Model / Preset Catalog Service" as ModelCatalog
+      component "File Conversion Worker\n(Async consumer)" as ConvertWorker
+    }
+  }
+
+  package "Data & Messaging" {
+    database "MySQL\n(Relational Records)" as MySQL
+    component "Redis\n(Cache)" as Redis
+    component "RabbitMQ\n(Message Queue)" as MQ
+    cloud "Minio\n(Object Storage)" as Minio
+  }
+
+  package "ML Runtime" {
+    component "BERT Paragraph Model" as BERT
+  }
+
+  note right of Cloud
+  Deployment: Tencent Cloud (C-010) + Docker (C-009)
+  end note
+}
+
+cloud "Third-party GPT API\n(ChatGPT-like Interface)" as GPT
+
+' UI / Proxy / Gateway
+WebUI -[#blue]-> Nginx : HTTP(S)\nStatic assets + API calls
+Nginx -[#blue]-> Gateway : Reverse proxy\nREST/JSON
+
+' Gateway to services
+Gateway -[#green]-> UserSvc
+Gateway -[#green]-> ProjectSvc
+Gateway -[#green]-> DocSvc
+Gateway -[#green]-> TagSvc
+Gateway -[#green]-> TaskSvc
+Gateway -[#green]-> MarkSvc
+Gateway -[#green]-> ExportSvc
+Gateway -[#green]-> MiningSvc
+Gateway -[#green]-> ModelCatalog
+
+' Service discovery and config
+UserSvc -[#gray]-> Registry : Register / Discover
+ProjectSvc -[#gray]-> Registry
+DocSvc -[#gray]-> Registry
+TagSvc -[#gray]-> Registry
+TaskSvc -[#gray]-> Registry
+MarkSvc -[#gray]-> Registry
+ExportSvc -[#gray]-> Registry
+MiningSvc -[#gray]-> Registry
+ModelCatalog -[#gray]-> Registry
+ConvertWorker -[#gray]-> Registry
+
+' Data stores usage
+UserSvc -[#brown]-> MySQL
+UserSvc -[#brown]-> Redis : Session / Token / Cache
+ProjectSvc -[#brown]-> MySQL
+ProjectSvc -[#brown]-> Redis
+DocSvc -[#brown]-> MySQL : Metadata, indexes\n(PDF/HTML/TXT refs)
+DocSvc -[#brown]-> Minio : Uploads / Downloads
+DocSvc -[#brown]-> MQ : enqueue file.convert
+TagSvc -[#brown]-> MySQL
+TaskSvc -[#brown]-> MySQL
+TaskSvc -[#brown]-> Redis : Task lists cache
+MarkSvc -[#brown]-> MySQL : Annotation results
+ExportSvc -[#brown]-> MySQL
+MiningSvc -[#brown]-> MySQL : Mining jobs, results
+MiningSvc -[#brown]-> Minio : Read converted docs
+MiningSvc -[#brown]-> Redis : Intermediate cache
+ConvertWorker -[#brown]-> MQ : consume file.convert
+ConvertWorker -[#brown]-> Minio : Store PDF/HTML/TXT
+ConvertWorker -[#brown]-> MySQL : Update refs / status
+
+' ML integrations
+MiningSvc -[#purple]-> ModelCatalog : List / select models & presets
+MiningSvc -[#purple]-> BERT : Paragraph localization (C-007)
+MiningSvc -[#purple]-> GPT : Entity extraction / few-shot (AD-002)
+
+' Cross-subsystem data sharing
+MiningSvc ..[#darkgreen].> MarkSvc : Retrieve annotated examples\n(DIO-003) few-shot support
+
+' Download support
+ExportSvc -[#brown]-> Minio : Export files / bundles
+ExportSvc -[#brown]-> MySQL : Query result sets
+
+' External communications and quality notes
+note right of WebUI
+UI-001/002/003/004/005/023
+COM-001: Axios async REST
+end note
+
+note right of Nginx
+COM-002: Reverse proxy, LB
+Serves SPA assets
+end note
+
+note right of Gateway
+Security: Spring Security (NFR-005)
+Routing, AuthN/AuthZ
+end note
+
+note right of Registry
+COM-003: Service discovery & config
+NFR-004: Scalability / Extensibility
+end note
+
+note right of MQ
+COM-004 / NFR-009:
+Async processing (e.g., file conversion)
+end note
+
+note right of Minio
+DSR-002: Object storage for
+documents and conversions
+Stores PDF/HTML/TXT objects
+end note
+
+note right of MySQL
+DSR-001: Structured records
+Users, projects, tags, tasks,
+annotation results, indexes
+end note
+
+note right of GPT
+AD-002: Requires third-party API
+end note
+
+' Actor workflows
+Admin --> WebUI : Manage presets, users,\nprojects, documents, export
+Annotator --> WebUI : Execute tasks,\ncreate marks and results
+Researcher --> WebUI : Upload, select model,\nrun extraction, view results
+
+' File download flow from UI
+WebUI -[#blue]-> Nginx : Download request
+Nginx -[#blue]-> Gateway
+Gateway -[#green]-> ExportSvc
+ExportSvc ..[#brown].> Minio : Signed URL / object ref
+
+@enduml

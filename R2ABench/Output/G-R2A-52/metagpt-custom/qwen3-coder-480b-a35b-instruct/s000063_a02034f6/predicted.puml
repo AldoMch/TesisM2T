@@ -1,0 +1,90 @@
+@startuml
+title MTProto Server Architecture - Component & Deployment Diagram
+
+' Deployment Layer
+node "Deployment Context" {
+    [MTProto Server] as mtproto #lightblue
+    [MySQL] as mysql_db #lightgray
+    [Redis] as redis_db #lightgray
+    [etcd] as etcd_db #lightgray
+    [Kafka] as kafka_mq #lightgray
+    [MinIO] as minio_store #lightgray
+}
+
+note right of mtproto
+  Can be deployed in:
+  - Docker Container
+  - Manual Binary
+end note
+
+note right of mysql_db
+  Can be:
+  - MySQL Container
+  - External MySQL
+end note
+
+' Component Layer
+package "Client Access Layer" {
+    component [MTProto Server] as mtproto_comp
+}
+
+package "Service Layer" {
+    component [Authorization Service] as auth_svc
+    component [Session Service] as session_svc
+    component [Salt Service] as salt_svc
+    component [Registration Service] as register_svc
+    component [Service Message Handler] as svcmsg_svc
+    component [Media Processing Service] as media_svc
+    component [Future Salt Service] as futuresalt_svc
+    component [Verification Code Service] as verifycode_svc
+}
+
+package "Storage Layer" {
+    component [Database Adapters] as db_adapters
+    component [Object Storage Client] as obj_client
+}
+
+package "Infrastructure Layer" {
+    component [Message Queue Client] as mq_client
+}
+
+' Storage Systems
+database [MySQL] as mysql_db_sys
+database [Redis] as redis_db_sys
+database [etcd] as etcd_db_sys
+cloud [MinIO] as minio_cloud_sys
+cloud [Kafka] as kafka_cloud_sys
+
+' Connections
+mtproto_comp --> auth_svc : uses
+auth_svc --> session_svc : creates/manages sessions
+session_svc --> salt_svc : requests salts
+register_svc --> session_svc : uses session context
+svcmsg_svc --> session_svc : manages session state
+auth_svc --> db_adapters : stores auth data
+session_svc --> db_adapters : stores session data
+salt_svc --> db_adapters : stores salt data
+register_svc --> db_adapters : stores registration data
+svcmsg_svc --> db_adapters : stores service msg data
+media_svc --> db_adapters : stores media metadata
+db_adapters --> mysql_db_sys : persists data
+db_adapters --> redis_db_sys : caches data
+db_adapters --> etcd_db_sys : stores metadata
+obj_client --> minio_cloud_sys : stores objects
+mq_client --> kafka_cloud_sys : sends/receives messages
+mtproto_comp --> mq_client : async notifications
+auth_svc --> mq_client : async tasks
+session_svc --> mq_client : async events
+register_svc --> mq_client : verification events
+svcmsg_svc --> mq_client : session cleanup events
+salt_svc --> mq_client : future salt events
+futuresalt_svc --> salt_svc : provides future salts
+verifycode_svc ..> register_svc : <<external>>\nverifies codes
+media_svc ..> svcmsg_svc : handles rpc_drop_answer
+media_svc ..> session_svc : handles destroy_session
+
+note top of media_svc
+  Uses external tools:\n- FFmpeg\n- FFProbe
+end note
+
+@enduml

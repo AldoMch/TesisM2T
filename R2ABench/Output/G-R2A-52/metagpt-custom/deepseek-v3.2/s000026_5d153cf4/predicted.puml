@@ -1,0 +1,59 @@
+@startuml
+
+!define RECTANGLE rectangle
+!define ARROW ->
+
+skinparam package {
+  BackgroundColor<<Presentation>> LightGreen
+  BackgroundColor<<Application>> LightBlue
+  BackgroundColor<<Infrastructure>> LightYellow
+}
+
+package "Presentation Layer" <<Presentation>> {
+  component "websocketd" as websocketd
+  interface "WebSocket Endpoint" as ws_endpoint
+}
+
+package "Application/Business Logic Layer" <<Application>> {
+  rectangle "Adapter Container" as adapter_container {
+    component "exec.sh" as exec_sh
+    component "pulltop process" as pulltop
+  }
+  note right of pulltop
+    Maintains cache of
+    last 10 messages
+  end note
+}
+
+package "Infrastructure/Platform Layer" <<Infrastructure>> {
+  rectangle "GKE Cluster" as gke_cluster {
+    component "Kubernetes Deployment" as k8s_deployment
+    component "Kubernetes Service\n(LoadBalancer)" as k8s_service
+    component "Kubernetes ConfigMap" as k8s_configmap
+    component "Horizontal Pod Autoscaler (HPA)" as hpa
+  }
+}
+
+cloud "Google Cloud Pub/Sub" as pubsub
+cloud "Web Clients" as web_clients
+
+' Internal dependencies
+websocketd ARROW exec_sh : "streams output"
+exec_sh ARROW pulltop : "invokes"
+pulltop ARROW websocketd : "sends messages"
+
+' Infrastructure dependencies
+k8s_service ARROW k8s_deployment : "load balances"
+k8s_deployment ARROW adapter_container : "manages pods\n(port 8080)"
+k8s_service ARROW websocketd : "routes traffic\n(port 80 → 8080)"
+hpa ARROW k8s_deployment : "monitors/scales"
+k8s_configmap ARROW k8s_deployment : "injects"
+k8s_deployment ARROW adapter_container : "sets SYMBOL env var"
+adapter_container ARROW pulltop : "provides topic\nfrom SYMBOL env"
+
+' External dependencies
+pulltop ARROW pubsub : "pulls messages\nvia subscription"
+web_clients ARROW ws_endpoint : "connects via"
+ws_endpoint ARROW k8s_service : "exposed by"
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+title Home Recipes - Layered Component/Deployment Diagram
+
+' Contract Layer
+package "Contract Layer" {
+  component "Protocol Buffers Contract" as ProtoContract
+}
+
+' Client Layer
+package "Client Layer" {
+  component "Flutter Client" as FlutterClient
+}
+
+' API Layer
+package "API Layer" {
+  component "gRPC-Gateway" as GRPCGateway
+}
+
+' Service Layer
+package "Service Layer" {
+  component "Go gRPC Server" as GoGRPCServer
+}
+
+' Deployment Layer
+package "Deployment Layer" {
+  component "Docker Container" as DockerContainer
+  component "Kubernetes Deployment" as K8sDeployment
+}
+
+' External Systems
+node "Platforms" {
+  cloud "Android Platform" as Android
+  cloud "iOS Platform" as iOS
+  cloud "Web Platform" as Web
+  cloud "macOS Platform" as MacOS
+}
+
+node "Infrastructure" {
+  cloud "Docker Runtime" as DockerRuntime
+  cloud "Kubernetes Cluster" as K8sCluster
+  cloud "Azure Kubernetes Service" as AKS
+}
+
+' Dependencies
+FlutterClient --> ProtoContract : uses
+FlutterClient --> GRPCGateway : HTTP/gRPC calls
+FlutterClient --> GoGRPCServer : direct gRPC calls
+GoGRPCServer --> ProtoContract : implements
+GRPCGateway --> ProtoContract : exposes
+GRPCGateway --> GoGRPCServer : proxies
+DockerContainer ..> GoGRPCServer : packages
+K8sDeployment ..> DockerContainer : pulls image
+K8sDeployment --> DockerContainer : deploys
+
+' Platform associations
+FlutterClient ..> Android : runs on
+FlutterClient ..> iOS : runs on
+FlutterClient ..> Web : runs on
+FlutterClient ..> MacOS : runs on
+
+DockerContainer ..> DockerRuntime : executes in
+K8sDeployment ..> K8sCluster : deployed to
+K8sCluster ..> AKS : hosted on
+
+@enduml

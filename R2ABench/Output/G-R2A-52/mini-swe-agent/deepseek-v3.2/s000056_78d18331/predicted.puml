@@ -1,0 +1,103 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6CC
+!define DATA_COLOR #E6FFE6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<DataStore>> DATA_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+title Kubescape Host-Scanner Architecture
+
+package "External Systems" <<External>> {
+  [Kubernetes Cluster] as k8s_cluster <<External>>
+  [HTTP Clients] as http_clients <<External>>
+  [Container Runtimes] as container_runtimes <<External>>
+  [Test Environment] as test_env <<External>>
+}
+
+package "Host-Scanner Service" <<Layer>> {
+  component "HTTP API Layer" as http_api <<Component>> {
+    [HTTP Server]
+    [Endpoint Handler]
+    [Request Router]
+  }
+  
+  component "Core Processing Layer" as core_processing <<Component>> {
+    [CNI Directory Resolver]
+    [JSON Sanitizer]
+    [Configuration Processor]
+  }
+  
+  component "Data Collection Layer" as data_collection <<Component>> {
+    [Host Information Collector]
+    [Runtime Data Gatherer]
+    [File System Scanner]
+  }
+}
+
+package "Data Stores" <<DataStore>> {
+  database "CNI Configuration" as cni_config <<DataStore>>
+  database "Control-Plane Data" as control_plane_data <<DataStore>>
+  database "Runtime Configuration" as runtime_config <<DataStore>>
+}
+
+package "Test Infrastructure" <<Layer>> {
+  component "Test Framework" as test_framework <<Component>> {
+    [End-to-End Tests]
+    [Provider-Specific Tests]
+    [Build Tag Selector]
+  }
+}
+
+' Connections
+http_clients --> http_api : HTTP GET requests
+http_api --> core_processing : Process requests
+core_processing --> data_collection : Collect host data
+data_collection --> k8s_cluster : Access node information
+data_collection --> container_runtimes : Runtime data
+
+' Configuration and data flows
+container_runtimes --> runtime_config : Runtime configuration
+k8s_cluster --> control_plane_data : Control-plane JSON
+k8s_cluster --> cni_config : CNI configuration
+
+core_processing --> cni_config : Read CNI config
+core_processing --> control_plane_data : Read control-plane data
+core_processing --> runtime_config : Read runtime config
+
+' Test connections
+test_env --> test_framework : Execute tests
+test_framework --> http_api : Test HTTP endpoints
+test_framework --> core_processing : Test processing logic
+
+' Internal dependencies
+http_api --> core_processing : Forward requests
+core_processing --> http_api : Return processed data
+
+' Key architectural notes
+note right of http_api
+  Exposes HTTP endpoints
+  Returns 404 for unknown paths
+  Standard HTTP semantics
+end note
+
+note right of core_processing
+  CNI directory resolution
+  JSON secret sanitization
+  Runtime configuration processing
+end note
+
+note right of test_framework
+  Go build tag support
+  Provider-specific tests
+  End-to-end verification
+end note
+
+@enduml

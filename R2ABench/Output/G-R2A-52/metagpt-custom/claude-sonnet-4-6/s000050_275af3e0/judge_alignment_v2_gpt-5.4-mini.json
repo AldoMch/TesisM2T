@@ -1,0 +1,390 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Hyper-V Hypervisor\\n(External Hypervisor Stack)"
+      ],
+      "gt_nodes": [
+        "Global::KVM (L0)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Windows Guest OS / Child Partition VM"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Guest VM (kAFL Guest Context)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::HarnessDriver\\n(Kernel Driver – Child Partition)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Windows Root Partition VM"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Windows Root Partition VM::Hyper-V Target & Crash Monitoring Layer::CrashMonitorDriver\\n(Kernel Driver – Root Partition)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Windows Root Partition VM::Hyper-V Target & Crash Monitoring Layer::VMSwitchTarget\\n(vmswitch.sys)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::kAFL-Fuzzer\\n(External Framework)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::hAFL2"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Data & Configuration Layer::Effector Maps\\n(Boolean Arrays)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Configuration Layer::Mutation Payloads\\n(Byte Arrays)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Configuration Layer::OffsetConfiguration\\n(Build-time Constants)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Configuration Layer::initrd Artifact\\n(Packaged Target)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Fuzzing Results\\n(Crash Reports / Coverage)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Guest VM (kAFL Guest Context)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Hyper-V Hypervisor\\n(External Hypervisor Stack)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Linux Host OS",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::VMBus / netvsc\\n(Inter-Partition Channel)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Visual Studio\\n(Build Toolchain)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Windows Guest OS / Child Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Windows Root Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::kAFL-Fuzzer\\n(External Framework)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::pytest\\n(Test Execution Framework)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest VM (kAFL Guest Context)::Guest Forkserver Layer::EmbeddedForkserver\\n(Hypercall Translator)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Host OS::Linux Userspace Fuzzing Layer::InitrdBuilder\\n(Bash Script Workflow)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Host OS::Linux Userspace Fuzzing Layer::LaunchScript\\n(Bash kAFL Launcher)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Host OS::Linux Userspace Fuzzing Layer::SharedLibraryCopier\\n(Host Lib Packager)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test & Orchestration Layer::DeterministicMutator\\n(Deterministic Test Suite)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test & Orchestration Layer::HavocMutator\\n(Havoc Test Suite)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test & Orchestration Layer::RandomMutator\\n(Random Test Suite)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test & Orchestration Layer::StandaloneTestRunner\\n(test.py)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::CompileScript\\n(compile.sh – Bash Build)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::HarnessDriver\\n(Kernel Driver – Child Partition)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::LoaderExe\\n(loader.exe)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::PacketSenderExe\\n(packet_sender.exe)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Root Partition VM::Hyper-V Target & Crash Monitoring Layer::CrashMonitorDriver\\n(Kernel Driver – Root Partition)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Root Partition VM::Hyper-V Target & Crash Monitoring Layer::VMSwitchTarget\\n(vmswitch.sys)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Hyper-V Hypervisor\\n(External Hypervisor Stack)"
+      ],
+      "gt_node": "Global::KVM (L0)"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Windows Guest OS / Child Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Guest VM (kAFL Guest Context)",
+        "Guest VM (kAFL Guest Context)::Guest Forkserver Layer::EmbeddedForkserver\\n(Hypercall Translator)",
+        "Linux Host OS::Linux Userspace Fuzzing Layer::InitrdBuilder\\n(Bash Script Workflow)",
+        "Linux Host OS::Linux Userspace Fuzzing Layer::LaunchScript\\n(Bash kAFL Launcher)",
+        "Linux Host OS::Linux Userspace Fuzzing Layer::SharedLibraryCopier\\n(Host Lib Packager)",
+        "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::CompileScript\\n(compile.sh – Bash Build)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::HarnessDriver\\n(Kernel Driver – Child Partition)",
+        "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::LoaderExe\\n(loader.exe)",
+        "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::PacketSenderExe\\n(packet_sender.exe)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Windows Root Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Windows Root Partition VM::Hyper-V Target & Crash Monitoring Layer::CrashMonitorDriver\\n(Kernel Driver – Root Partition)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Windows Root Partition VM::Hyper-V Target & Crash Monitoring Layer::VMSwitchTarget\\n(vmswitch.sys)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::kAFL-Fuzzer\\n(External Framework)",
+        "Test & Orchestration Layer::DeterministicMutator\\n(Deterministic Test Suite)",
+        "Test & Orchestration Layer::HavocMutator\\n(Havoc Test Suite)",
+        "Test & Orchestration Layer::RandomMutator\\n(Random Test Suite)",
+        "Test & Orchestration Layer::StandaloneTestRunner\\n(test.py)",
+        "Data & Configuration Layer::Effector Maps\\n(Boolean Arrays)",
+        "Data & Configuration Layer::Mutation Payloads\\n(Byte Arrays)",
+        "Global::Fuzzing Results\\n(Crash Reports / Coverage)"
+      ],
+      "gt_node": "KVM (L0)::hAFL2"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5277,
+      "completion_tokens": 910,
+      "total_tokens": 6187,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Data & Configuration Layer::Effector Maps\\n(Boolean Arrays)",
+    "Data & Configuration Layer::Mutation Payloads\\n(Byte Arrays)",
+    "Data & Configuration Layer::OffsetConfiguration\\n(Build-time Constants)",
+    "Data & Configuration Layer::initrd Artifact\\n(Packaged Target)",
+    "Global::Fuzzing Results\\n(Crash Reports / Coverage)",
+    "Global::Linux Host OS",
+    "Global::VMBus / netvsc\\n(Inter-Partition Channel)",
+    "Global::Visual Studio\\n(Build Toolchain)",
+    "Global::pytest\\n(Test Execution Framework)",
+    "Guest VM (kAFL Guest Context)::Guest Forkserver Layer::EmbeddedForkserver\\n(Hypercall Translator)",
+    "Linux Host OS::Linux Userspace Fuzzing Layer::InitrdBuilder\\n(Bash Script Workflow)",
+    "Linux Host OS::Linux Userspace Fuzzing Layer::LaunchScript\\n(Bash kAFL Launcher)",
+    "Linux Host OS::Linux Userspace Fuzzing Layer::SharedLibraryCopier\\n(Host Lib Packager)",
+    "Test & Orchestration Layer::DeterministicMutator\\n(Deterministic Test Suite)",
+    "Test & Orchestration Layer::HavocMutator\\n(Havoc Test Suite)",
+    "Test & Orchestration Layer::RandomMutator\\n(Random Test Suite)",
+    "Test & Orchestration Layer::StandaloneTestRunner\\n(test.py)",
+    "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::CompileScript\\n(compile.sh – Bash Build)",
+    "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::LoaderExe\\n(loader.exe)",
+    "Windows Guest OS / Child Partition VM::Windows Helper & Harness Layer::PacketSenderExe\\n(packet_sender.exe)"
+  ],
+  "_provenance": {
+    "fingerprint": "c83b80373a9ed73d1fe6ffdebf5935170a70b462d4e28843ed097aa9804b409a",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

@@ -1,0 +1,62 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+package "High level architecture" as SystemBoundary {
+    rectangle "user" as User
+
+    package "Frontend" as Frontend {
+        rectangle "React" as React
+        rectangle "Docker\nfrontend container" as FrontendDocker
+    }
+
+    package "Backend" as Backend {
+        rectangle "FastAPI" as FastAPI
+        rectangle "Genius API\nintegration" as GeniusApi
+        rectangle "Docker\nbackend container" as BackendDocker
+    }
+
+    package "Analytics and storage" as AnalyticsStorage {
+        database "Elasticsearch" as Elasticsearch
+        rectangle "Docker\nelasticsearch container" as ElasticsearchDocker
+
+        rectangle "Kibana" as Kibana
+        rectangle "Docker\nkibana container" as KibanaDocker
+    }
+
+    rectangle "Developer/Admin" as DeveloperAdmin
+}
+
+User --> React : searches for /\nprovides a song
+React --> FastAPI
+
+FastAPI --> GeniusApi : search missing songs
+FastAPI --> Elasticsearch : store / retrieve\nsong moods
+
+Kibana <--> Elasticsearch : inspect stored data
+DeveloperAdmin --> Kibana
+
+FrontendDocker ..> React
+BackendDocker ..> FastAPI
+ElasticsearchDocker ..> Elasticsearch
+KibanaDocker ..> Kibana
+@enduml

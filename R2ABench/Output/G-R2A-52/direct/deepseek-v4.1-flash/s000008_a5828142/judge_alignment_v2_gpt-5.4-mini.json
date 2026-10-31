@@ -1,0 +1,442 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "Application Runtime::Reverse Proxy::Express",
+        "Backend Repo::Node.js"
+      ],
+      "predicted_nodes": [
+        "Global::Backend Runtime - Node.js / Express + Socket.IO (C-001)"
+      ],
+      "is_boundary_correct": false,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Application Runtime::Reverse Proxy::Nginx",
+        "Frontend Repo::CI/CD Workflow"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Nginx Reverse Proxy\\n(C-011)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Redis (C-005, C-006)\\n--\\nWorkspace socket/version\\nmapping, temporary battle\\ninvitations, battle state"
+      ],
+      "gt_nodes": [
+        "Application Runtime::Database::Redis"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::MySQL (C-003)\\n--\\nUser accounts, projects,\\nversions, files, problems,\\nbattle records"
+      ],
+      "gt_nodes": [
+        "Application Runtime::Database::MySQL"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::InfluxDB (C-004)\\n--\\nTime-series coding-process\\nrecords for replay"
+      ],
+      "gt_nodes": [
+        "Application Runtime::Database::InfluxDB"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Static Asset Delivery::CDN\\nCloudFront",
+        "Static Asset Delivery::Storage\\nS3 bucket"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::CDN / URL Distribution\\n(C-010, NFR-007)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Docker Sandbox (C-009)\\nIsolated compile / execution\\n(NFR-005)"
+      ],
+      "gt_nodes": [
+        "Coding Sandbox::Coding Sandbox 1::Docker"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Client Tier::Vue Browser Frontend\\n--\\nUI-001 Login / entry\\nUI-002 Workspace editor\\nUI-003 Battle view\\nUI-004 Playback view"
+      ],
+      "gt_nodes": [
+        "Frontend Repo::Vue 3"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Global::Developer",
+        "Global::End User"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Maintainer / Operator"
+      ],
+      "match_type": "N:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Auth & JWT Service\\n--\\nAPI-001 Register / Login /\\nUser detail\\nAPI-002 Bearer token validation\\nAPI-003 Invalid token rejection\\nDEF-002 id, name, email",
+      "reference_nodes": [
+        "Backend Repo::Node.js"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Battle Socket Handler\\n--\\nAPI-010 Invite / accept / ready /\\ncode sync / judge / outcome /\\nleave\\nDEF-006, DEF-007, DEF-008",
+      "reference_nodes": [
+        "Application Runtime::Database::Redis"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Code Execution Service\\n--\\nAPI-006 Compile / execute\\nDEF-009 status, output, errors",
+      "reference_nodes": [
+        "Coding Sandbox::Coding Sandbox 1::Docker"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend Runtime - Node.js / Express + Socket.IO (C-001)::File Upload & Distribution\\n--\\nAPI-008 Upload + URL\\nDEF-011 URL + metadata",
+      "reference_nodes": [
+        "Static Asset Delivery::CDN\\nCloudFront",
+        "Static Asset Delivery::Storage\\nS3 bucket"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Playback Service\\n--\\nAPI-007 Records by project,\\nversion, time range\\nDEF-010 playback query",
+      "reference_nodes": [
+        "Application Runtime::Database::InfluxDB"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Project & Version Service\\n--\\nAPI-004 Create / query / update\\nAPI-005 Versions + initial files\\nDEF-003 project & version ids",
+      "reference_nodes": [
+        "Application Runtime::Database::MySQL"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Workspace Socket Handler\\n--\\nAPI-009 Authorization / edit state /\\nediting occupation / leave /\\ndisconnect cleanup\\nDEF-004 readOnly, authorization",
+      "reference_nodes": [
+        "Application Runtime::Database::Redis"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Tier::Vue Browser Frontend\\n--\\nUI-001 Login / entry\\nUI-002 Workspace editor\\nUI-003 Battle view\\nUI-004 Playback view",
+      "reference_nodes": [
+        "Frontend Repo::Vue 3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Automated Deployment (NFR-008)\\nDeployment scripts + environment\\nconfig (C-007, C-008, C-011)",
+      "reference_nodes": [
+        "Backend Repo::CI/CD Workflow",
+        "Backend Repo::Deploy Key"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Backend Runtime - Node.js / Express + Socket.IO (C-001)",
+      "reference_nodes": [
+        "Backend Repo::Node.js",
+        "Application Runtime::Reverse Proxy::Express"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::CDN / URL Distribution\\n(C-010, NFR-007)",
+      "reference_nodes": [
+        "Static Asset Delivery::CDN\\nCloudFront",
+        "Static Asset Delivery::Storage\\nS3 bucket"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Docker Sandbox (C-009)\\nIsolated compile / execution\\n(NFR-005)",
+      "reference_nodes": [
+        "Coding Sandbox::Coding Sandbox 1::Docker",
+        "Coding Sandbox::Coding Sandbox 2::Docker"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::InfluxDB (C-004)\\n--\\nTime-series coding-process\\nrecords for replay",
+      "reference_nodes": [
+        "Application Runtime::Database::InfluxDB"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Maintainer / Operator",
+      "reference_nodes": [
+        "Global::Developer",
+        "Global::End User"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::MySQL (C-003)\\n--\\nUser accounts, projects,\\nversions, files, problems,\\nbattle records",
+      "reference_nodes": [
+        "Application Runtime::Database::MySQL"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Nginx Reverse Proxy\\n(C-011)",
+      "reference_nodes": [
+        "Application Runtime::Reverse Proxy::Nginx"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Redis (C-005, C-006)\\n--\\nWorkspace socket/version\\nmapping, temporary battle\\ninvitations, battle state",
+      "reference_nodes": [
+        "Application Runtime::Database::Redis"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::S3-compatible Object Storage\\n(C-010)\\nCode files, battle result files,\\nuser files, archives",
+      "reference_nodes": [
+        "Static Asset Delivery::Storage\\nS3 bucket"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Visitor / Authenticated User\\n(Project owner, collaborator,\\nbattle participant)",
+      "reference_nodes": [
+        "Global::End User"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::InfluxDB (C-004)\\n--\\nTime-series coding-process\\nrecords for replay"
+      ],
+      "gt_node": "Application Runtime::Database::InfluxDB"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::MySQL (C-003)\\n--\\nUser accounts, projects,\\nversions, files, problems,\\nbattle records"
+      ],
+      "gt_node": "Application Runtime::Database::MySQL"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Redis (C-005, C-006)\\n--\\nWorkspace socket/version\\nmapping, temporary battle\\ninvitations, battle state"
+      ],
+      "gt_node": "Application Runtime::Database::Redis"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Backend Runtime - Node.js / Express + Socket.IO (C-001)"
+      ],
+      "gt_node": "Application Runtime::Reverse Proxy::Express"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Nginx Reverse Proxy\\n(C-011)"
+      ],
+      "gt_node": "Application Runtime::Reverse Proxy::Nginx"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Automated Deployment (NFR-008)\\nDeployment scripts + environment\\nconfig (C-007, C-008, C-011)"
+      ],
+      "gt_node": "Backend Repo::CI/CD Workflow"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Automated Deployment (NFR-008)\\nDeployment scripts + environment\\nconfig (C-007, C-008, C-011)"
+      ],
+      "gt_node": "Backend Repo::Deploy Key"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Automated Deployment (NFR-008)\\nDeployment scripts + environment\\nconfig (C-007, C-008, C-011)"
+      ],
+      "gt_node": "Backend Repo::GitHub"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Backend Runtime - Node.js / Express + Socket.IO (C-001)"
+      ],
+      "gt_node": "Backend Repo::Node.js"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Docker Sandbox (C-009)\\nIsolated compile / execution\\n(NFR-005)"
+      ],
+      "gt_node": "Coding Sandbox::Coding Sandbox 1::Docker"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Coding Sandbox::Coding Sandbox 1::Exporter"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Coding Sandbox::Coding Sandbox 1::Node.js"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Docker Sandbox (C-009)\\nIsolated compile / execution\\n(NFR-005)"
+      ],
+      "gt_node": "Coding Sandbox::Coding Sandbox 2::Docker"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Coding Sandbox::Coding Sandbox 2::Exporter"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Coding Sandbox::Coding Sandbox 2::Node.js"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Automated Deployment (NFR-008)\\nDeployment scripts + environment\\nconfig (C-007, C-008, C-011)"
+      ],
+      "gt_node": "Frontend Repo::CI/CD Workflow"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Automated Deployment (NFR-008)\\nDeployment scripts + environment\\nconfig (C-007, C-008, C-011)"
+      ],
+      "gt_node": "Frontend Repo::Deploy Key"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Automated Deployment (NFR-008)\\nDeployment scripts + environment\\nconfig (C-007, C-008, C-011)"
+      ],
+      "gt_node": "Frontend Repo::GitHub"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Client Tier::Vue Browser Frontend\\n--\\nUI-001 Login / entry\\nUI-002 Workspace editor\\nUI-003 Battle view\\nUI-004 Playback view"
+      ],
+      "gt_node": "Frontend Repo::Vue 3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Maintainer / Operator"
+      ],
+      "gt_node": "Global::Developer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Maintainer / Operator",
+        "Global::Visitor / Authenticated User\\n(Project owner, collaborator,\\nbattle participant)"
+      ],
+      "gt_node": "Global::End User"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::CDN / URL Distribution\\n(C-010, NFR-007)"
+      ],
+      "gt_node": "Static Asset Delivery::CDN\\nCloudFront"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::CDN / URL Distribution\\n(C-010, NFR-007)",
+        "Global::S3-compatible Object Storage\\n(C-010)\\nCode files, battle result files,\\nuser files, archives"
+      ],
+      "gt_node": "Static Asset Delivery::Storage\\nS3 bucket"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 7638,
+      "completion_tokens": 1070,
+      "total_tokens": 8708,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Backend Repo::CI/CD Workflow",
+    "Backend Repo::Deploy Key",
+    "Backend Repo::GitHub",
+    "Coding Sandbox::Coding Sandbox 1::Exporter",
+    "Coding Sandbox::Coding Sandbox 1::Node.js",
+    "Coding Sandbox::Coding Sandbox 2::Docker",
+    "Coding Sandbox::Coding Sandbox 2::Exporter",
+    "Coding Sandbox::Coding Sandbox 2::Node.js",
+    "Frontend Repo::Deploy Key",
+    "Frontend Repo::GitHub"
+  ],
+  "unmatched_predicted_nodes": [
+    "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Auth & JWT Service\\n--\\nAPI-001 Register / Login /\\nUser detail\\nAPI-002 Bearer token validation\\nAPI-003 Invalid token rejection\\nDEF-002 id, name, email",
+    "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Battle Socket Handler\\n--\\nAPI-010 Invite / accept / ready /\\ncode sync / judge / outcome /\\nleave\\nDEF-006, DEF-007, DEF-008",
+    "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Code Execution Service\\n--\\nAPI-006 Compile / execute\\nDEF-009 status, output, errors",
+    "Backend Runtime - Node.js / Express + Socket.IO (C-001)::File Upload & Distribution\\n--\\nAPI-008 Upload + URL\\nDEF-011 URL + metadata",
+    "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Playback Service\\n--\\nAPI-007 Records by project,\\nversion, time range\\nDEF-010 playback query",
+    "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Project & Version Service\\n--\\nAPI-004 Create / query / update\\nAPI-005 Versions + initial files\\nDEF-003 project & version ids",
+    "Backend Runtime - Node.js / Express + Socket.IO (C-001)::Workspace Socket Handler\\n--\\nAPI-009 Authorization / edit state /\\nediting occupation / leave /\\ndisconnect cleanup\\nDEF-004 readOnly, authorization",
+    "Global::Automated Deployment (NFR-008)\\nDeployment scripts + environment\\nconfig (C-007, C-008, C-011)",
+    "Global::S3-compatible Object Storage\\n(C-010)\\nCode files, battle result files,\\nuser files, archives",
+    "Global::Visitor / Authenticated User\\n(Project owner, collaborator,\\nbattle participant)"
+  ],
+  "_provenance": {
+    "fingerprint": "9205e833e57a0009d70b41600b46790e1fe6c9468e1a81c2d6541b6c438a02d0",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

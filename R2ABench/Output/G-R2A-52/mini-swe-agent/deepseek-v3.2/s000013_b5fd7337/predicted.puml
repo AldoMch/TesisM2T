@@ -1,0 +1,89 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define STORAGE_COLOR #F0FFF0
+
+title Song Mood Storage and Retrieval System - Layered Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Storage>> STORAGE_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+package "Presentation Layer" <<Layer>> {
+  component "React Frontend" <<Component>> {
+    [Web UI]
+    [User Interface]
+  }
+  note right of "React Frontend"
+    Browser-accessible interface
+    for song mood lookup
+  end note
+}
+
+package "Application Layer" <<Layer>> {
+  component "FastAPI Backend" <<Component>> {
+    [Song Lookup Service]
+    [Storage Workflow]
+    [API Gateway]
+  }
+  note right of "FastAPI Backend"
+    Handles song lookup requests
+    Manages storage workflows
+    Coordinates with storage and external APIs
+  end note
+}
+
+package "Data Layer" <<Layer>> {
+  component "Elasticsearch" <<Storage>> {
+    [Song Records]
+    [Mood Associations]
+    [Index Storage]
+  }
+  note right of "Elasticsearch"
+    Persistent storage for
+    song records and mood values
+    Fast retrieval for known songs
+  end note
+  
+  component "Kibana" <<Component>> {
+    [Data Inspection UI]
+    [Dashboard]
+  }
+  note right of "Kibana"
+    Auxiliary UI for inspecting
+    stored Elasticsearch data
+  end note
+}
+
+component "Genius API" <<External>> {
+  [External Song Search]
+  [Music Metadata]
+}
+note right of "Genius API"
+  External dependency for
+  searching missing songs
+  Not part of containerized deployment
+end note
+
+"React Frontend" --> "FastAPI Backend" : "Song lookup requests\n(HTTP/REST)"
+"FastAPI Backend" --> "Elasticsearch" : "Store/retrieve\nsong-mood associations"
+"FastAPI Backend" --> "Genius API" : "Search missing songs\n(External API)"
+"Kibana" --> "Elasticsearch" : "Data inspection\nand visualization"
+
+package "Docker Container Services" {
+  note top
+    Separate container services:
+    - Frontend (React)
+    - Backend (FastAPI)
+    - Elasticsearch
+    - Kibana
+  end note
+}
+
+@enduml

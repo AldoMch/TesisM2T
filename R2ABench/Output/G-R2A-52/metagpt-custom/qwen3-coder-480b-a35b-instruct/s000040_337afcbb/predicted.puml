@@ -1,0 +1,78 @@
+@startuml
+' Layered Component/Deployment Diagram for PlugIt Architecture
+
+' Define Nodes for Deployment Context
+node "External Systems" {
+  actor "End Users/Applications"
+  actor "Email Systems"
+  actor "Database Systems"
+}
+
+' Configuration Layer
+package "Configuration Layer" {
+  component "Service Configuration Files"
+  component "Private Settings Manager"
+  component "API Endpoint Configuration"
+}
+
+' Proxy Layer
+package "Proxy Layer" {
+  component "PlugIt Proxy"
+  database "Proxy Data Store"
+}
+
+' Service Layer
+package "Service Layer" {
+  component "PlugIt Service"
+  ' Additional services can be added similarly
+}
+
+' Data Layer
+package "Data Layer" {
+  database "Service Data Store"
+  component "Alembic Migration Interface"
+}
+
+' External Integration Layer
+package "External Integration Layer" {
+  component "API Client"
+}
+
+' Optional Mail Processing (Example Scope)
+package "Optional Components" {
+  component "Mail Processor"
+}
+
+' Dependencies and Connections
+
+' External Access to Proxy
+"End Users/Applications" --> "PlugIt Proxy"
+
+' Proxy Layer Internal Connections
+"PlugIt Proxy" --> "Proxy Data Store"
+
+' Service to Proxy Connection
+"PlugIt Service" --> "PlugIt Proxy"
+
+' Service to Data Stores
+"PlugIt Service" --> "Service Data Store"
+
+' Configuration Flow
+"Service Configuration Files" --> "PlugIt Service"
+"Private Settings Manager" --> "PlugIt Service"
+"API Endpoint Configuration" --> "PlugIt Proxy"
+"Service Configuration Files" --> "PlugIt Proxy"
+
+' Alembic Migration Interface
+"Alembic Migration Interface" --> "Service Data Store"
+"PlugIt Service" --> "Alembic Migration Interface"
+
+' External Integrations
+"API Client" --> "PlugIt Proxy"
+"Email Systems" --> "Mail Processor"
+"Mail Processor" --> "PlugIt Proxy"
+
+' External System Connections
+"Service Data Store" --> "Database Systems"
+
+@enduml

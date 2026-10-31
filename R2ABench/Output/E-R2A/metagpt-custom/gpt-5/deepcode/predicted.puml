@@ -1,0 +1,160 @@
+@startuml
+
+package "Front-end Layer" {
+  component "Vue3 Web Client (SPA)" as VueClient
+}
+
+package "Proxy Layer" {
+  cloud "DNS" as DNS
+  cloud "CDN" as CDN
+  node "Nginx Reverse Proxy" as Nginx
+}
+
+node "Spring Boot Backend Service" as Backend {
+  package "Presentation Layer" {
+    component "REST API Controllers" as RestControllers
+    component "Authentication/Authorization Filter" as AuthFilter
+    component "Validation Interceptor" as ValidationInterceptor
+    component "Swagger" as Swagger
+  }
+
+  package "Business Layer" {
+    component "User Module" as UserModule
+    component "Problem Module" as ProblemModule
+    component "Solution Module" as SolutionModule
+    component "Forum Module" as ForumModule
+    component "Judging Orchestrator" as JudgingOrchestrator
+    component "AI Assistance Module" as AiModule
+    component "Administration Module" as AdminModule
+  }
+
+  package "Access Layer" {
+    component "Data Access Layer (MyBatis-Plus)" as DAL
+    component "Redis Cache Client" as RedisClient
+    component "Object Storage Client" as ObjectStorageClient
+    component "Mail Service Client" as MailClient
+    component "LLM Client via LangChain4j" as LLMClient
+    component "Judging Service Client" as JudgeClient
+    component "Monitoring/Alerting Integration" as MonitoringIntegration
+    component "Token Service (JWT/OAuth2)" as TokenService
+  }
+}
+
+package "External Systems & Stores" {
+  database "MySQL 5.7.44" as MySQL
+  database "Redis 7.4.6" as RedisDB
+  cloud "MinIO" as MinIO
+  cloud "SMTP Mail Service" as SMTP
+  cloud "LLM Service" as LLMService
+
+  node "JudgeHost" as JudgeHost {
+    component "JudgeCore" as JudgeCore
+  }
+
+  cloud "Prometheus" as Prometheus
+  cloud "Grafana" as Grafana
+  cloud "PagerDuty" as PagerDuty
+  cloud "Offsite Backup Storage" as OffsiteBackup
+}
+
+package "Runtime & CI/CD" {
+  cloud "GitLab CI/CD" as GitLab
+  cloud "Private Image Registry" as ImageRegistry
+  node "Kubernetes Cluster" as K8s
+  node "Docker Runtime" as Docker
+  component "DB Backup Job (K8s CronJob)" as DBBackupJob
+}
+
+/' Client to Edge and Proxy '/
+VueClient --> DNS
+VueClient --> CDN
+VueClient --> Nginx
+
+/' Proxy to Backend with filter/interceptor chain before controllers '/
+Nginx --> AuthFilter
+AuthFilter --> ValidationInterceptor
+ValidationInterceptor --> RestControllers
+
+/' Swagger documents controllers (reverse dependency) '/
+Swagger --> RestControllers
+
+/' Auth filter and controllers use token service '/
+AuthFilter --> TokenService
+RestControllers --> TokenService
+
+/' Controllers to Business Modules '/
+RestControllers --> UserModule
+RestControllers --> ProblemModule
+RestControllers --> SolutionModule
+RestControllers --> ForumModule
+RestControllers --> JudgingOrchestrator
+RestControllers --> AiModule
+RestControllers --> AdminModule
+
+/' Business to Access layer '/
+UserModule --> DAL
+UserModule --> RedisClient
+UserModule --> ObjectStorageClient
+
+ProblemModule --> DAL
+ProblemModule --> RedisClient
+ProblemModule --> ObjectStorageClient
+ProblemModule --> MailClient
+
+SolutionModule --> DAL
+SolutionModule --> RedisClient
+SolutionModule --> ObjectStorageClient
+SolutionModule --> MailClient
+
+ForumModule --> DAL
+ForumModule --> RedisClient
+ForumModule --> ObjectStorageClient
+
+AdminModule --> DAL
+AdminModule --> RedisClient
+AdminModule --> ObjectStorageClient
+AdminModule --> MailClient
+
+JudgingOrchestrator --> DAL
+JudgingOrchestrator --> RedisClient
+JudgingOrchestrator --> ObjectStorageClient
+JudgingOrchestrator --> JudgeClient
+
+AiModule --> DAL
+AiModule --> RedisClient
+AiModule --> ObjectStorageClient
+AiModule --> LLMClient
+
+/' Access layer to External Systems '/
+DAL --> MySQL
+RedisClient --> RedisDB
+ObjectStorageClient --> MinIO
+MailClient --> SMTP
+LLMClient --> LLMService
+JudgeClient --> JudgeHost
+
+/' Judging subsystem and sandbox containerization '/
+JudgeHost --> MinIO
+JudgeHost --> Docker
+
+/' Monitoring, metrics, and alerting (pull model) '/
+Prometheus --> MonitoringIntegration
+Grafana --> Prometheus
+Prometheus --> PagerDuty
+
+/' CI/CD and runtime relationships '/
+GitLab --> ImageRegistry
+GitLab --> K8s
+K8s --> ImageRegistry
+K8s --> Docker
+
+/' Database backup to offsite storage '/
+K8s --> DBBackupJob
+DBBackupJob --> MySQL
+DBBackupJob --> OffsiteBackup
+
+/' Deployment context (optional hosting relations) '/
+K8s --> Nginx
+K8s --> Backend
+
+@enduml

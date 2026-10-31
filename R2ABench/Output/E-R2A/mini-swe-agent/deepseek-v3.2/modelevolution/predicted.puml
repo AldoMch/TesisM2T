@@ -1,0 +1,69 @@
+@startuml
+title Model Evolution Version Management Visualization Tool - Layered Architecture
+
+package "Presentation Layer" {
+  [Web Browser]
+  [Browser Console]
+}
+
+package "Application Layer" {
+  package "Frontend Module" {
+    [Account Management UI]
+    [Model Search UI]
+    [Model Viewing UI]
+    [Model Upload UI]
+    [Evolution Editor UI]
+    [User Management UI]
+  }
+
+  package "Backend Module" {
+    [Authentication Service]
+    [User Management Service]
+    [Model Management Service]
+    [Evolution Service]
+    [File Upload Service]
+    [Visualization Service]
+  }
+
+  package "Algorithm Support Module" {
+    [Model Parser]
+    [Graph Generator]
+    [Topology Analyzer]
+    [Performance Metrics]
+  }
+}
+
+package "Data Layer" {
+  database "MySQL Database" {
+    [User Data]
+    [Model Metadata]
+    [Dataset Information]
+    [Permission Records]
+  }
+
+  database "Neo4j Graph Database" {
+    [Evolution Relationships]
+    [Model Topology]
+    [Layer Reuse Graphs]
+  }
+
+  [File Storage]
+}
+
+package "External Systems" {
+  [Python Libraries]
+  [OAuth 2.0 Provider]
+  [Email Server (SMTP)]
+}
+
+[Web Browser] --> [Frontend Module] : "HTTP/HTTPS"
+[Frontend Module] --> [Backend Module] : "REST API"
+[Backend Module] --> [Algorithm Support Module] : "Service Calls"
+[Backend Module] --> [MySQL Database] : "SQL Queries"
+[Backend Module] --> [Neo4j Graph Database] : "Cypher Queries"
+[Backend Module] --> [File Storage] : "File Operations"
+[Algorithm Support Module] --> [Python Libraries] : "Library Calls"
+[Backend Module] --> [OAuth 2.0 Provider] : "Authentication"
+[Backend Module] --> [Email Server (SMTP)] : "Notifications"
+
+@enduml

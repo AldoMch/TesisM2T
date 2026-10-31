@@ -1,0 +1,100 @@
+@startuml
+title System Architecture - s000091_f459979d
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+actor "Authenticated API Client" as ApiClient
+component "LwM2M Service Component" as Lwm2mService
+component "Ethereum-compatible Node" as EthereumNode
+component "Smart Contract\nClient/Bootstrap Storage" as SmartContract
+database "Blockchain-backed\nClient/Bootstrap Storage" as BlockchainStorage
+
+interface "User HTTP API" as UserHttpApi
+interface "Blockchain Client/Bootstrap\nInterface" as BlockchainApi
+interface "Ethereum Connectivity\n(Web3j HTTP transport)" as EthereumApi
+interface "LwM2M Node\nDeserialization Interface" as Lwm2mApi
+
+package "Backend Runtime (Java / Spring)" as Backend {
+  component "User HTTP API\n(Spring Controller)" as UserApi
+  component "JWT Token Validation\n(JwtUtility.isValidToken(auth, 1))" as Jwt
+  component "User Service" as UserService
+
+  package "Blockchain Integration" {
+    component "Client/Security\nInformation Service" as SecurityInfoService
+    component "Client Bootstrap\nService" as BootstrapService
+    component "Blockchain Contract Client\n(Web3j)" as ContractClient
+    component "32-byte ASCII Codec" as AsciiCodec
+  }
+
+  package "LwM2M Integration" {
+    component "LwM2M Node JSON\nDeserializer" as NodeJsonDeserializer
+    component "LwM2M Model Types\n(Leshan node/resource structures)" as Lwm2mModel
+  }
+}
+
+ApiClient --> UserHttpApi : GET users / POST /add\nAuthorization header
+UserHttpApi -- UserApi
+UserApi --> Jwt : validate token
+Jwt --> UserApi : validation result\n0 / 1 / 2 / other
+UserApi --> UserService : retrieve users\nor add user
+UserService --> UserApi : user list\nor created user
+
+SecurityInfoService --> ContractClient : retrieve all clients
+ContractClient --> BlockchainApi : contract operations
+SmartContract -- BlockchainApi
+ContractClient --> EthereumApi
+EthereumNode -- EthereumApi
+SmartContract --> BlockchainStorage : read/write client/bootstrap data
+
+BootstrapService --> AsciiCodec : encode string fields\nto fixed 32-byte ASCII
+AsciiCodec --> BootstrapService : decode fixed 32-byte\nfields to ASCII strings
+BootstrapService --> ContractClient : add client /\nget client by endpoint
+ContractClient --> SmartContract : retrieveAllClients()\naddClient(...)\ngetClient(endpoint)
+
+Lwm2mService --> BootstrapService : request bootstrap\nconfiguration by endpoint
+BootstrapService --> Lwm2mService : bootstrap configuration
+Lwm2mService --> Lwm2mApi : LwM2M node JSON
+Lwm2mApi -- NodeJsonDeserializer
+NodeJsonDeserializer --> Lwm2mModel : typed node/resource\nstructures
+Lwm2mModel --> Lwm2mService : typed LwM2M nodes
+
+note right of UserApi
+  Access control:
+  200 OK / 201 Created - valid token
+  401 Unauthorized - validation result 1
+  403 Forbidden - validation result 2
+  400 Bad Request - other invalid results
+end note
+
+note bottom of SecurityInfoService
+  On contract-access failure:
+  record exception and return an
+  empty collection without propagating
+end note
+
+note bottom of AsciiCodec
+  Fixed 32-byte ASCII-compatible
+  encoding on submission and ASCII
+  decoding on retrieval (NFR-004)
+end note
+
+note bottom of NodeJsonDeserializer
+  Valid JSON -> typed LwM2M node structures.
+  Invalid payloads, including instances
+  without required id, cause parsing failure.
+  Primitive mapping:
+  boolean->BOOLEAN, string->STRING,
+  lossless number->INTEGER, other number->FLOAT,
+  default->STRING.
+end note
+
+note bottom of SmartContract
+  Client/bootstrap fields:
+  endpoint, bootstrap server URL/identity/key,
+  server URL/identity/key
+end note
+
+@enduml

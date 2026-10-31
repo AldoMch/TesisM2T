@@ -1,0 +1,119 @@
+@startuml
+title Deep Learning Model Sharing Platform - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "General User" as GU
+actor "Administrator" as ADM
+
+rectangle "Client Layer (Vue + TypeScript, Multilingual UI)" as CLIENT {
+  component "Account UI\n(register / login / recovery / profile / logout)" as UI_ACCT
+  component "Q&A Community UI\n(questions / answers)" as UI_QA
+  component "Blog UI\n(articles / comments)" as UI_BLOG
+  component "Model UI\n(upload / download / online run /\nrecommendation / purchase)" as UI_MODEL
+  component "Dataset UI\n(upload / download / modify / delete)" as UI_DATA
+  component "Follow UI\n(profile / follow list / unfollow)" as UI_FOLLOW
+  component "Administrator UI\n(account cancellation /\nillegal content deletion)" as UI_ADMIN
+}
+
+rectangle "Backend Application Layer (Spring Boot)" as BACKEND {
+  component "Account Management Service\n(registration / authentication /\nverification code / session / password recovery / profile)" as SVC_ACCT
+  component "Q&A Community Service\n(question & answer CRUD)" as SVC_QA
+  component "Blog Sharing Service\n(article & comment CRUD)" as SVC_BLOG
+  component "Model Management Service\n(upload / review entry / download /\ndelete / modify / online invocation)" as SVC_MODEL
+  component "Dataset Management Service\n(upload / download / delete / modify)" as SVC_DATA
+  component "Follow Management Service\n(follow / unfollow / follow list)" as SVC_FOLLOW
+  component "Recommendation Service\n(browsing history + registration info)" as SVC_REC
+  component "Purchase & Payment Service\n(purchase / price / purchased model list)" as SVC_PAY
+  component "Administrator Governance Service\n(user account cancellation /\nillegal content deletion)" as SVC_ADMIN
+
+  component "Security & Access Control\n(input validation / injection prevention /\nsession auth / role-based authorization)" as SVC_SEC
+  component "Internationalization Support\n(Chinese / English)" as SVC_I18N
+}
+
+rectangle "Data Layer" as DATA {
+  component "MySQL Database" as MYSQL {
+    database "User Account Data\n(registration info, login state, email,\npassword, verification code, role)" as DB_USER
+    database "Q&A Data\n(questions, answers)" as DB_QA
+    database "Blog Data\n(articles, comments)" as DB_BLOG
+    database "Model Data\n(basic info, usage method, files,\nreview state, sale flag, price,\npurchase relationships)" as DB_MODEL
+    database "Dataset Data\n(name, upload path, file content,\nowner, existence info)" as DB_DATA
+    database "Follow Relationship Data" as DB_FOLLOW
+    database "Browsing History & Recommendation Data" as DB_REC
+  }
+  component "File / Object Storage\n(model files, dataset files)" as STORAGE
+}
+
+' User access
+GU --> UI_ACCT
+GU --> UI_QA
+GU --> UI_BLOG
+GU --> UI_MODEL
+GU --> UI_DATA
+GU --> UI_FOLLOW
+
+ADM --> UI_ACCT
+ADM --> UI_ADMIN
+
+' UI to backend services
+UI_ACCT --> SVC_ACCT
+UI_QA --> SVC_QA
+UI_BLOG --> SVC_BLOG
+UI_MODEL --> SVC_MODEL
+UI_MODEL --> SVC_REC
+UI_MODEL --> SVC_PAY
+UI_DATA --> SVC_DATA
+UI_FOLLOW --> SVC_FOLLOW
+UI_ADMIN --> SVC_ADMIN
+
+' Cross-cutting concerns
+SVC_ACCT --> SVC_SEC
+SVC_QA --> SVC_SEC
+SVC_BLOG --> SVC_SEC
+SVC_MODEL --> SVC_SEC
+SVC_DATA --> SVC_SEC
+SVC_FOLLOW --> SVC_SEC
+SVC_PAY --> SVC_SEC
+SVC_ADMIN --> SVC_SEC
+CLIENT --> SVC_I18N
+
+' Service dependencies
+SVC_MODEL --> SVC_REC
+SVC_MODEL --> SVC_PAY
+SVC_ADMIN --> SVC_ACCT
+SVC_REC --> DB_REC
+
+' Persistence
+SVC_ACCT --> DB_USER
+SVC_QA --> DB_QA
+SVC_BLOG --> DB_BLOG
+SVC_MODEL --> DB_MODEL
+SVC_DATA --> DB_DATA
+SVC_FOLLOW --> DB_FOLLOW
+SVC_PAY --> DB_MODEL
+SVC_ADMIN --> DB_USER
+SVC_ADMIN --> DB_QA
+SVC_ADMIN --> DB_BLOG
+SVC_ADMIN --> DB_MODEL
+SVC_ADMIN --> DB_DATA
+
+' File storage
+SVC_MODEL --> STORAGE
+SVC_DATA --> STORAGE
+
+note right of STORAGE
+  Model and dataset file upload,
+  download and online invocation
+  rely on existing database records
+  (AD-004).
+end note
+
+note bottom of BACKEND
+  Technology constraints: MySQL, Spring Boot,
+  Vue, TypeScript, SQL (C-001).
+  Deployment topology, API schema and table
+  structures are not defined by the SRS (AD-005).
+end note
+
+@enduml

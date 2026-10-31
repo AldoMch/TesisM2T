@@ -1,0 +1,120 @@
+{
+  "candidate": {
+    "sample_id": "s000067_4d85c913",
+    "repository_name": "ShiftLeftSecurity/traceleft",
+    "image_url": "https://github.com/ShiftLeftSecurity/traceleft/blob/master/documentation/traceleft-architecture.png",
+    "source_ref": "890e67e2fc1ea0dcbdcb5164b665d6be245e5464",
+    "total_score": 96,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 4765,
+    "document_count": 13,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "config",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 23,
+      "user_scenario": 3,
+      "api_io": 60,
+      "deployment": 28,
+      "constraints": 1,
+      "non_functional": 3
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 96
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "documentation/README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05395274335333655,
+      "text": "ions (see for a list). The only thing the trace probes do is tail calling handler probes (or return 0 - i.e. do nothing - if no probe was set). **Examples:** The handler maps follow the scheme where is the name of the traced function (w/o prefix in the case of syscalls). traceleft provides a single map of type which handlers must use to send events. All events start with a common section to enable the tracer to dispatch events. Specific fields follow after. The Probe (see ; responsible for loading process-specific as well as default handler probes) expects handler probes to follow the scheme and , i.e. the name of a k{,ret}probe defines which handler map to update. Handler probes can be l..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05373418537166321,
+      "text": "# TraceLeft TraceLeft is a library to trace applications as well as a small CLI tool ( ) which acts as a reference implementation of the framework. It uses Linux eBPF and Kprobes to install probes on Linux function calls (both APIs and other internal functions) in order to receive callbacks for syscalls, file and network events of a traced process. TraceLeft is built using gobpf and takes inspiration from the BCC toolset. TraceLeft has been designed as a framework to build configuration driven system auditing tools as well as application tracing tools used for network and syscall monitoring. TraceLeft has been tested on kernel versions with eBPF support for Kprobes ans Kretprobes. Though..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "cli/main.go",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05223006976392579,
+      "text": "package main import \"github.com/ShiftLeftSecurity/traceleft/cli/cmd\" func main() { cmd.Execute() }"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "cli/cmd/trace.go",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05170363435229164,
+      "text": "package cmd import ( \"bytes\" \"encoding/json\" \"fmt\" \"io/ioutil\" \"net/http\" _ \"net/http/pprof\" \"os\" \"os/signal\" \"strconv\" \"strings\" \"github.com/spf13/cobra\" \"github.com/ShiftLeftSecurity/traceleft/metrics\" \"github.com/ShiftLeftSecurity/traceleft/probe\" \"github.com/ShiftLeftSecurity/traceleft/tracer\" ) // #include // #include \"../../bpf/events-struct.h\" import \"C\" type Event struct { ProgramID uint64 Pids []int ELFPath string } var ( traceCmd = &cobra.Command{ Use: \"trace [[program_id:] :] ...\", Short: \"Trace processes\", PreRunE: func(cmd *cobra.Command, args []string) error { if len(args) :] pair\") } return nil }, Run: cmdTrace, } ctx tracer.Context handlerCacheSize int collectorWithInsecur..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "generator/config.pb.go",
+      "doc_type": "config",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.0537401319057554,
+      "text": "Event_Args struct { Position uint32 Type string Name string Suffix string HashFunc string } func (m *Event_Args) Reset() { *m = Event_Args{} } func (m *Event_Args) String() string { return proto.CompactTextString(m) } func (*Event_Args) ProtoMessage() {} func (*Event_Args) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} } func (m *Event_Args) GetPosition() uint32 { if m != nil { return m.Position } return 0 } func (m *Event_Args) GetType() string { if m != nil { return m.Type } return \"\" } func (m *Event_Args) GetName() string { if m != nil { return m.Name } return \"\" } func (m *Event_Args) GetSuffix() string { if m != nil { return m.Suffix } return \"\" } func (m *Event_..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053299272022974686,
+      "text": "# TraceLeft TraceLeft is a library to trace applications as well as a small CLI tool ( ) which acts as a reference implementation of the framework. It uses Linux eBPF and Kprobes to install probes on Linux function calls (both APIs and other internal functions) in order to receive callbacks for syscalls, file and network events of a traced process. TraceLeft is built using gobpf and takes inspiration from the BCC toolset. TraceLeft has been designed as a framework to build configuration driven system auditing tools as well as application tracing tools used for network and syscall monitoring. TraceLeft has been tested on kernel versions with eBPF support for Kprobes ans Kretprobes. Though..."
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+@startuml
+component "Administrator Portal Service" as adminportalservice
+component "Artwork Catalog & Search Service" as artworkcatalogsearchservice
+component "Artwork Lifecycle & Moderation Service" as artworklifecycleservice
+component "Authentication & Identity Service" as authidentityservice
+component "Comments & Discussion Service" as commentdiscussionservice
+component "Favorites & Collections Service" as favoritesservice
+component "Notification Management Service" as notificationservice
+component "Recommendation Engine Service" as recommendationservice
+component "Security & API Gateway" as securityedgegateway
+component "User Profile & Social Graph Service" as userprofileservice
+adminportalservice --> artworklifecycleservice : gRPC
+adminportalservice --> commentdiscussionservice : gRPC
+adminportalservice --> userprofileservice : gRPC
+artworklifecycleservice --> artworkcatalogsearchservice : Event/PubSub
+artworklifecycleservice --> notificationservice : Event/PubSub
+commentdiscussionservice --> notificationservice : Event/PubSub
+recommendationservice --> artworkcatalogsearchservice : gRPC
+recommendationservice --> userprofileservice : gRPC
+securityedgegateway --> adminportalservice : HTTPS/REST
+securityedgegateway --> artworkcatalogsearchservice : HTTPS/REST
+securityedgegateway --> artworklifecycleservice : HTTPS/REST
+securityedgegateway --> authidentityservice : HTTPS/gRPC
+securityedgegateway --> commentdiscussionservice : HTTPS/REST
+securityedgegateway --> favoritesservice : HTTPS/REST
+securityedgegateway --> notificationservice : HTTPS/REST
+securityedgegateway --> recommendationservice : HTTPS/REST
+securityedgegateway --> userprofileservice : HTTPS/REST
+@enduml

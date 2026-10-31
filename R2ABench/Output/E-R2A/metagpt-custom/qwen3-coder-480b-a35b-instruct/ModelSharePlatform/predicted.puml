@@ -1,0 +1,137 @@
+@startuml
+' Deployment and Component Diagram for Deep Learning Model Sharing Platform
+
+' Infrastructure Layer
+node "Infrastructure Layer" {
+    node "Cloud Environment" {
+        node "x86-64/ARM Server" {
+        }
+    }
+}
+
+' Data Access Layer
+package "Data Access Layer" {
+    database "MySQL Database" as mysql
+    component "UserRepository" as userRepo
+    component "QuestionRepository" as questionRepo
+    component "AnswerRepository" as answerRepo
+    component "BlogPostRepository" as blogPostRepo
+    component "BlogCommentRepository" as blogCommentRepo
+    component "ModelRepository" as modelRepo
+    component "DatasetRepository" as datasetRepo
+    component "TransactionRepository" as transactionRepo
+}
+
+' Application Layer
+package "Application Layer" {
+    component "AccountService" as accountSvc
+    component "QnAService" as qnaSvc
+    component "BlogService" as blogSvc
+    component "BlogCommentService" as blogCommentSvc
+    component "ModelService" as modelSvc
+    component "DatasetService" as datasetSvc
+    component "FollowService" as followSvc
+    component "AdminService" as adminSvc
+    component "RecommendationEngine" as recEngine
+    component "ModelExecutionService" as modelExecSvc
+    component "PurchaseService" as purchaseSvc
+    component "DatasetDownloadService" as datasetDownloadSvc
+}
+
+' Presentation Layer
+package "Presentation Layer" {
+    component "Web UI (Vue + TypeScript)" as webUI
+}
+
+' External Systems
+cloud "External Systems" {
+    component "Email Service" as emailSvc
+    component "Payment Gateway" as paymentGw
+}
+
+' Dependencies - Service to Repository
+accountSvc --> userRepo : uses
+qnaSvc --> questionRepo : uses
+qnaSvc --> answerRepo : uses
+blogSvc --> blogPostRepo : uses
+blogCommentSvc --> blogCommentRepo : uses
+modelSvc --> modelRepo : uses
+datasetSvc --> datasetRepo : uses
+followSvc --> userRepo : uses
+recEngine --> modelRepo : uses
+recEngine --> userRepo : uses
+purchaseSvc --> transactionRepo : uses
+purchaseSvc --> modelRepo : uses
+purchaseSvc --> datasetRepo : uses
+modelExecSvc --> modelRepo : uses
+
+' Authentication dependencies
+webUI --> accountSvc : authenticates via
+qnaSvc --> accountSvc : authenticates via
+blogSvc --> accountSvc : authenticates via
+blogCommentSvc --> accountSvc : authenticates via
+modelSvc --> accountSvc : authenticates via
+datasetSvc --> accountSvc : authenticates via
+followSvc --> accountSvc : authenticates via
+adminSvc --> accountSvc : authenticates via
+recEngine --> accountSvc : authenticates via
+modelExecSvc --> accountSvc : authenticates via
+purchaseSvc --> accountSvc : authenticates via
+datasetDownloadSvc --> accountSvc : authenticates via
+
+' AdminService accesses all repositories and services
+adminSvc --> userRepo : manages
+adminSvc --> questionRepo : manages
+adminSvc --> answerRepo : manages
+adminSvc --> blogPostRepo : manages
+adminSvc --> blogCommentRepo : manages
+adminSvc --> modelRepo : manages
+adminSvc --> datasetRepo : manages
+adminSvc --> transactionRepo : manages
+adminSvc --> qnaSvc : manages
+adminSvc --> blogSvc : manages
+adminSvc --> blogCommentSvc : manages
+
+' External system integrations
+accountSvc --> emailSvc : sends emails via
+purchaseSvc --> paymentGw : processes payments via
+
+' Presentation to Application
+webUI --> accountSvc : interacts with
+webUI --> qnaSvc : interacts with
+webUI --> blogSvc : interacts with
+webUI --> blogCommentSvc : interacts with
+webUI --> modelSvc : interacts with
+webUI --> datasetSvc : interacts with
+webUI --> followSvc : interacts with
+webUI --> adminSvc : interacts with
+webUI --> recEngine : consumes recommendations from
+webUI --> modelExecSvc : invokes models via
+webUI --> purchaseSvc : initiates purchases via
+webUI --> datasetDownloadSvc : downloads datasets via
+
+' Data flow from repositories to database
+userRepo --> mysql : persists to
+questionRepo --> mysql : persists to
+answerRepo --> mysql : persists to
+blogPostRepo --> mysql : persists to
+blogCommentRepo --> mysql : persists to
+modelRepo --> mysql : persists to
+datasetRepo --> mysql : persists to
+transactionRepo --> mysql : persists to
+
+' Reverse data flow from services to presentation
+accountSvc --> webUI : returns data to
+qnaSvc --> webUI : returns data to
+blogSvc --> webUI : returns data to
+blogCommentSvc --> webUI : returns data to
+modelSvc --> webUI : returns data to
+datasetSvc --> webUI : returns data to
+followSvc --> webUI : returns data to
+adminSvc --> webUI : returns data to
+recEngine --> webUI : provides recommendations to
+modelExecSvc --> webUI : returns results to
+purchaseSvc --> webUI : confirms transactions to
+datasetDownloadSvc --> webUI : delivers datasets to
+
+@enduml

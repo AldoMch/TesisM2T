@@ -1,0 +1,120 @@
+{
+  "candidate": {
+    "sample_id": "s000097_d7ed0eae",
+    "repository_name": "JessNah/BeeGreen",
+    "image_url": "https://github.com/JessNah/BeeGreen/blob/main/Doc/Images/Architecture.png",
+    "source_ref": "37d91484aea8012b09e72db9935fe692a8a0b348",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 36307,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "readme",
+      "schema_model",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 92,
+      "user_scenario": 72,
+      "api_io": 71,
+      "deployment": 69,
+      "constraints": 4,
+      "non_functional": 7
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "Server/src/controllers/user.controller.ts",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053693618209747246,
+      "text": "import { Count, CountSchema, Filter, FilterExcludingWhere, repository, Where, } from '@loopback/repository'; import { post, param, get, getModelSchemaRef, patch, put, del, requestBody, response, } from '@loopback/rest'; import {User} from '../models'; import {UserRepository} from '../repositories'; export class UserController { constructor( @repository(UserRepository) public userRepository : UserRepository, ) {} @post('/users') @response(200, { description: 'User model instance', content: {'application/json': {schema: getModelSchemaRef(User)}}, }) async create( @requestBody({ content: { 'application/json': { schema: getModelSchemaRef(User, { title: 'NewUser', exclude: ['id'], }), }, }, })..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "Server/src/controllers/user.controller.ts",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.050713035825501664,
+      "text": "}), }, }, }, }) async find( @param.filter(User) filter?: Filter , ): Promise { return this.userRepository.find(filter); } @patch('/users') @response(200, { description: 'User PATCH success count', content: {'application/json': {schema: CountSchema}}, }) async updateAll( @requestBody({ content: { 'application/json': { schema: getModelSchemaRef(User, {partial: true}), }, }, }) user: User, @param.where(User) where?: Where , ): Promise { return this.userRepository.updateAll(user, where); } @get('/users/{id}') @response(200, { description: 'User model instance', content: { 'application/json': { schema: getModelSchemaRef(User, {includeRelations: true}), }, }, }) async findById( @param.path.stri..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "Server/src/controllers/ping.controller.ts",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.054351613484347486,
+      "text": "import {inject} from '@loopback/core'; import { Request, RestBindings, get, response, ResponseObject, } from '@loopback/rest'; /** * OpenAPI response for ping() */ const PING_RESPONSE: ResponseObject = { description: 'Ping Response', content: { 'application/json': { schema: { type: 'object', title: 'PingResponse', properties: { greeting: {type: 'string'}, date: {type: 'string'}, url: {type: 'string'}, headers: { type: 'object', properties: { 'Content-Type': {type: 'string'}, }, additionalProperties: true, }, }, }, }, }, }; /** * A simple controller to bounce back http requests */ export class PingController { constructor(@inject(RestBindings.Http.REQUEST) private req: Request) {} // Map t..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "Server/src/controllers/README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.04796360853077271,
+      "text": "# Controllers This directory contains source files for the controllers exported by this app. To add a new empty controller, type in from the command-line of your application's root directory. For more information, please visit Controller generator."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "Server/src/models/inventory-item.model.ts",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053289487893907,
+      "text": "import {Entity, model, property} from '@loopback/repository'; @model() export class InventoryItem extends Entity { @property({ type: 'string', id: true, generated: true, }) id?: string; @property({ type: 'object', }) stats?: object; @property({ type: 'number', }) totalScore?: number; @property({ type: 'string', }) category?: string; @property({ type: 'string', }) details?: string; @property({ type: 'array', itemType: 'object', }) comments?: object[]; @property({ type: 'string', }) name?: string; @property({ type: 'array', itemType: 'string', }) associatedStores?: string[]; constructor(data?: Partial ) { super(data); } } export interface InventoryItemRelations { // describe navigational pr..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "Server/src/models/user.model.ts",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05210084033613445,
+      "text": "import {Entity, model, property} from '@loopback/repository'; @model() export class User extends Entity { @property({ type: 'string', id: true, generated: true, }) id?: string; @property({ type: 'string', }) ip?: string; @property({ type: 'date', }) creationDate?: string; @property({ type: 'array', itemType: 'string', }) purchaseIds?: string[]; @property({ type: 'string', }) username?: string; @property({ type: 'string', }) region?: string; constructor(data?: Partial ) { super(data); } } export interface UserRelations { // describe navigational properties here } export type UserWithRelations = User & UserRelations;"
+    }
+  ]
+}

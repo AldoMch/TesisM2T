@@ -1,0 +1,126 @@
+@startuml
+title ReTool - Layered Microservice Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' Client / Presentation Layer
+' =========================================================
+package "Client Layer (Windows 10 / Chrome 81+)" as CLIENT {
+  component "Vue.js Web UI\n(SPA)" as WEBUI
+  component "User Auth UI" as AUTHUI
+  component "Project Mgmt UI" as PROJUI
+  component "Requirements Mgmt UI\n(tree / editor)" as REQMGUI
+  component "Requirement Analysis UI" as ANLYUI
+}
+
+' =========================================================
+' Access / Gateway Layer
+' =========================================================
+package "Gateway Layer (Local Computer)" as GATEWAY {
+  component "API Gateway\n(routing / auth entry)" as GW
+}
+
+' =========================================================
+' Backend Microservice Layer
+' =========================================================
+package "Microservice Layer (Flask, Local Computer)" as SERVICES {
+  component "User Management Service" as USERSVC
+  component "Project Management Service" as PROJSVC
+  component "Requirements Management Service" as REQSVC
+}
+
+' =========================================================
+' Algorithm Layer (Remote Server - EC2 / Amazon Linux 2)
+' =========================================================
+package "Algorithm Layer (High-Performance Server)" as ALGLAYER {
+  component "Algorithm Service" as ALGSVC
+  component "Requirement Itemization" as ITEMIZ
+  component "Requirement Structuring\n(NLP / heuristics)" as STRUCT
+  component "Common Requirement ID\n(Word2vec)" as COMMON
+  component "Conflict Detection\n(NLP / heuristics)" as CONFLICT
+  component "Association Analysis\n(NLP / heuristics)" as ASSOC
+  component "PyTorch / NLP Runtime" as PYTORCH
+}
+
+' =========================================================
+' Data Layer
+' =========================================================
+package "Data Layer" as DATA {
+  database "MongoDB\n(CRUD store)" as MONGO
+  component "File Storage\n(Word documents)" as FILESTORE
+  component "Log Store\n(persistent logs)" as LOGSTORE
+  component "Backup / Disaster Recovery\n(3-copy offsite)" as BACKUP
+}
+
+' =========================================================
+' External Systems / Dependencies
+' =========================================================
+cloud "Network Access" as NET
+
+actor "Project Manager" as PM
+actor "Project Leader" as PL
+actor "Ordinary Member" as OM
+actor "System Administrator" as SA
+
+' --- Client to Gateway ---
+PM --> WEBUI
+PL --> WEBUI
+OM --> WEBUI
+SA --> WEBUI
+WEBUI --> NET
+NET --> GW : HTTPS / Web interface
+
+' --- Gateway to microservices ---
+GW --> USERSVC
+GW --> PROJSVC
+GW --> REQSVC
+
+' --- Service collaborations ---
+REQSVC --> ALGSVC : requirement analysis
+REQSVC --> FILESTORE : upload/read Word docs
+USERSVC --> MONGO
+PROJSVC --> MONGO
+REQSVC --> MONGO
+
+' --- Algorithm service internals ---
+ALGSVC --> ITEMIZ
+ALGSVC --> STRUCT
+ALGSVC --> COMMON
+ALGSVC --> CONFLICT
+ALGSVC --> ASSOC
+STRUCT --> PYTORCH
+COMMON --> PYTORCH
+CONFLICT --> PYTORCH
+ASSOC --> PYTORCH
+ALGSVC --> MONGO : save analysis results
+
+' --- Data layer dependencies ---
+FILESTORE --> BACKUP
+MONGO --> BACKUP
+USERSVC --> LOGSTORE
+PROJSVC --> LOGSTORE
+REQSVC --> LOGSTORE
+ALGSVC --> LOGSTORE
+
+note right of ALGLAYER
+  Runs on remote high-performance
+  server (EC2 t2.xlarge, Amazon Linux 2)
+  due to machine performance needs (AD-003).
+end note
+
+note bottom of SERVICES
+  Gateway and core management services
+  run on a local computer;
+  MongoDB performs CRUD operations.
+end note
+
+note bottom of DATA
+  Periodic backup with 3-copy
+  offsite disaster recovery (NFR-009);
+  persistent, traceable logs (NFR-019).
+end note
+
+@enduml

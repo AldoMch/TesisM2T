@@ -1,0 +1,167 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+title EMBC ESS - System Architecture
+
+actor "Role-based Front-end User" as User
+actor "Developer" as Dev
+actor "Database Operator/Administrator" as DBO
+
+cloud "SiteMinder" as SiteMinder
+cloud "External URL(s)" as ExternalUrls
+
+node "Web Browser" as Browser {
+  package "Client Layer (Angular)" as Client {
+    component "ClientApp\n(Angular SPA)" as ClientApp
+    component "Router + Guards\n- Role-based landing\n- Auth/Role enforcement\n- External Redirect Guard" as RouterGuards
+    component "HTTP Interceptor\n- 401 => Logout + SessionExpired\n- Watchdog timer reset" as HttpInterceptor
+    component "NgRx Store\n(Selected shared state,\nimmutable, actions/reducers)" as NgRxStore
+    component "Controlled-list Loader\n(on init -> NgRx)" as ControlledListLoader
+    component "Notification Queue\n(in-memory)" as NotificationQueue
+    component "Notifier UI" as NotifierUI
+    component "Cookie Service" as CookieService
+    component "Module Double-Load Detector" as ModuleDetector
+
+    package "Service Wrappers (HTTP)" as SvcWrappers {
+      component "EvacueeService [Read]" as EvacueeSvc
+      component "IncidentTaskService [Create/Read/Update]" as IncidentTaskSvc
+      component "OrganizationService [Create/Read/Update]" as OrgSvc
+      component "ReferralService [Create/Read/Update/Delete]" as ReferralSvc
+      component "RegistrationService [Create/Read/Update]\n+ PDF Collection capability" as RegSvc
+    }
+  }
+}
+
+node "App Server (.NET Core WebAPI)" as Server {
+  component "WebAPI Host" as WebAPI
+  component "Auth & Session Middleware\n(SiteMinder-aware)" as AuthMW
+  package "Controllers" {
+    component "EvacueeController" as EvacueeCtrl
+    component "IncidentTaskController" as IncidentTaskCtrl
+    component "OrganizationController" as OrgCtrl
+    component "ReferralController" as ReferralCtrl
+    component "RegistrationController\n(+ PDF Collector capability)" as RegCtrl
+  }
+  package "Domain Layer" {
+    component "Domain Services" as DomainServices
+    component "Domain Models" as DomainModels
+  }
+  package "Data Access" {
+    component "Entity Framework Core\nDbContext/Repositories" as EFCore
+  }
+  component "Development Back Door\n(dev env only,\nrole-paired tokens)" as DevBackdoor
+}
+
+database "MS SQL Database\n(Persistent Entities)" as MSSQL
+
+folder "Repository SQL Scripts" as RepoScripts {
+  component "Volunteer Deactivation Script\n(sets Volunteer.Active = 0)" as VolunteerScript
+}
+
+' External actors to client
+User --> ClientApp
+Dev --> ClientApp
+DBO --> RepoScripts
+
+' Client internal wiring
+ClientApp --> RouterGuards
+ClientApp --> HttpInterceptor
+ClientApp --> NgRxStore
+ClientApp --> ControlledListLoader
+ClientApp --> NotificationQueue
+ClientApp --> NotifierUI
+ClientApp --> CookieService
+ClientApp --> ModuleDetector
+ClientApp --> EvacueeSvc
+ClientApp --> IncidentTaskSvc
+ClientApp --> OrgSvc
+ClientApp --> ReferralSvc
+ClientApp --> RegSvc
+
+ControlledListLoader --> NgRxStore
+NotificationQueue -down-> NotifierUI : observe
+
+' Client to external redirect
+RouterGuards -right-> ExternalUrls : redirect via router
+
+' Client to API via HTTP
+EvacueeSvc -[hidden]-> HttpInterceptor
+IncidentTaskSvc -[hidden]-> HttpInterceptor
+OrgSvc -[hidden]-> HttpInterceptor
+ReferralSvc -[hidden]-> HttpInterceptor
+RegSvc -[hidden]-> HttpInterceptor
+
+HttpInterceptor -right-> WebAPI : HTTP/JSON
+
+' Server pipeline
+WebAPI --> AuthMW
+AuthMW --> EvacueeCtrl
+AuthMW --> IncidentTaskCtrl
+AuthMW --> OrgCtrl
+AuthMW --> ReferralCtrl
+AuthMW --> RegCtrl
+
+' Controllers to domain
+EvacueeCtrl --> DomainServices
+IncidentTaskCtrl --> DomainServices
+OrgCtrl --> DomainServices
+ReferralCtrl --> DomainServices
+RegCtrl --> DomainServices
+
+DomainServices --> DomainModels
+DomainServices --> EFCore
+EFCore --> MSSQL
+
+' SiteMinder integration
+SiteMinder -down-> AuthMW : SSO / headers / cookies
+
+' Development environment notes and flows
+Dev -left-> DevBackdoor : configure role-paired\nSM_TOKEN (dev only)
+DevBackdoor .. AuthMW : enable bypass in\ndesignated dev env
+note right of DevBackdoor
+  Security constraint:
+  - Backend-only bypass
+  - Enabled only in designated development environments
+end note
+
+' Local development proxy note
+note bottom of Browser
+  Local development uses proxy configuration and
+  role-paired tokens for volunteer, local authority,
+  and provincial admin.
+end note
+
+' Unauthorized handling and session expiry
+note top of HttpInterceptor
+  On 401 during logged-in state:
+  - Logout user
+  - Navigate to Session-Expired page
+end note
+
+' NgRx and controlled-list notes
+note right of NgRxStore
+  Selected client-side shared state follows:
+  - Single immutable state
+  - Actions + Reducers
+  Controlled-list data loaded at init.
+end note
+
+' Registration PDF capability note
+note right of RegCtrl
+  Registration PDF collection capability
+  (schema and workflow not specified here)
+end note
+
+' SQL scripts to database
+VolunteerScript --> MSSQL : T-SQL (transactional)
+note right of VolunteerScript
+  Requires target database backup.
+  Uses filter variable and transaction.
+end note
+
+' Constraints
+note bottom of Client
+  Constraint: Front-end requires backend API (not standalone).
+end note
+
+@enduml

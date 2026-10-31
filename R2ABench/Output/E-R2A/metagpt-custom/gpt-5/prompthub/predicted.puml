@@ -1,0 +1,151 @@
+@startuml
+
+node "Client Browsers" {
+  package "Presentation Layer (Front End)" {
+    component "Home & Artwork List UI" as UIHome
+    component "Auth & Account UI" as UIAuth
+    component "Profile & Relationship UI" as UIProfile
+    component "Artwork Detail UI" as UIDetail
+    component "Upload & Edit UI" as UIUpload
+    component "Favorites Management UI" as UIFavMgmt
+    component "Recommendation Preferences UI" as UIRecoPref
+    component "History UI" as UIHistory
+    component "Notification UI" as UINotify
+    component "Admin Console UI" as UIAdmin
+    component "Like UI" as UILike
+  }
+  component "Chrome 110.0.5481.178+" as Chrome
+  component "Safari 15.3+" as Safari
+  component "Firefox 119.0+" as Firefox
+}
+
+node "Server Host (Ubuntu 22.04)" as Ubuntu {
+  node "Docker Runtime (20.10.17)" as Docker {
+    package "Infrastructure & Security Layer" {
+      component "Secure HTTP & Firewall/CORS" as SecHTTP
+      component "Monitoring & Email Alerting" as Monitor
+      component "Disk Usage Monitor" as DiskMon
+      component "Dependency Vulnerability Scanner" as VulnScan
+      component "Encryption Key Management (KMS)" as KMS
+    }
+
+    package "Application Layer (Django/Python)" as AppLayer {
+      component "Security Middleware" as SecMW
+      component "Rate Limiter" as RateLim
+      component "Authentication Service" as AuthSvc
+      component "User Profile & Relationship Service" as ProfileSvc
+      component "Artwork Service" as ArtworkSvc
+      component "Review Workflow Service" as ReviewSvc
+      component "Search & Filter Service" as SearchSvc
+      component "Favorites Service" as FavSvc
+      component "Favorite Category Service" as FavCatSvc
+      component "Comment Service" as CommentSvc
+      component "Reply Service" as ReplySvc
+      component "Browsing History Service" as HistorySvc
+      component "Recommendation Orchestrator" as RecoOrch
+      component "Notification Service" as NotifySvc
+      component "Like Service" as LikeSvc
+      component "Logging & Audit Service" as LogSvc
+      component "Persistence Access (ORM)" as ORM
+      component "Application Services (Aggregate)" as AppAgg
+    }
+
+    package "Algorithm Support Layer (Python)" as AlgoLayer {
+      component "Popularity Ranking Module" as PopRank
+      component "Personalized Recommendation Engine" as PersReco
+      component "Signal Processor" as SignalProc
+      interface "Model Serving Interface" as ModelIF
+    }
+
+    package "Data Persistence Layer" {
+      database "SQLite Database" as SQLite
+      database "Log Storage" as LogStore
+      component "Data-At-Rest Encryption" as DataEnc
+      component "Backup & DR Job" as BackupJob
+    }
+  }
+}
+
+cloud "Email Service" as Email
+cloud "Offsite Backup Storage" as Offsite
+cloud "PyTorch" as PyTorch
+cloud "TensorFlow" as TensorFlow
+cloud "Firewall (Server)" as ExtFirewall
+
+' Client traffic through firewall to secure HTTP entrypoint
+UIHome --> ExtFirewall
+UIAuth --> ExtFirewall
+UIProfile --> ExtFirewall
+UIDetail --> ExtFirewall
+UIUpload --> ExtFirewall
+UIFavMgmt --> ExtFirewall
+UIRecoPref --> ExtFirewall
+UIHistory --> ExtFirewall
+UINotify --> ExtFirewall
+UIAdmin --> ExtFirewall
+UILike --> ExtFirewall
+ExtFirewall --> SecHTTP
+
+' Security chain into application
+SecHTTP --> SecMW
+SecMW --> RateLim
+RateLim --> AppAgg
+
+' Aggregate to domain services
+AppAgg --> AuthSvc
+AppAgg --> ProfileSvc
+AppAgg --> ArtworkSvc
+AppAgg --> ReviewSvc
+AppAgg --> SearchSvc
+AppAgg --> FavSvc
+AppAgg --> FavCatSvc
+AppAgg --> CommentSvc
+AppAgg --> ReplySvc
+AppAgg --> HistorySvc
+AppAgg --> RecoOrch
+AppAgg --> NotifySvc
+AppAgg --> LikeSvc
+
+' Service-to-service flows
+ArtworkSvc --> ReviewSvc
+
+' Persistence access
+AppAgg --> ORM
+RecoOrch --> ORM
+ORM --> DataEnc
+DataEnc --> SQLite
+DataEnc --> KMS
+
+' Recommendations and algorithm support
+RecoOrch --> ModelIF
+RecoOrch --> SignalProc
+ModelIF --> PopRank
+ModelIF --> PersReco
+SignalProc --> PersReco
+PersReco --> PyTorch
+PersReco --> TensorFlow
+
+' Notification event subscriptions (services emit events to NotifySvc)
+CommentSvc --> NotifySvc
+ReplySvc --> NotifySvc
+ReviewSvc --> NotifySvc
+
+' Logging and backups
+LogSvc --> LogStore
+BackupJob --> SQLite
+BackupJob --> Offsite
+
+' Runtime monitoring and alerts
+Docker --> Monitor
+Monitor --> Email
+
+' Auth emails for verification/reset
+AuthSvc --> Email
+
+' Security and ops tools
+VulnScan --> Docker
+VulnScan --> AppLayer
+VulnScan --> AlgoLayer
+DiskMon --> Ubuntu
+
+@enduml

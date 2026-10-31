@@ -1,0 +1,148 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+
+skinparam component {
+  BackgroundColor #EBF5FB
+  BorderColor #2E86C1
+  FontColor #1A1A1A
+}
+
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #D4AC0D
+  FontColor #1A1A1A
+}
+
+skinparam cloud {
+  BackgroundColor #FDEDEC
+  BorderColor #C0392B
+  FontColor #1A1A1A
+}
+
+skinparam rectangle {
+  BackgroundColor #F4F6F7
+  BorderColor #717D7E
+  FontColor #1A1A1A
+}
+
+skinparam arrow {
+  Color #2C3E50
+  FontColor #2C3E50
+  FontSize 10
+}
+
+title GKE Pub/Sub WebSocket Adapter - System Architecture
+
+cloud "Google Cloud Platform" {
+
+  node "Google Cloud Pub/Sub" {
+    component "Pub/Sub Topic\n(projects/<id>/topics/<name>)" as PubSubTopic
+    component "Pub/Sub Subscription\n(1 per running instance)" as PubSubSub
+  }
+
+  node "Google Kubernetes Engine (GKE) Cluster" {
+
+    rectangle "Kubernetes Configuration Layer" {
+      component "ConfigMap\n[topic: <topic-identifier>]" as ConfigMap
+      component "HPA\n[min:1, max:2, CPU:80%]" as HPA
+    }
+
+    rectangle "Kubernetes Service Layer" {
+      component "LoadBalancer Service\n[TCP :80 -> :8080]" as LBService
+    }
+
+    rectangle "Kubernetes Deployment\n(Adapter Pods)" {
+
+      node "Adapter Pod Instance 1" {
+        rectangle "Container Runtime" {
+          component "exec.sh\n[entrypoint]" as ExecSh1
+          component "pulltop\n(Node.js)\n[pulls topic data]" as Pulltop1
+          component "websocketd\n[port 8080]" as Websocketd1
+          database "Message Cache\n[last 10 messages]" as Cache1
+        }
+        component "SYMBOL env var\n[injected from ConfigMap]" as EnvVar1
+      }
+
+      node "Adapter Pod Instance N" {
+        rectangle "Container Runtime " {
+          component "exec.sh\n[entrypoint]" as ExecShN
+          component "pulltop\n(Node.js)\n[pulls topic data]" as PulltopN
+          component "websocketd\n[port 8080]" as WebsocketdN
+          database "Message Cache\n[last 10 messages]" as CacheN
+        }
+        component "SYMBOL env var\n[injected from ConfigMap]" as EnvVarN
+      }
+    }
+  }
+}
+
+rectangle "Web Clients" {
+  component "Browser / Web Client 1" as Client1
+  component "Browser / Web Client M" as ClientM
+}
+
+' Configuration flow
+ConfigMap --> EnvVar1 : injects topic\nas SYMBOL
+ConfigMap --> EnvVarN : injects topic\nas SYMBOL
+
+' HPA targets Deployment
+HPA ..> Websocketd1 : scales Deployment\n(CPU utilization target)
+HPA ..> WebsocketdN : scales Deployment\n(CPU utilization target)
+
+' Internal pod runtime chain - Pod 1
+EnvVar1 --> ExecSh1 : SYMBOL param
+ExecSh1 --> Pulltop1 : starts with\ntopic param
+Pulltop1 --> Cache1 : stores last\n10 messages
+Pulltop1 --> Websocketd1 : stdout stream
+Cache1 --> Websocketd1 : cached messages\non client connect
+
+' Internal pod runtime chain - Pod N
+EnvVarN --> ExecShN : SYMBOL param
+ExecShN --> PulltopN : starts with\ntopic param
+PulltopN --> CacheN : stores last\n10 messages
+PulltopN --> WebsocketdN : stdout stream
+CacheN --> WebsocketdN : cached messages\non client connect
+
+' Pub/Sub subscription per instance
+PubSubTopic --> PubSubSub : publish
+PubSubSub --> Pulltop1 : pull messages\n(1 subscription per instance)
+PubSubSub --> PulltopN : pull messages\n(1 subscription per instance)
+
+' Service routing
+LBService --> Websocketd1 : forward :80 -> :8080\n(load balanced)
+LBService --> WebsocketdN : forward :80 -> :8080\n(load balanced)
+
+' Client connections
+Client1 --> LBService : WebSocket\nconnection (TCP :80)
+ClientM --> LBService : WebSocket\nconnection (TCP :80)
+
+note right of PubSubSub
+  Subscription consumption scales
+  with N (instances), not M (clients).
+  FR-007 / NFR-002
+end note
+
+note bottom of LBService
+  External WebSocket endpoint.
+  Clients need no Pub/Sub API/SDK.
+  FR-001 / NFR-005
+end note
+
+note right of Cache1
+  Up to last 10 messages
+  per instance.
+  FR-008 / DR-005
+end note
+
+@enduml

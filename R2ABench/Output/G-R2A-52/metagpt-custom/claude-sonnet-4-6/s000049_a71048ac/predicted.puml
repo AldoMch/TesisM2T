@@ -1,0 +1,135 @@
+@startuml
+
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam componentBackgroundColor #DBEAFE
+skinparam nodeBackgroundColor #FEF3C7
+skinparam databaseBackgroundColor #D1FAE5
+skinparam defaultFontSize 12
+skinparam arrowColor #374151
+skinparam componentBorderColor #3B82F6
+skinparam packageBorderColor #6366F1
+
+' ─────────────────────────────────────────
+' External Systems
+' ─────────────────────────────────────────
+
+' S-001 fix: use package instead of cloud for nested typed elements
+package "Apache Lucene 5.2.0\n(External Ecosystem)" as ApacheLucene {
+  database "Lucene Index Store" as LuceneIndex
+  component "Lucene Analyzers" as LuceneAnalyzers
+  component "Lucene Query Engine" as LuceneQueryEngine
+}
+
+' H-003 fix: replace named Spark/Mahout components with a generic ML boundary
+package "LIBSVM-Compatible ML Tool Ecosystem\n(External Consumers)" as MLEcosystem {
+  component "LIBSVM-Compatible\nML Tools" as LibsvmTools
+}
+
+' M-004 fix: LIBSVM output as a concrete file artifact
+database "LIBSVM Output File\n<<file artifact>>" as LibsvmFile
+
+' ─────────────────────────────────────────
+' NLP4L System Boundary
+' S-002 mitigation: flatten nesting – packages inside node only one level deep
+' ─────────────────────────────────────────
+node "NLP4L System\n(Scala / Apache Lucene Ecosystem)" as NLP4LSystem {
+
+  ' ── Interactive Interface Layer ──
+  package "Interactive Interface Layer" as InteractiveLayer {
+    component "ScalaInteractiveShell\n<<interaction context>>" as ScalaShell
+  }
+
+  ' ── Schema Configuration Layer ──
+  package "Schema Configuration Layer" as SchemaLayer {
+    ' M-002 fix: annotate dual load sources on SchemaLoader
+    component "SchemaLoader\n<<classpath resource | file path>>" as SchemaLoader
+    component "SchemaParser" as SchemaParser
+    ' M-001 fix: add SchemaValidator with error reporting
+    component "SchemaValidator\n<<error reporting>>" as SchemaValidator
+    ' M-003 fix: SchemaModel now explicitly includes custom analyzer definitions
+    component "SchemaModel\n(In-Memory Representation)\n+ Custom Analyzer Definitions" as SchemaModel
+  }
+
+  ' ── Lucene Integration Layer ──
+  package "Lucene Integration Layer" as LuceneLayer {
+    component "LuceneIndexReader" as IndexReader
+    component "AnalyzerTermAccessor" as TermAccessor
+    component "IndexSearcher" as IndexSearcher
+  }
+
+  ' ── NLP Processing Layer ──
+  package "NLP Processing Layer" as NLPLayer {
+    component "DocumentVectorBuilder" as DocVectorBuilder
+    ' D-003 fix: SearchResultCollector consumes IndexSearcher output (FR-002b)
+    component "SearchResultCollector" as SearchResultCollector
+  }
+
+  ' ── Export Layer ──
+  package "Export Layer" as ExportLayer {
+    component "LIBSVMWriter" as LibsvmWriter
+  }
+
+  ' ── Presentation Layer (Experimental) ──
+  package "Presentation Layer\n[experimental]" as PresentationLayer {
+    component "ChartDisplay\n<<experimental>>" as ChartDisplay
+    ' H-002 / D-001 fix: word count data is user-supplied input, not internally produced
+    component "WordCountDataInput\n<<user-supplied input>>" as WordCountInput
+  }
+
+}
+
+' ─────────────────────────────────────────
+' Internal Dependency Arrows
+' ─────────────────────────────────────────
+
+' H-001 fix: ScalaShell is an interaction context, not an orchestrator;
+' remove direct ScalaShell --> SchemaLoader and ScalaShell --> IndexReader arrows.
+' ScalaShell is shown as the entry-point context only.
+ScalaShell ..> SchemaLayer       : <<interaction context>>
+ScalaShell ..> LuceneLayer       : <<interaction context>>
+ScalaShell ..> NLPLayer          : <<interaction context>>
+ScalaShell ..> ExportLayer       : <<interaction context>>
+
+' Schema Configuration flow
+SchemaLoader  --> SchemaParser   : delegates parsing
+SchemaParser  --> SchemaValidator : submits parsed schema
+SchemaValidator --> SchemaModel  : produces (on valid schema)
+SchemaValidator --> SchemaLoader : reports error (on invalid schema)
+
+' M-003: SchemaParser recognises custom analyzer definitions → SchemaModel
+SchemaParser  --> SchemaModel    : populates custom analyzer defs
+
+' Lucene Integration -> External Lucene
+IndexReader   --> LuceneIndex        : reads documents
+' D-004 fix: TermAccessor reads from LuceneIndex as well as LuceneAnalyzers
+TermAccessor  --> LuceneIndex        : reads normalized term data
+TermAccessor  --> LuceneAnalyzers    : retrieves normalized terms
+IndexSearcher --> LuceneQueryEngine  : executes queries
+
+' NLP Processing dependencies
+DocVectorBuilder --> IndexReader    : reads document data
+DocVectorBuilder --> TermAccessor   : uses normalized terms
+' D-002 fix: full schema dependency chain — SchemaLoader feeds DocVectorBuilder via SchemaModel
+SchemaLoader     --> DocVectorBuilder : provides schema context
+DocVectorBuilder --> SchemaModel    : governed by schema
+
+' D-003 fix: IndexSearcher output consumed by SearchResultCollector
+IndexSearcher        --> SearchResultCollector : supplies search results
+SearchResultCollector --> DocVectorBuilder     : provides result document set
+
+' Export Layer
+LibsvmWriter --> DocVectorBuilder : consumes document vectors
+
+' Presentation Layer
+' H-002 / D-001 fix: ChartDisplay consumes user-supplied word count data, not an internal aggregator
+WordCountInput --> ChartDisplay : provides word count data
+
+' ─────────────────────────────────────────
+' External Output Arrows
+' M-004 fix: LibsvmWriter writes to a file artifact; ML tools read from that file
+' ─────────────────────────────────────────
+LibsvmWriter --> LibsvmFile  : writes LIBSVM-format file
+LibsvmFile   --> LibsvmTools : consumed by
+
+@enduml

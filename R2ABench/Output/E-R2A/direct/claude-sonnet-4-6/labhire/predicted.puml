@@ -1,0 +1,192 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #EEF2FF
+  BorderColor #5B7FDE
+  FontColor #1A1A2E
+  ArrowColor #5B7FDE
+}
+skinparam rectangle {
+  BackgroundColor #EEF2FF
+  BorderColor #5B7FDE
+  FontColor #1A1A2E
+}
+skinparam database {
+  BackgroundColor #FFF8E7
+  BorderColor #E6A817
+  FontColor #1A1A2E
+}
+skinparam cloud {
+  BackgroundColor #E8F8F5
+  BorderColor #27AE60
+  FontColor #1A1A2E
+}
+skinparam actor {
+  BackgroundColor #F9EBEA
+  BorderColor #C0392B
+  FontColor #1A1A2E
+}
+skinparam node {
+  BackgroundColor #F4ECF7
+  BorderColor #8E44AD
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #555555
+  FontColor #333333
+  FontSize 10
+}
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title LabHire System Architecture Diagram
+
+actor "Student User" as Student
+actor "Enterprise-Certified\nStudent User" as EntStudent
+actor "Mentor User" as Mentor
+actor "Administrator" as Admin
+
+node "Client Tier" {
+  rectangle "Web Browser\n(Chrome / Firefox / Edge)" as WebBrowser
+  rectangle "Mobile Client\n(Android 7.0+ / iOS 8.0+\n/ WeChat Mini-Program 6.5.6+)" as MobileClient
+}
+
+node "Application Server Tier" {
+
+  rectangle "API Gateway /\nAuth & Session Layer" as APIGateway {
+    rectangle "Registration & Login\n(Email Verification Code)" as AuthModule
+    rectangle "Permission &\nAccess Control" as PermModule
+    rectangle "Rate Limiting &\nGraphical CAPTCHA" as RateLimit
+  }
+
+  rectangle "Core Business Services" as CoreServices {
+
+    rectangle "Project Service" as ProjectService {
+      rectangle "Project Publication\n& Management" as ProjMgmt
+      rectangle "Project Application\n& Screening" as ProjApply
+      rectangle "Project Favorites" as ProjFav
+      rectangle "Mutual Evaluation" as MutualEval
+    }
+
+    rectangle "Recommendation Service" as RecService {
+      rectangle "Collaborative Filtering\nEngine" as CollabFilter
+      rectangle "Tag Matching\nEngine" as TagMatch
+      rectangle "Cold-Start\nRule Engine" as ColdStart
+    }
+
+    rectangle "Search Service" as SearchService {
+      rectangle "Project Search" as ProjSearch
+      rectangle "Mentor Search\n& Favorites" as MentorSearch
+    }
+
+    rectangle "User Profile Service" as UserProfileService {
+      rectangle "Student Personal\nInfo & Resume Upload" as StudentProfile
+      rectangle "Mentor Personal\nInfo" as MentorProfile
+      rectangle "Two-Way Selection\nMaterial View" as TwoWayView
+    }
+
+    rectangle "Certification Service" as CertService {
+      rectangle "University Identity\nReview (Round 1)\n[72h SLA]" as UniReview
+      rectangle "Enterprise Qualification\nReview (Round 2)" as EntReview
+    }
+
+    rectangle "Community Service" as CommunityService {
+      rectangle "Post Publication\n& Management\n(≤400 words, HTML/Markdown)" as PostMgmt
+      rectangle "Comment Management" as CommentMgmt
+      rectangle "Post & Comment\nFavorites" as PostFav
+      rectangle "Popularity Sorting\n(likes, views, comments,\ntime-decay)" as PopSort
+    }
+
+    rectangle "Administration Service" as AdminService {
+      rectangle "Identity & Enterprise\nCertification Review" as AdminCertReview
+      rectangle "Post & Comment\nContent Review" as AdminContentReview
+      rectangle "User & Entity\nManagement" as AdminEntityMgmt
+    }
+  }
+
+  rectangle "Cross-Cutting Services" as CrossCutting {
+    rectangle "Notification &\nMessaging Service" as NotifService
+    rectangle "Encrypted Chat\nService" as ChatService
+    rectangle "Risk-Control &\nAudit Log Service" as RiskAudit
+    rectangle "Review / Content\nGovernance Module\n(Sensitive Words, Ads,\nMalicious Detection)" as ContentGov
+  }
+}
+
+node "Data Tier" {
+  database "Primary Database\n(User Accounts, Projects,\nApplications, Evaluations,\nCertifications, Posts,\nComments, Favorites,\nReview Records,\nRelationship Model)" as PrimaryDB
+  database "File Storage\n(Resume Files: PDF ≤10MB)" as FileStorage
+  database "Popularity &\nBehavior Log Store\n(Likes, Views, Comments,\nTime-Decay Indicators,\nCTR Logs)" as BehaviorStore
+  database "Risk-Control\nLog Store" as RiskLogStore
+  database "Chat Message\nStore (Encrypted)" as ChatStore
+}
+
+cloud "External Services" as ExtServices {
+  rectangle "Campus Email /\nEnterprise Email\nVerification Code Service" as EmailVerify
+  rectangle "Email Push\nNotification Service" as EmailPush
+  rectangle "In-Site Message\nBroker" as InSiteMsg
+}
+
+' Client to Gateway
+WebBrowser --> APIGateway : HTTPS requests
+MobileClient --> APIGateway : HTTPS requests
+
+' Actors to Client
+Student --> WebBrowser
+Student --> MobileClient
+EntStudent --> WebBrowser
+EntStudent --> MobileClient
+Mentor --> WebBrowser
+Mentor --> MobileClient
+Admin --> WebBrowser
+
+' Gateway to Core Services
+APIGateway --> ProjectService
+APIGateway --> RecService
+APIGateway --> SearchService
+APIGateway --> UserProfileService
+APIGateway --> CertService
+APIGateway --> CommunityService
+APIGateway --> AdminService
+
+' Core Services to Cross-Cutting
+ProjectService --> NotifService : triggers notifications
+ProjectService --> ChatService : mentor-applicant chat
+CertService --> NotifService : review feedback
+CommunityService --> ContentGov : post/comment screening
+AdminService --> ContentGov : manual review
+AdminService --> RiskAudit : audit actions
+
+' Recommendation feeds from behavior & profile
+RecService --> BehaviorStore : read behavior & tags
+RecService --> PrimaryDB : read project & user tags
+
+' Cross-Cutting to Data
+NotifService --> InSiteMsg : in-site messages
+NotifService --> EmailPush : email push
+ChatService --> ChatStore : store encrypted chat
+RiskAudit --> RiskLogStore : write audit logs
+
+' Core Services to Primary DB
+ProjectService --> PrimaryDB
+SearchService --> PrimaryDB
+UserProfileService --> PrimaryDB
+CertService --> PrimaryDB
+CommunityService --> PrimaryDB
+AdminService --> PrimaryDB
+UserProfileService --> FileStorage : resume upload/download
+
+' Core Services to Behavior Store
+CommunityService --> BehaviorStore : like/view/comment events
+
+' External Interfaces
+AuthModule --> EmailVerify : send verification codes
+CertService --> EmailVerify : enterprise email verification
+NotifService --> EmailPush : push email notifications
+NotifService --> InSiteMsg : push in-site messages
+
+' Admin DB assignment note
+PrimaryDB ..> AuthModule : Admin accounts\nassigned by DB
+
+@enduml

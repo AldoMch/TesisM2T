@@ -1,0 +1,118 @@
+@startuml
+title AwesomeMusic System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+package "Client" {
+  [Browser]
+}
+
+package "Gateway & Delivery" {
+  [Nginx] <<gateway>>
+  [Web Frontend (HTML/CSS/JS/Bootstrap)] <<frontend>>
+}
+
+package "Backend API (Golang/Gin)" {
+  [Account Service] <<backend>>
+  [Score Service] <<backend>>
+  [Recommendation Service] <<backend>>
+  [Model Management] <<backend>>
+  [Task API] <<backend>>
+}
+
+package "Scheduler" {
+  [Cron Scheduler] <<scheduler>>
+}
+
+package "Algorithm Service" {
+  [Generation Module] <<algorithm>>
+  [Training Module] <<algorithm>>
+  [Classification Module] <<algorithm>>
+  [Recommendation Engine] <<algorithm>>
+}
+
+package "Messaging" {
+  [RabbitMQ] <<queue>>
+}
+
+package "Data & State" {
+  [Data Storage] <<db>>
+  [Hadoop HDFS] <<storage>>
+  [etcd] <<coordination>>
+}
+
+' Client to gateway and frontend
+[Browser] -down-> [Nginx] : HTTPS
+[Nginx] --> [Web Frontend (HTML/CSS/JS/Bootstrap)] : Static assets
+
+' Gateway to backend services
+[Nginx] --> [Account Service] : HTTPS/REST
+[Nginx] --> [Score Service] : HTTPS/REST
+[Nginx] --> [Recommendation Service] : HTTPS/REST
+[Nginx] --> [Model Management] : HTTPS/REST
+[Nginx] --> [Task API] : HTTPS/REST
+
+' Frontend to backend APIs
+[Web Frontend (HTML/CSS/JS/Bootstrap)] --> [Account Service]
+[Web Frontend (HTML/CSS/JS/Bootstrap)] --> [Score Service]
+[Web Frontend (HTML/CSS/JS/Bootstrap)] --> [Recommendation Service]
+[Web Frontend (HTML/CSS/JS/Bootstrap)] --> [Model Management]
+[Web Frontend (HTML/CSS/JS/Bootstrap)] --> [Task API]
+
+' Backend data access
+[Account Service] --> [Data Storage]
+[Score Service] --> [Data Storage]
+[Recommendation Service] --> [Data Storage]
+[Model Management] --> [Data Storage]
+
+' Score/media files in distributed storage
+[Score Service] --> [Hadoop HDFS] : Scores, midi, abc
+
+' Coordination/configuration
+[Task API] ..> [etcd] : Service discovery / config
+[Generation Module] ..> [etcd]
+[Training Module] ..> [etcd]
+[Classification Module] ..> [etcd]
+[Recommendation Engine] ..> [etcd]
+
+' Scheduling and messaging
+[Cron Scheduler] --> [RabbitMQ] : Daily tasks (train/classify/recommend)
+[Task API] --> [RabbitMQ] : Enqueue generation tasks
+[Training Module] <-- [RabbitMQ] : Training tasks
+[Classification Module] <-- [RabbitMQ] : Classification tasks
+[Recommendation Engine] <-- [RabbitMQ] : Recommendation tasks
+[Generation Module] <-- [RabbitMQ] : Generation tasks
+
+' Algorithm service interactions with data
+[Training Module] --> [Hadoop HDFS] : Read playlists (midi/abc)
+[Training Module] --> [Data Storage] : Update user model params
+[Generation Module] --> [Hadoop HDFS] : Read seed / Write midi
+[Generation Module] --> [Data Storage] : Read model params
+[Classification Module] --> [Hadoop HDFS] : Read scores/abc
+[Classification Module] --> [Data Storage] : Save labels
+[Recommendation Engine] --> [Data Storage] : Read favorites/follows; Save recommendations
+
+' Status polling by backend
+[Task API] ..> [RabbitMQ] : Poll task status
+
+note right of [Cron Scheduler]
+Triggers 02:00 batch tasks:
+- Training (FR-016)
+- Classification (FR-014)
+- Recommendation (FR-015)
+end note
+
+legend right
+<<gateway>>       Gateway/Reverse Proxy (Nginx)
+<<frontend>>      Web UI (HTML/CSS/JS/Bootstrap)
+<<backend>>       Backend services (Golang/Gin)
+<<scheduler>>     Scheduling component
+<<algorithm>>     Algorithmic modules
+<<queue>>         Message Queue (MQ)
+<<storage>>       Distributed storage (Hadoop HDFS)
+<<db>>            Application data store (unspecified)
+<<coordination>>  Coordination / Key-Value (etcd)
+end legend
+
+@enduml

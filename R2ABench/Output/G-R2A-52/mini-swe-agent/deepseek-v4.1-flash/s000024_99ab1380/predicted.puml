@@ -1,0 +1,108 @@
+@startuml
+title OCI Jenkins Terraform Deployment - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =========================================================
+' Layer 1: Operator / Configuration Input Layer
+' =========================================================
+package "Operator & Configuration Input Layer" as L1 {
+  [Cloud Operator / DevOps Engineer] as OPERATOR
+  [Infrastructure Administrator] as ADMIN
+
+  component "Config File Interface\n(UI-001)\nJSON input / terraform.tfvars" as CONFIG
+  component "CLI Deployment Interface\n(UI-002)\nTerraform CLI" as CLI
+}
+
+' =========================================================
+' Layer 2: Terraform Orchestration Layer
+' =========================================================
+package "Terraform Orchestration Layer" as L2 {
+  component "Terraform Workflow Engine\ninit / plan / apply\n(FR-013, NFR-004)" as TFENGINE
+
+  component "Input Variable Model\nOCI access, SSH, Jenkins cluster,\nmaster, slave, bastion\n(FR-001..FR-006)" as VARMODEL
+
+  component "Root Deployment Module\n(existing-infrastructure)" as ROOTMOD
+
+  component "Jenkins Master Module\n(FR-005, FR-007)" as MASTERMOD
+  component "Jenkins Slave/Agent Module\n(FR-006, FR-007)" as SLAVEMOD
+  component "Bastion Access Module\n(bastion_host, bastion_user,\nbastion_private_key)\n(FR-011, CON-006)" as BASTIONMOD
+}
+
+' =========================================================
+' Layer 3: OCI Provider / External Target Layer
+' =========================================================
+package "OCI Provider & Cloud Platform" as L3 {
+  component "OCI Terraform Provider\n(API credentials: tenancy_ocid,\ncompartment_ocid, user_ocid,\nregion, fingerprint,\nprivate_key_path)\n(FR-001, NFR-001)" as OCIPROVIDER
+
+  package "OCI Tenancy / Compartment" as TENANCY {
+    component "Compute Instances\n(VNIC-based)\n(CI-004)" as COMPUTE
+    component "Existing Network Objects\nVCN, subnets, route tables,\nDHCP options, security lists\n(FR-009, CON-002)" as NETOBJ
+    component "Availability Domains\n(master_ad, slave_ads)" as AD
+  }
+}
+
+' =========================================================
+' Layer 4: Deployed Jenkins Runtime Layer
+' =========================================================
+package "Deployed Jenkins Runtime" as L4 {
+  component "Jenkins Master Instance\npublic subnet\n(FR-007)" as MASTER
+  component "Jenkins Slave / Agent Instances\nprivate subnet, NAT outbound\n(FR-007, FR-010)" as SLAVE
+  component "Bastion Host\nprivate access\n(FR-011)" as BASTION
+  component "Load Balancer\npublic entry for Jenkins\n(FR-012)" as LB
+  database "Jenkins Service Ports\nHTTP (http_port)\nJNLP (jnlp_port)\n(CI-002)" as PORTS
+}
+
+' =========================================================
+' Layer 5: Delivery & Verification Layer
+' =========================================================
+package "Delivery & Verification" as L5 {
+  component "SSH Key-Based Access\n(ssh_authorized_keys /\nssh_private_key)\n(FR-002, FR-003, NFR-002)" as SSHKEYS
+  component "Cloud-Init / Base64 User Data\n(master_user_data,\nslave_user_data)\n(DI-003, CON-005)" as CLOUDINIT
+  component "Deployment Verification\ntopology & plan review\n(Section 8)" as VERIFY
+}
+
+' ================= Relationships =================
+OPERATOR --> CONFIG
+OPERATOR --> CLI
+ADMIN --> NETOBJ
+
+CONFIG --> VARMODEL
+CLI --> TFENGINE
+TFENGINE --> ROOTMOD
+VARMODEL --> ROOTMOD
+
+ROOTMOD --> MASTERMOD
+ROOTMOD --> SLAVEMOD
+ROOTMOD --> BASTIONMOD
+
+MASTERMOD --> OCIPROVIDER
+SLAVEMOD --> OCIPROVIDER
+BASTIONMOD --> OCIPROVIDER
+
+OCIPROVIDER --> COMPUTE
+OCIPROVIDER --> NETOBJ
+COMPUTE --> AD
+
+COMPUTE --> MASTER
+COMPUTE --> SLAVE
+BASTIONMOD ..> BASTION
+BASTION --> SLAVE
+LB --> MASTER
+LB --> SLAVE
+MASTER --> PORTS
+SLAVE --> PORTS
+
+SSHKEYS --> MASTER
+SSHKEYS --> SLAVE
+CLOUDINIT --> MASTER
+CLOUDINIT --> SLAVE
+MASTER --> VERIFY
+SLAVE --> VERIFY
+VERIFY --> TFENGINE
+
+NETOBJ --> MASTER
+NETOBJ --> SLAVE
+
+@enduml

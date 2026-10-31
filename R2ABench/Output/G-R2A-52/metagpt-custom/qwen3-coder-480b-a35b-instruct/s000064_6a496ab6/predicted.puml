@@ -1,0 +1,88 @@
+@startuml
+' Deployment & Component Diagram - Layered Architecture
+
+' === Infrastructure Layer ===
+node "GCP Infrastructure" {
+    node "Load Balancer" {
+        component "Global Load Balancer"
+    }
+
+    node "Virtual Machine Operations" {
+        component "GCE VM - Operations"
+        component "TLS Certificate Manager"
+    }
+
+    node "GKE Cluster" {
+        package "API Layer" {
+            component "Authentication API"
+            component "User Management API"
+            component "Book Management API"
+            component "EC Site API"
+            component "Support API"
+        }
+    }
+
+    package "Data Layer" {
+        database "MySQL Data Stores" {
+            [User DB]
+            [Book DB]
+            [EC Site DB]
+        }
+        database "NoSQL Storage" {
+            [Message Store]
+        }
+        database "Object Storage" {
+            [Thumbnail Store]
+        }
+    }
+}
+
+' === Client Access Layer ===
+node "Client Access Layer" {
+    component "Gateway/BFF"
+    component "Native Mobile Application"
+    component "Administrative Web Application"
+}
+
+' === External Integration Layer ===
+cloud "External Systems" {
+    component "Firebase Authentication"
+    component "Book Search API"
+    component "Stripe"
+    component "Push Notification Provider"
+    component "Email Notification Provider"
+}
+
+' === Dependencies and Connections ===
+
+' Load Balancer -> Gateway/BFF
+[Global Load Balancer] --> [Gateway/BFF]
+
+' Client Applications -> Gateway/BFF
+[Native Mobile Application] --> [Gateway/BFF]
+[Administrative Web Application] --> [Gateway/BFF]
+
+' Gateway/BFF -> APIs
+[Gateway/BFF] --> [Authentication API]
+[Gateway/BFF] --> [User Management API]
+[Gateway/BFF] --> [Book Management API]
+[Gateway/BFF] --> [EC Site API]
+[Gateway/BFF] --> [Support API]
+
+' API Layer -> External Integrations
+[Authentication API] --> [Firebase Authentication]
+[Book Management API] --> [Book Search API]
+[EC Site API] --> [Stripe]
+
+' API Layer -> Data Layer
+[User Management API] --> [User DB]
+[Book Management API] --> [Book DB]
+[Book Management API] --> [Thumbnail Store]
+[EC Site API] --> [EC Site DB]
+[Support API] --> [Message Store]
+
+' Operations Layer -> GKE Cluster
+[GCE VM - Operations] ..> [GKE Cluster] : manages
+[TLS Certificate Manager] ..> [GKE Cluster] : provisions
+
+@enduml

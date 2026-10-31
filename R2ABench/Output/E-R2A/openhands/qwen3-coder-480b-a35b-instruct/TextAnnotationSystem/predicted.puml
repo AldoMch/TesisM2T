@@ -1,0 +1,144 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+' Title and theme
+title Intelligent Text Annotation System (ITAS) - Architecture Diagram
+skinparam componentStyle rectangle
+
+' User actors
+actor "System Annotation\nAdministrator" as admin
+actor "Data Annotator" as annotator
+actor "Researcher" as researcher
+
+' Frontend components
+package "Frontend (Vue.js)" {
+  [Web Browser] as frontend
+  [Login/Register UI] as loginUI
+  [Profile Management UI] as profileUI
+  [Annotation Project UI] as annotationUI
+  [Mining UI] as miningUI
+  [Task Execution UI] as taskUI
+}
+
+' Gateway/Proxy
+[NGINX Reverse Proxy] as nginx
+
+' Backend components
+package "Backend (Spring Cloud)" {
+  [API Gateway] as gateway
+  [Authentication Service] as authService
+  [User Management Service] as userService
+  [Project Management Service] as projectService
+  [Document Management Service] as documentService
+  [Task Management Service] as taskService
+  [Annotation Service] as annotationService
+  [Mining Service] as miningService
+  [Model Integration Service] as modelService
+  [File Conversion Service] as conversionService
+}
+
+' Data storage
+database "MySQL Database" as mysql {
+  [User Data] as userData
+  [Project Data] as projectData
+  [Document Metadata] as documentMeta
+  [Task Data] as taskData
+  [Annotation Results] as annotationResults
+}
+
+package "Object Storage (Minio)" {
+  [PDF Documents] as pdfStorage
+  [HTML Documents] as htmlStorage
+  [TXT Documents] as txtStorage
+}
+
+' Cache
+[Redis Cache] as redis
+
+' Message Queue
+[RabbitMQ] as rabbitmq
+
+' AI/ML Models
+package "AI/ML Services" {
+  [BERT Model] as bert
+  [GPT/Third-party API] as gpt
+}
+
+' Cloud Platform
+cloud "Tencent Cloud" as cloud
+
+' External Systems
+folder "External Systems" {
+  [Third-party APIs] as thirdParty
+}
+
+' Relationships
+admin --> loginUI : uses
+annotator --> loginUI : uses
+researcher --> loginUI : uses
+
+admin --> profileUI : manages
+annotator --> profileUI : views
+researcher --> profileUI : manages
+
+admin --> annotationUI : manages projects
+annotator --> annotationUI : performs tasks
+researcher --> miningUI : performs mining
+
+admin --> taskUI : assigns tasks
+annotator --> taskUI : completes tasks
+researcher --> taskUI : views results
+
+frontend --> nginx : HTTP requests
+nginx --> gateway : forwards requests
+
+gateway --> authService : authentication
+gateway --> userService : user operations
+gateway --> projectService : project operations
+gateway --> documentService : document operations
+gateway --> taskService : task operations
+gateway --> annotationService : annotation operations
+gateway --> miningService : mining operations
+gateway --> modelService : model operations
+gateway --> conversionService : file conversion
+
+authService --> userData : manages
+userService --> userData : manages
+projectService --> projectData : manages
+documentService --> documentMeta : manages
+taskService --> taskData : manages
+annotationService --> annotationResults : manages
+
+conversionService --> rabbitmq : queues conversion tasks
+rabbitmq --> conversionService : processes tasks
+
+documentService --> pdfStorage : stores/retrieves
+documentService --> htmlStorage : stores/retrieves
+documentService --> txtStorage : stores/retrieves
+
+gateway --> redis : caching
+
+modelService --> bert : paragraph localization
+modelService --> gpt : entity recognition
+modelService --> thirdParty : API calls
+
+userService <--> authService : authentication data
+projectService <--> userService : user-project relations
+documentService <--> projectService : document-project relations
+taskService <--> documentService : task-document relations
+taskService <--> userService : task-user relations
+annotationService <--> taskService : annotations-tasks relations
+
+' Deployment
+cloud --> nginx : hosts
+cloud --> gateway : hosts
+cloud --> mysql : hosts
+cloud --> pdfStorage : hosts
+cloud --> htmlStorage : hosts
+cloud --> txtStorage : hosts
+cloud --> redis : hosts
+cloud --> rabbitmq : hosts
+cloud --> bert : hosts
+cloud --> gpt : accesses
+
+@enduml

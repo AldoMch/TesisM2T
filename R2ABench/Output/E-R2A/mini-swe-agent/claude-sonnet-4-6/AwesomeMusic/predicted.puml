@@ -1,0 +1,85 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+title AwesomeMusic - Layered Architecture
+
+package "Client Layer" #E8F4FD {
+  [Web Browser] as Browser
+}
+
+package "Gateway Layer" #FFF3CD {
+  [Nginx Reverse Proxy] as Nginx
+}
+
+package "Web Frontend Layer" #D4EDDA {
+  [Frontend Application] as Frontend
+}
+
+package "Web Backend Layer" #D1ECF1 {
+  [Account Service] as AccountSvc
+  [Score Service] as ScoreSvc
+  [Generation Task Service] as GenTaskSvc
+  [Model Service] as ModelSvc
+  [Recommendation Service] as RecommendSvc
+  [Scheduling Coordinator] as Scheduler
+}
+
+package "Message Queue Layer" #F8D7DA {
+  [RabbitMQ Task Queue] as MQ
+}
+
+package "Algorithm Service Layer" #E2D9F3 {
+  [Online Generation Service] as GenSvc
+  [Offline Training Service] as TrainSvc
+  [Classification Service] as ClassifySvc
+  [Recommendation Engine] as RecommendEngine
+}
+
+package "Data and Storage Layer" #FFF8E1 {
+  database "Relational DB" as RDBMS
+  database "Hadoop HDFS" as HDFS
+  [etcd Service Registry] as ETCD
+}
+
+package "Scheduled Tasks" #F0F0F0 {
+  [Cron Scheduler Daily 02:00] as Cron
+}
+
+Browser --> Nginx : HTTPS
+Nginx --> Frontend : HTTP
+Nginx --> AccountSvc : HTTP API
+Nginx --> ScoreSvc : HTTP API
+Nginx --> GenTaskSvc : HTTP API
+Nginx --> ModelSvc : HTTP API
+Nginx --> RecommendSvc : HTTP API
+
+AccountSvc --> RDBMS : user data
+ScoreSvc --> RDBMS : score metadata
+ScoreSvc --> HDFS : score files
+GenTaskSvc --> MQ : enqueue generation tasks
+ModelSvc --> RDBMS : model favorites
+RecommendSvc --> RDBMS : recommendation data
+Scheduler --> MQ : enqueue scheduled tasks
+Scheduler --> RDBMS : log task status
+
+MQ --> GenSvc : generation tasks
+MQ --> TrainSvc : training tasks
+MQ --> ClassifySvc : classification tasks
+MQ --> RecommendEngine : recommendation tasks
+
+GenSvc --> HDFS : midi and abc files
+GenSvc --> RDBMS : update task status
+TrainSvc --> HDFS : GPT-2 model params
+TrainSvc --> RDBMS : update model metadata
+ClassifySvc --> HDFS : score files
+ClassifySvc --> RDBMS : score labels
+RecommendEngine --> RDBMS : favorites and follows
+
+Cron --> Scheduler : trigger daily tasks
+
+AccountSvc --> ETCD : service discovery
+ScoreSvc --> ETCD : service discovery
+GenSvc --> ETCD : service discovery
+TrainSvc --> ETCD : service discovery
+
+@enduml

@@ -1,0 +1,68 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BorderColor #777777
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+rectangle "Simulator" as Simulator
+
+package "Biomechanical Model" as BiomechanicalModel #FFF2CC {
+    rectangle "BaseBMModel" as BaseBMModel
+    rectangle "MoblArmsIndex" as MoblArmsIndex #FFE599
+    rectangle "DerivedClass" as DerivedBMModel #D5E8D4
+}
+
+package "Interaction Task" as InteractionTask #FFF2CC {
+    rectangle "BaseTask" as BaseTask
+    rectangle "Pointing" as Pointing #FFE599
+    rectangle "Tracking" as Tracking #FFE599
+    rectangle "DerivedClass" as DerivedTask #D5E8D4
+}
+
+package "Perception" as PerceptionGroup #F5F5F5 {
+    rectangle "Perception" as Perception
+    rectangle "BaseModule" as BaseModule
+
+    package "Modalities" as Modalities {
+        rectangle "Vision" as Vision
+        rectangle "Proprioception" as Proprioception
+        rectangle "Modality" as Modality
+    }
+
+    rectangle "FixedEye" as FixedEye #FFE599
+    rectangle "BasicWithEEPos" as BasicWithEEPos #FFE599
+    rectangle "DerivedClass" as DerivedModality #D5E8D4
+}
+
+Simulator --> BaseBMModel
+Simulator --> BaseTask
+Simulator --> Perception
+
+BaseBMModel --> MoblArmsIndex
+BaseBMModel --> DerivedBMModel
+
+BaseTask --> Pointing
+BaseTask --> Tracking
+BaseTask --> DerivedTask
+
+Perception --> BaseModule
+BaseModule --> Vision
+BaseModule --> Proprioception
+BaseModule --> Modality
+
+Vision --> FixedEye
+Proprioception --> BasicWithEEPos
+Modality --> DerivedModality
+@enduml

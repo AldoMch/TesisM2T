@@ -1,0 +1,66 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+
+title Home Recipes System Architecture
+
+' Define components
+package "Client Tier" {
+  [Flutter/Dart\nClient Application] as client #LightBlue
+}
+
+package "Service Tier" {
+  [Go gRPC Server] as grpc_server #LightGreen
+  [gRPC-Gateway\nMiddleware] as gateway #LightYellow
+}
+
+package "Protocol Layer" {
+  [Protocol Buffers\nContract (.proto)] as proto #LightGray
+}
+
+package "Deployment Options" {
+  [Docker Container] as docker #LightPink
+  [Kubernetes Cluster] as k8s #LightPink
+  [Azure Kubernetes\nService (AKS)] as aks #LightPink
+}
+
+' Define relationships
+client --> grpc_server : gRPC (generated)
+client --> proto : Code Generation
+grpc_server --> proto : Code Generation
+gateway --> grpc_server : gRPC
+gateway --> proto : Code Generation
+gateway ..> client : HTTP/REST
+docker --> grpc_server : Contains
+k8s --> docker : Orchestrates
+aks --> k8s : Managed\nKubernetes
+
+note right of client
+  Multi-platform support:
+  Android, iOS, Web, macOS
+end note
+
+note right of gateway
+  Exposes gRPC operations
+  through HTTP endpoints:
+  - addRecipe
+  - ListAllRecipes
+  - ListAllIngredientsAtHome
+  - GetAllIngredientsForRecipe
+end note
+
+note bottom of k8s
+  Deployment through
+  Kubernetes manifests
+end note
+
+note bottom of aks
+  Azure Kubernetes
+  Service deployment
+end note
+
+@enduml

@@ -1,0 +1,93 @@
+@startuml Academic Achievement Platform
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BorderColor #444444
+  FontStyle bold
+}
+
+cloud "External Systems" {
+  [Public Academic Databases] as ExtDB
+}
+
+package "Frontend Layer" #E8F4FD {
+  node "Web Browser\n(Chrome / Edge / Firefox)" as Browser {
+    [Vue 3.3 Web Application] as VueApp
+  }
+}
+
+package "Application Layer" #EAF7EA {
+  component [AccountService] as AccSvc
+  component [LiteratureDiscoveryService] as LitSvc
+  component [AchievementManagementService] as AchSvc
+  component [InstitutionManagementService] as InstSvc
+  component [InteractionService] as IntSvc
+  component [AdministrationConsole] as AdminUI
+}
+
+package "Support Layer" #FFF8E7 {
+  component [SemanticProcessingService] as SemSvc
+  component [UserProfilingService] as ProfSvc
+  component [AuthorizationService] as AuthSvc
+  component [AcademicAnalysisService] as AnlSvc
+  component [MisconductDetectionService] as MisSvc
+}
+
+package "Infrastructure Layer" #F5EEF8 {
+  component [ExternalDataAcquisitor] as ExtAcq
+  component [DataNormalizationPipeline] as NormPipe
+  component [BackupService] as BkpSvc
+  component [EncryptionService] as EncSvc
+
+  database "RelationalDatabase\n(MySQL 8.0 Cluster)" as RelDB
+  database "UnstructuredContentStore" as UnstrDB
+}
+
+' ── Browser → Application ──────────────────────────────────────────
+VueApp --> AccSvc
+VueApp --> LitSvc
+VueApp --> AchSvc
+VueApp --> InstSvc
+VueApp --> IntSvc
+VueApp --> AdminUI
+
+' ── Application → Support ──────────────────────────────────────────
+LitSvc --> SemSvc       : query interpretation\n& multilingual mapping
+LitSvc --> ProfSvc      : personalized ranking\n& recommendations
+LitSvc --> AuthSvc      : exclude restricted\n& undisclosed records
+
+AchSvc --> AuthSvc      : claim binding\n& dispute authorization
+
+IntSvc --> AuthSvc      : identity verification\nfor private messaging
+
+AccSvc --> AuthSvc      : session grants\n& role enforcement
+
+AnlSvc --> AuthSvc      : visibility &\ndelayed-disclosure rules
+
+MisSvc --> AuthSvc      : restrict flagged results\nto authorized reviewers
+
+' ── Application → Infrastructure (RelationalDB) ────────────────────
+AccSvc --> RelDB
+LitSvc --> RelDB
+AchSvc --> RelDB
+InstSvc --> RelDB
+IntSvc --> RelDB
+AdminUI --> RelDB
+
+' ── Support → Infrastructure ───────────────────────────────────────
+AnlSvc --> RelDB        : read collected data
+
+' ── Infrastructure internal ────────────────────────────────────────
+ExtDB --> ExtAcq        : scholar profiles\n& literature metadata
+ExtAcq --> NormPipe     : raw external records
+NormPipe --> RelDB      : normalized &\ndeduplicated records
+
+BkpSvc --> RelDB        : daily full &\nhourly incremental backup
+BkpSvc --> UnstrDB      : backup unstructured\ncontent & logs
+
+EncSvc --> RelDB        : AES-256 at-rest encryption
+EncSvc --> UnstrDB      : AES-256 at-rest encryption
+EncSvc --> BkpSvc       : backup data protection
+
+@enduml

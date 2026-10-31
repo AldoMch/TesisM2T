@@ -1,0 +1,164 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+title psmpi s000072_b56aad92 - Checked Requirements Architecture
+
+actor "Developer / Tester" as Dev
+actor "Integrator" as Integ
+actor "Comm Maintainer" as Maint
+
+package "Build & Test Environment" {
+  component "./run-embedded-tests.sh <tarball>" as RunEmbedded
+  component "./autogen.sh, ./configure, make" as Autotools
+  component "Embedded hwloc verification" as HwlocVerify
+  component "make check" as MakeCheck
+  artifact "Distribution tarball" as Tarball
+  artifact "hwloc-tree/ (renamed source tree)" as HwlocTree
+}
+
+Dev --> RunEmbedded
+RunEmbedded --> HwlocVerify : executes
+HwlocVerify --> Tarball : verifies against
+Dev --> Autotools
+Autotools --> HwlocTree : builds
+HwlocTree --> HwlocVerify : testable tree
+HwlocVerify ..> MakeCheck : manual / not part of
+
+package "Communication Subsystem (documented responsibilities)" {
+  component "Comm Design Notes" as CommNotes
+  component "Lifecycle & Progress Responsibilities" as Lifecycle
+  component "One-to-Many Transfer" as OneToMany
+  component "Send State Machine Note" as SendSM
+}
+
+Maint --> CommNotes : inspects
+CommNotes --> Lifecycle
+CommNotes --> OneToMany
+CommNotes --> SendSM
+
+package "Send Path (send-sm documented behavior)" {
+  component "Flow-control check" as FlowCheck
+  component "Post data send" as PostSend
+  component "Direct-access branch" as DirectBranch
+  component "Packet-buffer packing branch" as PackBranch
+  component "Packet Buffer" as PacketBuf
+  component "Network Send Descriptor" as NetSendDesc
+  component "Pinned User Data" as PinnedUser
+  component "Data Descriptor (DD)" as DD
+  component "Rendezvous control fields" as RndvFields
+  component "Envelope" as Envelope
+  component "LIBA(OD)" as LIBAOD
+  component "LIBA" as LIBA
+  component "two LIBAs" as TwoLIBA
+}
+
+SendSM --> FlowCheck
+FlowCheck --> PostSend : flow enabled
+FlowCheck --> FlowCheck : defer while restricted
+SendSM --> DirectBranch
+SendSM --> PackBranch
+DirectBranch --> NetSendDesc : bind
+NetSendDesc --> PinnedUser : references
+PackBranch --> DD : source
+PackBranch --> PacketBuf : pack
+SendSM --> RndvFields
+RndvFields --> Envelope
+RndvFields --> LIBAOD : rndv-rts
+RndvFields --> LIBA : rndv-data
+RndvFields --> TwoLIBA : rndv-cts
+PacketBuf --> RndvFields : control info
+PacketBuf --> DD : payload when no direct access
+
+package "Embedded Libfabric Verbs Provider" {
+  component "Verbs Provider Build" as VerbsBuild
+  component "Linux Verbs API" as VerbsAPI
+  component "librdmacm >= 1.0.16" as RdmaCm
+  component "libibverbs >= 1.1.8" as IbVerbs
+  component "Matching headers" as Headers
+  component "CFLAGS / LDFLAGS / LD_LIBRARY_PATH" as EnvOverride
+}
+
+Integ --> VerbsBuild : build / enable
+VerbsBuild --> VerbsAPI
+VerbsBuild --> RdmaCm
+VerbsBuild --> IbVerbs
+VerbsBuild --> Headers
+VerbsBuild ..> EnvOverride : non-default paths
+RdmaCm --> VerbsAPI : communication mgmt
+IbVerbs --> VerbsAPI : control / data transfer
+
+package "CH4 Network Module Context" {
+  component "CH4 Network Module" as CH4
+  component "OFI / libfabric" as OFI
+  component "UCX" as UCX
+}
+
+CH4 --> OFI
+CH4 --> UCX
+OFI ..> VerbsBuild : optional integration
+CH4 ..> CommNotes : context
+
+note right of Lifecycle
+  FR-003: initialization, finalization,
+  progress advancement, blocking progress,
+  connection establishment.
+end note
+
+note right of OneToMany
+  FR-004: one-to-many scatter-style transfer.
+end note
+
+note right of FlowCheck
+  FR-005: check flow status before posting
+  data send; defer while flow restricted.
+  DR-005: flow-restricted vs flow-enabled state.
+end note
+
+note right of DirectBranch
+  FR-006 / DR-002 / DR-003:
+  short, eager, or rndv-data send with
+  direct access enabled binds network send
+  descriptor to pinned user data.
+end note
+
+note right of PackBranch
+  FR-007 / DR-001 / DR-003:
+  short, eager, or rndv-data send without
+  direct access packs payload from DD
+  into packet buffer before posting.
+end note
+
+note right of RndvFields
+  FR-008 / DR-004: rndv-rts = envelope + LIBA(OD);
+  rndv-cts = two LIBAs; rndv-data = one LIBA.
+  Preserve source-note terms without assuming
+  unsupported concrete structures.
+end note
+
+note bottom of VerbsBuild
+  NFR-001 / C-005: libibverbs >= 1.1.8,
+  librdmacm >= 1.0.16 when enabled.
+  NFR-002: matching headers for source builds.
+  C-004: Linux Verbs API; librdmacm for
+  communication management; libibverbs for
+  control and data transfer.
+end note
+
+note bottom of EnvOverride
+  NFR-003: non-default include/library paths
+  via CFLAGS, LDFLAGS, LD_LIBRARY_PATH.
+end note
+
+note bottom of HwlocVerify
+  NFR-004 / C-001: manual execution;
+  not part of make check.
+end note
+
+note bottom of CommNotes
+  NFR-005: design-note-derived behaviors are
+  documented responsibilities, not confirmed
+  public APIs unless separately verified.
+end note
+
+@enduml

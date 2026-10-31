@@ -1,0 +1,134 @@
+@startuml macpro-appian-connector
+title macpro-appian-connector - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+' =========================================================
+' Actors / Users
+' =========================================================
+actor "Developer" as Dev
+actor "Operator / DevOps" as Ops
+actor "Repository Maintainer" as Maint
+
+' =========================================================
+' Local / Terminal Environment
+' =========================================================
+package "Local Terminal Environment" as Local {
+  component "Onboarding Procedure" as Onboarding
+  component "Stage Listing Command\nrun listRunningStages" as ListStages
+  component "nvm Environment" as Nvm
+}
+
+' =========================================================
+' macpro-appian-connector Repository
+' =========================================================
+package "macpro-appian-connector Repository" as Repo {
+
+  component "Appian-to-BigMAC\nData Transfer Support" as Transfer
+
+  package "Connector Configuration & Runtime" as ConnCfg {
+    component "Connector Configuration Handler" as ConnHandler
+    component "Connector Management Library" as ConnLib
+    note right of ConnHandler
+      Inputs: cluster, service, connectors
+      - put connector definitions
+      - delete with empty deletion set
+      - restart configured connectors
+    end note
+  }
+
+  package "Runtime Status Observation" as RuntimeObs {
+    component "AWS Stage Listing" as StageListing
+  }
+
+  package "Service Event Alerting" as Alerting {
+    component "Event Filtering Criteria" as EventFilter
+  }
+
+  package "Deployment Metrics Collection" as DeployMetrics {
+    component "Deployment Metrics Collector\n(deploy.yml)" as DeployCollector
+    note right of DeployCollector
+      failedRuns = conclusion != success
+      passedRuns = total - failedRuns
+    end note
+  }
+
+  package "Pull Request Metrics Collection" as PRMetrics {
+    component "PR Merge-Time Metrics\nCollector" as PRCollector
+    note right of PRCollector
+      created_at, merged_at -> whole-hour diff
+      averageTimeToMerge (0 if none)
+    end note
+  }
+
+  component "GitHub API Client\n(paginated, per_page=100)" as GHClient
+}
+
+' =========================================================
+' AWS Cloud
+' =========================================================
+cloud "AWS Account & Region" as AWS {
+  component "AWS CLI\n(credentials)" as AWSCLI
+  component "AWS EventBridge\nEvent Routing Rules" as EventBridge
+  component "Amazon SNS\nNotification Topic" as SNSTopic
+  component "SNS Subscription Services\n(manually maintained)" as SNSSubs
+}
+
+' =========================================================
+' External Systems
+' =========================================================
+cloud "GitHub" as GitHub {
+  component "GitHub Actions\nCI/CD (deploy.yml)" as GHWorkflows
+  component "GitHub Pull Requests API" as GHPulls
+}
+
+cloud "CMS BigMAC" as BigMAC
+
+' =========================================================
+' Relationships
+' =========================================================
+Dev --> Onboarding
+Ops --> Onboarding
+Onboarding --> ListStages : after onboarding
+Dev --> ListStages : runs
+ListStages --> Nvm : nvm use
+Nvm --> StageListing
+StageListing --> AWSCLI : uses credentials
+AWSCLI --> AWS : current account/region
+StageListing ..> Repo : runningStages=<stages>
+
+Maint --> ConnHandler
+ConnHandler --> ConnLib : put / delete / restart
+ConnLib --> Transfer
+Transfer --> BigMAC : Appian data changes
+
+Ops --> EventBridge
+EventBridge --> EventFilter : matching rule pattern
+EventFilter --> SNSTopic : publish matching events
+SNSTopic --> SNSSubs : distribution
+Ops --> SNSSubs : add / remove manually
+note bottom of SNSSubs
+  Managed outside deployment automation
+end note
+
+Maint --> DeployCollector
+Maint --> PRCollector
+Ops --> DeployCollector
+DeployCollector --> GHClient
+PRCollector --> GHClient
+GHClient --> GHWorkflows : workflow runs
+GHClient --> GHPulls : closed pull requests
+GHWorkflows --> GHClient : paginated run records
+GHPulls --> GHClient : paginated PR records
+DeployCollector ..> Repo : failedRuns / passedRuns
+PRCollector ..> Repo : averageTimeToMerge
+
+note top of Repo
+  Supports Appian-to-BigMAC data transfer,
+  connector configuration, AWS stage listing,
+  service event alerting, and GitHub metrics.
+end note
+
+@enduml

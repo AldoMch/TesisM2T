@@ -1,0 +1,167 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam packageBorderColor #444444
+skinparam nodeBorderColor #444444
+skinparam backgroundColor #FAFAFA
+
+title Prediction Cards System — Layered Architecture Diagram
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "Aeternity Ecosystem" as AeternityCloud {
+
+    node "Aeternity Blockchain Node\n(Production)" as AeternityNode {
+        component [Aeternity RPC / API\nEndpoint] as AeNodeRPC
+    }
+
+    node "Aeternity Blockchain" as AeternityBC {
+        component [PredictionCards\nSmart Contract\n(Sophia)] as SmartContract
+        component [Aeternity Oracle\n(On-Chain)] as OnChainOracle
+    }
+
+    component [Aeternity AENS\n(Naming Service)] as AENS
+    component [Aeternity Wallet Client] as WalletClient
+    component [Aeternity SDK] as AeSdk
+    component [Aeternity Compiler Service] as AeCompiler
+}
+
+cloud "External Services" as ExtServices {
+    component [External Price Provider] as PriceProvider
+    database "Prediction Media Storage\n(IPFS-compatible)" as MediaStorage
+}
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER
+' ─────────────────────────────────────────────
+package "Presentation Layer" as PresentationLayer #E8F4FD {
+
+    component [Frontend Application\n(React, Browser)] as Frontend
+
+    component [WalletContext / Provider\n(Context & DI)] as WalletContext
+
+    interface "Wallet-Backed\nPrediction API" as WalletAPI
+}
+
+' ─────────────────────────────────────────────
+' OFF-CHAIN SERVICE LAYER
+' ─────────────────────────────────────────────
+package "Off-Chain Service Layer" as OffChainLayer #EAF7EA {
+
+    component [OracleService\n(Quarkus, Scheduled)] as OracleService
+
+    component [PredictionProcessingService\n(Scheduled)] as PredictionProcessingSvc
+}
+
+' ─────────────────────────────────────────────
+' LOCAL TEST / DEV LAYER
+' ─────────────────────────────────────────────
+package "Local Test / Dev Layer\n(Non-Production)" as LocalDevLayer #FEF9E7 {
+
+    node "Local Aeternity Node\n& Compiler" as LocalNode {
+        component [Local AE Node] as LocalAENode
+        component [Local Compiler] as LocalCompiler
+        component [Local Index] as LocalIndex
+        component [Debug Endpoint] as DebugEndpoint
+    }
+
+    component [Local Test Proxy /\nCORS Configuration] as LocalProxy
+}
+
+note right of LocalProxy
+  CORS: GET, POST, OPTIONS
+  Headers: Content-Type,
+  Cache-Control,
+  Content-Range, Range
+end note
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER — INTERNAL DEPENDENCIES
+' ─────────────────────────────────────────────
+Frontend --> WalletContext : uses / wraps\n(provider / context)
+WalletContext -- WalletAPI
+Frontend ..> WalletAPI : consumes\ncontract ops
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER → WALLET & SDK
+' ─────────────────────────────────────────────
+Frontend --> AeSdk : contract interaction\n& blockchain comms\n(NFR-001, C-003)
+Frontend --> WalletClient : wallet transactions\n(C-003)
+WalletContext --> AeSdk : SDK contract\ninteraction instance
+WalletContext --> WalletClient : wallet client\ndependency injection
+
+' WalletAPI outbound path: wallet mediates all contract calls
+WalletAPI --> WalletClient : wallet-mediated\ncontract submission\n(FR-007, C-003)
+
+' ─────────────────────────────────────────────
+' WALLET → SMART CONTRACT (wallet-mediated)
+' ─────────────────────────────────────────────
+WalletClient --> SmartContract : create prediction,\nfund / rent / withdraw /\nclaim reward\n(FR-006, FR-007, FR-011)
+
+' ─────────────────────────────────────────────
+' SMART CONTRACT — REWARD / OUTCOME STATE OUTPUT
+' ─────────────────────────────────────────────
+SmartContract ..> Frontend : exposes outcome /\nreward-claiming state\n(FR-010, FR-011, §6.2)
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER → MEDIA STORAGE
+' ─────────────────────────────────────────────
+Frontend --> MediaStorage : load NFT media\nfor display\n(FR-012, DR-004)
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER → AENS (direct, per DR-010)
+' ─────────────────────────────────────────────
+Frontend --> AENS : resolve contract\naddress via AENS name\n(DR-010, C-002)
+
+' ─────────────────────────────────────────────
+' SDK → BLOCKCHAIN NODE
+' ─────────────────────────────────────────────
+AeSdk --> AeNodeRPC : RPC / API calls\nto blockchain\n(NFR-001, C-003, §2.6)
+
+' ─────────────────────────────────────────────
+' OFF-CHAIN SERVICES → AENS (direct, per DR-010)
+' ─────────────────────────────────────────────
+PredictionProcessingSvc --> AENS : resolve contract\naddress via AENS name\n(DR-010)
+OracleService --> AENS : resolve contract\naddress via AENS name\n(DR-010)
+
+' ─────────────────────────────────────────────
+' OFF-CHAIN SERVICES → BLOCKCHAIN NODE
+' ─────────────────────────────────────────────
+OracleService --> AeNodeRPC : blockchain node\nconnection\n(DR-011, FR-004)
+PredictionProcessingSvc --> AeNodeRPC : blockchain node\nconnection\n(DR-011, M-02)
+
+' ─────────────────────────────────────────────
+' OFF-CHAIN SERVICES → SDK (for contract interaction)
+' ─────────────────────────────────────────────
+PredictionProcessingSvc --> AeSdk : SDK contract\ninteraction\n(FR-010, §3.2)
+OracleService --> AeSdk : SDK interaction\n(FR-001, FR-002)
+
+' ─────────────────────────────────────────────
+' OFF-CHAIN → BLOCKCHAIN (contract & oracle)
+' ─────────────────────────────────────────────
+PredictionProcessingSvc --> SmartContract : initiate oracle query\nfor closed predictions;\ndrive result processing\n(FR-010, §2.2 steps 5-7)
+
+OracleService --> OnChainOracle : register oracle;\nread pending queries;\nsubmit oracle responses\n(FR-001, FR-002, FR-003)
+
+' ─────────────────────────────────────────────
+' ORACLE SERVICE → EXTERNAL PRICE PROVIDER
+' ─────────────────────────────────────────────
+OracleService --> PriceProvider : fetch actual\nasset price data\n(FR-002, §2.6)
+
+' ─────────────────────────────────────────────
+' ON-CHAIN: SMART CONTRACT GENERATES ORACLE QUERY;
+' ORACLE RESPONDS BACK TO CONTRACT (callback)
+' ─────────────────────────────────────────────
+SmartContract --> OnChainOracle : emit oracle query\n(on-chain, FR-001)
+OnChainOracle --> SmartContract : oracle result\ncallback\n(on-chain, FR-003)
+
+' ─────────────────────────────────────────────
+' LOCAL DEV LAYER — INTERNAL
+' ─────────────────────────────────────────────
+LocalProxy --> LocalAENode : proxy requests\n(FR-008, FR-009)
+LocalProxy --> LocalCompiler : proxy requests
+LocalProxy --> LocalIndex : proxy requests
+LocalProxy --> DebugEndpoint : proxy requests
+
+@enduml

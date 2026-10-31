@@ -1,0 +1,109 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+
+title Tengine Lite — System Architecture
+
+actor "C API Integrator" as cUser
+actor "C++ API User" as cppUser
+actor "Python API User" as pyUser
+actor "Example User" as exUser
+actor "Tool User" as toolUser
+
+package "API Layer" {
+    [C API\n(Tengine-compatible)] as CAPI
+    [C++ API] as CppAPI
+    [Python API] as PyAPI
+}
+
+package "Example Applications" {
+    [Classification\n(MobileNet v1)] as ExClassify
+    [Object Detection\n(SSD / RetinaFace / YoloV3 /\nYoloV4-tiny / YoloV5s /\nNanoDet / EfficientDet)] as ExDetect
+    [Segmentation\n(Yolact / U-Net)] as ExSeg
+    [Pose Estimation\n(OpenPose / HRNet)] as ExPose
+    [Landmark Detection\n(Facial Landmark)] as ExLandmark
+    [Character Recognition\n(CRNN)] as ExCRNN
+}
+
+package "Model Conversion Tooling" {
+    [Linux Pre-compiled\nConversion Tool] as LinuxTool
+    [Browser-based Online\nConverter (WebAssembly)] as WebTool
+}
+
+package "Core Architecture" {
+    [Scheduler\n(NNIR / Computation Graph /\nHardware Resources / Serializer)] as Scheduler
+    [Device\n(NN Operators Backend)] as Device
+    [Operator\n(Register & Initialize\nNN Operators)] as Operator
+    [Serializer\n(Binary tmfile Decoder)] as Serializer
+}
+
+package "Build System" {
+    [CMake\n(Cross-platform Build)] as CMake
+}
+
+package "Data / Assets" {
+    database "Local Model Files\n(.tmfile)" as ModelFiles
+    database "Local Image Files" as ImageFiles
+    database "Converted Model\nArtifacts" as ConvertedModels
+}
+
+cUser --> CAPI
+cppUser --> CppAPI
+pyUser --> PyAPI
+exUser --> ExClassify
+exUser --> ExDetect
+exUser --> ExSeg
+exUser --> ExPose
+exUser --> ExLandmark
+exUser --> ExCRNN
+toolUser --> LinuxTool
+toolUser --> WebTool
+
+CAPI --> Scheduler
+CppAPI --> Scheduler
+PyAPI --> Scheduler
+
+ExClassify --> CAPI
+ExDetect --> CAPI
+ExSeg --> CAPI
+ExPose --> CAPI
+ExLandmark --> CAPI
+ExCRNN --> CAPI
+
+ExClassify --> ImageFiles
+ExClassify --> ModelFiles
+ExDetect --> ImageFiles
+ExDetect --> ModelFiles
+ExSeg --> ImageFiles
+ExSeg --> ModelFiles
+ExPose --> ImageFiles
+ExPose --> ModelFiles
+ExLandmark --> ImageFiles
+ExLandmark --> ModelFiles
+ExCRNN --> ImageFiles
+ExCRNN --> ModelFiles
+
+LinuxTool --> ModelFiles
+LinuxTool --> ConvertedModels
+WebTool --> ModelFiles
+WebTool --> ConvertedModels
+
+Scheduler --> Device
+Scheduler --> Operator
+Scheduler --> Serializer
+
+Serializer --> ModelFiles : reads binary tmfile
+
+Operator --> Device : registers NN Operators
+
+CMake --> CAPI : builds
+CMake --> CppAPI : builds
+CMake --> PyAPI : builds
+CMake --> Scheduler : builds
+CMake --> Device : builds
+CMake --> Operator : builds
+CMake --> Serializer : builds
+
+@enduml

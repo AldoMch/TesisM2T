@@ -1,0 +1,162 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+left to right direction
+
+title AI-Driven Text Adventure Game and Community - System Architecture
+
+node "Client Devices" as Clients {
+  component "Web Client\n(Vue.js / Nuxt.js SSR)" as WebClient
+}
+
+node "Cloud Provider / Data Center" as Cloud {
+  node "Kubernetes Cluster" as K8s {
+    component "Ingress / API Gateway\n(HTTPS / TLS)" as Ingress
+
+    package "Backend Services (Go / Iris)" as Backend {
+      component "Auth Service\nRegistration/Login/Logout/Password Recovery\n(Iris + Gorm)" as Auth
+      component "User Profile Service\nHomepage/Avatar/Username/History" as Profile
+      component "Community Service\nPosts/Comments/Replies/Search/Recommendations" as Community
+      component "Favorites Service\nAdd/View/Remove" as Favorites
+      component "Notification Service\nCreate/View/Delete/Read Status" as Notify
+      component "Admin Service\nUser/Post Governance/Review/Ban/Restore" as AdminSvc
+      component "Game Service\nNew/Continue/Delete/Share Saves\nBackground & Choices" as Game
+      component "LLM Connector\nModel Invocation Adapter" as LLMConn
+      component "AIGC Orchestrator\nImage/Music/SFX Generation" as AIGC
+    }
+
+    database "MySQL\n(Relational DB)" as DB
+    component "Object Storage\nAvatars/Screenshots/Media" as ObjectStore
+    component "Notification Event Bus\n(Message Queue)" as EventBus
+    component "Observability Stack\nLogging/Monitoring/Tracing" as Observ
+  }
+}
+
+node "External Services" as External {
+  component "Email Verification Service" as EmailSvc
+  component "Large Language Model Provider" as LLMProvider
+  component "AIGC Image Generator" as ImgGen
+  component "Audio/SFX Generator" as AudioGen
+}
+
+' Client to Ingress
+WebClient --> Ingress : HTTPS
+
+' Ingress routes to backend services
+Ingress --> Auth : REST/JSON
+Ingress --> Profile : REST/JSON
+Ingress --> Community : REST/JSON
+Ingress --> Favorites : REST/JSON
+Ingress --> Notify : REST/JSON / WebSocket
+Ingress --> AdminSvc : REST/JSON
+Ingress --> Game : REST/JSON
+
+' Backend services data access
+Auth --> DB
+Profile --> DB
+Community --> DB
+Favorites --> DB
+Notify --> DB
+AdminSvc --> DB
+Game --> DB
+
+' Media storage usage
+Profile --> ObjectStore : Avatars Upload/Fetch
+Community --> ObjectStore : Screenshots/Images Upload/Fetch
+AIGC --> ObjectStore : Generated Media Storage
+
+' Email verification integration
+Auth --> EmailSvc : Send Verification Codes / Password Reset
+
+' Notification event bus
+Community --> EventBus : Publish Comment/Reply Events
+AdminSvc --> EventBus : Publish Review Events
+EventBus --> Notify : Consume Events -> Create Notifications
+
+' Game model integration
+Game --> LLMConn : Generate Plot/Events/State
+LLMConn --> LLMProvider : Model API
+
+' AIGC integration for audiovisual feedback
+Game --> AIGC : Request Images/Music/SFX
+AIGC --> ImgGen : Image Generation API
+AIGC --> AudioGen : Audio/SFX API
+
+' Observability
+Auth --> Observ
+Profile --> Observ
+Community --> Observ
+Favorites --> Observ
+Notify --> Observ
+AdminSvc --> Observ
+Game --> Observ
+LLMConn --> Observ
+AIGC --> Observ
+Ingress --> Observ
+DB --> Observ
+
+' Security and framework notes
+note right of Ingress
+- TLS enabled (NFR-010)
+- Rate limiting and authentication
+- WebSocket for realtime notifications
+end note
+
+note bottom of Backend
+All backend services:
+- Built with Iris (Go web framework)
+- Use Gorm for data access
+- Containerized with Docker
+- Orchestrated on Kubernetes
+end note
+
+note right of Game
+Game Requirements:
+- Cloud & local saves (FR-034..FR-037)
+- Save sharing to community (FR-038)
+- Background setup consistency (FR-039, NFR-030)
+- Choice-based progression via LLM (FR-040)
+end note
+
+note right of Community
+Community Features:
+- Posts CRUD & review status (FR-016..FR-018, FR-026)
+- Comments & replies (FR-021..FR-024)
+- Search & recommendations (FR-019, FR-027)
+end note
+
+note right of AdminSvc
+Administration:
+- User/post lists (FR-013, FR-014)
+- Post review with notifications (FR-015)
+- Reports, bans, restore (FR-042, FR-043)
+end note
+
+note right of Notify
+Notifications:
+- Create on comment/reply/review events (FR-031)
+- View, mark read, delete (FR-032, FR-033)
+end note
+
+note right of Favorites
+Favorites:
+- Add, view, remove posts (FR-020, FR-028..FR-030)
+end note
+
+note right of Auth
+Auth:
+- Registration, login, logout (FR-001..FR-003)
+- Password recovery/change (FR-004, FR-008)
+- Email verification codes
+end note
+
+note right of DB
+MySQL stores:
+- Accounts, profiles, posts, reviews
+- Comments, replies, favorites
+- Notifications, game saves, backgrounds
+- Game state, choices, achievements, items
+end note
+
+@enduml

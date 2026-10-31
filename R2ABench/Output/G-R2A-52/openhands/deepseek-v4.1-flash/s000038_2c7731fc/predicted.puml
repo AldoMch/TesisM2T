@@ -1,0 +1,102 @@
+@startuml
+title IceFireDB Decentralized Database Infrastructure - System Architecture
+
+skinparam componentStyle rectangle
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam arrowColor #455A64
+
+' ============================================================
+' Actors / external clients
+' ============================================================
+actor "Redis Application\nIntegrator" as RedisApp
+actor "Redis Pub/Sub\nApplication" as PubSubApp
+
+' ============================================================
+' IceFireDB system boundary
+' ============================================================
+package "IceFireDB Decentralized Database Infrastructure" {
+
+  component "IceFireDB-Redis-Proxy" as RedisProxy {
+    component "Redis Command/Proxy\nInterface" as ProxyIface
+    component "Redis Instruction\nSynchronizer" as Sync
+    component "Redis Storage\nForwarder" as Forwarder
+    component "Cluster-Aware\nRouting" as ClusterRoute
+    component "Redis Command\nCategory Support\n(String/Set/List/Hash/\nSorted Set/Stream/Control)" as CmdSupport
+  }
+
+  component "IceFireDB-PubSub" as PubSub {
+    component "Redis Pub/Sub\nInterface" as PsIface
+    component "P2P Message\nDissemination" as Disseminate
+    component "NAT / Private-Network\nCommunication" as NATComm
+    component "Kademlia DHT Peer\nDiscovery & Routing\n(libp2p/IPFS-style)" as DHT
+  }
+
+  component "IceFireDB-SQLite\nInternal SQL Result\nHandling" as SQLite {
+    component "SQL/MySQL Result\nPacket Parser\n(fields/rows/warnings/status)" as SQLParser
+  }
+
+}
+
+' ============================================================
+' Storage / network backends
+' ============================================================
+database "Redis Storage\n(Standalone)" as RedisStandalone
+database "Redis Storage\n(Clustered)" as RedisCluster
+
+cloud "Decentralized Peer Network\n(same-network / cross-network /\nNAT / private-network)" as PeerNet
+
+' ============================================================
+' Relationships - Redis Proxy
+' ============================================================
+RedisApp --> ProxyIface : Redis commands / traffic
+ProxyIface --> CmdSupport : parse & validate\nsupported categories
+CmdSupport --> Sync : synchronizable instruction
+CmdSupport --> Forwarder : write operation
+Sync --> PeerNet : synchronize instructions\nbetween agents
+Forwarder --> ClusterRoute : select storage target
+ClusterRoute --> RedisStandalone : standalone mode\n(FR-001, FR-003)
+ClusterRoute --> RedisCluster : clustered mode\n(FR-001, FR-010)
+Forwarder --> PeerNet : decentralized\nRedis data sync
+
+' ============================================================
+' Relationships - PubSub
+' ============================================================
+PubSubApp --> PsIface : publish / subscribe\n(Redis semantics)
+PsIface --> Disseminate : pub/sub message
+Disseminate --> NATComm : NAT / private-network nodes
+Disseminate --> DHT : peer discovery & routing
+NATComm --> PeerNet : inter-node communication\nacross topologies
+DHT --> PeerNet : discovery & routing metadata
+
+' ============================================================
+' Relationships - Internal SQL result handling
+' ============================================================
+SQLParser --> SQLParser : parse field metadata,\nrows, warning counts,\nstatus values\n(internal only)
+
+' ============================================================
+' Notes for scope and constraints
+' ============================================================
+note right of SQLite
+  Internal data-handling scope only.
+  Packet-level SQL/MySQL result parsing is
+  not a top-level product feature
+  (C-005, C-006; DR-006-DR-008).
+end note
+
+note bottom of PeerNet
+  PubSub peer discovery and routing use
+  Kademlia DHT with libp2p/IPFS-style
+  mechanisms only - NOT file-system IPFS
+  storage behavior (C-003, FR-009).
+end note
+
+note left of RedisProxy
+  Multi-component proxy middleware between
+  Redis applications, peer agents, and
+  standalone/clustered Redis storage.
+  Compatible with both Redis deployment
+  modes (NFR-001, NFR-003).
+end note
+
+@enduml

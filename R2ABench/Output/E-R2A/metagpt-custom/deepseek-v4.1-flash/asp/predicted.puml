@@ -1,0 +1,40 @@
+@startuml
+title Semantic Web Application Architecture
+
+' External actors/clients as components
+component "Web Browser" as Browser
+component "API Client" as ApiClient
+
+' Interfaces from the draft
+interface "Browser UI Access" as BrowserUI
+interface "Authenticated Web/API Interface" as WebAPI
+interface "Semantic Processing Interface" as SemanticAPI
+
+' Core application components
+component "Web Frontend" as WebFrontend
+component "API Gateway" as ApiGateway
+component "Authentication Service" as AuthService
+component "Semantic Processor" as SemanticProcessor
+component "Knowledge Graph Store" as KnowledgeGraph
+component "Document Repository" as DocumentRepo
+
+' Browser interactions
+Browser --> BrowserUI : uses
+BrowserUI - WebFrontend : provided by
+
+' API client interactions
+ApiClient --> WebAPI : uses
+WebAPI - ApiGateway : provided by
+
+' Internal routing and authentication
+WebFrontend --> WebAPI : calls
+WebFrontend --> SemanticAPI : calls
+ApiGateway --> AuthService : validates credentials
+ApiGateway --> SemanticAPI : routes semantic requests
+
+' Semantic processing and persistence
+SemanticProcessor - SemanticAPI : provides
+SemanticProcessor --> KnowledgeGraph : reads/writes
+SemanticProcessor --> DocumentRepo : reads/writes
+
+@enduml

@@ -1,0 +1,299 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Client Environment\\n(Browser)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Erlang/OTP Game Server\\n(Master)"
+      ],
+      "gt_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Erlang/OTP Game Server\\n(Replica)"
+      ],
+      "gt_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Network Infrastructure::DNS /\\nLoad Balancer"
+      ],
+      "gt_nodes": [
+        "Global::DNS"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Web Server::Static Asset\\nServer\\n(HTML, CSS, JS,\\nImages)"
+      ],
+      "gt_nodes": [
+        "Static Web Tier::Web Server\\nGame assets, HTML, CSS, JS"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Client Environment\\n(Browser)"
+      ],
+      "gt_node": "Browser Clients::Client Browser\\nPlayer 1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Client Environment\\n(Browser)"
+      ],
+      "gt_node": "Browser Clients::Client Browser\\nPlayer 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Client Environment\\n(Browser)"
+      ],
+      "gt_node": "Browser Clients::Client Browser\\nPlayer 3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Erlang/OTP Game Server\\n(Master)",
+        "Erlang/OTP Game Server\\n(Master)::Fault-Tolerance\\nCoordinator"
+      ],
+      "gt_node": "Erlang / OTP Game Server Cluster::Server Master\\nErlang"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Erlang/OTP Game Server\\n(Replica)",
+        "Erlang/OTP Game Server\\n(Master)::Fault-Tolerance\\nCoordinator"
+      ],
+      "gt_node": "Erlang / OTP Game Server Cluster::Server Slave\\nErlang"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Network Infrastructure::DNS /\\nLoad Balancer"
+      ],
+      "gt_node": "Global::DNS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Erlang/OTP Game Server\\n(Master)",
+        "Global::Erlang/OTP Game Server\\n(Replica)",
+        "Erlang/OTP Game Server\\n(Master)::Fault-Tolerance\\nCoordinator"
+      ],
+      "gt_node": "Global::Erlang / OTP Game Server Cluster"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Web Server::Static Asset\\nServer\\n(HTML, CSS, JS,\\nImages)",
+        "Global::Web Server"
+      ],
+      "gt_node": "Static Web Tier::Web Server\\nGame assets, HTML, CSS, JS"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Client Environment\\n(Browser)::Heartbeat\\nManager\\n(ping/pong, 60 s)",
+      "reference_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Environment\\n(Browser)::Message\\nParser\\n[action, data?]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Environment\\n(Browser)::Message\\nSerializer\\n[event, data]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Environment\\n(Browser)::Reconnect\\nController",
+      "reference_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Environment\\n(Browser)::Room\\nManager",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Environment\\n(Browser)::Three.js\\nRenderer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Environment\\n(Browser)::WebSocket\\nHandler",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Erlang/OTP Game Server\\n(Master)::Fault-Tolerance\\nCoordinator",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang",
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang",
+        "Global::Erlang / OTP Game Server Cluster"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Erlang/OTP Game Server\\n(Master)::Player\\nRegistry",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Erlang/OTP Game Server\\n(Master)::Room\\nSession\\nManager",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Erlang/OTP Game Server\\n(Master)::Server List\\nManager",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Erlang/OTP Game Server\\n(Master)::WebSocket\\nEndpoint",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Erlang/OTP Game Server\\n(Replica)::Replica\\nRoom\\nSession\\nManager",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Erlang/OTP Game Server\\n(Replica)::Replica\\nWebSocket\\nEndpoint",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Client Environment\\n(Browser)",
+      "reference_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Erlang/OTP Game Server\\n(Master)",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang",
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang",
+        "Global::Erlang / OTP Game Server Cluster"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Erlang/OTP Game Server\\n(Replica)",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang",
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang",
+        "Global::Erlang / OTP Game Server Cluster"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Network Infrastructure",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Server",
+      "reference_nodes": [
+        "Static Web Tier::Web Server\\nGame assets, HTML, CSS, JS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Network Infrastructure::DNS /\\nLoad Balancer",
+      "reference_nodes": [
+        "Global::DNS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Web Server::Static Asset\\nServer\\n(HTML, CSS, JS,\\nImages)",
+      "reference_nodes": [
+        "Static Web Tier::Web Server\\nGame assets, HTML, CSS, JS"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1328,
+      "completion_tokens": 119,
+      "total_tokens": 1447,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Global::Erlang / OTP Game Server Cluster"
+  ],
+  "unmatched_predicted_nodes": [
+    "Client Environment\\n(Browser)::Heartbeat\\nManager\\n(ping/pong, 60 s)",
+    "Client Environment\\n(Browser)::Message\\nParser\\n[action, data?]",
+    "Client Environment\\n(Browser)::Message\\nSerializer\\n[event, data]",
+    "Client Environment\\n(Browser)::Reconnect\\nController",
+    "Client Environment\\n(Browser)::Room\\nManager",
+    "Client Environment\\n(Browser)::Three.js\\nRenderer",
+    "Client Environment\\n(Browser)::WebSocket\\nHandler",
+    "Erlang/OTP Game Server\\n(Master)::Fault-Tolerance\\nCoordinator",
+    "Erlang/OTP Game Server\\n(Master)::Player\\nRegistry",
+    "Erlang/OTP Game Server\\n(Master)::Room\\nSession\\nManager",
+    "Erlang/OTP Game Server\\n(Master)::Server List\\nManager",
+    "Erlang/OTP Game Server\\n(Master)::WebSocket\\nEndpoint",
+    "Erlang/OTP Game Server\\n(Replica)::Replica\\nRoom\\nSession\\nManager",
+    "Erlang/OTP Game Server\\n(Replica)::Replica\\nWebSocket\\nEndpoint",
+    "Global::Network Infrastructure",
+    "Global::Web Server"
+  ],
+  "_provenance": {
+    "fingerprint": "e80174729c9254791257e5a61c28ff138542d8e1867d55b372c48eccae68e4f4",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

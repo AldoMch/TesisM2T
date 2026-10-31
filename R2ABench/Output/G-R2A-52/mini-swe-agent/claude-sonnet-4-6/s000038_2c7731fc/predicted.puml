@@ -1,0 +1,84 @@
+@startuml
+title IceFireDB Decentralized Database Infrastructure - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> LightSteelBlue
+}
+
+' ===== Client Layer =====
+package "Client Layer" {
+  [Redis Application\n(Integrator / Developer)] as RedisApp
+  [Redis Pub/Sub\nApplication] as PubSubApp
+  [SQL/MySQL\nProtocol Client] as SQLClient
+}
+
+' ===== IceFireDB Core Components =====
+package "IceFireDB Core" {
+
+  package "IceFireDB-Redis-Proxy" {
+    [Redis Proxy\nMiddleware] as RedisProxy
+    [Instruction\nSynchronizer] as InstrSync
+    [Cluster-Aware\nRouter] as ClusterRouter
+    [Command Handler\n(String/Set/List/Hash/\nSortedSet/Stream/Control)] as CmdHandler
+  }
+
+  package "IceFireDB-PubSub" {
+    [PubSub\nService] as PubSubSvc
+    [Message\nDistributor] as MsgDistributor
+    [NAT Traversal\nHandler] as NATHandler
+    [Peer Discovery\n& Routing\n(Kademlia DHT)] as PeerDiscovery
+  }
+
+  package "IceFireDB-SQLite\n(Internal Data Handling)" {
+    [MySQL Protocol\nResult Parser] as SQLResultParser
+    [Field / Row /\nWarning Handler] as FieldRowHandler
+  }
+}
+
+' ===== Decentralized Network Layer =====
+package "Decentralized P2P Network" {
+  [Redis Proxy\nAgent Node A] as AgentA
+  [Redis Proxy\nAgent Node B] as AgentB
+  [PubSub Node 1] as PSNode1
+  [PubSub Node 2] as PSNode2
+  [libp2p / IPFS-style\nPeer Network] as LibP2P
+}
+
+' ===== Storage Layer =====
+package "Redis Storage Backend" {
+  database "Redis Standalone" as RedisSingle
+  database "Redis Cluster" as RedisCluster
+}
+
+' ===== Client to Core connections =====
+RedisApp --> RedisProxy : Redis commands / traffic
+PubSubApp --> PubSubSvc : Redis-style Pub/Sub operations
+SQLClient --> SQLResultParser : MySQL-protocol result packets
+
+' ===== Redis Proxy internal flow =====
+RedisProxy --> CmdHandler : dispatch commands
+RedisProxy --> InstrSync : synchronize instructions
+RedisProxy --> ClusterRouter : cluster-aware routing
+InstrSync --> AgentA : sync instructions
+InstrSync --> AgentB : sync instructions
+AgentA <--> AgentB : decentralized middleware network
+
+' ===== Redis Proxy to Storage =====
+ClusterRouter --> RedisSingle : write / proxy (standalone)
+ClusterRouter --> RedisCluster : write / proxy (cluster)
+
+' ===== PubSub internal flow =====
+PubSubSvc --> MsgDistributor : distribute messages
+PubSubSvc --> NATHandler : NAT / private-network traversal
+PubSubSvc --> PeerDiscovery : peer discovery & routing
+PeerDiscovery --> LibP2P : Kademlia DHT peer network
+MsgDistributor --> PSNode1 : deliver messages
+MsgDistributor --> PSNode2 : deliver messages
+PSNode1 <--> PSNode2 : multi-node P2P messaging
+NATHandler --> LibP2P : NAT traversal via P2P
+
+' ===== SQLite internal flow =====
+SQLResultParser --> FieldRowHandler : parsed fields / rows / warnings / status
+
+@enduml

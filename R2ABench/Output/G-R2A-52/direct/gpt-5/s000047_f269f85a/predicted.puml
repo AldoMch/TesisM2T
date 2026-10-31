@@ -1,0 +1,144 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+left to right direction
+
+package "Archifiltre Electron App" {
+  component "Settings Sanitization Service" <<service>> as SettingsSvc
+  component "Export Controller" <<controller>> as ExportCtrl
+  component "Hash Controller" <<controller>> as HashCtrl
+  component "Translation Module" <<module>> as I18n
+}
+
+package "Workers / Background Processing" {
+  component "Tree CSV Worker" <<worker>> as TreeWorker
+  component "RESIP Worker" <<worker>> as ResipWorker
+  component "CSV Export Worker" <<worker>> as CsvWorker
+  component "Excel Export Worker" <<worker>> as ExcelWorker
+  component "Hash Batch Processor" <<worker>> as HashWorker
+}
+
+package "Data Inputs" {
+  component "Files & Folders Map" as FilesFolders
+  component "Metadata" as Metadata
+  component "Aliases" as Aliases
+  component "Comments" as Comments
+  component "Tags" as Tags
+  component "Hashes (for CSV export)" as HashesInput
+  database "Persisted Settings" as PersistedSettings
+  component "Paths[]" as Paths
+  component "Base Path" as BasePath
+}
+
+package "Asynchronous Result Interfaces" {
+  interface "Observable<Progress|Tree CSV String>" as ObsTree
+  interface "Observable<Progress|RESIP CSV>" as ObsResip
+  interface "Observable<CSV Export Result>" as ObsCsv
+  interface "Observable<Excel Export Result>" as ObsXlsx
+  interface "Observable<Hash Stream|Aggregated Hash Map>" as ObsHash
+}
+
+package "Runtime & Filesystem" {
+  component "Electron Runtime" <<runtime>> as ElectronRuntime
+  folder "User Data Directory" as UserData
+  artifact "hash-result-debug" as HashResultFile
+  artifact "hash-error-debug" as HashErrorFile
+}
+
+' Settings sanitization workflow
+PersistedSettings --> SettingsSvc : persisted input\n({}, \"\", undefined, or invalid)
+SettingsSvc -[#green]-> PersistedSettings : normalized settings\n(isTrackingEnabled: true,\nisMonitoringEnabled: true,\nlanguage: \"en\" defaults)
+
+note right of SettingsSvc
+FR-001/FR-002
+- Sanitize empty or invalid persisted settings
+- Apply defaults (tracking=true, monitoring=true, language="en")
+- Preserve valid values
+end note
+
+' Language propagation
+ExportCtrl --> I18n : get current\nlanguage
+ExportCtrl -[#blue]-> TreeWorker : start(files&folders,\nlanguage)
+ExportCtrl -[#blue]-> ResipWorker : start(files, metadata,\naliases, comments, tags,\nlanguage)
+ExportCtrl -[#blue]-> CsvWorker : start(aliases, comments,\nfiles, metadata, tags,\nhashes, language)
+ExportCtrl -[#blue]-> ExcelWorker : start(CsvExporterData,\nlanguage)
+
+note top of I18n
+FR-004/FR-006/FR-007
+Provide current language to all export workers
+end note
+
+' Export inputs
+FilesFolders --> ExportCtrl
+Metadata --> ExportCtrl
+Aliases --> ExportCtrl
+Comments --> ExportCtrl
+Tags --> ExportCtrl
+HashesInput --> ExportCtrl
+
+' Asynchronous delivery (Observables/Streams)
+TreeWorker ..> ObsTree
+ObsTree ..> ExportCtrl : progress + final\nTree CSV
+
+ResipWorker ..> ObsResip
+ObsResip ..> ExportCtrl : progress(counts, empty CSV)\nthen final RESIP CSV
+
+CsvWorker ..> ObsCsv
+ObsCsv ..> ExportCtrl : CSV export result
+
+ExcelWorker ..> ObsXlsx
+ObsXlsx ..> ExportCtrl : Excel export result
+
+note bottom of ObsTree
+NFR-001
+Background workers emit asynchronous
+progress/results via Observable
+end note
+
+' Hash computation workflow
+Paths --> HashCtrl
+BasePath --> HashCtrl
+HashCtrl -[#blue]-> HashWorker : start(paths, basePath)
+
+HashWorker ..> ObsHash
+ObsHash ..> HashCtrl : stream + aggregated\nhash map results
+
+note right of HashWorker
+FR-008 / NFR-002
+Batch-based hash computation
+with aggregation of results
+end note
+
+' Hash debug outputs in user data directory
+HashWorker -[#brown]-> ElectronRuntime : app.getPath(\"userData\")
+ElectronRuntime -[#brown]-> UserData : provide location
+HashWorker -[#brown]-> HashResultFile : write
+HashWorker -[#brown]-> HashErrorFile : write
+HashResultFile -[#brown]-> UserData
+HashErrorFile -[#brown]-> UserData
+
+note bottom of UserData
+FR-009 / NFR-004
+Write hash debug files:
+- hash-result-debug
+- hash-error-debug
+Under application user data directory
+end note
+
+' Additional notes for exports
+note top of TreeWorker
+FR-003
+Tree CSV export:
+- Emits computation updates
+- Final export string last
+- Includes language
+end note
+
+note top of ResipWorker
+FR-005
+RESIP export:
+- Emits progress (counts + empty CSV)
+- Final result with RESIP CSV
+- Controller filters/maps worker messages
+end note
+@enduml

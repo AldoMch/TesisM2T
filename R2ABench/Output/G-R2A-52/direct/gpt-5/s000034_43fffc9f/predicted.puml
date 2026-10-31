@@ -1,0 +1,116 @@
+@startuml
+skinparam componentStyle rectangle
+
+' Top-level platform
+node "Shared/Distributed-Memory Platform" as Platform {
+  ' Rank 0 process (spawning rank)
+  node "MPI Process (Rank 0)" as Rank0 {
+    component "Python Application" as App0
+
+    package "torc_py Runtime (Rank 0)" as Torc0 {
+      component "Python API\n- submit, wait, map, as_completed\n- start/init/launch/shutdown\n- spmd, enable/disable_stealing\n- worker_id/num_workers\n- node_id/num_nodes, gettime" as API0 <<Python API>>
+      component "Task Scheduler & Dispatcher" as Sched0 <<Scheduler>>
+      component "Map Engine" as Map0
+      component "Future Store\n(Task Descriptors)" as Future0
+      component "Callback Manager" as CB0
+      component "Worker Thread Pool" as Pool0 <<ThreadPool>>
+      component "Worker Queues" as Queues0 <<Queue>>
+      component "Stealing Manager" as Steal0
+      component "SPMD Manager" as SPMD0
+      component "SPMD Function Execution" as SpmdFunc0
+      component "MPI Adapter (mpi4py)" as MPI0 <<MPI>>
+      component "Env Config Manager" as Env0 <<Config>>
+      component "Timing Service" as Time0
+    }
+
+    ' Internal wiring on Rank 0
+    App0 --> API0 : calls APIs\n(submit/wait/map/.../spmd)
+    API0 --> Sched0 : submit tasks
+    API0 --> Map0 : parallel map
+    API0 --> SPMD0 : spmd(f)
+    API0 --> Env0 : read runtime config
+    API0 --> Time0 : gettime()
+
+    Map0 --> Sched0 : enqueue map tasks
+
+    Sched0 --> Queues0 : enqueue
+    Pool0 --> Queues0 : pull tasks
+    Pool0 --> Future0 : set results
+    Future0 --> CB0 : on completion
+    CB0 --> App0 : invoke callback\n(on spawning rank)
+
+    ' Stealing and MPI on Rank 0
+    Pool0 --> Steal0 : idle notifications
+    Steal0 --> MPI0 : steal requests/responses
+
+    ' SPMD path and application-level MPI compatibility
+    SPMD0 --> MPI0 : coordinate SPMD launch
+    MPI0 --> SpmdFunc0 : run SPMD function
+    SpmdFunc0 ..> MPI0 : application-level MPI calls
+  }
+
+  ' Other ranks (workers and SPMD participants)
+  node "MPI Process (Rank 1..N-1)" as RankN {
+    package "torc_py Runtime (Other Ranks)" as TorcN {
+      component "Task Scheduler & Dispatcher" as SchedN <<Scheduler>>
+      component "Worker Thread Pool" as PoolN <<ThreadPool>>
+      component "Worker Queues" as QueuesN <<Queue>>
+      component "Future Store\n(Task Descriptors)" as FutureN
+      component "Stealing Manager" as StealN
+      component "SPMD Manager" as SPMDN
+      component "SPMD Function Execution" as SpmdFuncN
+      component "MPI Adapter (mpi4py)" as MPIN <<MPI>>
+    }
+
+    ' Internal wiring on other ranks
+    SchedN --> QueuesN : enqueue
+    PoolN --> QueuesN : pull tasks
+    PoolN --> FutureN : set results
+
+    PoolN --> StealN : idle notifications
+    StealN --> MPIN : steal requests/responses
+
+    SPMDN --> MPIN : participate in SPMD
+    MPIN --> SpmdFuncN : run SPMD function
+    SpmdFuncN ..> MPIN : application-level MPI calls
+  }
+
+  ' Inter-process communication
+  MPI0 <--> MPIN : internal MPI messages\n(task dispatch, results, control)
+
+  ' Cross-rank flows (illustrative)
+  MPI0 --> SchedN : dispatch remote tasks
+  FutureN --> MPIN : return results
+  MPIN --> MPI0 : deliver results to spawning rank
+}
+
+' Runtime configuration via environment variables
+artifact "TORC_WORKERS" as EV_WORKERS
+artifact "TORC_STEALING" as EV_STEAL
+artifact "TORC_SERVER_YIELDTIME\nTORC_WORKER_YIELDTIME" as EV_YIELD
+
+EV_WORKERS --> Env0 : workers per process
+EV_STEAL --> Env0 : enable/disable stealing
+EV_YIELD --> Env0 : idle-yield timing
+
+' Example data flows (image preprocessing)
+folder "Image Dataset Files" as Images
+database "HDF5 Output File" as HDF5
+
+App0 ..> Images : read images\n(map-style preprocessing)
+App0 ..> HDF5 : write processed data
+
+' Optional dependencies for examples
+package "Optional Example Dependencies" as Opt {
+  component "numpy" as Numpy
+  component "cma" as Cma
+  component "h5py" as H5py
+  component "pillow" as Pillow
+}
+
+App0 ..> Numpy : numerical examples
+App0 ..> Cma : optimization example
+App0 ..> H5py : HDF5 writing
+App0 ..> Pillow : image IO
+
+@enduml

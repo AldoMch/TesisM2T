@@ -1,0 +1,52 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+title Home Recipes System Architecture
+
+skinparam componentStyle rectangle
+
+package "Client Layer" {
+  [Flutter/Dart Client] as client
+}
+
+package "API Gateway Layer" {
+  [gRPC-Gateway] as gateway
+}
+
+package "Service Layer" {
+  [Go gRPC Server] as server
+}
+
+package "Data Layer" {
+  [Recipe Store] as recipeStore
+  [Ingredient Store] as ingredientStore
+}
+
+package "Deployment Environments" {
+  [Docker Container] as docker
+  [Kubernetes Cluster] as k8s
+  [Azure Kubernetes Service] as aks
+}
+
+client --> gateway : HTTP/REST
+client --> server : gRPC
+gateway --> server : gRPC
+
+server --> recipeStore : manages
+server --> ingredientStore : manages
+
+docker ..> server : contains
+k8s ..> server : orchestrates
+aks ..> server : orchestrates
+
+note right of server
+  Generated from shared
+  Protocol Buffers contract
+end note
+
+note top of gateway
+  Exposes gRPC services
+  as HTTP endpoints
+end note
+
+@enduml

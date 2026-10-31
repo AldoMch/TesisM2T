@@ -1,0 +1,109 @@
+@startuml
+title Airflow - Spark - Docker Compose Integration (Layered Architecture)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+' ===================== Actors / External Users =====================
+package "Users (Actors)" as USERS {
+  actor "Data Engineer" as DE
+  actor "Platform Engineer" as PE
+  actor "Notebook User" as NU
+  actor "Tester" as TE
+}
+
+' ===================== Host Environment =====================
+package "Host Machine" as HOST {
+  component "Docker Engine + Docker Compose (format 3.7)" as COMPOSE
+  component "Host Port Mappings\n5432 / 8282 / 8181 / 7077 / 8888 / 4040-4080" as PORTS
+}
+
+' ===================== Presentation / Access Layer =====================
+package "Presentation & Access Layer (Service UIs)" as PRES {
+  component "Airflow Web UI\n(host 8282)" as UI_AIRFLOW
+  component "Spark Master Web UI\n(host 8181)" as UI_SPARK
+  component "Jupyter Notebook UI\n(host 8888)" as UI_JUPYTER
+  component "Spark Application UI\n(host 4040-4080)" as UI_APP
+}
+
+' ===================== Orchestration Layer =====================
+package "Orchestration Layer" as ORCH {
+  component "Airflow Webserver + Scheduler\nimage: docker-airflow-spark:latest\nLocalExecutor" as AIRFLOW
+  component "DAG Runtime\nSpark test DAG loaded from mounted DAG dir" as DAGRUN
+  component "SparkSubmitOperator\nconn: spark_default" as SSO
+  component "PySpark Runtime in Airflow image\n(pinned deps + pyspark)" as AIRFLOW_PY
+}
+
+' ===================== Processing Layer =====================
+package "Spark Standalone Processing Layer" as PROC {
+  component "Spark Master\nbitnami/spark:latest\nSPARK_MODE=master\nspark://spark:7077" as SPARKMASTER
+  component "Swrk 1\nspark-worker-1" as W1
+  component "Swrk 2\nspark-worker-2" as W2
+  component "Swrk 3\nspark-worker-3" as W3
+  component "Worker Scaling Pattern\n(additional workers)" as WN
+  component "Jupyter / PySpark Service\njupyter/pyspark-notebook" as JUPYTER
+  component "Bundled Spark Distribution 2.4.5 / Hadoop 2.6\n./bin/pyspark, ./bin/run-example, MASTER selector" as SPARKDIST
+}
+
+' ===================== Data Layer =====================
+package "Data & Persistence Layer" as DATA {
+  database "Postgres 9.6\nAirflow metadata (5432)" as POSTGRES
+  component "Shared Mounted Volumes\nDAGs / Spark apps / Notebooks / Input data" as VOLUMES
+  component "libsvm Datasets\n(for bundled ML examples)" as LIBSVM
+}
+
+' ===================== Cross-cutting / NFR =====================
+package "Cross-Cutting Concerns" as CROSS {
+  component "Observability\nAirflow task logs, Spark UI, container logs" as OBS
+  component "Shared Compose Network\n(service-name DNS resolution)" as NET
+  component "Local Security Profile\nRPC auth/encryption, SSL disabled" as SEC
+}
+
+' --------------------- Relationships ---------------------
+DE --> UI_AIRFLOW
+DE --> UI_SPARK
+NU --> UI_JUPYTER
+TE --> UI_APP
+PE --> HOST
+
+HOST --> PRES
+PORTS --> PRES : exposes
+
+UI_AIRFLOW --> AIRFLOW
+UI_SPARK --> SPARKMASTER
+UI_JUPYTER --> JUPYTER
+UI_APP --> SPARKMASTER
+
+AIRFLOW --> DAGRUN : loads/schedules
+DAGRUN --> SSO : submits via
+SSO --> AIRFLOW_PY : uses
+AIRFLOW --> POSTGRES : metadata (CI-001)
+AIRFLOW --> VOLUMES : DAG + app files
+
+SSO --> SPARKMASTER : spark://spark:7077 (CI-002)
+SPARKMASTER --> W1 : dispatches (CI-003)
+SPARKMASTER --> W2 : dispatches
+SPARKMASTER --> W3 : dispatches
+SPARKMASTER --> WN : dispatches
+
+JUPYTER --> SPARKDIST : interactive PySpark
+JUPYTER --> VOLUMES : notebooks + input data
+AIRFLOW_PY --> SPARKDIST
+SPARKDIST --> LIBSVM : ML example readers
+SPARKDIST --> SPARKMASTER : MASTER target
+
+W1 --> VOLUMES
+W2 --> VOLUMES
+W3 --> VOLUMES
+SPARKMASTER --> VOLUMES
+
+AIRFLOW --> OBS
+SPARKMASTER --> OBS
+W1 --> OBS
+AIRFLOW --> NET
+SPARKMASTER --> NET
+JUPYTER --> NET
+POSTGRES --> NET
+SPARKDIST ..> SEC
+
+@enduml

@@ -1,0 +1,122 @@
+{
+  "candidate": {
+    "sample_id": "s000058_3ebb884d",
+    "repository_name": "Enterprise-CMCS/macpro-appian-connector",
+    "image_url": "https://github.com/Enterprise-CMCS/macpro-appian-connector/blob/master/docs/assets/architecture.png",
+    "source_ref": "6f5047f26d6ee51450baa17a614ac671cb3a7224",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 9198,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "config",
+      "deployment_config",
+      "docs",
+      "readme",
+      "test",
+      "tutorial_guide"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 42,
+      "user_scenario": 18,
+      "api_io": 27,
+      "deployment": 36,
+      "constraints": 23,
+      "non_functional": 10
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "docs/docs/developer-guide/list-running-stages.md",
+      "doc_type": "tutorial_guide",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05373406193078324,
+      "text": "--- layout: default title: List Running Stages parent: Development Workflows nav_order: 9 --- # List Running Stages {: .no_toc } How to get a list of currently running stages for this project in the current AWS account. {: .fs-6 .fw-300 } ## Table of contents {: .no_toc .text-delta } - TOC {:toc} --- ### List Running Stages #### Summary This returns a list of currently running stages for this project in the current AWS account. #### Prerequisites: - Completed all onboarding #### Procedure - Obtain and set AWS CLI credentials - Use the run script: #### Notes - None ### Run Report using GitHub Actions #### Summary This project uses GitHub Actions as its CI/CD tool. Each of our repositories..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "docs/docs/onboarding/workspace-setup.md",
+      "doc_type": "docs",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05145827218854908,
+      "text": "ur default download location, is fine. - Open a terminal - Run the setup.sh script Please note that you may be prompted to input your OS user's password, as some installation steps require higher priveleges. After successfully running the setup script, close all open terminals. The script adds PATH modifications to your .zshrc file, and that file will only take affect when starting a new terminal session. To ensure you immediately have the PATH modifications available, it's easiest to simply close all terminal windows now. You may reopen the terminal at any time afterwards. ## Clone the repository Now that you have all prerequisites installed, it's time to get the code base. This will req..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "src/services/alerts/README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053359923887587826,
+      "text": "# alerts The template in this service deploys an SNS topic that is triggered by an EventBridge rule. The SNS topic policy provides the permission for EventBridge to invoke the SNS topic. The EventBridge rules defined alongside various ECS services within this project filters the events based upon the criteria in the EventPattern section. When matching events are sent to EventBridge that trigger the rule, they are delivered to the SNS topic. The pattern of this flow is shown below: The SNS Subscription service associated with the topic is managed manually, this allows for users to be added / removed without being deployed. Additionally, we can create subscription services in specific envir..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "src/services/connector/handlers/configureConnectors.js",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05265289017287224,
+      "text": "import * as connect from \"./../../../libs/connect-lib\"; import { connectors } from \"../libs/connectors\"; async function myHandler(event, context, callback) { await connect.putConnectors( process.env.cluster, process.env.service, connectors ); await connect.deleteConnectors(process.env.cluster, process.env.service, []); await connect.restartConnectors( process.env.cluster, process.env.service, connectors ); } exports.handler = myHandler;"
+    },
+    {
+      "evidence_id": "E005",
+      "path": "docs/_deploy-metrics/lib/getSuccessfulDeploys.ts",
+      "doc_type": "deployment_config",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05466623276247813,
+      "text": "import { getRepoName } from \"./getRepoName\"; import { octokit } from \"./octokit\"; export const getSuccessfulDeploys = async (branch: string) => { const data = await octokit.paginate( \"GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs\", { owner: \"Enterprise-CMCS\", repo: getRepoName, workflow_id: \"deploy.yml\", branch, per_page: 100, }, (res) => res.data.flat() ); const failedRuns = data.filter((run) => run.conclusion !== \"success\").length; const passedRuns = data.length - failedRuns; return { failedRuns, passedRuns }; };"
+    },
+    {
+      "evidence_id": "E006",
+      "path": "docs/_deploy-metrics/lib/getPrsToBranch.ts",
+      "doc_type": "deployment_config",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05393145161290323,
+      "text": "import { octokit } from \"./octokit\"; import differenceInHours from \"date-fns/differenceInHours\"; import { getRepoName } from \"./getRepoName\"; export const getPrsToBranch = async (branch: string) => { const data = await octokit.paginate( \"GET /repos/{owner}/{repo}/pulls\", { owner: \"Enterprise-CMCS\", repo: getRepoName, state: \"closed\", per_page: 100, base: branch, }, (res) => res.data.flat() ); const timesToMergePrs = data .filter((pr) => pr.merged_at && pr.created_at) .map((pr) => ({ hours: differenceInHours( new Date(pr.merged_at!), new Date(pr.created_at!) ), })); const averageTimeToMerge = timesToMergePrs.reduce((total, { hours }) => total + hours, 0) / timesToMergePrs.length || 0; retu..."
+    }
+  ]
+}

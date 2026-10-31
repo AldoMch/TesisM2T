@@ -1,0 +1,162 @@
+@startuml
+title EasyLaTex - System Architecture
+
+' ============================================================
+' Client Layer - Browser-based UI
+' ============================================================
+package "Client Layer (Web Browser)" as Client {
+    component "Registration / Login UI" as UI_Auth
+    component "Password Recovery UI" as UI_Recover
+    component "Project & Group Workspace UI" as UI_Workspace
+    component "File Upload UI\n(Drag & Drop / File Selection)" as UI_Upload
+    component "LaTex Editor UI" as UI_Editor
+    component "Real-Time Render Preview UI" as UI_Preview
+    component "Version Tree & Comments UI" as UI_Version
+    component "Export UI" as UI_Export
+}
+
+' ============================================================
+' Presentation / API Gateway Layer
+' ============================================================
+package "External Interface Layer" as Interface {
+    component "HTTP/REST API Gateway" as APIGateway
+    component "WebSocket Channel\n(real-time preview / collaboration)" as WS
+}
+
+' ============================================================
+' Application / Business Service Layer
+' ============================================================
+package "Application Services" as Services {
+    component "User Management Service\n(register / login / recover / profile)" as SvcUser
+    component "Authentication & Authorization Service\n(RBAC: owner / collaborator)" as SvcAuth
+    component "Project Management Service" as SvcProject
+    component "Group & Collaboration Service" as SvcGroup
+    component "File Intake & Parsing Service" as SvcParse
+    component "Recognition Service\n(handwriting / image / CSV / Excel / PDF)" as SvcRecognize
+    component "LaTex Generation Service" as SvcLatexGen
+    component "Real-Time Rendering Service" as SvcRender
+    component "Version Control Service\n(version tree / branches / restore)" as SvcVersion
+    component "Comment Service" as SvcComment
+    component "Export Service\n(PDF / LaTex / PNG / JPEG)" as SvcExport
+}
+
+' ============================================================
+' AI / Recognition Engine Layer
+' ============================================================
+package "AI & Recognition Engines" as AI {
+    component "Handwriting Recognition Model" as AIHand
+    component "Formula Recognition Model" as AIFormula
+    component "Table Recognition Model" as AITable
+    component "OCR / Image Parser" as AIOCR
+    component "Document / PDF Extractor" as AIPDF
+    component "Structured Data Parser\n(CSV / Excel .xlsx)" as AIStruct
+}
+
+' ============================================================
+' LaTex Engine Layer
+' ============================================================
+package "LaTex Subsystem" as Latex {
+    component "LaTex Compilation Engine\n(TeX Live / MiKTeX compatible)" as LatexEngine
+    component "Renderer & Preview Generator" as LatexRender
+}
+
+' ============================================================
+' Data & Persistence Layer
+' ============================================================
+package "Data Layer" as Data {
+    database "Relational Database\n(MySQL 8.0+ / PostgreSQL 12+)" as DB
+    component "File & Object Storage\n(images, PDF, CSV, xlsx, exports)" as Storage
+}
+
+' ============================================================
+' Cross-Cutting Concerns
+' ============================================================
+package "Cross-Cutting Concerns" as Security {
+    component "Encryption Service\n(storage & transmission)" as SecEncrypt
+    component "Input Validation & Sanitization\n(SQLi / XSS / CSRF defenses)" as SecValidate
+    component "Privacy & Compliance Manager\n(GDPR)" as SecPrivacy
+}
+
+' ============================================================
+' External Systems
+' ============================================================
+cloud "Mainstream LaTex Editors\n(Overleaf / TeXstudio)" as ExtLatexEditors
+
+' ============================ Client <-> Interface ============================
+UI_Auth --> APIGateway
+UI_Recover --> APIGateway
+UI_Workspace --> APIGateway
+UI_Upload --> APIGateway
+UI_Editor --> APIGateway
+UI_Export --> APIGateway
+UI_Preview --> WS
+UI_Version --> APIGateway
+UI_Preview --> APIGateway
+
+' ============================ Gateway <-> Services ============================
+APIGateway --> SvcUser
+APIGateway --> SvcAuth
+APIGateway --> SvcProject
+APIGateway --> SvcGroup
+APIGateway --> SvcParse
+APIGateway --> SvcRecognize
+APIGateway --> SvcLatexGen
+APIGateway --> SvcRender
+APIGateway --> SvcVersion
+APIGateway --> SvcComment
+APIGateway --> SvcExport
+WS --> SvcRender
+WS --> SvcGroup
+
+' ============================ Service Interactions ============================
+SvcUser --> SvcAuth
+SvcProject --> SvcVersion
+SvcGroup --> SvcProject
+SvcGroup --> SvcComment
+SvcParse --> SvcRecognize
+SvcRecognize --> SvcLatexGen
+SvcLatexGen --> SvcRender
+SvcVersion --> SvcLatexGen
+SvcExport --> SvcLatexGen
+SvcExport --> SvcRender
+
+' ============================ Services <-> AI Engines ============================
+SvcRecognize --> AIHand
+SvcRecognize --> AIFormula
+SvcRecognize --> AITable
+SvcRecognize --> AIOCR
+SvcRecognize --> AIPDF
+SvcParse --> AIStruct
+
+' ============================ Services <-> LaTex Subsystem ============================
+SvcLatexGen --> LatexEngine
+SvcRender --> LatexRender
+LatexRender --> LatexEngine
+SvcExport --> LatexEngine
+
+' ============================ Services <-> Data ============================
+SvcUser --> DB
+SvcAuth --> DB
+SvcProject --> DB
+SvcGroup --> DB
+SvcVersion --> DB
+SvcComment --> DB
+SvcParse --> Storage
+SvcRecognize --> Storage
+SvcExport --> Storage
+DB --> Storage
+
+' ============================ Security (cross-cutting) ============================
+SvcUser --> SecEncrypt
+SvcAuth --> SecEncrypt
+SecEncrypt --> DB
+SecEncrypt --> Storage
+APIGateway --> SecValidate
+SvcUser --> SecValidate
+SvcUser --> SecPrivacy
+SecPrivacy --> DB
+
+' ============================ External Interfaces ============================
+SvcExport --> ExtLatexEditors : LaTex source\n(Overleaf / TeXstudio compatible)
+
+@enduml

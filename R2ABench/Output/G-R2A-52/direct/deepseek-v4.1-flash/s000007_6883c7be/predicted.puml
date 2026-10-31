@@ -1,0 +1,86 @@
+@startuml
+title HTTP Proxy System - Component Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName SansSerif
+
+actor "Developer /\nTester /\nIntegrator" as User
+
+rectangle "Build & Runtime Environment" {
+  component "Maven Multi-Module Build\n(Java 1.8 root/test-server,\nJava 1.7 proxy SDK)\nNFR-004, C-005, C-006" as Build
+  component "Java Runtime" as JRE
+  component "Debug Logging\nNFR-002" as Debug
+}
+
+rectangle "Bundled Test Utilities" {
+  component "Local HTTP Test Server\nGrizzly/Jersey\nAPI-001, FR-001, C-001" as TestServer
+  component "Download Resource\nGET /download\nAPI-003, FR-004, FR-005" as DownloadRes
+  component "File Upload Handler\nAPI-004, FR-007" as UploadHandler
+  component "Async Test Client Workload\nfixed thread pool\n50 threads x 1,000 GETs\nNFR-001, C-003" as TestClient
+  component "Success Counter\nHTTP status == 200\nFR-006, DR-006" as SuccessCounter
+}
+
+rectangle "HTTP Proxy Subsystem" {
+  component "HTTP Proxy\nJava SDK" as Proxy
+  component "Forwarding Handler\nRetains FullHttpRequest\nFR-002, FR-003" as ForwardHandler
+  component "Upstream Channel Context\nActivation condition\nC-002" as ChannelContext
+}
+
+rectangle "External / Upstream" {
+  component "External HTTP Client" as ExtClient
+  component "Upstream HTTP Server" as UpstreamServer
+  database "Local Filesystem\nTarget file presence\nC-004, FR-004, FR-005" as FileSystem
+}
+
+rectangle "Data & Interface Contracts" {
+  component "FullHttpRequest\nURI, headers, body\nDEF-001, DR-001" as FullReq
+  component "HTTP Response\nStatus code\n200 = success\nDEF-002, DR-006" as HttpResponse
+  component "Structured Response Object\ncode: Integer\nmsg: String\ndata: Object\nDEF-003, DR-002" as StructuredResp
+  component "File Download Response\napplication/octet-stream\nContent-Disposition attachment\nCOM-002, DEF-004, DR-003, DR-004" as DownloadResponse
+  component "File-handling Map Payload\nfilepath -> handled file name\nDEF-005, DR-005" as MapPayload
+}
+
+interface "API-002\nProxy Forwarding" as IProxyForward
+interface "API-001\nServer Startup" as IServerStartup
+interface "API-003\nGET /download" as IDownload
+interface "COM-001\nHTTP Request/Response" as IHttp
+
+User --> TestClient : runs
+User --> TestServer : starts
+Build ..> TestServer : builds
+Build ..> Proxy : builds
+JRE ..> TestServer
+JRE ..> Proxy
+Debug ..> ForwardHandler : exposes current URI,\nheaders, body to logs
+
+TestServer ..|> IServerStartup
+Proxy ..|> IProxyForward
+DownloadRes ..|> IDownload
+ExtClient --> IHttp
+TestClient --> IHttp
+TestServer --> IHttp
+Proxy --> IHttp
+UpstreamServer --> IHttp
+
+ExtClient --> Proxy : inbound HTTP request
+TestClient --> TestServer : async HTTP GET workload
+TestClient --> SuccessCounter : completed response
+SuccessCounter --> HttpResponse : checks status code == 200
+
+Proxy --> ForwardHandler
+ForwardHandler --> FullReq : retains request
+ForwardHandler --> ChannelContext : waits for activation
+ChannelContext --> UpstreamServer : writes and flushes\nretained FullHttpRequest
+ForwardHandler ..> Debug : debug data
+
+TestServer --> DownloadRes
+TestServer --> UploadHandler
+TestServer --> StructuredResp : may return
+DownloadRes --> FileSystem : checks target file
+DownloadRes --> DownloadResponse : builds when target exists
+DownloadRes --> HttpResponse : no file payload when target absent
+UploadHandler --> MapPayload : returns after upload handling
+
+@enduml

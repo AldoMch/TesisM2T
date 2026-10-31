@@ -1,0 +1,47 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam node {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+rectangle "Browser" as Browser
+
+package "Your GCP project" as GcpProject {
+    node "Compute Engine" as ComputeEngine {
+        rectangle "websocketd" as Websocketd
+        rectangle "pulltop" as Pulltop
+    }
+}
+
+package "pubsub-public-data project" as PublicDataProject {
+    cloud "Cloud Pub/Sub\ntopic" as PubSubTopic
+}
+
+Browser --> Websocketd : HTTP
+Websocketd --> Browser : WebSockets
+Pulltop --> Websocketd : STDOUT
+Pulltop --> PubSubTopic : Pull\nSubscription
+@enduml

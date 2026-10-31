@@ -1,0 +1,137 @@
+@startuml
+!define LAYER1 #E6F3FF
+!define LAYER2 #E6FFE6
+!define LAYER3 #FFF0E6
+!define LAYER4 #FFE6E6
+!define LAYER5 #F0E6FF
+
+title Gran-Book Backend Platform Architecture
+
+skinparam component {
+  BackgroundColor<<Client>> LAYER1
+  BackgroundColor<<Gateway>> LAYER2
+  BackgroundColor<<Service>> LAYER3
+  BackgroundColor<<Data>> LAYER4
+  BackgroundColor<<External>> LAYER5
+  BorderColor Black
+  ArrowColor Black
+}
+
+' === Client Layer ===
+component "Native Mobile Apps" <<Client>> as MobileApps
+component "Administrative Web App" <<Client>> as AdminWebApp
+
+' === Gateway/BFF Layer ===
+component "API Gateway / BFF" <<Gateway>> as APIGateway {
+  component "Authentication Gateway" as AuthGateway
+  component "Client API Gateway" as ClientGateway
+  component "Admin API Gateway" as AdminGateway
+}
+
+' === Backend Services Layer ===
+package "Backend Services" <<Service>> {
+  component "Authentication Service" as AuthService
+  component "User Management Service" as UserService
+  component "Book Management Service" as BookService
+  component "EC Site Service" as ECService
+  component "Support API Service" as SupportService
+  component "Notification Service" as NotificationService
+  component "Administration Service" as AdminService
+}
+
+' === Data Storage Layer ===
+package "Data Stores" <<Data>> {
+  database "MySQL Database" as MySQL {
+    component "User Data" as UserData
+    component "Book Data" as BookData
+    component "EC Site Data" as ECData
+  }
+  
+  database "NoSQL Storage" as NoSQL {
+    component "Message Data" as MessageData
+  }
+  
+  database "Object Storage" as ObjectStorage {
+    component "Thumbnails" as Thumbnails
+    component "Object Data" as ObjectData
+  }
+}
+
+' === External Services Layer ===
+package "External Services" <<External>> {
+  component "Firebase Authentication" as FirebaseAuth
+  component "Book Search API" as BookSearchAPI
+  component "Stripe Payment" as Stripe
+  component "Push Notification Service" as PushService
+  component "Email Notification Service" as EmailService
+}
+
+' === Infrastructure Layer ===
+cloud "GCP Infrastructure" as GCP {
+  component "Load Balancer" as LoadBalancer
+  component "GKE Cluster" as GKECluster
+  component "Container Runtime" as ContainerRuntime
+  component "GCE VMs" as GCEVMs
+}
+
+' === Client Connections ===
+MobileApps --> APIGateway : "API Calls"
+AdminWebApp --> APIGateway : "API Calls"
+
+' === Gateway to Services ===
+APIGateway --> AuthService : "Auth Requests"
+APIGateway --> UserService : "User Management"
+APIGateway --> BookService : "Book Operations"
+APIGateway --> ECService : "EC Site Operations"
+APIGateway --> SupportService : "Support Requests"
+APIGateway --> AdminService : "Admin Operations"
+
+' === Service to Data Store Connections ===
+AuthService --> FirebaseAuth : "Authentication"
+UserService --> UserData : "CRUD Operations"
+BookService --> BookData : "CRUD Operations"
+BookService --> Thumbnails : "Store/Retrieve"
+ECService --> ECData : "CRUD Operations"
+SupportService --> MessageData : "Message Storage"
+NotificationService --> PushService : "Send Push"
+NotificationService --> EmailService : "Send Email"
+
+' === Service to External Integrations ===
+BookService --> BookSearchAPI : "Search Books"
+ECService --> Stripe : "Payment Processing"
+
+' === Service to Service Communications ===
+UserService --> AuthService : "User Validation"
+BookService --> UserService : "User Context"
+ECService --> UserService : "User Context"
+ECService --> BookService : "Book Information"
+SupportService --> UserService : "User Information"
+NotificationService --> UserService : "User Preferences"
+
+' === Infrastructure Connections ===
+APIGateway --> LoadBalancer : "Traffic"
+LoadBalancer --> GKECluster : "Load Distribution"
+GKECluster --> ContainerRuntime : "Container Orchestration"
+ContainerRuntime --> AuthService : "Hosts"
+ContainerRuntime --> UserService : "Hosts"
+ContainerRuntime --> BookService : "Hosts"
+ContainerRuntime --> ECService : "Hosts"
+ContainerRuntime --> SupportService : "Hosts"
+ContainerRuntime --> NotificationService : "Hosts"
+ContainerRuntime --> AdminService : "Hosts"
+
+GCEVMs --> MySQL : "Database Hosting"
+GCEVMs --> NoSQL : "NoSQL Hosting"
+GCEVMs --> ObjectStorage : "Object Storage"
+
+' === Legend ===
+legend right
+  <color:LAYER1>Client Layer</color> - Frontend applications
+  <color:LAYER2>Gateway Layer</color> - API Gateway/BFF
+  <color:LAYER3>Service Layer</color> - Backend microservices
+  <color:LAYER4>Data Layer</color> - Data storage systems
+  <color:LAYER5>External Layer</color> - Third-party services
+  <color:#000000>Infrastructure</color> - GCP cloud platform
+endlegend
+
+@enduml

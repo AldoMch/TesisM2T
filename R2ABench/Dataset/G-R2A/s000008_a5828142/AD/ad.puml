@@ -1,0 +1,103 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam queue {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+rectangle "Developer" as Developer
+
+package "Frontend Repo" as FrontendRepo {
+    rectangle "GitHub" as FrontendGitHub
+    rectangle "Vue 3" as Vue3
+    rectangle "Deploy Key" as FrontendDeployKey
+    rectangle "CI/CD Workflow" as FrontendWorkflow
+}
+
+package "Backend Repo" as BackendRepo {
+    rectangle "GitHub" as BackendGitHub
+    rectangle "Node.js" as BackendNode
+    rectangle "Deploy Key" as BackendDeployKey
+    rectangle "CI/CD Workflow" as BackendWorkflow
+}
+
+package "Static Asset Delivery" as AssetDelivery {
+    cloud "Storage\nS3 bucket" as S3Bucket
+    cloud "CDN\nCloudFront" as CloudFront
+}
+
+rectangle "End User" as EndUser
+
+package "Application Runtime" as Runtime {
+    package "Reverse Proxy" as ReverseProxy {
+        rectangle "Nginx" as Nginx
+        rectangle "Express" as Express
+    }
+
+    package "Database" as DatabaseLayer {
+        database "Redis" as Redis
+        database "MySQL" as MySQL
+        database "InfluxDB" as InfluxDB
+    }
+}
+
+package "Coding Sandbox" as CodingSandboxGroup {
+    package "Coding Sandbox 1" as CodingSandbox1 {
+        rectangle "Docker" as Docker1
+        rectangle "Node.js" as SandboxNode1
+        rectangle "Exporter" as Exporter1
+    }
+
+    package "Coding Sandbox 2" as CodingSandbox2 {
+        rectangle "Docker" as Docker2
+        rectangle "Node.js" as SandboxNode2
+        rectangle "Exporter" as Exporter2
+    }
+}
+
+Developer --> FrontendRepo : Git Push
+Developer --> BackendRepo : Git Push
+
+FrontendWorkflow --> S3Bucket : Build and upload
+S3Bucket --> CloudFront
+CloudFront <--> EndUser
+
+BackendWorkflow --> Runtime : Deploy
+EndUser <--> Nginx : Socket connection\nAPI request / response
+
+Nginx --> Express
+Express --> Redis
+Express --> MySQL
+Express --> InfluxDB
+
+Express --> CodingSandboxGroup : Arrange sandbox jobs
+
+Express ..> S3Bucket : Upload Coding Archives
+FrontendWorkflow ..> CloudFront : Cache Invalidation
+@enduml

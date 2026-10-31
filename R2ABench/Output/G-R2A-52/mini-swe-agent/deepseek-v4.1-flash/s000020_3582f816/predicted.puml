@@ -1,0 +1,114 @@
+@startuml
+title MyEMS REST API and Admin Routing - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+left to right direction
+
+' ------------------------------------------------------------------
+' Actors / External Systems
+' ------------------------------------------------------------------
+actor "Administrator\n(MyEMS Admin user)" as AdminUser
+component "MyEMS Components" as MyEMSComp <<external system>>
+component "Third-Party Applications" as ThirdParty <<external system>>
+component "Developers / Deployers" as Deployer <<external actor>>
+
+' ------------------------------------------------------------------
+' Presentation Layer (Browser)
+' ------------------------------------------------------------------
+package "Presentation Layer (Browser Environment)" {
+  component "MyEMS Admin Web Application" as AdminApp {
+    component "Client-Side Routing Configuration\n(/user, /contact, settings routes)" as Router
+    component "API Base Path Resolver\n{protocol}//{hostname}:{port}/api/" as BasePathResolver
+    component "Localization / Title Keys\n(MENU.USERSETTING.USER,\nMENU.SETTINGS.CONTACT)" as I18n
+  }
+
+  package "Lazy-Loaded Route Modules" {
+    component "User Settings Module\n(services, controllers,\nlogin-related, UI libs)" as UserMod
+    component "Contact Settings Module" as ContactMod
+    component "Tariff Settings Module\n(where configured)" as TariffMod
+    component "Category Settings Module\n(where configured)" as CategoryMod
+  }
+}
+
+' ------------------------------------------------------------------
+' Edge / Routing Layer
+' ------------------------------------------------------------------
+package "Edge / Routing Layer" {
+  component "Reverse Proxy (e.g. Nginx)\noption: forwards /api/ traffic\n(same-origin, CORS avoidance)" as ReverseProxy
+}
+
+' ------------------------------------------------------------------
+' API / Service Layer
+' ------------------------------------------------------------------
+package "API Service Layer (Python Runtime)" {
+  component "MyEMS REST API Service" as ApiService {
+    component "REST Framework\nEndpoint Handling" as RestFw
+    component "CORS Support" as Cors
+    component "WSGI Execution Runtime" as Wsgi
+    component "Spreadsheet / Image Handling\nDependencies" as Processing
+    component "MySQL Connector" as MySqlConn
+  }
+}
+
+' ------------------------------------------------------------------
+' Data Layer
+' ------------------------------------------------------------------
+package "Data Layer" {
+  database "MySQL-Compatible Database" as MySQLDb
+  component "Runtime Configuration Data\n(package deps, network,\ndatabase connectivity)" as RuntimeCfg
+}
+
+' ------------------------------------------------------------------
+' Deployment / Tooling Layer
+' ------------------------------------------------------------------
+package "Deployment and Tooling Layer" {
+  component "Docker-Based Installation\n(image, setup scripts)" as Docker
+  component "Development Quick-Run\n(Linux / Windows commands)" as DevRun
+}
+
+' ------------------------------------------------------------------
+' Relationships
+' ------------------------------------------------------------------
+AdminUser --> AdminApp : uses settings views
+AdminApp ..> I18n
+Router --> UserMod : lazy-load route modules
+Router --> ContactMod : lazy-load route modules
+Router --> TariffMod : lazy-load (where configured)
+Router --> CategoryMod : lazy-load (where configured)
+AdminApp --> BasePathResolver : computes /api/ base path
+BasePathResolver --> ReverseProxy : HTTP/HTTPS requests to {origin}/api/
+AdminApp --> ApiService : same-origin /api/ access (fallback path)
+
+ReverseProxy --> ApiService : forwards /api/ traffic
+
+MyEMSComp --> ApiService : RESTful integration
+ThirdParty --> ApiService : RESTful integration
+
+ApiService --> RestFw
+ApiService --> Cors
+ApiService --> Wsgi
+ApiService --> Processing
+ApiService --> MySqlConn
+MySqlConn --> MySQLDb : persistent storage
+ApiService --> RuntimeCfg : runtime configuration
+
+Deployer --> DevRun : quick-run start
+Deployer --> Docker : install / prepare runtime
+Docker ..> ApiService : prepares Python dependency set
+DevRun ..> ApiService : starts service (development)
+
+ApiService --> Processing : payload/data exchange (REST)
+note bottom of ReverseProxy
+  CON-003: reverse proxy is an option,
+  not the only same-origin mechanism.
+end note
+
+note right of ApiService
+  CON-001: required Python packages
+  (REST framework, CORS, WSGI,
+  spreadsheet/image, MySQL connector)
+  must be installed before startup.
+end note
+
+@enduml

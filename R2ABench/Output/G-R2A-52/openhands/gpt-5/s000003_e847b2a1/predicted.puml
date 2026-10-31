@@ -1,0 +1,84 @@
+@startuml
+title Prediction Cards System Architecture
+left to right direction
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 220
+
+rectangle "User Frontend (React)" as FE {
+  component "Prediction UI" as UI
+  component "Prediction API\n(Provider/Context)" as API
+  component "Aeternity Wallet Client\n+ SDK" as WALLET
+}
+
+package "Aeternity Blockchain" as CHAIN {
+  component "PredictionCards\nSmart Contract" as CONTRACT
+  component "AENS Name Service" as AENS
+  component "Oracle Registry\n& Oracle Queries" as OREG
+}
+
+node "Backend Services" as SRV {
+  component "Prediction-Processing Service" as PPS
+  component "Oracle Service (Quarkus)" as ORACLE
+}
+
+cloud "Prediction Media Storage\n(IPFS-compatible)" as MEDIA
+cloud "External Price Provider" as PRICE
+
+frame "Local Contract Integration-Test Stack" as TEST {
+  component "AE Node" as NODE
+  component "Compiler Service" as COMP
+  component "Index Service" as IDX
+  component "Debug Endpoint" as DBG
+  component "Test Proxy\n(CORS Enabled)" as PROXY
+}
+
+' Frontend interactions
+UI --> API : User operations
+API --> WALLET : Wallet connection/sign & contract calls
+API ..> AENS : Resolve contract by AENS name
+WALLET --> CONTRACT : Create/View predictions;\nFund/Rent/Withdraw; Claim rewards
+API --> MEDIA : Load outcome NFT media
+
+' Prediction-processing service workflow
+PPS ..> AENS : Resolve contract
+PPS --> CONTRACT : 5. Initiate oracle query\n7. Drive on-chain result processing
+
+' On-chain oracle objects
+CONTRACT --> OREG : Create pending\noracle query objects
+
+' Oracle service responsibilities
+ORACLE ..> AENS : Resolve contract
+ORACLE --> PRICE : Obtain external price data
+ORACLE --> OREG : 6. Submit oracle response\n(result: higher | lower_or_equal)
+ORACLE --> OREG : Check/Register/Extend\noracle validity
+
+' Local integration-test flows (CORS/proxy)
+FE --> PROXY : Local browser requests\nGET/POST/OPTIONS; headers:\nContent-Type, Cache-Control,\nContent-Range, Range
+PROXY --> NODE
+PROXY --> COMP
+PROXY --> IDX
+PROXY --> DBG
+
+' Notes on responsibilities and constraints
+note right of ORACLE
+Scheduled periodic processing:\n- Check pending oracle queries\n- Maintain oracle registration/validity\n- Query price provider and submit responses
+end note
+
+note right of PPS
+Scheduled handling of closed predictions:\n- Discover closed predictions\n- Initiate oracle queries\n- Complete on-chain result processing
+end note
+
+note right of API
+Contract interaction rules:\n- Convert local times to millisecond timestamps (DR-009)\n- Use connected wallet dependency (FR-007)\n- Provide operations via provider/context (FR-005)
+end note
+
+note right of OREG
+Oracle result enumeration:\n- higher\n- lower_or_equal
+end note
+
+note bottom of CHAIN
+On-chain state holds predictions, outcomes, and\nreward-claiming availability after result processing.
+end note
+
+@enduml

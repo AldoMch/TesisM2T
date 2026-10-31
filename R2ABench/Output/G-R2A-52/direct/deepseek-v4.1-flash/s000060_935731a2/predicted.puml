@@ -1,0 +1,90 @@
+@startuml
+title lowes/auditor — System Architecture (Component View)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam arrowFontSize 11
+
+package "JVM 11 Application Environment" {
+
+  component "Integrating Application" as App
+
+  rectangle "AuditorEventConfig" as Config <<data>> {
+    note as ConfigNote
+      applicationName
+      eventSource
+      eventSubType
+      metadata
+      filters.element {
+        enabled,
+        types,
+        includes
+      }
+    end note
+  }
+
+  package "lowes/auditor (Kotlin Client Library)" {
+
+    component "Auditing API" as AuditAPI
+    component "Audit Comparison Engine" as DiffEngine
+    component "AuditEvent Builder" as EventBuilder
+
+    interface "EventPublisher" as EventPublisherI
+    interface "LogProvider" as LogProviderI
+    interface "AuditEventElementFilter" as ElementFilterI
+  }
+
+  rectangle "AuditEvent" as AuditEvent <<data>> {
+    note as AuditEventNote
+      type: UPDATED | CREATED | DELETED
+      elements[]:
+        name
+        updatedValue
+        previousValue
+        metadata.fqdn
+      published as JSON string
+    end note
+  }
+
+  component "Kafka Event Publisher\n(default implementation)" as KafkaPublisher
+  component "InclusionFilter" as InclusionFilter
+
+  component "Kafka Topic" as KafkaTopic
+
+  component "Downstream Consumer\n(out of scope)" as Consumer
+}
+
+App --> AuditAPI : oldObject, newObject,\nAuditorEventConfig
+App --> Config : supplies configuration
+AuditAPI --> Config : reads
+
+AuditAPI --> DiffEngine : compare old vs new state
+DiffEngine --> ElementFilterI : apply element filtering
+ElementFilterI <|.. InclusionFilter
+
+DiffEngine --> EventBuilder : changed elements\n(UPDATED / CREATED / DELETED)
+EventBuilder --> AuditEvent : creates
+Config ..> EventBuilder : configuration values
+
+EventBuilder --> EventPublisherI : publish(AuditEvent JSON)
+EventPublisherI <|.. KafkaPublisher
+KafkaPublisher --> KafkaTopic : serialized AuditEvent
+
+KafkaTopic --> Consumer : AuditEvent JSON
+
+EventBuilder ..> LogProviderI : logging support
+AuditAPI ..> LogProviderI : logging support
+
+note right of ElementFilterI
+  NFR-001 / C-001 / C-004:
+  abstract integration point
+  for element filtering
+end note
+
+note bottom of KafkaPublisher
+  C-003: default transport is Kafka,
+  abstracted behind EventPublisher
+end note
+
+@enduml

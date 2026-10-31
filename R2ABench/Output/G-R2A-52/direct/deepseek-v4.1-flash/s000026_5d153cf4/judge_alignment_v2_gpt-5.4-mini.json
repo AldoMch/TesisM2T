@@ -1,0 +1,211 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Web Client"
+      ],
+      "gt_nodes": [
+        "Global::Browser"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Your GCP project::Compute Engine::pulltop",
+        "Your GCP project::Compute Engine::websocketd"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::Node.js pulltop\\nprocess"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+      ],
+      "predicted_nodes": [
+        "GCP Project::Configured Topic\\nprojects/PROJECT_ID/topics/TOPIC_NAME",
+        "GCP Project::Google Cloud Pub/Sub",
+        "GCP Project::Pub/Sub Subscription\\none per adapter instance"
+      ],
+      "is_boundary_correct": false,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Your GCP project::Compute Engine"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::GKE Cluster"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "GCP Project::Configured Topic\\nprojects/PROJECT_ID/topics/TOPIC_NAME",
+      "reference_nodes": [
+        "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GCP Project::Google Cloud Pub/Sub",
+      "reference_nodes": [
+        "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "GCP Project::Pub/Sub Subscription\\none per adapter instance",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "GKE Cluster::ConfigMap\\nitem: topic",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "GKE Cluster::HorizontalPodAutoscaler\\nmin replicas 1, max replicas 2\\nCPU target 80%",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::Node.js pulltop\\nprocess",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine::pulltop"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::Recent message cache\\nlast 10 messages",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::SYMBOL\\nenvironment variable",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::exec.sh\\nentrypoint",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine::pulltop"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::websocketd\\nlistens on :8080",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine::websocketd"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GKE Cluster::Kubernetes Service\\nType: LoadBalancer\\nExposes TCP port 80",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Deployment / Kubernetes Operator",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::GCP Project Admin",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::GKE Cluster",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Client",
+      "reference_nodes": [
+        "Global::Browser"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Web Client"
+      ],
+      "gt_node": "Global::Browser"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "GKE Cluster::Kubernetes Service\\nType: LoadBalancer\\nExposes TCP port 80"
+      ],
+      "gt_node": "Your GCP project::Compute Engine"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::Node.js pulltop\\nprocess",
+        "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::exec.sh\\nentrypoint"
+      ],
+      "gt_node": "Your GCP project::Compute Engine::pulltop"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::websocketd\\nlistens on :8080"
+      ],
+      "gt_node": "Your GCP project::Compute Engine::websocketd"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "GCP Project::Configured Topic\\nprojects/PROJECT_ID/topics/TOPIC_NAME",
+        "GCP Project::Google Cloud Pub/Sub"
+      ],
+      "gt_node": "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5316,
+      "completion_tokens": 501,
+      "total_tokens": 5817,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "GKE Cluster::ConfigMap\\nitem: topic",
+    "GKE Cluster::HorizontalPodAutoscaler\\nmin replicas 1, max replicas 2\\nCPU target 80%",
+    "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::Recent message cache\\nlast 10 messages",
+    "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::SYMBOL\\nenvironment variable",
+    "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::exec.sh\\nentrypoint",
+    "GKE Cluster::Kubernetes Deployment\\nWebSocket Adapter::Adapter Pod\\nreplicas 1..2::Adapter Container::websocketd\\nlistens on :8080",
+    "GKE Cluster::Kubernetes Service\\nType: LoadBalancer\\nExposes TCP port 80",
+    "Global::Deployment / Kubernetes Operator",
+    "Global::GCP Project Admin"
+  ],
+  "_provenance": {
+    "fingerprint": "3709aa1bcd79c5cda4e9706df194b9257c5ff15ea9853420028036c0870ce43e",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

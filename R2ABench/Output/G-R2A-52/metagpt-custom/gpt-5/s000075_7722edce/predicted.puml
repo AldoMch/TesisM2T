@@ -1,0 +1,89 @@
+@startuml
+
+package "Client / Presentation Layer" {
+  node "Web Browser" as Browser {
+    component "Editor SPA (TypeScript/React)" as Editor
+    component "Redux Store" as Redux
+    component "Viewer UI (B/W Renderer)" as Viewer
+
+    Editor --> Redux
+  }
+}
+
+package "Server / API Layer" {
+  node "Python/Django App Server" as App {
+    component "Django API Server" as Django
+    interface "Gauge API" as GaugeAPI
+    interface "Display API" as DisplayAPI
+    interface "Layout API" as LayoutAPI
+    interface "Viewer Route" as ViewerRoute
+    component "Static Asset Serving" as StaticAssets
+
+    Django --> GaugeAPI
+    Django --> DisplayAPI
+    Django --> LayoutAPI
+    Django --> StaticAssets
+    Django --> ViewerRoute
+  }
+}
+
+package "Data / Persistence Layer" {
+  database "PostgreSQL" as PG
+
+  package "Data Models / ORM" as ORM {
+    component "Gauge Model" as GaugeModel
+    component "Display Model" as DisplayModel
+    component "Layout Model" as LayoutModel
+
+    DisplayModel --> LayoutModel : current_layout
+  }
+
+  GaugeModel --> PG
+  DisplayModel --> PG
+  LayoutModel --> PG
+}
+
+package "Build / Deployment Layer" {
+  component "Client Build Pipeline" as Build
+  node "Containerized Dev Runtime (Python 3.7)" as DevRuntime
+}
+
+package "External Systems" {
+  node "Node.js & npm" as NodeNpm
+  node "Docker Engine" as Docker
+  node "Headless Browser" as Headless
+  node "API Client (Data Poster/Display Registrar)" as APIClient
+}
+
+' Cross-layer dependencies
+Editor --> GaugeAPI
+Editor --> DisplayAPI
+Editor --> LayoutAPI
+
+Viewer --> DisplayAPI
+
+Django --> GaugeModel
+Django --> DisplayModel
+Django --> LayoutModel
+
+' Static asset and viewer route delivery to browser
+Browser --> StaticAssets : HTTP GET SPA & viewer assets
+Browser --> ViewerRoute : HTTP GET viewer page
+
+' External API client interactions
+APIClient --> GaugeAPI : POST gauge data
+APIClient --> DisplayAPI : Register displays
+
+' Build outputs static assets
+Build --> StaticAssets : generates SPA/viewer assets
+Build --> NodeNpm
+
+' Deployment/runtime relationships
+App --> DevRuntime : runs on (dev)
+Docker --> DevRuntime
+
+' Headless browser fetches viewer route/assets for automated verification
+Headless --> ViewerRoute : HTTP GET viewer page
+Headless --> StaticAssets : HTTP GET static assets
+
+@enduml

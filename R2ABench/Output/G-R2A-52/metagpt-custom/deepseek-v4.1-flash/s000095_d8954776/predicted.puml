@@ -1,0 +1,94 @@
+@startuml
+package "Presentation/UI Layer" {
+  component "Main Activity or Fragments" as MainActivity
+}
+
+package "Application/Service Layer" {
+  component "Event Bus" as EventBus
+  component "GPS Logging Service" as GpsLoggingService
+  component "Location Listeners" as LocationListeners
+  component "Session/Application Settings Components" as Settings
+  component "Google Play Services-dependent Feature" as GpsServicesFeature
+}
+
+package "Logging/Output Layer" {
+  component "Loggers" as Loggers
+  component "GPX Log Output File" as GpxOutput
+  component "KML Log Output File" as KmlOutput
+  component "Text Log Output File" as TextOutput
+}
+
+package "Integration/Transmission Layer" {
+  component "Uploaders or Upload Jobs" as Uploaders
+  component "OpenGTS Transmission Configuration (server, port, communication method, device identifier, optional path)" as OpenGtsConfig
+  component "OpenGTS Account/Device Message Data" as OpenGtsAccountDeviceData
+  component "UDP Datagram Packager" as UdpDatagramPackager
+  component "OpenGTS UDP Sender" as OpenGtsUdpSender
+  component "GPRMC Encoder" as GprmcEncoder
+  component "SerializableLocation" as SerializableLocation
+}
+
+package "Configuration/Build Layer" {
+  component "Build Configuration/Gradle Properties" as GradleProperties
+  component "OpenStreetMap Credential Configuration" as OsmCredentials
+  component "Dropbox Credential Configuration" as DropboxCredentials
+  component "Android Build/Import Setup" as AndroidBuildSetup
+  component "local.properties (sdk.dir)" as LocalProperties
+  component "Android SDK Build Tools" as AndroidSdkBuildTools
+  component "Android Support Repository" as AndroidSupportRepo
+  component "Android Support Library" as AndroidSupportLib
+  component "Google Repository" as GoogleRepo
+}
+
+package "Platform/Runtime Layer" {
+  node "Android Phone/Emulator Runtime" as AndroidRuntime
+  node "Google Play Services Framework" as GooglePlayServices
+}
+
+cloud "OpenStreetMap" as OpenStreetMap
+cloud "Dropbox" as Dropbox
+cloud "OpenGTS Server" as OpenGtsServer
+
+LocationListeners --> GpsLoggingService : supplies location updates
+GpsLoggingService --> EventBus : publishes locations
+MainActivity --> EventBus : consumes location changes
+GpsLoggingService --> Loggers : passes valid locations
+GpsLoggingService --> Settings : uses logging settings
+GpsLoggingService --> Uploaders : supplies location/message data
+
+Loggers --> GpxOutput : writes enabled output
+Loggers --> KmlOutput : writes enabled output
+Loggers --> TextOutput : writes enabled output
+Loggers --> Settings : reads enabled outputs
+
+Uploaders --> OpenGtsUdpSender : triggers OpenGTS sending
+Uploaders --> Settings : reads integration settings
+Settings --> OpenGtsConfig : provides server/port/communication/device/path
+Settings --> OpenGtsAccountDeviceData : provides account/device identifiers
+OpenGtsUdpSender --> OpenGtsConfig : uses server/port/communication/device/path
+OpenGtsUdpSender --> GprmcEncoder : requests GPRMC message
+GprmcEncoder --> SerializableLocation : encodes
+GprmcEncoder --> UdpDatagramPackager : supplies GPRMC message data
+OpenGtsAccountDeviceData --> UdpDatagramPackager : supplies account/device data
+OpenGtsUdpSender --> UdpDatagramPackager : builds UDP datagram
+OpenGtsUdpSender --> OpenGtsServer : sends UDP datagram
+
+GradleProperties --> OsmCredentials : injects OSM keys
+GradleProperties --> DropboxCredentials : injects Dropbox keys
+OsmCredentials --> Uploaders : provides OSM credentials
+DropboxCredentials --> Uploaders : provides Dropbox credentials
+Uploaders --> OpenStreetMap : optional integration use
+Uploaders --> Dropbox : optional integration use
+
+AndroidBuildSetup --> AndroidSdkBuildTools : uses
+AndroidBuildSetup --> AndroidSupportRepo : uses
+AndroidBuildSetup --> AndroidSupportLib : uses
+AndroidBuildSetup --> GoogleRepo : uses
+LocalProperties --> AndroidBuildSetup : supplies sdk.dir
+
+GpsServicesFeature --> GooglePlayServices : depends on
+AndroidRuntime --> GooglePlayServices : hosts
+AndroidRuntime --> MainActivity : hosts/runs
+AndroidRuntime --> GpsLoggingService : hosts/runs
+AndroidRuntime --> Uploaders : hosts/runs
+@enduml

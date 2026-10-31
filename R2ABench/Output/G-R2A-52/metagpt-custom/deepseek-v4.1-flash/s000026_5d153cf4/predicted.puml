@@ -1,0 +1,80 @@
+@startuml
+cloud "External Client Environment" {
+  component "Web Clients" as WebClients
+}
+
+cloud "Google Cloud Platform Project" as GCP {
+  cloud "Google Cloud Pub/Sub" {
+    component "Pub/Sub Topic\n(configured source)" as Topic
+    component "Pub/Sub Subscription\n(message consumption)" as Subscription
+  }
+
+  node "Google Kubernetes Engine (GKE) Cluster" as GKE {
+    package "Client Access Layer" {
+      component "WebSocket Endpoint\n(external interface)" as WebSocketEndpoint
+      component "Kubernetes LoadBalancer Service\nTCP 80 -> adapter 8080" as LoadBalancer
+    }
+
+    package "Kubernetes Platform Layer" {
+      component "Kubernetes Deployment\n(adapter pods)" as Deployment
+      component "Kubernetes Pods\n(adapter instances)" as Pods
+    }
+
+    package "Configuration Layer" {
+      component "Kubernetes ConfigMap\ntopic item" as ConfigMap
+    }
+
+    package "Adapter Runtime Layer" {
+      component "Adapter Container\nport 8080" as AdapterContainer
+      component "SYMBOL\nconfigured topic identifier" as Symbol
+      component "exec.sh\nentrypoint" as ExecSh
+      component "pulltop\nNode.js puller" as Pulltop
+      component "websocketd\nWebSocket server" as Websocketd
+    }
+
+    package "Data/Integration Layer" {
+      component "Recent-message cache\nin-runtime last 10 topic messages" as Cache
+    }
+
+    package "Autoscaling/Operations Layer" {
+      component "Horizontal Pod Autoscaler\nmin 1, max 2, CPU 80%" as HPA
+    }
+  }
+}
+
+' External WebSocket access
+WebClients --> WebSocketEndpoint : connects to WebSocket endpoint
+WebSocketEndpoint --> LoadBalancer : routes to adapter service
+LoadBalancer --> Pods : selects and forwards TCP 80 to 8080
+Websocketd --> WebSocketEndpoint : streams Pub/Sub mirror data
+WebSocketEndpoint --> WebClients : delivers WebSocket stream
+
+' GKE platform/runtime topology
+Deployment --> Pods : manages
+Pods *-- AdapterContainer : contains
+
+' Entrypoint and runtime processes
+AdapterContainer *-- ExecSh : entrypoint
+AdapterContainer *-- Pulltop : runs
+AdapterContainer *-- Websocketd : runs
+ExecSh --> Pulltop : starts process
+Symbol --> Pulltop : provides configured topic identifier
+
+' Configuration injection
+ConfigMap --> AdapterContainer : injects topic item as SYMBOL
+
+' Pub/Sub consumption flow
+Topic --> Subscription : publishes messages
+Subscription --> Pulltop : delivers messages to puller
+
+' Runtime output and cache
+Pulltop --> Websocketd : provides runtime output
+Pulltop --> Cache : updates recent messages
+AdapterContainer --> Cache : serves up to last 10 messages
+
+' Autoscaling and deployment preconditions
+HPA --> Deployment : scales replicas
+Deployment ..> Topic : deployment precondition\nrequires read access
+Deployment ..> Subscription : deployment precondition\nrequires create/read permission
+
+@enduml

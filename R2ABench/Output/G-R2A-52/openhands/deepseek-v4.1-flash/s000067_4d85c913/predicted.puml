@@ -1,0 +1,110 @@
+@startuml
+title TraceLeft System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "Userspace (Linux)" {
+
+  component "CLI Entry Point\n(FR-001)" as CLI {
+    component "trace Command\n(FR-002)" as TRACE
+  }
+
+  component "TraceLeft Library" as LIB {
+    component "Probe Installer\n(FR-003)" as PROBEINST
+    component "Probe Loader\n(FR-006, FR-009)" as PROBELOAD
+    component "Userspace Tracer\n(FR-004, FR-008)" as TRACER
+    component "Event Dispatcher\n(FR-008, DR-001)" as DISPATCH
+  }
+
+  component "Event Registration Structure\nProgramID / Pids / ELFPath\n(DR-004)" as REG
+
+  component "Handler Generator\n(FR-005, NFR-004)" as GEN
+
+  database "Event Configuration Metadata\nposition / type / name /\nsuffix / hash_func\n(DR-003)" as CONFIG
+
+  component "Generated eBPF\nHandler Source" as GENSRC
+}
+
+package "Linux Kernel" {
+
+  component "Main eBPF Program\n(kprobe / kretprobe attach)" as MAINBPF
+
+  component "Process Program Map\n(context keyed)" as PMAP
+  component "Return Program Map\n(context keyed)" as RMAP
+
+  component "Handler Program Map\nhandle_NAME_progs\nhandle_NAME_progs_ret\n(FR-009, C-004)" as HMAP
+
+  component "Default Handler\neBPF Probes\n(FR-006)" as DEFH
+  component "Process-Specific Handler\neBPF Probes\n(FR-006)" as PROCH
+
+  component "Handler eBPF Programs\n(FR-007, FR-008)" as HANDLERS
+
+  component "probe / kprobe / kretprobe\nfacilities" as PROBEFAC
+}
+
+package "Perf-based Event Channel" {
+  component "perf Event Channel\n(DR-002)" as PERF
+}
+
+actor "CLI Operator" as OP
+actor "Integrator / Embedded User" as INT
+
+OP --> CLI
+INT --> LIB
+
+CLI --> TRACE
+TRACE --> REG
+REG --> PROBELOAD
+REG --> TRACER
+
+PROBEINST --> PROBEFAC
+PROBELOAD --> HMAP
+PROBELOAD --> DEFH
+PROBELOAD --> PROCH
+PROBELOAD ..> MAINBPF : loads / attaches
+
+MAINBPF --> PMAP
+MAINBPF --> RMAP
+MAINBPF --> HMAP
+HMAP --> HANDLERS
+DEFH --> HANDLERS
+PROCH --> HANDLERS
+
+MAINBPF --> PROBEFAC
+HANDLERS --> PROBEFAC : hook function calls
+HANDLERS --> PERF : emit events with\ncommon header
+PERF --> TRACER
+
+TRACER --> DISPATCH
+DISPATCH --> TRACER : common leading\nsection (DR-001)
+
+LIB --> TRACER
+LIB --> PROBELOAD
+
+CONFIG --> GEN
+GEN --> GENSRC
+GENSRC ..> HANDLERS : generates source for\nconfigured events/args
+
+note right of REG
+  Parsed from trace command
+  arguments (DR-004)
+end note
+
+note bottom of HANDLERS
+  No handler set => no handler
+  action, return 0 (FR-007)
+end note
+
+note bottom of PROBEFAC
+  Requires eBPF, kprobe, kretprobe
+  Linux kernel v4.11+ (NFR-001,
+  C-001, C-002)
+end note
+
+note bottom of LIB
+  Built on gobpf integration
+  (NFR-003, C-003)
+end note
+
+@enduml

@@ -1,0 +1,81 @@
+@startuml
+!define RECTANGLE class
+
+rectangle "Client Layer" {
+  rectangle "Native Mobile Applications" as mobile_apps
+  rectangle "Administrative Web Application" as admin_app
+}
+
+rectangle "API Gateway / BFF Layer" {
+  rectangle "API Gateway" as api_gateway
+}
+
+rectangle "Service Layer" {
+  rectangle "Authentication Service" as auth_service
+  rectangle "User Management Service" as user_service
+  rectangle "Book Management Service" as book_service
+  rectangle "EC Site Management Service" as ec_service
+  rectangle "Support API Service" as support_service
+  rectangle "Notification Service" as notification_service
+}
+
+rectangle "Data Layer" {
+  rectangle "MySQL Database" as mysql_db
+  rectangle "NoSQL Storage" as nosql_db
+  rectangle "Object Storage" as object_storage
+  rectangle "Firebase Authentication" as firebase_auth
+}
+
+rectangle "External Services" {
+  rectangle "Firebase Auth (External)" as ext_firebase
+  rectangle "Stripe Payment (External)" as ext_stripe
+  rectangle "Book Search API (External)" as ext_book_search
+  rectangle "Push Notification (External)" as ext_push
+  rectangle "Email Notification (External)" as ext_email
+}
+
+mobile_apps --> api_gateway : HTTP/gRPC
+admin_app --> api_gateway : HTTP/gRPC
+
+api_gateway --> auth_service : Authentication
+api_gateway --> user_service : User Management
+api_gateway --> book_service : Book Management
+api_gateway --> ec_service : EC Site Management
+api_gateway --> support_service : Support Requests
+api_gateway --> notification_service : Notifications
+
+auth_service --> firebase_auth : Manage Auth Data
+firebase_auth --> ext_firebase : Delegate Auth
+
+user_service --> mysql_db : Store/Fetch User Data
+book_service --> mysql_db : Store/Fetch Book Data
+ec_service --> mysql_db : Store/Fetch EC Data
+support_service --> nosql_db : Store/Fetch Messages
+
+notification_service --> ext_push : Send Push Notifications
+notification_service --> ext_email : Send Email Notifications
+
+book_service --> ext_book_search : Lookup Books
+ec_service --> ext_stripe : Process Payments
+
+note right of ext_book_search
+  Provider name to be confirmed
+end note
+
+note right of api_gateway
+  May use Node.js-style implementation
+end note
+
+note right of user_service
+  Implemented using Golang
+end note
+
+note right of book_service
+  Implemented using Golang
+end note
+
+note right of ec_service
+  Implemented using Golang
+end note
+
+@enduml

@@ -1,0 +1,120 @@
+@startuml
+title Turing System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' Actors / User Classes
+' =========================================================
+actor "API Client" as ApiClient
+actor "Platform Operator" as Operator
+actor "Ensembler User" as EnsUser
+
+' =========================================================
+' Turing API Service
+' =========================================================
+package "Turing API Service" as ApiService {
+
+    component "HTTP API\n(OpenAPI 3.0.3)" as HttpApi
+
+    package "Handlers & Routing" as Handlers {
+        component "Routers API\nGET /projects/{project_id}/routers" as RoutersApi
+        component "Ensemblers API\nCRUD /projects/{project_id}/ensemblers" as EnsemblersApi
+    }
+
+    package "Middleware Layer" as Middleware {
+        component "Authorization Middleware" as AuthMw
+        component "Request Validation Middleware\n(OpenAPI spec)" as ValidMw
+    }
+
+    component "Service Layer" as ServiceLayer
+
+    package "Turing Resources" as ResourceStore {
+        component "Router\n(project-scoped)" as RouterEntity
+        component "Ensembler" as EnsemblerEntity
+        component "EnsemblerId" as EnsemblerIdEntity
+    }
+}
+
+' =========================================================
+' Router Lifecycle Management (cluster-facing)
+' =========================================================
+package "Router Lifecycle Management" as ClusterComponents {
+    component "Cluster Manager\n(Create / Update / Delete\nRouter Deployments)" as ClusterManager
+}
+
+' =========================================================
+' PyFuncEnsembler Runtime
+' =========================================================
+package "PyFuncEnsembler Runtime" as PyFuncRuntime {
+    component "PyFuncEnsemblerRunner\n(Webservice)" as PyFuncRunner
+    component "Local Image Build\n(Docker packaging)" as ImageBuild
+}
+
+' =========================================================
+' External Systems / Infrastructure
+' =========================================================
+cloud "Kubernetes Cluster" as K8s {
+    component "Router User Container\n(default port 8080,\nports.containerPort override)" as RouterUserContainer
+}
+
+node "MLflow Model Registry" as MLflow
+component "Docker Image Packaging" as DockerRegistry
+component "Jaeger\n(Tracing Client)" as Jaeger
+
+' =========================================================
+' Relationships - Users to System
+' =========================================================
+ApiClient --> HttpApi : HTTP / JSON
+Operator --> ClusterComponents : deployment operations
+EnsUser --> PyFuncRunner : run ensembler
+
+' =========================================================
+' API internal flow
+' =========================================================
+HttpApi --> Middleware
+AuthMw --> ValidMw : mounted when auth enabled
+ValidMw --> Handlers : validated request
+Handlers --> ServiceLayer
+ServiceLayer --> ResourceStore
+ServiceLayer --> ClusterManager : router lifecycle
+ServiceLayer --> PyFuncRunner : expose ensembler webservice
+
+' =========================================================
+' Cluster / Kubernetes
+' =========================================================
+ClusterManager --> K8s : Kubernetes API\n(create / update / delete)
+K8s --> RouterUserContainer
+
+' =========================================================
+' PyFuncEnsembler build & runtime
+' =========================================================
+ImageBuild --> MLflow : download model artifacts
+ImageBuild --> DockerRegistry : build & package image
+DockerRegistry --> PyFuncRunner : deploy image
+
+' =========================================================
+' Observability
+' =========================================================
+ClusterManager --> Jaeger : tracing (enabled & sampled)
+RouterUserContainer --> Jaeger : request tracing
+
+' =========================================================
+' Data / format notes
+' =========================================================
+note right of EnsemblerEntity
+  JSON representations:
+  - Ensembler (create / retrieve / update)
+  - EnsemblerId (delete result)
+  - Timeout pattern: ^[0-9]+(ms|s|m|h)$
+  - Protocol: HTTP_JSON | UPI_V1
+end note
+
+note bottom of Middleware
+  Middleware mounted only when the
+  corresponding configuration is enabled.
+end note
+
+@enduml

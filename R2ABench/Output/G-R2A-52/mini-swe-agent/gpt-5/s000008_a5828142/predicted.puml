@@ -1,0 +1,65 @@
+@startuml
+title Bunny Code - Layered Architecture
+
+skinparam componentStyle rectangle
+
+package "Presentation Layer" {
+  [Vue SPA (Browser)] as UI
+}
+
+package "Edge/Delivery Layer" {
+  [CDN / Distribution] as CDN
+  [Nginx Reverse Proxy] as Nginx
+}
+
+package "Backend Layer" {
+  [REST API (Node.js/Express)] as API
+  [Realtime Gateway (Socket.IO)] as Socket
+}
+
+package "Application Services" {
+  [Auth & User Service] as AuthSvc
+  [Projects & Versions Service] as ProjectSvc
+  [Workspace & Battle Coordination] as CollabSvc
+  [Code Execution Orchestrator] as ExecSvc
+  [Playback Service] as ReplaySvc
+  [File & Archive Service] as FileSvc
+}
+
+package "Data Stores" {
+  database "MySQL" as MySQL
+  database "InfluxDB (Time-series)" as InfluxDB
+  component "Redis (Cache/Coordination)" as Redis <<cache>>
+}
+
+package "External Systems" {
+  component "Docker Sandbox" as Sandbox
+  component "Object Storage (S3-compatible)" as S3
+}
+
+UI --> CDN : Static assets, downloads
+UI --> Nginx : HTTPS (REST, WebSocket)
+
+Nginx --> API
+Nginx --> Socket
+
+API --> AuthSvc
+API --> ProjectSvc
+API --> FileSvc
+API --> ExecSvc
+API --> ReplaySvc
+API --> CollabSvc
+
+Socket --> CollabSvc
+
+AuthSvc --> MySQL
+ProjectSvc --> MySQL
+CollabSvc --> Redis
+CollabSvc --> MySQL
+ExecSvc --> Sandbox
+ReplaySvc --> InfluxDB
+FileSvc --> S3
+
+CDN --> S3 : Origin
+
+@enduml

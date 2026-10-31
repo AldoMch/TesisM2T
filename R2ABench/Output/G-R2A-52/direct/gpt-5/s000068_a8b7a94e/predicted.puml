@@ -1,0 +1,136 @@
+@startuml
+title cFS Bundle - Architecture Overview (Reviewed Subset)
+
+skinparam componentStyle rectangle
+
+actor "Developer/Build User" as Dev
+actor "Functional Tester" as Tester
+actor "Telemetry Operator" as Operator
+actor "CI Maintainer" as Maintainer
+
+rectangle "nasa/cFS Repository" as Repo
+
+node "Developer/Test Host" as Host {
+  component "Build Env\n(make prep/install)\nuses Makefile.sample & sample_defs" as BuildEnv
+  component "Build Artifacts\n(debug/release)" as BuildArtifacts
+  component "cmdUtil\n(host-side command tool)" as CmdUtil
+
+  node "Runtime: core-cpu1 (cFS Target)" as Core {
+    component "cFS Target Process\n(core-cpu1)" as Target
+  }
+
+  component "Telemetry Viewer/Logger" as TelemetrySink
+}
+
+cloud "GitHub Actions" as GHA {
+  node "Runner: ubuntu-18.04" as R1804
+  node "Runner: ubuntu-latest" as Rlatest
+
+  package "cFS Bundle Workflows" as BundleWF {
+    component "Build & Install\n(debug/release matrix)" as WFBuild
+    component "Run + Functional Test\n(core-cpu1 + cmdUtil)\n15-min timeout" as WFFunc
+    component "Format Check\n(on push, pull_request, workflow_call)" as WFFormat
+    component "Changelog Generation\n(manual trigger)" as WFChangelog
+  }
+
+  package "Reusable Workflows" as ReuseWF {
+    component "Format Check (reusable)" as RWFFormat
+    component "Static Analysis / CodeQL (reusable)" as RWFCodeQL
+    component "Duplicate-check (reusable)" as RWFDuplicate
+  }
+
+  component "Changelog Artifact" as Artifact
+}
+
+package "cFS Submodule Repos" as Submodules
+
+package "Related Tools/Libraries (documented)" as Tools {
+  component "SIL"
+  component "ECI"
+  component "cFS_IO_LIB"
+  component "cFS_LIB"
+  component "CCDD"
+  component "Perfutils-java"
+  component "gen_sch_tbl"
+}
+
+' Repository and build relationships
+Repo -down- BuildEnv : source checkout\n(with submodules)
+Dev --> BuildEnv : copy assets &\nrun make
+BuildEnv --> BuildArtifacts : make prep/install
+BuildArtifacts --> Target : install & run
+Repo .. Tools : documented interfaces
+
+' Functional testing and telemetry flows
+Tester --> CmdUtil : invoke during tests
+CmdUtil --> Target : command packets\n(--pktid, --cmdcode, --endian,\n--uint32, ...)
+Operator --> TelemetrySink : configure/observe telemetry
+Target --> TelemetrySink : telemetry stream
+
+note on link
+Operator enters IP (e.g., 127.0.0.1)
+end note
+
+note bottom of Target
+Accepts host commands and produces telemetry
+end note
+
+' CI relationships and runners
+Repo --> BundleWF : workflow definitions
+Maintainer --> WFChangelog : manual dispatch
+BundleWF ..> ReuseWF : workflow_call reuse
+
+WFBuild --> R1804
+WFFunc --> R1804
+WFFormat --> R1804
+WFChangelog --> Rlatest
+RWFDuplicate --> Rlatest
+RWFFormat --> R1804
+RWFCodeQL --> Rlatest
+
+WFChangelog --> Artifact : upload artifact
+
+Submodules ..> ReuseWF : workflow_call reuse
+
+' Notes on workflows and constraints
+note right of WFBuild
+- Uses Git submodules checkout
+- Uses Makefile.sample and sample_defs
+- Produces debug/release builds
+end note
+
+note right of WFFunc
+- Executes core-cpu1 and ../host/cmdUtil
+- Functional-test timeout ceiling: 15 minutes
+end note
+
+note right of WFFormat
+- Runs on push, pull_request, workflow_call
+end note
+
+note right of R1804
+Used by build, run, functional-test,\nand format-checker jobs
+end note
+
+note right of Rlatest
+Used by changelog and duplicate-check jobs
+end note
+
+note as N1
+Changelog categories:
+- Closed issues
+- Breaking changes
+- Implemented enhancements
+- Fixed bugs
+- Deprecated
+- Removed
+- Security fixes
+end note
+Artifact .. N1
+
+note as N2
+Some reviewed build/test workflows are labeled "deprecated";
+revalidate against active workflows before adoption
+end note
+Repo .. N2
+@enduml

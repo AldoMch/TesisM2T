@@ -1,0 +1,153 @@
+@startuml
+
+package "Front-end/Browser Layer" as Frontend {
+  component "Account Management UI" as AccountUI
+  component "Model Search and Viewing UI" as SearchUI
+  component "Model Contribution and Editing UI" as ContributeUI
+  component "Evolution Relationship Editing UI" as EvolutionUI
+  component "User Management UI" as UserMgmtUI
+  component "Navigation UI" as NavUI
+  component "Front-end Router" as Router
+}
+
+package "Back-end Layer" as Backend {
+  component "API Gateway / Backend Routing" as ApiGateway
+  component "Account Management Service" as AccountSvc
+  component "Model Search and Viewing Service" as SearchSvc
+  component "Model Upload and Modification Service" as UploadSvc
+  component "Evolution Relationship Service" as EvolutionSvc
+  component "User Management Service" as UserMgmtSvc
+  component "Dataset and Trained Model Service" as DatasetSvc
+  component "Model Performance Metrics Service" as MetricsSvc
+  component "Permission Change Review Service" as PermReviewSvc
+}
+
+package "Algorithm Support Layer" as AlgoLayer {
+  component "Model Analysis/Topology Algorithm Component" as Algo
+}
+
+package "Security/Access Control Layer" as SecurityLayer {
+  component "Authentication and Authorization Service" as AuthSvc
+  component "Encryption/Data Protection Component" as Crypto
+  component "Privacy and User Consent Service" as ConsentSvc
+}
+
+package "Data Persistence Layer" as DataLayer {
+  component "Data Access/Repository Component" as Repo
+  database "Neo4j Graph Store" as Neo4j
+  database "MySQL Relational Store" as MySQL
+}
+
+package "External Interface/Communication Layer" as ExtIfaceLayer {
+  interface "Python Library Interface" as PyIF
+  interface "Browser Console Interface" as ConsoleIF
+  interface "Protocol Communication Interface" as ProtocolIF
+  interface "UDP Communication Interface" as UDPIF
+}
+
+package "Deployment / High Availability Layer" as HALayer {
+  component "Failover/Standby Manager" as FailoverMgr
+  node "Standby Machine" as StandbyMachine
+}
+
+cloud "Browser" as Browser
+cloud "Python Libraries" as PyLibs
+cloud "Browser Console" as BrowserConsole
+cloud "OAuth 2.0 / 2FA Service" as OAuth
+cloud "SMTP" as SMTP
+cloud "FTP" as FTP
+cloud "UDP Network" as UDPNet
+
+Browser --> AccountUI
+Browser --> SearchUI
+Browser --> ContributeUI
+Browser --> EvolutionUI
+Browser --> UserMgmtUI
+Browser --> NavUI
+Browser --> BrowserConsole
+
+BrowserConsole --> ConsoleIF : browser console
+
+Frontend --> ProtocolIF : HTTP/HTTPS/TCP/IP
+ProtocolIF --> ApiGateway : HTTP/HTTPS/TCP/IP
+ProtocolIF --> SMTP : SMTP
+ProtocolIF --> FTP : FTP
+ProtocolIF --> UDPIF : UDP
+UDPIF --> UDPNet : UDP
+
+ConsoleIF --> ApiGateway : tooling/admin API
+
+NavUI --> Router
+Router --> AccountUI
+Router --> SearchUI
+Router --> ContributeUI
+Router --> EvolutionUI
+Router --> UserMgmtUI
+
+AccountUI --> AccountSvc
+SearchUI --> SearchSvc
+ContributeUI --> UploadSvc
+EvolutionUI --> EvolutionSvc
+UserMgmtUI --> UserMgmtSvc
+
+ApiGateway --> AccountSvc
+ApiGateway --> SearchSvc
+ApiGateway --> UploadSvc
+ApiGateway --> EvolutionSvc
+ApiGateway --> UserMgmtSvc
+ApiGateway --> DatasetSvc
+ApiGateway --> MetricsSvc
+ApiGateway --> PermReviewSvc
+
+AccountSvc --> AuthSvc : account auth
+UploadSvc --> AuthSvc : upload permissions
+EvolutionSvc --> AuthSvc : evolution permissions
+UserMgmtSvc --> AuthSvc : review/adjust permissions
+DatasetSvc --> AuthSvc : dataset permissions
+MetricsSvc --> AuthSvc : metrics permissions
+
+UserMgmtSvc --> PermReviewSvc : permission changes
+PermReviewSvc --> AuthSvc : apply/review permissions
+PermReviewSvc --> Repo : permission-change records
+
+UploadSvc --> DatasetSvc : trained-model records
+EvolutionSvc --> DatasetSvc : dataset association
+MetricsSvc --> DatasetSvc : metrics for trained models/datasets
+
+SearchSvc --> Algo : analysis/topology
+EvolutionSvc --> Algo : evolution graph/detail generation
+Algo --> MetricsSvc : execution time/prediction accuracy
+UploadSvc --> MetricsSvc : model performance metrics
+
+AccountUI --> ConsentSvc : consent capture
+UserMgmtUI --> ConsentSvc : privacy policy/consent review
+ConsentSvc --> AuthSvc : consent-aware access
+ConsentSvc --> Repo : consent records
+
+AccountSvc --> Repo
+SearchSvc --> Repo
+UploadSvc --> Repo
+EvolutionSvc --> Repo
+UserMgmtSvc --> Repo
+DatasetSvc --> Repo
+MetricsSvc --> Repo
+PermReviewSvc --> Repo
+AuthSvc --> Repo : credentials/permissions
+
+Repo --> Neo4j
+Repo --> MySQL
+
+UploadSvc --> Crypto : model/upload encryption
+AuthSvc --> Crypto : sensitive auth data encryption
+Repo --> Crypto : sensitive data/model encryption
+
+AuthSvc --> OAuth : two-factor / OAuth 2.0
+
+Algo --> PyIF : uses Python library
+PyIF --> PyLibs : Python library calls
+
+ApiGateway --> FailoverMgr : health monitoring
+Repo --> FailoverMgr : data replication/standby
+FailoverMgr --> StandbyMachine : activates standby within 0.5h
+
+@enduml

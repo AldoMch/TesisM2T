@@ -1,0 +1,101 @@
+@startuml
+
+package "CLI Layer" {
+  component "scan-image Command Handler" as CLI_Image
+  component "scan-container Command Handler" as CLI_Container
+  component "IaC Scan Command Handler" as CLI_IaC
+}
+
+package "Runner/Execution Layer" {
+  node "Runner Image (veinmind-runner)" as RunnerImage
+  component "Parallel-Container Startup Script ./run.sh" as RunScript
+}
+
+package "Scanning Services Layer" {
+  component "Image Scanner" as ImgScanner
+  component "Container Scanner" as CtrScanner
+  component "IaC Scanner" as IaCScanner
+  component "Policy Library Loader" as PolicyLoader
+  component "IaC Result Grouper" as IaC_Grouper
+}
+
+package "SDK Integration Layer" {
+  component "SDK Integration Adapter" as SDK_Adapter
+}
+
+package "Authorization Routing Layer" {
+  component "Docker Authorization Router" as AuthRouter
+  database "Authorization Route Configuration" as AuthConfig
+  component "Docker Plugin Action Result" as DockerPluginResult
+  component "NoneDockerPlugin (Fallback)" as NoneDockerPlugin
+}
+
+package "Reporting/Data Model Layer" {
+  component "Report Event Client" as ReportClient
+  component "Malicious-File Report Model" as MalFileModel
+  component "IaC Report Model" as IaCModel
+}
+
+package "Packaging/Example Tools Layer" {
+  node "Python Example Container" as PyExample
+  component "Entrypoint Script /tool/entrypoint.sh" as EntryScript
+  component "scan.py" as ScanPy
+  artifact "requirements.txt" as Requirements
+  component "Dependency Installer (pip install -r requirements.txt)" as DepInstaller
+}
+
+package "External Systems" {
+  node "Docker" as Docker
+  node "Containerd" as Containerd
+  cloud "DockerHub" as DockerHub
+  cloud "Docker Registry" as DockerRegistry
+  cloud "Harbor" as Harbor
+  component "veinmind-sdk / libveinmind" as VeinmindSDK
+  interface "Docker authorization request interface" as DockerAuthIF
+  cloud "veinmind/python3.6:1.3.1-stretch" as BaseImage
+}
+
+' Key Dependencies
+CLI_Image --> SDK_Adapter : uses (API-001, CON-004)
+CLI_Container --> SDK_Adapter : uses (API-001, CON-004)
+CLI_IaC --> SDK_Adapter : uses (API-001, CON-004)
+
+CLI_IaC --> IaCScanner : run IaC scan (FR-007)
+IaCScanner --> PolicyLoader : load policies (FR-007)
+IaCScanner --> IaC_Grouper : produce raw IaC results (FR-007)
+IaC_Grouper --> ReportClient : publish grouped IaC alerts (API-003)
+ReportClient --> IaCModel : structured IaC alerts
+
+ImgScanner --> MalFileModel : produce findings (DAT-IF-001)
+CtrScanner --> MalFileModel : produce findings (DAT-IF-001)
+
+AuthRouter --> AuthConfig : read route patterns (FR-004)
+DockerAuthIF --> AuthRouter : delivers auth request (API-002)
+AuthRouter --> DockerPluginResult : produce action result (DAT-IF-003)
+DockerPluginResult --> DockerAuthIF : return decision (DAT-IF-003)
+AuthRouter --> NoneDockerPlugin : fallback when no match (FR-005)
+
+RunScript --> RunnerImage : start runner (FR-003)
+RunScript --> Docker : requires Docker (CON-001)
+RunnerImage --> Docker : container runtime required
+RunScript --> CLI_Image : invoke scan-image quick-start (FR-003)
+
+PyExample --> EntryScript : container entrypoint (CON-006)
+EntryScript --> ScanPy : invoke "python scan.py $*"
+DepInstaller --> Requirements : install from (CON-005)
+DepInstaller --> PyExample : install dependencies into image (CON-005)
+PyExample --> BaseImage : based on image (NFR-003)
+
+SDK_Adapter --> ImgScanner
+SDK_Adapter --> CtrScanner
+SDK_Adapter --> IaCScanner
+SDK_Adapter --> VeinmindSDK
+
+' NFR-002 runtime and registry compatibility
+SDK_Adapter --> Docker : integrates with runtime (NFR-002)
+SDK_Adapter --> Containerd : integrates with runtime (NFR-002)
+ImgScanner --> DockerHub : pull/scan images (NFR-002)
+ImgScanner --> DockerRegistry : pull/scan images (NFR-002)
+ImgScanner --> Harbor : pull/scan images (NFR-002)
+
+@enduml

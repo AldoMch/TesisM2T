@@ -1,0 +1,132 @@
+@startuml Soundzone Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam nodeBackgroundColor #E8F5E9
+skinparam databaseBackgroundColor #FFF3E0
+skinparam cloudBackgroundColor #E3F2FD
+skinparam defaultFontName Arial
+skinparam ArrowColor #37474F
+skinparam componentBorderColor #546E7A
+skinparam packageBorderColor #3949AB
+skinparam nodeBorderColor #2E7D32
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "External Media Layer" {
+  [Cloudinary Media Storage] as Cloudinary
+}
+
+' ─────────────────────────────────────────────
+' BROWSER CLIENT
+' ─────────────────────────────────────────────
+node "Browser Client" {
+
+  package "Presentation Layer" {
+    [ReactUI] as ReactUI
+    [WaveformPlayer] as WaveformPlayer
+    [FormValidator] as FormValidator
+    [ImageUploadUI] as ImageUploadUI
+  }
+
+  package "State Management Layer" {
+    [ReduxStore] as ReduxStore
+    [PlaybackStateManager] as PlaybackStateManager
+    [ActionThunkLayer] as ActionThunkLayer
+    [CloudinaryUploadClient] as CloudinaryUploadClient
+    [FrontendConfigProvider] as FrontendConfigProvider
+  }
+
+}
+
+' ─────────────────────────────────────────────
+' BACKEND SERVER
+' ─────────────────────────────────────────────
+node "API / Backend Layer\n(Node / Express Server)" {
+
+  [ExpressServer] as ExpressServer
+
+  package "Backend Controllers" {
+    [AuthController] as AuthController
+    [SoundController] as SoundController
+    [FollowController] as FollowController
+    [FeedController] as FeedController
+  }
+
+}
+
+' ─────────────────────────────────────────────
+' PERSISTENCE LAYER
+' ─────────────────────────────────────────────
+node "Persistence Layer" {
+  database "PostgreSQLDatabase" as PostgreSQLDatabase
+}
+
+' ─────────────────────────────────────────────
+' CONFIG PROVIDER (S-001 fix: no /\n; H-001 fix: no arrow to ReduxStore)
+' ─────────────────────────────────────────────
+FrontendConfigProvider --> CloudinaryUploadClient : Cloudinary URL and upload preset (DR-008)
+FrontendConfigProvider --> ActionThunkLayer        : API base URL (DR-008)
+
+' ─────────────────────────────────────────────
+' PRESENTATION -> STATE MANAGEMENT (Browser)
+' ─────────────────────────────────────────────
+ReactUI        --> ReduxStore           : reads state and dispatches actions
+ReactUI        --> PlaybackStateManager : playback controls and navigation events
+ReactUI        --> FormValidator        : form interaction and validation feedback
+WaveformPlayer --> PlaybackStateManager : scrub position dispatch (FR-004)
+FormValidator  --> ReduxStore           : error state dispatches
+
+' M-003 fix: Presentation Layer triggers upload via ReactUI and ImageUploadUI
+ReactUI        --> CloudinaryUploadClient : trigger audio upload (FR-001, C-006)
+ImageUploadUI  --> CloudinaryUploadClient : trigger image upload (FR-008, DR-004, DR-005)
+
+' D-003 fix: ReduxStore feeds form error state back to ReactUI for display (FR-007)
+ReduxStore     --> ReactUI              : form error state for display (FR-007)
+
+' ─────────────────────────────────────────────
+' M-001 fix: PlaybackStateManager connected to ReduxStore (FR-005, FR-006, A-004)
+' ─────────────────────────────────────────────
+PlaybackStateManager --> ReduxStore     : dispatch playback state updates (FR-005, A-004)
+ReduxStore           --> PlaybackStateManager : centralized playback state (FR-006, A-002)
+
+' D-002 fix: playback state feedback loop back to WaveformPlayer and ReactUI (FR-004)
+PlaybackStateManager --> WaveformPlayer : updated playback position (FR-004)
+PlaybackStateManager --> ReactUI        : playback state for UI re-render (FR-004)
+
+' ─────────────────────────────────────────────
+' STATE MANAGEMENT -> EXTERNAL (Cloudinary)
+' ─────────────────────────────────────────────
+CloudinaryUploadClient --> Cloudinary             : direct media upload audio and image (C-006)
+Cloudinary             --> CloudinaryUploadClient : hosted asset URLs
+CloudinaryUploadClient --> ReduxStore             : store returned hosted URLs
+
+' ─────────────────────────────────────────────
+' H-002 fix: ActionThunkLayer (not ReduxStore) makes HTTP calls
+' ─────────────────────────────────────────────
+ReduxStore       --> ActionThunkLayer  : dispatch triggers thunk middleware (A-002, A-003)
+ActionThunkLayer --> ExpressServer     : HTTP API requests (A-003)
+
+' D-001 fix: ExpressServer response paths back to frontend
+ExpressServer --> ActionThunkLayer     : HTTP API responses (FR-002, FR-003, FR-007)
+ActionThunkLayer --> ReduxStore        : dispatch response data to store
+
+' ─────────────────────────────────────────────
+' EXPRESS -> CONTROLLERS
+' ─────────────────────────────────────────────
+ExpressServer --> AuthController    : route /auth
+ExpressServer --> SoundController   : route /sounds
+ExpressServer --> FollowController  : route /follows
+ExpressServer --> FeedController    : route /feed
+
+' ─────────────────────────────────────────────
+' CONTROLLERS -> DATABASE
+' ─────────────────────────────────────────────
+AuthController   --> PostgreSQLDatabase : read/write user records (DR-001)
+SoundController  --> PostgreSQLDatabase : persist sound records and Cloudinary URLs (DR-006)
+FollowController --> PostgreSQLDatabase : read/write follow relationships (DR-003)
+FeedController   --> PostgreSQLDatabase : query sounds by followed users (FR-003)
+
+@enduml

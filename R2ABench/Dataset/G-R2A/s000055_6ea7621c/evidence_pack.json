@@ -1,0 +1,115 @@
+{
+  "candidate": {
+    "sample_id": "s000055_6ea7621c",
+    "repository_name": "FAC10/week4-jajascript",
+    "image_url": "https://github.com/FAC10/week4-jajascript/blob/master/public/assets/architecture-diagram.png",
+    "source_ref": "ef2fe84e25cdb9621e47e8bd36cb4a1e225a00ba",
+    "total_score": 86,
+    "prd_srs_convertibility_score": 13,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 751,
+    "document_count": 5,
+    "document_types": [
+      "code_api_route",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 14,
+      "user_scenario": 4,
+      "api_io": 16,
+      "deployment": 1,
+      "constraints": 9
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 6,
+    "doc_diversity_score": 12,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 13,
+    "total_score": 86
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05493064312736444,
+      "text": "# Nobel Prize Laureates Autocomplete ### User Story v.1.0 ### I would be able to input text into a text input field which will give me back sensible suggestion as I type. ### User Story v.1.1 ### The user should be able to enter a string into an input box which gives back a list of Nobel prize laureates, so that they can easily search for people who have won the Nobel prize ## Our Approach First we thought about the overall structure of our code, including: * Modularisation * Testing * File Structure * Deploying on Heroku Technical spike: we researched whether we'd want to keep our data in the backend or make a call to an API, along with which data we'd use/ what the function of our autoc..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "test/frontendTests.js",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "code|dense|hyde",
+      "score": 0.03892120571126388,
+      "text": "// Test to check QUnit is working // QUnit.test('1 + 1 equals 2', function(assert) { // assert.equal(add(1, 1), 2, '1 + 1 should equal 2'); // }); QUnit.test('Test that getDataUrl returns correct URL', function(assert) { assert.equal(getDataUrl('barack'), ' 'Yay, our test works!'); }); QUnit.test('Test that getUserInput returns correct userInput', function(assert) { var event = { target: { value: 'bar' } } assert.equal(getUserInput(event), 'bar', 'Yay, our test works!'); });"
+    },
+    {
+      "evidence_id": "E003",
+      "path": "src/router.js",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.055005749876188795,
+      "text": "var handler = require('./handler.js'); var algorithm = require('./algorithm.js'); module.exports = function(req, res) { var endpoint = req.url; if (endpoint === '/') { handler.serveHome(req, res); } else if (endpoint.indexOf('search') !== -1) { algorithm.serveHints(req, res); } else { handler.servePublic(req,res); } }"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "src/handler.js",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05454620571126388,
+      "text": "var fs = require('fs'); var path = require ('path'); var handler = module.exports = {}; handler.serveHome = function(req, res){ readFile(res, '/index.html'); }; const readFile = (res, endpoint) => { fs.readFile(path.join(__dirname, '..', 'public', endpoint), function(err, file) { if (err) { console.log(err); handler.notFound(null, res); } else { var extension = endpoint.split('.')[1]; var extensionType = { \"html\": \"text/html\", \"css\": \"text/css\", \"js\": \"application/javascript\", \"jpg\": \"image/jpg\", \"ico\": \"image/x-icon\" } res.writeHead(200, { \"Content-Type\": extensionType[extension]}); res.end(file); } }) } handler.servePublic = function(req, res) { var endpoint = req.url; readFile(res, end..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05573770491803279,
+      "text": "# Nobel Prize Laureates Autocomplete ### User Story v.1.0 ### I would be able to input text into a text input field which will give me back sensible suggestion as I type. ### User Story v.1.1 ### The user should be able to enter a string into an input box which gives back a list of Nobel prize laureates, so that they can easily search for people who have won the Nobel prize ## Our Approach First we thought about the overall structure of our code, including: * Modularisation * Testing * File Structure * Deploying on Heroku Technical spike: we researched whether we'd want to keep our data in the backend or make a call to an API, along with which data we'd use/ what the function of our autoc..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "test/backendTests.js",
+      "doc_type": "test",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.054838709677419356,
+      "text": "var test = require('tape'); var algorithm = require('../src/algorithm.js'); var obj = require('../src/data.json'); test('Check tape is working with a simple passing test', function (t) { t.pass('a message to print out on success'); t.end(); }); test ('Check if getValues returns a function', function (t){ var searchString = \"a\"; t.equal(algorithm.getValues(obj, \"firstname\") instanceof Array, true, 'yayy' ); t.end(); }); test('Check if autocomplete function returns an array', function (t) { var arr = ['a', 'b']; var searchString = \"a\"; t.equal(algorithm.autocomplete(arr, searchString) instanceof Array, true, 'Comparing the result value types'); t.equal(algorithm.autocomplete(arr, searchStri..."
+    }
+  ]
+}

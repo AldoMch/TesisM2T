@@ -1,0 +1,165 @@
+@startuml
+!define RECTANGLE rectangle
+!define COMPONENT component
+
+skinparam BackgroundColor #F5F5F5
+skinparam Shadowing false
+skinparam ArrowColor #333333
+skinparam ActorBackgroundColor #E1F5FE
+skinparam ActorBorderColor #01579B
+skinparam ComponentBackgroundColor #F3E5F5
+skinparam ComponentBorderColor #4A148C
+skinparam DatabaseBackgroundColor #E8F5E8
+skinparam DatabaseBorderColor #1B5E20
+skinparam NoteBackgroundColor #FFF3E0
+skinparam NoteBorderColor #EF6C00
+
+title LabHire System Architecture
+
+' === External Users ===
+actor "Student User" as Student
+actor "Enterprise-Certified\nStudent User" as EnterpriseStudent
+actor "Mentor User" as Mentor
+actor "Administrator" as Admin
+
+' === Main System Components ===
+package "LabHire Platform" {
+  COMPONENT "Authentication Module" as Auth
+  COMPONENT "Project Management Module" as ProjectMgmt
+  COMPONENT "User Profile Module" as Profile
+  COMPONENT "Community Module" as Community
+  COMPONENT "Recommendation Engine" as Recommendation
+  COMPONENT "Review & Risk Control" as Review
+  COMPONENT "Notification Service" as Notification
+  COMPONENT "Chat Service" as Chat
+  
+  Auth -down-> ProjectMgmt
+  Auth -down-> Profile
+  ProjectMgmt -down-> Recommendation
+  ProjectMgmt -right-> Community
+  Community -up-> Review
+  Profile -down-> Review
+  Notification -left-> Auth
+  Notification -left-> ProjectMgmt
+  Notification -left-> Community
+  Chat -right-> ProjectMgmt
+}
+
+' === External Services ===
+COMPONENT "Email Verification Service" as EmailService
+COMPONENT "University Email System" as UniEmail
+COMPONENT "Enterprise Email System" as EntEmail
+COMPONENT "Mobile App Interface" as MobileApp
+COMPONENT "Desktop Web Interface" as WebInterface
+
+' === Data Storage ===
+database "User Database" as UserDB
+database "Project Database" as ProjectDB
+database "Community Database" as CommunityDB
+database "Resume Storage" as ResumeStorage
+database "Review & Audit Logs" as AuditDB
+
+' === Connections: Users to System ===
+Student --> Auth : "Register/Login\nvia Campus Email"
+Student --> WebInterface : "Desktop Access"
+Student --> MobileApp : "Mobile Access"
+EnterpriseStudent --> Auth : "Enterprise\nCertification"
+Mentor --> Auth : "Register/Login\nvia Campus Email"
+Admin --> Auth : "Admin Login\n(DB Assigned)"
+
+' === Connections: System to External Services ===
+Auth --> EmailService : "Send Verification\nCode"
+EmailService --> UniEmail : "Campus Email\nVerification"
+EmailService --> EntEmail : "Enterprise Email\nVerification"
+Auth --> UniEmail : "Validate Campus\nEmail Domain"
+
+' === Connections: System to Data Storage ===
+Auth --> UserDB : "Store User Credentials\n& Profiles"
+ProjectMgmt --> ProjectDB : "Store Projects\n& Applications"
+Profile --> UserDB : "Update Personal\nInformation"
+Profile --> ResumeStorage : "Upload/Download\nResumes"
+Community --> CommunityDB : "Store Posts\n& Comments"
+Review --> AuditDB : "Log Review Actions\n& Risk Events"
+Recommendation --> ProjectDB : "Read Project Data\nfor Recommendations"
+Recommendation --> UserDB : "Read User Preferences"
+
+' === Core Functional Flows ===
+' Project Recommendation Flow
+Student --> Recommendation : "1. Request\nRecommendations"
+Recommendation --> ProjectDB : "2. Query Projects"
+Recommendation --> UserDB : "3. Get User Preferences"
+Recommendation --> Student : "4. Return Personalized\nRecommendations"
+
+' Project Application Flow
+Student --> ProjectMgmt : "1. Apply to Project"
+ProjectMgmt --> ProjectDB : "2. Store Application"
+ProjectMgmt --> Notification : "3. Notify Mentor"
+Mentor --> ProjectMgmt : "4. Review Application"
+ProjectMgmt --> Chat : "5. Chat with Applicant"
+ProjectMgmt --> Profile : "6. View Applicant\nResume (if selected)"
+
+' Community Interaction Flow
+Student --> Community : "1. Browse/Post/Comments"
+Community --> CommunityDB : "2. Store Content"
+Community --> Review : "3. Content Review\n(if needed)"
+Review --> Admin : "4. Manual Review\nfor Violations"
+
+' Certification Flow
+Student --> Profile : "1. Submit Personal Info"
+Profile --> Review : "2. Trigger Certification\nReview"
+Review --> Admin : "3. Manual Review\n(72h limit)"
+Admin --> Review : "4. Approve/Reject"
+Review --> Notification : "5. Send Result\nNotification"
+Notification --> Student : "6. Certification\nResult"
+
+' === Security Components ===
+frame "Security Layer" {
+  COMPONENT "Encryption Module" as Encryption
+  COMPONENT "Access Control" as AccessControl
+  COMPONENT "Audit Trail" as AuditTrail
+  
+  Encryption --> Auth : "Secure Login/Registration"
+  Encryption --> Chat : "Encrypt Chat Content"
+  AccessControl --> Profile : "Control Resume Access"
+  AccessControl --> ProjectMgmt : "Control Project Access"
+  AuditTrail --> AuditDB : "Log Security Events"
+}
+
+' === Interface Connections ===
+WebInterface --> Auth : "Authenticate Users"
+WebInterface --> ProjectMgmt : "Access Projects"
+WebInterface --> Community : "Access Community"
+MobileApp --> Auth : "Authenticate Users"
+MobileApp --> ProjectMgmt : "Access Projects"
+MobileApp --> Community : "Access Community"
+
+' === Non-Functional Requirements ===
+note right of Auth
+  **Performance**: <1s response time
+  **Robustness**: Handles abnormal input
+  **Security**: Encrypted communications
+end note
+
+note left of Review
+  **Compliance**: Content review
+  **Auditability**: Risk control logs
+  **Access Control**: Least privilege
+end note
+
+note bottom of Community
+  **Legal Compliance**: Post/comment review
+  **Content Limits**: 400 words max
+  **Formats**: HTML/Markdown supported
+end note
+
+' === Constraints ===
+note top of UserDB
+  **Constraints**:
+  1. University email verification required
+  2. Enterprise email for referral posts
+  3. No admin registration (DB assigned)
+  4. 72h review time limit
+  5. 10MB resume limit (PDF)
+end note
+
+@enduml

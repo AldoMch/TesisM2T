@@ -1,0 +1,130 @@
+@startuml
+!define LAYER1 #E6F3FF
+!define LAYER2 #FFE6E6
+!define LAYER3 #E6FFE6
+!define LAYER4 #FFF0E6
+!define LAYER5 #F0E6FF
+
+title ParaStation/psmpi Communication and Verification Architecture
+
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+package "User/Developer Layer" {
+  [Developer/Tester] as User
+  [Build/Deployment Engineer] as BuildEng
+}
+
+package "Verification & Build Layer" {
+  component "Embedded hwloc\nVerification Workflow" as HwlocVerif {
+    component "run-embedded-tests.sh" as RunScript
+    component "Manual Build Workflow" as ManualBuild
+    component "Test Execution\n(configure, make, check)" as TestExec
+  }
+  
+  component "Build System" as BuildSys {
+    component "autogen.sh" as Autogen
+    component "configure" as Configure
+    component "make" as Make
+  }
+}
+
+package "Communication Subsystem Layer" {
+  component "CH4 Network Module" as CH4Module {
+    component "Communication Subsystem" as CommSubsys {
+      component "Initialization/\nTermination" as InitTerm
+      component "Progress Handling" as Progress
+      component "Connection\nEstablishment" as ConnEst
+      component "One-to-Many\nScatter Transfer" as OneToMany
+    }
+    
+    component "Send State Machine" as SendSM {
+      component "Flow Control\nChecks" as FlowControl
+      component "Direct Access Send" as DirectAccess
+      component "Packet Buffer\nPacking" as PacketPacking
+      component "Rendezvous Control\nField Handling" as RendezvousCtrl
+    }
+    
+    component "Network Interface" as NetInterface {
+      component "Network Send\nDescriptors" as SendDesc
+      component "Packet Buffers" as PacketBuf
+    }
+  }
+}
+
+package "Transport Layer" {
+  component "Embedded Libfabric\nVerbs Provider" as VerbsProvider {
+    component "Linux Verbs API\nIntegration" as VerbsAPI
+  }
+  
+  component "Optional Transport\nLibraries" as TransportLibs {
+    component "OFI/libfabric" as OFI
+    component "UCX" as UCX
+  }
+}
+
+package "External Systems Layer" {
+  component "Linux Verbs Stack" as LinuxVerbs {
+    component "libibverbs\n(>=1.1.8)" as Libibverbs
+    component "librdmacm\n(>=1.0.16)" as Librdmacm
+  }
+  
+  component "Network Device" as NetDevice
+  component "Build Environment" as BuildEnv
+}
+
+'--- User Interactions ---'
+User --> RunScript : "executes\n./run-embedded-tests.sh <tarball>"
+User --> ManualBuild : "manual verification"
+BuildEng --> BuildSys : "build integration"
+
+'--- Verification Workflow ---'
+RunScript --> TestExec : "invokes"
+ManualBuild --> BuildSys : "uses"
+BuildSys --> BuildEnv : "depends on\nCFLAGS, LDFLAGS, LD_LIBRARY_PATH"
+
+'--- Communication Subsystem ---'
+CommSubsys --> SendSM : "uses send path"
+SendSM --> NetInterface : "prepares descriptors\nand buffers"
+NetInterface --> NetDevice : "posts sends"
+
+'--- Transport Integration ---'
+CH4Module --> VerbsProvider : "optional integration"
+CH4Module --> TransportLibs : "network library\nintegration"
+
+'--- External Dependencies ---'
+VerbsProvider --> LinuxVerbs : "requires"
+LinuxVerbs --> Libibverbs : "control & data transfer"
+LinuxVerbs --> Librdmacm : "communication management"
+
+'--- Data Flow ---'
+SendSM --> PacketBuf : "packet buffer\ncarries control/payload"
+SendSM --> SendDesc : "network send descriptor\nreferences pinned data"
+
+note right of SendSM
+  Data Sources:
+  - Direct access to pinned user data
+  - Data descriptor for packet packing
+  Flow Control States:
+  - Flow-restricted
+  - Flow-enabled
+end note
+
+note right of RendezvousCtrl
+  Rendezvous Control Fields:
+  - Envelope
+  - LIBA(OD)
+  - One LIBA
+  - Two LIBAs
+end note
+
+note bottom of BuildSys
+  Alternative workflow:
+  Rename extracted directory to hwloc-tree/
+  then run autogen.sh, configure, make
+end note
+
+@enduml

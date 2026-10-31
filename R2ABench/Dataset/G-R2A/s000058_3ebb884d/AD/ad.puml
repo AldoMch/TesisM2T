@@ -1,0 +1,76 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam queue {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "AWS Cloud\nAppian Source" as SourceAwsCloud {
+    package "VPC" as SourceVpc {
+        database "Appian\nOracle DB" as AppianOracleDb
+    }
+}
+
+rectangle "VPC peering\nconnection" as VpcPeering
+
+package "AWS Cloud\nConnector Account" as ConnectorAwsCloud {
+    package "VPC" as ConnectorVpc {
+        package "topics" as TopicsArea {
+            package "Private subnet" as TopicsPrivateSubnet {
+                rectangle "AWS Lambda\ncreate/delete topics" as TopicLambda
+            }
+        }
+
+        package "connector" as ConnectorArea {
+            package "Private subnet" as ConnectorPrivateSubnet {
+                rectangle "AWS Fargate\nKafka Connect Cluster" as KafkaConnectCluster
+            }
+        }
+
+        rectangle "CMS BigMAC" as CmsBigMac
+    }
+
+    rectangle "AWS EventBridge" as EventBridge
+    queue "SNS Topic\nalerts" as SnsTopic
+    rectangle "Email notification" as EmailNotification
+    rectangle "Chat notification" as ChatNotification
+    rectangle "Slack notification" as SlackNotification
+}
+
+AppianOracleDb --> VpcPeering : Appian data
+VpcPeering --> KafkaConnectCluster : captured by\nJDBC connector
+TopicLambda --> CmsBigMac : create/delete\nAppian data topics
+KafkaConnectCluster --> CmsBigMac : send Appian data\nto BigMAC topics
+KafkaConnectCluster --> EventBridge : ECS failure events
+EventBridge --> SnsTopic : notification fan out
+SnsTopic --> EmailNotification
+SnsTopic --> ChatNotification
+SnsTopic --> SlackNotification
+@enduml

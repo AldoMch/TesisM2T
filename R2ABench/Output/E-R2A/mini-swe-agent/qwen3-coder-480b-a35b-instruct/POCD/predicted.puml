@@ -1,0 +1,106 @@
+@startuml
+!define RECTANGLE class
+!define DATABASE rectangle
+!define COMPONENT rectangle
+
+skinparam componentStyle rectangle
+
+title POCD System Architecture
+
+' Layers
+package "Frontend Layer" {
+  [Web Browser] as frontend
+}
+
+package "Backend Layer" {
+  package "API Gateway" {
+    [REST API] as api
+  }
+
+  package "Business Logic Layer" {
+    [Account Management] as account
+    [File Management] as filemgr
+    [Detection Engine] as detection
+    [Matching Engine] as matching
+    [Repair Engine] as repair
+    [Configuration Service] as config
+    [Report Generator] as report
+    [History Service] as history
+    [Help Service] as help
+  }
+
+  package "Data Access Layer" {
+    [User Repository] as userrepo
+    [File Repository] as filerepo
+    [Detection Repository] as detectrepo
+    [Configuration Repository] as configrepo
+    [Report Repository] as reportrepo
+    [History Repository] as historyrepo
+    [Help Repository] as helprepo
+  }
+
+  package "External Systems" {
+    [StarUML Parser] as mdjparser
+    [MySQL Connector] as mysqlconn
+    [JDBC Driver] as jdbc
+  }
+}
+
+package "Data Storage" {
+  DATABASE "User Database" as userdb
+  DATABASE "File Storage" as filestore
+  DATABASE "Configuration Storage" as configstore
+  DATABASE "Detection Results" as detectstore
+  DATABASE "Reports Storage" as reportstore
+  DATABASE "History Storage" as historystore
+  DATABASE "Help Documents" as helpstore
+  DATABASE "MySQL Database" as mysqldb
+}
+
+' Connections
+frontend --> api : HTTP/HTTPS
+
+api --> account
+api --> filemgr
+api --> detection
+api --> matching
+api --> repair
+api --> config
+api --> report
+api --> history
+api --> help
+
+account --> userrepo
+filemgr --> filerepo
+detection --> detectrepo
+matching --> detectrepo
+repair --> detectrepo
+config --> configrepo
+report --> reportrepo
+history --> historyrepo
+help --> helprepo
+
+userrepo --> userdb
+filerepo --> filestore
+detectrepo --> detectstore
+configrepo --> configstore
+reportrepo --> reportstore
+historyrepo --> historystore
+helprepo --> helpstore
+
+' External system connections
+filemgr --> mdjparser : Parse .mdj files
+detection --> mysqlconn : Database analysis
+mysqlconn --> jdbc
+jdbc --> mysqldb
+
+' Data flows
+mdjparser --> filerepo : JSON Model
+mysqlconn --> detectrepo : DB Schema
+
+detectrepo --> matching : Models
+matching --> detection : Matches
+detection --> repair : Inconsistencies
+repair --> report : Repair Results
+
+@enduml

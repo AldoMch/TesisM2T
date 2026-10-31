@@ -1,0 +1,78 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+
+' Main system boundary
+package "Ethereum Network" {
+  [Consumer Contract Wallet] as wallet #LightBlue
+  
+  package "Supporting Contracts" {
+    [Token Whitelist] as whitelist
+    [Oracle/Licence] as oracle
+    [Controller] as controller
+    [TKN Holder Contract] as tknholder
+  }
+  
+  [ENS] as ens #LightYellow
+  [Gas Tank] as gastank #LightGreen
+  [Owner Address] as owner #LightPink
+}
+
+' Relationships
+wallet --> ens : Resolves contract addresses
+wallet --> whitelist : Checks token eligibility
+wallet --> oracle : Gets exchange rates
+wallet --> controller : Controlled operations
+whitelist --> tknholder : Burnability info
+controller --> wallet : Control operations
+owner --> wallet : Owns
+owner --> gastank : Funds gas payments
+gastank -[hidden]-> wallet
+
+note right of wallet
+  Holds user ETH and ERC20 assets
+end note
+
+note right of whitelist
+  Token exchange rates
+  Loadability status
+  Burnability status
+end note
+
+note right of oracle
+  Exchange-rate data
+end note
+
+note right of controller
+  Admin operations
+  Confirmation operations
+end note
+
+note left of gastank
+  Gas-payment ETH
+  Separate from wallet assets
+end note
+
+note left of owner
+  Externally owned address
+end note
+
+' Go Bindings
+package "Go Bindings Layer" {
+  [Wallet Binding] as walletbinding
+  [Controller Binding] as controllerbinding
+  [Whitelist Binding] as whitelistbinding
+}
+
+walletbinding --> wallet : Interacts
+controllerbinding --> controller : Interacts
+whitelistbinding --> whitelist : Interacts
+
+note bottom of walletbinding
+  Read-only calls
+  Paid transactions
+  Transfers
+end note
+
+@enduml

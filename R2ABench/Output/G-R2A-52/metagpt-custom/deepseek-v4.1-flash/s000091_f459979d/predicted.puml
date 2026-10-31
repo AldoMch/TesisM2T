@@ -1,0 +1,73 @@
+@startuml
+package "Management/API Layer" {
+  interface "HTTP User API" as HttpUserApi
+  component "User API" as UserApi
+  component "User Service" as UserService
+}
+
+package "Security/Authorization Layer" {
+  component "JwtUtility" as JwtUtility
+}
+
+package "Blockchain Integration Layer" {
+  component "Blockchain Client/Bootstrap Service" as BlockchainClientBootstrapService
+  component "Web3j HTTP Transport" as Web3jHttpTransport
+  component "Smart Contract Interface" as SmartContractInterface
+  component "Fixed 32-byte ASCII Encoder/Decoder" as Fixed32ByteAsciiCodec
+}
+
+package "LwM2M Data Handling Layer" {
+  component "LwM2M Node Deserializer" as LwM2MNodeDeserializer
+  component "LwM2M Primitive Type Mapper" as LwM2MPrimitiveTypeMapper
+  component "Bootstrap Configuration Builder" as BootstrapConfigurationBuilder
+}
+
+package "LwM2M Service Layer" {
+  component "LwM2M Service Component" as LwM2MServiceComponent
+}
+
+package "Data/Model Layer" {
+  component "User Model" as UserModel
+  component "Client/Bootstrap Contract Payload Model" as ClientBootstrapContractPayloadModel
+  component "Security-Information Collection Model" as SecurityInformationCollectionModel
+  component "LwM2M Node/Resource Model" as LwM2MNodeResourceModel
+  component "Bootstrap Configuration" as BootstrapConfiguration
+  component "Blockchain Transaction Receipt / Add-Client Result" as BlockchainTransactionReceipt
+}
+
+cloud "External: Authenticated API client" as AuthenticatedApiClient
+node "External: Ethereum-compatible node" as EthereumNode
+component "External: Blockchain Smart Contract" as BlockchainSmartContract
+
+AuthenticatedApiClient --> HttpUserApi : HTTP request/response
+
+UserApi -- HttpUserApi
+UserApi --> JwtUtility : validates Authorization token
+UserApi --> UserService : delegates user retrieval (FR-001)
+UserApi --> UserService : delegates authenticated creation (FR-002)
+UserApi --> UserModel : uses
+UserService --> UserModel : uses
+
+BlockchainClientBootstrapService --> Web3jHttpTransport : uses
+BlockchainClientBootstrapService --> SmartContractInterface : invokes contract operations
+BlockchainClientBootstrapService --> SecurityInformationCollectionModel : returns/creates (FR-003)
+BlockchainClientBootstrapService --> ClientBootstrapContractPayloadModel : uses
+BlockchainClientBootstrapService --> BlockchainTransactionReceipt : returns add-client result (FR-004)
+
+Web3jHttpTransport --> EthereumNode : HTTP transport
+SmartContractInterface --> Fixed32ByteAsciiCodec : encodes/decodes string fields
+SmartContractInterface --> BlockchainSmartContract : contract calls
+SmartContractInterface --> ClientBootstrapContractPayloadModel : exchanges payloads
+SmartContractInterface --> BlockchainTransactionReceipt : returns transaction receipt
+
+BootstrapConfigurationBuilder --> Fixed32ByteAsciiCodec : encodes/decodes fields
+BootstrapConfigurationBuilder --> BlockchainClientBootstrapService : retrieves client by endpoint / uses contract results
+BootstrapConfigurationBuilder --> ClientBootstrapContractPayloadModel : uses
+BootstrapConfigurationBuilder --> BootstrapConfiguration : builds/returns (FR-005)
+
+LwM2MServiceComponent --> BootstrapConfigurationBuilder : consumes bootstrap information
+LwM2MServiceComponent --> LwM2MNodeDeserializer : parses LwM2M node JSON
+LwM2MNodeDeserializer --> LwM2MNodeResourceModel : deserializes into
+LwM2MNodeDeserializer --> LwM2MPrimitiveTypeMapper : maps primitives
+LwM2MPrimitiveTypeMapper --> LwM2MNodeResourceModel : maps to typed resources
+@enduml

@@ -1,0 +1,80 @@
+@startuml
+title Home Recipes - System Architecture
+
+skinparam componentStyle rectangle
+
+actor "End User" as endUser
+actor "API Consumer / Tester" as apiTester
+
+package "Client Tier" {
+  component "Flutter/Dart Home Recipes Client" as client
+  component "Dart Generated Client Stubs" as dartStubs
+  component "Platform Runtimes\n(Android | iOS | Web | macOS)" as platforms
+}
+
+artifact "Protocol Buffers .proto Contract\n(recipe & ingredient services)" as proto
+
+package "Backend Tier" {
+  package "gRPC-Gateway Middleware" as gatewayPkg {
+    component "addRecipe\nHTTP endpoint" as epAdd
+    component "ListAllRecipes\nHTTP endpoint" as epList
+    component "ListAllIngredientsAtHome\nHTTP endpoint" as epHome
+    component "GetAllIngredientsForRecipe\nHTTP endpoint" as epIngredients
+  }
+
+  package "Go gRPC Server" as serverPkg {
+    component "RecipeService" as svcRecipe
+    component "IngredientService" as svcIngredient
+  }
+}
+
+package "Deployment & Infrastructure" {
+  component "Docker Container Image" as dockerImage
+  component "Local Kubernetes\nManifests" as k8s
+  component "Azure Kubernetes Service\n(AKS)" as aks
+}
+
+' Actors
+endUser --> client : uses
+apiTester --> gatewayPkg : HTTP/JSON\n(curl)
+
+' Client tier
+client --> platforms : runs on
+client --> dartStubs : integrates
+proto --> dartStubs : generates Dart code
+
+' Gateway
+proto --> gatewayPkg : generates middleware\n(annotations + gateway libs)
+epAdd --> svcRecipe : addRecipe
+epList --> svcRecipe : ListAllRecipes\n(server-streaming)
+epHome --> svcIngredient : ListAllIngredientsAtHome
+epIngredients --> svcIngredient : GetAllIngredientsForRecipe
+
+' Server
+proto --> serverPkg : generates Go gRPC code
+dartStubs --> serverPkg : gRPC calls\n(Protocol Buffers)
+gatewayPkg --> serverPkg : translates HTTP -> gRPC
+
+' Deployment
+dockerImage --> serverPkg : packages
+dockerImage --> gatewayPkg : packages
+k8s --> dockerImage : deploys
+aks --> dockerImage : deploys
+
+note right of proto
+  Single coherent contract shared by
+  Flutter client, Go gRPC server,
+  and gRPC-Gateway middleware.
+end note
+
+note bottom of gatewayPkg
+  Exposes selected gRPC operations
+  over HTTP for API consumers/testers.
+end note
+
+note bottom of serverPkg
+  Supports local run, Docker,
+  local Kubernetes, and AKS deployment.
+end note
+
+@enduml

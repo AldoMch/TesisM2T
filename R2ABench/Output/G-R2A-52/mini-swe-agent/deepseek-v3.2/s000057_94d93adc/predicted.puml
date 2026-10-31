@@ -1,0 +1,102 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATABASE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Database>> DATABASE_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+title Soundzone - Layered Architecture Diagram
+
+package "Presentation Layer" <<Layer>> {
+  component "React Frontend" <<Component>> {
+    component "Audio Player UI" <<Component>>
+    component "Waveform Navigation" <<Component>>
+    component "Upload Interface" <<Component>>
+    component "Follow Interface" <<Component>>
+    component "Form Validation" <<Component>>
+  }
+  
+  component "Redux State Management" <<Component>> {
+    component "Playback State" <<Component>>
+    component "User State" <<Component>>
+    component "Sound State" <<Component>>
+    component "Follow State" <<Component>>
+  }
+}
+
+package "Application Layer" <<Layer>> {
+  component "Node/Express Backend" <<Component>> {
+    component "User/Auth API" <<Component>>
+    component "Sound API" <<Component>>
+    component "Follow API" <<Component>>
+    component "Feed API" <<Component>>
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "PostgreSQL Database" <<Database>> {
+    component "User Data" <<Component>>
+    component "Sound Records" <<Component>>
+    component "Follow Relationships" <<Component>>
+    component "Media URL References" <<Component>>
+  }
+}
+
+package "External Services" <<Layer>> {
+  component "Cloudinary Media Storage" <<External>> {
+    component "Audio File Storage" <<Component>>
+    component "Image Storage" <<Component>>
+  }
+}
+
+' Frontend Configuration
+component "Frontend Configuration" <<Component>> {
+  component "API Base URL" <<Component>>
+  component "Cloudinary URL" <<Component>>
+  component "Upload Preset" <<Component>>
+}
+
+' User
+actor "End User" as User
+
+' Connections
+User --> "React Frontend" : Interacts with UI
+
+"React Frontend" --> "Redux State Management" : Manages state
+"Redux State Management" --> "React Frontend" : Updates UI
+
+"React Frontend" --> "Node/Express Backend" : HTTP API calls
+"React Frontend" --> "Cloudinary Media Storage" : Direct media uploads
+
+"Node/Express Backend" --> "PostgreSQL Database" : CRUD operations
+"Node/Express Backend" --> "React Frontend" : API responses
+
+"Cloudinary Media Storage" --> "React Frontend" : Returns media URLs
+"React Frontend" --> "Node/Express Backend" : Sends media URLs + data
+
+"Frontend Configuration" --> "React Frontend" : Runtime configuration
+
+' Key architectural flows
+note right of "React Frontend"
+  Media upload flow:
+  1. Upload to Cloudinary
+  2. Get media URL
+  3. Send to backend with data
+  4. Backend stores URL in PostgreSQL
+end note
+
+note right of "Redux State Management"
+  Maintains playback continuity
+  across page navigation
+  and single active sound
+end note
+
+@enduml

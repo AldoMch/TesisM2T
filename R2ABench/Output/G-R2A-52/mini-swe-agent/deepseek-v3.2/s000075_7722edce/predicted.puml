@@ -1,0 +1,83 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F0F0
+!define DATABASE_COLOR #E6FFE6
+!define EXTERNAL_COLOR #FFF0E6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<Database>> DATABASE_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title StatLord - Layered Architecture
+
+package "Presentation Layer" <<Layer>> {
+  component "Browser Editor" <<Component>> {
+    [TypeScript/React SPA]
+    [Redux State Management]
+    [Canvas Layout Editor]
+  }
+  
+  component "Viewer" <<Component>> {
+    [Display Rendering]
+    [Black-and-White Pixel View]
+  }
+}
+
+package "Application Layer" <<Layer>> {
+  component "Python/Django Server" <<Component>> {
+    [REST API]
+    [Data Processing]
+    [Static Asset Serving]
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  database "PostgreSQL" <<Database>> {
+    [Gauge Data]
+    [Display Registry]
+    [Layout Definitions]
+  }
+}
+
+package "External Systems" <<Layer>> {
+  component "API Clients" <<External>> {
+    [Data Posting]
+    [Display Registration]
+  }
+  
+  component "Display Devices" <<External>> {
+    [OLED/E-paper/LCD]
+    [Browser Displays]
+  }
+}
+
+"Browser Editor" --> "Python/Django Server" : HTTP/API Calls
+"Viewer" --> "Python/Django Server" : HTTP/API Calls
+"Python/Django Server" --> "PostgreSQL" : CRUD Operations
+"API Clients" --> "Python/Django Server" : HTTP/API Calls
+"Display Devices" --> "Viewer" : Display Output
+
+note right of "Browser Editor"
+  Manages controls, elements,
+  layouts, gauges, displays
+  using Redux state
+end note
+
+note right of "Python/Django Server"
+  Development-grade deployment
+  Uses Django development server
+end note
+
+note right of "PostgreSQL"
+  Stores:
+  - Gauge (key, value)
+  - Display (key, resolution, etc.)
+  - Layout (key, data, positions)
+end note
+
+@enduml

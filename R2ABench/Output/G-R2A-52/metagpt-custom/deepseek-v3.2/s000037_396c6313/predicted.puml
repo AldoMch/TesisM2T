@@ -1,0 +1,79 @@
+@startuml
+
+!define COMPONENT component
+!define DATABASE database
+!define NODE node
+!define CLOUD cloud
+!define INTERFACE interface
+
+' CLI Commands
+COMPONENT "scan-host image command" as scan_host_image
+COMPONENT "scan-image command" as scan_image
+COMPONENT "scan-container command" as scan_container
+COMPONENT "scan-iac command" as scan_iac
+
+' Core Components
+COMPONENT "Image Scanning Tool" as image_tool
+COMPONENT "Container Scanning Tool" as container_tool
+COMPONENT "IaC Scanning Tool" as iac_tool
+COMPONENT "Docker Authorization Router" as docker_router
+
+' Plugin/Integration Components
+COMPONENT "Python Example Package" as python_example
+INTERFACE "veinmind-sdk / libveinmind" as sdk
+INTERFACE "Report Event Client" as report_client
+
+' Data Components
+DATABASE "Report Data Structures" as report_data
+DATABASE "Policy Libraries" as policy_libs
+DATABASE "Docker Plugin Action Results" as docker_plugin_data
+
+' Execution Components
+NODE "veinmind-runner" as runner
+COMPONENT "Parallel-Container Startup Script" as startup_script
+
+' External Systems
+CLOUD "External Systems" {
+    COMPONENT "Docker" as docker
+    COMPONENT "DockerHub" as dockerhub
+    COMPONENT "Docker Registry" as docker_registry
+    COMPONENT "Harbor" as harbor
+    COMPONENT "Containerd" as containerd
+}
+
+' CLI to Tool Relationships
+scan_host_image --> startup_script : "executes"
+scan_image --> image_tool : "invokes"
+scan_container --> container_tool : "invokes"
+scan_iac --> iac_tool : "invokes"
+
+' Tool Dependencies
+image_tool --> sdk : "uses"
+container_tool --> sdk : "uses"
+iac_tool --> sdk : "uses"
+iac_tool --> policy_libs : "loads"
+iac_tool --> report_client : "publishes via"
+python_example --> sdk : "uses"
+
+' Data Flow Relationships
+image_tool --> report_data : "generates"
+container_tool --> report_data : "generates"
+report_client --> report_data : "writes"
+docker_router --> docker_plugin_data : "produces"
+
+' Execution Environment Relationships
+startup_script --> image_tool : "initiates"
+runner --> startup_script : "executes"
+startup_script --> docker : "requires"
+runner --> docker : "requires"
+
+' External System Relationships
+docker --> dockerhub : "compatible with"
+docker --> docker_registry : "compatible with"
+docker --> harbor : "compatible with"
+docker --> containerd : "compatible with"
+
+' Docker Authorization Flow
+docker_router --> docker : "handles auth requests"
+
+@enduml

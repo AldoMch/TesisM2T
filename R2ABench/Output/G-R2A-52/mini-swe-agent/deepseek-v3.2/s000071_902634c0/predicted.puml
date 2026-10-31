@@ -1,0 +1,109 @@
+@startuml
+!define LAYER1 #E6F3FF
+!define LAYER2 #FFE6E6
+!define LAYER3 #E6FFE6
+!define LAYER4 #FFF0E6
+!define EXTERNAL #F0F0F0
+
+skinparam component {
+  BackgroundColor<<Layer>> White
+  BorderColor<<Layer>> Black
+  ArrowColor Black
+}
+
+title ClearML Agent Architecture
+
+package "External Systems" <<EXTERNAL>> {
+  component "ClearML Server" as clearml_server {
+    component "Execution Queue" as execution_queue
+    component "Backend Services" as backend_services {
+      component "Events Service v2.5" as events_service
+      component "Models Service v2.4" as models_service
+    }
+  }
+  
+  component "Kubernetes Cluster" as k8s_cluster {
+    component "Kubernetes API" as k8s_api
+    component "Docker Runtime" as docker_runtime
+  }
+  
+  component "User Code/Experiments" as user_code
+}
+
+package "ClearML Agent Core" <<LAYER1>> {
+  component "ClearML Agent" as clearml_agent {
+    component "Configuration Manager" as config_manager
+    component "Telemetry Service" as telemetry_service {
+      component "Status Reporter" as status_reporter
+      component "Connectivity Pinger" as connectivity_pinger
+    }
+    
+    component "Backend Client" as backend_client {
+      component "Session Handler" as session_handler
+      component "Service Interface" as service_interface
+    }
+  }
+}
+
+package "Execution Modes" <<LAYER2>> {
+  component "Service-Pod Mode" as service_pod_mode {
+    component "Docker Socket Manager" as docker_socket_mgr
+    component "Sibling Container Manager" as sibling_container_mgr
+    component "Experiment Runner" as experiment_runner
+  }
+  
+  component "Kubernetes Glue Mode" as k8s_glue_mode {
+    component "Queue Monitor" as queue_monitor
+    component "Job Converter" as job_converter
+    component "Template Processor" as template_processor
+  }
+}
+
+package "Data & Monitoring" <<LAYER3>> {
+  component "Logging Service" as logging_service
+  component "Metrics Collector" as metrics_collector
+  database "Configuration Store" as config_store
+}
+
+' Connections
+clearml_agent --> clearml_server : "Periodic Ping\n(30s default)"
+clearml_agent --> clearml_server : "Status Reports\n(2s default)"
+backend_client --> backend_services : "Service Requests\n(create/get/get_by_id/get_all/get_all_ex)"
+service_interface --> events_service : "Histogram Queries\n(iter/iso_time/timestamp)"
+service_interface --> models_service : "Model Operations\n(delete with force flag)"
+
+queue_monitor --> execution_queue : "Pull Jobs"
+k8s_glue_mode --> k8s_api : "Create Kubernetes Jobs"
+job_converter --> template_processor : "Use YAML Template"
+
+service_pod_mode --> docker_runtime : "Manage Sibling Containers\n(via Docker Socket)"
+docker_socket_mgr --> docker_runtime : "Socket Access"
+
+experiment_runner --> user_code : "Execute & Monitor"
+experiment_runner --> logging_service : "stdout/stderr Logs"
+
+config_manager --> config_store : "Read/Write Config\n(report_period_sec, ping_period_sec,\nlog_stdout, report_global_mem_used)"
+
+telemetry_service --> metrics_collector : "Memory Metrics\n(process/machine scope)"
+
+note right of clearml_agent
+  <b>Key Constraints:</b>
+  1. Uses clearml-agent Docker image
+  2. Requires Docker socket mapping
+  3. Depends on YAML template for K8s jobs
+  4. Compatible with backend v2.4/v2.5
+end note
+
+note bottom of k8s_glue_mode
+  Converts queued jobs to
+  Kubernetes jobs using
+  provided YAML template
+end note
+
+note left of service_pod_mode
+  Long-lasting pod with
+  sibling container management
+  via Docker socket
+end note
+
+@enduml

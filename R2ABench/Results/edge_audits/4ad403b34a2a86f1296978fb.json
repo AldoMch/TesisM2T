@@ -1,0 +1,755 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "821db35ab5937b6c64a17f883bdebb430a66d4248bc4faa1308e37cd28b128d7",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "e5d89d68f0247448cfd6dafdac8c58a479516b17e002d0ae591e7c7131f8c96b",
+  "predicted_edges_sha256": "f6e43b3c322bf7945605e6b6cc959e860c12235106a01af54ad02e0601f26a05",
+  "precision": 0.13157894736842105,
+  "recall": 0.5,
+  "f1": 0.20833333333333334,
+  "reference_edges": [
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+    ],
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Postgres"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 1"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 2"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 3"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker N"
+    ],
+    [
+      "Docker Compose Environment::Postgres",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Postgres"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "External Systems::Dockerfile + Requirements\\n(docker-airflow-spark build context)",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::jupyter/pyspark-notebook Image (Docker Hub)",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "External Systems::postgres:9.6 Image (Docker Hub)",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowWebserver\\nWeb UI - port 8282"
+    ],
+    [
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+    ],
+    [
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+    ],
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Postgres"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 1"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 2"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 3"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker N"
+    ],
+    [
+      "Docker Compose Environment::Postgres",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Postgres"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "External Systems::Dockerfile + Requirements\\n(docker-airflow-spark build context)",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::jupyter/pyspark-notebook Image (Docker Hub)",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "External Systems::postgres:9.6 Image (Docker Hub)",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowWebserver\\nWeb UI - port 8282"
+    ],
+    [
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+    ],
+    [
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ]
+  ],
+  "internal_reference_edges": [],
+  "internal_predicted_edges": [
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowScheduler\\n(LocalExecutor Mode)",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkDefaultConnection\\nspark://spark:7077",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::PySpark Runtime\\n(pyspark package)\\nenables spark-submit"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkDefaultConnection\\nspark://spark:7077"
+    ]
+  ],
+  "reference_witnesses": [
+    {
+      "edge_index": 0,
+      "counterpart_index": 36,
+      "source_group": 0,
+      "target_group": 1
+    },
+    {
+      "edge_index": 1,
+      "counterpart_index": 34,
+      "source_group": 0,
+      "target_group": 3
+    },
+    {
+      "edge_index": 2,
+      "counterpart_index": 15,
+      "source_group": 1,
+      "target_group": 4
+    },
+    {
+      "edge_index": 3,
+      "counterpart_index": 16,
+      "source_group": 1,
+      "target_group": 5
+    },
+    {
+      "edge_index": 4,
+      "counterpart_index": 17,
+      "source_group": 1,
+      "target_group": 6
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 15,
+      "counterpart_index": 2,
+      "source_group": 1,
+      "target_group": 4
+    },
+    {
+      "edge_index": 16,
+      "counterpart_index": 3,
+      "source_group": 1,
+      "target_group": 5
+    },
+    {
+      "edge_index": 17,
+      "counterpart_index": 4,
+      "source_group": 1,
+      "target_group": 6
+    },
+    {
+      "edge_index": 34,
+      "counterpart_index": 1,
+      "source_group": 0,
+      "target_group": 3
+    },
+    {
+      "edge_index": 36,
+      "counterpart_index": 0,
+      "source_group": 0,
+      "target_group": 1
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "Docker Compose Environment::Airflow\\n(Spark Driver)": [
+      0
+    ],
+    "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)": [
+      1
+    ],
+    "Docker Compose Environment::Jupyter Notebook\\n(Spark)": [
+      2
+    ],
+    "Docker Compose Environment::Postgres": [
+      3
+    ],
+    "Docker Compose Environment::Spark Workers": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 1": [
+      4
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 2": [
+      5
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 3": [
+      6
+    ],
+    "Docker Compose Environment::Spark Workers::Worker N": [
+      7
+    ],
+    "Global::Data Engineer": [
+      8
+    ],
+    "Global::Docker Compose Environment": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "predicted_endpoint_anchors": {
+    "External Systems::Docker Compose v3.7": [],
+    "External Systems::Dockerfile + Requirements\\n(docker-airflow-spark build context)": [],
+    "External Systems::bitnami/spark:latest Image (Docker Hub)": [],
+    "External Systems::jupyter/pyspark-notebook Image (Docker Hub)": [],
+    "External Systems::postgres:9.6 Image (Docker Hub)": [],
+    "Global::External Systems": [],
+    "Global::Host Machine": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "Host Machine::Compute Layer": [
+      1,
+      4,
+      5,
+      6,
+      7
+    ],
+    "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)": [
+      1
+    ],
+    "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master": [
+      1
+    ],
+    "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)": [
+      4,
+      7
+    ],
+    "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077": [
+      4
+    ],
+    "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)": [
+      5,
+      7
+    ],
+    "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077": [
+      5
+    ],
+    "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)": [
+      6,
+      7
+    ],
+    "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077": [
+      6
+    ],
+    "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080": [],
+    "Host Machine::Interactive Development Layer": [
+      2
+    ],
+    "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)": [
+      2
+    ],
+    "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions": [
+      2
+    ],
+    "Host Machine::Metadata Persistence Layer": [
+      3
+    ],
+    "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432": [
+      3
+    ],
+    "Host Machine::Networking Layer": [],
+    "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution": [],
+    "Host Machine::Orchestration Layer": [
+      0
+    ],
+    "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)": [
+      0
+    ],
+    "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowScheduler\\n(LocalExecutor Mode)": [
+      0
+    ],
+    "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowWebserver\\nWeb UI - port 8282": [
+      0
+    ],
+    "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::PySpark Runtime\\n(pyspark package)\\nenables spark-submit": [
+      0
+    ],
+    "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkDefaultConnection\\nspark://spark:7077": [
+      0
+    ],
+    "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)": [
+      0
+    ],
+    "Host Machine::Shared Storage Layer": [],
+    "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)": []
+  },
+  "reference_unanchored_edges": [],
+  "predicted_unanchored_edges": [
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "External Systems::Docker Compose v3.7",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "External Systems::Dockerfile + Requirements\\n(docker-airflow-spark build context)",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::bitnami/spark:latest Image (Docker Hub)",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "External Systems::jupyter/pyspark-notebook Image (Docker Hub)",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "External Systems::postgres:9.6 Image (Docker Hub)",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)::SparkWorker-1\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)::SparkWorker-2\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)::SparkWorker-3\\nSPARK_MODE=worker\\nmaster: spark://spark:7077",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)::SparkMaster\\nhostname: spark\\nsubmit port: 7077\\nWeb UI: 8181\\nSPARK_MODE=master"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Host Port Mapping\\n5432, 8282, 8181, 7077\\n8888, 4040-4080",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::AirflowWebserver\\nWeb UI - port 8282"
+    ],
+    [
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)::JupyterPySpark\\nNotebook UI - port 8888\\nSpark App UI - ports 4040-4080\\ninteractive PySpark sessions",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Master Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-1 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-2 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Compute Layer::Spark Worker-3 Container\\n(bitnami/spark:latest)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Interactive Development Layer::Jupyter Container\\n(jupyter/pyspark-notebook)"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Metadata Persistence Layer::PostgresDB\\npostgres:9.6\\nport 5432"
+    ],
+    [
+      "Host Machine::Networking Layer::ComposeNetwork\\n(Docker Compose Bridge Network)\\nDNS: service-name resolution",
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ],
+    [
+      "Host Machine::Orchestration Layer::Airflow Container\\n(docker-airflow-spark:latest)::SparkSubmitOperator\\n(within DAGs)",
+      "Host Machine::Shared Storage Layer::SharedMountVolumes\\n/dags  (DAG definitions)\\n/spark-apps  (Spark application files)\\n/notebooks  (Jupyter notebooks)\\n/data  (input datasets)"
+    ]
+  ]
+}

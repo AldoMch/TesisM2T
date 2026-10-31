@@ -1,0 +1,79 @@
+@startuml
+title ClearML Agent System Architecture
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+actor "ClearML User" as User
+actor "K8s Platform Operator" as Operator
+
+package "Kubernetes Cluster" {
+  node "ClearML Agent Runtime" {
+    component "Kubernetes Glue\n[FR-001]" as Glue
+    component "Long-lasting Service Pod Mode\n[FR-003]" as ServicePod
+    component "In-Pod Experiment Runtime\n[FR-002]" as ExperimentRuntime
+    component "Worker Telemetry\n[FR-004, FR-005, NFR-002]" as Telemetry
+    component "Backend Service Client\n[FR-007, NFR-003]" as BackendClient
+    component "Worker Configuration\n[DR-001]\nreport_period_sec=2s\nping_period_sec=30s\nlog_stdout=true\nreport_global_mem_used" as Config
+  }
+
+  component "Prepared Kubernetes Job\n[FR-001, DR-006]" as K8sJob
+  component "Experiment Pod\n[FR-002]" as ExperimentPod
+  component "Sibling Docker Containers\n[FR-003, C-002]" as SiblingContainers
+  component "Docker Socket Mapping\n[C-002, C-005]" as DockerSocket
+  component "Podman (planned)\n[C-005]" as Podman
+}
+
+package "ClearML Server / Backend" {
+  component "Execution Queue\n[FR-001, DR-005]" as ExecutionQueue
+  component "Backend Services\ncreate, get, get_by_id,\nget_all, get_all_ex\n[FR-007]" as BackendServices
+  component "Events Service v2.5\nHistogram request/response\n[DR-002, NFR-003]" as EventsService
+  component "Models Service v2.4\nModel delete request / model object\n[DR-003, DR-004, NFR-003]" as ModelsService
+}
+
+file "Kubernetes YAML Template\n[DR-006, C-003]" as YamlTemplate
+
+User --> ExecutionQueue : submit queued jobs
+Operator --> ServicePod : deploy
+Operator --> Glue : deploy
+
+YamlTemplate --> Glue : template input
+ExecutionQueue --> Glue : pull jobs
+Glue --> K8sJob : prepare job
+K8sJob --> ExperimentPod : schedule/launch
+ExperimentPod --> ExperimentRuntime : install env,\nstart & monitor process
+ExperimentRuntime --> Telemetry : status data
+Telemetry --> BackendClient : telemetry/RPC calls
+BackendClient --> BackendServices : session-based\ncreate/get/get_by_id/\nget_all/get_all_ex
+BackendClient --> EventsService : histogram\nrequest/response
+BackendClient --> ModelsService : delete request /\nmodel object
+
+Telemetry --> BackendServices : status report every\nreport_period_sec (default 2s)
+Telemetry --> BackendServices : connectivity ping every\nping_period_sec (default 30s)
+
+Config --> Telemetry : reporting & ping periods,\nmemory scope
+Config --> ExperimentRuntime : log_stdout=true,\nstdout/stderr logging
+
+ServicePod --> DockerSocket : requires
+DockerSocket --> SiblingContainers : manage siblings
+Podman ..> DockerSocket : planned replacement
+
+note right of EventsService
+  key selectors:
+  iter, iso_time, timestamp
+  samples, task
+end note
+
+note right of ModelsService
+  Model object nullable fields:
+  id, name, user, company, created, task
+  Model delete request: model, force
+end note
+
+note bottom of BackendClient
+  Requests/responses use structured service objects.
+  Version compatibility: events v2.5, models v2.4.
+end note
+
+@enduml

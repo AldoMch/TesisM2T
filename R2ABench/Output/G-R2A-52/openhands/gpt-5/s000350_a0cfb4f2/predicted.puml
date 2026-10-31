@@ -1,0 +1,52 @@
+@startuml
+title squatm3gator - System Architecture
+
+skinparam componentStyle rectangle
+
+actor "Web User" as User
+
+node "Client" as Client {
+  component "Web UI\n(index.html)" as WebUI
+  component "Session (cookie/id)" as SessionClient
+  component "WebSocket Client" as WSClient
+}
+
+node "Server Runtime" as Server {
+  component "HTTP API" as API
+  component "Homoglyph-Complete Endpoint (GET)" as HcEndpoint
+  component "Error Handler\n(400/404/500, parsing)" as ErrHandler
+  component "Session Manager" as SessionMgr
+  component "Option Parser\n(attack codes, godaddy, output)" as OptParser
+  component "WebSocket/Socket.IO Gateway" as WSGateway
+  component "Background Consumer Thread" as Consumer
+}
+
+queue "Redis\n(Job Channel, Reporting Channel)" as Redis
+
+component "squatm3 CLI\n(subprocess)" as Squatm3
+cloud "GoDaddy API\n(optional)" as GoDaddy
+folder "Configuration\n(Redis URI, GoDaddy key/secret/base URL/endpoints)" as Config
+
+User --> WebUI : Access "/"
+WebUI --> API : HTTP GET "/"\ncreate session
+API --> SessionMgr : create/validate session
+SessionMgr --> WebUI : session key
+WebUI --> HcEndpoint : GET homoglyphs-complete\n(domain, attacks, flags)
+HcEndpoint --> OptParser : parse attack codes\nHf,Hc,-add,F,R\n+ godaddy, output
+OptParser --> API : constructed options\n(-Hf,-Hc,--add, --output=json, ...)
+
+API --> Redis : publish job\njob_id = session_key
+Redis --> Consumer : job delivery
+Consumer --> Squatm3 : exec with options\nand target domain
+Consumer --> GoDaddy : availability checks\nAuthorization: sso-key key:secret
+Consumer --> Redis : report progress/results\nWORKER_ID#JOB_UUID#{MESSAGE/RESULT}
+Redis --> API : reporting messages
+API --> WSGateway : session-filtered updates
+WSGateway --> WSClient : async progress/results
+
+API --> ErrHandler : HTTP errors
+ErrHandler --> WebUI : plain-text messages
+
+API --> Config : read settings
+Consumer --> Config : read settings
+@enduml

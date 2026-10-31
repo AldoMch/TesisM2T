@@ -1,0 +1,63 @@
+@startuml
+' IceFireDB System Architecture Diagram
+
+' Define skin parameters for better visualization
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+' Define components
+package "IceFireDB System" {
+  [Redis Application] as redisApp
+  [Redis Proxy\n(Middleware)] as redisProxy
+  [PubSub Service] as pubSub
+  
+  package "Storage Layer" {
+    [Redis Standalone] as redisStandalone
+    [Redis Cluster] as redisCluster
+  }
+  
+  package "Internal Components" {
+    [SQL Result Handler] as sqlHandler
+  }
+  
+  package "Network Layer" {
+    [Peer Discovery\n(Kademlia DHT)] as kademlia
+    [libp2p/IPFS Routing] as libp2p
+  }
+}
+
+' Define relationships
+redisApp --> redisProxy : Redis commands
+redisProxy --> redisStandalone : Data storage
+redisProxy --> redisCluster : Data storage
+redisProxy ..> redisProxy : Instruction synchronization
+pubSub ..> pubSub : Message distribution
+pubSub --> kademlia : Peer discovery
+pubSub --> libp2p : Network routing
+kademlia <--> libp2p : Network coordination
+sqlHandler ..> redisProxy : Internal data processing
+
+' Notes for key capabilities
+note right of redisProxy
+  - Redis instruction synchronization
+  - Data forwarding to storage
+  - Cluster-aware behavior
+  - Command category support
+end note
+
+note right of pubSub
+  - Redis-compatible Pub/Sub
+  - Multi-node operation
+  - NAT/private network support
+end note
+
+note bottom of kademlia
+  Decentralized peer discovery
+end note
+
+note bottom of libp2p
+  IPFS-style routing mechanism
+end note
+
+@enduml

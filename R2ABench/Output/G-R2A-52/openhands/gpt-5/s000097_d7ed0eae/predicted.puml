@@ -1,0 +1,82 @@
+@startuml
+title BeeGreen Backend API Architecture (SRS-driven)
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+left to right direction
+
+rectangle "Client Applications" as Clients {
+  component "Website\n(React/TypeScript)" as WebClient
+  component "Browser Extension\n(Chrome)" as ExtensionClient
+}
+
+node "Backend API Tier\n(Node.js + LoopBack)" as Backend {
+  component "Users Controller" as UsersCtrl
+  component "Ping Controller" as PingCtrl
+  component "UserRepository" as UserRepo
+}
+
+interface "Users API\n/ users\n- POST create\n- GET list [filter]\n- PATCH bulk update [where]\n- GET /{id}" as UsersAPI
+interface "Diagnostics API\n/ ping\n- GET ping" as PingAPI
+
+database "Persistent Storage" as DB
+component "Scoring & Recommendation\nData Processing" as Scoring <<external>>
+
+WebClient --> UsersAPI : HTTP / JSON
+WebClient --> PingAPI  : HTTP / JSON
+ExtensionClient --> UsersAPI : HTTP / JSON
+ExtensionClient --> PingAPI  : HTTP / JSON
+
+UsersCtrl - UsersAPI
+PingCtrl  - PingAPI
+
+UsersCtrl --> UserRepo
+UserRepo --> DB
+
+Backend ..> Scoring : uses (out-of-scope details)
+
+note right of UsersAPI
+JSON bodies:
+- Create: NewUser (id excluded)
+- List: optional filter parameter
+- Bulk update: partial User + optional where
+- Read by id: path 'id' (string)
+end note
+
+note right of PingAPI
+Response JSON:
+- greeting (string)
+- date (string)
+- url (string)
+- headers (object, additional properties allowed)
+end note
+
+note bottom of DB
+Data entities:
+User:
+- id (string, generated)
+- ip (string)
+- creationDate (date)
+- purchaseIds (string[])
+- username (string)
+- region (string)
+
+InventoryItem:
+- id (string, generated)
+- stats (object)
+- totalScore (number)
+- category (string)
+- details (string)
+- comments (object[])
+- name (string)
+- associatedStores (string[])
+end note
+
+note top of Backend
+Constraints:
+- LoopBack REST + Repository abstractions
+- Media type: application/json
+- Ping depends on request context
+end note
+
+@enduml

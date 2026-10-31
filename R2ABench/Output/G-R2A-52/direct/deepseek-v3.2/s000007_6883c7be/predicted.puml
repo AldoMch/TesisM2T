@@ -1,0 +1,130 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E6F3FF
+  BorderColor #0066CC
+  FontColor #003366
+}
+skinparam node {
+  BackgroundColor #FFF0E6
+  BorderColor #CC6600
+  FontColor #663300
+}
+skinparam database {
+  BackgroundColor #E6FFE6
+  BorderColor #009900
+  FontColor #006600
+}
+skinparam queue {
+  BackgroundColor #F0E6FF
+  BorderColor #6600CC
+  FontColor #330066
+}
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #666666
+  FontColor #000000
+}
+
+title HTTP Proxy System Architecture
+
+package "External Actors" {
+  [HTTP Client] as Client
+  [Upstream Server] as Upstream
+  [Local Filesystem] as FS
+}
+
+package "HTTP Proxy System" {
+  component "HTTP Proxy" as Proxy {
+    rectangle "Forwarding Handler" as FwdHandler
+    rectangle "Channel Manager" as ChannelMgr
+    rectangle "Debug Logger" as DebugLog
+  }
+
+  component "Test Server" as TestServer {
+    rectangle "Server Startup" as ServerStart
+    rectangle "File Download Handler" as DownloadHandler
+    rectangle "File Upload Handler" as UploadHandler
+    rectangle "Structured Response" as StructResp
+  }
+
+  component "Test Client" as TestClient {
+    rectangle "Async HTTP Client" as AsyncClient
+    rectangle "Workload Generator" as WorkloadGen
+    rectangle "Success Counter" as SuccessCounter
+    rectangle "Executor Service" as Executor
+  }
+
+  database "Request Buffer" as ReqBuffer
+  queue "Async Request Queue" as ReqQueue
+}
+
+' External Connections
+Client --> Proxy : "1. Sends FullHttpRequest"
+Proxy --> Upstream : "2. Forwards Request\n(after channel active)"
+TestServer --> FS : "3. Reads/Writes Files"
+Client --> TestServer : "4. GET /download\n5. File Upload"
+TestClient --> TestServer : "6. Async GET Requests"
+TestClient --> Upstream : "7. Direct Async Requests"
+
+' Internal Proxy Connections
+Client --> ReqBuffer : "1a. Retains Request"
+FwdHandler --> ReqBuffer : "Reads Retained Request"
+ChannelMgr --> FwdHandler : "Channel Active Signal"
+FwdHandler --> Upstream : "2. Writes/Flushes Request"
+DebugLog --> FwdHandler : "Logs URI/Headers/Body"
+
+' Internal Test Server Connections
+ServerStart --> TestServer : "Exposes Base URI"
+DownloadHandler --> FS : "Checks File Existence"
+DownloadHandler --> StructResp : "Returns Binary Payload\n+ Metadata"
+UploadHandler --> StructResp : "Returns Map Payload\n(filepath)"
+StructResp --> Client : "Returns Structured Response\n(code, msg, data)"
+
+' Internal Test Client Connections
+WorkloadGen --> ReqQueue : "Enqueues 50k Requests"
+ReqQueue --> AsyncClient : "Processes Async GETs"
+AsyncClient --> SuccessCounter : "Checks Status=200"
+Executor --> WorkloadGen : "Manages 50 Threads"
+WorkloadGen --> Executor : "Shutdown After Run"
+AsyncClient --> Executor : "Client Cleanup"
+
+' Constraints and Notes
+note top of Proxy
+  **Constraint C-002**
+  Forwarding only after
+  upstream channel active
+end note
+
+note right of TestServer
+  **Constraint C-001**
+  Grizzly/Jersey Stack
+end note
+
+note right of DownloadHandler
+  **Constraint C-004**
+  Behavior depends on
+  file existence
+end note
+
+note left of TestClient
+  **Constraint C-003**
+  Fixed thread pool for
+  workload generation
+end note
+
+note bottom of TestClient
+  **NFR-001**
+  50 threads × 1000 requests
+  = 50,000 total workload
+end note
+
+note bottom of Proxy
+  **NFR-002**
+  Debug logging shows
+  request URI/headers/body
+end note
+
+@enduml

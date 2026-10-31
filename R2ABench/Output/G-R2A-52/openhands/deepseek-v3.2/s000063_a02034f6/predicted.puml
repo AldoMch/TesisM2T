@@ -1,0 +1,136 @@
+@startuml
+!define LAYER_SEPARATOR #DDDDDD
+!define EXTERNAL #FFE6CC
+!define INTERNAL #E6F3FF
+!define CLIENT #F0F8FF
+!define DATABASE #FFF0F5
+
+skinparam component {
+  BackgroundColor<<External>> EXTERNAL
+  BackgroundColor<<Internal>> INTERNAL
+  BackgroundColor<<Client>> CLIENT
+  BackgroundColor<<Database>> DATABASE
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title Teamgram Server System Architecture
+
+package "External Infrastructure" <<External>> {
+  component "MySQL" as MYSQL <<Database>>
+  component "Redis" as REDIS <<Database>>
+  component "etcd" as ETCD <<Database>>
+  component "Kafka" as KAFKA
+  component "MinIO" as MINIO <<Database>>
+  component "FFmpeg/FFProbe" as FFMPEG #FFF0F5
+}
+
+package "Client Layer" <<Client>> {
+  component "Telegram Clients" as CLIENTS
+  component "MTProto Server Interface" as MTPROTO_SERVER
+}
+
+package "Access Layer" <<Internal>> {
+  component "Client Access Gateway" as GATEWAY
+  component "Session Manager" as SESSION_MGR
+  component "Authorization Service" as AUTH_SERVICE
+  component "Salt Manager" as SALT_MGR
+}
+
+package "Business Services" <<Internal>> {
+  component "Messaging Service" as MSG_SERVICE
+  component "Registration Service" as REG_SERVICE
+  component "Verification Service" as VERIFY_SERVICE
+  component "Media Processor" as MEDIA_PROCESSOR
+}
+
+package "Storage Layer" <<Internal>> {
+  component "Data Access Layer" as DAL
+  component "Cache Manager" as CACHE_MGR
+  component "File Storage" as FILE_STORE
+}
+
+package "Async Components" <<Internal>> {
+  component "Push Notification Service" as PUSH_SERVICE
+  component "Sync Service" as SYNC_SERVICE
+  component "Message Queue Handler" as MQ_HANDLER
+}
+
+' Connections
+
+CLIENTS --> MTPROTO_SERVER : "MTProto Protocol"
+MTPROTO_SERVER --> GATEWAY : "Client Requests"
+GATEWAY --> SESSION_MGR : "Session Management"
+GATEWAY --> AUTH_SERVICE : "Authorization Requests"
+GATEWAY --> SALT_MGR : "Salt Requests"
+
+' Access Layer to Business Services
+SESSION_MGR --> MSG_SERVICE : "Message Processing"
+AUTH_SERVICE --> REG_SERVICE : "Registration Flow"
+AUTH_SERVICE --> VERIFY_SERVICE : "Verification Flow"
+
+' Business Services to Storage
+MSG_SERVICE --> DAL : "Data Persistence"
+REG_SERVICE --> DAL : "User Data"
+VERIFY_SERVICE --> DAL : "Verification Data"
+MEDIA_PROCESSOR --> FILE_STORE : "Media Files"
+
+' Storage to External Infrastructure
+DAL --> MYSQL : "SQL Operations"
+CACHE_MGR --> REDIS : "Cache Operations"
+CACHE_MGR --> ETCD : "Configuration"
+FILE_STORE --> MINIO : "Object Storage"
+
+' Async Components
+MQ_HANDLER --> KAFKA : "Message Queues"
+PUSH_SERVICE --> CLIENTS : "Push Notifications"
+SYNC_SERVICE --> CLIENTS : "Sync Updates"
+
+' Optional Media Processing
+MEDIA_PROCESSOR --> FFMPEG : "Media Transcoding"
+
+' Internal communications
+SESSION_MGR --> CACHE_MGR : "Session Cache"
+SALT_MGR --> CACHE_MGR : "Salt Storage"
+AUTH_SERVICE --> CACHE_MGR : "Auth Tokens"
+
+' Service message handling
+note right of GATEWAY
+  Handles MTProto service messages:
+  • rpc_drop_answer
+  • destroy_session
+  • future_salts requests
+end note
+
+' Protocol data flow
+note bottom of SESSION_MGR
+  Manages:
+  • Authorization keys
+  • Encrypted sessions
+  • session_id creation
+  • Session replacement
+end note
+
+note bottom of SALT_MGR
+  Handles:
+  • Server salt
+  • Future salts
+  • Salt requests/responses
+end note
+
+note bottom of VERIFY_SERVICE
+  Verification modes:
+  • Default: code "12345"
+  • External service integration
+end note
+
+legend right
+  <color:blue>**Client Layer**</color> - MTProto client interfaces
+  <color:green>**Access Layer**</color> - Gateway and session management
+  <color:purple>**Business Services**</color> - Core application logic
+  <color:red>**Storage Layer**</color> - Data persistence and caching
+  <color:orange>**Async Components**</color> - Background processing
+  <color:brown>**External Infrastructure**</color> - Required dependencies
+end legend
+
+@enduml

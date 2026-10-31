@@ -1,0 +1,142 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+}
+skinparam arrow {
+  Color #333333
+  FontColor #333333
+}
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam linetype ortho
+
+title Kangrand – System Architecture\n(Interval ECDLP Solver for SECP256K1)
+
+actor "Local Operator" as LocalOp
+actor "Distributed Operator" as DistOp
+actor "Offline Analyst" as Analyst
+
+package "Command-Line Interface Layer" {
+  component [CLI Option Parser\n(-w, -wi, -i, -ws, -d,\n-gpu, server/client flags)] as CLI
+}
+
+package "Core Solver Engine" {
+  component [Input File Reader\n(ASCII / Hex / PubKey)] as InputReader
+  component [Kangaroo Solver\n(Pollard Kangaroo –\nTame & Wild Herds)] as Solver
+  component [Distinguished Point\nDetector & Filter] as DPDetector
+  component [In-Memory Hash Table\n(Distinguished Points Store)] as HashTable
+  component [Collision Detector\n& Key Extractor] as CollisionDetector
+  component [Work-File Manager\n(Save / Resume / Inspect)] as WorkFileMgr
+  component [Wsplit Backup Controller\n(Prefixed Backups +\nHash-Table Reset)] as WsplitCtrl
+}
+
+package "Distributed Execution Layer" {
+  component [Distributed Server\n(wsplit-enabled, no auth)] as DistServer
+  component [Server Config Loader] as SrvConfig
+  component [Distributed Client\n(CPU / GPU compute)] as DistClient
+  component [Client Kangaroo Worker\n(GPU-optional)] as ClientWorker
+}
+
+package "Offline Merge Layer" {
+  component [Work-File Merger\n(Offline / Merge-Discover)] as Merger
+  component [Master Work / Hash-Table\nConsolidator] as MasterConsolidator
+}
+
+database "Input ASCII File\n(Hex values, PubKey\ncompressed/uncompressed)" as InputFile
+database "Work File\n(Solver State)" as WorkFile
+database "Work File w/\nKangaroo State (-ws)" as WorkFileKS
+database "Wsplit Prefixed\nBackup Work Files" as WsplitFiles
+database "Server Config File" as SrvConfigFile
+database "Distributed\nWork Files" as DistWorkFiles
+database "Master Work File /\nHash-Table State" as MasterWorkFile
+database "Result File\n(Solved Key Output)" as ResultFile
+
+cloud "SECP256K1\nElliptic Curve Domain" as SECP256K1
+
+LocalOp --> CLI : invoke with options\nand input file
+DistOp --> CLI : invoke server/client\nmode options
+Analyst --> CLI : invoke merge /\ninspect options
+
+CLI --> InputReader : FR-001 read input file
+CLI --> WorkFileMgr : FR-004 -w/-wi save interval\nFR-005 -i resume\nFR-006 -ws/-d kangaroo state\nFR-007 inspect work file
+CLI --> WsplitCtrl : FR-009 wsplit backup behavior
+CLI --> DistServer : FR-010 start distributed server
+CLI --> DistClient : FR-011 connect to server
+CLI --> Merger : FR-008/FR-012 offline merge
+
+InputFile --> InputReader
+InputReader --> Solver : parsed problem instance
+
+Solver --> SECP256K1 : EC point arithmetic\n(tame & wild kangaroo walks)
+Solver --> DPDetector : candidate walk points
+DPDetector --> HashTable : store distinguished points\n(NFR-001 memory efficiency)
+HashTable --> CollisionDetector : collision check
+CollisionDetector --> ResultFile : solved key (when found)
+CollisionDetector --> Solver : continue search
+
+WorkFileMgr --> WorkFile : periodic save (FR-004)\nand on-demand
+WorkFile --> WorkFileMgr : resume state (FR-005)
+WorkFileMgr --> WorkFileKS : save with kangaroo state\n(FR-006 -ws)
+WorkFileMgr --> Solver : restore search state
+
+WsplitCtrl --> WsplitFiles : emit prefixed backup\nwork files (FR-009)
+WsplitCtrl --> HashTable : reset in-memory hash table\nafter each backup (NFR-003)
+
+SrvConfigFile --> SrvConfig
+SrvConfig --> DistServer : load configuration (FR-010)
+DistServer --> WsplitCtrl : wsplit-enabled backup cycles
+DistServer --> DistWorkFiles : emit server-side work /\nhash-table artifacts
+DistServer --> ResultFile : distributed result output
+
+DistClient --> DistServer : connect to server (FR-011)
+DistClient --> ClientWorker : dispatch kangaroo\ncomputation (CPU/GPU)
+ClientWorker --> SECP256K1 : GPU-optional EC\npoint arithmetic
+ClientWorker --> DistServer : submit distinguished\npoints / work data
+DistServer --> HashTable : aggregate distributed\ndistinguished points
+
+DistWorkFiles --> Merger : collect work files\n(FR-012)
+WorkFile --> Merger : local work files (FR-008)
+WsplitFiles --> Merger : wsplit backup files
+Merger --> MasterConsolidator : combine into master\nwork / hash table
+MasterConsolidator --> MasterWorkFile : consolidated state (DR-007)
+MasterConsolidator --> ResultFile : merge-discovered\nsolved key (FR-008)
+
+note top of DistServer
+  No built-in authentication (NFR-004, C-003)
+  Operator must stop clients before
+  changing server configuration (C-005)
+end note
+
+note right of WsplitCtrl
+  Bounds in-memory hash-table
+  growth via reset (NFR-003, C-004)
+end note
+
+note bottom of WorkFile
+  Portable across hardware /
+  DP settings for same key+range
+  (NFR-005, DR-003)
+end note
+
+@enduml

@@ -1,0 +1,83 @@
+@startuml
+title BeeGreen - Layered Component Architecture (Backend API Subset)
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+' ============ Client Layer ============
+package "Client Tier" <<Layer>> {
+  component "BeeGreen Website\n(React / TypeScript)" as WEB
+  component "BeeGreen Browser Extension\n(Chrome)" as EXT
+  component "API Client / Test Operator" as APICLIENT
+}
+
+' ============ API Tier ============
+package "Backend API Tier (Node.js / LoopBack)" <<Layer>> {
+  component "LoopBack REST Server\n(HTTP / application/json)" as REST
+
+  package "Controllers" {
+    component "UserController" as UC
+    component "PingController" as PC
+  }
+
+  package "Models / Schemas" {
+    component "User Model" as UM
+    component "NewUser Schema" as NUM
+    component "InventoryItem Model" as IM
+    component "PingResponse Model" as PRM
+  }
+}
+
+' ============ Repository / Data Access Tier ============
+package "Repository / Data Access Tier" <<Layer>> {
+  component "UserRepository" as UR
+  component "InventoryItem Repository" as IR
+}
+
+' ============ Data Layer ============
+package "Data Tier" <<Layer>> {
+  database "Persistent Data Store" as DB {
+    folder "User Records" as UDB
+    folder "InventoryItem Records" as IDB
+  }
+}
+
+' ============ Supporting / External Services ============
+package "Supporting Data & Cloud Services" <<Layer>> {
+  component "Sustainability Scoring /\nRecommendation Data Processing" as SCORE
+}
+
+' ============ Relationships ============
+WEB --> REST : HTTP REST / JSON
+EXT --> REST : HTTP REST / JSON
+APICLIENT --> REST : HTTP REST / JSON
+
+REST --> UC
+REST --> PC
+
+UC --> UM
+UC --> NUM
+PC --> PRM
+IM --- IR
+
+UC --> UR : repository access
+UR --> UDB : CRUD queries
+IR --> IDB : queries
+UM --> UDB
+
+SCORE --> IDB : scores / product data
+
+note right of REST
+  Documented endpoints:
+  POST /users
+  GET /users ?filter
+  PATCH /users ?where
+  GET /users/{id}
+  GET /ping
+end note
+
+note bottom of PRM
+  ping response: greeting, date, url, headers
+end note
+
+@enduml

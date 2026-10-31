@@ -1,0 +1,207 @@
+@startuml
+title Zhiyan Tongjie (智研通界) Academic Achievement Sharing Platform - System Architecture
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam dpi 150
+skinparam linetype ortho
+top to bottom direction
+
+package "Clients (Browsers on Windows/Linux/macOS)" <<External>> {
+  rectangle "Visitor" as Visitor
+  rectangle "Registered User" as RegUser
+  rectangle "Certified Scholar" as CertScholar
+  rectangle "Institution Administrator" as InstAdmin
+  rectangle "Expert Reviewer" as ExpertReviewer
+  rectangle "System Administrator" as SysAdmin
+}
+
+node "Web Frontend (Vue 3.3 SPA)" <<UI>> as Frontend
+
+Visitor -[#blue]-> Frontend : HTTPS
+RegUser -[#blue]-> Frontend : HTTPS
+CertScholar -[#blue]-> Frontend : HTTPS
+InstAdmin -[#blue]-> Frontend : HTTPS
+ExpertReviewer -[#blue]-> Frontend : HTTPS
+SysAdmin -[#blue]-> Frontend : HTTPS
+
+package "Zhiyan Tongjie Platform" {
+  package "Application Layer" <<Application>> {
+    component "Backend API Gateway\n(Django 4.2, AuthN/AuthZ & Rate Limit)\n[FR-001, FR-002, NFR-003, NFR-005]" as APIGW
+
+    component "Account & Session Service\nRegistration, Login, Roles\n[FR-001, FR-002]" as AccountSvc
+    component "Scholar Certification Workflow\n[FR-003]" as CertWorkflow <<Workflow>>
+    component "Profile & Scholar Portal\n[FR-004, FR-005]" as PortalSvc
+    component "Literature Discovery & Retrieval API\nMultidimensional Search, Filters, Ranking\n[FR-006, FR-007, FR-008, FR-009]" as SearchAPI
+    component "Personalization & Recommendations\nCross-disciplinary Discovery\n[FR-010, FR-011]" as RecoSvc
+    component "Achievement & Classification Mgmt\n[FR-012]" as AchvClassSvc
+    component "Achievement Claim Verification\n[FR-013]" as ClaimWorkflow <<Workflow>>
+    component "Ownership Dispute Resolution\nPreliminary/Expert/Final\n[FR-014]" as DisputeWorkflow <<Workflow>>
+    component "Institution & Hierarchy Mgmt\nCreation, Membership, Scope\n[FR-015, FR-016]" as InstMgmt
+    component "Academic Communication\nComments, Q&A, Private Messaging,\nFollow, Annotations, Report Sharing\n[FR-017..FR-021]" as CommSvc
+    component "Administration Console/API\nCert/Institution Reviews, Moderation,\nAccess Authorization, Content Admin\n[Admin UI]" as AdminAPI
+
+    APIGW -down-> AccountSvc
+    APIGW -down-> CertWorkflow
+    APIGW -down-> PortalSvc
+    APIGW -down-> SearchAPI
+    APIGW -down-> RecoSvc
+    APIGW -down-> AchvClassSvc
+    APIGW -down-> ClaimWorkflow
+    APIGW -down-> DisputeWorkflow
+    APIGW -down-> InstMgmt
+    APIGW -down-> CommSvc
+    APIGW -down-> AdminAPI
+  }
+
+  package "Support Services" <<Support>> {
+    component "Authorization & Policy Engine\nRoles, Institution Scope, Resource Permissions,\nVisibility & Delayed Disclosure Policies\n[FR-026, FR-027, NFR-005]" as PolicyEngine
+    component "Semantic Processing Service\nSpelling Correction, Cross-language Term Mapping\n[FR-007]" as SemanticSvc
+    component "Translation Service\nPreserve Originals & Associations\n[FR-007, NFR-009]" as TranslateSvc
+    component "Conversational Context Service\nMulti-turn Search Context Mgmt\n[FR-008, DR-007]" as ConvCtxSvc
+    component "Profiling & Recommendation Engine\nPreferences, Diversity Rules\n[FR-010, FR-011, DR-007]" as ProfileReco
+    component "Moderation Service\nComment/Q&A Moderation States\n[FR-017]" as ModerationSvc
+    component "Misconduct Detection Service\nPlagiarism Check, Blacklist Filter\n[FR-028]" as MisconductSvc
+    component "Academic Analysis Service\nHotspots & Influence Profiles\n[FR-025]" as AnalysisSvc
+  }
+
+  package "Infrastructure Layer" <<Infrastructure>> {
+    queue "Message Queue\n(Task Orchestration)" as MQ <<Queue>>
+    component "Task Workers\n(Background Jobs, Workflows)" as Workers
+    component "Scheduler\n(Cron/Timers for Acquisition, Sync, Analysis, Backup)\n[FR-022, FR-024, FR-025, NFR-006]" as Scheduler
+
+    component "External Data Acquisition Connectors\nAPIs & Crawlers, Provenance Capture\n[FR-022]" as Acquisition
+    component "Normalization & Dedup Processor\nIdempotent, Preserve Verified Associations\n[FR-023, NFR-010]" as Normalize
+
+    database "MySQL 8.0 Cluster\nStructured Persistence\n[DR-001..DR-011]" as MySQL <<DB>>
+    component "Search Index\n(Full-text & Faceted Retrieval)" as SearchIndex <<Index>>
+    storage "Object Storage\n(Unstructured Academic Content)\nEncrypted at Rest" as ObjStore <<Storage>>
+    component "Cache\n(Sessions, Context, Rate, Locks)" as Cache <<Cache>>
+    component "Private Message Transport\n(Encrypted Channels)\n[FR-019, NFR-004]" as PMTransport
+    component "Backup & Restore Service\nDaily Full, Hourly Incremental, 30-day Retention\n[NFR-006, DR-011]" as BackupSvc
+    storage "Backup Storage\n(Encrypted)" as BackupStore <<Storage>>
+    component "Key Management Service (KMS/HSM)\nEncryption Keys (AES-256 at rest)\n[NFR-004]" as KMS
+    component "Monitoring & Logging\n(Audit, Metrics, Traces)" as Observability
+  }
+}
+
+cloud "Public Academic Databases\n(APIs & Crawler Targets)" as ExternalDBs <<External>>
+cloud "Academic Terminology Resources / Models" as TermResources <<External>>
+
+' Client to Platform
+Frontend -[#blue]-> APIGW : HTTPS (JSON)
+
+' Application -> Support
+AccountSvc -down-> PolicyEngine : AuthZ checks\n[NFR-005]
+CertWorkflow -down-> PolicyEngine : Approvals & Roles
+PortalSvc -down-> PolicyEngine : Visibility/Disclosure
+SearchAPI -down-> SemanticSvc : Term mapping\n[FR-007]
+SearchAPI -down-> TranslateSvc : Assisted presentation\n[FR-007]
+SearchAPI -down-> ConvCtxSvc : Store/Retrieve context\n[FR-008]
+RecoSvc -down-> ProfileReco : Personalized ranking\n[FR-010, FR-011]
+AchvClassSvc -down-> PolicyEngine : Admin scope checks
+ClaimWorkflow -down-> PolicyEngine : Identity/ownership checks
+DisputeWorkflow -down-> PolicyEngine : Case access & stages
+InstMgmt -down-> PolicyEngine : Scope & hierarchy edits
+CommSvc -down-> ModerationSvc : Comment/Q&A moderation\n[FR-017]
+CommSvc -down-> PMTransport : Encrypted private messaging\n[FR-019]
+AdminAPI -down-> PolicyEngine : Access & enforcement
+
+' Support -> Infrastructure (stores/compute)
+PolicyEngine -down-> MySQL : Roles, Scope, Policies\n[DR-001, DR-010]
+SemanticSvc -down-> Cache : Dictionaries, caches
+SemanticSvc -right-> TermResources : Read terminology/models
+TranslateSvc -down-> Cache : Translation cache
+ConvCtxSvc -down-> Cache : Session-scoped context\n[DR-007]
+ProfileReco -down-> MySQL : Profiles & behavior\n[DR-007]
+ProfileReco -down-> Cache : Realtime features
+ModerationSvc -down-> MySQL : States & audits\n[DR-006]
+MisconductSvc -down-> Workers : Submit checks
+MisconductSvc -down-> MySQL : Results & status\n[DR-009]
+AnalysisSvc -down-> Workers : Batch jobs
+AnalysisSvc -down-> MySQL : Reports & profiles\n[DR-009]
+AnalysisSvc -down-> ObjStore : Shared reports content
+
+' Application -> Infrastructure (APIs, data)
+AccountSvc -down-> MySQL : Accounts, Sessions\n[DR-001]
+AccountSvc -down-> Cache : Session tokens
+PortalSvc -down-> MySQL : Scholar profiles\n[DR-002]
+PortalSvc -down-> ObjStore : Content refs\n[DR-003]
+SearchAPI -down-> SearchIndex : Query & Facets\n[FR-006..FR-009]
+SearchAPI -down-> MySQL : Filters, metadata
+RecoSvc -down-> MySQL : Preferences, logs
+AchvClassSvc -down-> MySQL : Classifications\n[DR-004]
+ClaimWorkflow -down-> MySQL : Claims & decisions\n[DR-005]
+DisputeWorkflow -down-> MySQL : Cases & history\n[DR-005]
+InstMgmt -down-> MySQL : Institutions & hierarchy\n[DR-004]
+CommSvc -down-> MySQL : Comments, Q&A, follows\n[DR-006]
+CommSvc -down-> ObjStore : Annotations, reports\n[DR-006]
+AdminAPI -down-> MySQL : Admin actions & audits
+
+' Workflows & async
+APIGW -down-> MQ : Enqueue workflows
+Scheduler -down-> MQ : Periodic triggers
+MQ -down-> Workers
+Workers -down-> MySQL
+Workers -down-> SearchIndex
+Workers -down-> ObjStore
+Workers -down-> Cache
+
+' Acquisition & normalization
+Scheduler -down-> Acquisition : Daily sync\n[FR-024]
+Acquisition -right-> ExternalDBs : APIs & crawling\n[FR-022]
+Acquisition -down-> Normalize : Collected records\n[FR-023]
+Normalize -down-> MySQL : Corpus & provenance\n[DR-003, DR-008]
+Normalize -down-> SearchIndex : Index literature
+Normalize -down-> ObjStore : Content ingestion
+Normalize -down-> MQ : Retry & dead-letter\n[NFR-010]
+
+' Security, encryption, and backups
+MySQL -down-> BackupSvc : Back up DB\n[NFR-006]
+ObjStore -down-> BackupSvc : Back up content\n[NFR-006]
+BackupSvc -down-> BackupStore
+MySQL -left-> KMS : TDE/Key refs\n[NFR-004]
+ObjStore -left-> KMS : Object encryption keys\n[NFR-004]
+PMTransport -left-> KMS : TLS certs/keys\n[NFR-004]
+APIGW -left-> Observability : Access logs, metrics
+Workers -left-> Observability : Job logs, metrics
+Acquisition -left-> Observability : Sync logs/status
+
+' Frontend connection
+Frontend -[#darkgreen]-> PMTransport : Secure WebSocket/TLS\nPrivate messaging [FR-019]
+
+' Notes for quality attributes and constraints
+note top of APIGW
+C-001: Python/Django 4.2 LTS
+NFR-005: Centralized authorization enforcement
+end note
+
+note right of Frontend
+C-002/C-005: Vue 3.3 SPA in supported browsers/OS
+NFR-008/NFR-009: Cross-browser & multilingual UX
+end note
+
+note bottom of SearchIndex
+Performance targets:
+- Search <= 1.5s
+- Filter update <= 500ms
+[NFR-001, NFR-002]
+end note
+
+note bottom of BackupStore
+Daily full + hourly incremental
+30-day retention; full restoration
+[NFR-006, DR-011]
+end note
+
+note right of PolicyEngine
+Enforces:
+- Roles & institution scope
+- Visibility & unpublished access (FR-026)
+- Delayed disclosure (FR-027)
+- Direct-request protection (NFR-005)
+end note
+
+' Client entry point
+Frontend -[#blue]-> APIGW : JSON/HTTPS API
+
+@enduml

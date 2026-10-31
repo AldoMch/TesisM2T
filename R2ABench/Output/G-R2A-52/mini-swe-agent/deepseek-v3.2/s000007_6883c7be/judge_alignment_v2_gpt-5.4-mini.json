@@ -1,0 +1,535 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Test Client Layer::Test Client",
+        "Test Client Layer::Test Client::Async HTTP Client",
+        "Test Client Layer::Test Client::Response Counter",
+        "Test Client Layer::Test Client::Workload Generator"
+      ],
+      "gt_nodes": [
+        "CGI Portal::Http Test\\nClient"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "HTTP Proxy Layer::HTTP Proxy"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Appkey\\nValidate"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "HTTP Proxy Layer::HTTP Proxy::Debug Logger"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Logging"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Test Server Layer::Test Server::File Download Handler"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Download"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Test Server Layer::Test Server::File Upload Handler"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Upload"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "HTTP Proxy Layer::HTTP Proxy::Channel Manager",
+        "HTTP Proxy Layer::HTTP Proxy::Request Forwarder"
+      ],
+      "gt_nodes": [
+        "Proxy Layer::cgi_proxy 1::Proxy Core"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::File System"
+      ],
+      "gt_nodes": [
+        "Support Platform::Data Bank\\nHDFS/Hbase/Druid"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::HTTP Client",
+        "External Systems::Upstream Server"
+      ],
+      "gt_nodes": [
+        "Support Platform::Msg Center\\nKafka"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Test Server Layer::Test Server",
+        "Test Server Layer::Test Server::Grizzly/Jersey Server"
+      ],
+      "gt_nodes": [
+        "Business Servers::......"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Data Layer::Response Data"
+      ],
+      "gt_nodes": [
+        "Global::Log consumer"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Data Layer::Request Cache",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Proxy Layer::cgi_proxy 1::Appkey\\nValidate"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Layer::Response Data",
+      "reference_nodes": [
+        "Global::Log consumer",
+        "Business Servers::......"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::File System",
+      "reference_nodes": [
+        "Support Platform::Data Bank\\nHDFS/Hbase/Druid",
+        "Proxy Layer::cgi_proxy 1::Plugin::Download",
+        "Proxy Layer::cgi_proxy 1::Plugin::Upload"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::HTTP Client",
+      "reference_nodes": [
+        "Clients::APP Client",
+        "Clients::Web Client",
+        "CGI Portal::Http Test\\nClient"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Upstream Server",
+      "reference_nodes": [
+        "Support Platform::Msg Center\\nKafka",
+        "Proxy Layer::cgi_proxy 1::Proxy Core"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "HTTP Proxy Layer::HTTP Proxy",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Appkey\\nValidate",
+        "Proxy Layer::cgi_proxy 1::Proxy Core"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "HTTP Proxy Layer::HTTP Proxy::Channel Manager",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Proxy Core"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "HTTP Proxy Layer::HTTP Proxy::Debug Logger",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Logging",
+        "CGI Portal::Log & Tree\\ninquire"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "HTTP Proxy Layer::HTTP Proxy::Request Forwarder",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Proxy Core",
+        "Proxy Layer::cgi_proxy 1::Appkey\\nValidate"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Client Layer::Test Client",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Client Layer::Test Client::Async HTTP Client",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Client Layer::Test Client::Response Counter",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "CGI Portal::Metrics &\\nReport"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Client Layer::Test Client::Workload Generator",
+      "reference_nodes": [
+        "CGI Portal::Http Test\\nClient",
+        "Task Scheduler::CGI Case\\nExecutor"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Server Layer::Test Server",
+      "reference_nodes": [
+        "Business Servers::......",
+        "CGI Portal::Case Manager",
+        "CGI Portal::Service\\nManager"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Server Layer::Test Server::File Download Handler",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Download"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Server Layer::Test Server::File Upload Handler",
+      "reference_nodes": [
+        "Proxy Layer::cgi_proxy 1::Plugin::Upload"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Test Server Layer::Test Server::Grizzly/Jersey Server",
+      "reference_nodes": [
+        "Business Servers::......",
+        "Access Layer\\nKeepalived(VIP)::Openresty"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Access Layer\\nKeepalived(VIP)::Openresty"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Business Servers::......"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Business Servers::Business Server A"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Business Servers::Business Server B"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Business Servers::Business Server C"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Appkey\\nManager"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::CGI Manager"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Case Manager"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Document\\nGenerate"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Test Client Layer::Test Client",
+        "Test Client Layer::Test Client::Async HTTP Client",
+        "Test Client Layer::Test Client::Response Counter",
+        "Test Client Layer::Test Client::Workload Generator"
+      ],
+      "gt_node": "CGI Portal::Http Test\\nClient"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Log & Tree\\ninquire"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Metrics &\\nReport"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "CGI Portal::Service\\nManager"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Clients::APP Client"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Clients::Business Server"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Clients::Developer"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Clients::Web Client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Layer::Response Data"
+      ],
+      "gt_node": "Global::Log consumer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "HTTP Proxy Layer::HTTP Proxy"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Appkey\\nValidate"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Formatter"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Global Limit"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "HTTP Proxy Layer::HTTP Proxy::Debug Logger"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Logging"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Login &\\nPermission"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Agent"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Attach Check"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Check\\nParameter"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Test Server Layer::Test Server::File Download Handler"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Download"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Mock"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Test Server Layer::Test Server::File Upload Handler"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Plugin::Upload"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "HTTP Proxy Layer::HTTP Proxy::Channel Manager",
+        "HTTP Proxy Layer::HTTP Proxy::Request Forwarder"
+      ],
+      "gt_node": "Proxy Layer::cgi_proxy 1::Proxy Core"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Proxy Layer::cgi_proxy 2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Data Bank\\nHDFS/Hbase/Druid"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Msg Center\\nKafka"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Mysql"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Permission\\nCenter"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::Redis Cache"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Support Platform::User Center"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Task Scheduler::CGI Case\\nExecutor"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Task Scheduler::CGI Health\\nCheck"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Task Scheduler::Daily Report"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Task Scheduler::Log Analysis"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Task Scheduler::Monitor/Alarm"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5520,
+      "completion_tokens": 1361,
+      "total_tokens": 6881,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Access Layer\\nKeepalived(VIP)::Openresty",
+    "Business Servers::Business Server A",
+    "Business Servers::Business Server B",
+    "Business Servers::Business Server C",
+    "CGI Portal::Appkey\\nManager",
+    "CGI Portal::CGI Manager",
+    "CGI Portal::Case Manager",
+    "CGI Portal::Document\\nGenerate",
+    "CGI Portal::Log & Tree\\ninquire",
+    "CGI Portal::Metrics &\\nReport",
+    "CGI Portal::Service\\nManager",
+    "Clients::APP Client",
+    "Clients::Business Server",
+    "Clients::Developer",
+    "Clients::Web Client",
+    "Proxy Layer::cgi_proxy 1::Formatter",
+    "Proxy Layer::cgi_proxy 1::Global Limit",
+    "Proxy Layer::cgi_proxy 1::Login &\\nPermission",
+    "Proxy Layer::cgi_proxy 1::Plugin::Agent",
+    "Proxy Layer::cgi_proxy 1::Plugin::Attach Check",
+    "Proxy Layer::cgi_proxy 1::Plugin::Check\\nParameter",
+    "Proxy Layer::cgi_proxy 1::Plugin::Mock",
+    "Proxy Layer::cgi_proxy 2",
+    "Support Platform::Mysql",
+    "Support Platform::Permission\\nCenter",
+    "Support Platform::Redis Cache",
+    "Support Platform::User Center",
+    "Task Scheduler::CGI Case\\nExecutor",
+    "Task Scheduler::CGI Health\\nCheck",
+    "Task Scheduler::Daily Report",
+    "Task Scheduler::Log Analysis",
+    "Task Scheduler::Monitor/Alarm"
+  ],
+  "unmatched_predicted_nodes": [
+    "Data Layer::Request Cache"
+  ],
+  "_provenance": {
+    "fingerprint": "cac729936cfd7fc1661c7bd7e60ca54be2d8134edf26335ee3ebc26748fea2e0",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

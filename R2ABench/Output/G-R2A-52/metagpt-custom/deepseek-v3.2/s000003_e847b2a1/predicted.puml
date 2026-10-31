@@ -1,0 +1,72 @@
+@startuml
+
+package "Frontend Layer" {
+    component "Frontend Application" as FE
+    component "Frontend Context API" as CONTEXT
+    database "Prediction Event Input" as INPUT
+}
+
+package "Service Layer" {
+    component "Oracle Service" as ORACLE
+    component "Prediction-Processing Service" as PROCESSOR
+    component "Compiler Service" as COMPILER
+    component "Service Runtime Configuration" as CONFIG
+}
+
+package "Blockchain Layer" {
+    node "Aeternity Blockchain" as CHAIN
+    component "PredictionCards Smart Contract" as CONTRACT
+    database "AENS Name" as AENS
+}
+
+package "Storage Layer" {
+    cloud "Prediction Media Storage" as MEDIA
+    note right of MEDIA: IPFS-compatible
+}
+
+package "Local Contract Integration-Test Environment" {
+    component "Local Test Proxy" as PROXY
+    node "Test Environment" as TEST
+}
+
+cloud "External Systems" {
+    component "Aeternity Wallet" as EXT_WALLET
+    component "External Price Provider" as PRICE
+}
+
+' Key Dependencies
+FE --> CONTEXT : "prediction operations"
+CONTEXT --> EXT_WALLET : "wallet-mediated calls"
+CONTEXT --> AENS : "resolves contract address"
+CONTEXT --> MEDIA : "loads NFT media"
+CONTEXT --> INPUT : "accepts prediction data"
+
+EXT_WALLET --> CHAIN : "connects to"
+EXT_WALLET --> CONTRACT : "create/read/fund/claim"
+
+ORACLE --> CHAIN : "registers/maintains oracle"
+ORACLE --> PRICE : "obtains price data"
+ORACLE --> CONFIG : "uses runtime configuration"
+ORACLE --> CONTRACT : "submits oracle responses"
+
+PROCESSOR --> CONTRACT : "initiates oracle queries\ncompletes processing"
+PROCESSOR --> ORACLE : "triggers price queries"
+
+COMPILER --> CONTRACT : "compiles/deploys"
+COMPILER --> CONFIG : "configures oracle service"
+
+' AENS Resolution
+FE --> AENS : "resolves contract address"
+ORACLE --> AENS : "resolves contract address"
+PROCESSOR --> AENS : "resolves contract address"
+
+' Test Environment Connections
+PROXY --> TEST : "CORS/proxy configuration"
+TEST --> CHAIN : "simulates blockchain"
+TEST --> CONTRACT : "hosts test contract"
+
+' Core Architecture Connections
+CHAIN --> CONTRACT : "hosts"
+CONTRACT ..> AENS : "registered via"
+
+@enduml

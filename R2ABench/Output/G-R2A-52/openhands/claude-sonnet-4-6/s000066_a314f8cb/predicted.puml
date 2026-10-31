@@ -1,0 +1,104 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+    BackgroundColor #DDEEFF
+    BorderColor #336699
+    FontColor #000000
+}
+skinparam node {
+    BackgroundColor #FFF8DC
+    BorderColor #CC9900
+}
+skinparam database {
+    BackgroundColor #E8F5E9
+    BorderColor #388E3C
+}
+skinparam interface {
+    BackgroundColor #F3E5F5
+    BorderColor #7B1FA2
+}
+skinparam arrow {
+    Color #333333
+}
+
+title Earth Defender – System Architecture
+
+node "Client Environment\n(Browser)" as ClientEnv {
+    component "Three.js\nRenderer" as Renderer
+    component "WebSocket\nHandler" as WSHandler
+    component "Heartbeat\nManager\n(ping/pong, 60 s)" as Heartbeat
+    component "Reconnect\nController" as Reconnect
+    component "Room\nManager" as RoomMgr
+    component "Message\nSerializer\n[event, data]" as Serializer
+    component "Message\nParser\n[action, data?]" as Parser
+
+    Renderer --> RoomMgr
+    RoomMgr --> WSHandler
+    WSHandler --> Serializer
+    WSHandler --> Parser
+    Heartbeat --> WSHandler
+    Reconnect --> WSHandler
+    Parser --> RoomMgr
+    Parser --> Reconnect
+    Parser --> Heartbeat
+}
+
+node "Network Infrastructure" as NetInfra {
+    component "DNS /\nLoad Balancer" as DNS
+}
+
+node "Web Server" as WebSrv {
+    component "Static Asset\nServer\n(HTML, CSS, JS,\nImages)" as StaticServer
+}
+
+node "Erlang/OTP Game Server\n(Master)" as MasterNode {
+    component "WebSocket\nEndpoint" as WSEndpoint
+    component "Room\nSession\nManager" as SessionMgr
+    component "Player\nRegistry" as PlayerReg
+    component "Server List\nManager" as ServerListMgr
+    component "Fault-Tolerance\nCoordinator" as FTCoord
+}
+
+node "Erlang/OTP Game Server\n(Replica)" as ReplicaNode {
+    component "Replica\nWebSocket\nEndpoint" as RepWSEndpoint
+    component "Replica\nRoom\nSession\nManager" as RepSessionMgr
+}
+
+ClientEnv --> DNS : HTTP\n(asset request)
+DNS --> WebSrv : forward
+WebSrv --> ClientEnv : static assets\n(HTML/CSS/JS/images)
+
+ClientEnv --> MasterNode : WebSocket over HTTP\n[ping, create_room,\njoin_room, reconnect ctx]
+MasterNode --> ClientEnv : WebSocket over HTTP\n[pong, game_reconnect,\nroom_players_number,\nservers_list,\nservers_list_redirect,\nserver_error]
+
+MasterNode --> ReplicaNode : OTP replication /\nfault-tolerance sync
+ReplicaNode --> MasterNode : heartbeat /\nstate sync
+
+note top of ClientEnv
+  Outbound: JSON [event, data]
+  Inbound:  JSON [action, data?]
+  No client-to-client P2P
+end note
+
+note right of MasterNode
+  Master/Replica topology
+  for fault-tolerant deployment
+  (NFR-002, C-005)
+end note
+
+note bottom of Heartbeat
+  Sends ping (data=null)
+  every 60 s while
+  WebSocket is open
+  (FR-004, DR-003)
+end note
+
+note bottom of Reconnect
+  On WebSocket close:
+  initiate reconnect;
+  send [roomId, playerId,
+  shipIndex] on reopen
+  (FR-005, DR-004)
+end note
+@enduml

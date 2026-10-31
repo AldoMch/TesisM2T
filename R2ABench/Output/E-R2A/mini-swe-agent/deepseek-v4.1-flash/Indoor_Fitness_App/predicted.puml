@@ -1,0 +1,127 @@
+@startuml
+title Indoor Fitness App - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ===================== External Systems / Devices =====================
+package "External Systems & Devices" {
+  component "Mobile Camera\n(video capture >= 30 fps)" as EXT_CAMERA
+  component "Android Target Device\n(same LAN, casting sink)" as EXT_ANDROID
+  component "PC / Windows Runtime Environment" as EXT_PC
+}
+
+' ===================== Actors =====================
+actor "Amateur / Professional\nExerciser" as USER
+actor "Administrator" as ADMIN
+
+' ===================== Presentation Layer (Mobile App) =====================
+package "Presentation Layer - Mobile App (Android 8.0+ / iOS 11.0+)" {
+  component "App Main Interface\n(today plan preview)" as UI_MAIN
+  component "Exercise Interface\n(video, stick diagram, timer)" as UI_EXERCISE
+  component "Professional Report Interface\n(charts & explanations)" as UI_REPORT
+  component "Exercise History Interface\n(calendar & monthly overview)" as UI_HISTORY
+  component "Personal Interface\n(profile & preferences)" as UI_PROFILE
+  component "Casting Operation Interface\n(device search & connect)" as UI_CAST
+  component "Poster / Sharing Interface" as UI_SHARE
+}
+
+' ===================== Client-Side Processing Layer =====================
+package "Client-Side Processing Layer" {
+  component "Camera Capture Module" as PROC_CAPTURE
+  component "Pose Estimation Module\n(skeleton extraction, >= 20 fps)" as PROC_POSE
+  component "Posture Evaluation & Scoring\n(vs standard skeleton)" as PROC_EVAL
+  component "Standard Movement Comparator" as PROC_COMPARE
+  component "Posture Stick Diagram Renderer" as PROC_RENDER
+  component "Exercise State Detector\n(start/end & completion)" as PROC_STATE
+  component "Casting Client\n(video stream & control commands)" as PROC_CAST
+  component "Local Media Cache" as PROC_CACHE
+}
+
+' ===================== Application / Service Layer (Server) =====================
+package "Application / Service Layer - Server" {
+  component "Authentication & Permission Service\n(admin vs ordinary user)" as SVC_AUTH
+  component "Training Plan Recommendation Service\n(<= 1 s per plan)" as SVC_PLAN
+  component "Poster & Report Generation Service\n(<= 3 s per report)" as SVC_REPORT
+  component "Media / Material Processing Service" as SVC_MEDIA
+  component "Exercise History Service" as SVC_HISTORY
+  component "Standard Video / Movement Library Service" as SVC_LIBRARY
+  component "Module Data Exchange / API Gateway\n(modular interfaces)" as API_GATEWAY
+  component "LAN Device Discovery & Casting Coordinator" as SVC_CAST
+}
+
+' ===================== Data Access Layer =====================
+package "Data Access Layer" {
+  component "Data Access / Persistence Module\n(SQL input checking, variable binding,\nprecompiled statements -> anti SQL injection)" as DAL_SQL
+  component "Data Protection Module\n(clipboard, screenshot, memory leakage controls)" as DAL_SECURITY
+}
+
+' ===================== Data Layer =====================
+database "User & Profile Store\n(body info, goals, restrictions, preferences)" as DB_USER
+database "Training Plans & Completion Store" as DB_PLAN
+database "Exercise History & Monthly Overview Store" as DB_HISTORY
+database "Standard Video / Movement Repository" as DB_STD
+database "Report, Poster & Material Store" as DB_MEDIA
+
+' ===================== Relationships =====================
+USER --> UI_MAIN
+USER --> UI_EXERCISE
+USER --> UI_REPORT
+USER --> UI_HISTORY
+USER --> UI_PROFILE
+USER --> UI_CAST
+ADMIN --> UI_PROFILE
+
+EXT_CAMERA --> PROC_CAPTURE
+UI_EXERCISE --> PROC_CAPTURE
+UI_CAST --> PROC_CAST
+PROC_CAST --> EXT_ANDROID : LAN video stream\n(<= 100 ms), commands (<= 50 ms)
+UI_CAST --> SVC_CAST
+
+PROC_CAPTURE --> PROC_POSE
+PROC_POSE --> PROC_EVAL
+PROC_COMPARE --> PROC_EVAL
+PROC_EVAL --> PROC_RENDER
+PROC_EVAL --> PROC_STATE
+PROC_RENDER --> UI_EXERCISE
+PROC_STATE --> UI_EXERCISE
+PROC_CACHE --> UI_SHARE
+
+UI_MAIN --> API_GATEWAY
+UI_PROFILE --> API_GATEWAY
+UI_HISTORY --> API_GATEWAY
+UI_REPORT --> API_GATEWAY
+UI_SHARE --> API_GATEWAY
+PROC_EVAL --> API_GATEWAY
+
+API_GATEWAY --> SVC_AUTH
+API_GATEWAY --> SVC_PLAN
+API_GATEWAY --> SVC_REPORT
+API_GATEWAY --> SVC_MEDIA
+API_GATEWAY --> SVC_HISTORY
+API_GATEWAY --> SVC_LIBRARY
+API_GATEWAY --> SVC_CAST
+
+SVC_AUTH --> DAL_SQL
+SVC_PLAN --> DAL_SQL
+SVC_REPORT --> SVC_MEDIA
+SVC_REPORT --> DAL_SQL
+SVC_MEDIA --> DAL_SQL
+SVC_HISTORY --> DAL_SQL
+SVC_LIBRARY --> DAL_SQL
+
+DAL_SQL --> DAL_SECURITY
+DAL_SQL --> DB_USER
+DAL_SQL --> DB_PLAN
+DAL_SQL --> DB_HISTORY
+DAL_SQL --> DB_STD
+SVC_MEDIA --> DB_MEDIA
+
+SVC_PLAN --> DB_PLAN
+SVC_LIBRARY --> DB_STD
+SVC_HISTORY --> DB_HISTORY
+
+EXT_PC ..> SVC_PLAN : server deployment host
+EXT_PC ..> SVC_REPORT : server deployment host
+
+@enduml

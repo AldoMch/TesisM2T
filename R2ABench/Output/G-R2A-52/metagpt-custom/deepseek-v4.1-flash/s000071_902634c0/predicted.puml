@@ -1,0 +1,113 @@
+@startuml
+
+package "Kubernetes Execution Layer" {
+  component "Kubernetes Glue" as KGlue
+  component "Prepared Kubernetes Job" as K8sJob
+  component "Long-Lasting Service Pod Integration" as LongPod
+  component "Docker Socket Management" as DockerSockMgmt
+}
+
+package "In-Pod Runtime Layer" {
+  component "In-Pod Experiment Startup/Monitoring" as InPodRuntime
+}
+
+package "Worker Telemetry Layer" {
+  component "Worker Telemetry" as WorkerTelemetry
+  component "Default stdout/stderr Logging" as StdErrLogging
+  component "Process/Subprocess Memory Reporting" as ProcMemReport
+  component "Entire-Machine Memory Reporting (report_global_mem_used)" as GlobalMemReport
+}
+
+package "Backend Service Client Layer" {
+  component "Backend Service Client" as BackendClient
+  component "Backend Session Request/Response Handling" as BackendSession
+  component "Events Service Interface" as EventsIface
+  component "Models Service Interface" as ModelsIface
+  component "Backend Client Action: create" as BackendCreate
+  component "Backend Client Action: get" as BackendGet
+  component "Backend Client Action: get_by_id" as BackendGetById
+  component "Backend Client Action: get_all" as BackendGetAll
+  component "Backend Client Action: get_all_ex" as BackendGetAllEx
+}
+
+package "Data/Configuration Layer" {
+  component "Worker Configuration" as WorkerConfig
+  component "Queue Job Input" as QueueJobInput
+  component "Kubernetes Job Template Input" as K8sJobTemplate
+  component "Histogram Request" as HistogramReq
+  component "Events Histogram Response" as HistogramResp
+  component "TableResponse" as TableResponse
+  component "Created Entity with Service Response ID" as CreatedEntity
+  component "Mapped Entity for get" as MappedGet
+  component "Mapped Entity for get_by_id" as MappedGetById
+  component "Model Delete Request" as ModelDeleteReq
+  component "Model Object" as ModelObj
+}
+
+database "ClearML execution queue" as ClearMLQueue
+cloud "ClearML server/backend" as ClearMLServer
+cloud "ClearML events service (v2.5)" as EventsService
+cloud "ClearML models service (v2.4)" as ModelsService
+
+node "Kubernetes cluster" as K8sCluster {
+  node "Kubernetes pod" as K8sPod
+}
+
+node "Docker-based execution environment / Docker socket" as DockerEnv
+node "Podman (planned replacement)" as Podman
+component "clearml-agent Docker image" as AgentImage
+
+QueueJobInput --> KGlue : jobs input
+K8sJobTemplate --> KGlue : YAML template
+KGlue --> ClearMLQueue : pulls jobs
+KGlue --> K8sJob : prepares job
+K8sJob --> K8sCluster : submitted to / deployed
+K8sJob --> K8sPod : job pod spec
+K8sJob --> InPodRuntime : triggers install / start / monitor
+InPodRuntime --> K8sPod : installs / starts / monitors
+
+LongPod --> K8sCluster : deployed in
+LongPod --> K8sPod : runs as long-lasting service pod
+LongPod --> AgentImage : constrained image
+LongPod --> DockerSockMgmt : sibling container management
+LongPod --> DockerEnv : mapped Docker socket
+DockerSockMgmt --> DockerEnv : socket access
+DockerSockMgmt ..> Podman : planned replacement
+
+WorkerConfig --> WorkerTelemetry : report / ping config
+WorkerConfig --> StdErrLogging : log_stdout=true
+WorkerConfig --> ProcMemReport : process/subprocess memory scope
+WorkerConfig --> GlobalMemReport : entire-machine scope via report_global_mem_used
+ProcMemReport --> WorkerTelemetry : memory reports
+GlobalMemReport --> WorkerTelemetry : global memory reports
+WorkerTelemetry --> ClearMLServer : status reports / pings
+
+BackendClient --> BackendSession : session request / response
+BackendClient --> BackendCreate : create action
+BackendClient --> BackendGet : get action
+BackendClient --> BackendGetById : get_by_id action
+BackendClient --> BackendGetAll : get_all action
+BackendClient --> BackendGetAllEx : get_all_ex action
+BackendCreate --> BackendSession : create request
+BackendGet --> BackendSession : get request
+BackendGetById --> BackendSession : get_by_id request
+BackendGetAll --> BackendSession : get_all request
+BackendGetAllEx --> BackendSession : get_all_ex request
+BackendSession --> EventsIface : events service session calls
+BackendSession --> ModelsIface : models service session calls
+BackendSession --> ClearMLServer : session request / response
+EventsIface --> EventsService : v2.5 compatibility
+ModelsIface --> ModelsService : v2.4 compatibility
+HistogramReq --> EventsIface : request structure
+EventsIface --> HistogramResp : response structure
+EventsService --> HistogramResp : returns histogram response
+ModelDeleteReq --> ModelsIface : delete request structure
+ModelObj --> ModelsIface : model data fields
+
+BackendCreate --> CreatedEntity : returns created entity with service response ID
+BackendGet --> MappedGet : returns mapped entity
+BackendGetById --> MappedGetById : returns mapped entity
+BackendGetAll --> TableResponse : returns table response
+BackendGetAllEx --> TableResponse : returns table response
+
+@enduml

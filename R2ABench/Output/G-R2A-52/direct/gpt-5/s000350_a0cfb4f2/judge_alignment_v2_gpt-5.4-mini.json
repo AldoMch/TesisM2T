@@ -1,0 +1,293 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::GoDaddy APIs",
+        "GoDaddy APIs::Availability Endpoints"
+      ],
+      "gt_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Server Process::HTTP API\\n- GET /\\n- GET /homoglyphs/complete?domain=...\\n- Error handling (400/404/500)\\n- Session validation",
+        "API Server Process::Option Builder\\n- Parse attack codes: Hf, Hc, -add, F, R\\n- Flags: godaddy, output\\n- Build CLI opts (e.g., -Hf, --add, --output=json)",
+        "API Server Process::Session Manager\\n- Create session on GET /\\n- Session ID == Job ID"
+      ],
+      "gt_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Redis Job Channel",
+        "Global::Redis Report Channel"
+      ],
+      "gt_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Server Process::WebSocket Gateway\\n(Socket.IO/WebSocket)",
+        "Client Browser::WebSocket Client"
+      ],
+      "gt_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Worker Execution::Subprocess: squatm3 CLI\\n(domain-generation engine)"
+      ],
+      "gt_nodes": [
+        "Global::Squatm3\\nDomain generation engine"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Client Browser::Web UI\\n(index.html)"
+      ],
+      "gt_nodes": [
+        "Global::Web UI\\nindex.html"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Server Process::Background Consumer Thread\\n- Started by API process",
+        "Worker Execution::Worker Adapter\\n- Receive jobs\\n- Invoke engine\\n- Stream progress/results"
+      ],
+      "gt_nodes": [
+        "Global::Workers\\nCommand consumers"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "API Server Process::Background Consumer Thread\\n- Started by API process",
+      "reference_nodes": [
+        "Global::Workers\\nCommand consumers"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Server Process::HTTP API\\n- GET /\\n- GET /homoglyphs/complete?domain=...\\n- Error handling (400/404/500)\\n- Session validation",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests",
+        "Global::Web UI\\nindex.html"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Server Process::Option Builder\\n- Parse attack codes: Hf, Hc, -add, F, R\\n- Flags: godaddy, output\\n- Build CLI opts (e.g., -Hf, --add, --output=json)",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Server Process::Session Manager\\n- Create session on GET /\\n- Session ID == Job ID",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Server Process::WebSocket Gateway\\n(Socket.IO/WebSocket)",
+      "reference_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Browser::Web UI\\n(index.html)",
+      "reference_nodes": [
+        "Global::Web UI\\nindex.html"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Browser::WebSocket Client",
+      "reference_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::API Server Process",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Client Browser",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Configuration\\n- Redis URI\\n- GoDaddy key/secret/base URL/endpoints",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability",
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::GoDaddy APIs",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Redis Job Channel",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Redis Report Channel",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues",
+        "Global::Socket.io\\nWebSocket result channel"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Web User",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Worker Execution",
+      "reference_nodes": [
+        "Global::Workers\\nCommand consumers"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GoDaddy APIs::Availability Endpoints",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Worker Execution::Subprocess: squatm3 CLI\\n(domain-generation engine)",
+      "reference_nodes": [
+        "Global::Squatm3\\nDomain generation engine"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Worker Execution::Worker Adapter\\n- Receive jobs\\n- Invoke engine\\n- Stream progress/results",
+      "reference_nodes": [
+        "Global::Workers\\nCommand consumers",
+        "Global::Squatm3\\nDomain generation engine"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::GoDaddy APIs",
+        "GoDaddy APIs::Availability Endpoints"
+      ],
+      "gt_node": "Global::GoDaddy API\\nDomain availability"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Server Process::HTTP API\\n- GET /\\n- GET /homoglyphs/complete?domain=...\\n- Error handling (400/404/500)\\n- Session validation",
+        "API Server Process::Option Builder\\n- Parse attack codes: Hf, Hc, -add, F, R\\n- Flags: godaddy, output\\n- Build CLI opts (e.g., -Hf, --add, --output=json)",
+        "API Server Process::Session Manager\\n- Create session on GET /\\n- Session ID == Job ID"
+      ],
+      "gt_node": "Global::HTTP API\\nSession and attack requests"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Redis Job Channel",
+        "Global::Redis Report Channel"
+      ],
+      "gt_node": "Global::Redis\\nCommand and reporting queues"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Server Process::WebSocket Gateway\\n(Socket.IO/WebSocket)",
+        "Client Browser::WebSocket Client"
+      ],
+      "gt_node": "Global::Socket.io\\nWebSocket result channel"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Worker Execution::Subprocess: squatm3 CLI\\n(domain-generation engine)"
+      ],
+      "gt_node": "Global::Squatm3\\nDomain generation engine"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Client Browser::Web UI\\n(index.html)"
+      ],
+      "gt_node": "Global::Web UI\\nindex.html"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Server Process::Background Consumer Thread\\n- Started by API process",
+        "Worker Execution::Worker Adapter\\n- Receive jobs\\n- Invoke engine\\n- Stream progress/results"
+      ],
+      "gt_node": "Global::Workers\\nCommand consumers"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4804,
+      "completion_tokens": 689,
+      "total_tokens": 5493,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Global::API Server Process",
+    "Global::Client Browser",
+    "Global::Configuration\\n- Redis URI\\n- GoDaddy key/secret/base URL/endpoints",
+    "Global::Web User",
+    "Global::Worker Execution"
+  ],
+  "_provenance": {
+    "fingerprint": "b16eaddcfcf4dc6c19f364da89862b68ad41cb613edfd12f33d439cd418ade91",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

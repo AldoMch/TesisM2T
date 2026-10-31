@@ -1,0 +1,60 @@
+@startuml
+
+package "Kotlin Auditing Client Library" {
+  package "Public API Layer" {
+    component "Auditing API"
+  }
+
+  package "Domain Model Layer" {
+    component "AuditEvent"
+    component "Event Element"
+    component "AuditorEventConfig"
+  }
+
+  package "Auditing Core Layer" {
+    component "Change Comparator"
+    component "AuditEvent Builder"
+  }
+
+  package "Filtering Integration Layer" {
+    interface "AuditEventElementFilter"
+  }
+
+  package "Serialization Layer" {
+    component "JSON Serializer"
+  }
+
+  package "Publishing Integration Layer" {
+    interface "EventPublisher"
+    component "Default Kafka-based EventPublisher"
+  }
+
+  package "Logging Integration Layer" {
+    interface "LogProvider"
+  }
+}
+
+cloud "Kafka"
+node "Downstream Event Consumers"
+
+"Auditing API" -> "Change Comparator"
+"Change Comparator" -> "AuditEventElementFilter"
+"Change Comparator" -> "AuditEvent Builder"
+"AuditEvent Builder" -> "AuditEvent"
+
+"Auditing API" -> "AuditorEventConfig"
+"Auditing API" -> "JSON Serializer"
+"Auditing API" -> "EventPublisher"
+"Auditing API" -> "LogProvider"
+
+"AuditorEventConfig" -> "AuditEventElementFilter"
+
+"JSON Serializer" -> "AuditEvent"
+
+"Default Kafka-based EventPublisher" ..|> "EventPublisher"
+"Default Kafka-based EventPublisher" -> "Kafka"
+"Downstream Event Consumers" -> "Kafka"
+
+"AuditEvent" -> "Event Element"
+
+@enduml

@@ -1,0 +1,163 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define COMPONENT component
+!define CLOUD cloud
+!define QUEUE queue
+
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #F5F5F5
+  BorderColor #333333
+  BorderThickness 1
+}
+skinparam database {
+  BackgroundColor #E8F5E8
+  BorderColor #2E7D32
+  BorderThickness 1
+}
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  BorderThickness 1
+}
+
+title BeeGreen System Architecture
+
+' ==== Client Tier ====
+rectangle "Client Tier" as client_tier {
+  rectangle "Web Client\n(React/TypeScript)" as web_client
+  rectangle "Browser Extension\n(Chrome)" as browser_extension
+  
+  note right of web_client
+    End user interface for
+    sustainability recommendations
+  end note
+  
+  note right of browser_extension
+    Browser-based interface
+    for shopping scenarios
+  end note
+}
+
+' ==== API Tier ====
+rectangle "API Tier" as api_tier {
+  rectangle "Backend API Server\n(Node.js/LoopBack)" as backend_server {
+    rectangle "User Controller" as user_controller
+    rectangle "Ping Controller" as ping_controller
+    rectangle "User Repository" as user_repository
+    rectangle "Model Layer" as model_layer
+    
+    user_controller -[hidden]- ping_controller
+    user_controller -[hidden]- user_repository
+    user_repository -[hidden]- model_layer
+    
+    note right of user_controller
+      Exposes REST endpoints:
+      - POST /users
+      - GET /users
+      - PATCH /users
+      - GET /users/{id}
+    end note
+    
+    note right of ping_controller
+      Diagnostic endpoint:
+      - GET /ping
+    end note
+  }
+}
+
+' ==== Data Tier ====
+rectangle "Data Tier" as data_tier {
+  DATABASE "Persistent Storage" as database {
+    rectangle "User Data" as user_data
+    rectangle "InventoryItem Data" as inventory_data
+    
+    user_data -[hidden]- inventory_data
+  }
+}
+
+' ==== Supporting Services ====
+cloud "Supporting Services" as supporting_services {
+  rectangle "Product Scoring\nService" as scoring_service
+  rectangle "Recommendation\nWorkflows" as rec_workflows
+  rectangle "Data Processing\nAssets" as data_processing
+  
+  scoring_service -[hidden]- rec_workflows
+  rec_workflows -[hidden]- data_processing
+  
+  note right of scoring_service
+    Sustainability scoring
+    for products
+  end note
+  
+  note right of rec_workflows
+    Recommendation
+    generation logic
+  end note
+}
+
+' ==== External Interfaces ====
+rectangle "External Systems" as external_systems {
+  rectangle "Online Stores" as online_stores
+  rectangle "Product Catalogs" as product_catalogs
+  
+  online_stores -[hidden]- product_catalogs
+}
+
+' ==== Connections ====
+web_client --> backend_server : HTTP/JSON\nAPI Calls
+browser_extension --> backend_server : HTTP/JSON\nAPI Calls
+
+user_controller --> user_repository : Data Access
+user_repository --> user_data : CRUD Operations
+model_layer --> user_data : Data Mapping
+model_layer --> inventory_data : Data Mapping
+
+backend_server --> scoring_service : Scoring Requests
+backend_server --> rec_workflows : Recommendation\nRequests
+scoring_service --> data_processing : Data Processing
+rec_workflows --> data_processing : Workflow Execution
+
+data_processing --> database : Read/Write\nProcessed Data
+
+scoring_service --> online_stores : Product Data
+scoring_service --> product_catalogs : Product Info
+rec_workflows --> online_stores : Shopping Context
+
+' ==== Protocol Notes ====
+note top of web_client
+  Protocol: HTTP
+  Media Type: application/json
+end note
+
+note top of browser_extension
+  Protocol: HTTP
+  Media Type: application/json
+end note
+
+note bottom of backend_server
+  Built with LoopBack REST
+  and repository abstractions
+end note
+
+note bottom of database
+  Stores:
+  - User records
+  - InventoryItem data
+  - System metadata
+end note
+
+' ==== Legend ====
+legend right
+  | Color | Meaning |
+  | #F5F5F5 | System Components |
+  | #E8F5E8 | Data Storage |
+  | #E3F2FD | Supporting Services |
+  |---|
+  Solid arrows show
+  primary data flow
+end legend
+
+@enduml

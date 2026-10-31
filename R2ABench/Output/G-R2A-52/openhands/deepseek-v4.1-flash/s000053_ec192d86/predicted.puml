@@ -1,0 +1,125 @@
+@startuml
+title Configuration Anomaly Detection (CAD) - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FDFDFD
+  BorderColor #333333
+}
+skinparam note {
+  BackgroundColor #FBFBEF
+  BorderColor #CCCC99
+}
+
+' ================= Actors =================
+actor "SRE / Operations\nUser" as SRE
+actor "Deployment\nEngineer" as DE
+actor "Developer /\nContributor" as DEV
+
+' ================= External Systems =================
+cloud "External Alert Source\n(webhook)" as ALERT
+cloud "PagerDuty" as PD
+cloud "AWS" as AWS
+cloud "OCM" as OCM
+cloud "Cluster Owner /\nOperations Systems" as OWNER
+
+' ================= CAD System =================
+package "CAD System" {
+
+  ' ---------- Normal event-driven execution path ----------
+  package "Tekton Execution (namespace: configuration-anomaly-detection)" {
+    component "Tekton EventListener" as EL
+    component "Tekton Trigger" as TRIG
+    component "Tekton PipelineRun\n(v1beta1 manifest)" as PR
+    component "cad-checks-pipeline" as PIPE
+  }
+
+  ' ---------- CLI runtime ----------
+  package "cadctl CLI Runtime (container image)" {
+    component "cadctl\n/bin/cadctl" as CADCTL
+    component "CHGM Workflow\ncluster-has-gone-missing" as CHGM
+    component "Anomaly Detection &\nCommunication" as ANOM
+    component "Mitigation / Disposition\nsupport status, silence,\nescalate, follow-up" as MIT
+  }
+
+  ' ---------- Integration library ----------
+  package "Integration Library (package) - FR-009 / NFR-004" {
+    component "PagerDuty Integration" as IPD
+    component "AWS Integration" as IAWS
+    component "OCM Integration" as IOCM
+  }
+
+  ' ---------- Maintenance utility ----------
+  package "Deployment Assets & Utilities" {
+    component "Template Update Utility" as TPL
+    artifact "Deployment Template Artifact\n(YAML)" as TPLART
+    artifact "YAML Manifests\n(pipeline / trigger / Job)" as YAML
+  }
+}
+
+' ================= Relations: normal webhook path =================
+ALERT --> EL : alert webhook input / JSON\n(DR-005)
+EL --> TRIG : event
+TRIG --> PR : creates / triggers
+PR --> PIPE : executes CAD checks
+PIPE --> CADCTL : invokes / runs checks
+
+note right of EL
+  FR-005: external alert webhook is received
+  through the EventListener, which triggers
+  a Tekton PipelineRun to execute CAD checks.
+end note
+
+' ================= Relations: direct skip-webhook path =================
+DE --> PR : creates PipelineRun directly\n(skip-webhook) - FR-006 / C-006
+PR ..> YAML : defined by\n(FR-007 / C-005)
+
+note bottom of PR
+  Direct path accepts a "payload" parameter as JSON
+  carrying event.data.id (FR-008 / DR-001 / DR-002).
+  Default/example target: cad-checks-pipeline in the
+  configuration-anomaly-detection namespace
+  (FR-007 / C-004 / C-005).
+end note
+
+' ================= Relations: CLI workflows =================
+SRE --> CADCTL : runs CAD workflows
+CADCTL --> CHGM : FR-002
+CADCTL --> ANOM : FR-003
+CADCTL --> MIT : FR-004
+CHGM --> ANOM
+ANOM --> MIT : when follow-up required
+
+CADCTL --> IPD : integration code
+CADCTL --> IAWS : integration code
+CADCTL --> IOCM : integration code
+IPD --> PD
+IAWS --> AWS
+IOCM --> OCM
+ANOM --> OWNER : relevant communications
+MIT --> OWNER : silencing / escalation /\nfollow-up handling
+
+note right of MIT
+  FR-004: mitigation/disposition actions include
+  updating support status, silencing or escalating
+  alerts, and recording follow-up handling.
+end note
+
+' ================= Relations: maintenance =================
+DEV --> TPL : runs template update\nworkflow (FR-010)
+TPL --> TPLART : updates template artifact\n(DR-004)
+DEV --> YAML : extends deployment /\ntemplate assets
+
+' ================= Packaging / build constraints =================
+note top of CADCTL
+  NFR-001 / C-001 / C-003:
+  packaged as a container image based on a
+  UBI minimal runtime image, including /bin/cadctl.
+  NFR-002 / C-002:
+  built with a Go 1.17 builder image.
+  NFR-003: exposes standard image labels.
+end note
+
+@enduml

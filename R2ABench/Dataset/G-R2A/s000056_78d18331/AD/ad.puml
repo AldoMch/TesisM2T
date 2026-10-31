@@ -1,0 +1,32 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    BorderThickness 1
+}
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Host Scanner Endpoint Tests" as EndpointTests {
+    rectangle "endpoint_test.go\ncommon endpoint tests" as GenericEndpointTest
+    rectangle "endpoint_platform1_test.go\nplatform-specific expected data" as Platform1EndpointTest
+    rectangle "endpoint_platform2_test.go\nplatform-specific expected data" as Platform2EndpointTest
+}
+
+rectangle "Go build tags" as BuildTags
+
+GenericEndpointTest --> Platform1EndpointTest : uses expected data
+GenericEndpointTest --> Platform2EndpointTest : uses expected data
+BuildTags --> Platform1EndpointTest : selects/includes
+BuildTags --> Platform2EndpointTest : selects/includes
+@enduml

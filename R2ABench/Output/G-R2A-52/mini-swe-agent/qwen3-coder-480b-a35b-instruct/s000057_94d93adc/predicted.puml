@@ -1,0 +1,60 @@
+@startuml
+!theme plain
+
+title Soundzone System Architecture
+
+skinparam componentStyle rectangle
+
+package "Frontend Layer" {
+  [React/Redux Client] as frontend
+}
+
+package "Backend Layer" {
+  [Node/Express Server] as backend
+}
+
+package "Data Layer" {
+  [PostgreSQL Database] as database
+}
+
+package "External Services" {
+  [Cloudinary Media Storage] as cloudinary
+}
+
+frontend --> backend : API Requests (HTTP)
+backend --> database : Data Persistence
+frontend --> cloudinary : Direct Media Upload
+cloudinary --> frontend : Media URLs
+backend --> cloudinary : Retrieve Media Metadata (if needed)
+
+note right of frontend
+  Environment Config:
+  - API Base URL
+  - Cloudinary URL
+  - Cloudinary Preset
+end note
+
+note right of backend
+  Manages:
+  - User Authentication
+  - Follow Relationships
+  - Sound Records
+  - Feed Generation
+end note
+
+note right of database
+  Stores:
+  - User Data
+  - Sound Metadata
+  - Follow Relations
+  - Media URLs (not binaries)
+end note
+
+note right of cloudinary
+  Handles:
+  - Audio File Storage
+  - Image Asset Storage
+  - Returns Hosted URLs
+end note
+
+@enduml

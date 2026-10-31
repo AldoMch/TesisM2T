@@ -1,0 +1,95 @@
+@startuml
+title Turing System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #37474F
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #37474F
+}
+skinparam package {
+  BackgroundColor #ECEFF1
+  BorderColor #78909C
+}
+skinparam database {
+  BackgroundColor #FFFFFF
+  BorderColor #37474F
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #37474F
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #FBC02D
+}
+
+actor "API Client" as ApiClient
+actor "Platform Operator" as Operator
+
+package "Turing API Server" as ApiServer {
+  component "HTTP API Endpoints\n(OpenAPI 3.0.3 / HTTP / JSON)" as HttpApi
+  component "Middleware Layer" as Middleware {
+    component "Authorization Middleware\n(mounted when configured)" as AuthMW
+    component "OpenAPI Request Validation\n(mounted when configured)" as ValMW
+  }
+  component "Router Service\n(list routers for project_id)" as RouterSvc
+  component "Ensembler Service\n(create / read / update / delete)" as EnsemblerSvc
+  component "Cluster Deployment Controller\n(router deployment lifecycle)" as ClusterCtrl
+  component "Jaeger Tracing Client" as JaegerClient
+}
+
+component "PyFuncEnsembler Webservice Runtime\n(Docker-based)" as PyFunc
+
+database "Kubernetes Cluster" as K8s {
+  component "Turing Router Deployment" as RouterDeployment
+  component "Router User Container\n(default port 8080, override ports.containerPort)" as UserContainer
+}
+
+component "MLflow Model Registry" as MLflow
+component "Jaeger" as Jaeger
+
+ApiClient --> HttpApi : HTTP requests
+Operator --> HttpApi
+Operator --> PyFunc : deploy / run
+
+HttpApi --> AuthMW
+HttpApi --> ValMW
+AuthMW --> RouterSvc
+AuthMW --> EnsemblerSvc
+ValMW --> RouterSvc
+ValMW --> EnsemblerSvc
+
+RouterSvc --> ClusterCtrl
+EnsemblerSvc ..> PyFunc : provisions user-defined ensembler
+
+ClusterCtrl --> RouterDeployment : Kubernetes API\n(create / update / delete)
+RouterDeployment *-- UserContainer
+RouterDeployment --> JaegerClient : tracing spans
+JaegerClient --> Jaeger : traces (when sampling selects)
+
+PyFunc --> MLflow : downloads model artifacts\n(for local image build)
+PyFunc --> RouterDeployment : serves ensembler webservice\nto Turing routers
+
+note right of EnsemblerSvc
+  Ensembler responses: application/json
+  Delete success: 200 + EnsemblerId
+  Delete errors: 400 (in use),
+    404 (not found), 500 (failure)
+end note
+
+note bottom of RouterSvc
+  Router timeout pattern: ^[0-9]+(ms|s|m|h)$
+  Protocol: HTTP_JSON | UPI_V1
+  (protocol constrains traffic-rule field sources)
+end note
+
+note bottom of JaegerClient
+  Tracing initialized by Router component;
+  actual traces depend on tracer
+  enabled state / sampling configuration.
+end note
+
+@enduml

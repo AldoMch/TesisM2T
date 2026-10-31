@@ -1,0 +1,798 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "2e3d6d7b1af70742ad43f5abd2a3a2cc2df83787f292e3d37d0cd0fd9cb73edf",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "0724f0bba075789de2ce989548b3de2ae816bd56d47194833cf606ed09a6948a",
+  "predicted_edges_sha256": "d7d52540a3194632116222941bd57c79effe594a5e0f1dbe7b507419661863bb",
+  "precision": 0.02564102564102564,
+  "recall": 0.25,
+  "f1": 0.04651162790697674,
+  "reference_edges": [
+    [
+      "Global::Internet",
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway",
+      "Global::Internet"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::JSON Input Files\\n[DI-001]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::SSH Key Material\\n(public + private)\\n[DR-002, FR-002]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::terraform.tfvars\\n/ Variable Files\\n[DI-002, DR-007]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Global::Infrastructure\\nAdministrator",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]"
+    ],
+    [
+      "Global::Infrastructure\\nAdministrator",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::JSON Input Files\\n[DI-001]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::SSH Key Material\\n(public + private)\\n[DR-002, FR-002]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::SSH Access Config\\n(ssh_authorized_keys,\\nssh_private_key)\\n[DR-002, FR-002]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::terraform.tfvars\\n/ Variable Files\\n[DI-002, DR-007]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Bastion Access Config\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[DR-006, FR-011, CON-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Bastion Access Config\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[DR-006, FR-011, CON-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Cloud-Init Data\\n(base64-encoded master_user_data\\n& slave_user_data)\\n[DR-008, DI-003, CON-005]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Master Config\\n(master_ad, master_subnet_id,\\nmaster_display_name,\\nmaster_image_id, master_shape,\\nmaster_user_data)\\n[DR-004, FR-005]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Cloud-Init Data\\n(base64-encoded master_user_data\\n& slave_user_data)\\n[DR-008, DI-003, CON-005]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Slave/Agent Config\\n(slave_count, slave_ads,\\nslave_subnet_ids,\\nslave_display_name,\\nslave_image_id, slave_shape,\\nslave_user_data)\\n[DR-005, FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Cluster Config\\n(label_prefix, jenkins_version,\\njenkins_password, http_port,\\njnlp_port, plugins)\\n[DR-003, FR-004]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Master Config\\n(master_ad, master_subnet_id,\\nmaster_display_name,\\nmaster_image_id, master_shape,\\nmaster_user_data)\\n[DR-004, FR-005]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Slave/Agent Config\\n(slave_count, slave_ads,\\nslave_subnet_ids,\\nslave_display_name,\\nslave_image_id, slave_shape,\\nslave_user_data)\\n[DR-005, FR-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::OCI Access Config\\n(tenancy_ocid, compartment_ocid,\\nuser_ocid, region, fingerprint,\\nprivate_key_path)\\n[DR-001, FR-001]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::SSH Access Config\\n(ssh_authorized_keys,\\nssh_private_key)\\n[DR-002, FR-002]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]",
+      "Local Workstation / CI Host::Terraform Modules"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform apply\\n[FR-013]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::OCI API Endpoint\\n(region, fingerprint,\\nprivate_key_path)"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform init\\n[FR-013]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform plan\\n[FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform plan\\n[FR-013]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform apply\\n[FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Public Subnet\\n(Jenkins Master)\\n[FR-005]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Cloud-Init / SSH\\nAuthorized Keys\\n[FR-003, DI-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Jenkins Agent\\n(JNLP / jnlp_port)\\n[CI-002, FR-004]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Private Subnet(s)\\n(Jenkins Slave/Agent)\\n[FR-010, NFR-005]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Cloud-Init / SSH\\nAuthorized Keys\\n[FR-003, DI-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Jenkins Agent\\n(JNLP / jnlp_port)\\n[CI-002, FR-004]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::OCI API Endpoint\\n(region, fingerprint,\\nprivate_key_path)",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::Tenancy / Compartment\\n(tenancy_ocid,\\ncompartment_ocid)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Private Subnet(s)\\n(Jenkins Slave/Agent)\\n[FR-010, NFR-005]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::NAT Gateway\\n(private node outbound)\\n[FR-010, CON-003]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Private Subnet(s)\\n(Jenkins Slave/Agent)\\n[FR-010, NFR-005]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VCN\\n[CON-001]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Public Subnet\\n(Jenkins Master)\\n[FR-005]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VCN\\n[CON-001]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Route Table /\\nDHCP Options /\\nSecurity Lists\\n[FR-009, CON-002]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VCN\\n[CON-001]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VNIC-based\\nInstance Networking\\n[CI-004, CON-001]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Bastion Host\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[FR-011, CI-003, CON-006]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Bastion Host\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[FR-011, CI-003, CON-006]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Load Balancer\\n(public entry point)\\n[FR-012, CON-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)",
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Private Subnet(s)\\n(Jenkins Slave/Agent)\\n[FR-010, NFR-005]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::NAT Gateway\\n(private node outbound)\\n[FR-010, CON-003]"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "Global::Internet",
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway",
+      "Global::Internet"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::JSON Input Files\\n[DI-001]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::SSH Key Material\\n(public + private)\\n[DR-002, FR-002]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::terraform.tfvars\\n/ Variable Files\\n[DI-002, DR-007]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Global::Infrastructure\\nAdministrator",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]"
+    ],
+    [
+      "Global::Infrastructure\\nAdministrator",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::JSON Input Files\\n[DI-001]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::SSH Key Material\\n(public + private)\\n[DR-002, FR-002]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::SSH Access Config\\n(ssh_authorized_keys,\\nssh_private_key)\\n[DR-002, FR-002]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::terraform.tfvars\\n/ Variable Files\\n[DI-002, DR-007]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Bastion Access Config\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[DR-006, FR-011, CON-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Bastion Access Config\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[DR-006, FR-011, CON-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Cloud-Init Data\\n(base64-encoded master_user_data\\n& slave_user_data)\\n[DR-008, DI-003, CON-005]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Master Config\\n(master_ad, master_subnet_id,\\nmaster_display_name,\\nmaster_image_id, master_shape,\\nmaster_user_data)\\n[DR-004, FR-005]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Cloud-Init Data\\n(base64-encoded master_user_data\\n& slave_user_data)\\n[DR-008, DI-003, CON-005]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Slave/Agent Config\\n(slave_count, slave_ads,\\nslave_subnet_ids,\\nslave_display_name,\\nslave_image_id, slave_shape,\\nslave_user_data)\\n[DR-005, FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Cluster Config\\n(label_prefix, jenkins_version,\\njenkins_password, http_port,\\njnlp_port, plugins)\\n[DR-003, FR-004]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Master Config\\n(master_ad, master_subnet_id,\\nmaster_display_name,\\nmaster_image_id, master_shape,\\nmaster_user_data)\\n[DR-004, FR-005]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Slave/Agent Config\\n(slave_count, slave_ads,\\nslave_subnet_ids,\\nslave_display_name,\\nslave_image_id, slave_shape,\\nslave_user_data)\\n[DR-005, FR-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::OCI Access Config\\n(tenancy_ocid, compartment_ocid,\\nuser_ocid, region, fingerprint,\\nprivate_key_path)\\n[DR-001, FR-001]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::SSH Access Config\\n(ssh_authorized_keys,\\nssh_private_key)\\n[DR-002, FR-002]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]",
+      "Local Workstation / CI Host::Terraform Modules"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform apply\\n[FR-013]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::OCI API Endpoint\\n(region, fingerprint,\\nprivate_key_path)"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform init\\n[FR-013]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform plan\\n[FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform plan\\n[FR-013]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform apply\\n[FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Public Subnet\\n(Jenkins Master)\\n[FR-005]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Cloud-Init / SSH\\nAuthorized Keys\\n[FR-003, DI-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Jenkins Agent\\n(JNLP / jnlp_port)\\n[CI-002, FR-004]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Private Subnet(s)\\n(Jenkins Slave/Agent)\\n[FR-010, NFR-005]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Cloud-Init / SSH\\nAuthorized Keys\\n[FR-003, DI-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Jenkins Agent\\n(JNLP / jnlp_port)\\n[CI-002, FR-004]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::OCI API Endpoint\\n(region, fingerprint,\\nprivate_key_path)",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::Tenancy / Compartment\\n(tenancy_ocid,\\ncompartment_ocid)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Private Subnet(s)\\n(Jenkins Slave/Agent)\\n[FR-010, NFR-005]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VCN\\n[CON-001]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Public Subnet\\n(Jenkins Master)\\n[FR-005]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VCN\\n[CON-001]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Route Table /\\nDHCP Options /\\nSecurity Lists\\n[FR-009, CON-002]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VCN\\n[CON-001]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VNIC-based\\nInstance Networking\\n[CI-004, CON-001]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Bastion Host\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[FR-011, CI-003, CON-006]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Bastion Host\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[FR-011, CI-003, CON-006]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Load Balancer\\n(public entry point)\\n[FR-012, CON-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]"
+    ]
+  ],
+  "internal_reference_edges": [
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController",
+      "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)"
+    ]
+  ],
+  "internal_predicted_edges": [],
+  "reference_witnesses": [
+    {
+      "edge_index": 9,
+      "counterpart_index": 31,
+      "source_group": 5,
+      "target_group": 2
+    },
+    {
+      "edge_index": 10,
+      "counterpart_index": 31,
+      "source_group": 5,
+      "target_group": 2
+    },
+    {
+      "edge_index": 11,
+      "counterpart_index": 31,
+      "source_group": 5,
+      "target_group": 2
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 31,
+      "counterpart_index": 9,
+      "source_group": 5,
+      "target_group": 2
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "Global::Internet": [
+      0
+    ],
+    "Global::Oracle Cloud Infrastructure (Region)": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Internet\\nGateway": [
+      1
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::NAT\\nGateway": [
+      2
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)": [
+      3,
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(primary)": [
+      3
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Load Balancer\\n(standby)": [
+      3
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Route Table": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 1\\n(Public/Regional)::Security List": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)": [
+      0,
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Bastion\\nHost": [
+      0
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Route Table": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 2\\n(Public/Regional)::Security List": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)": [
+      4,
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Healthcheck": [
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Jenkins\\nController": [
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Route Table": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 3\\n(Private/Regional)::Security List": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)": [
+      4,
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Agent Node\\n(Fault Domain X)": [
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Route Table": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 4\\n(Private/Regional)::Security List": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)": [
+      4,
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Agent Node\\n(Fault Domain Y)": [
+      5
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Route Table": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (Region)::VCN::Subnet 5\\n(Private/Regional)::Security List": [
+      4
+    ]
+  },
+  "predicted_endpoint_anchors": {
+    "Global::Deployment Operator\\n/ DevOps Engineer": [],
+    "Global::Infrastructure\\nAdministrator": [],
+    "Global::Local Workstation / CI Host": [],
+    "Global::Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "Local Workstation / CI Host::Configuration Layer": [],
+    "Local Workstation / CI Host::Configuration Layer::JSON Input Files\\n[DI-001]": [],
+    "Local Workstation / CI Host::Configuration Layer::SSH Key Material\\n(public + private)\\n[DR-002, FR-002]": [],
+    "Local Workstation / CI Host::Configuration Layer::terraform.tfvars\\n/ Variable Files\\n[DI-002, DR-007]": [],
+    "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]": [],
+    "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Bastion Access Config\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[DR-006, FR-011, CON-006]": [],
+    "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Cloud-Init Data\\n(base64-encoded master_user_data\\n& slave_user_data)\\n[DR-008, DI-003, CON-005]": [],
+    "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Cluster Config\\n(label_prefix, jenkins_version,\\njenkins_password, http_port,\\njnlp_port, plugins)\\n[DR-003, FR-004]": [],
+    "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Master Config\\n(master_ad, master_subnet_id,\\nmaster_display_name,\\nmaster_image_id, master_shape,\\nmaster_user_data)\\n[DR-004, FR-005]": [],
+    "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Slave/Agent Config\\n(slave_count, slave_ads,\\nslave_subnet_ids,\\nslave_display_name,\\nslave_image_id, slave_shape,\\nslave_user_data)\\n[DR-005, FR-006]": [],
+    "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::OCI Access Config\\n(tenancy_ocid, compartment_ocid,\\nuser_ocid, region, fingerprint,\\nprivate_key_path)\\n[DR-001, FR-001]": [],
+    "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::SSH Access Config\\n(ssh_authorized_keys,\\nssh_private_key)\\n[DR-002, FR-002]": [],
+    "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]": [],
+    "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform apply\\n[FR-013]": [],
+    "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform init\\n[FR-013]": [],
+    "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform plan\\n[FR-013]": [],
+    "Local Workstation / CI Host::Terraform Modules": [],
+    "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]": [],
+    "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Cloud-Init / SSH\\nAuthorized Keys\\n[FR-003, DI-003]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Cloud-Init / SSH\\nAuthorized Keys\\n[FR-003, DI-003]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Jenkins Agent\\n(JNLP / jnlp_port)\\n[CI-002, FR-004]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::OCI API Endpoint\\n(region, fingerprint,\\nprivate_key_path)": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::Tenancy / Compartment\\n(tenancy_ocid,\\ncompartment_ocid)": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]": [
+      1,
+      2,
+      4,
+      5
+    ],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::NAT Gateway\\n(private node outbound)\\n[FR-010, CON-003]": [
+      2
+    ],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Private Subnet(s)\\n(Jenkins Slave/Agent)\\n[FR-010, NFR-005]": [
+      5
+    ],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Public Subnet\\n(Jenkins Master)\\n[FR-005]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Route Table /\\nDHCP Options /\\nSecurity Lists\\n[FR-009, CON-002]": [
+      4
+    ],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VCN\\n[CON-001]": [
+      1
+    ],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VNIC-based\\nInstance Networking\\n[CI-004, CON-001]": [],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]": [
+      0,
+      3
+    ],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Bastion Host\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[FR-011, CI-003, CON-006]": [
+      0
+    ],
+    "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Load Balancer\\n(public entry point)\\n[FR-012, CON-003]": [
+      3
+    ]
+  },
+  "reference_unanchored_edges": [],
+  "predicted_unanchored_edges": [
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::JSON Input Files\\n[DI-001]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::SSH Key Material\\n(public + private)\\n[DR-002, FR-002]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Configuration Layer::terraform.tfvars\\n/ Variable Files\\n[DI-002, DR-007]"
+    ],
+    [
+      "Global::Deployment Operator\\n/ DevOps Engineer",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Global::Infrastructure\\nAdministrator",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]"
+    ],
+    [
+      "Global::Infrastructure\\nAdministrator",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::JSON Input Files\\n[DI-001]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::SSH Key Material\\n(public + private)\\n[DR-002, FR-002]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::SSH Access Config\\n(ssh_authorized_keys,\\nssh_private_key)\\n[DR-002, FR-002]"
+    ],
+    [
+      "Local Workstation / CI Host::Configuration Layer::terraform.tfvars\\n/ Variable Files\\n[DI-002, DR-007]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Bastion Access Config\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[DR-006, FR-011, CON-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Bastion Access Config\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[DR-006, FR-011, CON-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Cloud-Init Data\\n(base64-encoded master_user_data\\n& slave_user_data)\\n[DR-008, DI-003, CON-005]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Master Config\\n(master_ad, master_subnet_id,\\nmaster_display_name,\\nmaster_image_id, master_shape,\\nmaster_user_data)\\n[DR-004, FR-005]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Cloud-Init Data\\n(base64-encoded master_user_data\\n& slave_user_data)\\n[DR-008, DI-003, CON-005]",
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Slave/Agent Config\\n(slave_count, slave_ads,\\nslave_subnet_ids,\\nslave_display_name,\\nslave_image_id, slave_shape,\\nslave_user_data)\\n[DR-005, FR-006]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Cluster Config\\n(label_prefix, jenkins_version,\\njenkins_password, http_port,\\njnlp_port, plugins)\\n[DR-003, FR-004]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Master Config\\n(master_ad, master_subnet_id,\\nmaster_display_name,\\nmaster_image_id, master_shape,\\nmaster_user_data)\\n[DR-004, FR-005]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::Jenkins Slave/Agent Config\\n(slave_count, slave_ads,\\nslave_subnet_ids,\\nslave_display_name,\\nslave_image_id, slave_shape,\\nslave_user_data)\\n[DR-005, FR-006]",
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::OCI Access Config\\n(tenancy_ocid, compartment_ocid,\\nuser_ocid, region, fingerprint,\\nprivate_key_path)\\n[DR-001, FR-001]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Input Variable Aggregator\\n[SI-003, FR-001..FR-006]::SSH Access Config\\n(ssh_authorized_keys,\\nssh_private_key)\\n[DR-002, FR-002]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]",
+      "Local Workstation / CI Host::Terraform Modules"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform apply\\n[FR-013]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::OCI API Endpoint\\n(region, fingerprint,\\nprivate_key_path)"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform init\\n[FR-013]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform plan\\n[FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform plan\\n[FR-013]",
+      "Local Workstation / CI Host::Terraform Execution Engine\\n[CON-004, FR-013]::terraform apply\\n[FR-013]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Master Module\\n[FR-005, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]"
+    ],
+    [
+      "Local Workstation / CI Host::Terraform Modules::Jenkins Slave/Agent Module\\n[FR-006, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Public Subnet\\n(Jenkins Master)\\n[FR-005]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Cloud-Init / SSH\\nAuthorized Keys\\n[FR-003, DI-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Jenkins Agent\\n(JNLP / jnlp_port)\\n[CI-002, FR-004]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Private Subnet(s)\\n(Jenkins Slave/Agent)\\n[FR-010, NFR-005]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Cloud-Init / SSH\\nAuthorized Keys\\n[FR-003, DI-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]::Jenkins Agent\\n(JNLP / jnlp_port)\\n[CI-002, FR-004]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::OCI API Endpoint\\n(region, fingerprint,\\nprivate_key_path)",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Identity & Access\\n[FR-001, DR-001]::Tenancy / Compartment\\n(tenancy_ocid,\\ncompartment_ocid)"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::Public Subnet\\n(Jenkins Master)\\n[FR-005]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VCN\\n[CON-001]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::OCI Networking (Pre-existing)\\n[FR-009, CON-002]::VNIC-based\\nInstance Networking\\n[CI-004, CON-001]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Bastion Host\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[FR-011, CI-003, CON-006]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Bastion Host\\n(bastion_host, bastion_user,\\nbastion_private_key)\\n[FR-011, CI-003, CON-006]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Slave/Agent Instance(s)\\n(slave_shape, slave_image_id,\\nslave_ads) x slave_count\\n[FR-006, FR-007]"
+    ],
+    [
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Private-Network Access Layer\\n[CON-003, NFR-005]::Load Balancer\\n(public entry point)\\n[FR-012, CON-003]",
+      "Oracle Cloud Infrastructure (OCI)\\n[CON-001, NFR-001]::Compute Instances\\n[FR-007]::Jenkins Master Instance\\n(master_shape, master_image_id,\\nmaster_ad)\\n[FR-005, FR-007]::Jenkins Master Service\\n(http_port, jnlp_port)\\n[FR-004, CI-002]"
+    ]
+  ]
+}

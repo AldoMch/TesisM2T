@@ -1,0 +1,290 @@
+{
+  "requirements": [
+    {
+      "id": "Campus_Helper-R001",
+      "description": "The system shall support product discovery through popularity-ranked browsing, category browsing, and access to product detail pages for guests and registered users."
+    },
+    {
+      "id": "Campus_Helper-R002",
+      "description": "The system shall allow logged-in users to create orders, modify remarks before delivery or completion, confirm received but incomplete orders, and cancel orders before delivery, validating input and persisting order records and status changes."
+    },
+    {
+      "id": "Campus_Helper-R003",
+      "description": "The system shall provide a personal center where logged-in users can view their favorited products and their own order history."
+    },
+    {
+      "id": "Campus_Helper-R004",
+      "description": "The system shall provide administrator-only product management for overall product status viewing, product detail inspection, search, modification, and deletion."
+    },
+    {
+      "id": "Campus_Helper-R005",
+      "description": "The system shall provide administrator-only order management, including list, detail, and modification operations for orders."
+    },
+    {
+      "id": "Campus_Helper-R006",
+      "description": "The system shall provide administrator-only user management, including list, detail, and modification operations for users."
+    },
+    {
+      "id": "Campus_Helper-R007",
+      "description": "The system shall record administrator backend management operations and support retrieving the operation logs using multiple search conditions."
+    },
+    {
+      "id": "Campus_Helper-R008",
+      "description": "The system shall authenticate users and enforce permissions that distinguish guests, registered users, and administrators, with registered users participating as customers or sellers."
+    },
+    {
+      "id": "Campus_Helper-R009",
+      "description": "The system shall distinguish human and automated activity, identify malicious behavior, validate input parameters on the server side, and provide protection against SQL injection."
+    },
+    {
+      "id": "Campus_Helper-R010",
+      "description": "The system shall protect user privacy and personalized information and ensure data stored in the database is reviewed before or during persistence, with unauthorized access blocked."
+    },
+    {
+      "id": "Campus_Helper-R011",
+      "description": "The system shall respond within 1.5 seconds during normal periods and within 4 seconds during peak periods in at least 95% of cases, and shall return off-peak searches by specific number or name within 3 seconds."
+    },
+    {
+      "id": "Campus_Helper-R012-A",
+      "description": "The system shall detect invalid input, keep unaffected modules available when a module fails, and support service restart, rollback, and emergency updates for fault recovery."
+    },
+    {
+      "id": "Campus_Helper-R012-B",
+      "description": "The system shall collect runtime metrics and logs for fault localization, covering server resources, service response times, request rates, error codes, database activity, middleware, and storage."
+    },
+    {
+      "id": "Campus_Helper-R013",
+      "description": "The system shall maintain decoupled module boundaries and provide extension points for future upgrades."
+    },
+    {
+      "id": "Campus_Helper-R014",
+      "description": "The system shall provide a coherent and discoverable user interaction structure, including a unified visual style, easy-to-find function entry points, and help or navigation mechanisms that support user self-learning and efficient operation."
+    },
+    {
+      "id": "Campus_Helper-R015",
+      "description": "The platform shall provide its services as a WeChat Mini Program and support the specified client environment of Android 5.0 or later with WeChat 8.0 or later."
+    }
+  ],
+  "components": [
+    {
+      "id": "COMP-WMP-CLIENT",
+      "name": "WeChat Mini Program Client",
+      "type": "Client",
+      "description": "Frontend client running on WeChat runtime providing product browsing, ordering, and personal center interfaces.",
+      "tracesTo": [
+        "Campus_Helper-R001",
+        "Campus_Helper-R002",
+        "Campus_Helper-R003",
+        "Campus_Helper-R014",
+        "Campus_Helper-R015"
+      ]
+    },
+    {
+      "id": "COMP-ADMIN-WEB",
+      "name": "Admin Web Console",
+      "type": "Client",
+      "description": "Web portal for administrative management of products, orders, users, and audit logs.",
+      "tracesTo": [
+        "Campus_Helper-R004",
+        "Campus_Helper-R005",
+        "Campus_Helper-R006",
+        "Campus_Helper-R007",
+        "Campus_Helper-R014"
+      ]
+    },
+    {
+      "id": "COMP-API-GW",
+      "name": "API Gateway & Security Filter",
+      "type": "Gateway",
+      "description": "Performs bot detection, request rate limiting, input parameter sanitization, routing, authentication delegation, and circuit breaking.",
+      "tracesTo": [
+        "Campus_Helper-R008",
+        "Campus_Helper-R009",
+        "Campus_Helper-R011",
+        "Campus_Helper-R012-A",
+        "Campus_Helper-R013"
+      ]
+    },
+    {
+      "id": "COMP-AUTH-SVC",
+      "name": "User & Authentication Service",
+      "type": "Microservice",
+      "description": "Manages user profiles, role-based access control (guests, customers, sellers, admins), privacy protection, and user management.",
+      "tracesTo": [
+        "Campus_Helper-R003",
+        "Campus_Helper-R006",
+        "Campus_Helper-R008",
+        "Campus_Helper-R010",
+        "Campus_Helper-R013"
+      ]
+    },
+    {
+      "id": "COMP-PROD-SVC",
+      "name": "Product Catalog Service",
+      "type": "Microservice",
+      "description": "Handles product categorization, popularity-ranked indexing, search queries, and administrative lifecycle management of items.",
+      "tracesTo": [
+        "Campus_Helper-R001",
+        "Campus_Helper-R004",
+        "Campus_Helper-R011",
+        "Campus_Helper-R013"
+      ]
+    },
+    {
+      "id": "COMP-ORDER-SVC",
+      "name": "Order Management Service",
+      "type": "Microservice",
+      "description": "Executes order creation, modification, state transition validation, cancellation, and order history retrieval.",
+      "tracesTo": [
+        "Campus_Helper-R002",
+        "Campus_Helper-R003",
+        "Campus_Helper-R005",
+        "Campus_Helper-R010",
+        "Campus_Helper-R011",
+        "Campus_Helper-R012-A",
+        "Campus_Helper-R013"
+      ]
+    },
+    {
+      "id": "COMP-AUDIT-SVC",
+      "name": "Audit Logging Service",
+      "type": "Microservice",
+      "description": "Records administrative actions and provides structured querying capabilities over management audit trails.",
+      "tracesTo": [
+        "Campus_Helper-R007",
+        "Campus_Helper-R010",
+        "Campus_Helper-R013"
+      ]
+    },
+    {
+      "id": "COMP-CACHE",
+      "name": "Distributed Cache Cluster",
+      "type": "Middleware",
+      "description": "Caches popularity rankings, category catalogs, and frequent searches to meet high-performance latency requirements.",
+      "tracesTo": [
+        "Campus_Helper-R001",
+        "Campus_Helper-R011"
+      ]
+    },
+    {
+      "id": "COMP-DATASTORE",
+      "name": "Relational Persistence Store",
+      "type": "Database",
+      "description": "Provides secure, transactional relational data storage with parameterized query interfaces preventing SQL injection.",
+      "tracesTo": [
+        "Campus_Helper-R002",
+        "Campus_Helper-R009",
+        "Campus_Helper-R010"
+      ]
+    },
+    {
+      "id": "COMP-OBSERVABILITY",
+      "name": "Observability & Telemetry System",
+      "type": "Platform Service",
+      "description": "Collects runtime metrics, APM traces, resource utilization, and structured logs across services and middleware for fault localization.",
+      "tracesTo": [
+        "Campus_Helper-R012-B"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "CONN-WMP-GW",
+      "source": "COMP-WMP-CLIENT",
+      "target": "COMP-API-GW",
+      "protocol": "HTTPS/REST",
+      "description": "Transmits user queries and transactional actions securely from WeChat client."
+    },
+    {
+      "id": "CONN-ADMIN-GW",
+      "source": "COMP-ADMIN-WEB",
+      "target": "COMP-API-GW",
+      "protocol": "HTTPS/REST",
+      "description": "Transmits admin management requests and retrieves operational data."
+    },
+    {
+      "id": "CONN-GW-AUTH",
+      "source": "COMP-API-GW",
+      "target": "COMP-AUTH-SVC",
+      "protocol": "gRPC",
+      "description": "Routes identity verification, session validation, and user management requests."
+    },
+    {
+      "id": "CONN-GW-PROD",
+      "source": "COMP-API-GW",
+      "target": "COMP-PROD-SVC",
+      "protocol": "gRPC",
+      "description": "Routes product search, category browsing, and catalog administration commands."
+    },
+    {
+      "id": "CONN-GW-ORDER",
+      "source": "COMP-API-GW",
+      "target": "COMP-ORDER-SVC",
+      "protocol": "gRPC",
+      "description": "Routes order placement, remarks modification, cancellation, and admin order controls."
+    },
+    {
+      "id": "CONN-GW-AUDIT",
+      "source": "COMP-API-GW",
+      "target": "COMP-AUDIT-SVC",
+      "protocol": "gRPC",
+      "description": "Routes administration audit log retrieval requests."
+    },
+    {
+      "id": "CONN-PROD-CACHE",
+      "source": "COMP-PROD-SVC",
+      "target": "COMP-CACHE",
+      "protocol": "Redis Protocol",
+      "description": "Retrieves cached ranking and category listings for fast off-peak and peak responses."
+    },
+    {
+      "id": "CONN-AUTH-DB",
+      "source": "COMP-AUTH-SVC",
+      "target": "COMP-DATASTORE",
+      "protocol": "SQL/TLS",
+      "description": "Persists and loads credential and profile data using parameterized execution."
+    },
+    {
+      "id": "CONN-PROD-DB",
+      "source": "COMP-PROD-SVC",
+      "target": "COMP-DATASTORE",
+      "protocol": "SQL/TLS",
+      "description": "Persists product specifications, inventory status, and catalog items."
+    },
+    {
+      "id": "CONN-ORDER-DB",
+      "source": "COMP-ORDER-SVC",
+      "target": "COMP-DATASTORE",
+      "protocol": "SQL/TLS",
+      "description": "Stores and updates order transaction states and customer notes."
+    },
+    {
+      "id": "CONN-AUDIT-DB",
+      "source": "COMP-AUDIT-SVC",
+      "target": "COMP-DATASTORE",
+      "protocol": "SQL/TLS",
+      "description": "Stores tamper-evident administrative operation logs."
+    },
+    {
+      "id": "CONN-SVC-AUDIT",
+      "source": "COMP-API-GW",
+      "target": "COMP-AUDIT-SVC",
+      "protocol": "Asynchronous Event/gRPC",
+      "description": "Streams administrative invocation records for persistence."
+    },
+    {
+      "id": "CONN-TELEMETRY-GW",
+      "source": "COMP-API-GW",
+      "target": "COMP-OBSERVABILITY",
+      "protocol": "OTLP/OpenTelemetry",
+      "description": "Exports ingress traffic metrics, response times, and failure rates."
+    },
+    {
+      "id": "CONN-TELEMETRY-SERVICES",
+      "source": "COMP-ORDER-SVC",
+      "target": "COMP-OBSERVABILITY",
+      "protocol": "OTLP/OpenTelemetry",
+      "description": "Exports service-level error codes, latency, and operational telemetry."
+    }
+  ]
+}

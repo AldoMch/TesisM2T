@@ -1,0 +1,97 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor white
+skinparam defaultTextAlignment center
+
+title JSeats - Electoral Seat Allocation System Architecture
+
+actor "Application Developer" as Dev
+actor "CLI Operator / Analyst" as Operator
+
+rectangle "JSeats Library" {
+
+    package "Entry Points" {
+        [CLI Launcher] as CLI
+        [Caller-Facing Allocation API] as API
+    }
+
+    package "Processing Layer" {
+        [Allocation Engine / Processor] as Engine
+        [Tally Filter Chain] as FilterChain
+        [Tie-Breaking Rules] as TieBreaker
+        [Result Decorator Chain] as DecoratorChain
+    }
+
+    package "Allocation Methods Registry" {
+        [Majority Methods\\n(Simple / Qualified / Absolute)] as MajorityMethods
+        [Ranked Methods\\n(By Votes)] as RankedMethods
+        [Equal Proportions\\n(Huntington-Hill)] as EqualProportions
+        [Largest Remainder Methods\\n(Hare / Droop / Imperiali)] as LargestRemainder
+        [Highest Averages Methods\\n(D Hondt / Sainte-Lague / Imperiali / Danish)] as HighestAverages
+    }
+
+    package "Data Model" {
+        [Tally Model\\n(Candidates + Vote Counts)] as TallyModel
+        [Processor Configuration\\n(Properties / Method / Filters / Decorators)] as Config
+        [Result Model] as ResultModel
+    }
+
+    package "XML I/O" {
+        [XML Tally Loader\\n(Tally.fromXML())] as XMLLoader
+        [XML Config / Result Writer] as XMLWriter
+    }
+}
+
+rectangle "File System" {
+    [Tally Input Files\\n(XML / CSV)] as TallyFiles
+    [Configuration Files] as ConfigFiles
+    [Result Output Files] as OutputFiles
+}
+
+Dev --> API : Java API calls
+Operator --> CLI : command-line options
+
+CLI --> Engine : invoke processor
+CLI --> XMLLoader : load tally from XML
+CLI --> XMLWriter : write result / config
+API --> Engine : submit tally + config
+
+Engine --> FilterChain : apply tally filters
+Engine --> MajorityMethods : dispatch
+Engine --> RankedMethods : dispatch
+Engine --> EqualProportions : dispatch
+Engine --> LargestRemainder : dispatch
+Engine --> HighestAverages : dispatch
+Engine --> TieBreaker : resolve ties
+Engine --> DecoratorChain : decorate result
+Engine --> ResultModel : return allocation result
+
+FilterChain --> TallyModel : transform tally
+MajorityMethods --> TallyModel : read protected tally view
+RankedMethods --> TallyModel : read protected tally view
+EqualProportions --> TallyModel : read protected tally view
+LargestRemainder --> TallyModel : read protected tally view
+HighestAverages --> TallyModel : read protected tally view
+
+Config --> Engine : processor parameters
+XMLLoader --> TallyModel : populate tally
+XMLLoader --> TallyFiles : read XML
+XMLWriter --> OutputFiles : write output
+ConfigFiles --> CLI : read configuration
+
+Engine ..> ResultModel : produces
+DecoratorChain --> ResultModel : post-process result
+CLI --> OutputFiles : write result (when requested)
+
+note right of Engine
+  Raises SeatAllocationException
+  on processing failure (NFR-003)
+end note
+
+note right of HighestAverages
+  Supports user-provided
+  first divisor for
+  Sainte-Lague/Webster
+end note
+
+@enduml

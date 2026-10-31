@@ -1,0 +1,95 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+title EMBC ESS - Architecture Overview (from SRS)
+
+actor "Role-based User" as User
+
+package "Client (Angular Browser)" as Client {
+  component "ClientApp" as ClientApp
+  component "Router" as Router
+  component "Auth Guard / Login Handling" as AuthGuard
+  component "External Redirect Guard" as RedirectGuard
+  component "HTTP Interceptor\n(401 handling, watchdog reset)" as HttpInterceptor
+  component "NgRx Store" as Store
+  component "Controlled-List Loader" as ControlledLoader
+  component "Notifier" as Notifier
+  component "Notification Queue <<client-side>>" as NotificationQueue
+  component "Cookie Service" as CookieService
+
+  component "Evacuee Service\n(Read)" as EvacueeService
+  component "Incident-Task Service\n(Create, Read, Update)" as IncidentTaskService
+  component "Organization Service\n(Create, Read, Update)" as OrgService
+  component "Referral Service\n(Create, Read, Update, Delete)" as ReferralService
+  component "Registration Service\n(Create, Read, Update, PDF Collection)" as RegistrationService
+}
+
+package "Backend API (.NET Core WebAPI)" as Backend {
+  component "Controllers" as Controllers
+  component "Domain Services" as DomainServices
+  component "Auth Integration\n(SiteMinder-aware)" as AuthIntegration
+  component "Entity Framework / DbContext" as EF
+}
+
+rectangle "SiteMinder" as SiteMinder
+
+database "MS SQL Database" as MSSQL
+folder "Repository SQL Scripts\n(Volunteer Deactivation, etc.)" as SQLScripts
+
+User --> ClientApp : uses
+
+Router --> AuthGuard : role checks
+Router --> RedirectGuard : external URL routing
+
+ClientApp ..> Store : uses
+ControlledLoader --> Store : initialize data
+Notifier ..> NotificationQueue : observe
+ClientApp --> NotificationQueue : enqueue notifications
+ClientApp ..> CookieService : get/set cookies
+
+EvacueeService --> HttpInterceptor
+IncidentTaskService --> HttpInterceptor
+OrgService --> HttpInterceptor
+ReferralService --> HttpInterceptor
+RegistrationService --> HttpInterceptor
+
+HttpInterceptor --> Controllers : HTTP requests
+
+Controllers --> DomainServices
+DomainServices --> EF
+EF --> MSSQL
+
+Controllers ..> AuthIntegration : authentication/authorization
+AuthIntegration ..> SiteMinder : context
+
+SQLScripts --> MSSQL : maintenance operations
+
+ClientApp ..> SiteMinder : respects SiteMinder context
+
+note right of HttpInterceptor
+- On 401 while logged-in: log out and show session-expired page
+- Reset watchdog timer on each HTTP request
+end note
+
+note top of Store
+NgRx single immutable state; actions + reducers compute changes.
+end note
+
+note right of ClientApp
+Module double-load diagnostic alerts developers during development.
+end note
+
+note right of Backend
+Development API bypass is backend-only and enabled only in designated development environments.
+end note
+
+note bottom of MSSQL
+Backup is required before executing repository SQL scripts.
+end note
+
+note bottom of NotificationQueue
+Client-side queue; no external message broker/queue component required by this SRS.
+end note
+
+@enduml

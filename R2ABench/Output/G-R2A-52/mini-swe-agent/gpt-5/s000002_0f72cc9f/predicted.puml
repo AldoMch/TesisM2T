@@ -1,0 +1,88 @@
+@startuml
+title Escape (React + Node.js) Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+left to right direction
+
+actor User
+
+node "Browser" as Browser {
+  package "Client Layer (React)" {
+    component "Authentication UI\n(Sign-up/Sign-in)" as AuthUI
+    component "Shared Credential\nHandlers & State" as CredHandler
+    component "Navigation\n(React-Router)" as Router
+    component "Content Viewer" as ContentViewer
+    component "Scene Renderer\n(A-Frame / aframe-react)" as SceneRenderer
+    component "Error Display" as ErrorDisplay
+  }
+}
+
+node "Server Host" as Server {
+  package "Application Server (Node.js / Express)" {
+    component "HTTP API\n(Express Router)" as HttpAPI
+    component "Auth Service" as AuthService
+    component "Content Service" as ContentService
+    component "User Repository\n(User Model)" as UserRepo
+    component "Password Verifier\n(bcrypt-nodejs)" as Bcrypt
+    component "Cache Client" as CacheClient
+    component "Storage Client" as StorageClient
+    component "DB Access Layer" as DBAccess
+  }
+}
+
+database "Relational Database\n(MariaDB-style)" as DB
+component "Cache\n(Redis-style)" as Cache
+cloud "Image Storage\n(S3-style)" as S3
+
+' Client interactions
+User --> AuthUI
+User --> ContentViewer
+AuthUI --> CredHandler
+AuthUI --> Router
+ContentViewer --> Router
+ContentViewer --> ErrorDisplay
+SceneRenderer -[hidden]-> ContentViewer
+
+' Client-server interactions
+CredHandler --> HttpAPI : POST /auth
+ContentViewer --> HttpAPI : GET /content
+SceneRenderer --> HttpAPI : GET /assets
+
+' Server internal
+HttpAPI --> AuthService
+HttpAPI --> ContentService
+
+AuthService --> UserRepo
+AuthService --> Bcrypt
+UserRepo --> DBAccess
+DBAccess --> DB
+
+ContentService --> CacheClient
+ContentService --> DBAccess
+ContentService --> StorageClient
+CacheClient --> Cache
+StorageClient --> S3
+
+' Cache read-before DB optional
+ContentService --> CacheClient : get/set
+
+note right of SceneRenderer
+  Renders scenes: Lobby, SF, Louvre, Berlin,
+  Milan, Rome, Hack, Camera, Sky, Plane, TextPlane
+end note
+
+note bottom of AuthService
+  Verifies passwords using bcrypt-nodejs
+end note
+
+note bottom of Router
+  Client-side routing via React-Router
+end note
+
+note bottom of ContentViewer
+  Sequential paragraph/content fetch with single final state set
+  Visible error indicator on failures
+end note
+
+@enduml

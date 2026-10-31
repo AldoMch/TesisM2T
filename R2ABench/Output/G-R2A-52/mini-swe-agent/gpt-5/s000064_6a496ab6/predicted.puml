@@ -1,0 +1,80 @@
+@startuml
+title gran-book backend platform - layered architecture on GCP
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+
+package "Clients" {
+  component "Native Mobile Apps" as Mobile
+  component "Administrative Web App" as Admin
+}
+
+cloud "GCP" as GCP {
+  node "GCP Load Balancer" as LB
+
+  node "GKE Cluster" as GKE {
+    component "API Gateway / BFF" as Gateway
+
+    package "Backend Services" {
+      component "Auth API" as AuthSvc
+      component "User Management Service" as UserSvc
+      component "Book Management Service" as BookSvc
+      component "EC Site Service" as ECSvc
+      component "Support API" as SupportSvc
+      component "Admin Service" as AdminSvc
+      component "Notification Service" as NotifSvc
+    }
+  }
+
+  package "Managed Data Stores" as DataStores {
+    database "MySQL" as MySQL
+    database "NoSQL Store (Message Data)" as NoSQL
+    component "Object Storage (Buckets)" as ObjStore <<object storage>>
+  }
+
+  node "Ops VM (GCE)" as GCEVM
+}
+
+package "External Services" {
+  component "Firebase Authentication" as Firebase
+  component "Book Search API" as BookSearch
+  component "Stripe (Payments)" as Stripe
+  component "Push Notification Provider" as Push
+  component "Email Provider" as Email
+}
+
+' Clients to Edge '
+Mobile --> LB
+Admin --> LB
+
+' Edge to Gateway '
+LB --> Gateway
+
+' Gateway to Internal Services '
+Gateway --> AuthSvc
+Gateway --> UserSvc
+Gateway --> BookSvc
+Gateway --> ECSvc
+Gateway --> SupportSvc
+Gateway --> AdminSvc
+Gateway --> NotifSvc
+
+' Services to Data Stores '
+UserSvc --> MySQL
+BookSvc --> MySQL
+ECSvc  --> MySQL
+SupportSvc --> MySQL
+AdminSvc --> MySQL
+NotifSvc --> NoSQL
+BookSvc --> ObjStore
+
+' Services to External Integrations '
+AuthSvc --> Firebase
+BookSvc --> BookSearch
+ECSvc  --> Stripe
+NotifSvc --> Push
+NotifSvc --> Email
+
+' Operational dependency '
+GCEVM ..> LB : TLS/Cert ops
+
+@enduml

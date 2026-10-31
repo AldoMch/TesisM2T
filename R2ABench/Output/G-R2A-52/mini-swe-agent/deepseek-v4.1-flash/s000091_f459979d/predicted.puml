@@ -1,0 +1,73 @@
+@startuml
+title Layered Architecture - LwM2M / Blockchain Device Management Backend (s000091_f459979d)
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ===================== External Systems / Actors =====================
+actor "Authenticated API Client\n(HTTP + Authorization header)" as API_CLIENT
+
+package "External Systems" {
+  component "Ethereum-compatible Node\n(HTTP JSON-RPC endpoint)" as ETH_NODE
+  component "LwM2M Service Component\n(bootstrap data consumer)" as LWM2M_CONSUMER
+}
+
+' ===================== Presentation / API Layer =====================
+package "Presentation / API Layer (Spring HTTP)" {
+  component "User Management HTTP Controller\nGET user retrieval\nPOST /add user creation" as USER_CTRL
+  component "Blockchain Client/Bootstrap\nHTTP API Endpoint" as BC_API
+}
+
+' ===================== Security Layer =====================
+package "Security / Access Control Layer" {
+  component "Token Access Control\n(JwtUtility.isValidToken(auth,1))\n401 / 403 / 400 outcomes" as AUTH
+}
+
+' ===================== Application / Service Layer =====================
+package "Application / Service Layer" {
+  component "User Service\n(user retrieval, user creation)" as USER_SVC
+  component "Blockchain Client/Bootstrap Service\n(retrieve all clients\nadd client data\nretrieve client by endpoint)" as BC_SVC
+  component "Security Information Conversion Service\n(contract results -> security-info collection)" as SI_CONV
+  component "LwM2M Node Deserialization Service\n(JSON -> typed node structures)" as NODE_SVC
+}
+
+' ===================== Integration / Adapter Layer =====================
+package "Integration / Adapter Layer" {
+  component "Web3j Ethereum Client\n(HTTP transport)" as WEB3J
+  component "Smart-Contract Interaction Adapter\n(addClient / getAllClients / getClientByEndpoint)" as CONTRACT_ADAPTER
+  component "Fixed 32-byte ASCII\nEncode / Decode Utility" as ASCII_CODEC
+  component "Leshan / LwM2M Model Adapter\n(node, object, instance, resource types)" as LESHAN
+}
+
+' ===================== Data Layer =====================
+package "Data Layer" {
+  database "User Data Store" as USER_DB
+  database "Client/Bootstrap Smart Contract Storage\n(endpoint, bootstrap server URL/identity/key,\nserver URL/identity/key)" as CHAIN_STORE
+}
+
+' ===================== Relationships =====================
+API_CLIENT --> USER_CTRL : HTTP request + Authorization
+LWM2M_CONSUMER --> BC_API : bootstrap / client information request
+
+USER_CTRL --> AUTH : validate token first
+AUTH --> USER_SVC : authorized operation only
+USER_CTRL --> USER_SVC : retrieve users / add user
+USER_SVC --> USER_DB : read / write User records
+
+BC_API --> BC_SVC : client / bootstrap operations
+BC_SVC --> SI_CONV : convert contract results
+BC_SVC --> ASCII_CODEC : encode / decode string fields
+BC_SVC --> CONTRACT_ADAPTER : contract method invocation
+SI_CONV --> CONTRACT_ADAPTER
+CONTRACT_ADAPTER --> WEB3J : contract calls over HTTP
+WEB3J --> ETH_NODE : Web3j HTTP transport
+CONTRACT_ADAPTER --> CHAIN_STORE : read / write client data
+
+BC_API --> NODE_SVC : LwM2M node payload
+NODE_SVC --> LESHAN : build typed node structures
+NODE_SVC --> ASCII_CODEC : value/type handling support
+
+USER_CTRL ..> BC_API : backend component cooperation
+
+@enduml

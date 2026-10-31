@@ -1,0 +1,99 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6CC
+!define DATASTORE_COLOR #E6FFE6
+
+title HTTP Proxy System Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<DataStore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+package "External Systems" <<External>> {
+  component "HTTP Client" as http_client <<External>>
+  component "Upstream Server" as upstream_server <<External>>
+  component "File System" as filesystem <<External>>
+}
+
+package "HTTP Proxy Layer" <<Layer>> {
+  component "HTTP Proxy" as http_proxy <<Component>> {
+    component "Request Forwarder" as request_forwarder
+    component "Channel Manager" as channel_manager
+    component "Debug Logger" as debug_logger
+  }
+}
+
+package "Test Server Layer" <<Layer>> {
+  component "Test Server" as test_server <<Component>> {
+    component "Grizzly/Jersey Server" as grizzly_server
+    component "File Download Handler" as download_handler
+    component "File Upload Handler" as upload_handler
+  }
+}
+
+package "Test Client Layer" <<Layer>> {
+  component "Test Client" as test_client <<Component>> {
+    component "Async HTTP Client" as async_client
+    component "Workload Generator" as workload_generator
+    component "Response Counter" as response_counter
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "Request Cache" as request_cache <<DataStore>>
+  component "Response Data" as response_data <<DataStore>>
+}
+
+' External connections
+http_client --> http_proxy : "HTTP Requests"
+http_proxy --> upstream_server : "Forwarded Requests"
+test_server --> filesystem : "File I/O"
+test_client --> test_server : "Test Requests"
+
+' Internal connections
+http_proxy --> request_cache : "Retains requests"
+request_forwarder --> channel_manager : "Waits for channel activation"
+channel_manager --> upstream_server : "Active channel"
+debug_logger --> request_cache : "Logs request details"
+
+grizzly_server --> download_handler : "GET /download"
+grizzly_server --> upload_handler : "File upload"
+download_handler --> filesystem : "Reads file"
+upload_handler --> filesystem : "Writes file"
+
+async_client --> workload_generator : "Executes workload"
+workload_generator --> response_counter : "Counts 200 responses"
+response_counter --> response_data : "Stores success count"
+
+' Cross-layer connections
+test_client --> http_proxy : "Test proxy forwarding"
+test_server --> http_proxy : "Test server for proxy"
+
+' Data flow annotations
+note on link
+  Forwards FullHttpRequest
+  (URI, headers, body)
+end note
+
+note on link
+  Returns structured response
+  (code, msg, data)
+end note
+
+note on link
+  Binary file attachment
+  with Content-Disposition
+end note
+
+note on link
+  50 threads × 1000 requests
+  = 50,000 async requests
+end note
+
+@enduml

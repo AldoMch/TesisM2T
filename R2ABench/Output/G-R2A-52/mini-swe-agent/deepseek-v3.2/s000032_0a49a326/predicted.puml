@@ -1,0 +1,170 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title Activiti 7 Platform Architecture
+
+package "External Access Layer" <<Layer>> {
+  component "External Users" <<External>> {
+    [Authenticated Users]
+    [Task API Users]
+    [Human Participants]
+    [Cluster Operators]
+  }
+  
+  component "NGINX Ingress Controller" <<Component>> {
+    [Ingress Routing]
+  }
+  
+  component "Public IP" <<External>> {
+    [External Access Point]
+  }
+}
+
+package "API Gateway Layer" <<Layer>> {
+  component "API Gateway" <<Component>> {
+    [Gateway Services]
+  }
+}
+
+package "Authentication & Security Layer" <<Layer>> {
+  component "Keycloak" <<External>> {
+    [Identity Provider]
+    [Token Issuance]
+  }
+  
+  component "Spring Security" <<Component>> {
+    [User Management]
+    [Role Management]
+    [Authorization]
+  }
+  
+  component "Spring Boot Application" <<Component>> {
+    [Application Context]
+  }
+}
+
+package "Process Runtime Layer" <<Layer>> {
+  component "ProcessRuntime API" <<Component>> {
+    [Process Operations]
+  }
+  
+  component "Example Runtime Bundle" <<Component>> {
+    [Process Definitions]
+    [Process Instances]
+    [SimpleProcess]
+  }
+}
+
+package "Task Management Layer" <<Layer>> {
+  component "TaskRuntime API" <<Component>> {
+    [Task Operations]
+  }
+  
+  component "User Endpoints" <<Component>> {
+    [Protected Endpoints]
+  }
+}
+
+package "Monitoring & Query Layer" <<Layer>> {
+  component "Audit Service" <<Component>> {
+    [Event Monitoring]
+    [Audit Records]
+  }
+  
+  component "Query Service" <<Component>> {
+    [Process Execution Info]
+    [Read Operations]
+  }
+}
+
+package "Infrastructure Layer" <<Layer>> {
+  component "Kubernetes/GKE" <<External>> {
+    [Container Orchestration]
+  }
+  
+  component "Deployment Descriptors" <<Datastore>> {
+    [Input Rate Config]
+    [Replica Count Config]
+  }
+  
+  component "Registry/Config Maps" <<Datastore>> {
+    [Configuration Data]
+  }
+}
+
+package "Background Components" <<Layer>> {
+  component "Notification Service" <<Component>> {
+    [Event Notifications]
+  }
+  
+  component "Cloud Connectors" <<Component>> {
+    [External Integrations]
+  }
+}
+
+' External Access Layer connections
+[Public IP] --> [NGINX Ingress Controller] : "routes external traffic"
+[NGINX Ingress Controller] --> [API Gateway] : "routes to internal services"
+
+' Authentication flow
+[Authenticated Users] --> [Keycloak] : "obtains authentication token"
+[Keycloak] --> [Spring Security] : "validates tokens"
+[Spring Security] --> [User Endpoints] : "authorizes access"
+[Spring Security] --> [TaskRuntime API] : "enforces ROLE_ACTIVITI_USER"
+
+' Process management flow
+[User Endpoints] --> [ProcessRuntime API] : "process operations"
+[ProcessRuntime API] --> [Example Runtime Bundle] : "manages processes"
+[Example Runtime Bundle] --> [Audit Service] : "generates audit events"
+[Example Runtime Bundle] --> [Query Service] : "provides execution data"
+
+' Task management flow
+[Task API Users] --> [TaskRuntime API] : "task operations"
+[TaskRuntime API] --> [Example Runtime Bundle] : "interacts with process tasks"
+
+' Infrastructure connections
+[Kubernetes/GKE] --> [Deployment Descriptors] : "reads configuration"
+[Kubernetes/GKE] --> [Registry/Config Maps] : "reads config data"
+[Kubernetes/GKE] ..> [All Components] : "hosts and orchestrates"
+
+' Background component connections
+[Notification Service] ..> [Audit Service] : "consumes events"
+[Cloud Connectors] ..> [Example Runtime Bundle] : "external integrations"
+
+' Human participant interaction
+[Human Participants] --> [TaskRuntime API] : "participates in processes"
+
+' Cluster operator interactions
+[Cluster Operators] --> [Kubernetes/GKE] : "manages deployment"
+[Cluster Operators] --> [NGINX Ingress Controller] : "configures routing"
+
+note right of [TaskRuntime API]
+  Requires ROLE_ACTIVITI_USER
+  for authorization
+end note
+
+note right of [Keycloak]
+  Issues time-limited
+  authentication tokens
+end note
+
+note right of [Deployment Descriptors]
+  Configurable parameters:
+  - Data input rate
+  - Replica counts
+  for scalability experiments
+end note
+
+@enduml

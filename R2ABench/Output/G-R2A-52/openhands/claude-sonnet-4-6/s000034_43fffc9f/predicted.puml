@@ -1,0 +1,145 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+
+title torc_py Task-Based Parallelism Library — System Architecture
+
+actor "Python Application\nDeveloper" as AppDev
+actor "HPC Application\nDeveloper" as HPCDev
+actor "Data Preprocessing\nUser" as DataUser
+
+package "Application Layer" {
+    component [Python Application] as App
+}
+
+package "torc Package" {
+    package "Public API" {
+        component [Lifecycle API\nstart / init / launch / shutdown] as LifecycleAPI
+        component [Task Submission API\nsubmit / wait / map / as_completed] as SubmitAPI
+        component [SPMD API\nspmd] as SPMDAPI
+        component [Stealing Control API\nenable_stealing / disable_stealing] as StealAPI
+        component [Query API\nworker_id / num_workers\nnode_id / num_nodes / gettime] as QueryAPI
+    }
+
+    package "Task Management" {
+        component [Task Scheduler\n(Cyclic Assignment)] as Scheduler
+        component [Task Descriptor\n(Future)] as TaskDesc
+        component [Callback Executor] as CallbackExec
+        component [Parallel Map Engine\n(chunksize)] as MapEngine
+    }
+
+    package "Execution Layer" {
+        package "MPI Process (Rank 0)" {
+            component [Primary Application Task] as PrimaryTask
+            component [Worker Thread Pool\n(TORC_WORKERS)] as WorkerPool0
+            component [Worker Queue 0] as Queue0
+            component [Server Thread] as Server0
+        }
+
+        package "MPI Process (Rank N)" {
+            component [Worker Thread Pool\n(TORC_WORKERS)] as WorkerPoolN
+            component [Worker Queue N] as QueueN
+            component [Server Thread] as ServerN
+        }
+    }
+
+    package "Inter-Process Communication" {
+        component [MPI Communication Layer\n(mpi4py)] as MPILayer
+        component [Task Stealing Engine\n(TORC_STEALING)] as StealEngine
+    }
+
+    package "Runtime Configuration" {
+        component [Environment Variables\nTORC_WORKERS\nTORC_STEALING\nTORC_SERVER_YIELDTIME\nTORC_WORKER_YIELDTIME] as EnvConfig
+    }
+}
+
+package "External Runtime" {
+    component [MPI Runtime\n(mpi4py)] as MPIRuntime
+    component [Python Threading\nSubsystem] as PythonThreading
+}
+
+package "Optional Dependencies" {
+    component [numpy] as Numpy
+    component [cma] as CMA
+    component [h5py] as H5PY
+    component [pillow] as Pillow
+    component [termcolor] as Termcolor
+}
+
+package "Example Workloads" {
+    component [Master-Worker\nExample] as ExMW
+    component [SPMD Switching\nExample] as ExSPMD
+    component [Numerical Optimization\nExample] as ExOpt
+    component [Image Preprocessing\nExample] as ExImg
+    component [Task Stealing\nExample] as ExSteal
+}
+
+database "Image Dataset\n(Labeled Subfolders)" as ImageDB
+database "HDF5 Output File" as HDF5File
+
+AppDev --> App
+HPCDev --> App
+DataUser --> App
+
+App --> LifecycleAPI
+App --> SubmitAPI
+App --> SPMDAPI
+App --> StealAPI
+App --> QueryAPI
+
+LifecycleAPI --> PrimaryTask
+SubmitAPI --> Scheduler
+SubmitAPI --> TaskDesc
+SubmitAPI --> CallbackExec
+SubmitAPI --> MapEngine
+
+MapEngine --> Scheduler
+Scheduler --> Queue0 : qid=-1 (cyclic)
+Scheduler --> QueueN : qid=N (directed)
+
+Queue0 --> WorkerPool0
+QueueN --> WorkerPoolN
+
+WorkerPool0 --> TaskDesc : populate result
+WorkerPoolN --> TaskDesc : populate result
+
+CallbackExec --> TaskDesc : on completion
+Server0 --> MPILayer
+ServerN --> MPILayer
+
+StealAPI --> StealEngine
+StealEngine --> MPILayer : steal request
+StealEngine --> Queue0
+StealEngine --> QueueN
+
+SPMDAPI --> MPILayer : broadcast to all ranks
+
+MPILayer --> MPIRuntime
+
+WorkerPool0 --> PythonThreading
+WorkerPoolN --> PythonThreading
+
+EnvConfig --> WorkerPool0 : thread count
+EnvConfig --> WorkerPoolN : thread count
+EnvConfig --> StealEngine : enable/disable
+EnvConfig --> Server0 : yield timing
+EnvConfig --> ServerN : yield timing
+
+ExImg --> ImageDB : read
+ExImg --> HDF5File : write
+ExImg --> MapEngine
+ExImg --> H5PY
+ExImg --> Pillow
+ExImg --> Numpy
+
+ExOpt --> CMA
+ExOpt --> Numpy
+ExOpt --> SubmitAPI
+
+ExMW --> SubmitAPI
+ExSPMD --> SPMDAPI
+ExSteal --> StealAPI
+
+App --> Termcolor
+@enduml

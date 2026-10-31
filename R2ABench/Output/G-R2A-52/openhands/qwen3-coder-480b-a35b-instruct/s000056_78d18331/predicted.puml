@@ -1,0 +1,62 @@
+@startuml
+!theme plain
+skinparam rectangleLineWidth 1
+skinparam rectangleFontSize 12
+skinparam componentStyle rectangle
+
+' Main system boundary
+rectangle "Host Scanner" as host_scanner {
+  [HTTP API Service] as http_api
+  [CNI Directory Resolver] as cni_resolver
+  [JSON Sanitizer] as json_sanitizer
+  [Provider Test Selector] as test_selector
+}
+
+' External entities
+actor "HTTP Client" as client
+actor "Operator" as operator
+actor "Test Engineer" as tester
+actor "Integrator" as integrator
+
+' Data stores
+rectangle "Runtime Config" as runtime_config
+rectangle "Config Files" as config_files
+rectangle "Process Args" as process_args
+rectangle "Control Plane JSON" as control_plane_json
+
+' Relationships
+client --> http_api : HTTP Requests
+http_api --> cni_resolver : Request CNI Path
+http_api --> json_sanitizer : Request Sanitization
+cni_resolver --> runtime_config : Read
+cni_resolver --> config_files : Parse
+cni_resolver --> process_args : Read
+json_sanitizer --> control_plane_json : Process
+tester --> test_selector : Configure
+integrator --> runtime_config : Supply
+integrator --> config_files : Supply
+integrator --> process_args : Supply
+operator --> host_scanner : Deploy
+
+' Notes for key components
+note right of cni_resolver
+  Resolves CNI configuration 
+  directory based on:
+  - Runtime type
+  - Default configuration
+  - Config file content
+  - CLI arguments
+end note
+
+note right of json_sanitizer
+  Removes encryption provider
+  configuration secrets from
+  control plane JSON data
+end note
+
+note right of test_selector
+  Selects provider-specific
+  test data using Go build tags
+end note
+
+@enduml

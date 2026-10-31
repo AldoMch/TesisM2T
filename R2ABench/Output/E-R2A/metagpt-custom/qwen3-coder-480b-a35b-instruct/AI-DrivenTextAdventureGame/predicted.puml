@@ -1,0 +1,98 @@
+@startuml
+title AI-Driven Text Adventure Game and Community Platform - Component/Deployment Diagram
+
+' Infrastructure Layer
+node "Infrastructure Layer" {
+    node "Kubernetes Cluster" {
+        component "Docker Containers"
+    }
+}
+
+' Presentation Layer
+package "Presentation Layer" {
+    component "Vue.js/Nuxt.js Client" as Presentation
+}
+
+' Application Layer
+package "Application Layer" {
+    component "Iris Go Web Framework" as AppFramework
+    
+    component "Game Logic Module" as GameLogic
+    component "Community System" as CommunitySystem
+    component "User Management Service" as UserMgmtService
+    component "Administration Service" as AdminService
+    component "Notification Service" as NotificationService
+    component "Favorites Service" as FavoritesService
+    component "Save Management Service" as SaveMgmtService
+    component "Search Service" as SearchService
+    component "Post Management Service" as PostMgmtService
+    component "Game State Manager" as GameStateManager
+    component "Authentication Service" as AuthService
+}
+
+' Data Access Layer
+package "Data Access Layer" {
+    component "Gorm ORM" as Gorm
+    database "MySQL Database" as MySQL
+}
+
+' External Systems
+cloud "External Systems" {
+    component "Large Language Model Provider" as LLMProvider
+    component "Cloud Service Provider / Data Center" as CloudProvider
+    component "Email Service" as EmailService
+    component "File Storage Service" as FileStorage
+}
+
+' Connections within layers and cross-layer dependencies
+
+' Presentation to Application
+Presentation --> AppFramework : HTTP Requests
+Presentation --> AuthService : Direct Auth Interaction
+
+' Application internal dependencies
+AppFramework --> GameLogic : Invokes Game Features
+AppFramework --> CommunitySystem : Manages Communities
+AppFramework --> UserMgmtService : User Operations
+AppFramework --> AdminService : Admin Functions
+AppFramework --> NotificationService : Triggers Notifications
+AppFramework --> FavoritesService : Handles Favorites
+AppFramework --> SaveMgmtService : Manages Saves
+AppFramework --> SearchService : Performs Searches
+AppFramework --> PostMgmtService : Manages Posts
+AppFramework --> GameStateManager : Tracks Game States
+AppFramework --> AuthService : Delegates Auth
+
+' Cross-component interactions
+CommunitySystem --> PostMgmtService : Uses for Post Handling
+PostMgmtService --> NotificationService : Triggers Comment Notifications
+UserMgmtService --> EmailService : Sends Registration/Recovery Emails
+SaveMgmtService --> FileStorage : Stores Game Saves
+CommunitySystem --> FileStorage : Stores Media Content
+PostMgmtService --> FileStorage : Stores Attachments
+
+' Data access flows
+GameLogic --> Gorm : Queries Game Data
+CommunitySystem --> Gorm : Queries Community Data
+UserMgmtService --> Gorm : Manages Users
+AdminService --> Gorm : Admin Data Ops
+NotificationService --> Gorm : Notification Records
+FavoritesService --> Gorm : Favorite Relations
+SaveMgmtService --> Gorm : Save Metadata
+SearchService --> Gorm : Index Sources
+PostMgmtService --> Gorm : Post Content
+GameStateManager --> Gorm : Game State Persistence
+
+Gorm --> MySQL : Persists/Retrieves Data
+
+' AI Integration (as external service calls)
+GameLogic --> LLMProvider : Calls LLM APIs for Story Generation
+
+' Deployment context
+DockerContainers --> AppFramework : Hosts
+DockerContainers --> Gorm : Hosts
+DockerContainers --> MySQL : Hosts
+
+CloudProvider --> DockerContainers : Provides Infrastructure
+
+@enduml

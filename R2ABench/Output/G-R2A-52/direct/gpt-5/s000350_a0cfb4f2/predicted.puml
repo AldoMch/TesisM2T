@@ -1,0 +1,84 @@
+@startuml
+title squatm3gator System Architecture
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+
+actor "Web User" as User
+
+node "Client Browser" as Browser {
+  component "Web UI\n(index.html)" as WebUI
+  component "WebSocket Client" as WSClient
+}
+
+node "API Server Process" as APIServer {
+  component "HTTP API\n- GET /\n- GET /homoglyphs/complete?domain=...\n- Error handling (400/404/500)\n- Session validation" as HTTPAPI
+  component "WebSocket Gateway\n(Socket.IO/WebSocket)" as WSGateway
+  component "Option Builder\n- Parse attack codes: Hf, Hc, -add, F, R\n- Flags: godaddy, output\n- Build CLI opts (e.g., -Hf, --add, --output=json)" as OptionBuilder
+  component "Session Manager\n- Create session on GET /\n- Session ID == Job ID" as SessionMgr
+  component "Background Consumer Thread\n- Started by API process" as Consumer
+}
+
+component "Redis Job Channel" <<queue>> as RedisJobs
+component "Redis Report Channel" <<queue>> as RedisReports
+
+node "Worker Execution" as Worker {
+  component "Worker Adapter\n- Receive jobs\n- Invoke engine\n- Stream progress/results" as WorkerAdapter
+  component "Subprocess: squatm3 CLI\n(domain-generation engine)" as Squatm3
+}
+
+cloud "GoDaddy APIs" as GoDaddy {
+  component "Availability Endpoints" as GoDaddyEP
+}
+
+component "Configuration\n- Redis URI\n- GoDaddy key/secret/base URL/endpoints" as Config
+
+User --> WebUI : Use main page
+Browser --> HTTPAPI : HTTP GET /\n(create session)
+HTTPAPI --> SessionMgr : Create/validate session
+HTTPAPI --> WebUI : Render index.html
+Browser --> HTTPAPI : GET homoglyphs (complete)\nwith domain and options
+HTTPAPI --> OptionBuilder : Build attack/options
+HTTPAPI --> RedisJobs : Publish job\n(Job ID = Session ID)
+WSClient <--> WSGateway : WebSocket channel\n(session-bound updates)
+
+Consumer ..> RedisJobs : Subscribe/listen for jobs
+Consumer --> WorkerAdapter : Dispatch job for execution
+WorkerAdapter --> Squatm3 : Run with options
+WorkerAdapter --> RedisReports : Publish report messages
+
+WSGateway ..> RedisReports : Subscribe to reports
+WSGateway --> WSClient : Emit only messages\nmatching session key
+
+WorkerAdapter --> GoDaddyEP : Optional availability queries\nAuthorization: sso-key key:secret
+
+APIServer --> Config : Read runtime config
+WorkerAdapter --> Config : Read GoDaddy endpoints
+HTTPAPI --> Config : Read Redis URI and options
+
+note right of RedisReports
+Report format:
+WORKER_ID#JOB_UUID#{MESSAGE/RESULT}
+Only messages where JOB_UUID == Session ID
+end note
+
+note bottom of OptionBuilder
+Option rules:
+- Supported codes: Hf, Hc, -add, F, R
+- Prefix values with '-' (Hf -> -Hf)
+- For '-add' emit '--add'
+- If godaddy==1 add GoDaddy option
+- If output==1 add --output=json
+end note
+
+note bottom of Consumer
+Constraint C-003:
+Background consumer is started by API process
+and listens on Redis job channel
+end note
+
+note bottom of HTTPAPI
+FR-007/FR-008:
+Return plain-text messages for 400/404/500
+and parsing failures
+end note
+@enduml

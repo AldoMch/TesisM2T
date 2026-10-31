@@ -1,0 +1,98 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundCorner 10
+skinparam shadowing false
+
+title Bunny Code System Architecture
+
+package "External User" {
+    [Web Browser (Vue Frontend)] as Frontend
+}
+
+package "Load Balancer / Reverse Proxy" {
+    [Nginx] as Nginx
+}
+
+package "Application Backend" {
+    [Node.js/Express Server] as Backend
+    [Socket.IO Server] as SocketServer
+}
+
+package "Data Storage" {
+    database "MySQL\n(Relational Data)" as MySQL {
+        [Users]
+        [Projects]
+        [Versions]
+        [Battles]
+    }
+
+    database "InfluxDB\n(Time-Series)" as InfluxDB {
+        [Coding Process Records]
+    }
+
+    database "Redis\n(Cache & Coordination)" as Redis {
+        [Workspace Mappings]
+        [Battle Invitations]
+        [Battle State]
+    }
+}
+
+package "Execution & File Services" {
+    [Docker Sandbox\n(Code Execution)] as Sandbox
+    [S3-Compatible\nObject Storage] as ObjectStorage
+    [CDN / Distribution] as CDN
+}
+
+' Frontend Connections
+Frontend --> Nginx : "HTTP/HTTPS (REST API)"
+Frontend --> SocketServer : "WebSocket (Socket.IO)"
+
+' Reverse Proxy Routing
+Nginx --> Backend : "Proxies API Requests"
+Nginx --> Frontend : "Serves Static Assets"
+
+' Backend Core Connections
+Backend --> MySQL : "CRUD Operations\n(Users, Projects, Versions, Battles)"
+Backend --> InfluxDB : "Write/Query Time-Series\n(Coding Process Records)"
+Backend --> Redis : "Cache Operations\n(Workspace Mappings, Battle State)"
+Backend --> Sandbox : "Invokes Execution\n(Code Compilation/Run)"
+Backend --> ObjectStorage : "Uploads Files\n(Code, Battle Results, Archives)"
+
+' Socket Server Connections
+SocketServer --> Backend : "Shared Business Logic"
+SocketServer --> Redis : "Real-time State Mgmt\n(Workspace Auth, Battle Flow)"
+
+' File Distribution Flow
+ObjectStorage --> CDN : "Asset Distribution"
+CDN --> Frontend : "Distributable URLs"
+
+' Internal Component Links (non-network)
+Backend ..> SocketServer : "Uses for Real-time Events"
+SocketServer ..> Backend : "Triggers API Calls"
+
+note right of Backend
+  Handles:
+  - JWT Authentication
+  - Project/Version Management
+  - File Upload API
+  - Playback Query API
+end note
+
+note right of SocketServer
+  Handles:
+  - Workspace Authorization
+  - Live Editing State
+  - Battle Invitation/Acceptance
+  - Code Synchronization
+end note
+
+note bottom of Sandbox
+  Isolated execution environment
+  for user-submitted code.
+end note
+
+@enduml

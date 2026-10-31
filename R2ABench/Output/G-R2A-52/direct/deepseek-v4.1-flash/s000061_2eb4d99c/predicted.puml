@@ -1,0 +1,83 @@
+@startuml
+title AWS IoT Device Simulator - System Architecture
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+
+actor "Administrator /\nOperator" as Operator
+actor "API Client" as ApiClient
+
+rectangle "AWS Cloud" {
+  package "Presentation & Access" {
+    component "Web Management Console\n(Simulation & Device-Type Management)" as WebConsole
+    component "Identity & Authentication\n(Amazon Cognito)" as Identity
+    component "Amazon API Gateway\nREST API - REGIONAL\nStage: prod\nMethods: GET, POST, PUT, DELETE, OPTIONS\nRequest Validation + CORS\nTracing Enabled\nAccess Logs: JSON / INFO" as APIGW
+  }
+
+  package "Application Services" {
+    component "Simulation Management\nAPI Lambda(s)" as SimulationApi
+    component "Device-Type Management\nAPI Lambda(s)" as DeviceTypeApi
+    component "Simulation Executor\nLambda(s)" as SimulationExecutor
+    component "Route Loader\nS3 Route JSON Parser" as RouteLoader
+    component "CloudFormation Custom Resource\nLambda Handler\nResponse Body Construction" as CustomResourceLambda
+  }
+
+  package "Data & Orchestration" {
+    component "Amazon DynamoDB\nSimulations, Device Types,\nExecution State" as DynamoDB
+    component "AWS Step Functions\nSimulation Orchestration" as StepFunctions
+    component "Amazon S3\nROUTE_BUCKET\nRoute JSON Objects" as S3
+  }
+
+  package "IoT & Deployment" {
+    component "AWS IoT\nTopics / Message Broker" as IoT
+    component "AWS CloudFormation\nSolution Deployment\nCustom Resources" as CloudFormation
+  }
+}
+
+Operator --> WebConsole
+ApiClient --> APIGW : REST/HTTPS
+WebConsole --> Identity : authentication
+WebConsole --> APIGW : management APIs
+Identity --> APIGW : token / authorization
+APIGW --> SimulationApi : simulations API
+APIGW --> DeviceTypeApi : device-types API
+
+SimulationApi --> DynamoDB : manage simulations
+DeviceTypeApi --> DynamoDB : manage device types
+SimulationApi --> StepFunctions : start simulation
+StepFunctions --> SimulationExecutor : orchestrate execution
+SimulationExecutor --> RouteLoader : load route state
+RouteLoader --> S3 : GetObject(ROUTE_BUCKET,\nresolved route key)
+RouteLoader --> SimulationExecutor : route state\n(routeName, odometer,\nrouteStage, burndown,\nburndownCalc, routeEnded,\nroute, randomTriggers)
+SimulationExecutor --> DynamoDB : read/update state
+SimulationExecutor --> IoT : publish simulated\ndevice messages
+
+CloudFormation --> CustomResourceLambda : invocation event\n(CloudFormation, Lambda context,\nsolution ID/version,\nstack name property)
+CustomResourceLambda --> CloudFormation : CloudFormation\nresponse body
+CloudFormation ..> APIGW : provision / deploy
+CloudFormation ..> SimulationApi : provision
+CloudFormation ..> DeviceTypeApi : provision
+CloudFormation ..> SimulationExecutor : provision
+CloudFormation ..> DynamoDB : provision
+CloudFormation ..> StepFunctions : provision
+CloudFormation ..> S3 : provision
+CloudFormation ..> IoT : configure
+
+note right of APIGW
+  CORS preflight statusCode = 200
+  Allowed headers:
+  Authorization, Content-Type,
+  X-Amz-Date, X-Amz-Security-Token,
+  X-Api-Key
+end note
+
+note bottom of RouteLoader
+  FR-005 / FR-006
+  If routeInfo.routeName exists, use it as S3 key.
+  Else generate route-{random id}.json.
+  S3 failures propagate to caller.
+end note
+
+@enduml

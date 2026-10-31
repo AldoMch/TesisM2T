@@ -1,0 +1,72 @@
+@startuml
+title Kangrand System Architecture - Component/Deployment Diagram
+
+' Define Nodes for Deployment Context
+node "File System" {
+  database "Work Files" as workfiles
+  database "Config Files" as configfiles
+  database "Result Files" as resultfiles
+}
+
+' Interface Layer
+package "Interface Layer" {
+  component "CommandLineParser" as cli
+}
+
+' Core Solver Layer
+package "Core Solver Layer" {
+  component "ECDLPSolver" as solver
+  component "InputFileHandler" as inputhandler
+  component "WorkFileInspector" as inspector
+}
+
+' Persistence Layer
+package "Persistence Layer" {
+  component "WorkFileManager" as wfm
+  component "OfflineMerger" as merger
+  component "ResultFileHandler" as resultfh
+  component "BackupManager" as backupmgr
+}
+
+' Distribution Layer
+package "Distribution Layer" {
+  component "DistributedServer" as server
+  component "DistributedClient" as client
+}
+
+' Execution Context (includes GPU support)
+package "Execution Context" {
+  component "ExecutionContext" as execcontext
+}
+
+' Dependencies and Interfaces
+cli --> inputhandler : <<provides input file>>
+cli --> solver : <<configures>>
+cli --> wfm : <<controls>>
+cli --> server : <<configures>>
+cli --> client : <<configures>>
+
+solver --> inputhandler : <<reads input>>
+solver --> wfm : <<saves progress>>
+solver --> workfiles : <<resumes from>>
+solver --> execcontext : <<executes on>>
+
+inputhandler --> workfiles : <<reads>>
+inspector --> workfiles : <<inspects>>
+
+wfm --> workfiles : <<reads/writes>>
+wfm --> merger : <<provides data>>
+merger --> workfiles : <<reads for merge>>
+backupmgr --> workfiles : <<manages backups>>
+
+server --> wfm : <<generates data>>
+server --> workfiles : <<writes results>>
+server --> configfiles : <<reads config>>
+
+client --> server : <<connects via network>>
+client --> execcontext : <<utilizes when enabled>>
+
+resultfh --> resultfiles : <<writes>>
+resultfh <-- merger : <<receives merged data>>
+
+@enduml

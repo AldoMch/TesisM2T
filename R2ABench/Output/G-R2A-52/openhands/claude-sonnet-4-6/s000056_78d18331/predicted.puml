@@ -1,0 +1,116 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #444444
+skinparam backgroundColor #FAFAFA
+skinparam ArrowColor #555555
+skinparam component {
+    BackgroundColor #DDEEFF
+    BorderColor #336699
+    FontColor #222222
+}
+skinparam rectangle {
+    BackgroundColor #F0F4FF
+    BorderColor #7799BB
+}
+skinparam package {
+    BackgroundColor #EEF8EE
+    BorderColor #559955
+}
+skinparam actor {
+    BackgroundColor #FFFBE6
+    BorderColor #CC9900
+}
+skinparam database {
+    BackgroundColor #FFF0F0
+    BorderColor #BB4444
+}
+skinparam note {
+    BackgroundColor #FFFFF0
+    BorderColor #AAAA44
+}
+
+title host-scanner System Architecture
+
+actor "HTTP Client" as HTTPClient
+actor "Operator" as Operator
+actor "Test Engineer" as TestEngineer
+actor "Integrator" as Integrator
+
+package "Kubernetes Node (Privileged DaemonSet)" {
+
+    rectangle "host-scanner Service" {
+
+        component "HTTP API Layer" as HTTPApi {
+            component "Endpoint Router" as Router
+            component "Unknown Endpoint Handler\n(returns HTTP 404)" as UnknownHandler
+        }
+
+        component "CNI Config Directory Resolver" as CNIResolver {
+            component "Runtime Type Selector" as RuntimeSelector
+            component "Config-File Parser" as ConfigParser
+            component "CLI Argument Parser" as CLIParser
+            component "Default Path Provider\n(/etc/cni/, /var/lib/cni/)" as DefaultPaths
+        }
+
+        component "Control-Plane Data Sanitizer" as Sanitizer {
+            component "JSON Input Processor" as JSONInput
+            component "Encryption Secret Remover" as SecretRemover
+            component "Sanitized JSON Output Producer" as JSONOutput
+        }
+
+        component "Host Information Collector" as HostCollector
+    }
+
+    component "End-to-End Test Suite" as E2ETests {
+        component "Provider-Specific Test Files\n(//go:build <provider>)" as ProviderTests
+        component "HTTP Endpoint Tests" as EndpointTests
+        component "CNI Resolution Tests" as CNITests
+        component "Sanitization Tests" as SanitizationTests
+    }
+}
+
+database "Kubernetes Node Host\nFilesystem & Runtime" as NodeFS {
+    component "/etc/cni/" as EtcCNI
+    component "/var/lib/cni/" as VarLibCNI
+    component "/run/, /var/lib/" as RuntimePaths
+}
+
+rectangle "Runtime Environments" as Runtimes {
+    component "kubelet / containerd" as Kubelet
+    component "CRI-O" as CRIO
+}
+
+note right of ProviderTests
+  Go build tags:
+  //go:build <provider>
+  select provider-specific
+  expected data structures
+end note
+
+HTTPClient -down-> HTTPApi : "HTTP GET requests\n(e.g., /doesnotexist → 404)"
+Operator -down-> "host-scanner Service" : "deploys as DaemonSet,\nconfigures runtime"
+TestEngineer -down-> E2ETests : "executes tests\nwith build tags"
+Integrator -right-> CNIResolver : "supplies runtime type,\nconfig-file content,\nCLI args"
+Integrator -right-> Sanitizer : "supplies control-plane\nJSON data"
+
+Router -down-> UnknownHandler : "unknown path"
+Router -down-> HostCollector : "known endpoints"
+
+CNIResolver -down-> NodeFS : "reads CNI config paths"
+Runtimes -up-> RuntimeSelector : "runtime type context"
+CLIParser -left-> DefaultPaths : "explicit CNI dir arg\nor fallback"
+ConfigParser -left-> DefaultPaths : "config-derived subpath"
+
+HostCollector -down-> NodeFS : "reads host information"
+
+JSONInput -down-> SecretRemover
+SecretRemover -down-> JSONOutput
+
+EndpointTests -up-> HTTPApi : "HTTP GET /doesnotexist\nasserts 404"
+CNITests -up-> CNIResolver : "verifies resolved paths\n(/etc/cni/, /var/lib/cni/)"
+SanitizationTests -up-> Sanitizer : "verifies secrets removed\nfrom JSON output"
+ProviderTests -up-> EndpointTests : "build-tag selected\nprovider data"
+ProviderTests -up-> CNITests
+ProviderTests -up-> SanitizationTests
+
+@enduml

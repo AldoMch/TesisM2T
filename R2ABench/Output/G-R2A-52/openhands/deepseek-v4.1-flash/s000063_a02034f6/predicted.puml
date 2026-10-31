@@ -1,0 +1,99 @@
+@startuml
+title teamgram/teamgram-server - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =========================================================
+' Actors / External clients
+' =========================================================
+actor "Telegram-compatible\nClient" as Client
+
+' =========================================================
+' Client Access Layer
+' =========================================================
+package "Client Access Layer" {
+  component "MTProto Server\n(Client-Server Interface)" as MTProto
+  component "Authorization Key\nHandling" as AuthKey
+  component "Server Salt /\nFuture Salts Handling" as Salt
+  component "Encrypted Session\nManagement" as Session
+  component "Service-Message\nHandling\n(rpc_drop_answer,\ndestroy_session)" as SvcMsg
+  component "Registration &\nPhone Verification\n(12345 default / external)" as Registration
+}
+
+' =========================================================
+' BFF / Access-Facing Layer
+' =========================================================
+package "BFF / Access-Facing Service Layer" {
+  component "BFF / Access Service" as BFF
+}
+
+' =========================================================
+' Business / Service Layer
+' =========================================================
+package "Business / Service Layer" {
+  component "Messaging Service" as Messaging
+  component "Session Service" as SessionSvc
+  component "Sync Service" as Sync
+  component "Push Service" as Push
+  component "Media Wrapper\n(FFmpeg / FFprobe)" as Media
+}
+
+' =========================================================
+' Storage-Facing / Data Layer
+' =========================================================
+package "Storage-Facing & Data Layer" {
+  component "Data Access /\nDAO" as DAO
+}
+
+' =========================================================
+' Asynchronous / Messaging Infrastructure
+' =========================================================
+package "Asynchronous Flows" {
+  component "Kafka Producer /\nConsumer" as KafkaClient
+}
+
+' =========================================================
+' External Infrastructure
+' =========================================================
+cloud "MySQL" as MySQL
+cloud "Redis" as Redis
+cloud "etcd" as Etcd
+cloud "Kafka" as Kafka
+cloud "MinIO" as MinIO
+
+' =========================================================
+' Relationships
+' =========================================================
+Client --> MTProto : MTProto protocol
+MTProto --> AuthKey
+MTProto --> Salt
+MTProto --> Session
+MTProto --> SvcMsg
+MTProto --> Registration
+
+AuthKey --> Session
+Salt --> Session
+
+MTProto --> BFF
+BFF --> Messaging
+BFF --> SessionSvc
+BFF --> Registration
+
+Messaging --> DAO
+SessionSvc --> DAO
+Sync --> DAO
+
+Messaging --> KafkaClient
+Push --> KafkaClient
+
+SessionSvc --> Redis
+DAO --> MySQL
+DAO --> MinIO
+BFF --> Etcd
+
+KafkaClient --> Kafka
+
+Media ..> "FFmpeg / FFprobe" : optional
+
+@enduml

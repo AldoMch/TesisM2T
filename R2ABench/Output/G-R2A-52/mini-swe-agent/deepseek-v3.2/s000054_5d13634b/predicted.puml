@@ -1,0 +1,123 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATA_COLOR #F0FFF0
+
+title Ethereum Consumer Contract Wallet System Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Data>> DATA_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+' === External Systems Layer ===
+component "Ethereum Network" as ETH_NETWORK <<External>> {
+  component "Blockchain" as BLOCKCHAIN
+}
+
+component "Ethereum Name Service (ENS)" as ENS <<External>> {
+  component "ENS Registry" as ENS_REGISTRY
+}
+
+component "Oracle/Rate Provider" as ORACLE <<External>> {
+  component "Exchange Rate Data" as EXCHANGE_RATE
+}
+
+' === Core Smart Contract Layer ===
+package "Smart Contract Layer" <<Layer>> {
+  component "Consumer Contract Wallet" as WALLET <<Component>> {
+    component "ETH/ERC20 Asset Storage" as ASSET_STORAGE
+    component "Wallet Operations" as WALLET_OPS
+  }
+  
+  component "Controller Contracts" as CONTROLLER <<Component>> {
+    component "Admin Management" as ADMIN_MGMT
+    component "Control Operations" as CONTROL_OPS
+    component "Count Registry" as COUNT_REGISTRY
+  }
+  
+  component "Token Whitelist Contract" as TOKEN_WHITELIST <<Component>> {
+    component "Token Registry" as TOKEN_REGISTRY
+    component "Rate Storage" as RATE_STORAGE
+    component "Loadability Rules" as LOADABILITY
+  }
+  
+  component "Licence/Oracle Contract" as LICENCE <<Component>> {
+    component "Rate Integration" as RATE_INTEGRATION
+  }
+}
+
+' === Data Layer ===
+package "Data Layer" <<Layer>> {
+  component "Gas Tank" as GAS_TANK <<Data>> {
+    note right: "ETH for gas payments\nSeparate from wallet assets"
+  }
+  
+  component "Owner Address" as OWNER_ADDRESS <<Data>> {
+    note right: "Externally owned address\nControls wallet contracts"
+  }
+  
+  component "Controller Addresses" as CONTROLLER_ADDRESSES <<Data>> {
+    note right: "Set of addresses for\nservice and control operations"
+  }
+}
+
+' === Integration Layer ===
+package "Integration Layer" <<Layer>> {
+  component "Go Bindings" as GO_BINDINGS <<Component>> {
+    component "Read-only Calls" as READONLY_CALLS
+    component "Paid Transactions" as PAID_TX
+    component "Transfer Operations" as TRANSFER_OPS
+  }
+  
+  component "Integrator/Developer" as INTEGRATOR <<External>> {
+    component "Application Code" as APP_CODE
+  }
+}
+
+' === External Dependencies ===
+ETH_NETWORK --> ENS : "Resolves addresses"
+ENS --> WALLET : "Provides contract addresses"
+ENS --> CONTROLLER : "Provides contract addresses"
+ENS --> TOKEN_WHITELIST : "Provides contract addresses"
+ENS --> LICENCE : "Provides contract addresses"
+
+ORACLE --> LICENCE : "Provides exchange rates"
+LICENCE --> TOKEN_WHITELIST : "Updates rates"
+TOKEN_WHITELIST --> WALLET : "Provides token status\nand exchange rates"
+
+WALLET --> GAS_TANK : "Uses for gas payments"
+OWNER_ADDRESS --> WALLET : "Owns and controls"
+OWNER_ADDRESS --> GAS_TANK : "Holds gas ETH"
+CONTROLLER_ADDRESSES --> CONTROLLER : "Participates in operations"
+
+GO_BINDINGS --> WALLET : "Interacts via\ncontract calls"
+GO_BINDINGS --> CONTROLLER : "Interacts via\ncontract calls"
+GO_BINDINGS --> TOKEN_WHITELIST : "Interacts via\ncontract calls"
+GO_BINDINGS --> LICENCE : "Interacts via\ncontract calls"
+
+INTEGRATOR --> GO_BINDINGS : "Uses bindings for\ncontract interaction"
+
+' === Internal Dependencies ===
+WALLET --> CONTROLLER : "Uses for control operations"
+CONTROLLER --> WALLET : "Manages wallet operations"
+
+' === Security Boundaries ===
+note top of GAS_TANK
+  Security Boundary:
+  Gas payment ETH kept
+  outside wallet protection
+end note
+
+note top of WALLET
+  Security Boundary:
+  Protected wallet assets
+  (ETH and ERC20 tokens)
+end note
+
+@enduml

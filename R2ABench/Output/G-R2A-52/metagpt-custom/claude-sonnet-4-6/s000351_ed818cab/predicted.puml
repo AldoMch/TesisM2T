@@ -1,0 +1,147 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam backgroundColor #FAFAFA
+
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #5C6BC0
+skinparam packageFontColor #1A237E
+skinparam packageFontStyle bold
+
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentBorderColor #5C6BC0
+skinparam componentFontColor #1A237E
+
+skinparam nodeBackgroundColor #E8F5E9
+skinparam nodeBorderColor #388E3C
+skinparam nodeFontColor #1B5E20
+
+skinparam databaseBackgroundColor #FFF8E1
+skinparam databaseBorderColor #F9A825
+skinparam databaseFontColor #4E342E
+
+skinparam cloudBackgroundColor #FCE4EC
+skinparam cloudBorderColor #C62828
+skinparam cloudFontColor #4A148C
+
+' ─────────────────────────────────────────────
+' External Systems
+' ─────────────────────────────────────────────
+cloud "SECP256K1 Elliptic Curve\n(Cryptographic Domain)" as ECC
+node "GPU Hardware / GPU Runtime\n(Optional)" as GPU_HW
+node "Operator-Managed Network\n(Distributed Transport)" as NET
+database "Host Filesystem\n(Input files · Work files\nBackups · Config)" as FS
+database "Result File\n(Solved key output)" as RESULT_FILE
+
+' ─────────────────────────────────────────────
+' CLI / Interface Layer
+' ─────────────────────────────────────────────
+package "CLI / Interface Layer" as CLI_LAYER {
+  component [CLIParser] <<entry point>> as CLIParser
+  component [InputFileReader] <<input validation>> as InputFileReader
+  component [InspectionOutput] <<stdout reporter>> as InspectionOutput
+}
+
+' ─────────────────────────────────────────────
+' Computation Layer
+' ─────────────────────────────────────────────
+package "Computation Layer" as COMP_LAYER {
+  component [KangarooEngine] <<Pollard kangaroo\ntame + wild herds>> as KangarooEngine
+  component [DistinguishedPointFilter] <<DP criterion evaluator>> as DPFilter
+  component [InMemoryHashTable] <<active DP store\ncollision detection>> as HashTable
+  component [GPUDispatcher] <<CPU / GPU dispatch>> as GPUDispatcher
+}
+
+' ─────────────────────────────────────────────
+' State & Persistence Layer
+' ─────────────────────────────────────────────
+package "State & Persistence Layer" as PERSIST_LAYER {
+  component [WorkFileManager] <<save · resume · inspect\nwsplit backup>> as WorkFileManager
+  component [WorkFileMerger] <<offline merge\ncollision detection>> as WorkFileMerger
+}
+
+' ─────────────────────────────────────────────
+' Distributed Coordination Layer
+' ─────────────────────────────────────────────
+package "Distributed Coordination Layer" as DIST_LAYER {
+  component [DistributedServer] <<connection handler\nhash-table mgmt\nresult files>> as DistServer
+  component [DistributedClient] <<local compute\nDP submission>> as DistClient
+  component [ServerConfigReader] <<startup config>> as ServerCfgReader
+}
+
+' ─────────────────────────────────────────────
+' CLI → Subsystem wiring
+' ─────────────────────────────────────────────
+CLIParser --> InputFileReader      : input file path\n(-i option)
+CLIParser --> WorkFileManager      : -w / -wi / -ws\noptions & paths
+CLIParser --> ServerCfgReader      : config file path\nbackup interval\nDP setting
+CLIParser --> DistClient           : server address\nGPU/CPU options
+
+' ─────────────────────────────────────────────
+' Input → Engine
+' ─────────────────────────────────────────────
+InputFileReader --> FS             : reads ASCII input file
+InputFileReader --> KangarooEngine : parsed SECP256K1\nproblem instance\n(range + public key)
+
+' ─────────────────────────────────────────────
+' Computation wiring
+' ─────────────────────────────────────────────
+KangarooEngine --> ECC             : curve arithmetic\n(point addition / scalar mul)
+KangarooEngine --> DPFilter        : every walk point\nfor DP evaluation
+DPFilter       --> HashTable       : insert DP-qualifying points\ncollision check at insert
+KangarooEngine --> GPUDispatcher   : dispatch walk steps
+GPUDispatcher  --> GPU_HW          : GPU kernel execution
+GPU_HW         --> GPUDispatcher   : computed walk results
+GPUDispatcher  --> KangarooEngine  : walk step results / points
+
+' ─────────────────────────────────────────────
+' Computation → Persistence
+' ─────────────────────────────────────────────
+KangarooEngine  --> WorkFileManager : trigger periodic save\n(-wi interval / -ws state)
+HashTable       --> WorkFileManager : hash-table state\nserialized on save\ncleared after wsplit write
+
+' ─────────────────────────────────────────────
+' Resume path: Persistence → Engine
+' ─────────────────────────────────────────────
+WorkFileManager --> KangarooEngine  : restore engine state\non resume (-i work file)
+
+' ─────────────────────────────────────────────
+' Persistence wiring
+' ─────────────────────────────────────────────
+WorkFileManager --> FS              : write / read work files\nwsplit backups
+
+' Offline merge: operator supplies work files directly from FS
+FS              --> WorkFileMerger  : work files\n(operator-provided)
+WorkFileMerger  --> FS              : consolidated master\nwork file
+WorkFileMerger  --> HashTable       : merged hash-table\nstate artifact
+WorkFileMerger  --> RESULT_FILE     : write result file\n(solved key on collision)
+
+' ─────────────────────────────────────────────
+' Inspection wiring
+' ─────────────────────────────────────────────
+CLIParser        --> WorkFileManager  : inspect request\n(-wi path)
+WorkFileManager  --> InspectionOutput : metadata / inspection\nresults for display
+
+' ─────────────────────────────────────────────
+' Distributed wiring
+' ─────────────────────────────────────────────
+ServerCfgReader --> FS              : reads server config file
+ServerCfgReader --> DistServer      : startup configuration\n(DP setting, backup interval)
+
+' Client computation and local work data
+DistClient      --> KangarooEngine  : initiate local\nkangaroo computation
+DistClient      --> WorkFileManager : save local\nwork data / kangaroo data
+
+' Client → Server communication through network
+DistClient      --> NET             : submit DP points\n/ partial work data
+NET             --> DistServer      : inbound client connections\nand DP submissions
+
+' Server → Client round-trip (assignments / acknowledgements)
+DistServer      --> NET             : work assignments\n/ acknowledgements to clients
+
+' Server-side persistence and hash-table management
+DistServer      --> HashTable       : server-side DP\nhash-table management
+DistServer      --> WorkFileManager : periodic server-side\nwork file & wsplit writes
+DistServer      --> RESULT_FILE     : write result file\n(server-side solved key)
+
+@enduml

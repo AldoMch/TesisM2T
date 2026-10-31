@@ -1,0 +1,52 @@
+@startuml
+
+package "Browser Client" {
+    component "3D Renderer (Three.js)" as renderer
+    component "Input Handler" as input
+    component "Message Serializer/Deserializer" as serializer
+    component "Heartbeat Timer" as heartbeat
+    component "Reconnection Handler" as reconnect
+    component "Game Reconnect Handler" as gamereconnect
+    component "Server List Manager" as serverlist
+    component "Room Player Count Display" as playercount
+    component "Page Reload Handler" as pageload
+}
+
+node "Web Server" {
+    component "Static Asset Server" as assets
+}
+
+node "Game Server (Master)" {
+    component "Room Manager" as roommgr
+    component "Connection Manager" as connmgr
+    component "Ping/Pong Handler" as pingpong
+    component "Game Logic Engine" as logic
+}
+
+database "Replica Server (Slave)" as replica
+
+cloud "DNS/Load Balancer" as dns
+
+' Dependencies
+dns --> webserver : "routes requests"
+client --> webserver : "HTTP GET\n(static assets)"
+client --> gameserver : "WebSocket\n(JSON messages)"
+gameserver --> replica : "state replication\n(master→slave)"
+replica --> gameserver : "heartbeat & sync"
+client --> dns : "obtains server address"
+
+' Component relationships within Browser Client
+renderer --> playercount : "updates display"
+serializer --> gameserver : "sends/receives\nWebSocket messages"
+heartbeat --> gameserver : "60-second intervals"
+reconnect --> gameserver : "on WebSocket close"
+gamereconnect --> gameserver : "handles game_reconnect"
+serverlist --> dns : "handles updates/redirects"
+pageload --> webserver : "on server_error"
+
+' Component relationships within Game Server
+roommgr --> logic : "room state"
+connmgr --> pingpong : "connection health"
+logic --> connmgr : "broadcast messages"
+
+@enduml

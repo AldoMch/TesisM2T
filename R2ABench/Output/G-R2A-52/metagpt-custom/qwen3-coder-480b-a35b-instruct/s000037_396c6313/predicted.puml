@@ -1,0 +1,77 @@
+@startuml
+' Deployment nodes representing infrastructure and external systems
+node "Docker" as docker_runtime
+node "DockerHub" as dockerhub_registry
+node "Docker Registry" as docker_registry
+node "Harbor" as harbor_registry
+node "Containerd" as containerd_runtime
+
+' Component layers
+package "CLI Layer" {
+  component "ScanImageCommand"
+  component "ScanIacCommand"
+}
+
+package "Execution Layer" {
+  component "RunnerExecutor"
+  component "QuickStartWorkflow"
+  component "StartupScript"
+}
+
+package "Authorization Layer" {
+  component "DockerAuthRouter"
+}
+
+package "Plugin Layer" {
+  component "PluginManager"
+  component "IaCPolicyLoader"
+  component "IaCDuplicateMerger"
+  component "AlertBuilder"
+}
+
+package "Reporting Layer" {
+  component "ReportGenerator"
+}
+
+package "Example Packages" {
+  component "PythonEntrypoint"
+}
+
+' External libraries/systems
+cloud "veinmind-sdk/libveinmind" as veinmind_sdk
+cloud "veinmind-runner" as veinmind_runner
+
+' Dependencies between internal components
+ScanImageCommand --> PluginManager : uses plugins
+ScanImageCommand --> RunnerExecutor : triggers
+ScanIacCommand --> IaCPolicyLoader : loads policies
+ScanIacCommand --> IaCDuplicateMerger : merges duplicates
+ScanIacCommand --> AlertBuilder : builds alerts
+ScanIacCommand --> ReportGenerator : generates alerts
+IaCDuplicateMerger --> AlertBuilder : provides merged results
+AlertBuilder --> ReportGenerator : sends alerts
+
+PluginManager --> veinmind_sdk : uses SDK
+RunnerExecutor --> veinmind_runner : executes runners
+
+' Startup script interactions
+StartupScript --> ScanImageCommand : executes
+StartupScript --> QuickStartWorkflow : initializes
+
+' Authorization routing
+DockerAuthRouter --> docker_runtime : intercepts auth
+
+' Reporting data flows
+PluginManager --> ReportGenerator : provides scan results
+veinmind_runner --> ReportGenerator : outputs malicious file reports
+
+' Registry access through CLI/plugins
+ScanImageCommand --> dockerhub_registry : pulls images via plugin
+ScanImageCommand --> docker_registry : pulls images via plugin
+ScanImageCommand --> harbor_registry : pulls images via plugin
+ScanImageCommand --> containerd_runtime : scans containers via plugin
+
+' Example package integration
+PythonEntrypoint --> ScanImageCommand : invokes image scan
+
+@enduml

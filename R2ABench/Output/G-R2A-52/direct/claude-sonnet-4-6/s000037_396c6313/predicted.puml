@@ -1,0 +1,156 @@
+@startuml
+!define RECTANGLE class
+
+skinparam rectangle {
+  BackgroundColor<<external>> LightYellow
+  BackgroundColor<<tool>> LightBlue
+  BackgroundColor<<core>> LightGreen
+  BackgroundColor<<data>> LightPink
+  BackgroundColor<<infra>> LightGray
+  BorderColor Black
+  FontSize 12
+}
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+title veinmind-tools — System Architecture
+
+rectangle "External Users & Integrators" <<external>> {
+  actor "Security Operator" as secOp
+  actor "Plugin Developer" as pluginDev
+  actor "Deployment Operator" as deployOp
+  actor "Integrator" as integrator
+}
+
+rectangle "veinmind-tools Suite" <<core>> {
+
+  rectangle "CLI Layer" <<tool>> {
+    component "scan-image\n(FR-001, CLI-001)" as scanImage
+    component "scan-container\n(FR-002, CLI-002)" as scanContainer
+    component "scan-iac\n(FR-007, CLI-003)" as scanIac
+  }
+
+  rectangle "Quick-Start Workflow" <<tool>> {
+    component "run.sh\nParallel-Container\nStartup Script\n(FR-003, CLI-004)" as runSh
+  }
+
+  rectangle "Authorization Routing" <<tool>> {
+    component "Docker Auth\nRouting Component\n(FR-004, FR-005)" as authRouter
+    component "Route Pattern\nMatcher" as routeMatcher
+    component "NoneDockerPlugin\nFallback\n(FR-005, DAT-IF-003)" as nonePlugin
+  }
+
+  rectangle "IaC Scanning Engine" <<tool>> {
+    component "Policy Library\nLoader\n(FR-007)" as policyLoader
+    component "IaC Scanner\n(FR-007)" as iacScanner
+    component "Result Deduplicator\n(FR-007)" as dedup
+    component "Alert Detail\nBuilder\n(FR-007)" as alertBuilder
+    component "Report Event\nPublisher\n(API-003)" as reportPublisher
+  }
+
+  rectangle "Plugin Examples" <<tool>> {
+    rectangle "Python Example Package\n(FR-006, NFR-003)" <<tool>> {
+      component "entrypoint.sh\n/tool/entrypoint.sh\n(CON-006)" as entrypoint
+      component "scan.py\n(FR-006)" as scanPy
+      component "requirements.txt\nDependencies\n(CON-005)" as reqTxt
+    }
+  }
+
+  rectangle "Reporting Data Layer" <<data>> {
+    component "MaliciousFileInfo\n(DR-001)" as malFileInfo
+    component "ReportData\n(DR-002)" as reportData
+    component "ReportImage\n(DR-003)" as reportImage
+    component "ReportLayer\n(DR-004)" as reportLayer
+    component "IaC Rule Metadata\n(DR-005)" as iacRuleMeta
+    component "IaC File-Location\nDetail\n(DR-006)" as iacFileLoc
+    component "IaC Alert Detail\n(DR-007)" as iacAlertDetail
+  }
+}
+
+rectangle "SDK / Library Layer" <<core>> {
+  component "veinmind-sdk /\nlibveinmind\n(API-001, CON-004)" as sdk
+}
+
+rectangle "Infrastructure & Runtime" <<infra>> {
+  rectangle "Container Runtime" <<infra>> {
+    component "Docker\n(CON-001)" as docker
+    component "Containerd\n(NFR-002)" as containerd
+  }
+
+  rectangle "Image Registries" <<infra>> {
+    component "DockerHub" as dockerHub
+    component "Docker Registry" as dockerReg
+    component "Harbor" as harbor
+  }
+
+  rectangle "veinmind-runner" <<infra>> {
+    component "Runner Image\n(CON-002, DEP-002)" as runnerImage
+  }
+
+  rectangle "Python Base Image" <<infra>> {
+    component "veinmind/python3.6:\n1.3.1-stretch\n(NFR-003, CON-005)" as pyBase
+  }
+}
+
+' User interactions
+secOp --> scanImage : invokes scan-image
+secOp --> scanContainer : invokes scan-container
+secOp --> scanIac : invokes scan-iac
+secOp --> runSh : executes ./run.sh scan-host image
+pluginDev --> sdk : implements plugins using
+deployOp --> runnerImage : prepares runner image
+deployOp --> runSh : prepares startup script
+integrator --> authRouter : sends authorization requests
+
+' CLI to SDK
+scanImage --> sdk : uses
+scanContainer --> sdk : uses
+scanIac --> sdk : uses
+
+' Quick-start workflow
+runSh --> runnerImage : launches via
+runSh --> scanImage : triggers image scanning
+docker --> runSh : required by (CON-001)
+
+' Authorization routing internals
+authRouter --> routeMatcher : delegates matching
+routeMatcher --> nonePlugin : returns when no match (FR-005)
+authRouter ..> nonePlugin : fallback action (DAT-IF-003)
+
+' IaC scanning flow
+scanIac --> policyLoader : loads policy libraries
+scanIac --> iacScanner : runs scanner
+iacScanner --> dedup : merges duplicate results
+dedup --> alertBuilder : builds alert details
+alertBuilder --> iacRuleMeta : populates rule metadata
+alertBuilder --> iacFileLoc : populates file-location
+alertBuilder --> iacAlertDetail : assembles alert
+alertBuilder --> reportPublisher : publishes report event
+
+' Python example internals
+entrypoint --> scanPy : invokes python scan.py $* (FR-006)
+pyBase --> entrypoint : base image provides runtime
+reqTxt --> pyBase : installed during build (CON-005)
+
+' Reporting data relationships
+reportData --> reportImage : contains ScanImageResult
+reportImage --> reportLayer : contains Layers
+reportImage --> malFileInfo : contains MaliciousFileInfos
+reportLayer --> malFileInfo : contains MaliciousFileInfos
+iacAlertDetail --> iacRuleMeta : references
+iacAlertDetail --> iacFileLoc : references
+
+' SDK to runtime compatibility
+sdk --> docker : integrates with (NFR-002)
+sdk --> containerd : integrates with (NFR-002)
+sdk --> dockerHub : accesses images from (NFR-002)
+sdk --> dockerReg : accesses images from (NFR-002)
+sdk --> harbor : accesses images from (NFR-002)
+
+' Scan results feed reporting
+scanImage --> reportData : generates
+scanContainer --> reportData : generates
+scanIac --> iacAlertDetail : generates
+
+@enduml

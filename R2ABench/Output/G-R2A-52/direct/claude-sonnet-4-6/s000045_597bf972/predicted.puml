@@ -1,0 +1,153 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam defaultFontName Arial
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #003366
+}
+
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #CC9900
+}
+
+skinparam package {
+  BackgroundColor #F0F8E8
+  BorderColor #559944
+  FontColor #224411
+}
+
+skinparam rectangle {
+  BackgroundColor #EEF0FF
+  BorderColor #5566AA
+}
+
+skinparam database {
+  BackgroundColor #FFE8E8
+  BorderColor #AA3333
+}
+
+skinparam cloud {
+  BackgroundColor #E8F8FF
+  BorderColor #2277AA
+}
+
+skinparam arrow {
+  Color #444444
+  FontSize 10
+}
+
+title QAPM Android SDK — System Architecture Diagram\n(Background Scheduling · Upload Processing · HTTP Instrumentation)
+
+node "Android Host Application" as HostApp {
+  component "Application Code" as AppCode
+  component "QAPM SDK Integrator\n(Initialization / Config)" as Integrator
+}
+
+package "QAPM SDK Core" as QAPMCore {
+
+  package "Background Scheduling Layer" as SchedLayer {
+    component "QAPM Handler Manager\n(FR-010, DR-001, DR-002)" as HandlerMgr {
+      component "Default Background\nHandlerThread + Handler\n(FR-001, FR-002, NFR-001)" as BgHandler
+      component "Main-Thread Handler\n(Looper.getMainLooper)\n(FR-010, DR-002)" as MainHandler
+    }
+    component "Work Handler Init\n(FR-001, FR-002)" as WorkHandlerInit
+  }
+
+  package "Upload Processing Layer" as UploadLayer {
+    component "Upload Scheduler\n(FR-002, FR-003)" as UploadScheduler
+    component "Network Connectivity\nGate\n(FR-003, NFR-002, C-003)" as NetworkGate
+    component "Forced-Send / Storage\nPop Handler\n(FR-004)" as ForcedSendHandler
+    component "Upload File Processor\n(FR-005, FR-006, FR-007\nDR-003..DR-008, NFR-005)" as UploadFileProcessor
+    component "Upload Success / Failure\nCallback Handler\n(FR-007, DR-008)" as SendCallbackHandler
+  }
+
+  package "Configuration Management" as ConfigMgmt {
+    component "QAPM Config Manager\n(AD-003)" as ConfigMgr
+    component "Configured Data Sender\n(FR-006, DR-007)" as DataSender
+  }
+
+  package "Apache HttpClient Instrumentation Layer" as HttpInstrLayer {
+    component "Instrumented Response\nHandler Wrapper\n(FR-008, DR-009)" as ResponseHandlerWrapper
+    component "Transaction State\nInspector / Instrumentor\n(FR-008, DR-009)" as TxStateInspector
+    component "Instrumented Response\nEntity Wrapper\n(FR-009, DR-010, DR-011\nNFR-003)" as ResponseEntityWrapper
+    component "Counting Input Stream\n(DR-010, FR-009)" as CountingInputStream
+  }
+}
+
+package "Android Platform Services" as AndroidPlatform {
+  component "Handler / HandlerThread\n/ Looper\n(C-001, NFR-004)" as AndroidHandlerAPI
+  component "Android Context\n(FR-006, DR-006, C-001)" as AndroidContext
+  component "Network Connectivity\nService\n(FR-003, AD-001)" as NetworkService
+}
+
+package "Local File Storage" as LocalStorage {
+  database "Upload Directory\n/ Upload Files\n(DR-003, DR-004, AD-002)" as UploadDir
+  database "Pending Stored Data\n(FR-004)" as PendingStore
+}
+
+cloud "Apache HttpClient\nAbstractions\n(C-002, NFR-004)" as ApacheHttpClient {
+  component "ResponseHandler<T>" as ApacheRH
+  component "HttpResponse" as ApacheHttpResp
+  component "HttpEntity" as ApacheHttpEntity
+}
+
+cloud "Remote Upload Endpoint\n(AD-005, outside SRS scope)" as RemoteEndpoint
+
+' ---- Host App connections ----
+AppCode --> Integrator : uses / initializes
+Integrator --> HandlerMgr : initializes
+Integrator --> ConfigMgr : configures
+
+' ---- Scheduling Layer internal ----
+HandlerMgr --> WorkHandlerInit : creates HandlerThread,\nstarts, binds looper
+WorkHandlerInit --> BgHandler : creates work handler\nfrom background looper
+BgHandler --> AndroidHandlerAPI : uses Handler /\nHandlerThread / Looper
+MainHandler --> AndroidHandlerAPI : uses main Looper
+
+' ---- Upload scheduling ----
+AppCode --> UploadScheduler : posts upload request\n(FR-002)
+UploadScheduler --> BgHandler : post runnable/upload\nto background handler (FR-002)
+BgHandler --> NetworkGate : triggers upload\nprocessing
+
+' ---- Upload processing flow ----
+NetworkGate --> NetworkService : check connectivity\n(FR-003)
+NetworkGate --> ForcedSendHandler : if forced-send flag set\n(FR-004)
+ForcedSendHandler --> PendingStore : pop stored data\n(FR-004)
+NetworkGate --> UploadFileProcessor : if network available\n(FR-003, FR-005)
+UploadFileProcessor --> UploadDir : enumerate upload files,\nread bParam (FR-005, DR-003..DR-005)
+UploadFileProcessor --> AndroidContext : derive cParam\n(FR-006, DR-006)
+UploadFileProcessor --> DataSender : submit bParam + cParam\n(FR-006, DR-007)
+DataSender --> SendCallbackHandler : success / failure\ncallback (FR-007)
+SendCallbackHandler --> UploadDir : delete file on success\n(FR-007, DR-008)
+SendCallbackHandler --> HandlerMgr : log failure\n(FR-007, DR-008)
+
+' ---- Config ----
+ConfigMgr --> DataSender : provides configured sender\n(AD-003)
+DataSender --> RemoteEndpoint : send bParam / cParam pair
+
+' ---- HTTP Instrumentation ----
+AppCode --> ResponseHandlerWrapper : wraps ResponseHandler\n(FR-008, C-002)
+ResponseHandlerWrapper --> TxStateInspector : inspect / instrument\ntransaction state (FR-008, DR-009)
+ResponseHandlerWrapper --> ApacheRH : delegate handleResponse()\nto wrapped handler (FR-008)
+ApacheHttpResp --> ResponseHandlerWrapper : HttpResponse input\n(FR-008)
+TxStateInspector --> ResponseHandlerWrapper : instrumented transaction\nstate result (DR-009)
+
+AppCode --> ResponseEntityWrapper : wraps HttpEntity\n(FR-009, NFR-003)
+ResponseEntityWrapper --> ApacheHttpEntity : delegates writeTo()\n(FR-009, DR-011)
+ResponseEntityWrapper --> CountingInputStream : getContent() returns\nor reuses counting stream\n(FR-009, DR-010)
+CountingInputStream --> ApacheHttpEntity : reads underlying\nentity content (DR-010)
+
+' ---- Android platform links ----
+UploadFileProcessor --> AndroidContext : Android Context API\n(C-001)
+NetworkGate --> NetworkService : Android connectivity\nservice (C-001)
+ResponseHandlerWrapper --> ApacheHttpClient : Apache HttpClient\nabstraction (C-002)
+ResponseEntityWrapper --> ApacheHttpClient : Apache HttpClient\nabstraction (C-002)
+
+@enduml

@@ -1,0 +1,62 @@
+@startuml
+!define RECTANGLE class
+
+title statlord System Architecture
+
+skinparam componentStyle rectangle
+
+package "Client Layer" {
+    [Browser Editor (React/TypeScript)] as editor
+    [Viewer Component] as viewer
+}
+
+package "Server Layer" {
+    [API (Django/Python)] as api
+    [Data Entities\n(Gauge, Display, Layout)] as entities
+    [Database (PostgreSQL)] as db
+}
+
+package "Build & Deployment" {
+    [Node.js Build Environment] as node_build
+    [Python Runtime Environment] as python_runtime
+    [Container (Development-Grade)] as container
+}
+
+editor --> api : HTTP/REST
+viewer --> api : HTTP/REST
+api --> entities
+entities --> db
+
+node_build --> editor : Builds SPA
+python_runtime --> api : Executes server
+container ..> python_runtime
+container ..> node_build
+
+note right of container
+  Development-grade only
+  Not production-ready
+end note
+
+note top of editor
+  Redux-managed state:
+  - Controls
+  - Elements
+  - Layouts
+  - Gauges
+  - Displays
+end note
+
+note right of api
+  Exposes resources:
+  - Gauge (key, value)
+  - Display (key, resolution_x/y, available,\n current_layout, display_data, rotation)
+  - Layout (key, data, display_positions)
+end note
+
+note bottom of entities
+  Data Relationships:
+  - Display references Layout
+  - Cascade delete behavior
+end note
+
+@enduml

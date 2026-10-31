@@ -1,0 +1,48 @@
+@startuml
+!theme plain
+
+title FAC10/week4-jajascript Web Application Architecture
+
+skinparam componentStyle rectangle
+
+package "Web Browser (Client)" {
+  [User Interface] as UI
+}
+
+package "Node.js Server (Backend)" {
+  [Router] as Router
+  [Request Handler] as Handler
+  [Autocomplete Algorithm] as Autocomplete
+  [Data Store] as DataStore
+  [Static Asset Server] as StaticServer
+}
+
+database "Local File System" {
+  [Laureate Data JSON] as JSONData
+  [Public Assets] as PublicAssets
+}
+
+UI --> Router : HTTP requests
+Router --> Handler : / route
+Router --> Autocomplete : URLs with \"search\"
+Router --> StaticServer : Other routes
+
+Handler --> UI : Serve home page
+Autocomplete --> DataStore : Access laureate data
+DataStore --> JSONData : Read JSON
+StaticServer --> PublicAssets : Serve static files
+PublicAssets --> UI : CSS, JS, Images
+
+note right of Router
+  Routes based on URL substring matching
+end note
+
+note right of Autocomplete
+  Returns up to 10 matching laureate names
+end note
+
+note bottom of DataStore
+  Uses local JSON data source
+end note
+
+@enduml

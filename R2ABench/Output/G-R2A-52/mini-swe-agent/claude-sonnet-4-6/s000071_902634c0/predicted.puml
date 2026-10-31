@@ -1,0 +1,85 @@
+@startuml
+
+title ClearML Agent - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BorderColor #555555
+  BackgroundColor #F8F8F8
+}
+
+rectangle "External Systems" as ExtLayer {
+  component "ClearML Server\n(Backend)" as ClearMLServer
+  component "Kubernetes Cluster" as K8sCluster
+  component "Docker Runtime\n(via Docker Socket)" as DockerRuntime
+}
+
+rectangle "ClearML Agent Runtime" as AgentRuntime {
+
+  rectangle "Kubernetes Integration Layer" as K8sIntegration {
+    component "Kubernetes Glue\n(Queue-to-Job Converter)" as K8sGlue
+    component "Service Pod Manager\n(Long-lasting Pod Mode)" as ServicePodMgr
+    component "Sibling Container Manager\n(Docker Socket)" as SiblingContainerMgr
+  }
+
+  rectangle "Execution Engine" as ExecEngine {
+    component "Experiment Environment Installer" as EnvInstaller
+    component "Experiment Process Monitor" as ProcMonitor
+  }
+
+  rectangle "Worker Telemetry" as Telemetry {
+    component "Status Reporter\n(every 2s default)" as StatusReporter
+    component "Connectivity Pinger\n(every 30s default)" as ConnPinger
+    component "Memory Reporter\n(process/machine scope)" as MemReporter
+  }
+
+  rectangle "Backend Client Layer" as BackendClient {
+    component "Session Handler\n(Request/Response)" as SessionHandler
+    component "Events Service Client\n(v2.5)" as EventsSvcClient
+    component "Models Service Client\n(v2.4)" as ModelsSvcClient
+    component "Generic Service Client\n(create/get/get_by_id/get_all/get_all_ex)" as GenericSvcClient
+  }
+
+}
+
+rectangle "Configuration" as Config {
+  component "Worker Configuration\n(report_period_sec, ping_period_sec,\nlog_stdout, report_global_mem_used)" as WorkerConfig
+}
+
+rectangle "Data / Templates" as DataLayer {
+  database "ClearML Execution Queue" as ExecQueue
+  component "Kubernetes YAML Template" as YAMLTemplate
+}
+
+' External connections
+K8sGlue --> ExecQueue : pulls jobs
+K8sGlue --> K8sCluster : submits Kubernetes jobs
+K8sGlue --> YAMLTemplate : reads template
+ServicePodMgr --> DockerRuntime : manages sibling containers\n(via mapped Docker socket)
+SiblingContainerMgr --> DockerRuntime : Docker socket
+
+' Telemetry to backend
+StatusReporter --> SessionHandler : report status
+ConnPinger --> SessionHandler : ping
+MemReporter --> StatusReporter : memory data
+
+' Backend client to server
+SessionHandler --> ClearMLServer : HTTP requests
+
+' Events and Models services
+EventsSvcClient --> SessionHandler : scalar metric histograms (v2.5)
+ModelsSvcClient --> SessionHandler : model operations (v2.4)
+GenericSvcClient --> SessionHandler : CRUD operations
+
+' Execution engine
+EnvInstaller --> ExecEngine : installs environment
+ProcMonitor --> ExecEngine : starts and monitors experiment
+
+' Configuration
+WorkerConfig --> Telemetry : configures periods\nand logging
+
+' K8s integration to execution
+ServicePodMgr --> EnvInstaller : triggers env install
+K8sCluster --> ProcMonitor : pod runs experiment
+
+@enduml

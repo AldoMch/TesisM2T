@@ -1,0 +1,99 @@
+@startuml
+
+package "Presentation / User Interface" {
+  component "Web Management Console" as WebConsole
+}
+
+package "Hosting / Distribution" {
+  cloud "Web Console Hosting & Distribution" as WebHosting
+}
+
+package "API" {
+  component "API Gateway REST API\n(stage prod, REGIONAL)" as APIGateway
+}
+
+note right of APIGateway
+  Exposes API endpoint and API ID (FR-001)
+  Request validation for parameters and request bodies (FR-003)
+  AWS X-Ray tracing enabled (NFR-003)
+  CORS preflight configuration (FR-002/C-002):
+  - allowed methods: GET, POST, PUT, DELETE, OPTIONS
+  - allowed headers: Authorization, Content-Type, X-Amz-Date,
+    X-Amz-Security-Token, X-Api-Key
+  - statusCode: 200
+end note
+
+package "Service / Compute" {
+  component "Lambda Service Integrations" as LambdaServices
+}
+
+package "Simulation" {
+  component "Route Key Resolution" as RouteKeyResolution
+  component "Route Loader" as RouteLoader
+  component "Route State Assembly / UTF-8 JSON Parsing" as RouteStateAssembly
+  component "Device Simulation Engine" as DeviceSimulationEngine
+  component "Simulated Message Publisher" as MessagePublisher
+}
+
+package "Data / Persistence" {
+  database "Amazon S3\n(ROUTE_BUCKET, route JSON)" as S3
+  database "Amazon DynamoDB" as DynamoDB
+}
+
+note bottom of DynamoDB
+  Listed in environment.
+  Exact persistence mapping not specified in PRD.
+end note
+
+package "Integration / Messaging" {
+  cloud "AWS IoT Topics" as IoTTopics
+  cloud "AWS Step Functions" as StepFunctions
+}
+
+note bottom of StepFunctions
+  AWS-managed orchestration service listed in PRD.
+end note
+
+package "Identity / Authentication" {
+  cloud "Identity & Authentication Services" as IdentityServices
+}
+
+package "Deployment / Infrastructure" {
+  component "Solution ID / Version Configuration" as SolutionConfig
+  component "Custom-Resource Handler" as CustomResourceHandler
+  cloud "AWS CloudFormation" as CloudFormation
+}
+
+note bottom of CustomResourceHandler
+  Custom resource returns response body (FR-004).
+end note
+
+cloud "Log Destination" as LogDestination
+cloud "AWS Lambda" as AWSLambda
+
+WebHosting --> WebConsole : hosts/distributes
+WebConsole --> APIGateway : manages simulations and device types
+APIGateway --> LambdaServices : invokes Lambda-backed operations
+APIGateway --> LogDestination : JSON access logs / INFO method logs
+APIGateway --> IdentityServices : Authorization
+
+LambdaServices --> DeviceSimulationEngine : triggers simulations
+DeviceSimulationEngine --> RouteKeyResolution : "resolves routeInfo.routeName or default route-{random route identifier}.json (FR-005/C-003)"
+RouteKeyResolution --> RouteLoader : supplies resolved route key
+RouteLoader --> S3 : reads route JSON by key
+RouteLoader --> RouteStateAssembly : parses UTF-8 JSON and assembles route state/output fields (DR-002/DR-003)
+RouteStateAssembly --> DeviceSimulationEngine : provides assembled route state/output fields
+
+DeviceSimulationEngine --> MessagePublisher : emits simulated messages
+MessagePublisher --> IoTTopics : publishes to AWS IoT topics
+
+RouteLoader --> DeviceSimulationEngine : propagates S3 retrieval error
+DeviceSimulationEngine --> LambdaServices : returns S3 retrieval error
+LambdaServices --> APIGateway : returns retrieval error to caller (FR-006)
+
+CloudFormation --> CustomResourceHandler : invokes custom resource with StackName input property (DR-004/C-004)
+CustomResourceHandler --> CloudFormation : returns response body (FR-004)
+SolutionConfig --> CustomResourceHandler : provides solution ID/version (FR-004/C-004)
+CustomResourceHandler ..> AWSLambda : deployed on/as AWS Lambda
+
+@enduml

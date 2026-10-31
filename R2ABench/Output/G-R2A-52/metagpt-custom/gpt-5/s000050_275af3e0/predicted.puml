@@ -1,0 +1,90 @@
+@startuml
+
+cloud "kAFL Hypervisor/Fuzzer Framework" as KAFL
+interface "kAFL hypercalls" as KAFL_IF
+KAFL_IF --> KAFL
+
+cloud "hAFL2 Controller/Orchestrator" as HAFL2
+
+cloud "Windows VMSwitch" as VMSWITCH
+cloud "VMBus/netvsc channels" as VMBUS
+
+cloud "Visual Studio Toolchain" as VSTOOL
+cloud "bash environment" as BASH
+cloud "Python 3 runtime" as PY3
+cloud "pytest" as PYTEST
+cloud "Host Filesystem/Shared Libraries" as HOST_LIBS
+
+package "Orchestration & Test" {
+  component "Standalone Test Runner" as TEST_RUNNER
+  component "kAFL-Fuzzer Test Suites" as TEST_SUITES
+
+  TEST_RUNNER --> TEST_SUITES
+  TEST_RUNNER --> PY3
+  TEST_RUNNER --> PYTEST
+  PYTEST --> TEST_SUITES
+}
+
+package "Linux Userspace Fuzzing" {
+  component "Linux Launch Scripts" as LINUX_LAUNCH
+  component "Initrd Packager" as INITRD_PACK
+  component "Shared Library Resolver" as SHLIB_RES
+
+  LINUX_LAUNCH --> INITRD_PACK
+  INITRD_PACK --> SHLIB_RES
+  SHLIB_RES --> HOST_LIBS
+  LINUX_LAUNCH --> BASH
+}
+
+package "Guest I/O & Forkserver" {
+  component "Embedded Forkserver" as FORKSERVER
+  FORKSERVER --> KAFL_IF
+}
+
+LINUX_LAUNCH --> FORKSERVER
+LINUX_LAUNCH --> KAFL
+
+node "Hyper-V Child Partition VM" {
+  package "Windows Hyper-V Fuzzing" {
+    component "loader.exe" as LOADER
+    component "packet_sender.exe" as PACKET_SENDER
+    component "Child Partition Harness" as CHILD_HARNESS
+    component "Harness Driver(s)" as HARNESS_DRIVERS
+
+    CHILD_HARNESS --> LOADER
+    LOADER --> PACKET_SENDER
+    PACKET_SENDER --> HARNESS_DRIVERS
+
+    CHILD_HARNESS --> VMBUS
+  }
+}
+
+node "Hyper-V Root Partition VM" {
+  package "Crash Monitoring & Feedback" {
+    component "Root Partition Crash Monitor" as ROOT_MON
+  }
+}
+
+VMBUS --> VMSWITCH
+
+ROOT_MON --> HAFL2
+
+package "Build & Configuration Tooling" {
+  component "Windows Build Script" as WIN_BUILD_SCRIPT
+  component "Offset Configuration Source" as OFFSET_CFG
+  component "Windows Build Artifacts" as WIN_BUILD_ARTIFACTS
+
+  WIN_BUILD_SCRIPT --> VSTOOL
+  OFFSET_CFG --> WIN_BUILD_SCRIPT
+  WIN_BUILD_SCRIPT --> WIN_BUILD_ARTIFACTS
+}
+
+WIN_BUILD_ARTIFACTS --> LOADER
+WIN_BUILD_ARTIFACTS --> PACKET_SENDER
+WIN_BUILD_ARTIFACTS --> HARNESS_DRIVERS
+WIN_BUILD_ARTIFACTS --> ROOT_MON
+
+HARNESS_DRIVERS --> VSTOOL
+ROOT_MON --> VSTOOL
+
+@enduml

@@ -1,0 +1,120 @@
+@startuml
+
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+
+skinparam component {
+  BackgroundColor COMPONENT_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+skinparam node {
+  BackgroundColor LAYER_COLOR
+  BorderColor #333333
+}
+skinparam database {
+  BackgroundColor COMPONENT_COLOR
+  BorderColor #333333
+}
+skinparam cloud {
+  BackgroundColor EXTERNAL_COLOR
+  BorderColor #333333
+}
+skinparam package {
+  BackgroundColor LAYER_COLOR
+  BorderColor #333333
+}
+
+' ========== EXTERNAL SYSTEMS ==========
+cloud "External Systems" as external {
+  cloud "Firebase Authentication" as firebase_auth
+  cloud "Stripe" as stripe
+  cloud "Book-Search API" as book_search_api
+  cloud "Push Notification\nProvider" as push_provider
+  cloud "Email Notification\nProvider" as email_provider
+  cloud "Let's Encrypt\n(DNS-01)" as lets_encrypt
+}
+
+' ========== CLIENTS ==========
+cloud "Clients" as clients {
+  component "Native Mobile Apps" as mobile_apps
+  component "Admin Web App" as admin_web
+}
+
+' ========== GCP PLATFORM ==========
+node "GCP Platform" as gcp_platform {
+  node "Infrastructure Layer" as infra_layer {
+    component "GKE Cluster" as gke_cluster
+    component "Load Balancer" as load_balancer
+    component "GCE VMs (Ops)" as gce_vms
+    component "Cluster Access\nInterface" as cluster_access
+  }
+
+  ' ========== DATA LAYER ==========
+  node "Data Layer" as data_layer {
+    database "MySQL Database\n(User, Book, EC Data)" as mysql_db
+    database "NoSQL Storage\n(Message Management)" as message_db
+    database "Object Storage\n(Thumbnails, Objects)" as object_storage
+  }
+
+  ' ========== SERVICE LAYER ==========
+  node "Service Layer" as service_layer {
+    component "Authentication API\n(Protocol Buffers)" as auth_api
+    component "User Management API\n(Protocol Buffers)" as user_api
+    component "Book Management API\n(Protocol Buffers)" as book_api
+    component "EC Site API\n(Protocol Buffers)" as ec_api
+    component "Support API\n(Protocol Buffers)" as support_api
+    component "Administration API\n(Protocol Buffers)" as admin_api
+    component "Message Management API\n(Protocol Buffers)" as message_api
+  }
+
+  ' ========== CLIENT ACCESS LAYER ==========
+  node "Client Access Layer" as client_layer {
+    component "Gateway / BFF\n(Protocol Buffers)" as gateway
+  }
+}
+
+' ========== DEPENDENCIES & RELATIONS ==========
+
+' Client to Gateway
+mobile_apps --> gateway
+admin_web --> gateway
+
+' Load Balancer connections
+load_balancer --> gateway
+load_balancer --> service_layer : "load balances"
+
+' Gateway to Service APIs
+gateway --> auth_api : "routes to"
+gateway --> user_api : "routes to"
+gateway --> book_api : "routes to"
+gateway --> ec_api : "routes to"
+gateway --> support_api : "routes to"
+gateway --> admin_api : "routes to"
+gateway --> message_api : "routes to"
+
+' Service API to Data Stores
+user_api --> mysql_db : "persists/retrieves"
+book_api --> mysql_db : "persists/retrieves"
+ec_api --> mysql_db : "persists/retrieves"
+admin_api --> mysql_db : "manages"
+support_api --> message_db : "stores messages"
+message_api --> message_db : "manages"
+book_api --> object_storage : "stores thumbnails"
+
+' Service API to External Systems
+auth_api --> firebase_auth : "uses"
+ec_api --> stripe : "processes payments"
+book_api --> book_search_api : "queries"
+message_api --> push_provider : "sends"
+message_api --> email_provider : "sends"
+
+' Infrastructure Deployment & Management
+gke_cluster *-- service_layer : "hosts"
+gke_cluster *-- client_layer : "hosts"
+gce_vms --> cluster_access : "accesses"
+cluster_access --> gke_cluster : "retrieves credentials"
+gce_vms --> lets_encrypt : "manages certificates"
+
+@enduml

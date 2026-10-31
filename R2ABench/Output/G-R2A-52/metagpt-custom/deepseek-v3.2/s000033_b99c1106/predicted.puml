@@ -1,0 +1,91 @@
+@startuml
+
+!define SERVICE_COLOR #E8F4F8
+!define COMPONENT_COLOR #F5F5F5
+!define EXTERNAL_COLOR #F0F0F0
+
+skinparam component {
+    BackgroundColor COMPONENT_COLOR
+    BorderColor #333333
+    ArrowColor #333333
+}
+
+skinparam node {
+    BackgroundColor SERVICE_COLOR
+    BorderColor #333333
+}
+
+' Services Layer
+node "Airflow Service" as airflow {
+    component "Airflow Webserver\n(localhost:8282)" as airflow_webserver
+    note right of airflow_webserver
+        Includes Scheduler
+        with LocalExecutor
+    end note
+    component "spark_default\nConnection" as spark_connection
+}
+
+node "Spark Service" as spark {
+    component "Spark Master\n(localhost:8181, spark:7077)" as spark_master
+    component "spark-worker-1" as spark_worker1
+    component "spark-worker-2" as spark_worker2
+    component "spark-worker-3" as spark_worker3
+    note right of spark_master
+        Bundled Spark Distribution
+        • ./bin/pyspark
+        • ./bin/run-example
+        • libsvm dataset support
+    end note
+}
+
+node "Jupyter Service" as jupyter {
+    component "Jupyter/PySpark\n(localhost:8888)" as jupyter_server
+    note right of jupyter_server
+        Exposes Spark UI ports
+        4040-4080
+    end note
+}
+
+' Data & Storage Layer
+node "Data & Storage" as storage {
+    database "PostgreSQL\n(Airflow Metadata)" as postgres
+    folder "Shared Volumes" as shared_volumes {
+        file "DAGs" as dags
+        file "Spark Applications" as spark_apps
+        file "Notebooks" as notebooks
+        file "Input Data" as input_data
+    }
+}
+
+' External Systems
+cloud "Docker Engine" as docker_engine
+cloud "Host Machine" as host_machine
+
+' Actor
+actor "Data Engineer" as data_engineer
+
+' Service Connections
+airflow_webserver --> postgres : "metadata"
+spark_connection --> spark_master : "spark://spark:7077"
+spark_worker1 --> spark_master : "registers"
+spark_worker2 --> spark_master : "registers"
+spark_worker3 --> spark_master : "registers"
+spark_master --> shared_volumes : "accesses apps\n& data"
+jupyter_server --> spark_master : "PySpark execution"
+
+' Storage Access
+airflow_webserver --> dags : "loads"
+airflow_webserver --> spark_apps : "submits"
+jupyter_server --> notebooks : "accesses"
+jupyter_server --> input_data : "reads"
+
+' External Dependencies
+docker_engine --> host_machine : "runs on"
+shared_volumes --> host_machine : "mounted from"
+
+' Actor Access
+data_engineer --> airflow_webserver : "manages DAGs"
+data_engineer --> jupyter_server : "develops notebooks"
+data_engineer --> spark_master : "monitors jobs\nvia UI"
+
+@enduml

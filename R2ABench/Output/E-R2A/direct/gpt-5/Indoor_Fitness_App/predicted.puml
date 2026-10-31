@@ -1,0 +1,202 @@
+@startuml
+left to right direction
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+
+title Indoor Fitness App - System Architecture
+
+node "Mobile Device\n(Android >=8.0 / iOS >=11)\nHW: Octa-core 2.45 GHz, 4GB RAM, 32GB ROM+" as Mobile {
+  [Main UI] as UI_Main
+  [Exercise UI] as UI_Exercise
+  [History UI] as UI_History
+  [Personal/Preferences UI] as UI_Personal
+  [Casting Operations UI] as UI_Casting
+
+  component "Camera Capture" as CamCap
+  component "Pose Estimation Engine\n(Skeleton Extraction)" as PoseEst
+  component "Posture Evaluation & Scoring\n(Stick Diagram, Similarity)" as Eval
+  component "Training Session Monitor\n(Start/End, Completion Degree)" as SessionMon
+
+  component "Casting Server (Android)\n(Control Channel)" as CastServer
+  component "Device Discovery & Connection" as Discovery
+  component "Video Streamer\n(Exercise Interface)" as Streamer
+
+  component "Auth & Permissions Client" as AuthClient
+  component "App-Server API Client" as ApiClient
+
+  CamCap --> PoseEst : video frames (>=30 fps)
+  PoseEst --> Eval : skeleton data
+  Eval --> UI_Exercise : scores, stick diagram, remaining time
+  CamCap --> UI_Exercise : user movement
+  UI_Exercise --> Streamer : render frames
+  Eval --> SessionMon : evaluation & state data
+  SessionMon --> UI_Exercise : completion status
+  UI_Main --> ApiClient
+  UI_History --> ApiClient
+  UI_Personal --> ApiClient
+  UI_Casting --> Discovery
+  AuthClient --> ApiClient
+}
+
+cloud "Internet" as Internet
+cloud "Same LAN (Wi‑Fi)\nC-002: Same LAN required" as LAN
+
+node "Server-side Processing\n(HW: CPU >= Pentium 900M, Rec. P4 1.2G; RAM >=256MB)" as Server {
+  [App-Server API\n(protocol TBD)] as APIGW
+  [Auth & RBAC Service] as AuthSvc
+  [Plan Management Service] as PlanSvc
+  [Plan Recommendation Service] as RecSvc
+  [Materials Processor] as MaterialSvc
+  [Report/Poster Generation Service] as ReportSvc
+  [Data Access Layer\n(SQL Injection Protection)] as DAL
+
+  database "User/Profile/Preferences DB" as DBUser
+  database "Training Plans DB" as DBPlan
+  database "History & Records DB" as DBHist
+  database "Evaluation Data Store" as DBEval
+  folder "Standard Videos & Standard Movements\nRepository" as StdRepo
+
+  APIGW --> AuthSvc
+  APIGW --> PlanSvc
+  APIGW --> RecSvc
+  APIGW --> ReportSvc
+  ReportSvc --> MaterialSvc
+
+  AuthSvc --> DAL
+  PlanSvc --> DAL
+  RecSvc --> DAL
+  ReportSvc --> DAL
+  MaterialSvc --> DAL
+
+  DAL --> DBUser
+  DAL --> DBPlan
+  DAL --> DBHist
+  DAL --> DBEval
+  PlanSvc --> StdRepo
+  RecSvc --> StdRepo
+}
+
+node "Casting Target Android Device\n(Receiver)" as Target {
+  [Discovery Listener] as DiscClient
+  [Casting Client] as CastClient
+  [Command Handler] as CmdHandler
+  [Display Surface] as Display
+
+  CastClient --> Display
+  CmdHandler --> CastClient
+}
+
+' Network connectivity
+ApiClient --> Internet
+Internet --> APIGW : App-Server API calls\n(auth, plans, recommendations, reports)
+Streamer -- LAN : video stream
+CastServer -- LAN : control commands
+Discovery -- LAN
+DiscClient -- LAN
+CastClient -- LAN
+CmdHandler -- LAN
+
+LAN .. Target
+LAN .. Mobile
+Internet .. Server
+Internet .. Mobile
+
+' Data exchanges via API
+Eval --> ApiClient : skeleton, scores, evaluation
+SessionMon --> ApiClient : training results, completion
+ApiClient --> Internet : upload materials, request report/poster
+
+' Security and permissions flow
+AuthClient --> ApiClient : login/registration, tokens
+APIGW --> AuthSvc : identity verification, roles (Admin/User)
+
+' Notes for NFRs and constraints
+note right of PoseEst
+NFR-004: Model runtime >= 20 fps
+NFR-002: Pose recognition accuracy > 95% (normal)
+NFR-003: Occlusion robustness (visible parts >= 90%)
+end note
+
+note right of Eval
+NFR-005: Posture evaluation accuracy > 95% (ideal pose)
+NFR-006: Error-tolerant evaluation >= 95% (quantified in tests)
+NFR-007: Reduce body-shape/proportion impact
+end note
+
+note bottom of RecSvc
+NFR-008: Recommendation latency <= 1 s
+Uses training results and real-time state
+end note
+
+note bottom of ReportSvc
+NFR-009: Report generation <= 3 s
+Charts + textual explanations
+end note
+
+note bottom of Streamer
+NFR-010: Casting video latency <= 100 ms
+FR-015: Real-time exercise interface casting
+end note
+
+note bottom of CastServer
+NFR-011: Command response <= 50 ms
+FR-014: Device discovery & connection in same LAN
+end note
+
+note right of DAL
+NFR-013: SQL injection protection
+- Validate types/formats
+- Filter special symbols
+- Bind variables
+- Use prepared statements
+end note
+
+note left of Mobile
+NFR-012: Data leakage protection on client
+- Clipboard/drag-drop/screenshot controls
+- Memory theft mitigation
+C-001: Camera recording >= 30 fps
+OS: Android 8+/iOS 11+
+end note
+
+note right of Server
+NFR-012: Data leakage protection on server
+- Secure material collection/processing
+- Protect personal health data
+end note
+
+note right of StdRepo
+DR-001: Standard videos & standard movements
+Used for plan creation and posture comparison
+end note
+
+note right of DBPlan
+DR-005: User/system plans, next set/rest, completion degree
+end note
+
+note right of DBHist
+DR-007: Exercise history and monthly overview
+end note
+
+note right of DBUser
+DR-002: Personal info, health profile, goals, preferences
+FR-013: Permissions (Admin/User)
+end note
+
+note right of DBEval
+DR-004: Skeleton data, scores, professional evaluations, stick diagrams
+end note
+
+note bottom of Target
+FR-015: Display real-time exercise interface
+end note
+
+legend left
+System Architecture Highlights
+- Mobile executes camera, pose estimation, evaluation, and casting source
+- Server provides auth, recommendation, plan mgmt, and report/poster generation
+- Same-LAN casting to Android target with strict latency
+- Modular services with secure data access
+endlegend
+@enduml

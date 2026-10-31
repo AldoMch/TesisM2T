@@ -1,0 +1,118 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+title ReTool System Architecture
+
+' ============================================================
+' Actors / Users
+' ============================================================
+actor "System User\n(PM / Leader / Member)" as User
+actor "System Administrator" as Admin
+
+' ============================================================
+' Client Tier - Front-end / Back-end separated (Vue.js)
+' ============================================================
+package "Client Tier (Windows 10 64-bit, Chrome 81+)" {
+  component "Vue.js Web UI" as WebUI {
+    port "User Authentication UI" as P_Auth
+    port "User Management UI" as P_UserMgmt
+    port "Project List UI" as P_ProjList
+    port "Member Management UI" as P_Member
+    port "Baseline Management UI" as P_Baseline
+    port "Requirements Management UI\n(tree, create, import, modify, move, trace)" as P_ReqMgmt
+    port "Requirement Analysis UI" as P_ReqAnalysis
+  }
+}
+
+' ============================================================
+' Gateway
+' ============================================================
+package "Local Computer" {
+  component "API Gateway" as Gateway
+
+  ' ==========================================================
+  ' Microservices (Flask)
+  ' ==========================================================
+  package "Microservice Architecture (Flask)" {
+    component "User Management Service" as UserSvc {
+      port "Registration / Login / Logout" as UP1
+      port "User CRUD / Roles / Password / Personal Info" as UP2
+    }
+    component "Project Management Service" as ProjectSvc {
+      port "Project CRUD / Project Info" as PP1
+      port "Member & Project Role Management" as PP2
+      port "Baseline Node Management" as PP3
+    }
+    component "Requirements Management Service" as ReqSvc {
+      port "Requirement Item CRUD / Move" as RP1
+      port "Word Import / Itemization" as RP2
+      port "Requirement Item Tree" as RP3
+      port "Forward Tracing" as RP4
+    }
+  }
+}
+
+' ============================================================
+' Server - Algorithm Service (higher-performance machine)
+' ============================================================
+package "Algorithm Server (EC2 t2.xlarge, Amazon Linux 2)" {
+  component "Algorithm Service" as AlgoSvc {
+    port "Requirement Structuring" as AP1
+    port "Common Requirement Identification" as AP2
+    port "Conflict Detection" as AP3
+    port "Association Analysis" as AP4
+  }
+  component "NLP Toolkit" as NLP
+  component "Word2vec Model" as W2V
+  component "PyTorch Runtime" as Torch
+}
+
+' ============================================================
+' Data Tier
+' ============================================================
+database "MongoDB\n(CRUD store)" as MongoDB
+
+' ============================================================
+' Relationships
+' ============================================================
+User --> WebUI : uses
+Admin --> WebUI : uses
+
+WebUI --> Gateway : HTTPS / Web interfaces\n(network required)
+
+Gateway --> UserSvc : routes
+Gateway --> ProjectSvc : routes
+Gateway --> ReqSvc : routes
+Gateway --> AlgoSvc : routes analysis\nrequests (network)
+
+UserSvc --> MongoDB : CRUD
+ProjectSvc --> MongoDB : CRUD
+ReqSvc --> MongoDB : CRUD
+
+ReqSvc --> AlgoSvc : structured/analysis\nrequests
+AlgoSvc --> NLP : uses
+AlgoSvc --> W2V : uses
+AlgoSvc --> Torch : uses
+
+' ============================================================
+' Notes on cross-cutting constraints
+' ============================================================
+note right of Gateway
+  Front-end/back-end separated
+  Microservice architecture
+  Simultaneous access limit:
+  excess requests are blocked until
+  capacity is available (C-005)
+end note
+
+note bottom of MongoDB
+  Periodic backup + three-copy
+  offsite disaster recovery (NFR-009)
+end note
+
+note right of AlgoSvc
+  Deployed on server due to
+  machine performance requirements (C-007)
+end note
+
+@enduml

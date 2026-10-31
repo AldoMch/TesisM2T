@@ -1,0 +1,97 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+skinparam maxMessageSize 150
+
+title Smart Recipe System - Architecture Diagram
+
+' Mobile App Components
+package "Mobile App" {
+  component "Login Interface" as loginUI
+  component "Main Interface" as mainUI
+  component "Camera Interface" as cameraUI
+  component "Recipe Display Interface" as recipeUI
+  component "Health Center Interface" as healthUI
+  component "Community Interface" as communityUI
+  component "Recommendation Interface" as recommendUI
+  component "Admin Interface" as adminUI
+}
+
+' Backend Services
+package "Backend Services" {
+  package "Spring Boot Layer" {
+    component "Business Logic" as businessLogic
+    component "Control Layer" as controlLayer
+    component "Service Layer" as serviceLayer
+    component "Data Access Layer" as dataAccessLayer
+  }
+  
+  package "Flask Layer" {
+    component "Model Inference Service" as modelInference
+  }
+}
+
+' Data Storage
+package "Data Storage" {
+  component "MySQL Database" as mysqlDB
+  component "Redis Cache" as redisCache
+}
+
+' External Systems
+component "Image Recognition Model" as imageModel
+
+' Connections
+loginUI --> businessLogic : Authentication
+mainUI --> businessLogic : Navigation
+cameraUI --> businessLogic : Photo Upload
+recipeUI --> businessLogic : Recipe Display
+healthUI --> businessLogic : Health Data
+communityUI --> businessLogic : Sharing
+recommendUI --> businessLogic : Recommendations
+adminUI --> businessLogic : Admin Functions
+
+businessLogic --> controlLayer : Control
+controlLayer --> serviceLayer : Service Calls
+serviceLayer --> dataAccessLayer : Data Access
+dataAccessLayer --> mysqlDB : CRUD Operations
+dataAccessLayer --> redisCache : Cache Operations
+
+businessLogic --> modelInference : Recipe Recognition Request
+modelInference --> imageModel : Image Processing
+imageModel --> modelInference : Recipe Results
+modelInference --> businessLogic : Recipe Response
+
+mysqlDB --> serviceLayer : Data Retrieval
+redisCache --> serviceLayer : Cached Data
+
+note right of businessLogic
+  Main business logic processing
+  User management
+  Recipe search
+  Community features
+  Admin functions
+end note
+
+note right of modelInference
+  Deep learning model inference
+  Flask-based service
+end note
+
+note right of mysqlDB
+  Structured data storage:
+  - User information
+  - Recipe data
+  - Nutrition information
+  - Community content
+end note
+
+note right of redisCache
+  Performance optimization
+  Data caching
+end note
+
+@enduml

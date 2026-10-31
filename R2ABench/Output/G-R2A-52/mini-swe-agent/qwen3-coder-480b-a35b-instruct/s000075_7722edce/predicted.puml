@@ -1,0 +1,52 @@
+@startuml
+!define RECTANGLE class
+
+title StatLord System Architecture
+
+skinparam componentStyle rectangle
+
+package "Client Layer" {
+  [Browser Editor] as editor #lightblue
+  [Viewer] as viewer #lightgreen
+}
+
+package "Server Layer" {
+  [API Service] as api #lightyellow
+  [Data Store] as db #lightgray
+}
+
+package "Build & Deployment" {
+  [Node.js Build] as build
+  [Container Runtime] as container
+}
+
+editor --> api : HTTP/REST
+viewer --> api : HTTP/REST
+api --> db : Data Persistence
+
+build --> container : Static Assets
+container --> api : Hosts Python Server
+container --> viewer : Serves Viewer
+container --> editor : Serves Editor
+
+note right of editor
+  React/TypeScript SPA
+  Redux State Management
+end note
+
+note right of api
+  Python/Django Server
+  Exposes REST API
+end note
+
+note right of db
+  PostgreSQL Database
+  Persists Displays, Layouts, Gauges
+end note
+
+note right of container
+  Development-Grade Container
+  Not Production-Ready
+end note
+
+@enduml

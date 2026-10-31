@@ -1,0 +1,121 @@
+@startuml teamgram_server_architecture
+title teamgram/teamgram-server — System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam nodesep 20
+skinparam ranksep 30
+
+actor "End User\n(Telegram-compatible client)" as User
+actor "Operator / Deployer" as Ops
+actor "Developer / Integrator" as Dev
+
+package "Client Access Layer" <<layer>> {
+  component "MTProto Client Access\n(connection / RPC handling)\nFR-001" as MTProto
+  component "Auth Key & Salt Handling\nserver salt, future salts\nFR-002, FR-008" as Salt
+  component "Encrypted Session Manager\nauth key, session_id\nFR-003, FR-005" as Session
+  component "Service Message Handler\nrpc_drop_answer, destroy_session\nFR-006, FR-007" as SvcMsg
+}
+
+package "BFF / Access-Facing Layer" <<layer>> {
+  component "BFF / API Facade" as BFF
+  component "Registration &\nPhone Verification\nFR-004, FR-009" as Reg
+}
+
+package "Business / Service Layer" <<layer>> {
+  component "Messaging Service" as Msg
+  component "Sync Service" as Sync
+  component "Push Service" as Push
+  component "Session / Auth Service" as AuthSvc
+  component "Media Wrapper\n(optional)\nFFmpeg / FFProbe" as Media
+}
+
+package "Asynchronous & Supporting Layer" <<layer>> {
+  component "Kafka Producers /\nConsumers" as KafkaFlow
+  component "Task / Job Handlers" as Jobs
+}
+
+package "Data & Infrastructure Layer" <<layer>> {
+  database "MySQL\n(persistent data)\nDR-001..DR-005" as MySQL
+  database "Redis\n(cache / session state)" as Redis
+  database "MinIO\n(object storage)" as MinIO
+  database "etcd\n(service discovery / config)" as Etcd
+  queue "Kafka\n(message bus)" as Kafka
+}
+
+cloud "External Verification-Code Service\n(optional)\nFR-009" as ExtVerify
+cloud "FFmpeg / FFProbe\n(runtime tools)\nNFR-004" as FFmpeg
+
+' ---------------- Client interactions ----------------
+User --> MTProto : "MTProto / RPC over\nencrypted session"
+MTProto --> Salt : "salt negotiation"
+MTProto --> Session : "session / auth key"
+MTProto --> SvcMsg : "service messages"
+
+' ---------------- Client access to BFF ----------------
+MTProto --> BFF : "decoded requests"
+MTProto --> Reg : "registration / verification"
+
+' ---------------- BFF to services ----------------
+BFF --> Msg
+BFF --> Sync
+BFF --> AuthSvc
+BFF --> Push
+Reg --> AuthSvc
+Reg --> ExtVerify : "verify code\n(authoritative when enabled)"
+SvcMsg --> Session : "destroy / replace session"
+SvcMsg --> AuthSvc
+
+' ---------------- Service-to-service ----------------
+Msg --> Sync
+Msg --> Push
+Msg --> Media : "media tasks\n(optional)"
+Msg --> KafkaFlow : "publish / consume"
+Sync --> KafkaFlow
+Push --> KafkaFlow
+KafkaFlow --> Kafka
+KafkaFlow --> Jobs
+Jobs --> Msg
+
+' ---------------- Business layer to storage ----------------
+Msg --> MySQL
+Msg --> Redis
+Msg --> MinIO
+AuthSvc --> MySQL
+AuthSvc --> Redis
+Session --> Redis
+Reg --> MySQL
+Sync --> MySQL
+Sync --> MinIO
+
+' ---------------- Infrastructure integration ----------------
+BFF --> Etcd : "discovery / config"
+MTProto --> Etcd
+Msg --> Etcd
+AuthSvc --> Etcd
+
+' ---------------- Optional media tooling ----------------
+Media ..> FFmpeg : "exec (when enabled)"
+
+' ---------------- Actors on operations ----------------
+Ops --> BFF : "Docker-based or manual\ndeployment / start (NFR-003)"
+Ops --> Etcd : "configure"
+Ops --> MySQL : "provision"
+Ops --> Redis : "provision"
+Ops --> Kafka : "provision"
+Ops --> MinIO : "provision"
+Dev --> BFF : "integrate services"
+
+note right of MTProto
+  Implemented in Go (NFR-001, C-001)
+  MTProto-compatible behavior for
+  Telegram-compatible clients (NFR-002)
+end note
+
+note bottom of Media
+  Used only when media-processing
+  capability is enabled (C-005)
+end note
+
+@enduml

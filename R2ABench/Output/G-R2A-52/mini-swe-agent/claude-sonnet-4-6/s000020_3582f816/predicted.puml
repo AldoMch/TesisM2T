@@ -1,0 +1,72 @@
+@startuml
+title MyEMS REST API and Admin Routing - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #555555
+skinparam arrowColor #333333
+
+actor "Administrator" as admin
+actor "MyEMS Components" as myems_components
+actor "Third-Party Applications" as third_party
+
+rectangle "Browser Environment" {
+    rectangle "MyEMS Admin Application" as admin_app {
+        component "Client-Side Router" as router
+        component "API Base Path Resolver" as base_path_resolver
+        component [User Settings Module\n(/user)] as user_module
+        component [Contact Settings Module\n(/contact)] as contact_module
+        component [Tariff Settings Module] as tariff_module
+        component [Category Settings Module] as category_module
+        component "Lazy Module Loader" as lazy_loader
+    }
+}
+
+rectangle "Deployment Layer" {
+    rectangle "Reverse Proxy (e.g., Nginx)\n[Optional]" as reverse_proxy {
+        component "Route /api/ Traffic" as proxy_router
+    }
+
+    rectangle "MyEMS API Service (Python)" as api_service {
+        component "REST API Handler" as rest_handler
+        component "CORS Support" as cors
+        component "WSGI Server" as wsgi
+        component "Spreadsheet/Image Handler" as file_handler
+        component "MySQL Connector" as mysql_connector
+    }
+
+    database "MySQL Database" as mysql_db
+}
+
+rectangle "Deployment Infrastructure" {
+    component "Docker Container\n(Docker-based Install)" as docker
+    component "Linux/Windows\nQuick-Run Environment" as dev_env
+    component "Python Runtime\n(Dependencies)" as python_runtime
+}
+
+admin --> admin_app : navigates
+myems_components --> rest_handler : REST API calls
+third_party --> rest_handler : REST API calls
+
+admin_app --> base_path_resolver : compute API base path\n(origin + /api/)
+router --> lazy_loader : load route modules
+lazy_loader --> user_module : lazy-load
+lazy_loader --> contact_module : lazy-load
+lazy_loader --> tariff_module : lazy-load
+lazy_loader --> category_module : lazy-load
+
+admin_app --> reverse_proxy : HTTP/HTTPS\n/api/ requests
+reverse_proxy --> api_service : forward /api/ traffic
+admin_app ..> api_service : direct same-origin\n/api/ (alternative)
+
+rest_handler --> cors : CORS handling
+rest_handler --> wsgi : WSGI execution
+rest_handler --> file_handler : spreadsheet/image ops
+rest_handler --> mysql_connector : DB queries
+
+mysql_connector --> mysql_db : MySQL connection
+
+api_service --> python_runtime : requires Python packages
+docker --> api_service : containerized deployment
+dev_env --> api_service : development quick-run
+
+@enduml

@@ -1,0 +1,184 @@
+@startuml
+' Airflow Spark Docker Integration - System Architecture
+' Generated from SRS: Checked Software Requirements Specification
+
+skinparam component {
+    BackgroundColor<<Host>> #F5F5F5
+    BackgroundColor<<Container>> #E8F4F8
+    BackgroundColor<<Service>> #FFF8E1
+    BackgroundColor<<Database>> #F1F8E9
+    BackgroundColor<<UI>> #F3E5F5
+    BackgroundColor<<Data>> #E0F7FA
+    BorderColor #333333
+    ArrowColor #444444
+}
+
+title Airflow Spark Docker Integration - System Architecture
+
+' === HOST ENVIRONMENT ===
+rectangle "Host Machine" as host <<Host>> {
+    rectangle "Docker Compose\nFormat 3.7" as compose
+    rectangle "Port Mappings" as ports {
+        note right
+        <b>Host Ports:</b>
+        5432 → Postgres
+        8282 → Airflow Web UI
+        8181 → Spark Master UI
+        7077 → Spark Cluster
+        8888 → Jupyter Notebook
+        4040-4080 → Spark App UIs
+        end note
+    }
+}
+
+' === SHARED DATA DIRECTORIES ===
+package "Shared Data Directories" as data_dirs <<Data>> {
+    component "DAGs\n/opt/airflow/dags" as dag_dir
+    component "Spark Applications\n/opt/airflow/apps" as spark_apps_dir
+    component "Notebooks\n/home/jovyan/work" as notebooks_dir
+    component "Input Data\n/data" as data_dir
+    
+    dag_dir ..> spark_apps_dir : shared access
+    spark_apps_dir ..> data_dir : shared access
+    notebooks_dir ..> data_dir : shared access
+}
+
+' === CONTAINER SERVICES ===
+package "Docker Compose Environment" as docker_env {
+    
+    ' === DATABASE LAYER ===
+    component "Postgres 9.6" as postgres <<Database>> {
+        interface "5432" as pg_port
+    }
+    note right of postgres
+    <b>Airflow Metadata</b>
+    - DAG runs
+    - Task instances
+    - Scheduler metadata
+    end note
+    
+    ' === AIRFLOW LAYER ===
+    component "Airflow Webserver" as airflow <<Service>> {
+        interface "8282" as airflow_port
+        component "Scheduler" as scheduler
+        component "Web UI" as airflow_ui <<UI>>
+        component "PySpark\nDependency" as pyspark
+    }
+    note right of airflow
+    <b>Image:</b> docker-airflow-spark:latest
+    <b>Mode:</b> LocalExecutor
+    <b>Includes:</b> PySpark
+    end note
+    
+    ' === SPARK CLUSTER ===
+    component "Spark Master" as spark_master <<Service>> {
+        interface "7077" as spark_cluster_port
+        interface "8181" as spark_ui_port <<UI>>
+        component "Cluster Manager" as cluster_mgr
+    }
+    note right of spark_master
+    <b>Image:</b> bitnami/spark:latest
+    <b>Mode:</b> master
+    <b>Version:</b> Spark 2.4.5 Hadoop 2.6
+    <b>Hostname:</b> spark
+    end note
+    
+    ' === SPARK WORKERS ===
+    package "Spark Workers" as workers {
+        component "spark-worker-1" as worker1 <<Service>>
+        component "spark-worker-2" as worker2 <<Service>>
+        component "spark-worker-3" as worker3 <<Service>>
+        component "...\n(pattern extensible)" as more_workers
+    }
+    note right of workers
+    <b>Image:</b> bitnami/spark:latest
+    <b>Mode:</b> worker
+    <b>Connect to:</b> spark://spark:7077
+    end note
+    
+    ' === JUPYTER NOTEBOOK ===
+    component "Jupyter/PySpark" as jupyter <<Service>> {
+        interface "8888" as jupyter_port <<UI>>
+        interface "4040-4080" as spark_app_ports <<UI>>
+        component "Notebook Server" as notebook_server
+        component "PySpark Kernel" as pyspark_kernel
+    }
+    note right of jupyter
+    <b>Image:</b> jupyter/pyspark-notebook
+    <b>Exposes:</b> Notebook + Spark App UIs
+    end note
+}
+
+' === EXTERNAL ACTORS ===
+actor "Data Engineer" as data_eng
+actor "Platform Engineer" as platform_eng
+actor "Spark Developer" as spark_dev
+actor "Notebook User" as notebook_user
+actor "Tester" as tester
+
+' === INTERNAL DEPENDENCIES ===
+airflow ..> postgres : "depends on\nmetadata persistence"
+airflow --> spark_master : "SparkSubmitOperator\nspark://spark:7077\nvia spark_default connection"
+spark_master --> workers : "work dispatch &\ncoordination"
+jupyter ..> spark_master : "can use Spark capabilities\nfor interactive workloads"
+
+' === MOUNTED DIRECTORIES ===
+dag_dir -[hidden]-> airflow : "mounted to\n/opt/airflow/dags"
+spark_apps_dir -[hidden]-> airflow : "mounted to\n/opt/airflow/apps"
+spark_apps_dir -[hidden]-> spark_master : "accessible via\nshared volume"
+spark_apps_dir -[hidden]-> workers : "accessible via\nshared volume"
+notebooks_dir -[hidden]-> jupyter : "mounted to\n/home/jovyan/work"
+data_dir -[hidden]-> airflow : "mounted for\ninput data"
+data_dir -[hidden]-> spark_master : "mounted for\ninput data"
+data_dir -[hidden]-> workers : "mounted for\ninput data"
+data_dir -[hidden]-> jupyter : "mounted for\ninput data"
+
+' === USER ACCESS PATHS ===
+data_eng --> airflow_port : "accesses\nAirflow Web UI"
+data_eng --> spark_ui_port : "monitors\nSpark Master UI"
+data_eng --> jupyter_port : "uses\nJupyter Notebook"
+
+platform_eng --> compose : "operates\nDocker Compose"
+spark_dev --> spark_apps_dir : "develops\nSpark applications"
+notebook_user --> notebooks_dir : "creates/interacts with\nnotebooks"
+tester --> ports : "verifies\nport mappings"
+
+' === BUNDLED SPARK CAPABILITIES ===
+package "Bundled Spark Distribution" as spark_dist {
+    component "./bin/pyspark" as pyspark_shell
+    component "./bin/run-example" as spark_examples
+    component "ML libsvm support" as ml_libsvm
+    
+    pyspark_shell ..> ml_libsvm : "can use"
+    spark_examples ..> ml_libsvm : "can use"
+    
+    note right
+    <b>Inherited Capabilities:</b>
+    - Python Spark shell
+    - Example runner (SparkPi, etc.)
+    - ML libsvm dataset support
+    - MASTER variable target selection
+    (local, local[N], spark://..., mesos://..., yarn)
+    end note
+}
+
+spark_dist ..[hidden]..> spark_master : "packaged with\nSpark distribution"
+spark_dist ..[hidden]..> workers : "packaged with\nSpark distribution"
+
+' === SECURITY CONTEXT ===
+note bottom of docker_env
+<b>Security Context:</b>
+- Local development/testing setup
+- RPC auth, encryption, SSL disabled
+- Not hardened for production
+end note
+
+' === NETWORK CONNECTIVITY ===
+note top of docker_env
+<b>Compose Network:</b>
+All services on shared network
+Service discovery by name
+(spark, postgres, airflow-webserver, etc.)
+end note
+
+@enduml

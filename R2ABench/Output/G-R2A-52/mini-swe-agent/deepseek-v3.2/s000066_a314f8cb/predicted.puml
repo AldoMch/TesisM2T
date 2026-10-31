@@ -1,0 +1,114 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+title Earth Defender - Distributed Multiplayer Game Architecture
+
+package "Client Layer" <<Layer>> {
+  component "Browser Client" <<Component>> {
+    [Three.js Game Engine]
+    [WebSocket Client]
+    [Game State Manager]
+    [Room Manager]
+  }
+  note right of "Browser Client"
+    • Three.js-based 3D game client
+    • Initiates WebSocket connections
+    • Handles multiplayer room workflows
+    • Sends JSON [event, data] messages
+    • Receives JSON [action, data?] messages
+    • 60-second ping heartbeat
+    • Auto-reconnect on connection loss
+  end note
+}
+
+package "Web Server Layer" <<Layer>> {
+  component "Static Asset Server" <<Component>> {
+    [HTTP Server]
+    [Static File Handler]
+  }
+  note right of "Static Asset Server"
+    • Serves HTML, CSS, JavaScript, images
+    • Accessed via DNS/load balancing
+    • Provides initial game assets
+  end note
+}
+
+package "Game Server Layer" <<Layer>> {
+  component "Master Game Server" <<Component>> {
+    [Erlang/OTP Server]
+    [WebSocket Handler]
+    [Room Management]
+    [Player Session Manager]
+    [Game Logic Engine]
+  }
+  
+  component "Replica Server" <<Component>> {
+    [Erlang/OTP Replica]
+    [Fault Tolerance Handler]
+    [State Synchronization]
+  }
+  
+  "Master Game Server" -[dashed]-> "Replica Server" : master/slave\nfault tolerance
+}
+
+package "Data Layer" <<Layer>> {
+  database "Game State Database" <<Datastore>> {
+    [Room Data]
+    [Player Sessions]
+    [Game State]
+  }
+  
+  database "Session Store" <<Datastore>> {
+    [Connection States]
+    [Player Contexts]
+  }
+}
+
+cloud "Internet" <<External>> {
+}
+
+"Browser Client" --> "Static Asset Server" : HTTP\n(static assets)
+"Browser Client" --> "Master Game Server" : WebSocket over HTTP\n(game messages)
+"Master Game Server" --> "Game State Database" : CRUD operations
+"Master Game Server" --> "Session Store" : session management
+"Replica Server" --> "Game State Database" : read operations
+"Replica Server" --> "Session Store" : session sync
+
+"Internet" --> "Browser Client" : player access
+"Internet" --> "Static Asset Server" : asset requests
+"Internet" --> "Master Game Server" : game connections
+
+note top of "Master Game Server"
+  • Erlang/OTP implementation
+  • Handles WebSocket connections
+  • Manages multiplayer rooms
+  • Processes game messages:
+    - game_reconnect
+    - room_players_number
+    - servers_list
+    - servers_list_redirect
+    - server_error
+    - pong
+  • Supports soft real-time gameplay
+end note
+
+note bottom of "Replica Server"
+  • Fault-tolerant replica
+  • Takes over if master fails
+  • State synchronization
+  • High availability
+end note
+
+@enduml

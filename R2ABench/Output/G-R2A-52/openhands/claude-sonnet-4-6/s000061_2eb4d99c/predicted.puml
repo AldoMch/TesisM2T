@@ -1,0 +1,100 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontSize 13
+}
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #6688AA
+  FontSize 14
+}
+skinparam actor {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam node {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam arrow {
+  Color #444444
+  FontSize 11
+}
+
+actor "Administrator /\nOperator" as Admin
+actor "API Client" as APIClient
+actor "AWS CloudFormation\nDeployment Workflow" as CFN
+
+package "Web Tier" {
+  component "Web Management\nConsole\n(SPA)" as WebConsole
+  component "Amazon CloudFront\n/ S3 Hosting" as CloudFront
+}
+
+package "Identity & Auth" {
+  component "Amazon Cognito\n(User Pools / Identity)" as Cognito
+}
+
+package "API Layer" {
+  component "Amazon API Gateway\nREST API (REGIONAL)\nStage: prod\nMethods: GET POST PUT DELETE OPTIONS\nCORS: Authorization, Content-Type,\nX-Amz-Date, X-Amz-Security-Token, X-Api-Key\nRequest Validation Enabled\nAccess Logging (JSON) | Tracing | INFO" as APIGW
+}
+
+package "Lambda Service Functions" {
+  component "Simulation Management\nLambda" as SimMgmtLambda
+  component "Device Type Management\nLambda" as DevTypeLambda
+  component "Custom Resource\nHandler Lambda\n(CloudFormation Init)" as CRLambda
+  component "Simulator / Route Loader\nLambda" as SimLambda
+}
+
+package "Orchestration" {
+  component "AWS Step Functions\n(Simulation Workflow)" as StepFunctions
+}
+
+package "Persistence" {
+  database "Amazon DynamoDB\n(Simulations &\nDevice Types)" as DynamoDB
+}
+
+package "Route Data Store" {
+  component "Amazon S3\nRoute Bucket\n(ROUTE_BUCKET)\nJSON route objects" as S3Routes
+}
+
+package "IoT Messaging" {
+  component "AWS IoT Core\n(Topic Publication)" as IoTCore
+}
+
+package "Observability" {
+  component "Amazon CloudWatch Logs\n(API Access Logs)" as CWLogs
+}
+
+Admin --> WebConsole : manages simulations\n& device types
+APIClient --> APIGW : REST calls\n(GET/POST/PUT/DELETE/OPTIONS)
+CFN --> CRLambda : invokes custom resource\n(stack init / teardown)
+
+WebConsole --> CloudFront : served via
+CloudFront --> Cognito : authenticates users
+WebConsole --> APIGW : HTTPS REST API calls\n(with Authorization header)
+
+APIGW --> SimMgmtLambda : simulation CRUD routes
+APIGW --> DevTypeLambda : device-type CRUD routes
+APIGW --> CWLogs : JSON access logs
+
+SimMgmtLambda --> DynamoDB : read/write simulation records
+DevTypeLambda --> DynamoDB : read/write device-type records
+SimMgmtLambda --> StepFunctions : start / stop simulation executions
+
+StepFunctions --> SimLambda : triggers simulation steps
+
+SimLambda --> S3Routes : getObject(ROUTE_BUCKET, routeKey)\nparse JSON route payload
+SimLambda --> IoTCore : publish simulated device\nmessages to IoT topics
+SimLambda --> DynamoDB : read simulation snapshot\n& update state
+
+CRLambda --> S3Routes : initialise supporting\nresources at deploy time
+CRLambda ..> CFN : sends CloudFormation\nresponse body (callback)
+
+@enduml

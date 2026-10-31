@@ -1,0 +1,73 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+title GPSLogger Android App - Layered Component Architecture
+
+package "Presentation Layer" {
+  component "Main Activity &\nFragments" as UI
+}
+
+package "Application/Core Layer" {
+  component "GPS Logging Service" as Service
+  component "Event Bus" as EventBus
+  component "Settings &\nConfiguration" as Settings
+}
+
+package "Integration Layer" {
+  component "GPX Logger" as GPXLogger
+  component "KML Logger" as KMLLogger
+  component "Text Logger" as TextLogger
+  component "GPRMC Encoder" as GPRMC
+  component "OpenGTS Uploader\n(UDP)" as OpenGTSUploader
+  component "Dropbox Uploader" as DropboxUploader
+  component "OpenStreetMap Integration" as OSMIntegration
+}
+
+package "Platform Layer" {
+  component "Android Location Provider" as AndroidLocation
+  component "Google Play Services\n(Fused Location)" as GPSFused
+  database "Local Storage\n(GPX/KML/Text files)" as LocalStorage
+}
+
+package "External Systems" {
+  node "OpenGTS Server" as OpenGTS <<external>>
+  cloud "Dropbox API" as Dropbox <<external>>
+  cloud "OpenStreetMap API" as OSM <<external>>
+}
+
+'User' --> UI : Configure, View status
+UI --> Service : Start/Stop logging, Preferences
+UI ..> EventBus : Subscribe to location events
+
+Service --> AndroidLocation : Request location updates
+AndroidLocation --> Service : Location updates
+Service --> GPSFused : Optional location feature
+GPSFused --> Service : Location updates
+
+Service --> EventBus : Publish location events
+
+Service --> GPXLogger : Write points
+Service --> KMLLogger : Write points
+Service --> TextLogger : Write points
+
+GPXLogger --> LocalStorage
+KMLLogger --> LocalStorage
+TextLogger --> LocalStorage
+
+Service --> GPRMC : Prepare GPRMC strings
+GPRMC --> OpenGTSUploader
+OpenGTSUploader --> OpenGTS : UDP datagrams
+
+Service --> DropboxUploader : Trigger uploads (optional)
+DropboxUploader --> LocalStorage : Read log files
+DropboxUploader --> Dropbox
+
+Service --> OSMIntegration : Optional operations
+OSMIntegration --> OSM
+
+Settings --> Service : Logging options
+Settings --> OpenGTSUploader : Server, Port, Method, Device ID
+Settings --> DropboxUploader : App Key/Secret
+Settings --> OSMIntegration : Consumer Key/Secret
+@enduml

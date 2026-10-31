@@ -1,0 +1,111 @@
+@startuml
+
+package "Orchestration (Docker Compose)" as Orchestration {
+  component "Docker Compose\n(Orchestrator)" as compose
+  component "Compose Network" as net
+}
+
+package "Workflow & Scheduling (Airflow)" as Workflow {
+  component "Airflow Webserver/Scheduler\n(LocalExecutor)" as airflow
+  component "SparkSubmitOperator" as sparkop
+  component "Airflow Spark connection\n\"spark_default\"" as sparkconn
+  component "Airflow Python Env\nwith PySpark" as pyenv
+}
+
+package "Data Processing (Spark Standalone)" as DataProc {
+  node "Spark Master\nservice \"spark\"" as sparkmaster
+  node "spark-worker-1" as worker1
+  node "spark-worker-2" as worker2
+  node "spark-worker-3" as worker3
+  component "Bundled Spark runtime\n(Spark 2.4.5 for Hadoop 2.6)" as sparkruntime
+  interface "MASTER env var" as masterenv
+
+  component "CLI: pyspark\n(./bin/pyspark)" as cli_pyspark
+  component "CLI: run-example\n(./bin/run-example)" as cli_runexample
+  component "MLlib Examples\n(load libsvm dataset)" as mlexamples
+  component "libsvm sample dataset" as libsvmdata
+}
+
+package "Interactive Analytics (Jupyter/PySpark)" as Analytics {
+  node "Jupyter/PySpark service\n\"jupyter-spark\"" as jupyter
+}
+
+package "Persistence (Postgres)" as Persistence {
+  database "Postgres 9.6\n(Airflow metadata)" as pg
+}
+
+package "Shared Storage & Data" as Storage {
+  node "Mounted Directories\n(DAGs, Spark apps,\nnotebooks, input data)" as mounts
+}
+
+package "Access & Observability (Service UIs/Ports)" as Access {
+  component "Host Port Mappings\n5432, 8282, 8181, 7077,\n8888, 4040-4080" as ports
+}
+
+package "External Systems" as External {
+  cloud "Docker Engine" as dockerengine
+  node "Host Machine" as host
+}
+
+' Orchestration to Docker Engine and services
+compose -> dockerengine : orchestrates containers
+compose -> net : creates network
+compose -> airflow : starts
+compose -> pg : starts
+compose -> sparkmaster : starts
+compose -> worker1 : starts
+compose -> worker2 : starts
+compose -> worker3 : starts
+compose -> jupyter : starts
+
+' All services use the Compose Network
+airflow -> net
+pg -> net
+sparkmaster -> net
+worker1 -> net
+worker2 -> net
+worker3 -> net
+jupyter -> net
+
+' Workflow & Scheduling dependencies
+airflow -> pg : persists metadata
+airflow -> sparkop : executes DAG tasks
+airflow -> pyenv : run spark-submit
+sparkop -> sparkconn : resolve master endpoint
+sparkconn -> sparkmaster : spark://spark:7077
+airflow -> mounts : load DAGs & apps
+
+' Spark cluster internal relationships
+worker1 -> sparkmaster : register & execute
+worker2 -> sparkmaster : register & execute
+worker3 -> sparkmaster : register & execute
+sparkmaster -> sparkruntime
+worker1 -> sparkruntime
+worker2 -> sparkruntime
+worker3 -> sparkruntime
+sparkruntime -> masterenv : selects execution backend
+
+' Spark CLI and ML examples (bundled)
+sparkruntime -> cli_pyspark
+sparkruntime -> cli_runexample
+sparkruntime -> mlexamples
+mlexamples -> libsvmdata
+
+' Interactive analytics dependencies (no coupling to standalone master/runtime)
+jupyter -> mounts : notebooks & data
+
+' Shared storage mounted from host
+host -> mounts : bind mounts
+sparkmaster -> mounts : mounted dirs
+worker1 -> mounts : mounted dirs
+worker2 -> mounts : mounted dirs
+worker3 -> mounts : mounted dirs
+
+' Access & observability via host port mappings
+host -> ports : external access
+airflow -> ports : 8282
+pg -> ports : 5432
+sparkmaster -> ports : 8181, 7077
+jupyter -> ports : 8888, 4040-4080
+
+@enduml

@@ -1,0 +1,103 @@
+@startuml
+title System Architecture - LwM2M-oriented Device Management (s000091_f459979d)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Authenticated API Client" as Client
+
+package "Spring Backend" {
+
+  component "User HTTP API\n<<Spring Controller>>" as UserAPI {
+    portin "GET users (Authorization)" as EP_GET
+    portin "POST /add (Authorization, User body)" as EP_ADD
+  }
+
+  component "JwtUtility" as Jwt {
+    note right of Jwt
+      isValidToken(auth, 1)
+      0 = valid
+      1 = unauthorized
+      2 = forbidden
+      else = bad request
+    end note
+  }
+
+  component "User Service" as UserService
+
+}
+
+package "Blockchain Integration" {
+
+  component "Client/Bootstrap\nContract Service" as ContractService {
+    port "getAllClients()" as P1
+    port "addClient(...)" as P2
+    port "getClientByEndpoint(endpoint)" as P3
+  }
+
+  component "Web3j HTTP Transport" as Web3j
+
+  component "Fixed 32-byte\nASCII Codec" as Codec {
+    note right of Codec
+      encode: String -> 32-byte ASCII
+      decode: 32-byte ASCII -> String
+    end note
+  }
+
+  component "Security Information\nMapper" as SecInfoMapper
+
+}
+
+package "LwM2M Integration" {
+
+  component "LwM2M Node JSON\nDeserializer\n<<Leshan Model Types>>" as NodeDeserializer
+
+  component "LwM2M Node\nStructure\n(id, instances, resources)" as NodeModel
+
+}
+
+database "User Data Store" as UserDB
+
+cloud "Ethereum-compatible Node\n(Smart Contract)" as EthNode
+
+' ---- Client to API ----
+Client --> EP_GET
+Client --> EP_ADD
+
+' ---- API to JWT validation ----
+UserAPI --> Jwt : validate token
+Jwt --> UserAPI : validation result
+
+' ---- API to User Service ----
+UserAPI --> UserService : retrieve users
+UserAPI --> UserService : add user
+
+' ---- User Service to DB ----
+UserService --> UserDB
+
+' ---- Blockchain retrieval of security info ----
+ContractService --> SecInfoMapper : convert results
+SecInfoMapper --> ContractService : security-info collection\n(or empty on failure)
+
+' ---- Contract service uses codec ----
+ContractService --> Codec : encode/decode fields
+P2 ..> Codec
+P3 ..> Codec
+
+' ---- Contract service to Web3j / node ----
+ContractService --> Web3j : contract calls
+Web3j --> EthNode : HTTP/JSON-RPC\nWeb3j HTTP transport
+
+' ---- Ports to contract operations ----
+P1 --> EthNode : retrieve all clients
+P2 --> EthNode : add client (receipt)
+P3 --> EthNode : retrieve client by endpoint
+
+' ---- LwM2M ----
+NodeDeserializer --> NodeModel : typed node structure\n(reject invalid payload)
+Client ..> NodeDeserializer : LwM2M node JSON
+
+' ---- LwM2M consumes bootstrap info ----
+NodeDeserializer ..> ContractService : bootstrap configuration
+
+@enduml

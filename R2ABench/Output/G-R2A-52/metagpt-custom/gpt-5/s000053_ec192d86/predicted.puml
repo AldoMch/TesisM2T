@@ -1,0 +1,87 @@
+@startuml
+
+package "Interface / Entry Layer" {
+  component "cadctl CLI" as CLI
+  interface "Alert Webhook Input" as Webhook
+}
+
+package "Orchestration Layer" {
+  node "Tekton" as TektonNode {
+    component "Tekton EventListener" as EL
+    component "Tekton Trigger" as TR
+    component "Pipeline Steps invoking cadctl" as Steps
+    component "Skip-webhook Direct Invocation Path" as Direct
+    interface "payload: JSON (contains event.data.id)" as Payload
+
+    node "Namespace: configuration-anomaly-detection" as CADNS {
+      component "Tekton PipelineRun" as PR
+      component "CAD Checks Pipeline (cad-checks-pipeline)" as Pipeline
+    }
+  }
+}
+
+package "Application Layer" {
+  component "CAD Workflows (CHGM, Anomaly Detection, Communications, Mitigation/Disposition)" as Workflows
+}
+
+package "Integration Layer" {
+  component "Integration Library" as IL
+  component "PagerDuty Integration" as PDInt
+  component "AWS Integration" as AWSInt
+  component "OCM Integration" as OCMInt
+}
+
+package "Deployment / Utilities Layer" {
+  component "Deployment Manifests" as Manifests
+  component "Template Update Utility" as TemplUtil
+}
+
+package "Platform / Runtime Layer" {
+  component "CLI Container Image (/bin/cadctl)" as Image
+  node "UBI Minimal Base Image" as UBI
+}
+
+package "Build Layer" {
+  node "Go 1.17 Builder Image" as GoBuilder
+}
+
+package "External Systems" {
+  cloud "PagerDuty" as PDCloud
+  cloud "AWS" as AWSCloud
+  cloud "OCM" as OCMCloud
+}
+
+Webhook --> EL
+EL --> TR
+TR --> PR
+Direct --> PR
+PR --> Pipeline
+PR --> Steps
+Payload --> PR
+Steps --> CLI
+Steps --> Image
+
+CLI --> Workflows
+CLI --> IL
+Workflows --> IL
+
+IL --> PDInt
+IL --> AWSInt
+IL --> OCMInt
+
+PDInt --> PDCloud
+AWSInt --> AWSCloud
+OCMInt --> OCMCloud
+
+TemplUtil --> Manifests
+Manifests --> EL
+Manifests --> TR
+Manifests --> PR
+Manifests --> Direct
+Manifests --> Pipeline
+
+Image --> UBI
+Image ..> GoBuilder : build-time
+Image --> CLI
+
+@enduml

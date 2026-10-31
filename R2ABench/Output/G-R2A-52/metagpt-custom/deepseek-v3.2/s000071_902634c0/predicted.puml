@@ -1,0 +1,57 @@
+@startuml
+
+package "Execution Layer" {
+    component "Experiment Runner" as exp_runner
+    component "Worker Telemetry" as worker_telemetry
+    component "Worker Configuration" as worker_config
+}
+
+package "Service Interface Layer" {
+    component "Backend Service Client" as backend_client
+    component "Events Service Interface" as events_interface
+    component "Models Service Interface" as models_interface
+}
+
+node "Kubernetes Cluster" as k8s_cluster {
+    component "Pod Environment" as pod_env
+    interface "Docker Socket" as docker_socket
+}
+
+cloud "ClearML Server" as clearml_server {
+    database "ClearML Execution Queue" as exec_queue
+    component "Backend Session" as backend_session
+    component "Events Service (v2.5)" as events_service
+    component "Models Service (v2.4)" as models_service
+}
+
+database "YAML Template" as yaml_template
+
+component "Kubernetes Glue" as k8s_glue
+
+k8s_glue --> exec_queue : pulls jobs from
+k8s_glue --> yaml_template : prepares jobs from
+k8s_glue --> k8s_cluster : deploys to
+k8s_glue --> clearml_server : interacts with
+
+pod_env --> docker_socket : manages sibling containers via
+
+exp_runner --> pod_env : installs/runs in
+exp_runner --> clearml_server : monitors experiments via
+exp_runner --> worker_telemetry : provides execution context to
+
+worker_telemetry --> clearml_server : reports to / pings
+worker_telemetry --> worker_config : uses settings from
+worker_telemetry --> pod_env : monitors process/machine memory from
+
+worker_config --> backend_client : receives configuration via
+
+backend_client --> backend_session : interacts via
+backend_client --> clearml_server : communicates with
+
+events_interface --> events_service : calls (v2.5)
+models_interface --> models_service : calls (v2.4)
+
+exp_runner --> events_interface : reports histograms via
+exp_runner --> models_interface : manages models via
+
+@enduml

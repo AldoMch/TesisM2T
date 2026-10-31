@@ -1,0 +1,101 @@
+@startuml
+
+package "Presentation Layer" {
+    component "Web Frontend" as WebFrontend
+    component "Account Management Interface" as AccountInterface
+    component "Model Contribution Interface" as ModelInterface
+    component "Evolution Relationship Interface" as EvolutionInterface
+    component "User Management Interface" as UserMgmtInterface
+    component "Navigation Interface" as NavInterface
+}
+
+package "Business Logic Layer" {
+    component "User Service" as UserService
+    component "Model Management Service" as ModelMgmtService
+    component "Evolution Graph Service" as EvolutionGraphService
+    component "Search Service" as SearchService
+    component "Authentication Handler" as AuthHandler
+    component "Encryption Service" as EncryptionService
+    component "Protocol Handler" as ProtocolHandler
+}
+
+package "Algorithm Support Layer" {
+    component "Model Parser" as ModelParser
+    component "Visualization Engine" as VisualizationEngine
+    component "Python Libraries" as PythonLibs
+}
+
+package "Data Access Layer" {
+    database "MySQL Database" as MySQLDB
+    database "Neo4j Database" as Neo4jDB
+    database "Dataset Storage" as DatasetDB
+    database "Trained Model Storage" as TrainedModelDB
+    database "Performance Metrics Storage" as MetricsDB
+}
+
+cloud "OAuth 2.0 Provider" as OAuthProvider
+
+' Presentation Layer internal connections
+WebFrontend --> AccountInterface : "hosts"
+WebFrontend --> ModelInterface : "hosts"
+WebFrontend --> EvolutionInterface : "hosts"
+WebFrontend --> UserMgmtInterface : "hosts"
+WebFrontend --> NavInterface : "hosts"
+
+' Presentation to Business Layer dependencies
+AccountInterface --> UserService : "HTTP/HTTPS\nregistration, login, logout"
+ModelInterface --> ModelMgmtService : "HTTP/HTTPS\nupload, edit models"
+EvolutionInterface --> EvolutionGraphService : "HTTP/HTTPS\nedit evolution relationships"
+UserMgmtInterface --> UserService : "HTTP/HTTPS\nmanage users, permissions"
+NavInterface --> SearchService : "HTTP/HTTPS\nnavigation queries"
+
+' Business Logic Layer dependencies
+UserService --> AuthHandler : "authentication requests"
+UserService --> EncryptionService : "data encryption"
+UserService --> OAuthProvider : "OAuth 2.0 authentication"
+UserService --> MySQLDB : "persist/retrieve user data"
+UserService --> Neo4jDB : "store permission-change applications"
+
+ModelMgmtService --> ModelParser : "interpret uploaded files"
+ModelMgmtService --> EncryptionService : "model encryption"
+ModelMgmtService --> MySQLDB : "store/retrieve model attributes"
+ModelMgmtService --> Neo4jDB : "store/retrieve structural graphs"
+ModelMgmtService --> DatasetDB : "associate datasets"
+ModelMgmtService --> TrainedModelDB : "store trained models"
+ModelMgmtService --> VisualizationEngine : "generate model topology"
+
+EvolutionGraphService --> VisualizationEngine : "generate evolution graphs"
+EvolutionGraphService --> Neo4jDB : "query/update evolution graphs"
+EvolutionGraphService --> DatasetDB : "associate evolution datasets"
+EvolutionGraphService --> MetricsDB : "store performance metrics"
+
+SearchService --> MySQLDB : "query model attributes"
+SearchService --> Neo4jDB : "query graph relationships"
+SearchService --> VisualizationEngine : "generate result visualizations"
+SearchService --> DatasetDB : "query dataset information"
+SearchService --> TrainedModelDB : "query trained models"
+SearchService --> MetricsDB : "query performance metrics"
+
+' Protocol handling
+ProtocolHandler --> WebFrontend : "HTTP/HTTPS/TCP"
+ProtocolHandler --> UserService : "protocol translation"
+ProtocolHandler --> ModelMgmtService : "protocol translation"
+ProtocolHandler --> EvolutionGraphService : "protocol translation"
+ProtocolHandler --> SearchService : "protocol translation"
+
+' Algorithm Support Layer dependencies
+ModelParser --> PythonLibs : "uses libraries"
+ModelParser --> MySQLDB : "read model data"
+ModelParser --> Neo4jDB : "read graph data"
+VisualizationEngine --> PythonLibs : "uses libraries"
+VisualizationEngine --> Neo4jDB : "read graph data"
+
+' Security dependencies
+AuthHandler --> EncryptionService : "2FA encryption"
+EncryptionService --> MySQLDB : "encrypt/decrypt data"
+EncryptionService --> Neo4jDB : "encrypt/decrypt data"
+EncryptionService --> DatasetDB : "encrypt/decrypt data"
+EncryptionService --> TrainedModelDB : "encrypt/decrypt data"
+EncryptionService --> MetricsDB : "encrypt/decrypt data"
+
+@enduml

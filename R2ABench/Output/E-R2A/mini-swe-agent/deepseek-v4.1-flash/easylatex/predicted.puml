@@ -1,0 +1,130 @@
+@startuml
+title EasyLaTex - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+' =====================================================
+' Presentation Layer
+' =====================================================
+package "Presentation Layer (Browser Clients)" as PRES {
+  component "Web UI\n(Registration / Login / Recovery)" as UICLIENT
+  component "Workspace & Project UI\n(Projects / Groups)" as UIWORK
+  component "Upload & Editor UI\n(Drag-drop / LaTex Editing)" as UIEDIT
+  component "Real-time Preview UI" as UIPREVIEW
+  component "Version Tree & Comments UI" as UIVER
+  component "Export UI" as UIEXPORT
+}
+
+' =====================================================
+' API / Gateway Layer
+' =====================================================
+package "API / Gateway Layer" as API {
+  component "REST API Gateway\n(HTTP/REST)" as RESTGW
+  component "WebSocket Gateway\n(Real-time channels)" as WSGW
+  component "Authentication & Session Guard\n(Token / Permission Control)" as AUTHGW
+}
+
+' =====================================================
+' Application / Business Service Layer
+' =====================================================
+package "Application / Service Layer" as APP {
+  component "User & Auth Service\n(Register / Login / Recover)" as SVCUSER
+  component "Project & Workspace Service" as SVCPROJ
+  component "Group & Collaboration Service" as SVCGROUP
+  component "Version Control Service\n(Branches / History / Restore)" as SVCVER
+  component "Comment Service" as SVCCOM
+  component "File Management Service\n(Upload / Download)" as SVCFILE
+  component "Input Parsing Service\n(CSV / Excel / PDF / Image)" as SVCPARSE
+  component "Recognition Service\n(Handwriting / OCR / Deep Learning)" as SVCREC
+  component "LaTex Generation Service" as SVCGEN
+  component "Rendering Service\n(Real-time Preview)" as SVCRENDER
+  component "Export Service\n(PDF / Source / PNG / JPEG)" as SVCEXPORT
+}
+
+' =====================================================
+' Data Layer
+' =====================================================
+package "Data Layer" as DATA {
+  database "Relational Database\n(MySQL / PostgreSQL)\nUsers / Groups / Projects\nVersions / Files / Comments" as DB
+  component "File / Object Storage\n(Uploaded files, Images,\nExports, Rendered artifacts)" as FILESTORE
+  component "Encryption & Privacy Store\n(Encrypted credentials,\nDe-identified data)" as SECSTORE
+}
+
+' =====================================================
+' External Systems
+' =====================================================
+package "External Systems" as EXT {
+  component "AI / ML Recognition Models\n(Formula & Table recognition)" as AIMODEL
+  component "LaTex Engine\n(TeX Live / MiKTeX)" as LATEXENG
+  component "Email / Notification Service\n(Password recovery)" as EMAIL
+  component "External LaTex Editors\n(Overleaf / TeXstudio compatible)" as EXTEDITOR
+}
+
+' =====================================================
+' Dependencies - Presentation to API
+' =====================================================
+UICLIENT --> RESTGW
+UIWORK --> RESTGW
+UIEDIT --> RESTGW
+UIEXPORT --> RESTGW
+UIPREVIEW --> WSGW
+UIVER --> RESTGW
+
+' =====================================================
+' API to Application Services
+' =====================================================
+RESTGW --> AUTHGW
+RESTGW --> SVCUSER
+RESTGW --> SVCPROJ
+RESTGW --> SVCGROUP
+RESTGW --> SVCVER
+RESTGW --> SVCCOM
+RESTGW --> SVCFILE
+RESTGW --> SVCPARSE
+RESTGW --> SVCGEN
+RESTGW --> SVCRENDER
+RESTGW --> SVCEXPORT
+WSGW --> SVCRENDER
+WSGW --> SVCGROUP
+AUTHGW --> SVCUSER
+
+' =====================================================
+' Service to Service dependencies
+' =====================================================
+SVCPARSE --> SVCREC
+SVCREC --> SVCGEN
+SVCGEN --> SVCRENDER
+SVCGEN --> SVCEXPORT
+SVCPROJ --> SVCVER
+SVCVER --> SVCCOM
+SVCGROUP --> SVCPROJ
+SVCVER --> SVCFILE
+SVCPARSE --> SVCFILE
+
+' =====================================================
+' Services to Data Layer
+' =====================================================
+SVCUSER --> DB
+SVCUSER --> SECSTORE
+SVCPROJ --> DB
+SVCGROUP --> DB
+SVCVER --> DB
+SVCCOM --> DB
+SVCFILE --> FILESTORE
+SVCPARSE --> FILESTORE
+SVCEXPORT --> FILESTORE
+SVCRENDER --> FILESTORE
+
+' =====================================================
+' Application to External Systems
+' =====================================================
+SVCREC --> AIMODEL
+SVCRENDER --> LATEXENG
+SVCUSER --> EMAIL
+SVCGEN --> EXTEDITOR
+SVCEXPORT --> EXTEDITOR
+
+@enduml

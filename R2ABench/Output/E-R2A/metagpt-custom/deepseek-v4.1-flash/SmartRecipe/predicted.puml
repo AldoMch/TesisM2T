@@ -1,0 +1,136 @@
+@startuml
+skinparam componentStyle rectangle
+
+node "Android/iOS Mobile Terminals" as MobileTerminals {
+  package "Mobile App Interface Layer" {
+    component "Login UI" as MobileLogin
+    component "User Main UI" as MobileMain
+    component "Photo Recognition UI\n(preprocess + simple food check)" as MobilePhoto
+    component "Recipe Display UI" as MobileRecipe
+    component "Health Center / Nutrition Analysis UI" as MobileHealth
+    component "Community Sharing UI" as MobileCommunity
+    component "Recommendation UI" as MobileRecommend
+    component "Administrator UI" as MobileAdmin
+    component "Merchant Location UI" as MobileMerchantLocation
+  }
+}
+
+node "Backend Application Server\n(Spring Boot framework)" as BackendServer {
+  package "Control Layer" {
+    component "Backend Controller / Request Handling" as Controller
+  }
+
+  package "Business Layer" {
+    component "Login / Authentication" as LoginAuth
+    component "Personal Information" as PersonalInfo
+    component "Photo-based Recipe Recognition" as PhotoRecipe
+    component "Text-based Recipe Search" as TextSearch
+    package "Health & Nutrition" {
+      component "Health Analysis" as HealthAnalysis
+      component "Diet Plan Management" as DietPlan
+      component "Daily Diet Check-in" as DailyCheckIn
+      component "Diet Evaluation" as DietEvaluation
+      component "Calorie Analysis" as CalorieAnalysis
+    }
+    component "Community Sharing" as CommunitySharing
+    component "Likes & Comments" as LikesComments
+    component "Intelligent Recommendation" as Recommendation
+    component "Administrator Management" as AdminMgmt
+    component "Administrator User-Feedback Handling" as AdminFeedback
+    component "Catering Company Data Support" as CateringSupport
+    component "Merchant Information & Location" as MerchantInfo
+    component "Notification / Push Service" as NotificationPush
+  }
+
+  package "Service Layer" {
+    component "Service Layer" as ServiceLayer
+  }
+
+  package "Data Access Layer" {
+    component "Structured Data Access" as DataAccess
+    component "Cache Access" as CacheAccess
+  }
+}
+
+node "Model Inference Server" as InferenceServer {
+  component "Flask Inference Service" as FlaskInference
+}
+
+database "MySQL\nStructured Data" as MySQL
+database "Redis\nCache" as Redis
+cloud "Assumed External Map Service\n(not named in SRS)" as MapService
+
+' Mobile to control
+MobileLogin --> Controller : Ajax/direct
+MobileMain --> Controller : Ajax/direct
+MobilePhoto --> Controller : Ajax/direct
+MobileRecipe --> Controller : Ajax/direct
+MobileHealth --> Controller : Ajax/direct
+MobileCommunity --> Controller : Ajax/direct
+MobileRecommend --> Controller : Ajax/direct
+MobileAdmin --> Controller : Ajax/direct
+MobileMerchantLocation --> Controller : merchant/location query
+MobileMerchantLocation --> MapService : display merchant location (lon/lat)
+
+' Control to business
+Controller --> LoginAuth
+Controller --> PersonalInfo
+Controller --> PhotoRecipe
+Controller --> TextSearch
+Controller --> HealthAnalysis
+Controller --> CommunitySharing
+Controller --> LikesComments : like/comment actions
+Controller --> Recommendation
+Controller --> AdminMgmt
+Controller --> CateringSupport
+Controller --> MerchantInfo
+
+' Health decomposition
+HealthAnalysis --> DietPlan
+HealthAnalysis --> DailyCheckIn
+HealthAnalysis --> DietEvaluation
+HealthAnalysis --> CalorieAnalysis
+
+' Business to service layer
+LoginAuth --> ServiceLayer : credentials
+PersonalInfo --> ServiceLayer : user data
+PhotoRecipe --> ServiceLayer : recognition persistence / cache
+TextSearch --> ServiceLayer : search data / cache
+HealthAnalysis --> ServiceLayer : health data
+DietPlan --> ServiceLayer : diet plan data
+DailyCheckIn --> ServiceLayer : daily check-in data
+DietEvaluation --> ServiceLayer : diet evaluation data
+CalorieAnalysis --> ServiceLayer : calorie data
+CommunitySharing --> ServiceLayer : sharing data
+LikesComments --> ServiceLayer : like/comment records
+Recommendation --> ServiceLayer : history/query/follows/sharing records / cache
+AdminMgmt --> ServiceLayer : admin management data
+AdminFeedback --> ServiceLayer : user feedback records
+CateringSupport --> ServiceLayer : catering company data
+MerchantInfo --> ServiceLayer : merchant/location data
+
+' Service layer to data access and cache
+ServiceLayer --> DataAccess : structured data
+ServiceLayer --> CacheAccess : performance cache read/write
+DataAccess --> MySQL
+CacheAccess --> Redis
+
+' External inference
+PhotoRecipe --> FlaskInference : image matrix vector
+
+' Preconditions
+PhotoRecipe --> LoginAuth : precondition
+TextSearch --> LoginAuth : precondition
+HealthAnalysis --> LoginAuth : precondition
+CommunitySharing --> LoginAuth : precondition
+LikesComments --> LoginAuth : precondition
+Recommendation --> LoginAuth : precondition
+AdminMgmt --> LoginAuth : precondition
+
+' Community review and push flow
+CommunitySharing --> AdminMgmt : submit for admin review
+AdminMgmt --> CommunitySharing : approve/reject publication
+CommunitySharing --> NotificationPush : push approved post to other users
+AdminMgmt --> AdminFeedback : handle user feedback
+
+@enduml

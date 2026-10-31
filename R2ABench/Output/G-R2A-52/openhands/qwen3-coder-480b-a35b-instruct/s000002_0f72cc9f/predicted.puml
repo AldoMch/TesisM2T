@@ -1,0 +1,74 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+' Define styles
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam shadowing false
+
+' Define components
+package "Web Client" {
+  [React Application] as client #LightBlue
+  [React Router] as router #LightBlue
+  [A-Frame Renderer] as aframe #LightBlue
+  [Authentication Views] as authViews #LightBlue
+  [Shared Credential Handlers] as credHandlers #LightBlue
+}
+
+package "Web Server" {
+  [Node.js Server] as server #LightGreen
+  [Express Router] as express #LightGreen
+  [User Controller] as userController #LightGreen
+}
+
+package "Persistence Layer" {
+  [User Model] as userModel #LightYellow
+  [Database\n(MariaDB)] as database #LightYellow
+}
+
+package "External Services" {
+  [Image Storage\n(AWS S3)] as imageStorage #LightGray
+  [Cache\n(Redis)] as cache #LightGray
+}
+
+' Define relationships
+client --> router : uses
+client --> aframe : renders scenes
+client --> authViews : displays
+authViews --> credHandlers : delegates input
+credHandlers --> server : submits credentials
+server --> express : routes requests
+express --> userController : delegates auth
+userController --> userModel : manages users
+userModel --> database : persists data
+userController --> cache : caches data
+server --> imageStorage : stores/retrieves images
+
+' Add notes for key technologies
+note right of client
+  React, jQuery
+  aframe-react
+end note
+
+note right of server
+  Node.js
+  bcrypt-nodejs for
+  password verification
+end note
+
+note right of database
+  MariaDB-style
+  relational database
+end note
+
+note left of cache
+  Redis-style
+  caching service
+end note
+
+note right of imageStorage
+  AWS S3-style
+  image storage
+end note
+
+@enduml

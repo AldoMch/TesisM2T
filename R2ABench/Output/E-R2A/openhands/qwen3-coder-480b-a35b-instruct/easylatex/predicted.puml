@@ -1,0 +1,102 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define COMPONENT component
+!define INTERFACE interface
+
+' Title and theme
+title EasyLaTeX System Architecture
+
+' Browser-based Client (Frontend)
+RECTANGLE "Browser-based\nClient (Frontend)" as frontend {
+    RECTANGLE "User Interface" as ui
+    RECTANGLE "Real-time Preview" as preview
+    RECTANGLE "Project Manager" as proj_mgr
+    RECTANGLE "Version Control UI" as version_ui
+    RECTANGLE "Collaboration UI" as collab_ui
+}
+
+' Backend Services
+RECTANGLE "Backend Services" as backend {
+    RECTANGLE "User Management\nService" as user_svc
+    RECTANGLE "Authentication\nService" as auth_svc
+    RECTANGLE "File Processing\nService" as file_svc
+    RECTANGLE "Project Management\nService" as project_svc
+    RECTANGLE "Version Control\nService" as version_svc
+    RECTANGLE "Collaboration\nService" as collab_svc
+    RECTANGLE "Rendering\nService" as render_svc
+}
+
+' AI/OCR Models
+RECTANGLE "AI/OCR Models" as ai_models {
+    RECTANGLE "Handwriting\nRecognition Model" as handwriting_model
+    RECTANGLE "Image Formula\nRecognition Model" as image_model
+    RECTANGLE "Table Recognition\nModel" as table_model
+    RECTANGLE "CSV/Excel Parser" as csv_parser
+    RECTANGLE "PDF Parser" as pdf_parser
+}
+
+' Database
+DATABASE "Database" as database {
+    RECTANGLE "User Data" as user_db
+    RECTANGLE "Project Data" as project_db
+    RECTANGLE "Version Data" as version_db
+    RECTANGLE "File Storage Metadata" as file_db
+    RECTANGLE "Collaboration Data" as collab_db
+}
+
+' File Storage
+RECTANGLE "File Storage\n(System)" as file_storage {
+    RECTANGLE "Uploaded Files\n(JPG,PNG,PDF,CSV,XLSX)" as uploaded_files
+    RECTANGLE "Generated Outputs\n(LaTeX,PDF,PNG,JPEG)" as generated_files
+}
+
+' External Interfaces
+RECTANGLE "External Interfaces" as external {
+    RECTANGLE "LaTeX Engine\n(TeX Live/MiKTeX)" as latex_engine
+    RECTANGLE "Web Server\n(Apache/Nginx)" as web_server
+}
+
+' Relationships
+' Frontend to Backend
+ui --> auth_svc : "Login/Register"
+ui --> file_svc : "Upload Files"
+ui --> project_svc : "Manage Projects"
+ui --> version_svc : "Version Operations"
+ui --> collab_svc : "Collaborate"
+preview --> render_svc : "Render LaTeX"
+
+' Backend Services to AI/OCR Models
+file_svc --> handwriting_model : "Process Handwritten Input"
+file_svc --> image_model : "Process Image Files"
+file_svc --> table_model : "Process Tables"
+file_svc --> csv_parser : "Parse CSV/Excel"
+file_svc --> pdf_parser : "Parse PDF"
+
+' Backend Services to Database
+user_svc --> user_db : "Store/Retrieve User Data"
+auth_svc --> user_db : "Authenticate Users"
+project_svc --> project_db : "Manage Projects"
+version_svc --> version_db : "Version Control"
+file_svc --> file_db : "File Metadata"
+collab_svc --> collab_db : "Collaboration Data"
+
+' Backend Services to File Storage
+file_svc --> uploaded_files : "Store Uploaded Files"
+render_svc --> generated_files : "Store Generated Outputs"
+
+' Backend to External Interfaces
+render_svc --> latex_engine : "Compile LaTeX"
+backend --> web_server : "Serve Content"
+
+' Database to File Storage (metadata)
+file_db --> uploaded_files : "Reference"
+file_db --> generated_files : "Reference"
+
+' User flows
+frontend ..> backend : "HTTP/REST API"
+backend ..> database : "Database Queries"
+backend ..> ai_models : "AI Processing"
+backend ..> external : "External Services"
+
+@enduml

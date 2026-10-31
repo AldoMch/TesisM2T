@@ -1,0 +1,100 @@
+@startuml
+
+package "Configuration Layer" {
+  component "YAML Simulator Configuration" as YamlConfig
+}
+
+package "Build and Composition Layer" {
+  component "Simulator Builder" as SimBuilder
+  component "MuJoCo XML Integration Layer" as XmlIntegration
+}
+
+package "Simulation Component Layer" {
+  component "Biomechanical Model Modules" as BioModel
+  component "Interaction Task Modules" as TaskModules
+
+  package "Perception Modules" {
+    component "Perception Module Extension Contract" as PerceptionContract
+    component "Vision Perception (Egocentric)" as VisionPerception
+    component "Proprioception" as Proprioception
+  }
+}
+
+package "Runtime Interface Layer" {
+  component "Standalone Gym-Compatible Simulator Package" as GymSimPkg
+}
+
+package "Training Layer" {
+  component "Reinforcement-Learning Training Workflow" as RLTraining
+}
+
+package "Evaluation Layer" {
+  component "Evaluation Runner" as EvalRunner
+  component "Action Logger" as ActionLogger
+}
+
+package "Evaluation Inputs" {
+  component "Evaluation CLI/Script Inputs" as EvalCLI
+}
+
+package "Data and Artifact Layer" {
+  database "Run-Folder Artifact Store" as RunFolder
+  database "Checkpoint Directory" as CheckpointDir
+  database "Evaluation Output Directory" as EvalOutDir
+  database "Action Log File" as ActionLogFile
+}
+
+cloud "MuJoCo" as MuJoCo
+cloud "OpenAI Gym" as Gym
+database "File System" as FileSystem
+node "Python Execution Environment" as PyEnv
+
+YamlConfig --> SimBuilder : defines model/task/perception/training
+YamlConfig --> RLTraining : provides training configuration
+
+SimBuilder --> XmlIntegration : integrates biomechanical and task XML
+XmlIntegration --> BioModel : reads biomechanical MuJoCo XML
+XmlIntegration --> TaskModules : reads interaction-task MuJoCo XML
+SimBuilder --> BioModel : initializes selected model wrapper
+SimBuilder --> TaskModules : initializes selected task wrapper
+SimBuilder --> PerceptionContract : initializes selected perception wrapper
+SimBuilder --> VisionPerception : initializes if vision modality selected
+SimBuilder --> Proprioception : initializes if proprioception modality selected
+VisionPerception --> PerceptionContract : extends/implements modality contract
+Proprioception --> PerceptionContract : extends/implements modality contract
+SimBuilder --> GymSimPkg : produces standalone simulator package
+
+GymSimPkg --> Gym : implements OpenAI Gym interface
+GymSimPkg --> MuJoCo : runs MuJoCo-based simulation
+GymSimPkg --> BioModel : action inputs constrained to [-1, 1]
+BioModel --> MuJoCo : applies control outputs constrained to [0, 1]
+TaskModules --> MuJoCo : integrates via MuJoCo XML
+
+RLTraining --> SimBuilder : builds simulator from YAML training config (delegates)
+RLTraining --> GymSimPkg : uses built simulator for training; action inputs [-1, 1]
+RLTraining --> RunFolder : writes training artifacts
+RLTraining --> CheckpointDir : writes model checkpoints
+RunFolder --> CheckpointDir : contains/references checkpoints
+RunFolder --> GymSimPkg : contains/references simulator package
+RunFolder --> EvalOutDir : contains evaluate directory
+
+EvalCLI --> EvalRunner : supplies run folder path, optional checkpoint, action log name, logging/recording options
+EvalRunner --> RunFolder : reads run folder
+EvalRunner --> GymSimPkg : instantiates simulator loaded from run folder; action inputs [-1, 1]
+EvalRunner --> CheckpointDir : loads specified or latest checkpoint
+EvalRunner --> ActionLogger : invokes/enables when logging
+ActionLogger --> ActionLogFile : writes configured action log
+ActionLogFile --> EvalOutDir : stored under evaluate when configured
+EvalRunner --> EvalOutDir : ensures/creates evaluate directory if absent; writes enabled evaluation artifacts
+
+SimBuilder --> FileSystem : reads YAML and MuJoCo XML inputs
+RunFolder --> FileSystem : persisted on
+CheckpointDir --> FileSystem : persisted on
+EvalOutDir --> FileSystem : persisted on
+ActionLogFile --> FileSystem : persisted on
+
+PyEnv --> GymSimPkg : executes runtime
+PyEnv --> RLTraining : executes training
+PyEnv --> EvalRunner : executes evaluation
+
+@enduml

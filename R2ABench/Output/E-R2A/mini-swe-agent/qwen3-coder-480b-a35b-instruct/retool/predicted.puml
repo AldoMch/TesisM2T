@@ -1,0 +1,55 @@
+@startuml
+!define RECTANGLE class
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+title ReTool System Architecture
+
+rectangle "Client (Browser)" as client {
+  rectangle "Vue.js Frontend" as frontend
+}
+
+rectangle "Local Computer" as local {
+  rectangle "API Gateway" as gateway
+  rectangle "User Management Service" as userService
+  rectangle "Project Management Service" as projectService
+  rectangle "Requirements Management Service" as reqService
+}
+
+rectangle "Server" as server {
+  rectangle "Algorithm Service" as algoService
+}
+
+rectangle "Database" as database {
+  rectangle "MongoDB" as mongodb
+}
+
+client -down-> gateway : HTTP/REST
+gateway -down-> userService : Service Call
+gateway -down-> projectService : Service Call
+gateway -down-> reqService : Service Call
+reqService -right-> algoService : Service Call
+userService -down-> mongodb : CRUD
+projectService -down-> mongodb : CRUD
+reqService -down-> mongodb : CRUD
+algoService -down-> mongodb : CRUD
+
+note right of server
+  High-performance environment
+  for algorithm processing
+end note
+
+note right of local
+  Services run on
+  local computer
+end note
+
+note right of database
+  Data persistence layer
+  MongoDB database
+end note
+
+@enduml
+

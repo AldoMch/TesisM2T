@@ -1,0 +1,102 @@
+@startuml
+title TokenCard Contracts - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ================= Actors / Users =================
+actor "Owner\n(Externally Owned Address)" as Owner
+actor "Integrator / Developer" as Integrator
+actor "Controller Addresses" as ControllerActors
+
+' ================= Client / Integration Layer =================
+package "Client / Integration Layer (Off-chain, Go)" as ClientLayer {
+  component "Generated Go Contract Bindings" as GoBindings {
+    component "Call\n(read-only invocation)" as Call
+    component "Transact\n(paid invocation: method + params)" as Transact
+    component "Transfer\n(paid default-method transfer)" as Transfer
+  }
+}
+
+' ================= On-Chain Smart Contract Layer =================
+package "On-Chain Contract Layer (Ethereum / Solidity)" as ContractLayer {
+  component "Consumer Contract Wallet" as Wallet
+  component "Controller Contract\n(adminCount, controllerCount)" as Controller
+  component "Token Whitelist Contract\n(rate, loadable, burnable)" as Whitelist
+  component "Oracle / Licence Rate Provider" as Oracle
+  component "TKN Holder Contract" as TknHolder
+}
+
+' ================= Data Layer =================
+package "On-Chain Data Stores" as DataLayer {
+  database "Wallet Asset Store\n(ETH / ERC20 balances)" as AssetStore
+  database "Token Whitelist Data\n(rate, loadability, burnability)" as WhitelistData
+  database "Exchange-Rate Data" as RateData
+  database "ENS-Resolved Contract Addresses" as EnsAddressData
+}
+
+' ================= Off-chain owner-controlled resources =================
+package "Owner-Controlled Off-Chain Resources" as OwnerResources {
+  component "Gas Tank\n(gas-payment ETH on Owner Address)" as GasTank
+}
+
+' ================= External / Infrastructure Systems =================
+package "External / Infrastructure Systems" as External {
+  component "Ethereum Network" as Ethereum
+  component "Ethereum Name Service (ENS)" as ENS
+}
+
+' ================= Relationships =================
+' Client integration
+Integrator --> GoBindings : uses bindings
+Call --> Ethereum
+Transact --> Ethereum
+Transfer --> Ethereum
+GoBindings --> Controller : Call / Transact / Transfer
+GoBindings --> Wallet : Call / Transact
+
+' Owner control and gas segregation
+Owner --> Wallet : owns / controls
+Owner --> GasTank : funds gas
+GasTank ..> Ethereum : gas payment path
+
+' Wallet contract integration
+Wallet --> ENS : resolve supporting contracts
+Wallet --> AssetStore : custody of ETH / ERC20
+Wallet --> Whitelist : token support / loadability
+Wallet --> Oracle : exchange-rate lookup
+Wallet --> TknHolder : burnability check
+
+' Controller operations
+ControllerActors --> Controller : control / confirmation
+Controller --> EnsAddressData : resolves via ENS
+
+' Supporting contracts resolved through ENS
+Whitelist --> EnsAddressData
+Oracle --> EnsAddressData
+ENS --> EnsAddressData : registers / resolves
+ENS --> Ethereum : operates on
+
+' Data dependencies
+Whitelist --> WhitelistData
+Oracle --> RateData
+
+' Runtime dependencies
+Wallet ..> Ethereum
+Controller ..> Ethereum
+Whitelist ..> Ethereum
+TknHolder ..> Ethereum
+
+note bottom of GasTank
+  NFR-002 / C-004: Gas-payment ETH is kept
+  outside the Consumer Contract Wallet and
+  outside wallet security protections.
+end note
+
+note right of GoBindings
+  NFR-003: distinct read-only (Call) and
+  paid (Transact / Transfer) interaction paths.
+end note
+
+@enduml

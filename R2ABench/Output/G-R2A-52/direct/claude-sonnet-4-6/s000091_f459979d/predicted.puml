@@ -1,0 +1,171 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam rectangle {
+    BackgroundColor #DDEEFF
+    BorderColor #336699
+    FontColor #000000
+}
+
+skinparam package {
+    BackgroundColor #F0F8FF
+    BorderColor #336699
+    FontStyle bold
+}
+
+skinparam database {
+    BackgroundColor #FFF8DC
+    BorderColor #B8860B
+}
+
+skinparam cloud {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+
+skinparam node {
+    BackgroundColor #F3E5F5
+    BorderColor #6A1B9A
+}
+
+skinparam arrow {
+    Color #336699
+    FontColor #333333
+    FontSize 10
+}
+
+title LwM2M Device Management Backend - System Architecture
+
+actor "Authenticated API Client" as APIClient
+actor "LwM2M Service Component" as LwM2MClient
+
+package "Spring Backend Layer" {
+    rectangle "User Management\nController\n(HTTP REST API)" as UserController {
+    }
+
+    rectangle "JWT Utility\n(JwtUtility.isValidToken)" as JWTUtil {
+    }
+
+    rectangle "User Service" as UserService {
+    }
+}
+
+package "Blockchain Integration Layer" {
+    rectangle "Blockchain Service\nFacade" as BlockchainService {
+    }
+
+    rectangle "Client Bootstrap\nService" as BootstrapService {
+    }
+
+    rectangle "32-Byte ASCII\nEncoder/Decoder" as AsciiCodec {
+    }
+
+    rectangle "Web3j HTTP\nConnector" as Web3jConnector {
+    }
+
+    rectangle "Smart Contract\nProxy\n(Ethereum Contract)" as SmartContract {
+    }
+}
+
+package "LwM2M / Leshan Layer" {
+    rectangle "LwM2M Node JSON\nDeserializer" as NodeDeserializer {
+    }
+
+    rectangle "LwM2M Primitive\nType Mapper\n(BOOLEAN/STRING/INTEGER/FLOAT)" as TypeMapper {
+    }
+
+    rectangle "Bootstrap Config\nBuilder" as BootstrapConfigBuilder {
+    }
+}
+
+database "User Store\n(Backend DB)" as UserDB {
+}
+
+cloud "Ethereum-Compatible\nBlockchain Node\n(HTTP Transport)" as EthNode {
+}
+
+node "Security Info\nCollection Store" as SecurityStore {
+}
+
+' External Actor to Spring Backend
+APIClient --> UserController : "HTTP GET (retrieve users)\nHTTP POST /add (create user)\n+ Authorization header"
+
+' User Controller internals
+UserController --> JWTUtil : "validate token\n(isValidToken)"
+UserController --> UserService : "add/get user\n(if token valid)"
+UserService --> UserDB : "read/write user data"
+UserController ..> APIClient : "200 OK / 201 Created\n401 / 403 / 400"
+
+' LwM2M Service to Leshan Layer
+LwM2MClient --> NodeDeserializer : "JSON payload\n(LwM2M node)"
+LwM2MClient --> BootstrapConfigBuilder : "request bootstrap\nconfiguration by endpoint"
+
+NodeDeserializer --> TypeMapper : "map primitives\n(boolean/string/number)"
+NodeDeserializer ..> LwM2MClient : "typed LwM2M node\nstructure or parse failure"
+
+' Bootstrap Config Builder to Blockchain
+BootstrapConfigBuilder --> BootstrapService : "get client by endpoint"
+BootstrapConfigBuilder ..> LwM2MClient : "bootstrap configuration"
+
+' Blockchain Service Facade
+BlockchainService --> Web3jConnector : "retrieve all clients\n(security info)"
+BlockchainService --> AsciiCodec : "decode 32-byte fields\nto ASCII"
+BlockchainService ..> SecurityStore : "populate security\ninfo collection"
+
+' Bootstrap Service
+BootstrapService --> AsciiCodec : "encode endpoint &\nfields to 32-byte ASCII\n(submission) /\ndecode on retrieval"
+BootstrapService --> SmartContract : "addClient(bytes32...)\ngetClient(bytes32)\ngetAllClients()"
+
+' Smart Contract to Web3j
+SmartContract --> Web3jConnector : "contract method\ncalls"
+
+' Web3j to Ethereum Node
+Web3jConnector --> EthNode : "Web3j HTTP transport\n(Ethereum RPC)"
+
+EthNode ..> Web3jConnector : "transaction receipts\nclient data (bytes32)"
+
+' Blockchain failures
+BlockchainService ..> BlockchainService : "exception logged;\nempty collection\nreturned on failure"
+
+note top of UserController
+  FR-001: GET users (token validated)
+  FR-002: POST /add user (token validated)
+  NFR-001: No operation executed
+  on token validation failure
+  C-001: JwtUtility.isValidToken(auth, 1)
+end note
+
+note top of BlockchainService
+  FR-003: Retrieve client/security info
+  DR-003: Convert to security-info objects
+  Returns empty collection on failure
+end note
+
+note top of BootstrapService
+  FR-004: Submit client bootstrap data
+  FR-005: Retrieve bootstrap config by endpoint
+  C-005: Fixed 32-byte ASCII encoding/decoding
+  DR-002: endpoint, bootstrap URL/identity/key,
+  server URL/identity/key
+end note
+
+note top of NodeDeserializer
+  FR-006: LwM2M JSON deserialization
+  NFR-003: Reject invalid payloads
+  DR-004: instances require id field
+  DR-005: Primitive type mapping rules
+  C-004: Leshan/LwM2M model types
+end note
+
+note bottom of EthNode
+  C-002: Web3j HTTP transport
+  NFR-002: Ethereum-compatible node
+  A-002: Blockchain connectivity dependency
+end note
+
+@enduml

@@ -1,0 +1,93 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+
+actor "Web Clients" as Clients
+
+cloud "GCP Project" as GCP {
+  cloud "Google Cloud Pub/Sub" as PubSub {
+    component "Topic\n(configured)" as Topic
+    component "Subscription (per Pod)\nSub-1" as Sub1
+    component "Subscription (per Pod)\nSub-2" as Sub2
+    Topic -down- Sub1
+    Topic -down- Sub2
+  }
+
+  node "GKE Cluster" as GKE {
+    component "ConfigMap\nkey: topic" as ConfigMap
+    component "Deployment\nAdapter Pods" as Deployment
+    component "HPA\nmin: 1, max: 2\nCPU target: 80%" as HPA
+    component "Service\nType: LoadBalancer\nPort 80 -> 8080" as SVC
+
+    HPA -down-> Deployment : scales
+    ConfigMap -right-> Deployment : mounts 'topic'
+
+    node "Pod-1 (Adapter)" as Pod1 {
+      component "Adapter Container" as Container1
+      component "websocketd\nlistens :8080" as WS1
+      component "exec.sh" as EXEC1
+      component "pulltop (Node.js)" as PULL1
+      component "Recent Message Cache\n(10 messages)" as Cache1
+
+      ConfigMap --> Container1 : env SYMBOL from 'topic'
+      Container1 -down-> WS1
+      WS1 -down-> EXEC1 : executes
+      EXEC1 -down-> PULL1 : pass SYMBOL
+      PULL1 -left-> Cache1 : store recent messages
+      PULL1 -up-> WS1 : stdout stream
+    }
+
+    node "Pod-2 (Adapter)\n(scaled replica)" as Pod2 {
+      component "Adapter Container" as Container2
+      component "websocketd\nlistens :8080" as WS2
+      component "exec.sh" as EXEC2
+      component "pulltop (Node.js)" as PULL2
+      component "Recent Message Cache\n(10 messages)" as Cache2
+
+      ConfigMap --> Container2 : env SYMBOL from 'topic'
+      Container2 -down-> WS2
+      WS2 -down-> EXEC2 : executes
+      EXEC2 -down-> PULL2 : pass SYMBOL
+      PULL2 -left-> Cache2 : store recent messages
+      PULL2 -up-> WS2 : stdout stream
+    }
+
+    SVC --> WS1 : forwards to :8080
+    SVC --> WS2 : forwards to :8080
+  }
+}
+
+Clients -down-> SVC : WebSocket over TCP 80
+PULL1 -right-> Sub1 : consume
+PULL2 -right-> Sub2 : consume
+
+note right of PubSub
+- Topic identifier string (e.g., projects/<project-id>/topics/<topic-name>)
+- Adapter consumes via Pub/Sub subscription
+- 1 subscription per running Pod (not per client)
+end note
+
+note bottom of SVC
+Kubernetes Service:
+- Type: LoadBalancer
+- Exposes TCP port 80
+- Forwards to Pod port 8080
+- Distributes client connections across Pods
+end note
+
+note bottom of HPA
+Horizontal Pod Autoscaler:
+- Min replicas: 1
+- Max replicas: 2
+- CPU utilization target: 80%
+end note
+
+note bottom of ConfigMap
+ConfigMap 'topic' -> injected into container as env SYMBOL
+end note
+
+note top of Clients
+No Pub/Sub API/SDK required;
+receives mirrored topic data via WebSockets
+end note
+@enduml

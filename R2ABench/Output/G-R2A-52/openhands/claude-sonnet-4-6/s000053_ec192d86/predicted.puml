@@ -1,0 +1,126 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam rectangle {
+    BackgroundColor #f5f5f5
+    BorderColor #999999
+}
+skinparam component {
+    BackgroundColor #ddeeff
+    BorderColor #336699
+}
+skinparam cloud {
+    BackgroundColor #fff8e0
+    BorderColor #cc9900
+}
+skinparam database {
+    BackgroundColor #e8f5e8
+    BorderColor #339933
+}
+skinparam node {
+    BackgroundColor #f0eaff
+    BorderColor #7755aa
+}
+
+title Configuration Anomaly Detection (CAD) - System Architecture
+
+actor "SRE / Operations User" as SRE
+actor "Deployment Engineer" as DepEng
+actor "Developer / Contributor" as Dev
+
+cloud "External Alert Sources" as AlertSrc {
+    [Alert Webhook Sender]
+}
+
+cloud "External Integrations" as ExtInt {
+    [PagerDuty]
+    [AWS]
+    [OCM]
+}
+
+rectangle "Tekton Execution Environment\n(namespace: configuration-anomaly-detection)" as TektonEnv {
+
+    rectangle "Normal Event-Driven Path" as NormalPath {
+        component "EventListener" as EL
+        component "Trigger" as TR
+    }
+
+    component "PipelineRun\n(cad-checks-pipeline)" as PR
+}
+
+node "CAD Container Image\n(UBI Minimal Runtime)" as ContainerImg {
+    component "/bin/cadctl\n(CLI Entry Point)" as cadctl
+
+    rectangle "Integration Library\n(Package Library)" as IntLib {
+        component "PagerDuty\nIntegration" as PDInt
+        component "AWS\nIntegration" as AWSInt
+        component "OCM\nIntegration" as OCMInt
+    }
+
+    rectangle "CAD Workflows" as Workflows {
+        component "CHGM Workflow\n(Cluster Has Gone Missing)" as CHGM
+        component "Anomaly Detection\n& Communication" as AnomalyDet
+        component "Mitigation &\nDisposition Handling" as Mitigation
+    }
+}
+
+rectangle "Template Update Utility" as TplUtil {
+    component "Template Update\nWorkflow" as TplUpdate
+    database "Deployment Template\nArtifacts" as TplArtifacts
+}
+
+rectangle "Build Environment" as BuildEnv {
+    component "Go 1.17\nBuilder Image" as GoBuilder
+}
+
+rectangle "Skip-Webhook Path" as SkipWebhook {
+    component "Direct PipelineRun\nManifest (YAML / JSON payload)" as DirectPR
+}
+
+' External alert input to normal path
+[Alert Webhook Sender] --> EL : "alert webhook\n(HTTP)"
+EL --> TR : triggers
+TR --> PR : creates PipelineRun
+
+' Skip-webhook direct path
+DepEng --> DirectPR : "submits PipelineRun\nmanifest directly"
+DirectPR --> PR : "creates PipelineRun\n(bypasses EventListener)"
+
+' PipelineRun executes cadctl
+PR --> cadctl : "executes\n(/bin/cadctl)"
+
+' cadctl uses integration library
+cadctl --> IntLib : uses
+
+' Integration library calls external systems
+PDInt --> [PagerDuty] : "API calls\n(alert, silence, escalate)"
+AWSInt --> [AWS] : "API calls\n(cluster info)"
+OCMInt --> [OCM] : "API calls\n(support status,\nfollow-up events)"
+
+' cadctl drives workflows
+cadctl --> CHGM : invokes
+cadctl --> AnomalyDet : invokes
+cadctl --> Mitigation : invokes
+
+' Workflows use integrations
+CHGM --> IntLib : uses
+AnomalyDet --> IntLib : uses
+Mitigation --> IntLib : uses
+
+' Mitigation outputs
+Mitigation --> [PagerDuty] : "silence / escalate alerts"
+Mitigation --> [OCM] : "update support status\nrecord follow-up"
+
+' Build
+GoBuilder --> ContainerImg : builds
+
+' Template update
+Dev --> TplUpdate : runs utility
+TplUpdate --> TplArtifacts : updates
+
+' User interactions
+SRE --> cadctl : "invokes CAD\nworkflows"
+DepEng --> EL : "configures &\ndeploys"
+Dev --> IntLib : "extends integrations\nand CLI commands"
+
+@enduml

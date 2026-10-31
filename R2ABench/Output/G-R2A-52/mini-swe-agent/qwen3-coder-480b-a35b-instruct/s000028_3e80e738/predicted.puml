@@ -1,0 +1,55 @@
+@startuml
+!define AWSPrefix(x) aws.x
+
+package "AWS Infrastructure" {
+  node "Cognito Account" {
+    [Cognito User Pool] as userPool
+    [Cognito Identity Pool] as identityPool
+    [IAM Roles] as iamRoles
+  }
+
+  node "API Gateway Account" {
+    [API Gateway] as apiGateway
+    [Cognito Authorizer] as cognitoAuth
+    [WhoAmI Method] as whoAmI
+    [ECS Proxy Method] as ecsProxy
+    [VPC Link] as vpcLink
+  }
+
+  node "VPC" {
+    [SQS VPC Endpoint] as sqsEndpoint
+    [Security Group] as secGroup
+  }
+
+  userPool --> identityPool : Provides authentication
+  identityPool --> iamRoles : Maps roles
+  userPool --> cognitoAuth : Used for authorization
+  cognitoAuth --> apiGateway : Secures API methods
+  whoAmI --> apiGateway : Part of deployment
+  ecsProxy --> apiGateway : Part of deployment
+  apiGateway --> vpcLink : Enables private access
+  vpcLink --> sqsEndpoint : Connects to SQS
+  sqsEndpoint --> secGroup : Restricted by CIDR
+}
+
+note right of userPool
+  - Configurable token validity units
+  - Custom attributes: Role, email
+end note
+
+note right of identityPool
+  - Allows unauthenticated identities
+  - Role mapping for auth/unauth paths
+end note
+
+note right of apiGateway
+  - Callback URL output
+  - Role header: x-pagopa-pn-cx-role
+end note
+
+note right of sqsEndpoint
+  - Private DNS enabled
+  - Ingress restricted by VPC CIDR
+end note
+
+@enduml

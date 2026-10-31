@@ -1,0 +1,79 @@
+@startuml
+
+node "Server Host (Node.js runtime)" as Server {
+  package "Runtime/Startup (server)" {
+    component "Startup Script/CLI" as CLI
+  }
+  package "Web Serving (server)" {
+    component "HTTP Server (port 7000 default)" as HTTP
+    component "Static Files Server" as StaticFiles
+  }
+  package "Ingestion/API (server)" {
+    component "Express App" as Express
+    component "Logging Router" as LoggerRouter
+    component "JSON Body Parser Middleware" as BodyParser
+  }
+  package "Real-time Delivery (server)" {
+    component "Socket.IO Server" as SIOServer
+    component "Client Connection Manager" as ClientMgr
+  }
+}
+
+node "Web Browser (Client)" as Browser {
+  package "Browser Client (client)" {
+    component "Browser UI Shell (/client.html)" as UIShell
+    component "Socket.IO Client" as SIOClient
+    component "Schema Validator (Ajv)" as AjvValidator
+    component "Invalid Message Wrapper" as InvalidWrapper
+    database "Received Data Store" as DataStore
+  }
+  package "Visualization (client)" {
+    component "Window Dispatcher" as WindowDispatcher
+    component "Default Window" as DefaultWindow
+    component "Visualizer Loader/Registry" as VizLoader
+    component "Visualizer Dispatcher" as VizDispatcher
+    component "Visualizer Plugins" as VizPlugins
+  }
+}
+
+cloud "Logging Producers (HTTP clients)" as Producers
+cloud "Socket.IO Library" as SocketIOLib
+cloud "Ajv Library" as AjvLib
+database "Configuration" as Config
+node "Default OS Browser" as OSBrowser
+
+Express --> BodyParser : uses
+Express --> LoggerRouter : mounts /logger
+Express --> StaticFiles : serves static
+HTTP --> Express : hosts app
+SIOServer --> HTTP : attaches to
+SIOServer --> ClientMgr : manages connections
+LoggerRouter --> SIOServer : emit 'notification'
+CLI --> HTTP : start, set port
+CLI --> Express : boot app
+CLI --> OSBrowser : open http://localhost:PORT/client.html
+
+Producers --> LoggerRouter : POST /logger/in (JSON)
+Producers --> LoggerRouter : GET /logger/status
+UIShell --> HTTP : GET /client.html
+
+SIOClient <--> SIOServer : connect
+SIOServer --> SIOClient : 'notification'
+SIOClient --> UIShell : on 'notification'
+
+UIShell --> SIOClient : establish connection
+UIShell --> AjvValidator : validate messages
+AjvValidator --> AjvLib : compile/run schema
+UIShell --> InvalidWrapper : wrap invalid
+UIShell --> DataStore : store objects
+UIShell --> WindowDispatcher : display pipeline
+WindowDispatcher --> DefaultWindow : deliver objects
+DefaultWindow --> VizDispatcher : delegate rendering
+VizDispatcher --> VizPlugins : canDisplay/display
+VizLoader --> VizPlugins : load modules
+VizLoader --> Config : use configuration
+
+SIOServer --> SocketIOLib
+SIOClient --> SocketIOLib
+
+@enduml

@@ -1,0 +1,78 @@
+@startuml
+title VirtualMotionTracker - System Architecture
+
+skinparam componentStyle rectangle
+skinparam monochrome true
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+actor "External Control Application\n(User Application)" as UserApp
+
+interface "OSC External Control Input" as OSC
+
+package "VirtualMotionTracker" {
+  component "VMT Manager" as Manager
+  component "VMT Driver\n(OpenVR driver artifact)" as Driver
+  component "Shared Memory IPC\n(JSON string exchange)" as SHM
+  artifact "Legacy Controller Binding\nmycontroller.json" as Binding
+}
+
+package "Runtime Dependency" {
+  component "SteamVR / OpenVR Runtime" as Runtime
+}
+
+UserApp --> OSC : provides external\ncontrol input
+OSC --> Manager : FR-001 / DR-001
+
+Manager <--> SHM : JSON messages\nmanager-to-driver /\ndriver-to-manager\nFR-002 / FR-003 / NFR-002
+SHM <--> Driver : JSON messages\nsend count, handshake count,\nmessage length\nFR-004 / DR-003
+
+Driver --> Runtime : via OpenVR\ndriver interface\nFR-005 / NFR-001 / C-001
+Runtime --> Driver : loads / hosts\ndriver artifact
+
+Binding --> Driver : provided as legacy\nbinding artifact
+Binding --> Runtime : consumed for\ncontroller type mycontroller\nFR-006 / DR-004 / DR-005 / NFR-003
+
+note right of SHM
+  Bidirectional channels:
+  manager-to-driver
+  driver-to-manager
+
+  Synchronization/control fields:
+  send count
+  handshake count
+  message length
+end note
+
+note bottom of Binding
+  controller_type: mycontroller
+  mode: button
+  parameters.sub_mode: complex
+  Mappings:
+  /user/hand/right/input/a -> /actions/legacy/in/right_axis1_press
+  /user/hand/right/input/c -> /actions/legacy/in/right_a_press
+  /user/hand/right/input/b -> /actions/legacy/in/right_grip_press
+end note
+
+note bottom of Manager
+  Responsibility separation:
+  external input handling /
+  manager-driver shared-memory communication
+end note
+
+note bottom of Driver
+  Responsibility separation:
+  shared-memory communication /
+  runtime driver integration
+end note
+
+note bottom of Runtime
+  Dependency context:
+  OpenVR SDK initialization,
+  interface-version checks,
+  shutdown behavior,
+  path constants and SDK structures
+  are constraints, not core product functionality.
+end note
+
+@enduml

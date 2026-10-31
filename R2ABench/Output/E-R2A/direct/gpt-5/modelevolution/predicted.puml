@@ -1,0 +1,166 @@
+@startuml
+title Model Evolution Version Management Visualization Tool - Logical Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+hide stereotype
+left to right direction
+
+package "Users" {
+  component "Learner" as Learner <<User>>
+  component "Model Contributor" as Contributor <<User>>
+  component "Administrator" as Admin <<User>>
+}
+
+node "Web Browser" as Browser
+component "Browser Console Interface" as BrowserConsole
+
+package "Web Front-End" {
+  component "SPA UI\n- Account Mgmt\n- Search & View\n- Model Contribution & Editing\n- Evolution Editing\n- User Management\n- Navigation (<=10 pages)" as FrontendUI
+  component "Code Editor (PyTorch)" as CodeEditor
+  component "Topology Viewer\n(Evolution Graphs)" as TopologyViewer
+}
+
+package "Back-End API" {
+  component "API Gateway / Web Server" as APIGateway
+  component "Auth Service\n(OAuth2 + 2FA)" as AuthService
+  component "Access Control (RBAC)" as RBAC
+  component "User & Role Management Service" as UserService
+  component "Permission Workflow Service\n(Apply / Review)" as PermissionService
+  component "Model Repository Service\n(ONNX, PyTorch, Profiles, Deletion)" as ModelService
+  component "Evolution Graph Service\n(Relationships, Details)" as EvolutionService
+  component "Search Service" as SearchService
+  component "Dataset & Training Service" as DatasetService
+  component "Visualization Service\n(Topology generation)" as VizService
+  component "File Upload Service\n(ONNX/PyTorch)" as UploadService
+  component "Encryption Service\n(AES/DES at rest)" as EncryptionService
+  component "Audit & Logging" as AuditService
+  component "Protocol Support\n(HTTP/HTTPS, TCP/IP, FTP, SMTP, UDP)" as ProtocolSupport
+}
+
+package "Algorithm Support Module" {
+  component "ONNX Parser" as ONNXParser
+  component "PyTorch Analyzer" as PyTorchAnalyzer
+  component "Metrics Engine\n(Performance)" as MetricsEngine
+  component "Topology Analyzer & Diff\n(Module deletion/reuse,\nLayer reuse)" as TopologyAnalyzer
+  component "Python Library Adapters" as PythonLibs
+}
+
+package "Datastores" {
+  database "MySQL\n(Users, Models, Attributes,\nPermissions, Datasets, Trained Models, Logs)" as MySQL
+  database "Neo4j\n(Evolution graphs & details)" as Neo4j
+}
+
+component "Identity Provider\n(OAuth2 / 2FA)" as IdP
+
+' Client to UI
+Learner --> Browser
+Contributor --> Browser
+Admin --> Browser
+
+Browser --> FrontendUI : HTTPS (TLS)
+Browser ..> BrowserConsole : Console access
+FrontendUI ..> BrowserConsole : Exposes logs/diagnostics
+
+' UI composition
+FrontendUI --> CodeEditor
+FrontendUI --> TopologyViewer
+
+' UI to Backend
+FrontendUI --> APIGateway : REST/JSON over HTTPS
+CodeEditor --> APIGateway : Save edits
+TopologyViewer --> APIGateway : Fetch graphs
+
+' Gateway and security
+APIGateway --> ProtocolSupport
+APIGateway --> RBAC
+APIGateway --> AuthService
+AuthService --> IdP : OAuth2 / 2FA
+RBAC --> UserService
+
+' Service routing
+APIGateway --> UserService
+APIGateway --> PermissionService
+APIGateway --> ModelService
+APIGateway --> EvolutionService
+APIGateway --> SearchService
+APIGateway --> DatasetService
+APIGateway --> VizService
+APIGateway --> UploadService
+APIGateway --> AuditService
+
+' Upload and model handling
+UploadService --> ModelService
+
+' Algorithm support interactions
+ModelService --> ONNXParser : Parse ONNX
+ModelService --> PyTorchAnalyzer : Analyze/Index code
+EvolutionService --> TopologyAnalyzer : Compute diffs
+VizService --> TopologyAnalyzer : Build topology views
+DatasetService --> MetricsEngine : Compute metrics
+
+' Python libraries
+ONNXParser --> PythonLibs
+PyTorchAnalyzer --> PythonLibs
+MetricsEngine --> PythonLibs
+TopologyAnalyzer --> PythonLibs
+
+' Data access
+UserService --> MySQL
+PermissionService --> MySQL
+ModelService --> MySQL
+SearchService --> MySQL
+DatasetService --> MySQL
+AuditService --> MySQL
+
+EvolutionService --> Neo4j
+VizService --> Neo4j
+SearchService --> Neo4j
+
+' Encryption at rest
+MySQL <.. EncryptionService : Encrypt/Decrypt at rest
+Neo4j <.. EncryptionService : Encrypt/Decrypt at rest
+
+' Notes for constraints and qualities
+note right of Browser
+- B/S architecture via browser
+- Cross-platform OS & devices
+- Mainstream browsers (Firefox, Chrome, 360)
+end note
+
+note right of AuthService
+- NFR-010: Two-factor + OAuth2
+- NFR-015: Spoofing protection
+end note
+
+note right of RBAC
+- NFR-013: Access control before login
+- NFR-014: Approved model protection
+end note
+
+note right of ProtocolSupport
+Supported protocols per SRS:
+HTTP, HTTPS, TCP, IP, FTP, SMTP, UDP
+end note
+
+note bottom of Neo4j
+Stores:
+- Evolution relationships & details
+(FR-009, FR-010, FR-016..FR-018)
+end note
+
+note bottom of MySQL
+Stores:
+- Users & Roles (FR-001..FR-005, FR-020..FR-022)
+- Model attributes & artifacts (FR-011..FR-015)
+- Datasets & Trained models (FR-019)
+- Logs/Audit
+end note
+
+' Role capability mapping (logical)
+Learner -[dotted]-> FrontendUI : View/Search
+Contributor -[dotted]-> FrontendUI : Upload/Edit Models\nEdit Evolution
+Admin -[dotted]-> FrontendUI : User Mgmt & Reviews
+
+@enduml

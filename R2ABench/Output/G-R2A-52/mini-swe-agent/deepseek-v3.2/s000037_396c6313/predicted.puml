@@ -1,0 +1,148 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6CC
+!define DATA_COLOR #E6FFE6
+
+title veinmind-tools Container Security Tool Suite - Architecture Diagram
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Data>> DATA_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+' ========== LAYERS ==========
+package "User Interface Layer" <<Layer>> {
+  component "CLI Interface" <<Component>> {
+    [scan-image command]
+    [scan-container command]
+    [scan-iac command]
+  }
+  
+  component "Quick-Start Scripts" <<Component>> {
+    [run.sh startup script]
+  }
+}
+
+package "Core Services Layer" <<Layer>> {
+  component "Scanning Engine" <<Component>> {
+    [Image Scanner]
+    [Container Scanner]
+    [IaC Scanner]
+  }
+  
+  component "Plugin Framework" <<Component>> {
+    [Plugin Manager]
+    [Command Mapper]
+  }
+  
+  component "Authorization Router" <<Component>> {
+    [Route Matcher]
+    [Action Classifier]
+  }
+}
+
+package "Execution Layer" <<Layer>> {
+  component "Runner Execution" <<Component>> {
+    [Parallel Container Manager]
+    [Container Lifecycle]
+  }
+  
+  component "Plugin Examples" <<Component>> {
+    [Python Example Container]
+    [SDK Integration]
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "Report Generator" <<Component>> {
+    [Malicious File Reporter]
+    [IaC Alert Builder]
+  }
+  
+  database "Scan Results Store" <<Data>> {
+    [MaliciousFileInfo]
+    [ReportData]
+    [ReportImage]
+    [ReportLayer]
+    [IaC Alert Details]
+  }
+}
+
+' ========== EXTERNAL SYSTEMS ==========
+component "Docker Runtime" <<External>> {
+  [Docker Daemon]
+  [Container Registry]
+}
+
+component "Cloud Infrastructure" <<External>> {
+  [DockerHub]
+  [Docker Registry]
+  [Harbor]
+  [Containerd]
+}
+
+component "Policy Libraries" <<External>> {
+  [IaC Policy Rules]
+  [Security Policies]
+}
+
+' ========== DEPENDENCIES ==========
+component "veinmind-sdk/libveinmind" <<External>> {
+  [SDK Core]
+  [Library APIs]
+}
+
+component "veinmind-runner" <<External>> {
+  [Runner Image]
+  [Execution Environment]
+}
+
+' ========== RELATIONSHIPS ==========
+
+' User interactions
+"Security Operator" --> "CLI Interface" : invokes commands
+"Plugin Developer" --> "Plugin Framework" : develops plugins
+"Deployment Operator" --> "Quick-Start Scripts" : executes scripts
+
+' Internal flows
+"CLI Interface" --> "Scanning Engine" : triggers scans
+"Quick-Start Scripts" --> "Runner Execution" : starts containers
+"Scanning Engine" --> "Report Generator" : sends findings
+"Report Generator" --> "Scan Results Store" : stores reports
+"Plugin Framework" --> "Scanning Engine" : extends scanning
+"Authorization Router" --> "Plugin Framework" : classifies actions
+
+' External dependencies
+"Runner Execution" --> "Docker Runtime" : manages containers
+"Scanning Engine" --> "Docker Runtime" : accesses images/containers
+"Scanning Engine" --> "Policy Libraries" : loads policies
+"Plugin Examples" --> "veinmind-sdk/libveinmind" : uses SDK
+"Runner Execution" --> "veinmind-runner" : uses runner image
+
+' Compatibility connections
+"Docker Runtime" <--> "Cloud Infrastructure" : registry/runtime compatibility
+"Scanning Engine" --> "Cloud Infrastructure" : supports listed platforms
+
+' Data flows
+"IaC Scanner" --> "Policy Libraries" : loads rule metadata
+"Scanning Engine" --> "Report Generator" : generates structured alerts
+
+' Constraint dependencies
+note right of "Quick-Start Scripts"
+  Requires Docker installed (CON-001)
+  Requires runner image (CON-002)
+  Requires startup script (CON-003)
+end note
+
+note right of "Plugin Examples"
+  Uses veinmind-sdk (CON-004)
+  Installs from requirements.txt (CON-005)
+  Uses /tool/entrypoint.sh (CON-006)
+end note
+
+@enduml

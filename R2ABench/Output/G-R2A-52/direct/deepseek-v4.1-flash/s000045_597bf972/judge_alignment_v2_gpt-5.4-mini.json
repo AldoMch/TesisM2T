@@ -1,0 +1,355 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Android Application\\nIntegrator"
+      ],
+      "gt_nodes": [
+        "Global::Application"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "QAPM_Plugin::Plugin init compile",
+        "QAPM_Plugin::QAPM_Plugin"
+      ],
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "QAPM Configuration & Reporting Services\\n(dependency, partially out-of-scope)::APM Collection / Storage /\\nReporting / Plugin Pipeline\\n(OUT OF SCOPE: AD-005, C-004)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Content-Buffering\\nResponse Entity Wrapper\\n- rejects null entity\\n(FR-009, NFR-003, DR-011)"
+      ],
+      "gt_nodes": [
+        "QAPM_SDK::QAPM-SDK"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Local Upload Storage\\n(upload directory + files)\\n(AD-002, DR-003, DR-004)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Forced-Send Storage Pop\\n- pops pending stored data\\nbefore directory scan\\n(FR-004)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload File Scanner\\n- resolves upload dir\\n- enumerates matching files\\n(FR-005, DR-003, DR-004)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Parameter Builder\\n- reads file content -> bParam\\n- derives cParam from Context\\n(FR-005, FR-006, DR-005, DR-006)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Processor\\n- orchestrates upload run\\n(FR-003, FR-005)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Sender Invoker\\n- submits bParam/cParam pair\\n(FR-006, DR-007, NFR-005)"
+      ],
+      "gt_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Network Connectivity Gate\\n- aborts before file scan\\nwhen offline\\n(FR-003, NFR-002)"
+      ],
+      "gt_nodes": [
+        "QAPM_SDK::QAPM_Collect"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Transaction-Aware\\nResponse Handler Wrapper\\n- inspects/instruments txn state\\n- delegates to wrapped handler\\n(FR-008, DR-009)"
+      ],
+      "gt_nodes": [
+        "QAPM_SDK::QAPM_Report"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Android Application\\nIntegrator"
+      ],
+      "gt_node": "Global::Application"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "QAPM Configuration & Reporting Services\\n(dependency, partially out-of-scope)::APM Collection / Storage /\\nReporting / Plugin Pipeline\\n(OUT OF SCOPE: AD-005, C-004)"
+      ],
+      "gt_node": "QAPM_Plugin::Plugin init compile"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "QAPM Configuration & Reporting Services\\n(dependency, partially out-of-scope)::APM Collection / Storage /\\nReporting / Plugin Pipeline\\n(OUT OF SCOPE: AD-005, C-004)"
+      ],
+      "gt_node": "QAPM_Plugin::QAPM_Plugin"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::Async Work Dispatcher\\n- post(runnable)\\n- post(upload request)\\n(FR-002, NFR-001)",
+        "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::QAPMHandlerThread\\n- default background HandlerThread\\n- main-thread Handler\\n(FR-010, DR-002)",
+        "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::WorkHandlerManager\\n- creates HandlerThread looper\\n- builds work Handler\\n(FR-001, DR-001)"
+      ],
+      "gt_node": "QAPM_SDK::QAPM-SDK"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "QAPM_SDK::QAPM_Collect"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Apache HttpClient Abstractions\\n(C-002, NFR-004)::HttpEntity / OutputStream",
+        "Apache HttpClient Abstractions\\n(C-002, NFR-004)::ResponseHandler / HttpResponse",
+        "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Content-Buffering\\nResponse Entity Wrapper\\n- rejects null entity\\n(FR-009, NFR-003, DR-011)",
+        "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Counting Input Stream\\n- cached/reused\\nfor getContent()\\n(FR-009, DR-010)",
+        "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Transaction State\\n(DR-009)",
+        "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Transaction-Aware\\nResponse Handler Wrapper\\n- inspects/instruments txn state\\n- delegates to wrapped handler\\n(FR-008, DR-009)"
+      ],
+      "gt_node": "QAPM_SDK::QAPM_Report"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Local Upload Storage\\n(upload directory + files)\\n(AD-002, DR-003, DR-004)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Forced-Send Storage Pop\\n- pops pending stored data\\nbefore directory scan\\n(FR-004)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Network Connectivity Gate\\n- aborts before file scan\\nwhen offline\\n(FR-003, NFR-002)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Sender Callback Handler\\n- success: delete upload file\\n- failure: log failure\\n(FR-007, DR-008, NFR-005)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload File Scanner\\n- resolves upload dir\\n- enumerates matching files\\n(FR-005, DR-003, DR-004)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Parameter Builder\\n- reads file content -> bParam\\n- derives cParam from Context\\n(FR-005, FR-006, DR-005, DR-006)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Processor\\n- orchestrates upload run\\n(FR-003, FR-005)",
+        "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Sender Invoker\\n- submits bParam/cParam pair\\n(FR-006, DR-007, NFR-005)"
+      ],
+      "gt_node": "QAPM_SDK::QAPM_Storage"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Android Platform APIs\\n(C-001, NFR-004)::Connectivity State",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM-SDK"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Android Platform APIs\\n(C-001, NFR-004)::Context",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM-SDK"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Android Platform APIs\\n(C-001, NFR-004)::Handler / HandlerThread /\\nLooper",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM-SDK"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Apache HttpClient Abstractions\\n(C-002, NFR-004)::HttpEntity / OutputStream",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Report"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Apache HttpClient Abstractions\\n(C-002, NFR-004)::ResponseHandler / HttpResponse",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Report"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Android Application\\nIntegrator",
+      "reference_nodes": [
+        "Global::Application"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Local Upload Storage\\n(upload directory + files)\\n(AD-002, DR-003, DR-004)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Test Engineer",
+      "reference_nodes": [
+        "Global::Application"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host Android Application (Out-of-Scope Consumer)::Apache HttpClient Usage\\n(host HTTP calls)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host Android Application (Out-of-Scope Consumer)::Application Code\\n(invokes QAPM work & upload APIs)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "QAPM Configuration & Reporting Services\\n(dependency, partially out-of-scope)::APM Collection / Storage /\\nReporting / Plugin Pipeline\\n(OUT OF SCOPE: AD-005, C-004)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "QAPM Configuration & Reporting Services\\n(dependency, partially out-of-scope)::Data Sender\\n- reports success / failure\\n(DR-007, DR-008)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "QAPM Configuration & Reporting Services\\n(dependency, partially out-of-scope)::QAPM Configuration Manager\\n- provides configured sender\\n(AD-003)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::Async Work Dispatcher\\n- post(runnable)\\n- post(upload request)\\n(FR-002, NFR-001)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM-SDK"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::QAPMHandlerThread\\n- default background HandlerThread\\n- main-thread Handler\\n(FR-010, DR-002)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM-SDK"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::WorkHandlerManager\\n- creates HandlerThread looper\\n- builds work Handler\\n(FR-001, DR-001)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM-SDK"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Content-Buffering\\nResponse Entity Wrapper\\n- rejects null entity\\n(FR-009, NFR-003, DR-011)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Report"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Counting Input Stream\\n- cached/reused\\nfor getContent()\\n(FR-009, DR-010)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Report"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Transaction State\\n(DR-009)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Report"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Transaction-Aware\\nResponse Handler Wrapper\\n- inspects/instruments txn state\\n- delegates to wrapped handler\\n(FR-008, DR-009)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Report"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Forced-Send Storage Pop\\n- pops pending stored data\\nbefore directory scan\\n(FR-004)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Network Connectivity Gate\\n- aborts before file scan\\nwhen offline\\n(FR-003, NFR-002)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Sender Callback Handler\\n- success: delete upload file\\n- failure: log failure\\n(FR-007, DR-008, NFR-005)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload File Scanner\\n- resolves upload dir\\n- enumerates matching files\\n(FR-005, DR-003, DR-004)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Parameter Builder\\n- reads file content -> bParam\\n- derives cParam from Context\\n(FR-005, FR-006, DR-005, DR-006)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Processor\\n- orchestrates upload run\\n(FR-003, FR-005)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Upload Sender Invoker\\n- submits bParam/cParam pair\\n(FR-006, DR-007, NFR-005)",
+      "reference_nodes": [
+        "QAPM_SDK::QAPM_Storage"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 2320,
+      "completion_tokens": 151,
+      "total_tokens": 2471,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Android Platform APIs\\n(C-001, NFR-004)::Connectivity State",
+    "Android Platform APIs\\n(C-001, NFR-004)::Context",
+    "Android Platform APIs\\n(C-001, NFR-004)::Handler / HandlerThread /\\nLooper",
+    "Apache HttpClient Abstractions\\n(C-002, NFR-004)::HttpEntity / OutputStream",
+    "Apache HttpClient Abstractions\\n(C-002, NFR-004)::ResponseHandler / HttpResponse",
+    "Global::Test Engineer",
+    "Host Android Application (Out-of-Scope Consumer)::Apache HttpClient Usage\\n(host HTTP calls)",
+    "Host Android Application (Out-of-Scope Consumer)::Application Code\\n(invokes QAPM work & upload APIs)",
+    "QAPM Configuration & Reporting Services\\n(dependency, partially out-of-scope)::Data Sender\\n- reports success / failure\\n(DR-007, DR-008)",
+    "QAPM Configuration & Reporting Services\\n(dependency, partially out-of-scope)::QAPM Configuration Manager\\n- provides configured sender\\n(AD-003)",
+    "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::Async Work Dispatcher\\n- post(runnable)\\n- post(upload request)\\n(FR-002, NFR-001)",
+    "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::QAPMHandlerThread\\n- default background HandlerThread\\n- main-thread Handler\\n(FR-010, DR-002)",
+    "QAPM SDK - In-Scope Checked Subset::Background Execution Subsystem\\n(FR-001, FR-002, FR-010, NFR-001)::WorkHandlerManager\\n- creates HandlerThread looper\\n- builds work Handler\\n(FR-001, DR-001)",
+    "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Counting Input Stream\\n- cached/reused\\nfor getContent()\\n(FR-009, DR-010)",
+    "QAPM SDK - In-Scope Checked Subset::HTTP Instrumentation Subsystem\\n(FR-008, FR-009, NFR-003, NFR-004)::Transaction State\\n(DR-009)",
+    "QAPM SDK - In-Scope Checked Subset::Upload Subsystem\\n(FR-003 .. FR-007, NFR-002, NFR-005)::Sender Callback Handler\\n- success: delete upload file\\n- failure: log failure\\n(FR-007, DR-008, NFR-005)"
+  ],
+  "_provenance": {
+    "fingerprint": "03dee94d0b85cd0d5b1c3ac6cb64960d6703a5a4b409bebff233885b0dc58d45",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

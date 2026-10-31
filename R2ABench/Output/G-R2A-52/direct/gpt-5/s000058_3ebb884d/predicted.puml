@@ -1,0 +1,108 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+left to right direction
+title macpro-appian-connector - System Architecture
+
+' Users
+rectangle "Developer" as Dev
+rectangle "Operator/DevOps" as Ops
+rectangle "Repository Maintainer" as Maint
+
+' Local Environment
+node "Local Environment\n(Terminal & Scripts)" as Local {
+  component "Stage Listing Script\n(run listRunningStages)" as StageScript
+  component "Connector Config Handler" as ConfigHandler
+  component "Connector Mgmt Library" as ConnLib
+  package "Metrics Collectors" as Metrics {
+    component "Deploy Metrics Collector" as DeployMetrics
+    component "PR Merge Metrics Collector" as PRMetrics
+  }
+  artifact "AWS CLI Credentials" as AwsCreds
+}
+
+' AWS Account
+node "AWS Account (current region)" as AWS {
+  component "Project Service\n(event producer)" as Service
+  component "AWS Event Routing\n(EventBridge Rule)" as EventBridge
+  component "SNS Topic\n(Notifications)" as SNS
+  folder "SNS Subscriptions\n(manual targets)" as Subs
+  component "Target Cluster & Service\n(BigMAC Connectors)" as ClusterService
+}
+
+' GitHub
+cloud "GitHub" as GH {
+  node "GitHub Actions" as GHA {
+    component "deploy.yml Workflow" as DeployWorkflow
+  }
+  database "GitHub API" as GHAPI {
+    component "Workflow Runs Endpoint" as RunsAPI
+    component "Pull Requests Endpoint" as PRsAPI
+  }
+}
+
+' User interactions
+Dev --> StageScript : run stage listing
+Ops --> StageScript : run AWS-scoped operations
+Ops --> Subs : manage subscriptions (manual)
+Maint --> ConfigHandler : manage connector definitions
+Maint --> DeployMetrics : collect deploy metrics
+Maint --> PRMetrics : collect PR merge metrics
+
+' Local interactions
+StageScript --> AwsCreds : requires
+StageScript --> AWS : query running stages
+ConfigHandler --> ConnLib
+ConnLib --> ClusterService : put connectors\n delete(empty set)\n restart connectors
+
+' Event routing
+Service --> EventBridge : emit runtime events
+EventBridge --> SNS : route matching events
+SNS --> Subs : deliver notifications
+
+' Metrics flows
+DeployMetrics --> RunsAPI : query deploy.yml workflow runs\n(paginated per_page=100)
+PRMetrics --> PRsAPI : query closed PRs for base branch\n(paginated per_page=100)
+RunsAPI --> DeployMetrics : workflow run records\n(conclusion field)
+PRsAPI --> PRMetrics : PR records\n(created_at, merged_at)
+DeployMetrics --> Maint : output failedRuns, passedRuns
+PRMetrics --> Maint : output averageTimeToMerge
+
+' Notes
+note right of StageScript
+- Operates after onboarding and AWS CLI setup
+- Constrained to current AWS account and region
+- Output: runningStages=<comma-separated stages>
+end note
+
+note right of ConfigHandler
+Applies connector definitions to target cluster and service:
+- put configured connectors
+- delete with empty deletion set (no deletions)
+- restart configured connectors
+end note
+
+note right of EventBridge
+Event rule filters matching service events
+end note
+
+note right of SNS
+SNS topic authorized for event-routing invocation
+end note
+
+note right of Subs
+Subscriptions managed manually, decoupled from deployment automation
+end note
+
+note right of DeployMetrics
+Compute:
+- failedRuns = runs with conclusion != success
+- passedRuns = total - failedRuns
+end note
+
+note right of PRMetrics
+Compute averageTimeToMerge as whole-hour differences;
+default 0 when no qualifying PRs
+end note
+@enduml

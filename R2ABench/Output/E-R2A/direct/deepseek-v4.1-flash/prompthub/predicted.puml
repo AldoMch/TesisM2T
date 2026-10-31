@@ -1,0 +1,132 @@
+@startuml
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam nodesep 12
+skinparam ranksep 20
+skinparam defaultFontSize 11
+
+title PromptHub — System Architecture (derived from SRS)
+
+' ================= Actors =================
+actor "Visitor" as Visitor
+actor "Registered User /\nAI Artwork Creator /\nArtwork Viewer" as User
+actor "Administrator" as Admin
+
+' ================= Client Tier =================
+node "Client Tier\nWindows 7+ / macOS 8.0+ kernels\nIntel i7 8th Gen / 4-16 GB RAM" as ClientTier {
+  component "Web Browser\nChrome 110+ · Firefox 119+ · Safari 15.3+" as Browser
+  note right of Browser
+    NFR-018 / NFR-019
+    responsive UI, <=3 clicks,
+    mouse-only operations, cookies
+  end note
+}
+
+' ================= Server Tier =================
+node "Server Tier — Ubuntu 22.0.4 · Docker 20.10.17\nIntel i5-10600K+ · GTX 2060+ · 32 GB RAM" as ServerTier {
+
+  component "Front-End Module\nHTML / CSS / JavaScript · Vue.js · JQuery" as FE {
+    component "Home & Artwork List UI\nsearch · sort · filter · popular entry" as UIList
+    component "Artwork Detail UI\nimage · Prompt · model · comments" as UIDetail
+    component "Auth & Account UI\nregister · login · password recovery" as UIAuth
+    component "Upload / Edit Artwork UI" as UIUpload
+    component "Favorite Management UI\npublic / private categories" as UIFav
+    component "Personal Home Page UI\navatar · username · follow · fans · history" as UIProfile
+    component "Administrator Console UI\nusers · artworks · review · comments" as UIAdmin
+    component "Notification UI\nunread · mark read · delete" as UINotify
+  }
+
+  component "Back-End Module\nPython / Java · Django" as BE {
+    component "Account & Profile Service\nFR-001..007, FR-016..019" as SvcAccount
+    component "Artwork Service\nFR-008, FR-027..032" as SvcArtwork
+    component "Favorite Service\nFR-009..010, FR-033..042" as SvcFav
+    component "Comment & Reply Service\nFR-043..046" as SvcComment
+    component "Social / Relationship Service\nFR-012..015" as SvcSocial
+    component "Review & Moderation Service\nFR-020..026" as SvcReview
+    component "Notification Service\nFR-050..052" as SvcNotify
+    component "Recommendation Facade\nFR-047..049" as SvcReco
+    component "Security & Validation Layer\nHTTPS · AuthN/AuthZ · XSS/SQLi · encryption" as SecurityLayer
+  }
+
+  component "Algorithm Support Module\nPython · PyTorch / TensorFlow" as ALG {
+    component "Popular Recommendation\nrecent artworks by popularity" as RecPopular
+    component "Personalized Recommendation\nhistory · likes · favorites · follows" as RecPersonal
+  }
+
+  component "Event Listener\ncomment · reply · review-progress events" as EventBus
+
+  database "SQLite Database\nDR-001..DR-013\n(migration path: MySQL)" as DB
+
+  component "Log Store & Backup\nNFR-016 · DR-014" as LogStore
+}
+
+' ================= External Systems =================
+component "Email / SMTP Service\nverification codes · password reset · dev alerts" as SMTP
+component "Offsite Disaster Recovery Backup\nNFR-007" as OffsiteDR
+
+' ================= Client ↔ Front-End =================
+Visitor --> Browser
+User --> Browser
+Admin --> Browser
+Browser --> FE : HTTPS (NFR-009)
+
+' ================= Front-End ↔ Back-End =================
+FE --> BE : authenticated Web requests
+UIList --> SvcArtwork
+UIDetail --> SvcArtwork
+UIAuth --> SvcAccount
+UIUpload --> SvcArtwork
+UIFav --> SvcFav
+UIProfile --> SvcAccount
+UIAdmin --> SvcReview
+UINotify --> SvcNotify
+
+' ================= Back-End internal wiring =================
+SvcReco --> ALG : ranking request
+RecPopular --> DB : read artworks + popularity
+RecPersonal --> DB : read signals (DR-012)
+
+SvcComment --> EventBus : comment / reply created
+SvcReview --> EventBus : review result changed
+EventBus --> SvcNotify : event consumed
+SvcNotify --> DB : unread count / state
+
+SvcAccount --> SMTP : send verification code (FR-001, FR-005)
+
+SvcAccount --> SecurityLayer
+SvcArtwork --> SecurityLayer
+SvcFav --> SecurityLayer
+SvcComment --> SecurityLayer
+SvcSocial --> SecurityLayer
+SvcReview --> SecurityLayer
+SvcNotify --> SecurityLayer
+SecurityLayer --> DB : parameterised, revalidated access
+
+' ================= Operations / cross-cutting =================
+BE --> LogStore : log output
+ServerTier --> SMTP : auto-restart + failure alert (NFR-006)
+DB --> OffsiteDR : offsite backup of persistent user data
+LogStore --> OffsiteDR : backup of logs
+
+note right of SecurityLayer
+  NFR-009 / NFR-010 / NFR-011 / NFR-012 / NFR-013
+  secure HTTP, operation authentication, firewall,
+  CORS control, XSS & SQL-injection prevention,
+  end-to-end encryption, dependency scanning,
+  obfuscated front-end release + back-end revalidation
+end note
+
+note bottom of ALG
+  FR-048 personalised recommendation is only served to
+  logged-in users with the preference enabled;
+  otherwise a prompt is returned (FR-049).
+end note
+
+note bottom of ServerTier
+  C-003 concurrent access volume is limited;
+  NFR-004 MTBF > 720 h, NFR-005 data loss <= 1%,
+  NFR-008 server disk usage < 80%.
+end note
+
+@enduml

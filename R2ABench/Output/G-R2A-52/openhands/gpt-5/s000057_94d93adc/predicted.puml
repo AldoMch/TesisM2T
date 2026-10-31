@@ -1,0 +1,73 @@
+@startuml
+title Soundzone - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "Frontend (Browser)" as FE {
+  component "React App" as React
+  component "Redux Store\n& Actions" as Redux
+  component "Playback Manager" as Playback
+  component "Audio Player" as Audio
+  component "Waveform UI" as Waveform
+  component "Forms & Validation" as Forms
+  component "Config\n(API base URL,\nCloudinary URL,\nUpload Preset)" as FEConfig
+}
+
+package "Backend (Node/Express)" as BE {
+  component "Express Server" as Express
+  component "Auth API" as AuthAPI
+  component "Sound API" as SoundAPI
+  component "Follow API" as FollowAPI
+  component "Feed API" as FeedAPI
+}
+
+database "PostgreSQL" as PG
+cloud "Cloudinary\n(Media Storage)" as Cld
+
+' Internal frontend relationships
+React --> Redux : dispatch/actions
+Redux --> React : state/selectors
+React --> Forms
+React --> Waveform
+Playback --> Audio
+Waveform --> Playback : waveform click -> seek
+Redux --> Playback : current playback state
+FEConfig --> React : runtime config
+
+' Frontend to backend APIs
+React --> AuthAPI : HTTP/JSON via API base URL
+React --> SoundAPI : create/read/delete sound\n(persist Cloudinary URLs)
+React --> FollowAPI : follow/unfollow
+React --> FeedAPI : followed users' sounds
+
+' Direct media upload
+React --> Cld : direct upload (audio/image)
+Cld --> React : hosted URL
+
+' Backend relationships
+Express -[hidden]-> AuthAPI
+Express -[hidden]-> SoundAPI
+Express -[hidden]-> FollowAPI
+Express -[hidden]-> FeedAPI
+
+AuthAPI --> PG : users, sessions
+SoundAPI --> PG : sounds, media URL refs
+FollowAPI --> PG : follow relationships
+FeedAPI --> PG : queries for feeds/lists
+
+note right of Playback
+- Maintain single current playback
+- Preserve playback across navigation/component switches
+end note
+
+note bottom of Cld
+Store audio/image assets.
+Return URLs used by backend persistence.
+end note
+
+note bottom of PG
+Persist application records and Cloudinary URL references.
+end note
+
+@enduml

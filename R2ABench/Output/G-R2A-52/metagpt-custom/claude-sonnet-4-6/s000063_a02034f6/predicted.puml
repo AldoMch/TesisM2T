@@ -1,0 +1,155 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam nodeBackgroundColor #EAF7EA
+skinparam databaseBackgroundColor #FFF8E1
+
+' ─────────────────────────────────────────────
+' CLIENT ACCESS LAYER
+' ─────────────────────────────────────────────
+package "Client Access Layer" as CAL #E8EEFF {
+  component [MTProto Gateway] as GWMT
+  component [Authorization Key Handler] as AKH
+  component [Session Manager] as SM
+  component [Service Message Processor] as SMP
+  component [Future Salts Handler] as FSH
+}
+
+' ─────────────────────────────────────────────
+' BFF / ACCESS-FACING SERVICE LAYER
+' ─────────────────────────────────────────────
+package "BFF / Access-Facing Service Layer" as BFF_LAYER #E8F4FF {
+  component [BFF / Access-Facing Service] as BFFGW
+}
+
+' ─────────────────────────────────────────────
+' BUSINESS / SERVICE LAYER
+' ─────────────────────────────────────────────
+package "Business / Service Layer" as BSL #EDF9ED {
+  component [Registration & Verification Service] as RVS
+  component [Verification Code Verifier] as VCV
+  component [Messaging Service] as MSGS
+  component [Media Processing Service] as MEDIAS
+}
+
+' ─────────────────────────────────────────────
+' STORAGE-FACING / DATA LAYER
+' ─────────────────────────────────────────────
+package "Storage-Facing / Data Layer" as SDL #FFFBE6 {
+  component [MySQL Adapter] as MYSQLA
+  component [Redis Adapter] as REDISA
+  component [MinIO Adapter] as MINIOA
+  component [Kafka Adapter] as KAFKAA
+  component [etcd Adapter] as ETCDC
+}
+
+' ─────────────────────────────────────────────
+' ASYNCHRONOUS / SUPPORTING LAYER
+' ─────────────────────────────────────────────
+package "Asynchronous / Supporting Layer" as ASL #FFF0F0 {
+  component [Sync Service] as SYNCS
+}
+
+' ─────────────────────────────────────────────
+' INFRASTRUCTURE & DEPLOYMENT LAYER
+' ─────────────────────────────────────────────
+package "Infrastructure & Deployment Layer" as IDL #F5F0FF {
+  component [FFmpeg/FFProbe Wrapper] as FFWRAP
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+package "External Systems" as EXT #FFF0F5 {
+  database "MySQL" as MYSQL
+  database "Redis" as REDIS
+  database "etcd" as ETCD
+  database "Kafka" as KAFKA
+  database "MinIO" as MINIO
+  component [FFmpeg] as FFMPEG
+  component [FFProbe] as FFPROBE
+  component [External Verification-Code Service] as EXTVER
+}
+
+' ─────────────────────────────────────────────
+' INTRA-LAYER DEPENDENCIES — Client Access Layer
+' ─────────────────────────────────────────────
+GWMT --> AKH       : resolve / create auth key
+GWMT --> SM        : session create / lookup
+GWMT --> SMP       : dispatch service messages
+GWMT --> FSH       : future-salts requests
+
+SMP  --> SM        : destroy_session / session replacement
+
+AKH  --> FSH       : delegate salt generation
+
+' ─────────────────────────────────────────────
+' CLIENT ACCESS → BFF
+' ─────────────────────────────────────────────
+GWMT --> BFFGW     : route decoded RPC calls
+
+' ─────────────────────────────────────────────
+' BFF → BUSINESS LAYER
+' ─────────────────────────────────────────────
+BFFGW --> RVS      : registration & verification requests
+BFFGW --> MSGS     : messaging requests
+
+' ─────────────────────────────────────────────
+' BUSINESS LAYER INTERNAL
+' ─────────────────────────────────────────────
+RVS   --> VCV      : delegate verification logic
+VCV   --> EXTVER   : external verification (when configured)
+
+' ─────────────────────────────────────────────
+' BUSINESS → STORAGE
+' ─────────────────────────────────────────────
+RVS   --> MYSQLA   : persist registration / verification data
+MSGS  --> KAFKAA   : publish messaging events
+MSGS  --> MYSQLA   : persist / retrieve message data
+MSGS  --> REDISA   : message state cache
+
+MEDIAS --> MINIOA  : retrieve / store media objects
+MEDIAS --> FFWRAP  : invoke media processing (optional)
+
+' ─────────────────────────────────────────────
+' SESSION MANAGER & AUTH KEY HANDLER → STORAGE
+' ─────────────────────────────────────────────
+SM    --> MYSQLA   : durable session records
+SM    --> REDISA   : active session state cache
+AKH   --> MYSQLA   : persist auth keys & server-salt
+AKH   --> REDISA   : cache server-salt / future-salt
+
+' ─────────────────────────────────────────────
+' FUTURE SALTS HANDLER → STORAGE
+' ─────────────────────────────────────────────
+FSH   --> REDISA   : read / cache future-salts
+
+' ─────────────────────────────────────────────
+' SERVICE DISCOVERY — STORAGE-FACING LAYER
+' ─────────────────────────────────────────────
+BFFGW --> ETCDC    : service discovery & routing
+GWMT  --> ETCDC    : service registry lookup
+
+' ─────────────────────────────────────────────
+' ASYNCHRONOUS LAYER — KAFKA CONSUMERS
+' ─────────────────────────────────────────────
+SYNCS --> KAFKAA   : consume session-sync events
+
+' ─────────────────────────────────────────────
+' ADAPTERS → EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+MYSQLA  --> MYSQL  : SQL queries
+REDISA  --> REDIS  : cache read/write
+MINIOA  --> MINIO  : object store read/write
+KAFKAA  --> KAFKA  : produce / consume messages
+ETCDC   --> ETCD   : service registry & config
+
+' ─────────────────────────────────────────────
+' INFRASTRUCTURE → EXTERNAL TOOLS
+' ─────────────────────────────────────────────
+FFWRAP --> FFMPEG  : media encode/transcode
+FFWRAP --> FFPROBE : media inspection / metadata
+
+@enduml

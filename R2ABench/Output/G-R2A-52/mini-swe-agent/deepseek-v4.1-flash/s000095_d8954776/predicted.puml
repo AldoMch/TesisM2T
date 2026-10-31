@@ -1,0 +1,131 @@
+@startuml
+title GPSLogger (mendhak/gpslogger) - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =========================
+' External Systems / Actors
+' =========================
+package "External Systems & Devices" {
+  actor "End User" as User
+  [Android Platform / OS] as AndroidOS
+  [GPS Provider\n(Hardware / LocationManager)] as GPSProvider
+  [Google Play Services] as GPlay
+  [OpenStreetMap Service] as OSM
+  [Dropbox Cloud Storage] as Dropbox
+  [OpenGTS Server\n(UDP endpoint)] as OpenGTS
+}
+
+' =========================
+' Build & Configuration Layer
+' =========================
+package "Build & Configuration Layer" {
+  [Gradle Build System\n(SDK Build Tools 19.0.3)] as Gradle
+  [Gradle Properties\nGPSLOGGER_OSM_* /\nGPSLOGGER_DROPBOX_*] as GradleProps
+  [local.properties\n(sdk.dir)] as LocalProps
+  [Generated App Configuration\n(BuildConfig)] as BuildConfig
+}
+
+' =========================
+' Presentation Layer
+' =========================
+package "Presentation Layer (Android UI)" {
+  [Main Activity] as MainActivity
+  [GPSLogger Fragments\n(location display & status)] as Fragments
+  [Settings UI] as SettingsUI
+}
+
+' =========================
+' Application / Domain Layer
+' =========================
+package "Application & Service Layer" {
+  [GPS Logging Service\n(foreground location service)] as LoggingService
+  [Location Listener\n(location acquisition)] as LocationListener
+  [Event Bus\n(in-app location/status events)] as EventBus
+  [Session / Application Settings] as Settings
+}
+
+' =========================
+' Logging & Integration Layer
+' =========================
+package "Logging & Integration Layer" {
+  [Logger Manager] as LoggerManager
+  [GPX Logger] as GpxLogger
+  [KML Logger] as KmlLogger
+  [Text/File Logger] as TextLogger
+  [Upload Job Scheduler] as UploadScheduler
+  [OpenGTS Uploader] as OpenGTSUploader
+  [GPRMC Encoder] as GprmcEncoder
+}
+
+' =========================
+' Data Layer
+' =========================
+package "Data Layer" {
+  database "Local Log Output Storage\n(GPX / KML / Text files)" as LogStorage
+  database "Credential & Endpoint Config Store" as ConfigStore
+}
+
+' =========================
+' User & UI interactions
+' =========================
+User --> MainActivity
+User --> SettingsUI
+MainActivity --> Fragments
+SettingsUI --> Settings
+Fragments --> Settings
+
+' =========================
+' Service & location flow
+' =========================
+MainActivity --> LoggingService
+Fragments ..> EventBus : subscribe
+LoggingService --> LocationListener
+GPSProvider --> LocationListener : location updates
+LoggingService --> EventBus : publish location events
+LocationListener --> EventBus
+LoggingService --> Settings
+LoggingService --> LoggerManager
+
+' =========================
+' Logging flow
+' =========================
+LoggerManager --> GpxLogger
+LoggerManager --> KmlLogger
+LoggerManager --> TextLogger
+GpxLogger --> LogStorage
+KmlLogger --> LogStorage
+TextLogger --> LogStorage
+
+' =========================
+' Upload / integration flow
+' =========================
+LoggingService --> UploadScheduler
+UploadScheduler --> OpenGTSUploader
+OpenGTSUploader --> GprmcEncoder
+GprmcEncoder --> OpenGTSUploader
+OpenGTSUploader --> OpenGTS : UDP datagram
+OpenGTSUploader --> ConfigStore : endpoint config
+LoggingService --> Dropbox : optional upload
+LoggingService --> OSM : optional map integration
+
+' =========================
+' Platform dependencies
+' =========================
+LoggingService --> AndroidOS
+Fragments --> AndroidOS
+LoggingService --> GPlay
+MainActivity --> GPlay
+
+' =========================
+' Build-time configuration flow
+' =========================
+Gradle --> GradleProps
+Gradle --> LocalProps
+Gradle --> BuildConfig : inject credentials
+BuildConfig --> ConfigStore
+BuildConfig --> OSM
+BuildConfig --> Dropbox
+
+@enduml

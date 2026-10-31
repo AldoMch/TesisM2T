@@ -1,0 +1,87 @@
+@startuml
+title veinmind-tools - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Security Operator" as Operator
+actor "Plugin Developer" as PluginDev
+actor "Deployment Operator" as DeployOp
+actor "Integrator" as Integrator
+
+package "veinmind-tools" {
+
+  package "CLI Interfaces" {
+    component "scan-image" as ScanImage
+    component "scan-container" as ScanContainer
+    component "scan-iac" as ScanIac
+  }
+
+  package "Quick-Start Workflow" {
+    component "run.sh (parallel-container startup)" as RunSh
+    component "veinmind-runner" as Runner
+  }
+
+  package "SDK Integration Layer" {
+    component "veinmind-sdk / libveinmind" as SDK
+  }
+
+  package "Authorization Routing" {
+    component "Docker Authorization Router" as AuthRouter
+    component "Route Pattern Matcher" as RouteMatcher
+    component "Docker Plugin Action" as Action
+    component "NoneDockerPlugin (fallback)" as NonePlugin
+  }
+
+  package "Plugin Packaging" {
+    component "Python Example Package" as PyExample
+    component "entrypoint.sh" as Entrypoint
+    component "scan.py" as ScanPy
+  }
+
+  package "Reporting" {
+    component "Report Event Mechanism" as ReportEvent
+    component "Malicious-File Report Data" as MalReport
+    component "IaC Alert Details" as IacReport
+  }
+}
+
+node "Docker Runtime" as Docker
+node "Runner Image" as RunnerImage
+database "Policy Libraries" as PolicyLib
+cloud "Cloud-Native Objects (DockerHub, Docker Registry, Harbor, Docker, Containerd)" as Compat
+
+Operator --> ScanImage : invoke
+Operator --> ScanContainer : invoke
+Operator --> ScanIac : invoke
+DeployOp --> RunSh : run scan-host image
+PluginDev --> PyExample : package scanner
+Integrator --> AuthRouter : authorization request
+Integrator --> MalReport : consume report data
+Integrator --> IacReport : consume report data
+
+ScanImage --> SDK
+ScanContainer --> SDK
+ScanIac --> SDK
+ScanIac --> PolicyLib : load policy libraries
+ScanIac --> ReportEvent : publish alert details
+ReportEvent --> IacReport
+
+RunSh --> Runner : start
+Runner --> RunnerImage
+Runner --> Docker
+Runner --> ScanImage : launch scan
+Runner --> ScanContainer : launch scan
+
+AuthRouter --> RouteMatcher : method + URI
+RouteMatcher --> Action : first matching route
+RouteMatcher --> NonePlugin : no match
+
+PyExample --> Entrypoint
+Entrypoint --> ScanPy : python scan.py args
+ScanPy --> SDK
+
+MalReport --> Compat : image / layer findings
+Action --> Integrator
+
+@enduml

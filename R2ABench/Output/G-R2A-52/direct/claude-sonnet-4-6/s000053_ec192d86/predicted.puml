@@ -1,0 +1,113 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam arrowColor #555555
+skinparam componentBorderColor #777777
+skinparam nodeBorderColor #777777
+skinparam databaseBorderColor #777777
+skinparam rectangleBorderColor #777777
+skinparam cloudBorderColor #777777
+skinparam packageBorderColor #999999
+skinparam componentBackgroundColor #FFFDE7
+skinparam nodeBackgroundColor #E3F2FD
+skinparam databaseBackgroundColor #F3E5F5
+skinparam packageBackgroundColor #F9F9F9
+skinparam rectangleBackgroundColor #E8F5E9
+
+title Configuration Anomaly Detection (CAD) — System Architecture
+
+actor "SRE / Operations User" as SRE
+actor "Deployment Engineer" as DepEng
+actor "Developer / Contributor" as Dev
+
+cloud "External Systems" {
+    component [PagerDuty] as PD
+    component [AWS] as AWS
+    component [OCM\n(OpenShift Cluster Manager)] as OCM
+    component [Alert Source\n(External Webhook)] as AlertSrc
+}
+
+package "CAD Container Image\n(UBI Minimal Runtime)" {
+    component [cadctl CLI\n(/bin/cadctl)] as cadctl
+
+    package "Integration Package Library" {
+        component [PagerDuty Integration] as PDInt
+        component [AWS Integration] as AWSInt
+        component [OCM Integration] as OCMInt
+    }
+
+    component [CHGM Workflow Handler] as CHGM
+    component [Anomaly Detection &\nCommunication Module] as AnomalyDet
+    component [Mitigation & Disposition\nHandler] as MitigDisp
+}
+
+package "Build Environment\n(Go 1.17 Builder Image)" {
+    component [Container Build Process] as BuildProc
+}
+
+package "Tekton Execution Environment\n(configuration-anomaly-detection namespace)" {
+    component [EventListener] as EventListener
+    component [Trigger] as Trigger
+    component [PipelineRun\n(cad-checks-pipeline)] as PipelineRun
+    database [Deployment YAML\nManifests] as DeployYAML
+}
+
+package "Deployment & Maintenance Assets" {
+    component [Template Update Utility] as TemplateUtil
+    database [Deployment Template\nArtifacts] as TemplateArtifacts
+}
+
+note right of cadctl
+  Entry point: /bin/cadctl
+  Container constraint: UBI minimal base
+  Build constraint: Go 1.17 builder
+end note
+
+note right of PipelineRun
+  apiVersion: tekton.dev/v1beta1
+  Pipeline: cad-checks-pipeline
+  Namespace: configuration-anomaly-detection
+  Param: payload (JSON, event.data.id)
+end note
+
+SRE --> cadctl : invoke CAD workflows\n(CHGM, anomaly handling)
+SRE --> DepEng : coordinate execution paths
+DepEng --> EventListener : configure webhook-driven path
+DepEng --> PipelineRun : submit PipelineRun\n(skip-webhook path)
+Dev --> cadctl : extend CLI commands
+Dev --> TemplateUtil : run template update utility
+Dev --> BuildProc : build container image
+
+BuildProc --> cadctl : produces /bin/cadctl\nin container image
+
+cadctl --> CHGM : execute CHGM workflow\n(FR-002)
+cadctl --> AnomalyDet : detect anomalies &\nsend communications (FR-003)
+cadctl --> MitigDisp : execute mitigation /\ndisposition actions (FR-004)
+
+cadctl --> PDInt : call PagerDuty integration
+cadctl --> AWSInt : call AWS integration
+cadctl --> OCMInt : call OCM integration
+
+PDInt --> PD : PagerDuty API
+AWSInt --> AWS : AWS API
+OCMInt --> OCM : OCM API
+
+MitigDisp --> PDInt : silence / escalate alerts
+MitigDisp --> OCMInt : update support status,\nrecord follow-up events
+
+AlertSrc --> EventListener : external alert webhook\n(FR-005, DR-005)
+EventListener --> Trigger : webhook received
+Trigger --> PipelineRun : create PipelineRun\n(standard event-driven path)
+
+DepEng --> PipelineRun : create PipelineRun directly\n(skip-webhook path, FR-006, C-006)
+
+PipelineRun --> cadctl : executes cadctl\nwith JSON payload\n(event.data.id)
+
+DeployYAML --> PipelineRun : YAML manifest\n(v1beta1 PipelineRun, C-004)
+
+TemplateUtil --> TemplateArtifacts : update deployment\ntemplate artifacts (FR-010)
+TemplateArtifacts --> DeployYAML : provides deployment\nmanifest templates
+
+@enduml

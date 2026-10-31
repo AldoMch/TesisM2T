@@ -1,0 +1,63 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam defaultFontSize 13
+skinparam packageBackgroundColor #FAFAFA
+skinparam componentBackgroundColor #DDEEFF
+skinparam interfaceBackgroundColor #FFFFCC
+skinparam databaseBackgroundColor #E8F5E9
+skinparam arrowColor #333333
+skinparam linetype ortho
+
+title lowes/auditor - System Architecture
+
+package "JVM Application" {
+    component [Application Code] as App
+    component [AuditorEventConfig\n(applicationName, eventSource,\neventSubType, metadata, filters)] as Config
+
+    package "lowes/auditor Library (Kotlin/JVM 11)" {
+        component [Auditing API] as AuditAPI
+        component [Change Detector] as Detector
+        component [AuditEvent Builder] as Builder
+        component [Element Filter Engine] as FilterEngine
+
+        component [AuditEvent\n(CREATED | UPDATED | DELETED)\n(elements: name, updatedValue,\npreviousValue, metadata.fqdn)] as AuditEvent
+    }
+
+    interface "EventPublisher" as IPublisher
+    interface "LogProvider" as ILogger
+    interface "AuditEventElementFilter" as IFilter
+
+    component [InclusionFilter\n(includes list)] as InclusionFilter
+    component [Kafka EventPublisher\n(default implementation)] as KafkaPublisher
+    component [Log Provider Impl] as LogImpl
+}
+
+database "Kafka Topic\n(serialized AuditEvent JSON)" as Kafka
+
+package "Downstream Consumers" {
+    component [Consumer Service\n(deserializes AuditEvent)] as Consumer
+}
+
+App --> AuditAPI : invokes with\noldObject, newObject,\nAuditorEventConfig
+Config ..> AuditAPI : configures
+
+AuditAPI --> Detector : compare\noldObject vs newObject
+Detector --> Builder : detected changes\n(field diffs)
+Builder --> FilterEngine : apply element filters
+FilterEngine --> AuditEvent : filtered elements
+AuditEvent --> IPublisher : publish
+
+AuditAPI --> ILogger : log events
+
+IFilter <|.. InclusionFilter : implements
+FilterEngine --> IFilter : uses
+
+IPublisher <|.. KafkaPublisher : implements
+ILogger <|.. LogImpl : implements
+
+KafkaPublisher --> Kafka : send serialized\nJSON payload
+
+Kafka --> Consumer : consume\nAuditEvent JSON
+
+@enduml

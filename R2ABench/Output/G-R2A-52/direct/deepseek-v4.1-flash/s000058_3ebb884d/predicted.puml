@@ -1,0 +1,119 @@
+@startuml
+title macpro-appian-connector - System Architecture
+
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam componentStyle uml2
+skinparam defaultFontName "Helvetica"
+skinparam arrowColor #4A6785
+skinparam arrowFontSize 11
+skinparam component {
+  BackgroundColor #F5F9FF
+  BorderColor #4A6785
+  FontColor #1B2A41
+}
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #90A4AE
+  FontColor #37474F
+}
+skinparam actor {
+  BackgroundColor #FFF8E1
+  BorderColor #C9A227
+}
+skinparam note {
+  BackgroundColor #FFFDE7
+  BorderColor #C9A227
+}
+
+' ===== Actors =====
+actor "Developer" as dev
+actor "Operator / DevOps" as ops
+actor "Repository Maintainer" as maint
+
+' ===== Local / Terminal Environment =====
+rectangle "Terminal / Local Environment" {
+  component "CLI / Run Scripts\n(nvm use, run listRunningStages)" as term
+  component "AWS CLI Credentials & Session\n(current account / region)" as awscli
+}
+
+' ===== Repository Components =====
+rectangle "macpro-appian-connector (Repository)" {
+  component "Stage Listing Command\nFR-001, NFR-001" as slc
+  component "Connector Configuration Handler\nFR-002" as cch
+  component "Event Alerting Configuration\nFR-003, FR-004" as ear
+  component "Deployment Metrics Collector\nFR-005" as dmc
+  component "PR Merge-Time Metrics Collector\nFR-006" as prm
+  component "Connector Management Library" as cml
+  component "GitHub Metrics Client\npaginated, per_page=100\nNFR-004" as gml
+}
+
+' ===== AWS Environment =====
+rectangle "AWS Account & Region" {
+  component "Project Stage Runtime" as stages
+  component "AWS EventBridge\nEvent Routing Rules\n(filtering criteria)\nDR-003" as eb
+  component "Amazon SNS\nNotification Topic" as sns
+  component "Manually Maintained\nSNS Subscriptions\nFR-004, NFR-002" as subs
+  component "Target Cluster & Service\n(Connector Definitions)\nDR-002" as cluster
+}
+
+' ===== External Systems =====
+rectangle "External Systems" {
+  component "Appian\nData Change Source" as appian
+  component "CMS BigMAC" as bigmac
+  component "GitHub Actions\ndeploy.yml Workflow Runs\nDR-004" as gha
+  component "GitHub Pull Requests API\nclosed PRs, base branch\nDR-005" as ghpr
+}
+
+' ===== Relationships: users and environment =====
+dev --> term : onboard, run procedures
+maint --> cch : maintain connector definitions
+maint --> dmc
+maint --> prm
+ops --> sns : observe alerts
+ops --> subs : add / remove subscribers\n(no deployment)
+term --> awscli : uses
+
+' ===== Stage listing flow =====
+term --> slc : run listRunningStages
+slc --> awscli : requires credentials
+slc --> stages : query running stages\ncurrent account / region
+note right of slc
+  Output (DR-001):
+  runningStages=<comma-separated stages>
+end note
+
+' ===== Connector configuration flow =====
+cch --> cml : apply definitions
+cml --> cluster : put connectors
+cml --> cluster : delete connectors (empty deletion set)
+cml --> cluster : restart connectors
+
+' ===== Data transfer =====
+appian --> cluster : Appian data changes
+cluster --> bigmac : transfer to BigMAC
+
+' ===== Event alerting flow =====
+ear --> eb : define matching rules
+eb --> sns : publish matching events
+sns --> subs : distribute notifications
+subs --> ops : alert delivery
+
+' ===== Metrics flows =====
+dmc --> gml : request workflow runs for branch
+prm --> gml : request closed PRs for branch
+gml --> gha : query deploy.yml runs\npaginated per_page=100
+gml --> ghpr : query closed PRs\npaginated per_page=100
+dmc --> gml : aggregate all pages
+
+note right of dmc
+  Output (DR-006):
+  failedRuns, passedRuns
+end note
+
+note right of prm
+  Output (DR-006):
+  averageTimeToMerge
+end note
+
+@enduml

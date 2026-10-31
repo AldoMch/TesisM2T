@@ -1,0 +1,46 @@
+@startuml
+
+' Deployment Nodes
+node "Host System" {
+    node "SteamVR/OpenVR Runtime" as steamvr_runtime
+    
+    package "VirtualMotionTracker System" {
+        package "External Interface Layer" {
+            component "User Application" as user_app
+        }
+
+        package "Management Layer" {
+            component "VMT Manager" as vmt_manager
+        }
+
+        package "Driver Integration Layer" {
+            component "VMT Driver" as vmt_driver
+        }
+        
+        ' Controller binding artifact
+        artifact "mycontroller.json" as controller_binding
+    }
+}
+
+cloud "OpenVR SDK" as openvr_sdk
+
+' Shared Memory Structure with Synchronization Fields
+database "Shared Memory" as shm {
+    frame "Send Count" as send_count
+    frame "Handshake Count" as handshake_count
+    frame "Message Length" as msg_length
+}
+
+' Component Dependencies
+user_app --> vmt_manager : Control Input (OSC)
+vmt_manager --> shm : Write JSON Messages
+shm --> vmt_driver : Read JSON Messages
+vmt_driver --> steamvr_runtime : OpenVR Driver Interface
+vmt_driver --> openvr_sdk : Uses for Compliance
+vmt_manager --> controller_binding : Loads Configuration
+
+' Return path for bidirectional communication
+vmt_driver --> shm : Write Response Data
+shm --> vmt_manager : Read Response Data
+
+@enduml

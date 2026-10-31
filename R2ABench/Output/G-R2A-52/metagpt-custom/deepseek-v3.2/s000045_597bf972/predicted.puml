@@ -1,0 +1,60 @@
+@startuml
+
+component "Host Application" as host_app
+component "Android Context" as android_context
+component "QAPM Configuration Manager" as config_manager
+
+component "WorkHandlerManager" as work_handler_manager
+component "MainThread Handler" as main_handler
+component "Background Handler Thread" as bg_handler_thread
+
+component "Upload Processor" as upload_processor
+database "Storage" as storage
+component "Transaction State" as transaction_state
+
+interface "DataSender" as data_sender <<interface>>
+component "ResponseHandlerWrapper" as response_wrapper
+component "ContentBufferingResponseEntity" as content_entity
+component "Counting InputStream" as counting_stream
+component "Apache HttpClient" as apache_client
+
+' Configuration relationships
+host_app --> android_context : "provides"
+host_app --> config_manager : "configures"
+config_manager --> data_sender : "configures"
+
+' Scheduling relationships
+work_handler_manager --> main_handler : "uses for callbacks"
+work_handler_manager --> bg_handler_thread : "schedules work on"
+work_handler_manager --> upload_processor : "schedules"
+
+' Upload processing relationships
+upload_processor --> android_context : "reads cParam from"
+upload_processor --> storage : "pops from for forced send"
+upload_processor --> transaction_state : "creates/updates"
+upload_processor --> data_sender : "submits to"
+
+' Instrumentation relationships
+response_wrapper --> transaction_state : "instruments with"
+response_wrapper --> apache_client : "wraps response handler"
+content_entity --> counting_stream : "wraps"
+content_entity --> apache_client : "wraps http entity"
+
+' Callback relationships
+data_sender ..> upload_processor : "callbacks for success/failure"
+
+' Data flow annotations
+note right of upload_processor
+  Processes upload directory path (DR-003)
+  Uses bParam/cParam configuration
+end note
+
+note right of response_wrapper
+  Instruments transaction state (FR-008, DR-009)
+end note
+
+note right of content_entity
+  Uses counting stream for byte tracking (FR-009, DR-010)
+end note
+
+@enduml

@@ -1,0 +1,93 @@
+@startuml
+title statlord - System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+' ---------- Actors / External Clients ----------
+actor "Browser Editor User" as EditorUser
+actor "API Client" as ApiClient
+actor "Display Device / Viewer Consumer" as DisplayDevice
+
+' ---------- Client / Editor Tier ----------
+package "Client / Editor Tier (Node.js, npm build -> static assets)" as ClientTier {
+
+  component "Browser Editor SPA\n(TypeScript / React)" as EditorSPA {
+    component "Layout Editing UI\n(text, gauges, multi-display positioning)" as LayoutUI
+    component "Canvas Operations\n(render requests, delete requests)" as CanvasOps
+  }
+
+  package "Redux Store" as ReduxStore {
+    component "Controls State" as ControlsState
+    component "Elements State" as ElementsState
+    component "Layouts State" as LayoutsState
+    component "Gauges State" as GaugesState
+    component "Displays State (client display state)" as DisplaysState
+  }
+
+  component "Viewer Rendering Path\n(reads display data, produces B/W pixel view\nat display resolution)" as Viewer
+}
+
+' ---------- Server / API Tier ----------
+package "Server Tier (Python / Django)" as ServerTier {
+
+  component "Web / API Interface\n(HTTP endpoints)" as ApiLayer
+
+  component "Display Registration &\nState Management" as DisplayService
+  component "Layout Management" as LayoutService
+  component "Gauge Data Service" as GaugeService
+
+  component "Static Content Server\n(built client assets)" as StaticServer
+
+  package "Server Data Model" as DataModel {
+    component "Gauge\nkey, value (<= 600 chars)" as GaugeEntity
+    component "Display (server resource)\nkey, available, resolution_x,\nresolution_y, current_layout,\ndisplay_data, rotation" as DisplayEntity
+    component "Layout\nkey, data (binary),\ndisplay_positions (text)" as LayoutEntity
+  }
+}
+
+' ---------- Persistence Tier ----------
+database "PostgreSQL\n(persistent storage)" as Postgres
+
+' ---------- Relationships: users to system ----------
+EditorUser --> EditorSPA : uses (browser)
+ApiClient --> ApiLayer : posts data / registers displays
+DisplayDevice --> Viewer : requests display view
+
+' ---------- Client internals ----------
+EditorSPA --> LayoutUI
+EditorSPA --> CanvasOps
+LayoutUI --> ReduxStore
+CanvasOps --> ReduxStore
+ReduxStore --> ControlsState
+ReduxStore --> ElementsState
+ReduxStore --> LayoutsState
+ReduxStore --> GaugesState
+ReduxStore --> DisplaysState
+Viewer ..> DisplaysState : reads display data
+
+' ---------- Client to server ----------
+EditorSPA --> ApiLayer : web/API communication
+Viewer --> ApiLayer : fetches display data / layout
+StaticServer --> EditorSPA : serves built static assets
+
+' ---------- API routing ----------
+ApiLayer --> GaugeService
+ApiLayer --> DisplayService
+ApiLayer --> LayoutService
+
+' ---------- Service to data model ----------
+GaugeService --> GaugeEntity
+DisplayService --> DisplayEntity
+LayoutService --> LayoutEntity
+
+' ---------- Data relationships ----------
+DisplayEntity --> LayoutEntity : current_layout (may reference)
+DisplayEntity ..> LayoutEntity : on layout delete,\ncurrent_layout set to null (0..1)
+
+' ---------- Persistence ----------
+GaugeEntity --> Postgres
+DisplayEntity --> Postgres
+LayoutEntity --> Postgres
+
+@enduml

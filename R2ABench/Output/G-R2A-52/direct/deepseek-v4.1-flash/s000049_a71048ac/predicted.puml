@@ -1,0 +1,92 @@
+@startuml
+title attic-nlp4l — System Architecture (NLP4L for Apache Lucene)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+actor "Lucene ecosystem user" as LU
+actor "ML workflow user" as MU
+actor "Scala interactive user" as SU
+actor "Schema configuration user" as CU
+
+rectangle "External Environment" {
+  component "Apache Lucene 5.2.0\nIndex + Analyzers" as LUCENE <<external>>
+  component "External ML Tools\n(Apache Spark / Mahout)" as MLTOOLS <<external>>
+  component "Schema Resource / File Path" as SCHEMAFILE <<external>>
+  component "Word Count Data" as WORDCOUNT <<external>>
+}
+
+package "attic-nlp4l (Scala)" {
+
+  component "Interactive Scala Facade / API" as API
+
+  package "Index & NLP Processing" {
+    component "Lucene Document Processor" as DOCCORPUS
+    component "Analyzer-Normalized\nTerm Access" as TERMACCESS
+    component "Document Search\n(query, filter, count, sort)" as SEARCH
+  }
+
+  package "Document Vector Export" {
+    component "Document Vector Builder" as VECBUILDER
+    component "LIBSVM Writer" as LIBSVMWRITER
+  }
+
+  package "Schema Subsystem" {
+    component "Schema Loader\n(resource / file path)" as SCHEMALOADER
+    component "Schema Model\n(root, default analyzer,\nfield types, field defs,\ncustom analyzers)" as SCHEMAMODEL
+  }
+
+  package "Experimental" {
+    component "Chart Display Tool" as CHART
+  }
+}
+
+LU --> API
+MU --> API
+SU --> API
+CU --> SCHEMALOADER
+
+API --> DOCCORPUS
+API --> TERMACCESS
+API --> SEARCH
+API --> VECBUILDER
+API --> SCHEMALOADER
+API --> CHART
+
+DOCCORPUS --> LUCENE
+TERMACCESS --> LUCENE
+SEARCH --> LUCENE
+VECBUILDER --> LUCENE
+VECBUILDER --> LIBSVMWRITER
+LIBSVMWRITER --> MLTOOLS : LIBSVM file
+
+SCHEMALOADER --> SCHEMAFILE : load from
+SCHEMALOADER --> SCHEMAMODEL : builds / validates
+SCHEMAMODEL --> DOCCORPUS
+SCHEMAMODEL --> TERMACCESS
+SCHEMAMODEL --> SEARCH
+
+WORDCOUNT --> CHART
+CHART --> SU : chart presentation
+
+note right of LUCENE
+  NFR-001 / C-002: interfaces and runtime
+  scope remain compatible with the
+  Apache Lucene 5.2.0 ecosystem
+end note
+
+note right of SCHEMAMODEL
+  FR-006 / DR-005..DR-008: invalid schema
+  error when load source is unavailable or
+  root "schema", default analyzer, or field
+  definitions are missing
+end note
+
+note bottom of CHART
+  FR-005 / NFR-004 / C-004: experimental,
+  no compatibility guarantee across revisions
+end note
+
+@enduml

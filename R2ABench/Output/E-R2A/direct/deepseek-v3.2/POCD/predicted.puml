@@ -1,0 +1,125 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    FontColor #000000
+    ArrowColor #333333
+}
+title POCD System Architecture
+
+package "User Interface Layer (Frontend)" {
+    [Web Browser] as Browser
+    component "Registration/Login UI" as RegLoginUI
+    component "File Management UI" as FileUI
+    component "Detection Configuration UI" as ConfigUI
+    component "Detection Result UI" as ResultUI
+    component "Report & History UI" as ReportUI
+    component "Help & Case UI" as HelpUI
+}
+
+package "Business Logic Layer (Backend)" {
+    component "User Account Service" as AccountService
+    component "File Upload/Download Service" as FileService
+    component "Detection Configuration Service" as ConfigService
+    component "Detection & Matching Engine" as DetectionEngine
+    component "Repair Engine" as RepairEngine
+    component "Report & History Service" as ReportService
+    component "Help & Case Service" as HelpService
+    component "Open API Gateway" as APIGateway
+}
+
+package "Data Access Layer" {
+    component "MDJ Parser" as MDJParser
+    component "JDBC Database Connector" as JDBCConnector
+    component "JSON Converter (Jackson)" as JSONConverter
+    database "Application Database" as AppDB
+    database "External MySQL Database" as ExternalDB
+}
+
+package "External Systems/Data" {
+    [StarUML MDJ Files] as MDJFiles
+    [MySQL Design Files/Scripts] as SQLFiles
+    [Third-Party Applications] as ThirdParty
+}
+
+' User Interface Layer connections
+Browser --> RegLoginUI : HTTP/HTTPS
+Browser --> FileUI
+Browser --> ConfigUI
+Browser --> ResultUI
+Browser --> ReportUI
+Browser --> HelpUI
+
+' UI to Business Logic connections
+RegLoginUI --> AccountService : API Calls
+FileUI --> FileService : API Calls
+ConfigUI --> ConfigService : API Calls
+ResultUI --> DetectionEngine : API Calls
+ResultUI --> RepairEngine : API Calls
+ReportUI --> ReportService : API Calls
+HelpUI --> HelpService : API Calls
+
+' Business Logic Layer internal connections
+AccountService --> AppDB : CRUD
+FileService --> AppDB : CRUD
+FileService --> MDJParser : Parse Request
+FileService --> JDBCConnector : Connection Request
+ConfigService --> AppDB : CRUD
+DetectionEngine --> MDJParser : Parsed Data
+DetectionEngine --> JDBCConnector : DB Metadata
+DetectionEngine --> JSONConverter : Convert to JSON
+DetectionEngine --> AppDB : Store Results
+RepairEngine --> DetectionEngine : Inconsistency Data
+RepairEngine --> MDJParser : Modify MDJ
+RepairEngine --> JDBCConnector : Execute SQL
+RepairEngine --> AppDB : Store Results
+ReportService --> AppDB : Query
+HelpService --> AppDB : Query
+APIGateway --> ThirdParty : Open API
+
+' Data Access Layer connections
+MDJParser --> MDJFiles : Read/Parse
+JDBCConnector --> ExternalDB : JDBC Connection
+JDBCConnector --> SQLFiles : Parse Scripts
+JSONConverter --> DetectionEngine : JSON Data
+AppDB --> DetectionEngine : Persist Data
+
+' External connections
+ThirdParty --> APIGateway : API Integration
+
+' Security and communication notes
+note top of Browser
+All sensitive data transmission
+uses SSL encryption (C-008)
+end note
+
+note right of DetectionEngine
+Core matching & detection algorithms:
+- Entity/Attribute/Relationship matching (FR-016)
+- Field, type, class/table inconsistencies (FR-017-FR-020)
+- Relationship inconsistencies (FR-021-FR-023)
+end note
+
+note left of RepairEngine
+Generates & executes repairs:
+- Class diagram repair (FR-024, FR-025)
+- Database repair (FR-026, FR-027)
+end note
+
+note bottom of AppDB
+Stores:
+- User accounts (DR-001)
+- Files & parsing results (DR-002-DR-005)
+- Configurations (DR-006-DR-007)
+- Detection reports & history (DR-009, DR-011)
+- Repair suggestions & results (DR-010)
+- Help & cases (DR-012)
+- Operation logs (DR-013)
+end note
+
+@enduml

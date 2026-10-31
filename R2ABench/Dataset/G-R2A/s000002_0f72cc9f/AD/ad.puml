@@ -1,0 +1,39 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam rectangle {
+    BorderColor #777777
+    BorderThickness 1
+}
+skinparam database {
+    BorderColor #5B8FD8
+    BorderThickness 1
+}
+skinparam cloud {
+    BorderColor #C23A2B
+    BorderThickness 1
+}
+
+rectangle "<b><u>WEB CLIENT</u></b>\n\n* A-Frame\n* React\n* React-Router" as WebClient #F6CCCC
+rectangle "<b><u>WEB SERVER</u></b>\n\n* Node\n* Express\n* DigitalOcean (Deployment)" as WebServer #D8EED5
+rectangle "<b>REDIS CACHE</b>" as RedisCache #DED2E6
+database "<b><u>DATABASE</u></b>\n\n* MariaDB\n  * Users\n  * Likes\n  * Photos\n  * Comments" as Database #D5E4FA
+cloud "<b>AWS S3</b>" as AwsS3 #D84A3A
+
+WebClient -down-> WebServer
+WebServer -up-> WebClient
+
+WebServer -down-> RedisCache
+RedisCache -up-> WebServer
+
+RedisCache -down-> Database
+Database -up-> RedisCache
+
+AwsS3 -left-> WebClient : Serve Images
+WebServer <-> AwsS3 : Upload Images
+@enduml

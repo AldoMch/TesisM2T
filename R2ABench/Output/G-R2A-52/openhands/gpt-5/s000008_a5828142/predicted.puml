@@ -1,0 +1,108 @@
+@startuml
+title Bunny Code - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor Visitor
+actor "Authenticated User" as AuthUser
+actor "Project Owner/Collaborator" as Owner
+actor "Battle Participant" as Battler
+actor Maintainer
+
+node "Browser (Vue App)" as Browser
+
+node "Nginx Reverse Proxy" as Nginx
+
+node "Backend (Node.js/Express + Socket.IO)" as Backend {
+  component "Auth API / JWT" as AuthAPI
+  component "Project API" as ProjectAPI
+  component "Version API / Init Files" as VersionAPI
+  component "Workspace Socket API" as WorkspaceSock
+  component "Battle Socket API" as BattleSock
+  component "Code Execution API" as ExecAPI
+  component "Playback API" as PlaybackAPI
+  component "File Upload API" as FileUploadAPI
+}
+
+database "MySQL\n(users, projects, versions, battles)" as MySQL
+database "InfluxDB\n(coding-process records)" as InfluxDB
+rectangle "Redis\n(cache, workspace mapping,\nbattle invitations/state)" as Redis
+node "Docker Sandbox\n(code compile/execute)" as Sandbox
+cloud "Object Storage (S3-compatible)" as S3
+cloud "CDN Distribution\n(CloudFront-style)" as CDN
+
+Visitor --> Browser
+AuthUser --> Browser
+Owner --> Browser
+Battler --> Browser
+Maintainer --> Nginx
+
+Browser --> Nginx : HTTP + WebSocket
+Nginx --> Backend : REST + Socket.IO
+Browser --> CDN : Static assets & archives
+
+Backend --> MySQL
+Backend --> InfluxDB
+Backend --> Redis
+Backend --> Sandbox
+Backend --> S3
+S3 --> CDN
+
+Browser --> AuthAPI : register/login + JWT
+Browser --> ProjectAPI : project CRUD
+Browser --> VersionAPI : version create + init files
+Browser ..> WorkspaceSock : socket: authorization, status, edit, leave, cleanup
+Browser ..> BattleSock : socket: invite, accept, readiness, sync, judge, outcome
+Browser --> ExecAPI : compile/execute code
+Browser --> PlaybackAPI : playback query
+Browser --> FileUploadAPI : upload files
+
+AuthAPI --> MySQL
+ProjectAPI --> MySQL
+VersionAPI --> MySQL
+WorkspaceSock --> Redis : socket<->version mapping when authorized
+BattleSock --> Redis : invitation read-delete (watched)
+PlaybackAPI --> InfluxDB
+ExecAPI --> Sandbox
+FileUploadAPI --> S3
+
+note right of WorkspaceSock
+Defaults: readOnly=true, authorization=false when
+missing project or version identifiers.
+Writes Redis socket/version mapping only when
+access is authorized and Redis is ready.
+end note
+
+note right of BattleSock
+Acceptance uses Redis isolated execution and watched
+state; upon reading a temporary invitation, delete it
+to prevent repeated acceptance under concurrency.
+end note
+
+note right of ExecAPI
+Code execution isolates in Docker sandbox, not inside
+main backend process.
+end note
+
+note right of AuthAPI
+Validate JWT bearer tokens; reject empty or malformed
+tokens with API error; resolve user info object when valid.
+end note
+
+note bottom of S3
+Store code files, battle result files, user files,
+static assets, and archives; return distributable URLs.
+end note
+
+note bottom of CDN
+Distribute assets/archives via configured URLs.
+end note
+
+note bottom of Redis
+Verify readiness before cache-dependent operations;
+deployment provides host/port/credentials. Persistence
+options are deployment choices.
+end note
+
+@enduml

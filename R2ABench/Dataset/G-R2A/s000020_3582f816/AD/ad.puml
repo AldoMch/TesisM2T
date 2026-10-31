@@ -1,0 +1,128 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName "Microsoft YaHei"
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #9B4A4A
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #9B4A4A
+    BorderThickness 1
+}
+skinparam node {
+    BackgroundColor #FFFFFF
+    BorderColor #9B4A4A
+    BorderThickness 1
+}
+
+package "安全" as Security {
+    rectangle "用户权限" as UserPermission
+    rectangle "HTTPS" as HTTPS
+    rectangle "API Access" as ApiAccess
+}
+
+package "硬件网关" as HardwareGateway {
+    rectangle "数据采集" as GatewayDataCollection
+    rectangle "设备控制" as DeviceControl
+}
+
+package "其它数据源" as OtherDataSources {
+    rectangle "BMS" as SourceBMS
+    rectangle "MES" as MES
+    rectangle "ERP" as SourceERP
+    rectangle "天气" as Weather
+    rectangle "手工录入" as ManualInput
+}
+
+package "数据可视化" as DataVisualization {
+    rectangle "Web UI" as WebUI
+    rectangle "小程序" as MiniProgram
+    rectangle "手机应用" as MobileApp
+    rectangle "大屏" as BigScreen
+    rectangle "BI" as BI
+    rectangle "..." as VisualizationMore
+}
+
+package "第三方应用" as ThirdPartyApps {
+    rectangle "BMS" as ThirdPartyBMS
+    rectangle "ERP" as ThirdPartyERP
+    rectangle "AR" as AR
+    rectangle "..." as ThirdPartyMore
+}
+
+package "数据分析服务" as DataAnalysis {
+    rectangle "API" as AnalysisAPI
+    rectangle "Excel导出" as ExcelExport
+    rectangle "高级报表引擎" as ReportEngine
+    rectangle "FDD规则引擎" as FddRulesEngine
+    rectangle "邮件/短信/微信" as NotificationChannels
+    rectangle "..." as AnalysisMore
+}
+
+package "数据计算服务" as DataComputation {
+    rectangle "数据清洗" as DataCleaning
+    rectangle "数据规范化" as DataNormalization
+    rectangle "计量表数据" as MeterData
+    rectangle "空间数据" as SpaceData
+    rectangle "租户数据" as TenantData
+    rectangle "门店数据" as StoreData
+    rectangle "车间数据" as WorkshopData
+    rectangle "设备数据" as EquipmentData
+    rectangle "组合设备数据" as CompositeEquipmentData
+    rectangle "碳排放数据" as CarbonEmissionData
+    rectangle "成本数据" as CostData
+    rectangle "..." as ComputationMore
+}
+
+package "数据采集服务" as DataCollection {
+    rectangle "Modbus" as Modbus
+    rectangle "OPC UA" as OpcUa
+    rectangle "BACnet" as Bacnet
+    rectangle "EtherNet/IP" as EtherNetIp
+    rectangle "S7" as S7
+    rectangle "MQTT" as Mqtt
+    rectangle "Kafka" as Kafka
+    rectangle "..." as CollectionMore
+}
+
+package "容器化服务器集群" as ContainerCluster {
+    database "数据库集群" as DatabaseCluster
+    node "Web Server" as WebServer
+    rectangle "MQTT Broker" as MqttBroker
+    rectangle "Kafka Broker" as KafkaBroker
+    rectangle "..." as ClusterMore
+    node "裸金属服务器" as BareMetalServer
+    node "虚拟机" as VirtualMachine
+    node "Docker Engine" as DockerEngine
+    node "本地Kubernetes集群" as LocalKubernetes
+    node "云端Kubernetes集群" as CloudKubernetes
+}
+
+Security ..> DataAnalysis : protects
+HardwareGateway --> DataCollection
+OtherDataSources --> DataCollection
+DataCollection --> DataComputation
+DataComputation --> DataAnalysis
+DataAnalysis --> DataVisualization
+DataAnalysis --> ThirdPartyApps
+ContainerCluster ..> DataCollection : hosts
+ContainerCluster ..> DataComputation : hosts
+ContainerCluster ..> DataAnalysis : hosts
+ApiAccess --> AnalysisAPI
+Mqtt ..> MqttBroker : pub/sub
+Kafka ..> KafkaBroker : stream
+DataComputation --> DatabaseCluster
+WebServer ..> WebUI : serves
+@enduml

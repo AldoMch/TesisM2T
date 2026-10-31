@@ -1,0 +1,737 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "System Back End::Model Configuration Service\\n[FR-001, DR-001]"
+      ],
+      "gt_nodes": [
+        "Application Layer::Model Initialization"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Application Layer::Model Management",
+        "Service Layer::Neural Network Model Management"
+      ],
+      "predicted_nodes": [
+        "System Back End::Model Management Service\\n(create, save, load, list)\\n[FR-017, FR-019]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Application Layer::Model Training",
+        "Service Layer::Core Functional Modules::Training::Model Selection",
+        "Service Layer::Core Functional Modules::Training::Training Hyperparams"
+      ],
+      "predicted_nodes": [
+        "System Back End::Training Service\\n(start, evaluate & save,\\nmanual terminate)\\n[FR-004, FR-005, FR-006, DR-004]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Application Layer::Task Inference",
+        "Service Layer::Core Functional Modules::Inference::Model Selection",
+        "Service Layer::Core Functional Modules::Inference::Task Settings"
+      ],
+      "predicted_nodes": [
+        "System Back End::Inferencer\\n(model loader + data loader,\\nforward(), result return)\\n[FR-007, FR-008, FR-009, DR-005]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "System Back End::Data Loading Service\\n(preprocess, augmentation,\\nsplitting)\\n[FR-002, FR-003, DR-002]"
+      ],
+      "gt_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Data Related::Data Loader"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::Preset Datasets\\n(download links + loaders:\\nCIFAR, ImageNet, COCO,\\nFashion-MNIST, IMDB, PTB,\\nSVHN, EMNIST)\\n[FR-018, DR-003]"
+      ],
+      "gt_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Data Related::Datasets"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::Weight Initialization\\n(He, Lecun, Xavier,\\nactivation-function mapping)\\n[FR-016, DR-007]"
+      ],
+      "gt_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Neural Network::Activation Functions"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Optimization::LR Scheduler",
+        "MyTorch Framework Layer::High-Level Components::Optimization::Optimizers"
+      ],
+      "predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::GPU Acceleration Module\\n(device detect & configure,\\nhost<->device copy,\\nasync CPU/GPU, easy APIs,\\nlegacy compatibility)\\n[FR-010, FR-012, FR-013, FR-014, FR-015]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "MyTorch Framework Layer::Low-Level Operations::Gradient Computation",
+        "MyTorch Framework Layer::Low-Level Operations::Mathematical Interfaces",
+        "MyTorch Framework Layer::Low-Level Operations::Tensor Operations"
+      ],
+      "predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::GPU Matrix Operation Kernels\\n(add, multiply, scalar multiply,\\nmean, extremum, element-wise fn)\\n[FR-011, DR-006]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Presentation Layer::Configuration Interface",
+        "Service Layer::Core Functional Modules::Initialization::Backbone Selection",
+        "Service Layer::Core Functional Modules::Initialization::Initialization Visualization",
+        "Service Layer::Core Functional Modules::Initialization::Parameter Settings"
+      ],
+      "predicted_nodes": [
+        "Visual Front End::Configuration Interface\\n(model structure, params,\\nweight init, components)\\n[UI-CONF]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Presentation Layer::Inference Interface",
+        "Service Layer::Core Functional Modules::Inference::Inference Visualization"
+      ],
+      "predicted_nodes": [
+        "Visual Front End::Inference Interface\\n(result display, performance)\\n[UI-INFER]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Visual Front End::Main Interface\\n[UI-MAIN]"
+      ],
+      "gt_nodes": [
+        "Presentation Layer::Main Interface"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Presentation Layer::Training Interface",
+        "Service Layer::Core Functional Modules::Training::Training Visualization"
+      ],
+      "predicted_nodes": [
+        "Visual Front End::Training Interface\\n(loss / accuracy,\\nreal-time visualization)\\n[UI-TRAIN]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Service Layer::Infrastructure & Interfaces::Business System",
+        "Service Layer::Infrastructure & Interfaces::Public Interface",
+        "Service Layer::Infrastructure & Interfaces::Service Interface"
+      ],
+      "predicted_nodes": [
+        "System Back End::Back-End Business / Service API\\n(model init, training, inference,\\nmodel management)\\n[FR-019]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Service Layer::System Management::Logging System",
+        "Service Layer::System Management::Security Audit"
+      ],
+      "predicted_nodes": [
+        "System Back End::Monitoring & Fault Handling\\n(gradient explosion, GPU/memory\\noverflow, resource KPIs, errors)\\n[NFR-011..NFR-015, DR-011]"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "SQLite Local Database\\n(deployed with the system)\\n[C-008]::model_config /\\nweight_init_config\\n[DR-001, DR-007]"
+      ],
+      "gt_nodes": [
+        "Storage / Data Layer::NN Model Data"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "SQLite Local Database\\n(deployed with the system)\\n[C-008]::training_task /\\ntraining_logs /\\nevaluation_results\\n[DR-004, DR-009]"
+      ],
+      "gt_nodes": [
+        "Storage / Data Layer::Train/Inference History"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "Global::Deep Learning\\nBeginner",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Developer /\\nTeam Member",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::GPU Device / Hardware\\n[C-002]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::SQLite Local Database\\n(deployed with the system)\\n[C-008]",
+      "reference_nodes": [
+        "Storage / Data Layer::NN Model Data"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Stakeholder",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MyTorch / NNE Framework (extended)::Classic Model Zoo\\n(ResNet, VGG, Transformer,\\nadded to NNE API)\\n[FR-017, DR-008]",
+      "reference_nodes": [
+        "Service Layer::Neural Network Model Management",
+        "MyTorch Framework Layer::High-Level Components::Data Related::Datasets"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MyTorch / NNE Framework (extended)::Data Augmentation /\\nPreprocessing / Splitting",
+      "reference_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Data Related::Data Loader",
+        "MyTorch Framework Layer::High-Level Components::Data Related::Datasets"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MyTorch / NNE Framework (extended)::GPU Acceleration Module\\n(device detect & configure,\\nhost<->device copy,\\nasync CPU/GPU, easy APIs,\\nlegacy compatibility)\\n[FR-010, FR-012, FR-013, FR-014, FR-015]",
+      "reference_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Optimization::LR Scheduler",
+        "MyTorch Framework Layer::High-Level Components::Optimization::Optimizers"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MyTorch / NNE Framework (extended)::GPU Matrix Operation Kernels\\n(add, multiply, scalar multiply,\\nmean, extremum, element-wise fn)\\n[FR-011, DR-006]",
+      "reference_nodes": [
+        "MyTorch Framework Layer::Low-Level Operations::Gradient Computation",
+        "MyTorch Framework Layer::Low-Level Operations::Mathematical Interfaces",
+        "MyTorch Framework Layer::Low-Level Operations::Tensor Operations"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MyTorch / NNE Framework (extended)::NNE Core\\n(tensor, layer, activation,\\nloss, optimizer, forward())\\n[C-001]",
+      "reference_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Data Related::Data Loader",
+        "MyTorch Framework Layer::High-Level Components::Neural Network::Activation Functions",
+        "MyTorch Framework Layer::High-Level Components::Neural Network::Loss Functions",
+        "MyTorch Framework Layer::High-Level Components::Neural Network::Neural Network Tools",
+        "MyTorch Framework Layer::High-Level Components::Optimization::LR Scheduler",
+        "MyTorch Framework Layer::High-Level Components::Optimization::Optimizers",
+        "MyTorch Framework Layer::Low-Level Operations::Gradient Computation",
+        "MyTorch Framework Layer::Low-Level Operations::Mathematical Interfaces",
+        "MyTorch Framework Layer::Low-Level Operations::Tensor Operations"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MyTorch / NNE Framework (extended)::Preset Datasets\\n(download links + loaders:\\nCIFAR, ImageNet, COCO,\\nFashion-MNIST, IMDB, PTB,\\nSVHN, EMNIST)\\n[FR-018, DR-003]",
+      "reference_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Data Related::Datasets"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MyTorch / NNE Framework (extended)::Weight Initialization\\n(He, Lecun, Xavier,\\nactivation-function mapping)\\n[FR-016, DR-007]",
+      "reference_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Neural Network::Activation Functions"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "SQLite Local Database\\n(deployed with the system)\\n[C-008]::Backup files\\n(auto + manual)\\n[FR-021, C-009]",
+      "reference_nodes": [
+        "Storage / Data Layer::NN Model Data",
+        "Storage / Data Layer::Train/Inference History"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "SQLite Local Database\\n(deployed with the system)\\n[C-008]::datasets /\\ndata_loading_config\\n[DR-002, DR-003]",
+      "reference_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Data Related::Datasets"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "SQLite Local Database\\n(deployed with the system)\\n[C-008]::error & fault records /\\nperformance metrics\\n[DR-011]",
+      "reference_nodes": [
+        "Service Layer::System Management::Logging System"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "SQLite Local Database\\n(deployed with the system)\\n[C-008]::inference_task /\\ninference_logs\\n[DR-005, DR-009]",
+      "reference_nodes": [
+        "Storage / Data Layer::Train/Inference History",
+        "Application Layer::Task Inference"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "SQLite Local Database\\n(deployed with the system)\\n[C-008]::model_config /\\nweight_init_config\\n[DR-001, DR-007]",
+      "reference_nodes": [
+        "Storage / Data Layer::NN Model Data",
+        "MyTorch Framework Layer::High-Level Components::Neural Network::Activation Functions"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "SQLite Local Database\\n(deployed with the system)\\n[C-008]::training_task /\\ntraining_logs /\\nevaluation_results\\n[DR-004, DR-009]",
+      "reference_nodes": [
+        "Storage / Data Layer::Train/Inference History",
+        "Application Layer::Model Training"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "System Back End::Back-End Business / Service API\\n(model init, training, inference,\\nmodel management)\\n[FR-019]",
+      "reference_nodes": [
+        "Application Layer::Model Initialization",
+        "Application Layer::Model Management",
+        "Application Layer::Model Training",
+        "Application Layer::Task Inference",
+        "Service Layer::Infrastructure & Interfaces::Business System",
+        "Service Layer::Infrastructure & Interfaces::Public Interface",
+        "Service Layer::Infrastructure & Interfaces::Service Interface",
+        "Service Layer::Neural Network Model Management"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "System Back End::Data Loading Service\\n(preprocess, augmentation,\\nsplitting)\\n[FR-002, FR-003, DR-002]",
+      "reference_nodes": [
+        "MyTorch Framework Layer::High-Level Components::Data Related::Data Loader"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "System Back End::Inferencer\\n(model loader + data loader,\\nforward(), result return)\\n[FR-007, FR-008, FR-009, DR-005]",
+      "reference_nodes": [
+        "Application Layer::Task Inference",
+        "Service Layer::Core Functional Modules::Inference::Model Selection",
+        "Service Layer::Core Functional Modules::Inference::Task Settings"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "System Back End::Model Configuration Service\\n[FR-001, DR-001]",
+      "reference_nodes": [
+        "Application Layer::Model Initialization",
+        "Presentation Layer::Configuration Interface",
+        "Service Layer::Core Functional Modules::Initialization::Parameter Settings"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "System Back End::Model Management Service\\n(create, save, load, list)\\n[FR-017, FR-019]",
+      "reference_nodes": [
+        "Application Layer::Model Management",
+        "Presentation Layer::Main Interface",
+        "Service Layer::Neural Network Model Management"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "System Back End::Monitoring & Fault Handling\\n(gradient explosion, GPU/memory\\noverflow, resource KPIs, errors)\\n[NFR-011..NFR-015, DR-011]",
+      "reference_nodes": [
+        "Service Layer::System Management::Logging System",
+        "Service Layer::System Management::Security Audit"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "System Back End::Persistence & Backup Service\\n(SQLite backup / auto & manual\\nrecovery, security & integrity)\\n[FR-020, FR-021, NFR-014, DR-010, DR-012]",
+      "reference_nodes": [
+        "Storage / Data Layer::NN Model Data",
+        "Storage / Data Layer::Train/Inference History"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "System Back End::Training Service\\n(start, evaluate & save,\\nmanual terminate)\\n[FR-004, FR-005, FR-006, DR-004]",
+      "reference_nodes": [
+        "Application Layer::Model Training",
+        "Service Layer::Core Functional Modules::Training::Model Selection",
+        "Service Layer::Core Functional Modules::Training::Training Hyperparams"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Visual Front End::Configuration Interface\\n(model structure, params,\\nweight init, components)\\n[UI-CONF]",
+      "reference_nodes": [
+        "Presentation Layer::Configuration Interface",
+        "Service Layer::Core Functional Modules::Initialization::Backbone Selection",
+        "Service Layer::Core Functional Modules::Initialization::Initialization Visualization",
+        "Service Layer::Core Functional Modules::Initialization::Parameter Settings"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Visual Front End::Guidance & Help\\n(steps, prompts, examples,\\nparameter explanations)\\n[UI-HELP]",
+      "reference_nodes": [
+        "Presentation Layer::Main Interface"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Visual Front End::Inference Interface\\n(result display, performance)\\n[UI-INFER]",
+      "reference_nodes": [
+        "Presentation Layer::Inference Interface",
+        "Service Layer::Core Functional Modules::Inference::Inference Visualization"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Visual Front End::Main Interface\\n[UI-MAIN]",
+      "reference_nodes": [
+        "Presentation Layer::Main Interface"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Visual Front End::Training Interface\\n(loss / accuracy,\\nreal-time visualization)\\n[UI-TRAIN]",
+      "reference_nodes": [
+        "Presentation Layer::Training Interface",
+        "Service Layer::Core Functional Modules::Training::Training Visualization"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Model Configuration Service\\n[FR-001, DR-001]"
+      ],
+      "gt_node": "Application Layer::Model Initialization"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Model Management Service\\n(create, save, load, list)\\n[FR-017, FR-019]"
+      ],
+      "gt_node": "Application Layer::Model Management"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Training Service\\n(start, evaluate & save,\\nmanual terminate)\\n[FR-004, FR-005, FR-006, DR-004]"
+      ],
+      "gt_node": "Application Layer::Model Training"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Inferencer\\n(model loader + data loader,\\nforward(), result return)\\n[FR-007, FR-008, FR-009, DR-005]"
+      ],
+      "gt_node": "Application Layer::Task Inference"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Data Loading Service\\n(preprocess, augmentation,\\nsplitting)\\n[FR-002, FR-003, DR-002]"
+      ],
+      "gt_node": "MyTorch Framework Layer::High-Level Components::Data Related::Data Loader"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::Preset Datasets\\n(download links + loaders:\\nCIFAR, ImageNet, COCO,\\nFashion-MNIST, IMDB, PTB,\\nSVHN, EMNIST)\\n[FR-018, DR-003]"
+      ],
+      "gt_node": "MyTorch Framework Layer::High-Level Components::Data Related::Datasets"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::Weight Initialization\\n(He, Lecun, Xavier,\\nactivation-function mapping)\\n[FR-016, DR-007]"
+      ],
+      "gt_node": "MyTorch Framework Layer::High-Level Components::Neural Network::Activation Functions"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "MyTorch Framework Layer::High-Level Components::Neural Network::Loss Functions"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "MyTorch Framework Layer::High-Level Components::Neural Network::Neural Network Tools"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::GPU Acceleration Module\\n(device detect & configure,\\nhost<->device copy,\\nasync CPU/GPU, easy APIs,\\nlegacy compatibility)\\n[FR-010, FR-012, FR-013, FR-014, FR-015]"
+      ],
+      "gt_node": "MyTorch Framework Layer::High-Level Components::Optimization::LR Scheduler"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::GPU Acceleration Module\\n(device detect & configure,\\nhost<->device copy,\\nasync CPU/GPU, easy APIs,\\nlegacy compatibility)\\n[FR-010, FR-012, FR-013, FR-014, FR-015]"
+      ],
+      "gt_node": "MyTorch Framework Layer::High-Level Components::Optimization::Optimizers"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::GPU Matrix Operation Kernels\\n(add, multiply, scalar multiply,\\nmean, extremum, element-wise fn)\\n[FR-011, DR-006]"
+      ],
+      "gt_node": "MyTorch Framework Layer::Low-Level Operations::Gradient Computation"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::GPU Matrix Operation Kernels\\n(add, multiply, scalar multiply,\\nmean, extremum, element-wise fn)\\n[FR-011, DR-006]"
+      ],
+      "gt_node": "MyTorch Framework Layer::Low-Level Operations::Mathematical Interfaces"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "MyTorch / NNE Framework (extended)::GPU Matrix Operation Kernels\\n(add, multiply, scalar multiply,\\nmean, extremum, element-wise fn)\\n[FR-011, DR-006]"
+      ],
+      "gt_node": "MyTorch Framework Layer::Low-Level Operations::Tensor Operations"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Configuration Interface\\n(model structure, params,\\nweight init, components)\\n[UI-CONF]"
+      ],
+      "gt_node": "Presentation Layer::Configuration Interface"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Inference Interface\\n(result display, performance)\\n[UI-INFER]"
+      ],
+      "gt_node": "Presentation Layer::Inference Interface"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Main Interface\\n[UI-MAIN]"
+      ],
+      "gt_node": "Presentation Layer::Main Interface"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Training Interface\\n(loss / accuracy,\\nreal-time visualization)\\n[UI-TRAIN]"
+      ],
+      "gt_node": "Presentation Layer::Training Interface"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Inference Interface\\n(result display, performance)\\n[UI-INFER]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Inference::Inference Visualization"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Inferencer\\n(model loader + data loader,\\nforward(), result return)\\n[FR-007, FR-008, FR-009, DR-005]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Inference::Model Selection"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Inferencer\\n(model loader + data loader,\\nforward(), result return)\\n[FR-007, FR-008, FR-009, DR-005]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Inference::Task Settings"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Configuration Interface\\n(model structure, params,\\nweight init, components)\\n[UI-CONF]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Initialization::Backbone Selection"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Configuration Interface\\n(model structure, params,\\nweight init, components)\\n[UI-CONF]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Initialization::Initialization Visualization"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Configuration Interface\\n(model structure, params,\\nweight init, components)\\n[UI-CONF]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Initialization::Parameter Settings"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Training Service\\n(start, evaluate & save,\\nmanual terminate)\\n[FR-004, FR-005, FR-006, DR-004]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Training::Model Selection"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Training Service\\n(start, evaluate & save,\\nmanual terminate)\\n[FR-004, FR-005, FR-006, DR-004]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Training::Training Hyperparams"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Visual Front End::Training Interface\\n(loss / accuracy,\\nreal-time visualization)\\n[UI-TRAIN]"
+      ],
+      "gt_node": "Service Layer::Core Functional Modules::Training::Training Visualization"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Back-End Business / Service API\\n(model init, training, inference,\\nmodel management)\\n[FR-019]"
+      ],
+      "gt_node": "Service Layer::Infrastructure & Interfaces::Business System"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Back-End Business / Service API\\n(model init, training, inference,\\nmodel management)\\n[FR-019]"
+      ],
+      "gt_node": "Service Layer::Infrastructure & Interfaces::Public Interface"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Back-End Business / Service API\\n(model init, training, inference,\\nmodel management)\\n[FR-019]"
+      ],
+      "gt_node": "Service Layer::Infrastructure & Interfaces::Service Interface"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Model Management Service\\n(create, save, load, list)\\n[FR-017, FR-019]"
+      ],
+      "gt_node": "Service Layer::Neural Network Model Management"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Service Layer::Software Construction & Middleware"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Monitoring & Fault Handling\\n(gradient explosion, GPU/memory\\noverflow, resource KPIs, errors)\\n[NFR-011..NFR-015, DR-011]"
+      ],
+      "gt_node": "Service Layer::System Management::Logging System"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Service Layer::System Management::Permission Management"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "System Back End::Monitoring & Fault Handling\\n(gradient explosion, GPU/memory\\noverflow, resource KPIs, errors)\\n[NFR-011..NFR-015, DR-011]"
+      ],
+      "gt_node": "Service Layer::System Management::Security Audit"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "SQLite Local Database\\n(deployed with the system)\\n[C-008]::model_config /\\nweight_init_config\\n[DR-001, DR-007]"
+      ],
+      "gt_node": "Storage / Data Layer::NN Model Data"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "SQLite Local Database\\n(deployed with the system)\\n[C-008]::training_task /\\ntraining_logs /\\nevaluation_results\\n[DR-004, DR-009]"
+      ],
+      "gt_node": "Storage / Data Layer::Train/Inference History"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 9674,
+      "completion_tokens": 2110,
+      "total_tokens": 11784,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "MyTorch Framework Layer::High-Level Components::Neural Network::Loss Functions",
+    "MyTorch Framework Layer::High-Level Components::Neural Network::Neural Network Tools",
+    "Service Layer::Software Construction & Middleware",
+    "Service Layer::System Management::Permission Management"
+  ],
+  "unmatched_predicted_nodes": [
+    "Global::Deep Learning\\nBeginner",
+    "Global::Developer /\\nTeam Member",
+    "Global::GPU Device / Hardware\\n[C-002]",
+    "Global::SQLite Local Database\\n(deployed with the system)\\n[C-008]",
+    "Global::Stakeholder",
+    "MyTorch / NNE Framework (extended)::Classic Model Zoo\\n(ResNet, VGG, Transformer,\\nadded to NNE API)\\n[FR-017, DR-008]",
+    "MyTorch / NNE Framework (extended)::Data Augmentation /\\nPreprocessing / Splitting",
+    "MyTorch / NNE Framework (extended)::NNE Core\\n(tensor, layer, activation,\\nloss, optimizer, forward())\\n[C-001]",
+    "SQLite Local Database\\n(deployed with the system)\\n[C-008]::Backup files\\n(auto + manual)\\n[FR-021, C-009]",
+    "SQLite Local Database\\n(deployed with the system)\\n[C-008]::datasets /\\ndata_loading_config\\n[DR-002, DR-003]",
+    "SQLite Local Database\\n(deployed with the system)\\n[C-008]::error & fault records /\\nperformance metrics\\n[DR-011]",
+    "SQLite Local Database\\n(deployed with the system)\\n[C-008]::inference_task /\\ninference_logs\\n[DR-005, DR-009]",
+    "System Back End::Persistence & Backup Service\\n(SQLite backup / auto & manual\\nrecovery, security & integrity)\\n[FR-020, FR-021, NFR-014, DR-010, DR-012]",
+    "Visual Front End::Guidance & Help\\n(steps, prompts, examples,\\nparameter explanations)\\n[UI-HELP]"
+  ],
+  "_provenance": {
+    "fingerprint": "0f597ddb3e92587ace816cd6f9e8420166f39c82ab1fffe9a3719776e246d6f4",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

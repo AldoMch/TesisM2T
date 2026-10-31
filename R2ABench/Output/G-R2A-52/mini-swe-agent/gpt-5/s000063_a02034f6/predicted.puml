@@ -1,0 +1,73 @@
+@startuml
+title Teamgram Server - Layered Component Architecture (MTProto)
+
+skinparam componentStyle rectangle
+left to right direction
+
+actor "Telegram-compatible Client" as Client
+
+package "Client Access Layer" {
+  component "MTProto Gateway\n(Access/BFF)" as Gateway
+}
+
+package "Service Layer" {
+  component "Auth Service\n(Authorization Keys, Server/Future Salts)" as Auth
+  component "Session Service\n(Encrypted Sessions, session_id,\nDestroy/Drop Answer Handling)" as Session
+  component "Message Service\n(Service Messages)" as Msg
+  component "Registration & Verification Service" as Reg
+  component "Push/Sync Service" as Push
+  component "Media Service (optional)" as Media
+}
+
+package "Integration & Infrastructure Layer" {
+  database "MySQL" as MySQL
+  component "Redis" as Redis
+  component "etcd" as Etcd
+  queue "Kafka" as Kafka
+  component "MinIO (Object Storage)" as MinIO
+  component "FFmpeg/FFProbe\n(optional tools)" as FFMPEG
+  component "External Verification Service\n(optional)" as VerifySvc
+}
+
+' Client interactions
+Client --> Gateway : MTProto
+
+' Access to services
+Gateway --> Auth : auth key / salts
+Gateway --> Session : session setup / encrypted msgs
+Gateway --> Msg : service messages
+Gateway --> Reg : registration / phone verify
+
+' Intra-service coordination
+Msg --> Session : destroy_session / rpc_drop_answer
+
+' Service to infrastructure
+Auth --> MySQL
+Auth --> Redis
+Session --> Redis : session state
+Msg --> MySQL
+Msg --> Kafka : events
+Push --> Kafka : consume/produce
+Push --> Gateway : updates / sync
+Reg --> MySQL
+Reg --> VerifySvc : verify code (when enabled)
+Media --> MinIO : media objects
+Media --> FFMPEG : transcode/probe (when enabled)
+
+' Configuration/coordination
+Auth -.- Etcd
+Session -.- Etcd
+Msg -.- Etcd
+Push -.- Etcd
+Reg -.- Etcd
+Gateway -.- Etcd
+
+note bottom
+- Go-based, multi-service server
+- Deployable via Docker or manual build/install
+- Depends on MySQL, Redis, etcd, Kafka, MinIO
+- Optional media via FFmpeg/FFProbe
+- Maintains MTProto interoperability
+end note
+
+@enduml

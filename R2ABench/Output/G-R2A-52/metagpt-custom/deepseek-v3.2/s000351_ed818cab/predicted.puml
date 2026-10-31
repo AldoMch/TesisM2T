@@ -1,0 +1,92 @@
+@startuml
+' Refined Architecture for Kangrand ECDLP Solver
+
+package "Input/Output Layer" {
+    component "InputFileParser" as InputParser
+    component "ConfigurationHandler" as ConfigHandler
+    component "ResultFileGenerator" as ResultGenerator
+    component "WorkFileManager" as WorkFiles
+}
+
+package "Orchestration Layer" {
+    component "CommandLineInterface" as CLI
+    component "DistributedServer" as Server
+    component "DistributedClient" as Client
+    component "OfflineMerger" as Merger
+}
+
+package "Core Solver Layer" {
+    component "SolverEngine" as Solver {
+        component "DistinguishedPointManager" as DPointManager
+        component "KangarooStateManager" as StateManager
+        component "WsplitBackupManager" as BackupManager
+    }
+}
+
+node "GPU Hardware" as GPU
+
+' Input/Output Layer dependencies
+InputParser --> ConfigHandler : reads configuration
+InputParser --> WorkFiles : writes parsed input
+ConfigHandler --> WorkFiles : manages config files
+WorkFiles --> ResultGenerator : provides data for results
+
+' Orchestration Layer dependencies
+CLI --> InputParser : invokes parsing
+CLI --> ConfigHandler : loads configuration
+CLI --> Server : starts/stops
+CLI --> Client : configures/launches
+CLI --> Merger : invokes merge
+CLI --> Solver : configures local solving
+
+Server --> ConfigHandler : reads server config
+Server --> Solver : coordinates solving work
+Server --> WorkFiles : generates work files
+Server --> Client : distributes work
+
+Client --> ConfigHandler : reads client config
+Client --> Solver : performs computation
+Client --> Server : requests work/reports results
+Client --> WorkFiles : reads/writes work files
+
+Merger --> WorkFiles : reads work files
+Merger --> Solver : checks for solved keys
+Merger --> ResultGenerator : outputs final results
+
+' Core Solver Layer dependencies
+Solver --> InputParser : reads problem definition
+Solver --> DPointManager : manages distinguished points
+Solver --> StateManager : persists kangaroo states
+Solver --> BackupManager : handles wsplit backups
+Solver --> WorkFiles : periodic save/load (FR-004)
+Solver --> GPU : optional acceleration
+
+' Component relationships within Solver
+DPointManager --> StateManager : updates states
+StateManager --> BackupManager : triggers backups
+BackupManager --> WorkFiles : creates prefixed backups
+
+' External hardware dependency
+Solver ..> GPU : optional hardware acceleration
+
+' Data flow annotations
+note right of InputParser
+  Parses ASCII input files
+  with hex values and
+  public keys (FR-001, FR-002)
+end note
+
+note right of WorkFiles
+  Portable across hardware/
+  configurations (NFR-005)
+  Periodic saves (FR-004)
+end note
+
+note right of Solver
+  Internal memory management
+  with hash tables (NFR-003)
+  Distinguished point
+  handling (FR-006)
+end note
+
+@enduml

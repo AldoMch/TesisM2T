@@ -1,0 +1,122 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+
+actor "Java Developer" as javaDev
+actor "CLI Operator" as cliOp
+
+package "JSeats System" {
+
+    package "Entry Points" {
+        component "CLI Launcher" as cli
+        component "Caller-Facing\nAllocation API" as callerAPI
+    }
+
+    package "Data Model" {
+        component "Tally" as tally
+        component "Candidate" as candidate
+        component "Properties" as props
+        component "Processor\nConfiguration" as procConfig
+        component "Result" as result
+    }
+
+    package "Allocation Processor" {
+        component "Seat Allocation\nProcessor" as processor
+        component "Tally Filter\nAPI" as filterAPI
+        component "Result Decoration\nAPI" as decorAPI
+    }
+
+    package "Allocation Method Contract" {
+        interface "AllocationMethod\n(Protected Tally View)" as methodContract
+    }
+
+    package "Majority Methods" {
+        component "Simple Majority" as simpleMaj
+        component "Qualified Majority" as qualMaj
+        component "Absolute Majority" as absMaj
+    }
+
+    package "Ranked Methods" {
+        component "Ranked by Votes" as ranked
+    }
+
+    package "Equal Proportions Methods" {
+        component "Huntington-Hill" as huntington
+    }
+
+    package "Largest Remainder Methods" {
+        component "Hare" as hare
+        component "Droop" as droop
+        component "Imperiali (LR)" as imperialiLR
+    }
+
+    package "Highest Averages Methods" {
+        component "D'Hondt" as dhondt
+        component "Sainte-Lague /\nWebster" as sainteLague
+        component "Imperiali (HA)" as imperialiHA
+        component "Danish" as danish
+    }
+
+    package "Extensions" {
+        component "Tally Filters" as filters
+        component "Result Decorators" as decorators
+    }
+
+    package "Error Handling" {
+        component "SeatAllocationException" as exception
+    }
+
+    package "Data Exchange" {
+        component "XML Tally\nLoader\n(Tally.fromXML())" as xmlLoader
+        component "XML Config /\nResult I/O" as xmlIO
+    }
+}
+
+javaDev --> callerAPI : submits tally,\nmethod, config
+cliOp --> cli : invokes with\nCLI arguments
+
+cli --> callerAPI : delegates\nallocation
+cli --> xmlIO : reads/writes\nXML files
+cli ..> tally : accepts Name:Votes\nor file input
+cli ..> props : sets processor\nproperties
+
+callerAPI --> processor : triggers\nprocessing
+callerAPI --> tally : accepts/sets\ntally data
+callerAPI --> procConfig : accepts\nconfiguration
+
+procConfig *-- props
+procConfig *-- filters
+procConfig *-- decorators
+
+tally *-- candidate
+tally --> xmlLoader : loads from XML
+
+processor --> filterAPI : applies\ntally filters
+processor --> methodContract : invokes\nselected method
+processor --> decorAPI : applies\nresult decorators
+processor --> result : produces
+processor ..> exception : throws on\nfailure
+
+filterAPI --> filters : delegates to
+decorAPI --> decorators : delegates to
+
+methodContract <|.. simpleMaj
+methodContract <|.. qualMaj
+methodContract <|.. absMaj
+methodContract <|.. ranked
+methodContract <|.. huntington
+methodContract <|.. hare
+methodContract <|.. droop
+methodContract <|.. imperialiLR
+methodContract <|.. dhondt
+methodContract <|.. sainteLague
+methodContract <|.. imperialiHA
+methodContract <|.. danish
+
+absMaj --> qualMaj : delegates with\ncomputed minimumVotes\n(potentialVotes/2)+1
+
+callerAPI --> result : returns\nResult or Exception
+
+@enduml

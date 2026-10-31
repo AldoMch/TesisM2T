@@ -1,0 +1,111 @@
+@startuml
+' Deployment Node for overall system boundary
+node "Smart Recipe System" {
+
+    ' Mobile App Layer
+    package "Mobile App Layer" {
+        component "Mobile App" as mobileApp
+    }
+
+    ' Backend Service Layer - Control Layer
+    package "Control Layer" {
+        component "User Management Controller" as userCtrl
+        component "Photo Recognition Controller" as photoCtrl
+        component "Recipe Search Controller" as searchCtrl
+        component "Health Analysis Controller" as healthCtrl
+        component "Community Sharing Controller" as communityCtrl
+        component "Recommendation Controller" as recommendCtrl
+        component "Admin Management Controller" as adminCtrl
+        component "Location Controller" as locationCtrl
+    }
+
+    ' Backend Service Layer - Service Layer
+    package "Service Layer" {
+        component "User Management Service" as userService
+        component "Photo Recognition Service" as photoService
+        component "Recipe Search Service" as searchService
+        component "Health Analysis Service" as healthService
+        component "Community Sharing Service" as communityService
+        component "Recommendation Service" as recommendService
+        component "Admin Management Service" as adminService
+        component "Location Service" as locationService
+        component "Catering Data Service" as cateringService
+        component "Model Inference Service" as modelService
+    }
+
+    ' Backend Service Layer - Data Access Layer
+    package "Data Access Layer" {
+        component "User DAO" as userDAO
+        component "Recipe DAO" as recipeDAO
+        component "Health Data DAO" as healthDAO
+        component "Community DAO" as communityDAO
+        component "Feedback DAO" as feedbackDAO
+        component "Catering DAO" as cateringDAO
+        component "Location DAO" as locationDAO
+    }
+
+    ' Data Storage Layer
+    package "Data Storage Layer" {
+        database "MySQL Database" as mysqlDB
+        database "Redis Cache" as redisCache
+        database "Personal Health Info Store" as healthStore
+    }
+}
+
+' Component Dependencies - Mobile to Controllers
+mobileApp --> userCtrl : authentication required
+mobileApp --> photoCtrl : send images
+mobileApp --> searchCtrl : search recipes
+mobileApp --> healthCtrl : get health insights
+mobileApp --> communityCtrl : share content
+mobileApp --> recommendCtrl : get recommendations
+mobileApp --> locationCtrl : get merchant locations
+
+' Controller to Services
+userCtrl --> userService
+photoCtrl --> photoService
+searchCtrl --> searchService
+healthCtrl --> healthService
+communityCtrl --> communityService
+recommendCtrl --> recommendService
+adminCtrl --> adminService
+locationCtrl --> locationService
+
+' Service to Data Access Objects
+userService --> userDAO
+photoService --> recipeDAO
+searchService --> recipeDAO
+healthService --> healthDAO
+communityService --> communityDAO
+recommendService --> userDAO
+adminService --> feedbackDAO
+locationService --> locationDAO
+cateringService --> cateringDAO
+
+' Data Access to Storage
+userDAO --> mysqlDB
+recipeDAO --> mysqlDB
+communityDAO --> mysqlDB
+feedbackDAO --> mysqlDB
+locationDAO --> mysqlDB
+cateringDAO --> mysqlDB
+healthDAO --> healthStore
+
+' Caching Layer
+userDAO --> redisCache
+recipeDAO --> redisCache
+communityDAO --> redisCache
+
+' Specialized Service Connections
+photoService --> modelService : request inference
+healthService --> healthStore : access PHI
+adminService --> userDAO : manage users
+adminService --> communityDAO : moderate content
+recommendService --> healthDAO : get dietary info
+
+' Cross-Cutting Services
+locationService --> cateringService : enrich location data
+communityService --> adminService : report content
+recommendService --> cateringService : suggest catering options
+
+@enduml

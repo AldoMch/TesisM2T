@@ -1,0 +1,110 @@
+@startuml
+
+node "torc MPI Rank Process" as torc_proc {
+
+  package "Python API Layer" as api {
+    component "Submission API\n(torc.submit)" as submit
+    component "Wait/Completion API\n(torc.wait, as_completed)" as waitapi
+    component "Map Engine\n(torc.map)" as mapeng
+    component "Lifecycle API\n(torc.start/init/launch/shutdown)" as lifecycleapi
+    component "SPMD API\n(torc.spmd)" as spmdapi
+  }
+
+  package "Runtime Lifecycle Layer" as lifecycle {
+    component "Lifecycle Manager\n(torc.start/init/launch/shutdown)" as lifecyclemgr
+  }
+
+  package "Task Scheduling & Queueing Layer" as sched {
+    component "Scheduler" as scheduler
+    component "Callback Dispatcher" as callback
+  }
+
+  package "Worker Execution Layer (Threads)" as worker {
+    component "Worker Queues & Executor" as workers
+  }
+
+  package "Interprocess Communication Layer (MPI)" as ipc {
+    component "MPI Communicator" as mpicomm
+    component "SPMD Executor\n(torc.spmd)" as spmd
+    component "Server Message Pump\n(server thread)" as server
+    component "Stealing Controller\n(torc.enable/disable_stealing)" as stealing
+  }
+
+  package "Configuration Layer" as config {
+    component "Config Manager" as cfg
+  }
+
+  package "Data Model Layer" as datamodel {
+    component "Task Descriptor\n(Future)" as taskdesc
+  }
+
+  package "Utilities & Introspection Layer" as util {
+    component "Timing Service\n(torc.gettime)" as timing
+    component "Identity Service\n(torc.worker_id/num_workers,\n torc.node_id/num_nodes)" as identity
+  }
+
+}
+
+cloud "Python runtime" as py
+cloud "MPI runtime + mpi4py" as mpi
+cloud "Operating System Environment\n(TORC_* env vars)" as osenv
+cloud "mpirun" as mpirun
+cloud "HDF5 files" as hdf5
+cloud "Optional example packages\n(numpy, cma, h5py, pillow)" as optpkgs
+cloud "Image dataset files" as images
+cloud "Examples & Workflows\n(master-worker, SPMD, stealing,\n image preprocessing, optimization)" as ex
+
+' Key dependencies within torc
+submit --> scheduler
+submit --> taskdesc
+submit --> callback
+
+scheduler --> workers
+scheduler --> callback
+workers --> taskdesc
+workers --> callback
+
+waitapi --> taskdesc
+waitapi --> scheduler
+
+mapeng --> submit
+
+lifecycleapi --> lifecyclemgr
+spmdapi --> spmd
+
+lifecyclemgr --> mpicomm
+lifecyclemgr --> workers
+
+server --> mpicomm
+server --> scheduler
+server --> callback
+
+stealing --> mpicomm
+workers --> stealing
+stealing --> workers
+spmd --> mpicomm
+
+cfg --> workers
+cfg --> stealing
+cfg --> server
+cfg --> osenv
+
+api --> timing
+api --> identity
+identity --> mpicomm
+identity --> workers
+
+' External systems and usage
+workers --> py
+callback --> py
+mpicomm --> mpi
+
+ex --> api
+ex --> mpirun
+ex --> hdf5
+ex --> optpkgs
+ex --> images
+
+mpirun --> mpi
+
+@enduml

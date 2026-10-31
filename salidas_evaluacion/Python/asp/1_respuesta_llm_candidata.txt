@@ -1,0 +1,227 @@
+{
+  "requirements": [
+    {
+      "id": "asp-R001",
+      "description": "User registration, scholar certification, profile editing, and display of achievements and cooperation networks."
+    },
+    {
+      "id": "asp-R002",
+      "description": "Literature retrieval across multiple dimensions, conversational/natural-language search, semantic correction, multilingual support, filtering, and sorting."
+    },
+    {
+      "id": "asp-R003",
+      "description": "Academic interaction including moderated comments, Q&A, encrypted 1-to-1 private messaging with mutual verification, following, annotations, and sharing."
+    },
+    {
+      "id": "asp-R004",
+      "description": "Academic achievement management, hierarchical field classification, claim verification, and multi-stage claim appeal workflow."
+    },
+    {
+      "id": "asp-R005",
+      "description": "Institution membership and creation workflows, administrative review, and three-level institution hierarchy (university, institute, laboratory)."
+    },
+    {
+      "id": "asp-R006",
+      "description": "Periodic data collection via crawlers/APIs, deduplication/cleaning, daily incremental sync, hotspot analysis, and influence profiles."
+    },
+    {
+      "id": "asp-R007",
+      "description": "Personalized content and literature recommendations, including interdisciplinary diversity rules."
+    },
+    {
+      "id": "asp-R008",
+      "description": "Access control for unpublished works, 3-month delayed disclosure for sensitive rankings, encrypted messaging, and AES-256 data protection."
+    },
+    {
+      "id": "asp-R009",
+      "description": "Persistent hybrid storage for relational and unstructured data, with daily full and hourly incremental backups kept for 30 days."
+    },
+    {
+      "id": "asp-R010",
+      "description": "Academic misconduct detection via draft plagiarism checking and blacklist filtering."
+    },
+    {
+      "id": "asp-R011",
+      "description": "Three-tier architecture separating application layer, support services layer, and infrastructure layer."
+    }
+  ],
+  "components": [
+    {
+      "id": "comp-api-gateway",
+      "name": "API Gateway & Security Controller",
+      "layer": "Application Layer",
+      "description": "Handles authentication verification, route dispatching, rate limiting, and access authorization for sensitive or unpublished data.",
+      "tracesTo": ["asp-R001", "asp-R008", "asp-R011"]
+    },
+    {
+      "id": "comp-user-management",
+      "name": "User and Scholar Profile Service",
+      "layer": "Application Layer",
+      "description": "Manages user registrations, scholar certification workflows, profile updates, and displays scholar networks.",
+      "tracesTo": ["asp-R001", "asp-R011"]
+    },
+    {
+      "id": "comp-interaction-service",
+      "name": "Academic Collaboration & Messaging Service",
+      "layer": "Application Layer",
+      "description": "Provides moderated commenting, literature Q&A, collaborative annotations, and end-to-end verified point-to-point private messaging.",
+      "tracesTo": ["asp-R003", "asp-R008", "asp-R011"]
+    },
+    {
+      "id": "comp-search-conversational-service",
+      "name": "Conversational Search & Translation Gateway",
+      "layer": "Application Layer",
+      "description": "Processes natural language queries, multi-turn conversational search contexts, and multilingual translation for literature queries.",
+      "tracesTo": ["asp-R002", "asp-R011"]
+    },
+    {
+      "id": "comp-institution-service",
+      "name": "Institution Hierarchy Management Service",
+      "layer": "Support Layer",
+      "description": "Manages application workflows and models the 3-level tree structure (university, institute, laboratory).",
+      "tracesTo": ["asp-R005", "asp-R011"]
+    },
+    {
+      "id": "comp-achievement-service",
+      "name": "Achievement & Claim Lifecycle Service",
+      "layer": "Support Layer",
+      "description": "Manages multi-level academic taxonomies, author achievement claims, and three-stage appeal verification processes.",
+      "tracesTo": ["asp-R004", "asp-R008", "asp-R011"]
+    },
+    {
+      "id": "comp-nlp-search-engine",
+      "name": "Multilingual Semantic Search Engine",
+      "layer": "Support Layer",
+      "description": "Executes multidimensional retrieval, semantic error correction, and cross-language mappings across Chinese, English, Japanese, and German.",
+      "tracesTo": ["asp-R002", "asp-R011"]
+    },
+    {
+      "id": "comp-recommendation-service",
+      "name": "Recommendation & Discovery Engine",
+      "layer": "Support Layer",
+      "description": "Generates personalized literature feeds and triggers diversity rules to recommend cross-disciplinary researchers.",
+      "tracesTo": ["asp-R007", "asp-R011"]
+    },
+    {
+      "id": "comp-analytics-service",
+      "name": "Hotspot & Influence Analytics Engine",
+      "layer": "Support Layer",
+      "description": "Computes research hotspots, compiles influence profiles, and enforces embargo rules on sensitive metric disclosure.",
+      "tracesTo": ["asp-R006", "asp-R008", "asp-R011"]
+    },
+    {
+      "id": "comp-misconduct-detection-service",
+      "name": "Academic Misconduct Detection Service",
+      "layer": "Support Layer",
+      "description": "Performs draft plagiarism checks and cross-references blacklist records against submissions.",
+      "tracesTo": ["asp-R010", "asp-R011"]
+    },
+    {
+      "id": "comp-data-ingestion-pipeline",
+      "name": "Data Collection & ETL Pipeline",
+      "layer": "Infrastructure Layer",
+      "description": "Crawls and accesses external scholarly APIs, deduplicates, cleans, and coordinates daily incremental synchronizations.",
+      "tracesTo": ["asp-R006", "asp-R011"]
+    },
+    {
+      "id": "comp-hybrid-storage-engine",
+      "name": "Secure Hybrid Persistence Layer",
+      "layer": "Infrastructure Layer",
+      "description": "Provides encrypted persistent storage (AES-256) for relational operational models and unstructured literature and behavior logs.",
+      "tracesTo": ["asp-R008", "asp-R009", "asp-R011"]
+    },
+    {
+      "id": "comp-backup-management-system",
+      "name": "Automated Backup & Retention System",
+      "layer": "Infrastructure Layer",
+      "description": "Executes daily full backups and hourly incremental backups with a 30-day retention lifecycle.",
+      "tracesTo": ["asp-R009", "asp-R011"]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn-gw-user",
+      "source": "comp-api-gateway",
+      "target": "comp-user-management",
+      "description": "Routes user authentication, profile requests, and scholar verification actions."
+    },
+    {
+      "id": "conn-gw-search",
+      "source": "comp-api-gateway",
+      "target": "comp-search-conversational-service",
+      "description": "Directs conversational search queries and filter parameters."
+    },
+    {
+      "id": "conn-gw-interaction",
+      "source": "comp-api-gateway",
+      "target": "comp-interaction-service",
+      "description": "Transfers comment submissions, questions, and mutual-verification private messaging sessions."
+    },
+    {
+      "id": "conn-user-institution",
+      "source": "comp-user-management",
+      "target": "comp-institution-service",
+      "description": "Queries and associates scholar profiles with institutional nodes in the hierarchy."
+    },
+    {
+      "id": "conn-search-nlp",
+      "source": "comp-search-conversational-service",
+      "target": "comp-nlp-search-engine",
+      "description": "Dispatches parsed search terms and conversational contexts for semantic retrieval."
+    },
+    {
+      "id": "conn-search-rec",
+      "source": "comp-search-conversational-service",
+      "target": "comp-recommendation-service",
+      "description": "Passes user query patterns to inform cross-disciplinary recommendation diversity rules."
+    },
+    {
+      "id": "conn-interaction-achievement",
+      "source": "comp-interaction-service",
+      "target": "comp-achievement-service",
+      "description": "Verifies literature and achievement bindings for commentary, annotations, and Q&A."
+    },
+    {
+      "id": "conn-achievement-misconduct",
+      "source": "comp-achievement-service",
+      "target": "comp-misconduct-detection-service",
+      "description": "Triggers plagiarism checks and blacklist validations on claimed or submitted drafts."
+    },
+    {
+      "id": "conn-ingestion-analytics",
+      "source": "comp-data-ingestion-pipeline",
+      "target": "comp-analytics-service",
+      "description": "Feeds synchronized and cleaned academic data for hotspot computation and influence scoring."
+    },
+    {
+      "id": "conn-ingestion-storage",
+      "source": "comp-data-ingestion-pipeline",
+      "target": "comp-hybrid-storage-engine",
+      "description": "Persists structured and unstructured academic data into storage."
+    },
+    {
+      "id": "conn-achievement-storage",
+      "source": "comp-achievement-service",
+      "target": "comp-hybrid-storage-engine",
+      "description": "Stores and reads achievement classifications, claims, and status records with AES-256 encryption."
+    },
+    {
+      "id": "conn-analytics-storage",
+      "source": "comp-analytics-service",
+      "target": "comp-hybrid-storage-engine",
+      "description": "Stores computed metrics and reads aggregated academic records."
+    },
+    {
+      "id": "conn-nlp-storage",
+      "source": "comp-nlp-search-engine",
+      "target": "comp-hybrid-storage-engine",
+      "description": "Queries index and unstructured literature corpora for search and filtering."
+    },
+    {
+      "id": "conn-storage-backup",
+      "source": "comp-hybrid-storage-engine",
+      "target": "comp-backup-management-system",
+      "description": "Supplies database dumps and transaction logs for hourly incremental and daily full backups."
+    }
+  ]
+}

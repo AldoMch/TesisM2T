@@ -1,0 +1,156 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 20
+skinparam ranksep 30
+
+title Smart Recipe System - High-Level Architecture
+
+' ========== EXTERNAL ENTITIES ==========
+rectangle "Mobile User" as User <<External Person>>
+rectangle "System Administrator" as Admin <<External Person>>
+rectangle "Catering Company" as Catering <<External Person>>
+
+' ========== MOBILE CLIENT TIER ==========
+package "Mobile Client Tier" {
+    [Android App] as AndroidApp
+    [iOS App] as iOSApp
+    note right of AndroidApp
+        Contains UI for:
+        - Login/Registration
+        - Photo Capture/Upload
+        - Recipe Display
+        - Health Center
+        - Community Sharing
+        - Recommendations
+    end note
+    AndroidApp - [iOSApp] : Common UI Logic
+}
+
+' ========== API GATEWAY & COMMUNICATION ==========
+node "API Gateway / Load Balancer" as Gateway {
+}
+
+' ========== BACKEND SERVICE TIER ==========
+package "Backend Service Tier (Spring Boot)" as Backend {
+    rectangle "Authentication Service" as AuthService
+    rectangle "User Profile Service" as UserService
+    rectangle "Recipe Management Service" as RecipeService
+    rectangle "Health Analysis Service" as HealthService
+    rectangle "Community Service" as CommunityService
+    rectangle "Recommendation Service" as RecService
+    rectangle "Admin Management Service" as AdminService
+
+    AuthService .u.> UserService : Manages\nCredentials
+    RecipeService .d.> HealthService : Provides Data\nfor Analysis
+    CommunityService .d.> RecService : Provides Sharing Data
+    AdminService .r.> CommunityService : Reviews Content
+    AdminService .r.> RecipeService : Manages Recipes
+}
+
+' ========== AI/ML SERVICE TIER ==========
+node "AI/ML Inference Service (Flask)" as MLService {
+    rectangle "Image Preprocessing" as Preprocess
+    rectangle "Food Recognition Model" as RecognitionModel
+    rectangle "Recipe Generator" as RecipeGen
+    Preprocess -> RecognitionModel : Image Vectors
+    RecognitionModel -> RecipeGen : Food Labels/Features
+}
+
+' ========== DATA TIER ==========
+package "Data Tier" {
+    database "MySQL Database" as MySQL {
+        folder "Structured Data" {
+            [User Accounts]
+            [Recipes & Ingredients]
+            [Nutrition Data]
+            [Health Profiles]
+            [Community Posts]
+            [Merchant Info]
+            [Food Taboos]
+            [User History]
+        }
+    }
+
+    database "Redis Cache" as Redis {
+        folder "Cached Data" {
+            [Session Tokens]
+            [Hot Recipes]
+            [Recommendation Features]
+            [API Responses]
+        }
+    }
+}
+
+' ========== EXTERNAL CONNECTIONS ==========
+User --> AndroidApp : Uses
+User --> iOSApp : Uses
+Admin --> AndroidApp : Uses (Admin UI)
+Catering .[hidden].> Admin : (Data Access via Admin)
+
+AndroidApp --> Gateway : Ajax / Direct Calls
+iOSApp --> Gateway : Ajax / Direct Calls
+
+Gateway --> AuthService : Routes Requests
+Gateway --> UserService
+Gateway --> RecipeService
+Gateway --> HealthService
+Gateway --> CommunityService
+Gateway --> RecService
+Gateway --> AdminService
+Gateway --> MLService : For Image Recognition
+
+' ========== SERVICE TO DATA CONNECTIONS ==========
+AuthService --> Redis : Caches Tokens
+AuthService --> MySQL : Validates Credentials
+
+UserService --> MySQL : CRUD User Profiles
+
+RecipeService --> MySQL : CRUD Recipes
+RecipeService --> Redis : Caches Recipe Data
+RecipeService --> MLService : Submits Images for Recognition
+
+HealthService --> MySQL : Reads Nutrition & Health Data
+HealthService --> Redis : Caches Analysis Results
+
+CommunityService --> MySQL : CRUD Posts, Likes, Comments
+CommunityService --> Redis : Caches Feed
+
+RecService --> MySQL : Reads User History
+RecService --> Redis : Stores Features & Recommendations
+
+AdminService --> MySQL : Manages All Data
+
+MLService --> MySQL : Fetches Recipe DB for Generation
+MLService --> Redis : (Optional) Caches Model Results
+
+' ========== DATA FLOW NOTES ==========
+note top of MLService
+    **Image Recognition Flow:**
+    1. Receive image from client
+    2. Preprocess & validate
+    3. Run inference model
+    4. Match with recipe DB
+    5. Return recipe data
+end note
+
+note bottom of MySQL
+    **Stores:**
+    - User data (DR-001, DR-002)
+    - Recipes (DR-004)
+    - Health info (DR-005, DR-006)
+    - Ingredients & Taboos (DR-012, DR-013)
+    - Community data (DR-009, DR-010, DR-011)
+    - History (DR-014)
+end note
+
+note left of Redis
+    **Performance Cache:**
+    - Session management
+    - Frequently accessed data
+    - Recommendation features
+    (NFR-004)
+end note
+
+@enduml

@@ -1,0 +1,99 @@
+@startuml
+!define LAYER1 #LightBlue
+!define LAYER2 #LightGreen
+!define LAYER3 #LightYellow
+!define EXTERNAL #LightGray
+!define DATA #LightPink
+
+title NLP4L Architecture - Scala NLP Tool for Apache Lucene
+
+skinparam component {
+  BackgroundColor<<Layer>> White
+  BorderColor<<Layer>> Black
+  ArrowColor Black
+}
+
+package "External Systems" <<EXTERNAL>> {
+  component "Apache Lucene 5.2.0" as Lucene {
+    component "Lucene Index" as LuceneIndex <<DATA>>
+    component "Lucene Analyzers" as LuceneAnalyzers
+  }
+  
+  component "Machine Learning Tools" as MLTools {
+    component "Apache Spark" as Spark
+    component "Apache Mahout" as Mahout
+  }
+  
+  component "Scala Interactive Environment" as ScalaEnv
+}
+
+package "NLP4L Core System" <<LAYER1>> {
+  component "Schema Configuration Manager" as SchemaManager {
+    component "Schema Loader" as SchemaLoader
+    component "Schema Validator" as SchemaValidator
+    component "Schema Model" as SchemaModel <<DATA>>
+  }
+  
+  component "Lucene Index Processor" as IndexProcessor {
+    component "Document Data Processor" as DocProcessor
+    component "Term Data Access" as TermAccess
+    component "Search Engine" as SearchEngine
+  }
+  
+  component "Document Vector Generator" as VectorGenerator {
+    component "Vector Creation" as VectorCreation
+    component "LIBSVM Writer" as LIBSVMWriter
+  }
+  
+  component "Chart Display (Experimental)" as ChartDisplay {
+    component "Word Count Visualizer" as WordCountViz
+  }
+  
+  component "Interactive Scala API" as ScalaAPI
+}
+
+package "Data Storage" <<DATA>> {
+  component "Schema Configuration Files" as SchemaFiles <<DATA>>
+  component "LIBSVM Output Files" as LIBSVMFiles <<DATA>>
+  component "Word Count Data" as WordCountData <<DATA>>
+}
+
+' External Interfaces
+LuceneIndex --> DocProcessor : "document data"
+LuceneAnalyzers --> TermAccess : "normalized term data"
+SchemaFiles --> SchemaLoader : "load from resource/file"
+SchemaModel --> DocProcessor : "field definitions"
+SchemaModel --> TermAccess : "analyzer configuration"
+DocProcessor --> VectorCreation : "processed documents"
+VectorCreation --> LIBSVMWriter : "document vectors"
+LIBSVMWriter --> LIBSVMFiles : "write"
+LIBSVMFiles --> MLTools : "export for ML"
+WordCountData --> WordCountViz : "visualize"
+ScalaEnv --> ScalaAPI : "interactive use"
+ScalaAPI --> IndexProcessor : "ad hoc processing"
+ScalaAPI --> VectorGenerator : "vector generation"
+ScalaAPI --> ChartDisplay : "chart display"
+
+' Internal Dependencies
+SchemaLoader --> SchemaValidator : "validate"
+SchemaValidator --> SchemaModel : "store valid schema"
+DocProcessor --> TermAccess : "access term data"
+DocProcessor --> SearchEngine : "search capability"
+SearchEngine --> LuceneIndex : "query documents"
+
+note right of ChartDisplay
+  Experimental feature
+  May change in future revisions
+end note
+
+note right of Lucene
+  Apache Lucene 5.2.0
+  Ecosystem dependency
+end note
+
+note right of MLTools
+  External ML tools
+  (Spark, Mahout, etc.)
+end note
+
+@enduml

@@ -1,0 +1,139 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+
+skinparam node {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontStyle bold
+}
+
+skinparam component {
+  BackgroundColor #EEF8EE
+  BorderColor #2E7D32
+}
+
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F57F17
+}
+
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+
+skinparam rectangle {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+skinparam arrow {
+  Color #333333
+  FontSize 11
+}
+
+title Earth Defender — System Architecture Diagram
+
+cloud "DNS / Load Balancer" as DNS {
+}
+
+node "Browser Client\n(Three.js)" as Browser {
+  component "3D Game Renderer\n(Three.js)" as Renderer
+  component "WebSocket Client" as WSClient
+  component "Heartbeat Manager\n(ping/pong, 60s)" as Heartbeat
+  component "Message Serializer\n([event, data] JSON)" as MsgSerializer
+  component "Inbound Message Handler" as InboundHandler
+  component "Reconnect Manager" as ReconnectMgr
+  component "Room/Player Context Store\n(roomId, playerId, shipIndex)" as ContextStore
+  component "Server List Store" as ServerListStore
+  component "Room Player Count Display" as PlayerCount
+}
+
+node "Web Server\n(Static Asset Server)" as WebServer {
+  component "HTML / CSS / JS Assets" as StaticAssets
+  component "Images / Game Assets" as ImageAssets
+}
+
+node "Erlang/OTP Game Server\n(Master Node)" as GameServer {
+  component "WebSocket Endpoint" as WSEndpoint
+  component "Room Manager" as RoomManager
+  component "Game Session Handler" as SessionHandler
+  component "Reconnect Handler" as ReconnectHandler
+  component "Server List Provider" as ServerListProvider
+  component "Heartbeat Responder\n(pong)" as HeartbeatResponder
+}
+
+node "Erlang/OTP Replica Server\n(Slave / Replica Node)" as ReplicaServer {
+  component "WebSocket Endpoint (Replica)" as WSEndpointR
+  component "Room Manager (Replica)" as RoomManagerR
+  component "Game Session Handler (Replica)" as SessionHandlerR
+}
+
+database "Reconnect Context\n[roomId, playerId, shipIndex]" as ReconnectCtx
+
+Browser -[hidden]r- DNS
+
+DNS --> Browser : resolve server address
+DNS --> WebServer : resolve web server address
+
+Browser --> WebServer : HTTP GET static assets\n(HTML, CSS, JS, images)
+StaticAssets --> Browser : serve static files
+ImageAssets --> Browser : serve game assets
+
+WSClient --> WSEndpoint : WebSocket over HTTP\n(multiplayer runtime)
+
+MsgSerializer --> WSClient : outbound\n[event, data] JSON
+WSClient --> InboundHandler : inbound\n[action, data?] JSON
+
+Heartbeat --> MsgSerializer : ping (null, every 60s\nwhile connection open)
+InboundHandler --> Heartbeat : pong (no state change)
+
+InboundHandler --> ReconnectMgr : game_reconnect + data
+ReconnectMgr --> Renderer : re-add ship to scene\ncontinue gameplay flow
+
+InboundHandler --> PlayerCount : room_players_number + data
+InboundHandler --> ServerListStore : servers_list + data
+InboundHandler --> ServerListStore : servers_list_redirect + data\nthen disconnect session
+InboundHandler --> Browser : server_error → reload page
+
+WSClient --> ReconnectMgr : WebSocket close event
+ReconnectMgr --> ContextStore : read roomId, playerId, shipIndex
+ReconnectMgr --> WSClient : reopen connection
+ReconnectMgr --> MsgSerializer : send reconnect context\n[roomId, playerId, shipIndex]
+ContextStore --> ReconnectCtx : persist context
+
+WSEndpoint --> RoomManager : create / join room
+RoomManager --> SessionHandler : manage game session
+WSEndpoint --> ReconnectHandler : game_reconnect
+WSEndpoint --> HeartbeatResponder : ping → pong
+WSEndpoint --> ServerListProvider : servers_list / redirect
+HeartbeatResponder --> WSEndpoint : pong response
+
+GameServer --> ReplicaServer : Erlang/OTP distribution\n(master/replica fault tolerance)
+ReplicaServer --> Browser : WebSocket over HTTP\n(failover)
+
+note right of Browser
+  Constraints:
+  - Three.js client only
+  - No P2P (client-to-client)
+  - Client initiates all connections
+  - Async/concurrent messaging
+end note
+
+note right of GameServer
+  Constraints:
+  - Erlang/OTP only
+  - Master/Replica topology
+  - Soft real-time behavior
+end note
+
+note bottom of WSClient
+  Message formats:
+  Outbound: [event, data]
+  Inbound:  [action, data?]
+end note
+
+@enduml

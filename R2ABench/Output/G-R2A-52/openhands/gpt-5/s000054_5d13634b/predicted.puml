@@ -1,0 +1,64 @@
+@startuml
+title tokencard/contracts - System Architecture
+
+skinparam componentStyle rectangle
+
+package "Off-chain Integrations" {
+  component "Integrator / Developer" as Integrator
+  component "Generated Go Bindings" as GoBindings
+  Integrator --> GoBindings : uses
+}
+
+component "Owner Address (EOA)" as Owner
+
+package "Ethereum Network" {
+  component "ENS" as ENS
+  component "Controller Contract" as Controller
+  component "Token Whitelist Contract" as Whitelist
+  component "Oracle / Rate Provider" as Oracle
+  component "TKN Holder Contract" as TKNHolder
+  database "Gas Tank (ETH on Owner EOA)" as GasTank
+
+  frame "Wallet Security Boundary" as Boundary {
+    component "Consumer Contract Wallet" as Wallet
+    database "Protected Assets\n(ETH, ERC20)" as Assets
+    Wallet -- Assets : holds
+  }
+}
+
+' Ownership and gas
+Owner --> Wallet : controls/owns
+Owner --> GasTank : holds gas
+
+' ENS resolution
+Wallet --> ENS : resolve(controller,\nwhitelist, oracle/licence)
+
+' Wallet dependencies
+Wallet --> Whitelist : token support,\nrates, loadability
+Wallet --> Oracle : exchange rates
+
+' Controller relation
+Controller --> Wallet : control/confirm ops
+
+' Token burnability
+TKNHolder --> Whitelist : burnability rules
+
+' Off-chain interactions via bindings
+GoBindings --> Wallet : Call / Transact / Transfer
+GoBindings --> Controller : Call(adminCount,\ncontrollerCount) /\nTransact / Transfer
+GoBindings --> Whitelist : Call (read-only)
+GoBindings ..> ENS : optional resolution
+
+note right of Controller
+Exposes read-only counts:
+- adminCount : uint256
+- controllerCount : uint256
+end note
+
+note bottom of GasTank
+Outside wallet security
+protections; separate from
+protected assets.
+end note
+
+@enduml

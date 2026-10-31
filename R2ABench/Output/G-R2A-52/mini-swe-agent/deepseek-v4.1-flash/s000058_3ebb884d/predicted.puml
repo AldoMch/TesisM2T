@@ -1,0 +1,110 @@
+@startuml
+title macpro-appian-connector - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' External Systems / Actors
+' =========================================================
+package "External Actors & Systems" <<external>> {
+  actor "Developer / Operator" as DEV
+  actor "Repository Maintainer" as MAINTAINER
+  component "Appian Data Source" as APPIAN <<external>>
+  component "CMS BigMAC" as BIGMAC <<external>>
+  component "GitHub Actions API\n(workflow runs - deploy.yml)" as GH_ACTIONS <<external>>
+  component "GitHub Pull Requests API\n(closed PRs, base branch)" as GH_PR <<external>>
+}
+
+package "AWS Cloud (current account & region)" <<external>> {
+  component "AWS CLI Credentials" as AWSCLI <<external>>
+  component "AWS EventBridge\n(event routing rules)" as EVENTBRIDGE <<external>>
+  component "AWS SNS\n(notification topic + target policy)" as SNS <<external>>
+  component "Manual SNS Subscription\nAdministration" as SNS_SUBS <<external>>
+}
+
+' =========================================================
+' Presentation / Interaction Layer
+' =========================================================
+package "Presentation / Interaction Layer" <<layer>> {
+  component "Terminal / Script Interface\n(nvm use, run listRunningStages)" as CLI
+  component "Connector Config Handler\n(invocation entrypoint)" as HANDLER
+  component "Onboarding Procedure" as ONBOARD
+}
+
+' =========================================================
+' Application / Service Layer
+' =========================================================
+package "Application / Service Layer" <<layer>> {
+  component "Stage Listing Service\n(list currently running stages)" as STAGE_SVC
+  component "Connector Configuration Service\n(apply definitions, restart)" as CONN_SVC
+  component "Service Event Alerting Service\n(match + route to SNS)" as ALERT_SVC
+  component "Deployment Metrics Collector\n(deploy.yml runs)" as DEPLOY_METRICS
+  component "PR Merge-Time Metrics Collector\n(averageTimeToMerge)" as PR_METRICS
+}
+
+' =========================================================
+' Data Access / Integration Layer
+' =========================================================
+package "Data Access / Integration Layer" <<layer>> {
+  component "AWS CLI Adapter\n(stage queries)" as CLI_ADAPTER
+  component "Connector Management Library Adapter\n(put / delete / restart)" as CONN_ADAPTER
+  component "GitHub API Client\n(paginated, per_page=100)" as GH_CLIENT
+  component "Event Routing Adapter" as EVT_ADAPTER
+}
+
+' =========================================================
+' Data Layer
+' =========================================================
+package "Data Layer" <<layer>> {
+  database "Connector Definitions Store\n(connectors + cluster/service config)" as CONN_STORE
+  database "Topic & Event Pattern Config\n(event filter criteria, SNS topic)" as TOPIC_CFG
+  database "Metrics Results\n(failedRuns, passedRuns, averageTimeToMerge)" as METRICS_OUT
+  database "Running Stage List Output\n(runningStages=<csv>)" as STAGE_OUT
+}
+
+' =========================================================
+' Relationships
+' =========================================================
+
+' Actors -> Presentation
+DEV --> CLI
+MAINTAINER --> HANDLER
+MAINTAINER --> METRICS_OUT
+DEV --> ONBOARD
+
+' Presentation -> Application
+CLI --> STAGE_SVC
+HANDLER --> CONN_SVC
+ONBOARD ..> CLI : prerequisite
+
+' Application -> Integration
+STAGE_SVC --> CLI_ADAPTER
+CONN_SVC --> CONN_ADAPTER
+ALERT_SVC --> EVT_ADAPTER
+DEPLOY_METRICS --> GH_CLIENT
+PR_METRICS --> GH_CLIENT
+
+' Integration -> Data
+CONN_ADAPTER --> CONN_STORE
+EVT_ADAPTER --> TOPIC_CFG
+DEPLOY_METRICS --> METRICS_OUT
+PR_METRICS --> METRICS_OUT
+STAGE_SVC --> STAGE_OUT
+
+' Integration -> External
+CLI_ADAPTER --> AWSCLI : requires credentials
+CONN_ADAPTER --> CONN_STORE
+ALERT_SVC ..> APPIAN : consumes service events
+EVT_ADAPTER --> EVENTBRIDGE : matching event pattern
+EVENTBRIDGE --> SNS : routed matching event
+SNS --> SNS_SUBS : manual subscription targets
+GH_CLIENT --> GH_ACTIONS : paginated workflow runs
+GH_CLIENT --> GH_PR : paginated closed PRs
+
+' Data transfer flow
+APPIAN --> CONN_SVC : Appian data changes
+CONN_SVC --> BIGMAC : connector-mediated transfer
+
+@enduml

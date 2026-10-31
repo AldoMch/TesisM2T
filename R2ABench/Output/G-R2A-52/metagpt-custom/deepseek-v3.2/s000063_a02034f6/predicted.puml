@@ -1,0 +1,87 @@
+@startuml
+
+package "Client Access Layer" <<layer>> {
+    component "MTProto Server" as mtproto_server <<component>>
+    component "MTProto Protocol Handler" as mtproto_handler <<component>>
+}
+
+package "BFF/Access-Facing Layer" <<layer>> {
+    component "BFF Gateway" as bff_gateway <<component>>
+    component "Authorization Service" as auth_service <<component>>
+    component "Session Manager" as session_manager <<component>>
+    component "Service Message Handler" as service_msg_handler <<component>>
+}
+
+package "Business/Service Layer" <<layer>> {
+    component "Registration/Verification Service" as reg_verification_service <<component>>
+    component "Messaging Service" as messaging_service <<component>>
+    component "Push Notification Service" as push_service <<component>>
+    component "Sync Service" as sync_service <<component>>
+}
+
+package "Infrastructure/Supporting Layer" <<layer>> {
+    component "Media Processor" as media_processor <<component>>
+    component "Kafka Consumer" as kafka_consumer <<component>>
+    component "Kafka Producer" as kafka_producer <<component>>
+}
+
+package "Storage/Data Layer" <<layer>> {
+    database "MySQL" as mysql <<database>>
+    database "Redis" as redis <<database>>
+    database "etcd" as etcd <<database>>
+    queue "Kafka" as kafka <<queue>>
+    database "MinIO" as minio <<database>>
+}
+
+node "External Tools" {
+    component "FFmpeg/FFProbe" as ffmpeg <<tool>>
+}
+
+' Client Access Layer connections
+mtproto_server --> mtproto_handler : "handles protocol"
+mtproto_handler --> bff_gateway : "forwards requests"
+
+' BFF Layer connections
+bff_gateway --> auth_service : "authorizes"
+bff_gateway --> session_manager : "manages sessions"
+bff_gateway --> service_msg_handler : "processes service messages"
+
+auth_service --> session_manager : "validates sessions"
+auth_service --> reg_verification_service : "verifies credentials"
+
+' Business Layer connections
+messaging_service --> auth_service : "checks auth"
+messaging_service --> session_manager : "validates sessions"
+push_service --> auth_service : "checks auth"
+sync_service --> auth_service : "checks auth"
+
+' Infrastructure Layer connections
+media_processor --> ffmpeg : "uses"
+media_processor --> minio : "stores/retrieves media"
+
+kafka_producer --> kafka : "publishes events"
+kafka_consumer --> kafka : "consumes events"
+
+' Kafka integration with business services
+kafka_producer --> messaging_service : "produces message events"
+kafka_consumer --> messaging_service : "consumes message events"
+kafka_producer --> push_service : "produces push events"
+kafka_consumer --> push_service : "consumes push events"
+kafka_producer --> sync_service : "produces sync events"
+kafka_consumer --> sync_service : "consumes sync events"
+
+' Storage Layer connections
+auth_service --> mysql : "stores user data"
+auth_service --> redis : "caches auth data"
+session_manager --> redis : "stores session data"
+session_manager --> etcd : "service discovery"
+reg_verification_service --> mysql : "stores verification data"
+messaging_service --> mysql : "stores messages"
+push_service --> redis : "stores device tokens"
+sync_service --> mysql : "stores sync state"
+
+' Service Message Handler connections
+service_msg_handler --> kafka_producer : "publishes service events"
+service_msg_handler --> etcd : "configuration"
+
+@enduml

@@ -1,0 +1,66 @@
+@startuml
+title GKE Pub/Sub WebSocket Adapter - Deployment/Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ============================================
+' External Actors / Systems
+' ============================================
+actor "Web Client\n(Browser / Integrator)" as Client
+cloud "Google Cloud Pub/Sub\n(Configured Topic)" as PubSub
+cloud "GCP Project\n(Billing, IAM, Topic Access)" as GCP
+
+' ============================================
+' Google Kubernetes Engine Cluster
+' ============================================
+node "Google Kubernetes Engine (GKE) Cluster" as GKE {
+
+  node "Kubernetes Control Plane" as ControlPlane {
+    component "LoadBalancer Service\n(TCP port 80 -> 8080)" as LB
+    component "Horizontal Pod Autoscaler\n(min 1 / max 2 replicas, CPU 80%)" as HPA
+    component "ConfigMap\ntopic identifier" as ConfigMap
+  }
+
+  node "Adapter Deployment\n(one instance per topic)" as Deployment {
+
+    node "Adapter Pod [replica]" as Pod {
+      component "exec.sh\n(Container Entrypoint)" as ExecSh
+      component "pulltop\n(Node.js Pub/Sub Puller)" as Pulltop
+      component "websocketd\n(WebSocket Bridge :8080)" as Websocketd
+      database "Recent Message Cache\n(last 10 messages)" as Cache
+      artifact "SYMBOL environment\n(runtime topic parameter)" as Symbol
+    }
+  }
+}
+
+' ============================================
+' Relationships
+' ============================================
+Client --> LB : WebSocket (TCP 80)
+LB --> Websocketd : forwards to port 8080
+HPA ..> Deployment : scales replicas
+ConfigMap --> Symbol : injects topic as SYMBOL
+Symbol --> ExecSh : runtime topic parameter
+ExecSh --> Pulltop : starts with topic param
+Pulltop --> PubSub : pulls topic messages\n(one subscription per instance)
+Pulltop --> Cache : stores last 10 messages
+Cache --> Websocketd : cached + live output stream
+PubSub --> Pulltop : topic messages
+Pulltop --> Websocketd : runtime output stream
+GCP ..> PubSub : provides topic / permissions
+GCP ..> GKE : hosts cluster / billing
+
+note right of Deployment
+  Subscription consumption scales with
+  number of running instances (N),
+  not with connected clients (M).
+end note
+
+note bottom of Client
+  Clients integrate only via the
+  WebSocket endpoint; no Pub/Sub
+  API or SDK credentials required.
+end note
+
+@enduml

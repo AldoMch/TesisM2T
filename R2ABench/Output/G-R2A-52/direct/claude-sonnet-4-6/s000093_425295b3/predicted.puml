@@ -1,0 +1,98 @@
+@startuml
+!define RECTANGLE class
+
+skinparam rectangle {
+  BackgroundColor<<external>> LightYellow
+  BackgroundColor<<core>> LightBlue
+  BackgroundColor<<runtime>> LightGreen
+  BackgroundColor<<ipc>> LightSalmon
+  BackgroundColor<<artifact>> LightGray
+  BorderColor Black
+  FontSize 12
+}
+
+skinparam node {
+  BackgroundColor White
+  BorderColor Black
+}
+
+skinparam database {
+  BackgroundColor LightSalmon
+  BorderColor DarkOrange
+}
+
+skinparam cloud {
+  BackgroundColor LightGreen
+  BorderColor DarkGreen
+}
+
+title VirtualMotionTracker — System Architecture Diagram
+
+node "User Application Environment" <<external>> {
+  rectangle "User Application\n(External Control Input Provider)" as UserApp <<external>>
+}
+
+node "VMT Management Process" <<core>> {
+  rectangle "VMT Manager\n\n- Receives external control input\n- Manages shared-memory communication\n- Drives virtual motion tracking state updates" as VmtManager <<core>>
+}
+
+node "VMT Driver Process (SteamVR Plugin)" <<core>> {
+  rectangle "VMT Driver\n\n- Exposes virtual motion tracking capability\n- Integrates with OpenVR driver interface\n- Loadable by SteamVR/OpenVR runtime" as VmtDriver <<core>>
+
+  rectangle "Legacy Controller Binding\n(mycontroller)\n\n- controller_type: mycontroller\n- /user/hand/right/input/a\n  → /actions/legacy/in/right_axis1_press\n- /user/hand/right/input/c\n  → /actions/legacy/in/right_a_press\n- /user/hand/right/input/b\n  → /actions/legacy/in/right_grip_press\n- mode: button, sub_mode: complex" as BindingArtifact <<artifact>>
+}
+
+node "Shared Memory IPC Layer" <<ipc>> {
+  database "Shared Memory Channel\n(Manager → Driver)\n\nPayload: JSON string\nMetadata: send_count,\nhandshake_count, message_length" as ShmMgrToDrv <<ipc>>
+
+  database "Shared Memory Channel\n(Driver → Manager)\n\nPayload: JSON string\nMetadata: send_count,\nhandshake_count, message_length" as ShmDrvToMgr <<ipc>>
+}
+
+cloud "SteamVR / OpenVR Runtime\n\n- Loads and hosts VMT Driver\n- OpenVR driver interface\n- Provides runtime environment" as SteamVR <<runtime>>
+
+UserApp -right-> VmtManager : "External Control Input\n(OSC protocol, C-003)\n[FR-001, DR-001]"
+
+VmtManager -down-> ShmMgrToDrv : "Write JSON message\n[FR-002, FR-003, FR-004]\n[DR-002, DR-003]"
+ShmMgrToDrv -down-> VmtDriver : "Read JSON message\n[FR-002, FR-003]\n[DR-002]"
+
+VmtDriver -down-> ShmDrvToMgr : "Write JSON message\n[FR-003, DR-002, DR-003]"
+ShmDrvToMgr -up-> VmtManager : "Read JSON message\n[FR-003, DR-002]"
+
+VmtDriver -right-> SteamVR : "OpenVR Driver Interface\n(virtual motion tracking)\n[FR-005, NFR-001, C-001]"
+
+VmtDriver ..> BindingArtifact : "provides\n[FR-006, DR-004, DR-005]"
+BindingArtifact ..> SteamVR : "consumed by runtime\n[NFR-003]"
+
+note top of UserApp
+  External control integrator
+  supplies motion-tracking
+  control input (OSC identified
+  architecturally, C-003)
+end note
+
+note bottom of ShmMgrToDrv
+  Bidirectional shared-memory IPC
+  JSON-encoded payloads (NFR-002)
+  Sync fields: send_count,
+  handshake_count, message_length
+  (FR-004, DR-003)
+end note
+
+note right of SteamVR
+  Dependency context (C-004):
+  - SDK initialization/shutdown
+  - Interface-version checks
+  - SDK path constants & structures
+  are NOT core product requirements
+end note
+
+legend right
+  |= Color |= Component Type |
+  |<#LightYellow>  | External / User Application |
+  |<#LightBlue>  | Core VMT Components |
+  |<#LightSalmon>  | Shared Memory IPC |
+  |<#LightGreen>  | SteamVR/OpenVR Runtime |
+  |<#LightGray>  | Artifact / Binding File |
+endlegend
+
+@enduml

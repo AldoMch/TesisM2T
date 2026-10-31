@@ -1,0 +1,159 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+actor "Visitor" as Visitor
+actor "Registered User" as User
+actor "Administrator" as Admin
+
+package "Front-end Layer" {
+  component "Vue 3 SPA\n(TypeScript, Vuex, vue-router,\nAnt Design Vue, CodeMirror,\nwangEditor, ECharts, Axios)" as VueApp
+}
+
+package "Edge / Proxy Layer" {
+  component "Nginx Reverse Proxy\n(HTTPS termination,\nreverse proxy)" as Nginx
+  component "CDN\n(Static resources)" as CDN
+  component "DNS" as DNS
+}
+
+package "Back-end (Spring Boot 3.1.2, JDK 21-LTS)" {
+  package "Presentation Layer" {
+    component "REST Controllers" as REST
+    component "Auth Filter\n(JWT / OAuth 2.0)" as AuthFilter
+    component "Swagger UI" as Swagger
+  }
+  package "Business Layer" {
+    component "User Module" as UserMod
+    component "Problem Module" as ProbMod
+    component "Solution Module" as SolMod
+    component "Forum Module" as ForumMod
+    component "AI Assistance Module" as AIMod
+    component "Judging Client Module" as JudgeClient
+    component "Admin Module" as AdminMod
+  }
+  package "Access Layer" {
+    component "MyBatis-Plus" as MyBatis
+    component "Redis Client" as RedisClient
+    component "MinIO Client" as MinIOClient
+    component "SMTP Client" as SMTPClient
+    component "LangChain4j" as LangChain
+    component "HTTP Client" as HTTPClient
+  }
+}
+
+cloud "AI Service (LLM)" as LLM
+
+node "Judging Service" as JudgeService {
+  component "JudgeHost" as JudgeHost
+  component "JudgeCore" as JudgeCore
+  component "Docker Containers\n(seccomp, CPU/memory limits)" as DockerJudge
+}
+
+component "SMTP Server" as SMTPServer
+
+database "MySQL 5.7.44" as MySQL
+database "Redis 7.4.6" as Redis
+database "MinIO Object Storage" as MinIO
+
+package "Monitoring & Ops" {
+  component "Prometheus" as Prometheus
+  component "Grafana" as Grafana
+  component "PagerDuty / DingTalk" as Alerts
+  component "GitLab CI/CD" as GitLab
+  component "Docker Registry" as Registry
+  component "Kubernetes" as K8s
+}
+
+' Relationships
+Visitor --> VueApp : HTTPS
+User --> VueApp : HTTPS
+Admin --> VueApp : HTTPS
+
+VueApp --> Nginx : RESTful API (HTTPS)
+Nginx --> REST : Forward Request (HTTP/Intranet)
+CDN --> VueApp : Static Resources
+DNS --> VueApp : Domain Resolution
+
+REST --> AuthFilter : Validate
+AuthFilter --> UserMod : Authorized
+REST --> UserMod
+REST --> ProbMod
+REST --> SolMod
+REST --> ForumMod
+REST --> AIMod
+REST --> AdminMod
+REST --> JudgeClient
+
+UserMod --> MyBatis
+ProbMod --> MyBatis
+SolMod --> MyBatis
+ForumMod --> MyBatis
+AdminMod --> MyBatis
+
+UserMod --> RedisClient
+ProbMod --> RedisClient
+ForumMod --> RedisClient
+
+ProbMod --> MinIOClient
+SolMod --> MinIOClient
+ForumMod --> MinIOClient
+JudgeClient --> MinIOClient
+AIMod --> MinIOClient
+
+UserMod --> SMTPClient
+AdminMod --> SMTPClient
+
+AIMod --> LangChain
+LangChain --> LLM : API Call
+
+JudgeClient --> HTTPClient
+HTTPClient --> JudgeHost : HTTP
+
+SMTPClient --> SMTPServer
+
+MyBatis --> MySQL
+RedisClient --> Redis
+MinIOClient --> MinIO
+
+JudgeHost --> JudgeCore : Call
+JudgeCore --> DockerJudge : Execute
+
+' Monitoring
+Prometheus --> MySQL : Metrics
+Prometheus --> Redis : Metrics
+Prometheus --> REST : Metrics
+Prometheus --> JudgeService : Metrics
+Grafana --> Prometheus : Query
+Prometheus --> Alerts : Trigger
+
+' CI/CD
+GitLab --> Registry : Build & Push
+GitLab --> K8s : Deploy
+K8s --> VueApp : Deploy
+K8s --> REST : Deploy
+
+' Notes
+note right of VueApp
+  HTML5 compatible browsers:
+  Edge, Chrome, Opera, Safari, Firefox
+end note
+
+note right of MySQL
+  Stores: User, Follow, Question, TestCase,
+  QuestionTag, Record, Language, Solution,
+  Discussion, AI Results, etc.
+end note
+
+note bottom of DockerJudge
+  Resource limits:
+  CPU time, memory, output size
+  seccomp system call restriction
+end note
+
+note top of Prometheus
+  Collects CPU, memory, disk I/O,
+  response time, error rate, QPS,
+  DB query latency, connection count
+end note
+
+@enduml

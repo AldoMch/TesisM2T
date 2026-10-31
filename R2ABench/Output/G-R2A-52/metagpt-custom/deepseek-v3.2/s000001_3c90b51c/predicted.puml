@@ -1,0 +1,75 @@
+@startuml
+
+component "CommandLineLauncher" as CLI
+component "AllocationEntryPoint" as API
+
+component "Processor" as Processor
+component "TallyFilter" as Filter
+component "ResultDecorator" as Decorator
+component "Configuration" as Config
+component "TieBreaker" as TieBreaker
+
+component "XMLParser" as XMLParser
+
+component "AllocationMethod" as Method <<abstract>>
+component "MajorityMethod" as MajorityMethod
+component "RankedMethod" as RankedMethod
+component "EqualProportionsMethod" as EqualProportionsMethod
+component "LargestRemainderMethod" as LargestRemainderMethod
+component "HighestAveragesMethod" as HighestAveragesMethod
+
+component "Tally" as Tally
+component "Candidate" as Candidate
+component "Result" as Result
+
+component "SeatAllocationException" as Exception
+
+node "Java Runtime Environment (JRE)" as JRE
+node "Command-Line Shell" as Shell
+
+' Core allocation flow
+CLI --> Processor : invokes
+API --> Processor : invokes
+Processor --> Method : executes
+Method --> Tally : reads
+Method --> Result : writes
+
+' Configuration dependencies
+Processor --> Config : uses
+Method --> Config : receives parameters from
+Filter --> Config : configurable by
+Decorator --> Config : configurable by
+TieBreaker --> Config : configurable by
+
+' XML handling
+XMLParser --> Tally : creates
+CLI --> XMLParser : uses for loading
+API --> XMLParser : uses for loading
+
+' Tally structure
+Tally --> Candidate : contains
+
+' Optional processing
+Processor --> Filter : optionally applies
+Processor --> Decorator : optionally applies
+Processor --> TieBreaker : optionally uses
+
+' Method variants inheritance
+MajorityMethod --|> Method
+RankedMethod --|> Method
+EqualProportionsMethod --|> Method
+LargestRemainderMethod --|> Method
+HighestAveragesMethod --|> Method
+
+' Error handling
+Method --> Exception : may throw
+Processor --> Exception : may propagate
+Exception --> CLI : surfaces to
+Exception --> API : surfaces to
+
+' External dependencies
+CLI --> Shell : runs in
+CLI --> JRE : requires
+API --> JRE : requires
+
+@enduml

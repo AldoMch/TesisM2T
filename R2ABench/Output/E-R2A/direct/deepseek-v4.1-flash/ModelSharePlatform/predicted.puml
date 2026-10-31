@@ -1,0 +1,114 @@
+@startuml
+title Deep Learning Model Sharing Platform - System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "General User" as GU
+actor "Administrator" as ADMIN
+
+package "Client / Presentation Layer" {
+  component "Modern Browser Runtime" as BROWSER
+  component "Web UI\n(Vue + TypeScript)" as WEBUI
+  component "Multilingual UI\n(Chinese / English)" as I18N
+}
+
+package "Application / Backend Layer\n(Spring Boot)" {
+  component "API / Web Controllers" as API
+  component "Authentication & Account Service" as ACCOUNT
+  component "Q&A Community Service" as QA
+  component "Blog Service" as BLOG
+  component "Model Management Service" as MODEL
+  component "Dataset Management Service" as DATASET
+  component "Online Invocation Service" as INVOKE
+  component "Recommendation Service" as RECO
+  component "Follow Service" as FOLLOW
+  component "Administrator Governance Service" as ADMIN_SVC
+  component "Purchase / Payment Service" as PAYMENT
+  component "File Transfer / Storage Adapter" as FILETRANSFER
+  component "Security & Authorization" as SECURITY
+  component "Internationalization Support" as I18N_BACKEND
+}
+
+package "Data Layer" {
+  database "MySQL Database" as DB
+}
+
+package "External / Infrastructure" {
+  cloud "Email Service" as EMAIL
+  cloud "Payment Channel\n(unspecified)" as PAY_CHANNEL
+  cloud "Server File Storage" as STORAGE
+}
+
+GU --> BROWSER
+ADMIN --> BROWSER
+
+BROWSER --> WEBUI
+WEBUI --> I18N
+WEBUI --> API : HTTP/HTTPS implied
+
+API --> ACCOUNT
+API --> QA
+API --> BLOG
+API --> MODEL
+API --> DATASET
+API --> INVOKE
+API --> RECO
+API --> FOLLOW
+API --> ADMIN_SVC
+API --> PAYMENT
+API --> SECURITY
+
+ACCOUNT --> DB
+QA --> DB
+BLOG --> DB
+MODEL --> DB
+DATASET --> DB
+INVOKE --> DB
+RECO --> DB
+FOLLOW --> DB
+ADMIN_SVC --> DB
+PAYMENT --> DB
+SECURITY --> DB
+
+ACCOUNT --> EMAIL : password recovery email
+MODEL --> FILETRANSFER : model upload/download
+DATASET --> FILETRANSFER : dataset upload/download
+INVOKE --> FILETRANSFER : run input/output files
+FILETRANSFER --> STORAGE
+PAYMENT --> PAY_CHANNEL : payment processing
+
+SECURITY ..> ACCOUNT
+SECURITY ..> QA
+SECURITY ..> BLOG
+SECURITY ..> MODEL
+SECURITY ..> DATASET
+SECURITY ..> INVOKE
+SECURITY ..> ADMIN_SVC
+I18N_BACKEND ..> API
+
+note right of DB
+  MySQL persistence per DR-001..DR-010:
+  user accounts, questions, answers,
+  blog articles/comments, models,
+  datasets, follow relationships,
+  recommendation data, and governance data.
+end note
+
+note bottom of API
+  Technology constraints: Spring Boot,
+  MySQL, Vue, TypeScript, SQL, UI.
+  API schema, review process, payment channel,
+  DB tables, and protocols are not fully specified
+  and must not be assumed complete (AD-005).
+end note
+
+note bottom of BROWSER
+  Runtime: modern browsers only.
+  Internet Explorer is not supported (C-006).
+  Hardware: x86-64 or ARM, >=4 GB RAM,
+  >=30 GB disk.
+end note
+
+@enduml

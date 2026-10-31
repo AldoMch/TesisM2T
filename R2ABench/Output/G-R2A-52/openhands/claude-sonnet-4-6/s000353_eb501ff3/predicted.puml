@@ -1,0 +1,80 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #666666
+skinparam packageBorderColor #999999
+skinparam ArrowColor #444444
+skinparam backgroundColor #FAFAFA
+
+actor "API Client" as APIClient
+actor "Platform Operator" as PlatformOp
+
+package "Turing System" {
+
+    package "HTTP API Layer" {
+        component "HTTP API Server\n(OpenAPI 3.0.3)" as HTTPAPIServer
+        component "Authorization Middleware" as AuthMiddleware
+        component "Request Validation Middleware\n(OpenAPI-spec-based)" as ValidationMiddleware
+    }
+
+    package "Service Layer" {
+        component "Router Service" as RouterService
+        component "Ensembler Service" as EnsemblerService
+    }
+
+    package "Cluster Management" {
+        component "Cluster Component\n(Router Deployment Lifecycle)" as ClusterComponent
+    }
+
+    package "PyFuncEnsembler Runtime" {
+        component "PyFuncEnsembler\nWebservice" as PyFuncEnsemblerSvc
+        component "Local Image Builder" as ImageBuilder
+    }
+
+    package "Observability" {
+        component "Jaeger Client\n(Request Tracing)" as JaegerClient
+    }
+}
+
+package "Kubernetes Cluster" {
+    component "Turing Router Deployments\n(port 8080 default)" as K8sRouterDeployments
+    component "Ensembler Webservice Pods" as EnsemblerPods
+}
+
+database "MLflow Model Registry" as MLflow
+component "Jaeger" as JaegerServer
+
+APIClient --> HTTPAPIServer : HTTP
+PlatformOp --> HTTPAPIServer : HTTP
+
+HTTPAPIServer --> AuthMiddleware : authorization check
+HTTPAPIServer --> ValidationMiddleware : request validation
+
+HTTPAPIServer --> RouterService : GET /projects/{project_id}/routers
+HTTPAPIServer --> EnsemblerService : GET/POST/PUT/DELETE\n/projects/{project_id}/ensemblers/{ensembler_id}
+
+RouterService --> ClusterComponent : create / update / delete router deployments
+RouterService --> JaegerClient : tracing
+
+ClusterComponent --> K8sRouterDeployments : Kubernetes API\n(create, update, delete)
+
+EnsemblerService --> PyFuncEnsemblerSvc : expose as webservice
+PyFuncEnsemblerSvc --> EnsemblerPods : deploy to Kubernetes
+
+ImageBuilder --> MLflow : download model artifacts
+ImageBuilder --> PyFuncEnsemblerSvc : build Docker image
+
+JaegerClient --> JaegerServer : send traces
+
+K8sRouterDeployments --> PyFuncEnsemblerSvc : route ensemble requests
+
+note right of HTTPAPIServer
+  JSON payloads (application/json)
+  for ensembler responses
+end note
+
+note right of ClusterComponent
+  Router user container port: 8080
+  (configurable via ports.containerPort)
+end note
+
+@enduml

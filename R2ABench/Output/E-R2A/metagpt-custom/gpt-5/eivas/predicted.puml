@@ -1,0 +1,120 @@
+@startuml
+
+package "Presentation (Web UI)" {
+  component "Reporting Form UI" as ReportingUI
+  component "Case Management UI" as CaseMgmtUI
+  component "Map Display UI" as MapUI
+  component "Association List UI" as AssocUI
+  component "Relationship Graph UI" as RelGraphUI
+  component "Statistical Charts UI" as StatsUI
+}
+
+package "Infrastructure & Security" {
+  component "API Gateway (TLS Termination)" as APIGW
+  component "Rate Limiter / IP Cooldown" as RateLimit
+  component "Failover Manager / Traffic Switch" as Failover
+}
+
+cloud "Map / Geographic Visualization Service" as MapCloud
+cloud "Weather/Climate Data Provider" as WeatherCloud
+
+node "Primary Cluster" as Primary {
+  package "Application/API" {
+    component "Web API/Controller" as WebAPI
+    component "Case Management Service" as CaseMgmtSvc
+    component "Itinerary Service" as ItinSvc
+    component "Association Query Service" as AssocSvc
+    component "Relationship Graph Service" as RelGraphSvc
+    component "Analysis Orchestration Service" as AnalysisSvc
+    component "Data Quality Checker" as DQChecker
+  }
+
+  package "Algorithm Module" {
+    component "Flow Risk Calculator" as FlowCalc
+    component "Case Clustering Engine" as ClusterEngine
+  }
+
+  package "Data Storage" {
+    database "Back-end Database" as DB
+  }
+}
+
+node "Backup Cluster" as Backup {
+  package "Application/API (Backup)" {
+    component "Web API/Controller (Backup)" as WebAPI_B
+    component "Case Management Service (Backup)" as CaseMgmtSvc_B
+    component "Itinerary Service (Backup)" as ItinSvc_B
+    component "Association Query Service (Backup)" as AssocSvc_B
+    component "Relationship Graph Service (Backup)" as RelGraphSvc_B
+    component "Analysis Orchestration Service (Backup)" as AnalysisSvc_B
+    component "Data Quality Checker (Backup)" as DQChecker_B
+  }
+
+  package "Algorithm Module (Backup)" {
+    component "Flow Risk Calculator (Backup)" as FlowCalc_B
+    component "Case Clustering Engine (Backup)" as ClusterEngine_B
+  }
+
+  package "Data Storage (Backup)" {
+    database "Back-end Database (Replica)" as DB_B
+  }
+}
+
+' Unified ingress with rate limiting and failover
+ReportingUI --> RateLimit
+CaseMgmtUI --> RateLimit
+MapUI --> RateLimit
+AssocUI --> RateLimit
+RelGraphUI --> RateLimit
+StatsUI --> RateLimit
+
+RateLimit --> APIGW
+APIGW --> Failover
+
+' Failover routes traffic to primary or backup clusters
+Failover --> WebAPI
+Failover --> WebAPI_B
+
+' Primary cluster internal flows
+WebAPI --> CaseMgmtSvc
+WebAPI --> ItinSvc
+WebAPI --> AssocSvc
+WebAPI --> RelGraphSvc
+WebAPI --> AnalysisSvc
+
+CaseMgmtSvc --> DB
+ItinSvc --> DB
+AssocSvc --> DB
+RelGraphSvc --> DB
+AnalysisSvc --> DB
+
+AnalysisSvc --> DQChecker
+AnalysisSvc --> FlowCalc
+AnalysisSvc --> ClusterEngine
+AnalysisSvc --> WeatherCloud
+
+' Backup cluster internal flows
+WebAPI_B --> CaseMgmtSvc_B
+WebAPI_B --> ItinSvc_B
+WebAPI_B --> AssocSvc_B
+WebAPI_B --> RelGraphSvc_B
+WebAPI_B --> AnalysisSvc_B
+
+CaseMgmtSvc_B --> DB_B
+ItinSvc_B --> DB_B
+AssocSvc_B --> DB_B
+RelGraphSvc_B --> DB_B
+AnalysisSvc_B --> DB_B
+
+AnalysisSvc_B --> DQChecker_B
+AnalysisSvc_B --> FlowCalc_B
+AnalysisSvc_B --> ClusterEngine_B
+AnalysisSvc_B --> WeatherCloud
+
+' External map tiles accessed by client
+MapUI --> MapCloud
+
+' Database replication to backup
+DB -[dashed]-> DB_B
+
+@enduml

@@ -1,0 +1,123 @@
+@startuml
+title LabHire - Research Internship Platform Architecture
+
+'' === Presentation Layer ===
+rectangle "Presentation Layer" {
+  component "Web Browser" as Browser
+  component "Mobile App" as MobileApp
+}
+
+'' === Application Services Layer ===
+rectangle "Application Services" {
+  component "Authentication Service" as AuthService
+  component "Project Management Service" as ProjectService
+  component "User Profile Service" as ProfileService
+  component "Community Service" as CommunityService
+  component "Notification Service" as NotifyService
+  component "Recommendation Service" as RecService
+  component "Review & Moderation Service" as ReviewService
+  component "Chat Service" as ChatService
+}
+
+'' === Business Logic Layer ===
+rectangle "Business Logic" {
+  component "User Management" as UserMgmt
+  component "Project Management" as ProjectMgmt
+  component "Certification Logic" as CertLogic
+  component "Recommendation Engine" as RecEngine
+  component "Content Moderation" as ContentMod
+  component "Risk Control & Audit" as RiskControl
+}
+
+'' === Data Storage Layer ===
+rectangle "Data Storage" {
+  database "User Database" as UserDB
+  database "Project Database" as ProjectDB
+  database "Community Database" as CommunityDB
+  database "System Database" as SystemDB
+}
+
+'' === External Services ===
+rectangle "External Services" {
+  component "Email Service" as EmailService
+  component "File Storage" as FileStorage
+}
+
+'' === User Types ===
+actor "Student User" as Student
+actor "Mentor User" as Mentor
+actor "Administrator" as Admin
+actor "Enterprise Student" as EnterpriseStudent
+
+'' === User Connections ===
+Student --> Browser : "Access via Web"
+Student --> MobileApp : "Access via Mobile"
+Mentor --> Browser : "Access via Web"
+Mentor --> MobileApp : "Access via Mobile"
+Admin --> Browser : "Admin Portal"
+EnterpriseStudent --> Browser : "Enterprise Features"
+
+Browser --> AuthService : "Login/Register"
+MobileApp --> AuthService : "Mobile Login"
+
+'' === Core Service Connections ===
+AuthService --> UserMgmt : "Manage Users"
+ProjectService --> ProjectMgmt : "Manage Projects"
+CommunityService --> ContentMod : "Validate Content"
+ProfileService --> UserMgmt : "Update Profiles"
+NotifyService --> EmailService : "Send Notifications"
+RecService --> RecEngine : "Get Recommendations"
+ReviewService --> CertLogic : "Process Certifications"
+ReviewService --> ContentMod : "Moderate Content"
+ChatService --> UserMgmt : "User Lookup"
+
+'' === Business Logic to Data Layer ===
+UserMgmt --> UserDB : "CRUD Operations"
+ProjectMgmt --> ProjectDB : "CRUD Operations"
+CertLogic --> UserDB : "Update Cert Status"
+RecEngine --> ProjectDB : "Analyze Projects"
+RecEngine --> CommunityDB : "Analyze Engagement"
+ContentMod --> CommunityDB : "Moderate Content"
+RiskControl --> SystemDB : "Log Activities"
+
+'' === External Service Connections ===
+AuthService --> EmailService : "Send Verification Codes"
+ProfileService --> FileStorage : "Store Resume Files"
+NotifyService --> EmailService : "Email Notifications"
+
+'' === User to Service Direct Connections ===
+Student --> ProjectService : "Browse/Apply Projects"
+Mentor --> ProjectService : "Publish/Manage Projects"
+Student --> CommunityService : "Community Posts"
+EnterpriseStudent --> CommunityService : "Referral Posts"
+Admin --> ReviewService : "Review Content"
+Mentor --> ChatService : "Chat with Applicants"
+Student --> ChatService : "Chat with Mentors"
+
+'' === Data Flow for Key Features ===
+ProjectService --> RecService : "Get Recommendations"
+CommunityService --> RecService : "Popularity Data"
+UserMgmt --> ReviewService : "Certification Requests"
+ContentMod --> ReviewService : "Content Flags"
+
+note right of AuthService
+  University email verification
+  Enterprise email certification
+  No admin registration
+end note
+
+note right of RecService
+  Collaborative filtering
+  Tag matching
+  Cold-start rules
+  Based on interests/skills
+end note
+
+note right of ReviewService
+  Manual review within 72h
+  Content moderation
+  Risk control logs
+  Audit capabilities
+end note
+
+@enduml

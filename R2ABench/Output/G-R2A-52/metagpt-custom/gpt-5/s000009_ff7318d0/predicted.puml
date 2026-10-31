@@ -1,0 +1,96 @@
+@startuml
+
+package "Presentation Layer" {
+  node "Amazon S3" as s3 {
+    component "Web Frontend" as web
+    component "Chatbot UI" as chatbot_ui
+  }
+}
+
+package "API Routing Layer" {
+  cloud "Amazon API Gateway" as apigw
+}
+
+package "Security Layer" {
+  cloud "Amazon Cognito" as cognito
+  cloud "AWS IAM" as iam
+}
+
+package "Application Logic Layer" {
+  node "AWS Lambda" as lambda {
+    component "Match Data API" as match_api
+    component "Prediction API" as prediction_api
+    component "Chatbot Conversation Handler" as chatbot_handler
+    component "Screening Recommendation Handler" as screening_handler
+    component "Reminder Request Handler" as reminder_handler
+    component "Reminder Processor" as reminder_processor
+  }
+}
+
+package "Data & Search Layer" {
+  database "DynamoDB (Match Data Store)" as ddb
+  cloud "Elasticsearch (Search Index)" as es
+  component "Search Indexing Sync" as indexing_sync
+}
+
+package "Machine Learning Layer" {
+  cloud "Amazon SageMaker" as sagemaker
+  component "Prediction Service Integration" as prediction_integration
+}
+
+package "Messaging & Notifications Layer" {
+  cloud "Amazon SQS (Notification Queue)" as sqs
+  cloud "Amazon SNS (Notification Service)" as sns
+}
+
+package "Streaming Layer" {
+  node "Amazon EC2" as ec2 {
+    component "Live Score Streaming Cluster (Kafka)" as kafka
+    interface "Apache Avro Schemas" as avro
+    component "Live Score Update Processor" as live_update_ec2
+  }
+}
+
+' Presentation to API and Security
+web --> apigw
+chatbot_ui --> apigw
+web --> cognito
+
+' API Gateway to Security
+apigw --> iam
+apigw --> cognito
+
+' API Gateway to Application Logic
+apigw --> match_api
+apigw --> prediction_api
+apigw --> chatbot_handler
+apigw --> screening_handler
+apigw --> reminder_handler
+
+' Application Logic to Data & Search
+match_api --> ddb
+match_api --> es
+chatbot_handler --> ddb
+chatbot_handler --> es
+
+' Data & Search sync
+indexing_sync --> ddb
+indexing_sync --> es
+
+' Application Logic to ML
+prediction_api --> prediction_integration
+prediction_integration --> sagemaker
+
+' Messaging & Notifications
+reminder_handler --> sqs
+sqs --> reminder_processor
+reminder_processor --> sns
+
+' Streaming dependencies
+kafka --> live_update_ec2
+kafka -- avro
+live_update_ec2 -- avro
+live_update_ec2 --> ddb
+live_update_ec2 --> es
+
+@enduml

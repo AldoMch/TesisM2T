@@ -1,0 +1,103 @@
+@startuml
+!define RECTANGLE class
+
+skinparam rectangle {
+    BackgroundColor<<gcp>> #E3F2FD
+    BorderColor<<gcp>> #1565C0
+    BackgroundColor<<gke>> #E8F5E9
+    BorderColor<<gke>> #2E7D32
+    BackgroundColor<<pod>> #FFF9C4
+    BorderColor<<pod>> #F9A825
+    BackgroundColor<<external>> #FCE4EC
+    BorderColor<<external>> #C62828
+    BackgroundColor<<k8s>> #F3E5F5
+    BorderColor<<k8s>> #6A1B9A
+}
+
+skinparam component {
+    BackgroundColor<<runtime>> #FFF3E0
+    BorderColor<<runtime>> #E65100
+}
+
+skinparam node {
+    BackgroundColor #ECEFF1
+    BorderColor #546E7A
+}
+
+skinparam arrow {
+    Color #37474F
+    FontColor #37474F
+}
+
+title GKE Pub/Sub WebSocket Adapter - System Architecture
+
+actor "Web Client\n(Browser)" as WebClient <<external>>
+
+rectangle "Google Cloud Platform (GCP)" <<gcp>> {
+
+    rectangle "Google Cloud Pub/Sub" <<gcp>> {
+        component "Pub/Sub Topic\n(projects/<id>/topics/<name>)" as PubSubTopic
+        component "Pub/Sub Subscription\n(1 per running instance)" as PubSubSub
+    }
+
+    rectangle "Google Kubernetes Engine (GKE Cluster)" <<gke>> {
+
+        rectangle "Kubernetes Resources" <<k8s>> {
+            component "ConfigMap\n[topic: <topic-identifier>]" as ConfigMap
+            component "HPA\n(min:1 / max:2 / CPU:80%)" as HPA
+        }
+
+        rectangle "LoadBalancer Service\n(TCP :80 → :8080)" <<k8s>> as LBService
+
+        rectangle "Adapter Deployment" <<k8s>> {
+
+            rectangle "Adapter Pod (Instance N)" <<pod>> {
+                component "SYMBOL\nenv variable" as EnvSymbol
+                component "exec.sh\n(entrypoint)" as ExecSh
+                component "pulltop\n(Node.js process)" as Pulltop
+                component "Message Cache\n(last 10 messages)" as Cache
+                component "websocketd\n(port 8080)" as Websocketd
+            }
+
+        }
+
+    }
+
+}
+
+' --- External client connection ---
+WebClient -right-> LBService : "WebSocket\nws:// (TCP :80)"
+LBService -right-> Websocketd : "forward to\nport 8080"
+
+' --- Internal runtime chain ---
+Websocketd -down-> Pulltop : "streams stdout\nto WebSocket clients"
+Pulltop -left-> Cache : "stores last\n10 messages"
+Cache -up-> Websocketd : "serve cached\nmessages to\nnew clients"
+ExecSh -right-> Pulltop : "invokes with\n$SYMBOL parameter"
+EnvSymbol -up-> ExecSh : "topic parameter"
+
+' --- Kubernetes config injection ---
+ConfigMap -down-> EnvSymbol : "injects topic value\nas SYMBOL env var"
+
+' --- Pub/Sub message flow ---
+PubSubTopic -right-> PubSubSub : "publishes\nmessages"
+PubSubSub -right-> Pulltop : "pull\nsubscription"
+
+' --- Scaling ---
+HPA -down-> Pulltop : "scales Deployment\n(CPU utilization)"
+
+note bottom of LBService
+  Each deployment instance
+  binds exactly one endpoint
+  to one configured Pub/Sub topic.
+  Multiple topics require multiple
+  independent deployments.
+end note
+
+note right of PubSubSub
+  Subscription count scales
+  with running instance count (N),
+  not with client count (M).
+end note
+
+@enduml

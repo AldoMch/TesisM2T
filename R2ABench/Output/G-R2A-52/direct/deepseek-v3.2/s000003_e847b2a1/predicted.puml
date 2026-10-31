@@ -1,0 +1,114 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E6F3FF
+  BorderColor #0066CC
+  FontColor #003366
+}
+skinparam node {
+  BackgroundColor #FFF0E6
+  BorderColor #CC6600
+  FontColor #663300
+}
+skinparam database {
+  BackgroundColor #E6FFE6
+  BorderColor #009900
+  FontColor #006600
+}
+skinparam interface {
+  BackgroundColor #F0E6FF
+  BorderColor #6600CC
+  FontColor #330066
+}
+skinparam queue {
+  BackgroundColor #FFFFE6
+  BorderColor #CCCC00
+  FontColor #666600
+}
+skinparam cloud {
+  BackgroundColor #E6F9FF
+  BorderColor #00B3B3
+  FontColor #006666
+}
+
+title Prediction Cards System Architecture
+
+cloud "External Systems" {
+  component "Aeternity Blockchain" as blockchain
+  database "External Price Provider" as price_provider
+  database "Prediction Media Storage" as media_storage
+  node "Aeternity Wallet" as wallet
+}
+
+node "User Frontend" as frontend {
+  interface "Wallet-Connected Frontend Application" as ui
+  component "Frontend Context/Provider" as context
+  component "Aeternity SDK Integration" as sdk
+}
+
+node "Backend Services" as services {
+  component "Prediction-Processing Service" as processing_service
+  component "Oracle Service" as oracle_service
+}
+
+node "On-Chain Component" as onchain {
+  component "PredictionCards Smart Contract" as contract
+  database "Contract State (Predictions, NFTs)" as contract_state
+}
+
+node "Local Test Environment" as test_env {
+  component "Local Contract Integration-Test Stack" as test_stack
+  component "CORS/Proxy Configuration" as cors_proxy
+  database "Test Aeternity Node" as test_node
+}
+
+' Connections
+ui --> context : "provides prediction operations"
+context --> sdk : "uses"
+sdk --> wallet : "wallet-mediated calls"
+sdk --> contract : "submits transactions/queries\nvia AENS name"
+contract --> contract_state : "manages"
+contract --> blockchain : "deployed on"
+processing_service --> contract : "initiates oracle queries\ncompletes result processing"
+oracle_service --> contract : "reads queries\nsubmits responses"
+oracle_service --> price_provider : "obtains price data"
+oracle_service --> blockchain : "registers/maintains oracle"
+ui --> media_storage : "loads outcome NFT media"
+test_stack --> cors_proxy : "configured with"
+test_stack --> test_node : "connects to"
+test_stack --> contract : "tests integration"
+
+' External interfaces
+wallet --> blockchain : "connects to"
+price_provider -[hidden]--> blockchain
+media_storage -[hidden]--> blockchain
+
+' Notes
+note top of contract
+  Located via AENS name
+  Maintains prediction lifecycle,
+  outcome NFT state, funds, rewards
+end note
+
+note right of oracle_service
+  Quarkus-based
+  Scheduled periodic execution
+  Maintains oracle registration/validity
+end note
+
+note left of processing_service
+  Scheduled service
+  Drives closed predictions
+  through outcome workflow
+end note
+
+note bottom of test_env
+  Local development & testing
+  Browser-compatible CORS support
+  (GET, POST, OPTIONS methods,
+  configured headers)
+end note
+
+@enduml

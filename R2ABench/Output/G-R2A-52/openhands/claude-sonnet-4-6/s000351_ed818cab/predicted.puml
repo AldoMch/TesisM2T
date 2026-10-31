@@ -1,0 +1,155 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #003366
+}
+skinparam node {
+  BackgroundColor #EEF5EE
+  BorderColor #336633
+}
+skinparam database {
+  BackgroundColor #FFF8DC
+  BorderColor #AA8800
+}
+skinparam arrow {
+  Color #444444
+}
+
+title Kangrand -- Pollard's Kangaroo Interval ECDLP Solver (SECP256K1) -- System Architecture
+
+actor "Local Operator" as LocalOp
+actor "Distributed Operator" as DistOp
+actor "Offline Analyst" as Analyst
+
+package "Command-Line Interface" as CLI {
+  component "Argument Parser\n(-w, -wi, -i, -ws, -d,\n -gpu, server/client flags)" as ArgParser
+}
+
+package "Kangrand Core Engine" as CoreEngine {
+  component "Input File Reader\n(ASCII Hex / Public Keys)" as InputReader
+  component "Kangaroo Solver\n(Pollard Kangaroo Algorithm\nSECP256K1)" as Solver
+  component "Tame Herd" as TameHerd
+  component "Wild Herd" as WildHerd
+  component "Distinguished Point Filter\n(-d bit count)" as DPFilter
+  component "In-Memory Hash Table" as HashTable
+  component "Collision Detector" as CollisionDetector
+  component "GPU Execution Module\n(optional)" as GPU
+  component "Work File Manager\n(-w, -wi, -i, -ws)" as WorkFileMgr
+  component "Wsplit Backup Controller" as WsplitCtrl
+}
+
+package "File System Artifacts" as FileSystem {
+  database "Input ASCII File\n(hex values, public keys\ncompressed / uncompressed)" as InputFile
+  database "Work File\n(solver state)" as WorkFile
+  database "Work File\n+ Kangaroo State\n(-ws)" as WorkFileKS
+  database "Wsplit Backup\nWork Files\n(prefixed)" as WsplitFiles
+  database "Result File\n(solved key)" as ResultFile
+  database "Master Work File\n/ Hash Table" as MasterWork
+}
+
+package "Distributed Server" as DistServer {
+  component "Server Engine\n(wsplit-enabled)" as ServerEngine
+  component "Server Config Reader" as ServerConfig
+  component "Server Hash Table" as ServerHashTable
+  component "Server Work File Writer\n(periodic backup)" as ServerWorkWriter
+  database "Server Configuration File" as ServerConfigFile
+  database "Server Work Files\n/ Hash-Table Artifacts" as ServerWorkFiles
+  database "Server Result File" as ServerResultFile
+}
+
+package "Distributed Clients" as DistClients {
+  component "Client Engine\n(Kangaroo Computation)" as ClientEngine
+  component "Client GPU Module\n(optional)" as ClientGPU
+  database "Local Client\nKangaroo / Work Data" as ClientWorkData
+}
+
+package "Offline Merger" as OfflineMerge {
+  component "Work File Merge Engine" as MergeEngine
+  component "Merge Collision Detector" as MergeCollision
+}
+
+' Local Operator interactions
+LocalOp --> ArgParser : starts solver\n(local mode)
+ArgParser --> InputReader
+ArgParser --> WorkFileMgr
+ArgParser --> WsplitCtrl
+ArgParser --> GPU : --gpu options
+
+InputFile --> InputReader : FR-001, FR-002
+InputReader --> Solver
+
+Solver --> TameHerd
+Solver --> WildHerd
+TameHerd --> DPFilter
+WildHerd --> DPFilter
+DPFilter --> HashTable : store distinguished points\n(NFR-001)
+HashTable --> CollisionDetector
+CollisionDetector --> ResultFile : solved key (FR-003)
+
+GPU --> Solver : accelerated computation
+
+WorkFileMgr --> WorkFile : periodic save (-w, -wi)\n(FR-004)
+WorkFileMgr --> WorkFileKS : save kangaroo state (-ws)\n(FR-006)
+WorkFile --> WorkFileMgr : resume (-i) (FR-005)
+
+WsplitCtrl --> WsplitFiles : emit prefixed backup files\n(FR-009)
+WsplitCtrl --> HashTable : reset after each backup\n(NFR-003)
+
+' Offline Analyst interactions
+Analyst --> WorkFileMgr : inspect work file (FR-007)
+Analyst --> MergeEngine : provide work files for merge (FR-008)
+
+WorkFile --> MergeEngine
+WsplitFiles --> MergeEngine
+MergeEngine --> MergeCollision
+MergeCollision --> MasterWork : FR-008, FR-012
+MergeCollision --> ResultFile : solved key on merge (FR-008)
+
+' Distributed Operator interactions
+DistOp --> DistServer : start server\n(backup interval, -d, config file)\n(FR-010)
+DistOp --> DistClients : start clients\n(specify server)\n(FR-011)
+
+ServerConfigFile --> ServerConfig
+ServerConfig --> ServerEngine
+ServerEngine --> ServerHashTable
+ServerEngine --> ServerWorkWriter
+ServerWorkWriter --> ServerWorkFiles : periodic work / hash-table output
+ServerWorkWriter --> ServerHashTable : reset after wsplit backup\n(NFR-003)
+ServerEngine --> ServerResultFile : result output
+
+ClientEngine --> ClientGPU : optional GPU (FR-011)
+ClientEngine --> ClientWorkData : local kangaroo / work data
+ClientEngine --> ServerEngine : connect & submit points\n(FR-011, C-005)
+ServerEngine --> ClientEngine : coordinate distributed search
+
+' Offline merge from distributed artifacts
+ServerWorkFiles --> MergeEngine : offline merge workflow (FR-012)
+ClientWorkData --> MergeEngine : offline merge workflow (FR-012)
+
+note bottom of DistServer
+  No built-in authentication mechanism (NFR-004, C-003).
+  Operator must control network exposure.
+  Clients must be stopped before server
+  restart with changed configuration (C-005).
+end note
+
+note bottom of OfflineMerge
+  Merge may require full RAM even
+  when wsplit reduced RAM during
+  collection (C-004).
+end note
+
+note right of CoreEngine
+  Solver scope: interval ECDLP
+  on SECP256K1 only (C-001).
+  Distinguished-point bit count
+  controls time/memory tradeoff
+  (NFR-002).
+end note
+
+@enduml

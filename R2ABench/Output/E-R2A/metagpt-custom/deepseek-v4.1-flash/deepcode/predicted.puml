@@ -1,0 +1,117 @@
+@startuml
+
+package "Front-end Layer" {
+  node "Browser" as Browser {
+    component "Vue 3 Web Client\n<<TypeScript, Vuex, Vue Router, Ant Design Vue, CodeMirror, wangEditor, ECharts, Axios, Webpack, Vue CLI, ESLint>>" as WebClient
+  }
+}
+
+package "Proxy / Security Layer" {
+  cloud "DNS" as DNS
+  cloud "CDN" as CDN
+  component "Firewall / Intranet Security Boundary" as Firewall
+  component "HTTPS/TLS Termination" as TLS
+  component "Nginx Reverse Proxy" as Nginx
+}
+
+package "Presentation Layer" {
+  interface "RESTful API / Presentation Controller" as RESTAPI
+  component "Authentication & Authorization Filter" as AuthFilter
+  component "JWT / OAuth 2.0 Token Service" as TokenService
+  component "Input Validation" as Validation
+  component "Swagger API Documentation" as Swagger
+}
+
+package "Business Layer" {
+  component "Spring Boot Backend\n<<JDK 21, Lombok, MyBatis-Plus, JWT, Interceptor, WebFlux, Thread Pools>>" as Backend {
+    component "User Module" as UserModule
+    component "Problem Module" as ProblemModule
+    component "Solution Module" as SolutionModule
+    component "Forum Module" as ForumModule
+    component "Judging Orchestration Module" as JudgeOrch
+    component "AI Integration Module" as AIModule
+  }
+}
+
+package "Access Layer" {
+  component "Data Access Layer" as DataAccess
+  component "Transaction Management / Rollback" as TxManager
+  component "SMTP Mail Component" as SMTPComponent
+  database "MySQL" as MySQL
+  database "Redis" as Redis
+  database "MinIO Object Storage" as MinIO
+  cloud "LLM Service" as LLM
+  cloud "SMTP Mail Service" as SMTP
+}
+
+package "Judging Service Layer" {
+  component "Judging Queue / Thread Pool" as JudgeQueue
+  component "JudgeHost" as JudgeHost
+  component "JudgeCore" as JudgeCore
+  component "Seccomp / Syscall Filter" as Seccomp
+  node "Docker Containers" as DockerContainers
+}
+
+package "Platform Operations / Infrastructure Layer" {
+  component "Prometheus" as Prometheus
+  component "Grafana" as Grafana
+  cloud "Alertmanager / PagerDuty / DingTalk Robot" as AlertReceiver
+  component "Backup Component" as Backup
+  cloud "Offsite Backup Storage" as OffsiteBackup
+  component "CI/CD & Deployment Stack" as CICD
+  cloud "GitLab CI/CD" as GitLab
+  node "Docker" as Docker
+  node "Private Image Registry" as Registry
+  node "Kubernetes" as K8s
+}
+
+WebClient --> DNS : DNS query / resolve domain
+DNS --> WebClient : resolved IP
+WebClient --> CDN : HTTPS static resources
+WebClient --> Firewall : HTTPS/TLS external access
+Firewall --> TLS : allow inbound
+TLS --> Nginx : HTTP after TLS termination
+Nginx --> AuthFilter : reverse proxy
+AuthFilter --> TokenService : validate/issue JWT or OAuth 2.0
+TokenService --> AuthFilter : authenticated principal
+AuthFilter --> RESTAPI : authorized request
+RESTAPI --> Validation : validate input
+Validation --> Backend : validated request
+RESTAPI --> Swagger : documents
+
+Backend --> TxManager : transactional use cases
+TxManager --> DataAccess : commit / rollback
+TxManager --> Backend : rollback on failure
+Backend --> DataAccess : business data access
+DataAccess --> MySQL
+DataAccess --> Redis
+DataAccess --> MinIO
+Backend --> SMTPComponent : email service
+SMTPComponent --> SMTP
+AIModule --> LLM : LangChain4j
+
+JudgeOrch --> JudgeQueue : submit judging job
+JudgeQueue --> JudgeHost : dispatch when worker available
+JudgeQueue --> JudgeOrch : busy / queue full return
+JudgeHost --> JudgeCore : compile/execute
+JudgeHost --> MinIO : test cases
+JudgeCore --> Seccomp : enforce syscall restrictions
+JudgeCore --> DockerContainers : restricted execution
+
+Grafana --> Prometheus : query metrics
+Prometheus --> Backend : scrape metrics
+Prometheus --> MySQL : monitor metrics
+Prometheus --> Redis : monitor metrics
+Prometheus --> Docker : container metrics
+Prometheus --> K8s : cluster metrics
+Prometheus --> AlertReceiver : alert notifications
+Backup --> MySQL : daily backup
+Backup --> OffsiteBackup : offsite backup
+CICD --> GitLab : pipeline
+GitLab --> Docker : build image
+GitLab --> Registry : push image
+CICD --> K8s : deploy / rollback
+K8s --> Registry : pull image
+K8s --> Backend : deploy / scale / rollback
+
+@enduml

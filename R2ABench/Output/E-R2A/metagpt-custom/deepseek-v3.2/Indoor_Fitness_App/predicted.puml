@@ -1,0 +1,86 @@
+@startuml
+
+' ===== LAYER DEFINITIONS =====
+package "Presentation Layer" {
+  component "Mobile App UI" as mobile_ui
+  component "Real-Time Exercise Interface" as exercise_ui
+}
+
+package "Business Logic Layer" {
+  component "Training Plan Engine" as plan_engine
+  component "Plan Recommendation Engine" as rec_engine
+  component "Custom Plan Builder" as plan_builder
+  component "Report/Poster Generator" as report_gen
+  component "User & Permission Manager" as user_mgr
+  component "Authentication Service" as auth_svc
+  component "Exercise History Manager" as history_mgr
+  component "Exercise State Monitor" as state_monitor
+}
+
+package "Data Access Layer" {
+  component "Data Access Layer" as data_access
+}
+
+package "Device/Network Layer" {
+  component "Camera Capture Manager" as camera_mgr
+  component "Real-Time Pose Estimator" as pose_estimator
+  component "Posture Evaluation Scorer" as posture_scorer
+  component "Casting Service" as casting_svc
+}
+
+' ===== EXTERNAL SYSTEMS =====
+cloud "Mobile Phone Camera" as camera_hw
+cloud "Server-Side Processing" as server_side
+node "Casting Target Device" as cast_target
+
+' ===== DEPENDENCIES =====
+' Presentation Layer internal
+mobile_ui --> exercise_ui : "displays"
+
+' Device/Network Layer internal
+pose_estimator --> camera_mgr : "video stream"
+posture_scorer --> pose_estimator : "skeleton data"
+
+' Business Logic Layer internal
+rec_engine --> plan_engine : "enhances"
+plan_builder --> plan_engine : "extends"
+state_monitor --> pose_estimator : "monitors"
+state_monitor --> posture_scorer : "monitors"
+auth_svc --> user_mgr : "verifies for"
+
+' Presentation to Business Layer
+mobile_ui --> user_mgr : "user management"
+mobile_ui --> auth_svc : "login requests"
+mobile_ui --> plan_engine : "plan requests"
+mobile_ui --> plan_builder : "custom plan creation"
+mobile_ui --> report_gen : "generation requests"
+mobile_ui --> history_mgr : "history requests"
+mobile_ui --> camera_mgr : "camera control"
+mobile_ui --> casting_svc : "initiates casting"
+
+' Business to Presentation Layer
+exercise_ui --> posture_scorer : "displays score"
+exercise_ui --> state_monitor : "displays progress"
+exercise_ui --> casting_svc : "video stream"
+
+' Business Logic to Data Access
+plan_engine --> data_access
+rec_engine --> data_access
+report_gen --> data_access
+user_mgr --> data_access
+history_mgr --> data_access
+plan_builder --> data_access
+
+' Data Access to External
+data_access --> server_side : "API calls"
+
+' Device/Network to External
+camera_mgr --> camera_hw : "captures from"
+casting_svc --> cast_target : "casts to"
+
+' Business Logic to Device/Network
+plan_engine --> posture_scorer : "evaluation requests"
+report_gen --> posture_scorer : "score data"
+report_gen --> history_mgr : "historical data"
+
+@enduml

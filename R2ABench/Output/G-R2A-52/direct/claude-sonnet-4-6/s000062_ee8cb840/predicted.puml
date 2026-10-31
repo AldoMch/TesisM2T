@@ -1,0 +1,147 @@
+@startuml
+!define RECTANGLE class
+
+skinparam rectangle {
+  BackgroundColor<<external>> LightYellow
+  BackgroundColor<<subsystem>> LightBlue
+  BackgroundColor<<node>> LightGreen
+  BackgroundColor<<topic>> WhiteSmoke
+  BackgroundColor<<infra>> LightCoral
+  BorderColor Black
+  FontSize 12
+}
+
+skinparam arrow {
+  Color DarkSlateGray
+  FontSize 10
+}
+
+skinparam title {
+  FontSize 16
+  FontStyle Bold
+}
+
+title ROS-Based Self-Driving Car System Integration Architecture
+
+rectangle "Execution Environment" <<infra>> {
+  rectangle "Docker Container" <<infra>> {
+    rectangle "ROS Runtime" <<infra>> {
+
+      rectangle "Launch Entry Points" <<infra>> {
+        rectangle "launch/styx.launch\n(Simulator Mode)" as styx <<infra>>
+        rectangle "launch/site.launch\n(Site Mode)" as site <<infra>>
+      }
+
+      rectangle "Perception Subsystem" <<subsystem>> {
+        rectangle "Traffic Light\nDetection Node" as tl_detect <<node>>
+        rectangle "Traffic Light\nClassifier\n(Real Images)" as tl_classify <<node>>
+      }
+
+      rectangle "Planning Subsystem" <<subsystem>> {
+        rectangle "Waypoint Loader\nNode" as wp_loader <<node>>
+        rectangle "Waypoint Updater\nNode\n(uses twist.twist.linear.x)" as wp_updater <<node>>
+      }
+
+      rectangle "Control Subsystem" <<subsystem>> {
+        rectangle "Waypoint Follower\nNode" as wp_follower <<node>>
+        rectangle "Drive-By-Wire\n(DBW) Node\n(throttle / steering / brake)" as dbw <<node>>
+      }
+
+      rectangle "ROS Topics" <<topic>> {
+        rectangle "/current_pose" as t_pose <<topic>>
+        rectangle "/base_waypoints" as t_base_wp <<topic>>
+        rectangle "/traffic_waypoint\n(stop waypoint for red/yellow)" as t_traffic_wp <<topic>>
+        rectangle "/final_waypoints" as t_final_wp <<topic>>
+        rectangle "/twist_cmd" as t_twist <<topic>>
+        rectangle "/vehicle/dbw_cmd\n(vehicle commands)" as t_vehicle <<topic>>
+      }
+    }
+  }
+}
+
+rectangle "External Systems & Data Sources" {
+  rectangle "Udacity Capstone\nProject Simulator" as simulator <<external>>
+  rectangle "Recorded Training Bag\n(downloaded & unzipped)" as bag <<external>>
+}
+
+' Launch file to subsystem activation
+styx --> wp_loader : activates (simulator mode)
+styx --> wp_updater : activates
+styx --> tl_detect : activates
+styx --> wp_follower : activates
+styx --> dbw : activates
+
+site --> wp_loader : activates (site mode)
+site --> wp_updater : activates
+site --> tl_detect : activates (real images)
+site --> tl_classify : activates
+site --> wp_follower : activates
+site --> dbw : activates
+
+' External data sources
+simulator --> t_pose : publishes current pose
+bag --> tl_detect : real-image traffic light data\n(site-mode playback)
+
+' Waypoint Loader publishes base waypoints
+wp_loader --> t_base_wp : publishes
+
+' Pose and base waypoints feed updater
+t_pose --> wp_updater : current vehicle position
+t_base_wp --> wp_updater : base waypoint path\n(target speed: twist.twist.linear.x)
+
+' Traffic light detection pipeline
+t_pose --> tl_detect : current pose
+t_base_wp --> tl_detect : waypoint map
+tl_detect --> tl_classify : candidate images
+tl_classify --> tl_detect : light state\n(red / yellow / green)
+tl_detect --> t_traffic_wp : stop waypoint index\n(red or yellow light)
+
+' Traffic waypoint feeds updater
+t_traffic_wp --> wp_updater : stop index for red/yellow
+
+' Updater produces final waypoints
+wp_updater --> t_final_wp : speed-adjusted final waypoints
+
+' Control pipeline
+t_final_wp --> wp_follower : target path & speed
+wp_follower --> t_twist : twist command
+t_twist --> dbw : steering / throttle / brake
+dbw --> t_vehicle : vehicle commands
+t_vehicle --> simulator : actuator commands (simulator mode)
+
+note bottom of simulator
+  Must be downloaded, extracted,
+  and made runnable before testing.
+  (C-005)
+end note
+
+note bottom of bag
+  Must be downloaded and unzipped
+  before site-mode playback.
+  (C-006, DR-002)
+end note
+
+note right of wp_updater
+  FR-005 / DR-001:
+  Vehicle speed shall not exceed
+  waypoint twist.twist.linear.x
+  (target top speed upper bound)
+end note
+
+note right of tl_classify
+  FR-009 / DR-003:
+  Classifies red / yellow / green
+  from real images during bag playback.
+  Produces stop waypoint for
+  red or yellow lights.
+end note
+
+note bottom of "Docker Container"
+  NFR-002 / C-003 / C-004:
+  Docker is a prerequisite.
+  ROS must be launched from
+  within the prepared container.
+  Deliverable ≤ 2 GB (C-007)
+end note
+
+@enduml

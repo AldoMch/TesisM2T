@@ -1,0 +1,69 @@
+@startuml
+!define RECTANGLE class
+
+title ReTool System Architecture
+
+skinparam componentStyle rectangle
+
+package "Client Layer" {
+    [Vue.js Frontend] as frontend
+}
+
+package "Server Layer" {
+    package "Microservices (Local Computer)" {
+        [API Gateway] as gateway
+        [User Management Service] as user_service
+        [Project Management Service] as project_service
+        [Requirements Management Service] as req_service
+    }
+
+    package "Algorithm Service (High-Performance Server)" {
+        [NLP & PyTorch Algorithms] as algo_service
+    }
+}
+
+package "Data Layer" {
+    [MongoDB] as database
+}
+
+frontend --> gateway : HTTP/HTTPS
+
+gateway --> user_service : Internal API Calls
+gateway --> project_service : Internal API Calls
+gateway --> req_service : Internal API Calls
+
+user_service --> database : CRUD Operations
+project_service --> database : CRUD Operations
+req_service --> database : CRUD Operations
+req_service --> algo_service : Analytical Processing
+
+algo_service --> database : Read/Write Results
+
+note right of algo_service
+    Runs on high-performance server
+    due to computational demands
+end note
+
+note bottom of database
+    MongoDB handles all persistent
+    data storage and retrieval
+end note
+
+cloud "Network" {
+    [Client Browser] as client
+    client --> frontend : Access via Chrome 81+
+}
+
+note right of client
+    Requires:
+    - Intel Core i7-6700HQ
+    - 8GB+ RAM
+    - Windows 10 64-bit
+end note
+
+note top of gateway
+    Deployed locally with
+    core services
+end note
+
+@enduml

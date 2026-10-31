@@ -1,0 +1,116 @@
+@startuml
+!define RECTANGLE class
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+}
+skinparam node {
+  BackgroundColor #EBF5EB
+  BorderColor #27AE60
+}
+
+title ROS-Based Self-Driving Car System Integration Architecture
+
+node "Docker Container" {
+
+  node "ROS Runtime Environment" {
+
+    package "Perception Subsystem" {
+      [Traffic Light Detection Node] as TLD
+      [Traffic Light Classifier] as TLC
+    }
+
+    package "Planning Subsystem" {
+      [Waypoint Loader Node] as WL
+      [Waypoint Updater Node] as WU
+    }
+
+    package "Control Subsystem" {
+      [Waypoint Follower Node] as WF
+      [Drive-By-Wire (DBW) Node] as DBW
+    }
+
+    package "ROS Topic Bus" {
+      queue "/current_pose" as POSE
+      queue "/base_waypoints" as BASE_WP
+      queue "/traffic_waypoint" as TRAFFIC_WP
+      queue "/final_waypoints" as FINAL_WP
+      queue "/twist_cmd" as TWIST_CMD
+      queue "/vehicle/dbw_enabled" as DBW_ENABLED
+    }
+
+  }
+
+  package "Launch Entry Points" {
+    [styx.launch] as STYX_LAUNCH
+    [site.launch] as SITE_LAUNCH
+  }
+
+}
+
+node "External Systems" {
+  [Udacity Capstone Simulator] as SIM
+  [Recorded Training Bag] as BAG
+}
+
+actor "Evaluator / Developer" as USER
+
+USER --> STYX_LAUNCH : simulator mode
+USER --> SITE_LAUNCH : site mode
+
+STYX_LAUNCH --> SIM : connects
+STYX_LAUNCH ..> WL : launches
+STYX_LAUNCH ..> WU : launches
+STYX_LAUNCH ..> TLD : launches
+STYX_LAUNCH ..> WF : launches
+STYX_LAUNCH ..> DBW : launches
+
+SITE_LAUNCH --> BAG : bag playback
+SITE_LAUNCH ..> WL : launches
+SITE_LAUNCH ..> WU : launches
+SITE_LAUNCH ..> TLD : launches
+SITE_LAUNCH ..> DBW : launches
+
+SIM --> POSE : publishes current pose
+SIM --> BASE_WP : publishes base waypoints
+BAG --> POSE : replays pose data
+BAG --> BASE_WP : replays waypoint data
+
+WL --> BASE_WP : publishes base waypoints
+BASE_WP --> WU : subscribes
+
+TLD --> TLC : classify image
+TLC --> TRAFFIC_WP : publishes traffic light state & stop waypoint
+
+POSE --> WU : subscribes
+TRAFFIC_WP --> WU : subscribes
+WU --> FINAL_WP : publishes final waypoints
+
+FINAL_WP --> WF : subscribes
+WF --> TWIST_CMD : publishes twist command
+
+TWIST_CMD --> DBW : subscribes
+DBW_ENABLED --> DBW : subscribes
+DBW --> SIM : throttle / steering / brake commands
+
+note right of TLC
+  Detects and classifies
+  traffic lights (Red/Yellow/Green)
+  from real images during
+  site-mode bag playback
+end note
+
+note right of WU
+  Generates waypoints respecting
+  twist.twist.linear.x as
+  target top speed upper bound
+end note
+
+@enduml

@@ -1,0 +1,139 @@
+@startuml
+title Configuration Anomaly Detection (CAD) - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =========================================================
+' Actor / User Layer
+' =========================================================
+package "Actors (Users)" {
+  actor "SRE / Operations User" as SRE
+  actor "Deployment Engineer" as DEPENG
+  actor "Developer / Contributor" as DEV
+}
+
+' =========================================================
+' External Systems Layer
+' =========================================================
+package "External Systems" {
+  [Alert Source / Monitoring Webhook] as ALERT_SRC
+  [PagerDuty] as PAGERDUTY
+  [AWS] as AWS
+  [OCM] as OCM
+}
+
+' =========================================================
+' Execution Orchestration Layer (Tekton)
+' =========================================================
+package "Execution Orchestration Layer (Tekton, namespace configuration-anomaly-detection)" {
+  [Tekton EventListener] as EVENTLISTENER
+  [Tekton Trigger] as TRIGGER
+  [Tekton PipelineRun (v1beta1)] as PIPELINERUN
+  [cad-checks-pipeline] as CAD_PIPELINE
+}
+
+' =========================================================
+' CLI Layer (Containerized runtime)
+' =========================================================
+package "CLI Layer (Container Image: UBI minimal + /bin/cadctl)" {
+  [cadctl CLI Entry Point] as CADCTL
+  [CHGM Workflow Handler] as CHGM
+  [Anomaly Detection Engine] as ANOMALY
+  [Disposition / Mitigation Handler] as DISPOSITION
+  [Skip-Webhook Direct Runner] as SKIP_RUNNER
+}
+
+' =========================================================
+' Integration Library Layer
+' =========================================================
+package "Integration Package Library" {
+  [PagerDuty Integration] as INT_PD
+  [AWS Integration] as INT_AWS
+  [OCM Integration] as INT_OCM
+}
+
+' =========================================================
+' Maintenance / Tooling Layer
+' =========================================================
+package "Maintenance Utility Layer" {
+  [Template Update Utility] as TPL_UPDATE
+}
+
+' =========================================================
+' Data / Artifact Layer
+' =========================================================
+package "Data Stores & Artifacts" {
+  database "PipelineRun YAML Manifest" as DR_MANIFEST
+  database "JSON Payload (event.data.id)" as DR_PAYLOAD
+  database "Deployment Template Artifact" as DR_TEMPLATE
+  database "Alert Webhook Payload" as DR_ALERT
+}
+
+' =========================================================
+' Build & Runtime Environment
+' =========================================================
+package "Build & Runtime Environment" {
+  [Go 1.17 Builder Image] as BUILDER
+  [UBI Minimal Runtime Image] as RUNTIME
+}
+
+' =========================================================
+' Relationships - Actors
+' =========================================================
+SRE --> CADCTL : runs CAD workflows / CHGM
+DEPENG --> PIPELINERUN : submits direct PipelineRun
+DEPENG --> EVENTLISTENER : operates trigger path
+DEV --> CADCTL : extends CLI & integrations
+DEV --> TPL_UPDATE : maintains deployment assets
+
+' =========================================================
+' Relationships - Normal event-driven path
+' =========================================================
+ALERT_SRC --> EVENTLISTENER : alert webhook (FR-005, DR-005)
+EVENTLISTENER --> TRIGGER : evaluates event
+TRIGGER --> PIPELINERUN : creates
+PIPELINERUN --> CAD_PIPELINE : references cad-checks-pipeline (FR-007)
+CAD_PIPELINE --> CADCTL : executes CAD checks
+DR_ALERT --> EVENTLISTENER : alert input
+
+' =========================================================
+' Relationships - Skip-webhook direct path
+' =========================================================
+SKIP_RUNNER --> PIPELINERUN : creates directly (FR-006, C-006)
+DR_MANIFEST --> SKIP_RUNNER : supplies v1beta1 manifest (C-004)
+DR_PAYLOAD --> PIPELINERUN : payload parameter (FR-008, DR-001, DR-002)
+
+' =========================================================
+' Relationships - CLI internals
+' =========================================================
+CADCTL --> CHGM : invokes (FR-002)
+CADCTL --> ANOMALY : invokes (FR-003)
+CADCTL --> DISPOSITION : invokes (FR-004)
+
+' =========================================================
+' Relationships - Integrations
+' =========================================================
+ANOMALY --> INT_PD
+DISPOSITION --> INT_PD
+ANOMALY --> INT_AWS
+DISPOSITION --> INT_AWS
+ANOMALY --> INT_OCM
+DISPOSITION --> INT_OCM
+
+INT_PD --> PAGERDUTY : silence / escalate alerts (FR-004)
+INT_AWS --> AWS : query cluster state
+INT_OCM --> OCM : support status / follow-up events (FR-004)
+
+' =========================================================
+' Relationships - Maintenance utility
+' =========================================================
+TPL_UPDATE --> DR_TEMPLATE : updates (FR-010, DR-004)
+
+' =========================================================
+' Relationships - Build / Runtime
+' =========================================================
+BUILDER --> CADCTL : builds (NFR-002, C-002)
+RUNTIME --> CADCTL : packages /bin/cadctl (NFR-001, C-001, C-003)
+
+@enduml

@@ -1,0 +1,78 @@
+@startuml
+
+package "Presentation / Web UI Layer" {
+  component "Web UI / Main Page" as WebUI
+  component "WebSocket / Socket.IO Channel" as SocketIO
+}
+
+package "HTTP / API Layer" {
+  component "HTTP API / Request Handler" as HttpApi
+  component "Session Manager" as SessionManager
+  component "Attack Option Parser" as OptionParser
+  component "Homoglyph-Complete Retrieval Endpoint" as HomoglyphEndpoint
+  component "Error Handler" as ErrorHandler
+}
+
+package "Asynchronous Messaging / Job Dispatch Layer" {
+  component "Job Producer / Publisher" as JobProducer
+  component "Background Consumer Thread" as BackgroundConsumer
+  component "Reporting Handler / Result Router" as ReportingRouter
+}
+
+package "Worker / Domain Generation Layer" {
+  component "Worker Execution Flow / squatm3 Adapter" as WorkerFlow
+}
+
+package "Integration Layer" {
+  component "GoDaddy Integration" as GoDaddyIntegration
+}
+
+package "Configuration / Infrastructure Layer" {
+  component "Configuration Provider" as ConfigProvider
+  component "Redis Messaging Infrastructure" as RedisInfra
+}
+
+database "Redis" as Redis
+interface "Redis job channel" as RedisJobChannel
+interface "Redis reporting channel" as RedisReportChannel
+
+cloud "Web Clients / Browser Clients" as WebClients
+cloud "GoDaddy API Endpoints" as GoDaddyAPI
+cloud "squatm3 CLI Engine" as Squatm3Engine
+
+WebClients --> HttpApi : HTTP GET /
+HttpApi --> SessionManager : create session
+HttpApi --> WebUI : return index.html / main page
+WebUI --> HttpApi : API requests after page load
+HttpApi --> SessionManager : validate session
+HttpApi --> OptionParser : parse attack options
+HttpApi --> JobProducer : submit validated job
+HttpApi --> HomoglyphEndpoint : GET homoglyph-complete
+HttpApi --> ErrorHandler : 400 / 404 / 500 / parse failures
+HttpApi --> BackgroundConsumer : start background consumer thread
+
+SessionManager --> JobProducer : session key as job ID
+OptionParser --> JobProducer : command options
+
+HomoglyphEndpoint --> JobProducer : dispatch homoglyph-complete job
+HomoglyphEndpoint --> ReportingRouter : retrieve homoglyph-complete results
+
+JobProducer --> RedisJobChannel : publish job
+BackgroundConsumer --> RedisJobChannel : listen for jobs
+BackgroundConsumer --> WorkerFlow : trigger execution
+WorkerFlow --> Squatm3Engine : invoke wrapped CLI subprocess
+WorkerFlow --> RedisReportChannel : report progress / results
+WorkerFlow --> GoDaddyIntegration : optional availability checks
+ReportingRouter --> RedisReportChannel : read reporting messages
+ReportingRouter --> SocketIO : route by session / job ID
+SocketIO --> WebClients : asynchronous updates
+
+GoDaddyIntegration --> GoDaddyAPI : availability checks (sso-key)
+ConfigProvider --> RedisInfra : Redis URI
+ConfigProvider --> GoDaddyIntegration : key / secret / base URL / endpoints
+
+RedisInfra -- RedisJobChannel
+RedisInfra -- RedisReportChannel
+RedisInfra --> Redis : Redis URI
+
+@enduml

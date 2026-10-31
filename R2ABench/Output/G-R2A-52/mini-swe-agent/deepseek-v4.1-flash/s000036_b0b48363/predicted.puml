@@ -1,0 +1,88 @@
+@startuml
+title HypnoLog Server - Layered Architecture
+
+' ===================== External Systems =====================
+package "External Systems / Actors" <<External>> {
+  component "Logging Producer\n(any language, HTTP/JSON)" as PRODUCER <<external>>
+  component "Visualizer Developer" as VIZDEV <<external>>
+  component "Server Operator\n(npm / CLI)" as OPERATOR <<external>>
+}
+
+' ===================== Presentation / Browser Client Layer =====================
+package "Browser Client Layer (static web assets)" <<Client>> {
+  component "client.html\nBrowser Web UI" as UI
+  component "Socket.IO Client\nsame-origin connection" as SOCLIENT
+  component "Message Intake &\nSchema Validation (Ajv)" as VALIDATOR
+  component "HypnoLog-error Object Builder\n(invalid message wrapping)" as ERRMAP
+  component "Client-side Received-Data List\n(in-memory store)" as CLIENTSTORE
+  component "UI State Controller\n(last update, tags, name)" as UISTATE
+  component "Window Registry / Dispatcher" as WINDOWMGR
+  component "Default Display Window\n(DOM output)" as DEFWIN
+  component "Visualizer Loader\n(default + user config)" as VIZLOADER
+  component "Visualizer Plugin Pipeline\n(canDisplay first-match -> display)" as VIZPIPE
+}
+
+' ===================== Server / Application Layer =====================
+package "Node.js / Express Application Layer (default port 7000)" <<Server>> {
+  component "Startup Entry Point\nbin/www + npm start + CLI aliases" as STARTUP
+  component "Express Application\nHTTP routing & middleware" as EXPRESS
+  component "JSON Body Parser\n(limit 50mb)" as BODYPARSER
+  component "Static File Hosting\n(public web directory)" as STATIC
+  component "Logging Router (/logger)" as LOGROUTER {
+    component "POST /logger/in\nlog ingestion" as ROUTEIN
+    component "GET /logger/status" as ROUTESTATUS
+  }
+  component "Socket.IO Server\n(notification event, client list)" as SOCKSRV
+  component "HTTP Server (Node)" as HTTPSRV
+  component "Browser Launcher /\nURL Announcer" as LAUNCHER
+}
+
+' ===================== Configuration & Data =====================
+package "Configuration & Data" <<Data>> {
+  database "Default Visualizer Configuration" as DEFCFG
+  database "User Configuration File\n(optional override)" as USERCFG
+  database "HypnoLog Data Object Schema\n(required: data, type)" as SCHEMA
+}
+
+' ===================== Relationships =====================
+PRODUCER --> ROUTEIN : POST JSON\nContent-Type: application/json
+ROUTEIN --> BODYPARSER : parse body
+BODYPARSER --> SOCKSRV : forward parsed\nlog object
+ROUTESTATUS --> PRODUCER : HTTP 200 status
+OPERATOR --> STARTUP : start server / port arg
+STARTUP --> EXPRESS : bootstrap app
+STARTUP --> HTTPSRV : listen on port 7000
+STARTUP --> LAUNCHER : print & open /client.html
+LAUNCHER --> UI : open default browser
+
+EXPRESS --> LOGROUTER : mount under /logger
+EXPRESS --> STATIC : serve public assets
+EXPRESS --> BODYPARSER
+HTTPSRV --> EXPRESS : request handling
+SOCKSRV --- HTTPSRV : attached to same HTTP server
+SOCKSRV --> SOCKSRV : maintain connected client list
+
+STATIC --> UI : deliver client.html and JS bundles
+UI --> SOCLIENT : load
+SOCLIENT --> SOCKSRV : Socket.IO connection (same origin)
+SOCKSRV --> SOCLIENT : notification event
+
+SOCLIENT --> VALIDATOR : validate each notification
+SCHEMA --> VALIDATOR
+VALIDATOR --> ERRMAP : invalid message
+ERRMAP --> CLIENTSTORE : HypnoLog-error object
+VALIDATOR --> CLIENTSTORE : valid log object
+CLIENTSTORE --> UISTATE : update last-update state
+CLIENTSTORE --> WINDOWMGR : dispatch object
+WINDOWMGR --> DEFWIN : display call
+DEFWIN --> VIZPIPE : select first matching visualizer
+
+VIZLOADER --> VIZPIPE : register loaded visualizers
+DEFCFG --> VIZLOADER
+USERCFG --> VIZLOADER : override / supplement
+VIZDEV --> VIZPIPE : implement canDisplay / display
+VIZPIPE --> DEFWIN : DOM element via callback
+UISTATE --> UI : tags / name rendering
+DEFWIN --> UI : rendered output
+
+@enduml

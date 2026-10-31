@@ -1,0 +1,144 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<DataStore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title PlugIt Framework - Architecture Overview
+
+package "External Systems" <<External>> {
+  [External Users/Systems] as ExternalUsers
+  [Email System] as EmailSystem
+  [External Database] as ExternalDB
+}
+
+package "PlugIt Proxy Layer" <<Layer>> {
+  component "PlugIt Proxy" as PlugItProxy {
+    component "Proxy API Gateway" as ProxyAPI
+    component "Configuration Manager" as ConfigManager
+    component "Mail Processing\n(Example/Standalone)" as MailProcessor
+  }
+  
+  database "Proxy Data Store" as ProxyDataStore <<DataStore>>
+}
+
+package "PlugIt Services Layer" <<Layer>> {
+  component "PlugIt Service 1" as Service1 {
+    component "Service API" as ServiceAPI1
+    component "Business Logic" as BusinessLogic1
+    component "PlugIt API Client" as APIClient1
+  }
+  
+  database "Service 1 Data Store" as Service1DataStore <<DataStore>>
+  
+  component "PlugIt Service 2" as Service2 {
+    component "Service API" as ServiceAPI2
+    component "Business Logic" as BusinessLogic2
+    component "PlugIt API Client" as APIClient2
+  }
+  
+  database "Service 2 Data Store" as Service2DataStore <<DataStore>>
+  
+  component "PlugIt Service N" as ServiceN {
+    component "Service API" as ServiceAPIN
+    component "Business Logic" as BusinessLogicN
+    component "PlugIt API Client" as APIClientN
+  }
+  
+  database "Service N Data Store" as ServiceNDataStore <<DataStore>>
+}
+
+package "Configuration Layer" <<Layer>> {
+  component "Project Configuration" as ProjectConfig
+  component "Local/Private Configuration" as LocalConfig
+  component "Schema Migration Files" as MigrationFiles
+}
+
+' External connections
+ExternalUsers --> ProxyAPI : "HTTP Requests"
+EmailSystem --> MailProcessor : "Inbound Email"
+ExternalDB --> Service1DataStore : "Database Provisioning"
+ExternalDB --> Service2DataStore : "Database Provisioning"
+ExternalDB --> ServiceNDataStore : "Database Provisioning"
+
+' Proxy to Services communication
+ProxyAPI --> ServiceAPI1 : "PlugIt Protocol"
+ProxyAPI --> ServiceAPI2 : "PlugIt Protocol"
+ProxyAPI --> ServiceAPIN : "PlugIt Protocol"
+
+' Services to Proxy API
+APIClient1 --> ProxyAPI : "API Requests"
+APIClient2 --> ProxyAPI : "API Requests"
+APIClientN --> ProxyAPI : "API Requests"
+
+' Internal service connections
+ServiceAPI1 --> BusinessLogic1
+BusinessLogic1 --> APIClient1
+BusinessLogic1 --> Service1DataStore : "CRUD Operations"
+
+ServiceAPI2 --> BusinessLogic2
+BusinessLogic2 --> APIClient2
+BusinessLogic2 --> Service2DataStore : "CRUD Operations"
+
+ServiceAPIN --> BusinessLogicN
+BusinessLogicN --> APIClientN
+BusinessLogicN --> ServiceNDataStore : "CRUD Operations"
+
+' Configuration dependencies
+ConfigManager --> ProjectConfig : "Reads"
+ConfigManager --> LocalConfig : "Reads (Private)"
+Service1 --> ProjectConfig : "Uses"
+Service1 --> LocalConfig : "Uses (Private)"
+Service2 --> ProjectConfig : "Uses"
+Service2 --> LocalConfig : "Uses (Private)"
+ServiceN --> ProjectConfig : "Uses"
+ServiceN --> LocalConfig : "Uses (Private)"
+
+' Database schema management
+Service1 --> MigrationFiles : "Applies"
+Service2 --> MigrationFiles : "Applies"
+ServiceN --> MigrationFiles : "Applies"
+
+' Mail processing flow
+MailProcessor --> ConfigManager : "Reads Mail Secret"
+MailProcessor --> ProxyDataStore : "Stores Mail Data"
+
+' Proxy internal connections
+PlugItProxy --> ConfigManager
+PlugItProxy --> ProxyDataStore : "Stores Proxy Data"
+
+note right of ExternalUsers
+  Access services through
+  proxy-mediated experience
+end note
+
+note right of EmailSystem
+  Example/Standalone scope only
+  Inbound mail processing
+end note
+
+note right of ExternalDB
+  Externally provisioned
+  (MySQL, SQLite, etc.)
+end note
+
+note right of LocalConfig
+  Private settings excluded
+  from source control
+end note
+
+note right of MigrationFiles
+  Versioned schema upgrades
+  for database evolution
+end note
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml
+
+package "Client Layer" {
+  component "Flutter/Dart Client" as flutter_client {
+    component "Android" as android
+    component "iOS" as ios
+    component "Web" as web
+    component "macOS" as macos
+  }
+  
+  component "Dart Generated Client Code" as dart_client
+}
+
+package "API Gateway Layer" {
+  component "gRPC-Gateway Middleware" as grpc_gateway {
+    component "ListAllRecipes" as list_recipes
+    component "GetRecipe" as get_recipe
+    component "CreateRecipe" as create_recipe
+    component "UpdateRecipe" as update_recipe
+  }
+}
+
+package "Service Layer" {
+  component "Go gRPC Server" as go_server
+}
+
+node "Local Kubernetes" as local_k8s {
+  component "Kubernetes Deployment" as local_deployment
+}
+
+cloud "Azure Kubernetes Service (AKS)" as aks {
+  component "AKS Deployment" as aks_deployment
+}
+
+component "Protocol Buffers Contract" as proto_contract
+component "Recipe Data" as recipe_data
+component "Ingredient Data" as ingredient_data
+
+' Build-time dependencies
+dart_client .left.> proto_contract : generated from
+go_server .left.> proto_contract : generated from
+grpc_gateway .left.> proto_contract : generated from
+
+' Runtime dependencies
+flutter_client --> dart_client : uses
+dart_client --> go_server : gRPC calls (server streaming)
+dart_client --> grpc_gateway : HTTP calls (fallback)
+grpc_gateway --> go_server : depends on
+
+' Data flow
+go_server --> recipe_data : manages
+go_server --> ingredient_data : manages
+list_recipes --> recipe_data : streams
+get_recipe --> recipe_data : returns
+create_recipe --> recipe_data : creates
+update_recipe --> recipe_data : updates
+
+' Deployment dependencies
+local_deployment --> go_server : runs
+local_deployment --> grpc_gateway : runs
+aks_deployment --> go_server : runs
+aks_deployment --> grpc_gateway : runs
+
+' Platform targets
+android --> flutter_client : part of
+ios --> flutter_client : part of
+web --> flutter_client : part of
+macos --> flutter_client : part of
+
+@enduml

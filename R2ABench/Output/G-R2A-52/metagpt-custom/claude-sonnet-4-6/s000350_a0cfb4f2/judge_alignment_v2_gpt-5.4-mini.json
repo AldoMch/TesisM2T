@@ -1,0 +1,326 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Integration Layer::GoDaddyClient",
+        "External Systems::GoDaddy API"
+      ],
+      "gt_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Layer::JobController",
+        "API Layer::SessionManager"
+      ],
+      "gt_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Presentation Layer::WebEntryController\\n(GET /)",
+        "Presentation Layer::index.html Template"
+      ],
+      "gt_nodes": [
+        "Global::Web UI\\nindex.html"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Redis\\n(Job Channel + Reporting Channel)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Async Notification Layer::WebSocket Session Channel",
+        "Async Notification Layer::WebSocketNotifier\\n(Socket.IO)"
+      ],
+      "gt_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Domain Generation Layer::Squatm3Wrapper",
+        "External Systems::squatm3 CLI binary"
+      ],
+      "gt_nodes": [
+        "Global::Squatm3\\nDomain generation engine"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Worker / Consumer Layer::BackgroundConsumerThread"
+      ],
+      "gt_nodes": [
+        "Global::Workers\\nCommand consumers"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Integration Layer::GoDaddyClient",
+        "External Systems::GoDaddy API"
+      ],
+      "gt_node": "Global::GoDaddy API\\nDomain availability"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Layer::AttackOptionParser",
+        "API Layer::JobController",
+        "API Layer::SessionManager",
+        "Presentation Layer::WebEntryController\\n(GET /)",
+        "Presentation Layer::index.html Template"
+      ],
+      "gt_node": "Global::HTTP API\\nSession and attack requests"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Redis\\n(Job Channel + Reporting Channel)",
+        "Messaging Layer::RedisProducer",
+        "Messaging Layer::RedisReportingReader"
+      ],
+      "gt_node": "Global::Redis\\nCommand and reporting queues"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Async Notification Layer::WebSocket Session Channel",
+        "Async Notification Layer::WebSocketNotifier\\n(Socket.IO)"
+      ],
+      "gt_node": "Global::Socket.io\\nWebSocket result channel"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Domain Generation Layer::Squatm3Wrapper",
+        "External Systems::squatm3 CLI binary"
+      ],
+      "gt_node": "Global::Squatm3\\nDomain generation engine"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Presentation Layer::WebEntryController\\n(GET /)",
+        "Presentation Layer::index.html Template"
+      ],
+      "gt_node": "Global::Web UI\\nindex.html"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Worker / Consumer Layer::BackgroundConsumerThread"
+      ],
+      "gt_node": "Global::Workers\\nCommand consumers"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "API Layer::AttackOptionParser",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Layer::ErrorHandler\\n(400 / 404 / 500)",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Layer::HomoglyphEndpoint",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Layer::JobController",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Layer::QueryStringFailureHandler\\n(FR-008)",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Layer::SessionManager",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Async Notification Layer::WebSocket Session Channel",
+      "reference_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Async Notification Layer::WebSocketNotifier\\n(Socket.IO)",
+      "reference_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Configuration Layer::AppConfig",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability",
+        "Global::HTTP API\\nSession and attack requests",
+        "Global::Redis\\nCommand and reporting queues",
+        "Global::Socket.io\\nWebSocket result channel",
+        "Global::Squatm3\\nDomain generation engine",
+        "Global::Web UI\\nindex.html",
+        "Global::Workers\\nCommand consumers"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Domain Generation Layer::Squatm3Wrapper",
+      "reference_nodes": [
+        "Global::Squatm3\\nDomain generation engine"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Integration Layer::GoDaddyClient",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::GoDaddy API",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::squatm3 CLI binary",
+      "reference_nodes": [
+        "Global::Squatm3\\nDomain generation engine"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Browser / HTTP Client",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::External Systems",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Redis\\n(Job Channel + Reporting Channel)",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Messaging Layer::RedisProducer",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Messaging Layer::RedisReportingReader",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation Layer::WebEntryController\\n(GET /)",
+      "reference_nodes": [
+        "Global::Web UI\\nindex.html",
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation Layer::index.html Template",
+      "reference_nodes": [
+        "Global::Web UI\\nindex.html"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Worker / Consumer Layer::BackgroundConsumerThread",
+      "reference_nodes": [
+        "Global::Workers\\nCommand consumers"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1197,
+      "completion_tokens": 168,
+      "total_tokens": 1365,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "API Layer::AttackOptionParser",
+    "API Layer::ErrorHandler\\n(400 / 404 / 500)",
+    "API Layer::HomoglyphEndpoint",
+    "API Layer::QueryStringFailureHandler\\n(FR-008)",
+    "Configuration Layer::AppConfig",
+    "Global::Browser / HTTP Client",
+    "Global::External Systems",
+    "Messaging Layer::RedisProducer",
+    "Messaging Layer::RedisReportingReader"
+  ],
+  "_provenance": {
+    "fingerprint": "93c09587be7dc6c69a9d55fec67149d30e18fe199e767601e49e28f3f1493249",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

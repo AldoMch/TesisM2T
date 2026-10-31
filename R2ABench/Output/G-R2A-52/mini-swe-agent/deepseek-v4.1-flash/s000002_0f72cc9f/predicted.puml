@@ -1,0 +1,94 @@
+@startuml
+title Escape Application - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ============================================
+' Client Layer
+' ============================================
+package "Client Layer (Browser)" {
+
+  component "Web Client\n(React SPA)" as WebClient
+
+  component "Top-Level App Component\n(Shared Credential State)" as AppComponent
+
+  package "Authentication Views" {
+    component "Sign-Up View\n\"Escape Signup\"" as SignupView
+    component "Sign-In View\n\"Escape Signin\"" as SigninView
+    component "Shared Credential\nInput Handlers" as CredHandlers
+    component "Error Display\n(Visible Indicator)" as ErrorDisplay
+  }
+
+  package "Scene Rendering (A-Frame / aframe-react)" {
+    component "Scene Support Components\n(Lobby, SF, Louvre, Berlin,\nMilan, Rome, Hack, Camera,\nSky, Plane, TextPlane)" as SceneComponents
+  }
+
+  component "Client Content Retrieval\n(Sequential Title Fetch)" as ContentRetrieval
+  component "Client-Server Communication\n(HTTP / JSON POST)" as HttpComm
+  component "Client Navigation\n(React-Router)" as Router
+}
+
+' ============================================
+' Server Layer
+' ============================================
+package "Server Layer (Node.js / Express)" {
+  component "Web Server\n(Express HTTP Routing)" as WebServer
+  component "Authentication Route\nInterface" as AuthRoute
+  component "User Controller" as UserController
+  component "User Model\n(Persistence Interface)" as UserModel
+  component "Password Verification\n(bcrypt-nodejs)" as Bcrypt
+}
+
+' ============================================
+' Data Layer
+' ============================================
+package "Data Layer" {
+  database "Database (MariaDB-style)\nUsers, Likes, Photos, Comments" as DB
+  database "Cache (Redis-style)" as Cache
+  cloud "Image Storage Service\n(AWS S3-style)" as ImageStorage
+}
+
+' ============================================
+' External Users
+' ============================================
+actor "Anonymous Visitor" as Visitor
+actor "Registered User" as RegUser
+actor "System Operator" as Operator
+
+' ============================================
+' Relationships
+' ============================================
+Visitor --> SignupView
+Visitor --> SigninView
+RegUser --> SigninView
+RegUser --> SceneComponents
+Operator --> WebServer
+
+SignupView --> CredHandlers
+SigninView --> CredHandlers
+SignupView --> Router : link to Sign-In
+SigninView --> Router : link to Sign-Up
+CredHandlers --> AppComponent
+AppComponent --> HttpComm
+WebClient --> AppComponent
+WebClient --> Router
+WebClient --> SceneComponents
+WebClient --> ContentRetrieval
+ErrorDisplay --> WebClient
+ContentRetrieval --> HttpComm : request content by title
+ContentRetrieval --> ErrorDisplay : on failure
+
+HttpComm --> WebServer : HTTP request / JSON POST
+WebServer --> AuthRoute
+WebServer --> UserController
+AuthRoute --> UserController
+UserController --> UserModel
+UserController --> Bcrypt : compare password
+UserModel --> DB : persistence
+WebServer --> Cache
+WebServer --> ImageStorage : store / retrieve images
+
+DB --> ImageStorage : photo references
+
+@enduml

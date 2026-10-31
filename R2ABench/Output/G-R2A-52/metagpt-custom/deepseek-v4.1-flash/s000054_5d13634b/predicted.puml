@@ -1,0 +1,44 @@
+@startuml
+
+component "Consumer Contract Wallet" as Wallet
+component "Wallet-held ETH/ERC20 Assets" as WalletAssets
+component "Controller Contract Interface" as Controller
+component "Token Whitelist" as TokenWhitelist
+component "TKN Holder Contract" as TknHolder
+component "Licence/Oracle-related Components" as LicenceOracle
+component "ENS Resolution" as EnsResolution
+component "Generated Go Bindings" as GoBindings
+component "Oracle/Rate Provider Contract" as OracleRateProviderContract
+component "Supported Contract Targets" as SupportedContracts
+node "Ethereum Network" as Ethereum
+cloud "Ethereum Name Service (ENS)" as ENS
+interface "Oracle/Rate Provider Interface" as RateProvider
+component "Gas Tank" as GasTank
+node "Owner Address" as OwnerAddress
+
+Wallet --> WalletAssets : holds/custodies ETH and ERC20
+OwnerAddress --> Wallet : controls/owns
+Wallet --> EnsResolution : resolve supporting contract locations
+Wallet --> Controller : control and confirmation operations using ENS-resolved address
+Wallet --> TokenWhitelist : token support, exchange-rate, loadability, burnability using ENS-resolved address
+Wallet --> OracleRateProviderContract : exchange-rate data using ENS-resolved address
+Wallet --> LicenceOracle : supporting contract interactions using ENS-resolved address
+
+EnsResolution --> ENS : name resolution
+EnsResolution --> Ethereum : runtime dependency
+EnsResolution ..> Controller : resolves address
+EnsResolution ..> TokenWhitelist : resolves address
+EnsResolution ..> OracleRateProviderContract : resolves address
+EnsResolution ..> LicenceOracle : resolves address
+
+OracleRateProviderContract -- RateProvider : provides interface
+
+GoBindings --> Controller : Call adminCount/controllerCount, Transact(methodName, params)/Transfer
+GoBindings --> SupportedContracts : Call/Transact(methodName, params)/Transfer for supported contracts
+GoBindings --> Ethereum : contract call, transact, transfer
+
+TknHolder --> TokenWhitelist : burn eligibility constrained by burnability
+
+GasTank --> OwnerAddress : gas-payment ETH maintained on
+
+@enduml

@@ -1,0 +1,76 @@
+@startuml
+title MyEMS REST API and Admin Architecture
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+node "Browser" as browser {
+  component "MyEMS Admin\n(SPA)" as admin
+  package "Routing" as routing {
+    component "/user\nUser Settings View" as userRoute
+    component "/contact\nContact Settings View" as contactRoute
+    component "Tariff Settings Modules\n(optional)" as tariffMod
+    component "Category Settings Modules\n(optional)" as categoryMod
+  }
+  component "User Settings Modules\n(lazy-loaded)" as userMods
+  component "Contact Settings Modules\n(lazy-loaded)" as contactMods
+
+  note right of admin
+    Computes API base path from browser origin:
+    {protocol}//{hostname}:{port}/api/
+    Uses same-origin '/api/' by default.
+  end note
+
+  note bottom of userRoute
+    Title: MENU.USERSETTING.USER
+  end note
+
+  note bottom of contactRoute
+    Title: MENU.SETTINGS.CONTACT
+  end note
+
+  admin --> userRoute : navigate
+  admin --> contactRoute : navigate
+  userRoute ..> userMods : lazy-load
+  contactRoute ..> contactMods : lazy-load
+}
+
+cloud "External Clients" as clients {
+  component "MyEMS Components" as myemsClients
+  component "Third-Party Apps" as thirdClients
+}
+
+node "Reverse Proxy (optional)\n(e.g., Nginx)" as proxy
+
+node "API Service (Python)" as api {
+  component "RESTful Endpoints" as rest
+  folder "Runtime Dependencies" as deps {
+    [REST framework]
+    [CORS]
+    [WSGI]
+    [Spreadsheet/Image]
+    [MySQL Connector]
+  }
+}
+
+database "MySQL-compatible Database\n(optional)" as db
+
+package "Deployment Support" as deploy {
+  component "Dev Quick-Run\nLinux / Windows" as devRun
+  component "Docker-based Installation" as docker
+}
+
+admin -down-> proxy : HTTP(S) /api/*
+proxy -down-> rest : forward /api/
+
+admin ..down..> rest : HTTP(S) /api/*\n(no proxy)
+
+myemsClients --> rest : HTTP(S)
+thirdClients --> rest : HTTP(S)
+
+rest --> db : SQL (when enabled)
+
+devRun ..> api : start in dev
+docker ..> api : containerized setup
+
+@enduml

@@ -1,0 +1,83 @@
+@startuml
+skinparam componentStyle rectangle
+title Indoor Fitness App - System Architecture
+
+actor "User" as User
+
+node "Mobile Device" as Mobile {
+  component "Mobile App" as App
+  component "Auth & Permission" as Auth
+  component "Camera Capture" as Cam
+  component "Pose Estimation\n& Skeleton Extraction" as Pose
+  component "Real-time Evaluation UI" as EvalUI
+  component "Training Session Manager" as Session
+  component "Plan Recommendation Client" as RecClient
+  component "Poster/Report Client" as PRClient
+  component "Personal Profile & Preferences" as Profile
+  component "History & Overview" as History
+  component "Casting Controller\n(Device Discovery & Connection)" as CastClient
+  App --> Auth
+  App --> Cam
+  App --> Pose
+  App --> EvalUI
+  App --> Session
+  App --> RecClient
+  App --> PRClient
+  App --> Profile
+  App --> History
+  App --> CastClient
+  Cam --> Pose : video frames
+  Pose --> EvalUI : skeleton + score
+}
+
+cloud "Same-LAN" as LAN
+
+node "Android Target Device" as Target {
+  component "Casting Server" as CastServer
+  component "Display Surface" as Display
+}
+
+package "Server Side" as Server {
+  component "API Gateway" as APIGW
+  component "Plan Recommendation Engine" as RecEngine
+  component "Material Collector/\nProcessor" as MaterialProc
+  component "Report Generator" as ReportGen
+  database "User & Training\nData Store" as DB
+  database "Standard Movement\nLibrary" as StdLib
+  component "Input Validation &\nSQLi Prevention" as Sec
+  APIGW --> RecEngine
+  APIGW --> MaterialProc
+  APIGW --> ReportGen
+  RecEngine --> DB
+  MaterialProc --> DB
+  ReportGen --> DB
+  RecEngine --> StdLib
+  Sec --> APIGW
+}
+
+User --> App : interactions
+App --> APIGW : HTTPS API
+PRClient --> MaterialProc : poster materials request
+PRClient --> ReportGen : report request
+RecClient --> RecEngine : recommendation request
+Session --> RecClient : training state/results
+Session --> PRClient : training summary
+
+CastClient .. LAN
+CastServer .. LAN
+CastClient --> CastServer : video stream + commands
+CastServer --> Display : render in real time
+
+note top of Pose
+NFR: >=20 fps runtime; >=95% accuracy (normal)
+end note
+
+note top of CastClient
+NFR: video latency <=100ms;\ncommand response <=50ms
+end note
+
+note top of Sec
+Enforces input checking,\nspecial symbol filtering,\nvariable binding,\nprepared statements
+end note
+
+@enduml

@@ -1,0 +1,62 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+
+title EMBC ESS Application Architecture
+
+package "Frontend Layer" {
+  [ClientApp (Angular)] as client
+  [NgRx Store] as ngrx
+}
+
+package "Backend Layer" {
+  [WebAPI (.NET Core)] as api
+  [Domain Services] as domain
+  [Entity Framework DbContext] as ef
+}
+
+package "Data Layer" {
+  [MS SQL Database] as db
+}
+
+package "External Systems" {
+  [SiteMinder Authentication] as siteminder
+}
+
+client --> api : HTTP Requests
+client --> ngrx : State Management
+api --> domain : Service Calls
+domain --> ef : Data Access
+ef --> db : SQL Operations
+client ..> siteminder : Authentication Context
+
+note right of client
+  - Role-based routing
+  - Session handling
+  - HTTP interceptors
+end note
+
+note right of api
+  - Controllers
+  - Domain interaction
+end note
+
+note right of domain
+  - Business logic
+  - Evacuee, Incident-task
+  - Organization, Referral
+  - Registration services
+end note
+
+note right of ef
+  - ORM layer
+  - DbContext usage
+end note
+
+note right of db
+  - Persistent entities
+  - Repository scripts
+end note
+
+@enduml

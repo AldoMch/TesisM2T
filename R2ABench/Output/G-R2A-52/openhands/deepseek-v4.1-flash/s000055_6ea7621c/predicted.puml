@@ -1,0 +1,81 @@
+@startuml
+title Nobel Prize Laureates Autocomplete - System Architecture
+
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+actor "End User" as EndUser
+actor "Developer / Tester" as Dev
+actor "Deployer / Operator" as Ops
+
+package "Client Environment (Web Browser)" as Client {
+  component "Search Input Field" as SearchInput
+  component "Suggestions / List Output" as Suggestions
+  component "Frontend Helpers (JavaScript)" as FrontendHelpers
+}
+
+package "Server Runtime (Node.js / CommonJS)" as Server {
+  component "Router" as Router
+  component "Request Handler\n(home, static, not-found)" as Handler
+  component "Search-Hint /\nAutocomplete Algorithm" as Algo
+  component "Backend Data Access\n(value extraction)" as DataAccess
+}
+
+package "Local Data" as DataStore {
+  database "Laureate JSON Data" as LaureateData
+}
+
+package "Public Asset Directory" as PublicAssets {
+  artifact "HTML" as HTML
+  artifact "CSS" as CSS
+  artifact "JavaScript" as JS
+  artifact "JPG" as JPG
+  artifact "ICO" as ICO
+}
+
+package "Deployment (Heroku)" as Heroku {
+  component "Node.js Start Script" as StartScript
+}
+
+' --- User interaction ---
+EndUser --> SearchInput : enters laureate text (FR-001, DR-004)
+SearchInput --> FrontendHelpers : input event value (FR-001)
+FrontendHelpers --> Suggestions : renders suggestion list (FR-002)
+Suggestions --> EndUser : shows laureate names (FR-002)
+
+' --- HTTP communication ---
+FrontendHelpers --> Router : HTTP request\nURL contains "search" (FR-004, C-004)
+EndUser --> Router : HTTP GET / (FR-003)
+
+' --- Routing / delegation ---
+Router --> Algo : delegates search requests\n(substring "search") (FR-004)
+Router --> Handler : delegates home page\n(GET /) and static\nassets (FR-003, FR-005)
+Handler --> Router : HTTP response\n(HTML / asset / 404) (FR-003, FR-006, FR-007)
+
+' --- Algorithm / data ---
+Algo --> DataAccess : requests field values (FR-008)
+DataAccess --> LaureateData : reads local JSON (FR-002, FR-009, DR-002)
+LaureateData --> DataAccess : object-based records (DR-003)
+DataAccess --> Algo : array of field values (FR-008)
+Algo --> Router : prefix-matched names,\nmax 10 results (FR-002, FR-009)
+
+' --- Static assets ---
+Handler --> PublicAssets : filesystem read (C-002)
+HTML --> Handler : home / not-found page (FR-003, FR-007)
+CSS --> Handler : Content-Type text/css (FR-006, NFR-002)
+JS --> Handler : Content-Type application/javascript (FR-006, NFR-002)
+JPG --> Handler : Content-Type image/jpg (FR-006, NFR-002)
+ICO --> Handler : Content-Type image/x-icon (FR-006, NFR-002)
+
+' --- Deployment ---
+Ops --> StartScript : runs Node.js start script (NFR-004, C-005)
+StartScript --> Server : launches server runtime (NFR-004)
+Heroku ..> Server : hosting environment (A-004, C-005)
+
+' --- Verification ---
+Dev --> FrontendHelpers : frontend helper tests (NFR-001)
+Dev --> Algo : backend autocomplete tests (NFR-001)
+Dev --> DataAccess : backend data tests (NFR-001)
+
+@enduml

@@ -1,0 +1,189 @@
+@startuml
+title Intelligent Text Annotation System (ITAS) - System Architecture
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+skinparam component {
+  BackgroundColor #F5F9FF
+  BorderColor #2C5F9E
+}
+skinparam database {
+  BackgroundColor #FFF7E6
+  BorderColor #B8860B
+}
+
+' ============================ Actors ============================
+actor "System Annotation\nAdministrator" as Admin
+actor "Data Annotator" as Annotator
+actor "Researcher" as Researcher
+
+' ============================ Client Layer ============================
+package "Client Layer (Vue.js / Vue 3.0)" as Client {
+  component "Registration / Login UI" as UI_LOGIN
+  component "Profile Management UI" as UI_PROFILE
+  component "Annotation Project Creation UI" as UI_PROJ_CREATE
+  component "Annotation Project Management UI" as UI_PROJ_MGMT
+  component "Annotation Task Execution UI" as UI_TASK
+  component "Mining Main UI" as UI_MINING
+  component "Mining File Upload UI" as UI_UPLOAD
+  component "Mining Result Display UI" as UI_RESULT
+
+  component "vue-router" as ROUTER
+  component "Pinia (State)" as PINIA
+  component "Ant Design / Ant-Design-Vue" as ANTD
+  component "Axios HTTP Client" as AXIOS
+
+  ROUTER -down- UI_LOGIN
+  ANTD -down- UI_LOGIN
+  PINIA -down- UI_LOGIN
+}
+
+Admin --> UI_LOGIN
+Admin --> UI_PROJ_CREATE
+Admin --> UI_PROJ_MGMT
+Annotator --> UI_LOGIN
+Annotator --> UI_TASK
+Researcher --> UI_MINING
+Researcher --> UI_UPLOAD
+Researcher --> UI_RESULT
+UI_PROFILE -down- UI_LOGIN
+UI_UPLOAD -down- UI_MINING
+UI_RESULT -down- UI_MINING
+
+' ============================ Edge / Gateway Layer ============================
+package "Edge & Gateway Layer" as Edge {
+  component "Nginx Reverse Proxy\n(forwarding, load balancing)" as NGINX
+  component "Spring Gateway\n(API routing)" as GATEWAY
+  component "Spring Security\n(authentication / authorization)" as SECURITY
+  component "Service Discovery &\nConfiguration Management\n(Spring Cloud)" as DISCOVERY
+}
+
+AXIOS --> NGINX : HTTPS / HTTP
+NGINX --> GATEWAY
+GATEWAY --> SECURITY
+
+' ============================ Backend Services ============================
+package "Backend Application Layer (Spring Boot / Spring Cloud microservices)" as Backend {
+
+  package "Text Annotation Subsystem" as AnnotationSvc {
+    component "User & Login Controller\n(register, login, logout, profile)" as C_USER
+    component "Role / Task Switch Manager" as C_ROLE
+    component "Annotator Management Controller" as C_ANNOTATOR
+    component "Project Management Controller" as C_PROJECT
+    component "Preset Management Controller\n(paragraph / entity presets)" as C_PRESET
+    component "Paper / Document Controller\n(upload, delete, view, query)" as C_PAPER
+    component "File Download Controller" as C_FILE
+    component "Tag / Label Management Controller" as C_TAG
+    component "Task Management Controller\n(assign, list, complete, statistics)" as C_TASK
+    component "Annotation Mark / Result Controller" as C_MARK
+    component "Result Export / Return Controller" as C_EXPORT
+  }
+
+  package "Intelligent Mining Subsystem" as MiningSvc {
+    component "Document Upload Service" as M_UPLOAD
+    component "Format Conversion Service\n(PDF / HTML / TXT)" as M_CONVERT
+    component "Model Selection Service\n(built-in, community, third-party)" as M_MODELSEL
+    component "Information Extraction Service\n(paragraph annotation & key data)" as M_EXTRACT
+    component "Paragraph Localization Service" as M_PARALOC
+    component "Entity Recognition Service" as M_ENTITY
+    component "Few-shot Learning Extraction\nService" as M_FEWSHOT
+  }
+
+  package "Shared Infrastructure Services" as Shared {
+    component "Async Task / Message Producer" as MSG_PRODUCER
+    component "Cache Access Service\n(Redis client)" as CACHE_SVC
+    component "Data Access Layer\n(MyBatis / MyBatis Plus ORM)" as ORM
+    component "Object Storage Access Service\n(Minio client)" as MINIO_SVC
+  }
+}
+
+UI_TASK --> C_TASK
+UI_PROJ_CREATE --> C_PROJECT
+UI_PROJ_MGMT --> C_PROJECT
+UI_MINING --> M_EXTRACT
+UI_UPLOAD --> M_UPLOAD
+UI_RESULT --> M_EXTRACT
+
+GATEWAY --> C_USER
+GATEWAY --> C_PROJECT
+GATEWAY --> C_TASK
+GATEWAY --> M_UPLOAD
+GATEWAY --> M_EXTRACT
+DISCOVERY -down- AnnotationSvc
+DISCOVERY -down- MiningSvc
+
+C_MARK --> M_EXTRACT : annotation outputs\n(AD-001)
+C_EXPORT --> ORM
+C_ANNOTATOR --> ORM
+C_PRESET --> ORM
+M_EXTRACT --> M_PARALOC
+M_EXTRACT --> M_ENTITY
+M_EXTRACT --> M_FEWSHOT
+M_EXTRACT --> M_MODELSEL
+M_CONVERT --> MSG_PRODUCER
+M_UPLOAD --> MSG_PRODUCER
+
+' ============================ ML / Model Layer ============================
+package "Model / ML Layer" as Models {
+  component "BERT\n(paragraph model)" as BERT
+  component "GPT / GPT API\n(entity model interface)" as GPT
+}
+
+M_PARALOC --> BERT
+M_ENTITY --> GPT
+M_MODELSEL --> GPT
+M_FEWSHOT --> GPT
+
+' ============================ Messaging ============================
+queue "RabbitMQ\n(asynchronous message queue)" as MQ
+
+MSG_PRODUCER --> MQ
+MQ --> M_CONVERT : file conversion tasks\n(AD-004, NFR-009)
+
+' ============================ Data Layer ============================
+package "Data Layer" as Data {
+  database "MySQL\n(users, projects, documents, tags,\ntasks, presets, annotation results)" as MYSQL
+  database "Minio Object Storage\n(text / unstructured documents,\nobject identifiers & buckets)" as MINIO
+  database "Redis\n(cache)" as REDIS
+}
+
+ORM --> MYSQL : MyBatis / MyBatis Plus
+MINIO_SVC --> MINIO : S3-compatible API
+CACHE_SVC --> REDIS : cache access
+
+C_USER --> ORM
+C_ROLE --> ORM
+C_PROJECT --> ORM
+C_PAPER --> ORM
+C_FILE --> MINIO_SVC
+C_TAG --> ORM
+C_TASK --> ORM
+C_MARK --> ORM
+M_EXTRACT --> ORM
+M_UPLOAD --> MINIO_SVC
+M_CONVERT --> MINIO_SVC
+
+' ============================ Deployment / Infrastructure ============================
+cloud "Tencent Cloud (deployment / runtime / public hosting)" as CLOUD
+node "Docker Containers (environment consistency & portability)" as DOCKER
+
+CLOUD -down- DOCKER : hosts
+DOCKER ..> NGINX : packages
+DOCKER ..> Backend : packages
+DOCKER ..> Models : packages
+DOCKER ..> MYSQL : packages
+DOCKER ..> MINIO : packages
+DOCKER ..> REDIS : packages
+DOCKER ..> MQ : packages
+
+' ============================ Third-Party ============================
+cloud "Third-Party Services" as THIRD_PARTY
+component "GPT API /\nChatGPT-like Interface" as GPT_EXT
+THIRD_PARTY -down- GPT_EXT
+GPT --> GPT_EXT : third-party API invocation\n(AD-002, API-003)
+
+@enduml

@@ -1,0 +1,163 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #111111
+}
+
+skinparam interface {
+  BackgroundColor #FFFACD
+  BorderColor #CC9900
+}
+
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+
+skinparam cloud {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+skinparam node {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+title lowes/auditor — System Architecture Diagram
+
+actor "Application Developer\n(Integrating Service)" as AppDev
+
+node "JVM Application (Java 11 / JVM 11)" {
+
+  rectangle "Application Code" as AppCode {
+    component "Caller / Client Code" as Caller
+  }
+
+  rectangle "lowes/auditor\nKotlin Client Library" as AuditorLib {
+
+    component "Auditing API\nEntry Point" as AuditAPI <<API>>
+
+    component "AuditorEventConfig\nResolver" as ConfigResolver {
+      component "applicationName" as cfgAppName
+      component "eventSource" as cfgEventSource
+      component "eventSubType" as cfgEventSubType
+      component "metadata" as cfgMetadata
+    }
+
+    component "Object Diff Engine" as DiffEngine {
+      component "Field Comparator\n(scalar, map, list,\nnested, UUID, nullable)" as FieldComparator
+      component "Change Classifier\n(CREATED / UPDATED / DELETED)" as ChangeClassifier
+    }
+
+    component "AuditEvent Builder" as EventBuilder {
+      component "Element Assembler\n(name, updatedValue,\npreviousValue, metadata.fqdn)" as ElementAssembler
+    }
+
+    component "Element Filter Engine" as FilterEngine {
+      component "AuditEventElementFilter\n<<interface>>" as ElementFilterIface
+      component "InclusionFilter\n(includes list)" as InclusionFilter
+    }
+
+    component "Event Publisher\nOrchestrator" as PubOrchestrator
+
+    interface "EventPublisher\n<<interface>>" as EventPublisherIface
+    interface "LogProvider\n<<interface>>" as LogProviderIface
+  }
+
+  rectangle "Default Infrastructure Implementations" as DefaultImpls {
+    component "Kafka EventPublisher\nImplementation" as KafkaPublisher
+    component "Application LogProvider\nImplementation" as AppLogger
+    component "Custom Element Filter\nImplementation" as CustomFilter
+  }
+}
+
+database "AuditEvent\n(JSON Payload)" as AuditEventPayload
+
+cloud "Kafka Topic\n(Event Stream)" as KafkaTopic
+
+rectangle "Downstream Consumer\nService" as DownstreamConsumer
+
+AppDev --> Caller : calls auditing API\nwith oldObject, newObject,\nAuditorEventConfig
+
+Caller --> AuditAPI : invoke audit\n(oldObject, newObject,\nAuditorEventConfig)
+
+AuditAPI --> ConfigResolver : extract config values\n(appName, source, subtype,\nmetadata, filters)
+
+AuditAPI --> DiffEngine : compare\noldObject vs newObject
+
+DiffEngine --> FieldComparator : iterate fields\n(scalar, map, list,\nnested, UUID, nullable)
+FieldComparator --> ChangeClassifier : classify changes\n(CREATED/UPDATED/DELETED)
+
+ChangeClassifier --> EventBuilder : detected changes\nwith field names\nand values
+
+ConfigResolver --> EventBuilder : resolved config values
+
+EventBuilder --> ElementAssembler : assemble elements\n(name, updatedValue,\npreviousValue, metadata.fqdn)
+
+ElementAssembler --> FilterEngine : candidate\nAuditEvent elements
+
+FilterEngine --> ElementFilterIface : apply filter
+ElementFilterIface <|.. InclusionFilter : implements
+ElementFilterIface <|.. CustomFilter : implements (external)
+
+FilterEngine --> PubOrchestrator : filtered AuditEvent
+
+PubOrchestrator --> EventPublisherIface : publish(AuditEvent\nas JSON payload)
+PubOrchestrator --> LogProviderIface : log audit operation
+
+EventPublisherIface <|.. KafkaPublisher : default impl
+LogProviderIface <|.. AppLogger : external impl
+
+KafkaPublisher --> KafkaTopic : send serialized\nAuditEvent JSON\nto configured topic
+
+KafkaTopic --> DownstreamConsumer : consume event
+
+DownstreamConsumer --> AuditEventPayload : deserialize JSON\ninto AuditEvent object
+
+note right of AuditAPI
+  API Inputs:
+  - oldObject (domain object)
+  - newObject (domain object)
+  - AuditorEventConfig (optional)
+    · applicationName
+    · eventSource
+    · eventSubType
+    · metadata
+    · filters.element
+      (enabled, types, includes)
+end note
+
+note right of AuditEventPayload
+  AuditEvent fields:
+  - event type (CREATED / UPDATED / DELETED)
+  - applicationName, eventSource, eventSubType
+  - metadata
+  - elements[]:
+    · name
+    · updatedValue
+    · previousValue
+    · metadata.fqdn
+end note
+
+note bottom of DefaultImpls
+  Infrastructure implementations are
+  injected externally (NFR-001, C-002).
+  Kafka is the default transport (C-003).
+  Custom filter and logger are provided
+  by integrating applications.
+end note
+
+@enduml

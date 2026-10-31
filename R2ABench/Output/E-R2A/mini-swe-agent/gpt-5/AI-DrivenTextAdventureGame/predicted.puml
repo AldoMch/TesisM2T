@@ -1,0 +1,65 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+title AI-Driven Text Adventure Game and Community - Layered Architecture
+
+package Client_Layer {
+  [Web Client (Vue.js / Nuxt.js)] as WebClient
+}
+
+package API_Layer {
+  [HTTP API and Routing (Iris)] as API
+}
+
+package Application_Services {
+  [Game Service] as GameSvc
+  [User and Auth Service] as UserSvc
+  [Community Service] as CommunitySvc
+  [Admin Governance Service] as AdminSvc
+  [Favorites Service] as FavSvc
+  [Notification Service] as NotifSvc
+}
+
+package Integration_Adapters {
+  [LLM Provider Adapter] as LLMAdapter
+}
+
+package Data_Access {
+  [ORM (Gorm)] as GormORM
+}
+
+database MySQL as MySQL
+cloud LLM_Provider_API as LLMAPI
+cloud Cloud_Runtime_Docker_Kubernetes as CloudRuntime
+
+WebClient --> API : HTTPS
+API --> GameSvc
+API --> UserSvc
+API --> CommunitySvc
+API --> AdminSvc
+API --> FavSvc
+API --> NotifSvc
+
+GameSvc --> LLMAdapter : generate plots/events
+GameSvc --> GormORM : saves, background, state
+UserSvc --> GormORM : accounts, profiles
+CommunitySvc --> GormORM : posts, comments, replies
+AdminSvc --> GormORM : reviews, governance
+FavSvc --> GormORM : favorites
+NotifSvc --> GormORM : notifications
+
+LLMAdapter --> LLMAPI : REST/gRPC
+
+GormORM --> MySQL : SQL
+
+API ..> CloudRuntime
+GameSvc ..> CloudRuntime
+UserSvc ..> CloudRuntime
+CommunitySvc ..> CloudRuntime
+AdminSvc ..> CloudRuntime
+FavSvc ..> CloudRuntime
+NotifSvc ..> CloudRuntime
+MySQL ..> CloudRuntime
+
+@enduml

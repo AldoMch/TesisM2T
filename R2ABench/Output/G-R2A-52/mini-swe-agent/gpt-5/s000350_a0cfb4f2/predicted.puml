@@ -1,0 +1,52 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+package "Client Layer" {
+  actor "Web User" as User
+  component "Web Browser\n(UI)" as Browser
+}
+
+package "API Layer (Server Process)" {
+  component "HTTP API\n(REST/GET)" as API
+  component "WebSocket Gateway" as WS
+  component "Session Manager" as Session
+  component "Background Consumer Thread" as Consumer
+}
+
+package "Messaging" {
+  component "Redis Message Broker" as Redis <<Redis>>
+}
+
+package "Worker/Execution" {
+  component "squatm3 CLI Engine\n(subprocess)" as Engine
+}
+
+package "External Services" {
+  cloud "GoDaddy Domains API" as GoDaddy
+}
+
+User --> Browser
+Browser --> API : HTTP GET /\nattack selection, flags
+Browser <--> WS : WebSocket updates
+
+API --> Session : create/validate session\n(use session key as job id)
+API --> Redis : Publish job\n(sessionKey = jobId)
+Consumer --> Redis : Subscribe jobs
+Consumer --> Engine : Execute domain generation\nwith options
+Consumer --> GoDaddy : Optional availability checks
+Consumer --> Redis : Publish reports
+API --> Redis : Subscribe reports
+API --> WS : Emit progress/results to session channel
+
+note right of Redis
+Job and report communication via configured Redis URI
+Report format: WORKER_ID#JOB_UUID#{MESSAGE/RESULT}
+end note
+
+note bottom of API
+Handles error responses (400/404/500)
+Provides homoglyph-complete GET resource
+end note
+
+@enduml

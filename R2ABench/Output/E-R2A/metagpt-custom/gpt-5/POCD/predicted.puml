@@ -1,0 +1,133 @@
+@startuml
+
+package "User Interface Layer" {
+  component "Registration & Login UI" as UIAuth
+  component "File Management UI" as UIFile
+  component "Detection Configuration UI" as UIConfig
+  component "Detection Records UI" as UIRecords
+  component "Detection Result & Repair UI" as UIResultRepair
+  component "Report Export UI" as UIReport
+  component "Help & Cases UI" as UIHelp
+}
+
+package "Business Logic Layer" {
+  interface "Open API Endpoints" as API
+
+  component "Authentication & RBAC Service" as Auth
+  component "File Service" as FileSvc
+  component "MDJ Parser" as MdjParser
+  component "MySQL Parser & Connector" as MySQLParser
+  component "Relationship Extractor" as RelExtractor
+  component "JSON Converter" as JsonConv
+  component "Matching Engine" as MatchEngine
+  component "Detection Engine" as DetectEngine
+  component "Rule & Exception Manager" as RulesMgr
+  component "Repair Suggestion Generator" as RepairGen
+  component "Class Diagram Repair Executor" as ClassRepairExec
+  component "Database Repair Executor" as DbRepairExec
+  component "Report Generator & Exporter" as ReportGen
+  component "History & Audit Service" as HistorySvc
+  component "Async Task Orchestrator" as Orchestrator
+  component "Resource Usage Controller" as ResourceCtrl
+}
+
+package "Data Access Layer" {
+  database "User Repository" as UserRepo
+  database "File Repository" as FileRepo
+  database "Parsing Model Repository" as ModelRepo
+  database "Rule/Exception Repository" as RuleRepo
+  database "Matching Results Store" as MatchStore
+  database "Detection Reports Repository" as ReportRepo
+  database "Repair Records Repository" as RepairRepo
+  database "History Repository" as HistoryRepo
+  database "Help/Case Repository" as HelpRepo
+  database "Operation Log Repository" as LogRepo
+}
+
+package "External Systems" {
+  database "MySQL Database" as MySQLDB
+  component "JDBC Database Connector" as JDBC
+  component "StarUML MDJ Files" as MDJFiles
+  component "MySQL Design Files/Scripts" as MySQLDesign
+  component "Jackson / JSON Library" as Jackson
+  cloud "SSL/TLS Secure Transport" as TLS
+  cloud "Third-Party Applications" as ThirdParty
+}
+
+/' UI -> Open API '/
+UIAuth --> API
+UIFile --> API
+UIConfig --> API
+UIRecords --> API
+UIResultRepair --> API
+UIReport --> API
+UIHelp --> API
+
+/' Secure transport for all clients '/
+UIAuth --> TLS
+UIFile --> TLS
+UIConfig --> TLS
+UIRecords --> TLS
+UIResultRepair --> TLS
+UIReport --> TLS
+UIHelp --> TLS
+ThirdParty --> TLS
+TLS --> API
+
+/' Open API -> Services and External '/
+API --> Auth
+API --> FileSvc
+API --> RulesMgr
+API --> HistorySvc
+API --> ReportGen
+API --> HelpRepo
+
+/' Business Logic -> Data Access and External '/
+Auth --> UserRepo
+FileSvc --> FileRepo
+FileSvc --> MySQLDesign
+
+MdjParser --> ModelRepo
+MdjParser --> MDJFiles
+
+MySQLParser --> JDBC
+MySQLParser --> ModelRepo
+MySQLParser --> MySQLDesign
+JDBC --> MySQLDB
+
+RelExtractor --> MySQLParser
+RelExtractor --> ModelRepo
+
+JsonConv --> ModelRepo
+JsonConv --> Jackson
+JsonConv --> MatchEngine
+JsonConv --> DetectEngine
+
+MatchEngine --> ModelRepo
+MatchEngine --> MatchStore
+
+DetectEngine --> MatchStore
+DetectEngine --> RuleRepo
+DetectEngine --> ReportRepo
+
+RepairGen --> ReportRepo
+
+ClassRepairExec --> RepairRepo
+ClassRepairExec --> MDJFiles
+ClassRepairExec --> FileRepo
+
+DbRepairExec --> JDBC
+
+ReportGen --> ReportRepo
+
+HistorySvc --> LogRepo
+HistorySvc --> HistoryRepo
+
+Orchestrator --> DetectEngine
+Orchestrator --> ClassRepairExec
+Orchestrator --> DbRepairExec
+Orchestrator --> HistorySvc
+
+ResourceCtrl --> Orchestrator
+
+@enduml

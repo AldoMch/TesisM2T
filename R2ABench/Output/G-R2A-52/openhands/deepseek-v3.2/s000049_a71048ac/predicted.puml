@@ -1,0 +1,121 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 14
+title NLP4L System Architecture
+
+package "External Systems" {
+  [Apache Lucene 5.2.0] as LUCENE
+  [External ML Tools\n(Spark, Mahout)] as MLTOOLS
+  [Scala Interactive\nEnvironment] as SCALA_ENV
+}
+
+package "NLP4L System" {
+  component "Lucene Index Processor" as INDEX_PROCESSOR {
+    component "Document Data\nProcessor" as DOC_PROCESSOR
+    component "Analyzer-normalized\nTerm Data Access" as TERM_ACCESS
+  }
+  
+  component "Search Capability" as SEARCH {
+    component "Query Processor" as QUERY
+    component "Filter Processor" as FILTER
+    component "Sort Processor" as SORT
+  }
+  
+  component "Document Vector\nGenerator" as VECTOR_GEN {
+    component "Vector Creation" as VECTOR_CREATE
+    component "LIBSVM Exporter" as LIBSVM_EXPORT
+  }
+  
+  component "Schema Configuration\nLoader" as SCHEMA_LOADER {
+    component "Resource Loader" as RESOURCE_LOAD
+    component "File Path Loader" as FILE_LOAD
+    component "Schema Validator" as SCHEMA_VALID
+  }
+  
+  component "Schema Model" as SCHEMA_MODEL {
+    component "Default Analyzer\nConfiguration" as DEFAULT_ANALYZER
+    component "Field Definitions" as FIELD_DEFS
+    component "Field-type Mappings" as FIELD_MAPPINGS
+    component "Custom Analyzer\nDefinitions" as CUSTOM_ANALYZERS
+  }
+  
+  component "Chart Display\n(Experimental)" as CHART_DISPLAY {
+    component "Word Count\nVisualizer" as WORD_VISUALIZER
+  }
+}
+
+' Data flows and interfaces
+interface "Lucene Index Interface" as LUCENE_IF
+interface "LIBSVM Format Interface" as LIBSVM_IF
+interface "Schema Configuration\nInterface" as SCHEMA_IF
+interface "Scala Interactive\nInterface" as SCALA_IF
+interface "Chart Display\nInterface" as CHART_IF
+
+' Connections between external systems and NLP4L
+LUCENE ..> LUCENE_IF : provides\nindex data
+LUCENE_IF ..> INDEX_PROCESSOR : document data\n& term data
+
+MLTOOLS ..> LIBSVM_IF : consumes\nvectors
+LIBSVM_IF ..> VECTOR_GEN : exports\nvectors
+
+SCALA_ENV ..> SCALA_IF : interactive\nprocessing
+SCALA_IF ..> INDEX_PROCESSOR : ad hoc\noperations
+SCALA_IF ..> SEARCH : search\nqueries
+SCALA_IF ..> VECTOR_GEN : vector\ngeneration
+SCALA_IF ..> SCHEMA_LOADER : schema\nloading
+
+' Internal connections
+INDEX_PROCESSOR --> SEARCH : indexed\ndata
+INDEX_PROCESSOR --> VECTOR_GEN : processed\ndata
+SEARCH --> VECTOR_GEN : search\nresults
+SCHEMA_LOADER --> SCHEMA_MODEL : validated\nschema
+SCHEMA_MODEL --> INDEX_PROCESSOR : analyzer\nconfiguration
+SCHEMA_MODEL --> SEARCH : field\nmappings
+
+' Data flows for chart display
+INDEX_PROCESSOR --> CHART_DISPLAY : word count\ndata
+SCALA_IF ..> CHART_DISPLAY : visualization\nrequests
+CHART_IF ..> CHART_DISPLAY : chart\npresentation
+
+' Schema configuration sources
+database "Resource File" as RESOURCE_FILE
+database "File System Path" as FILE_PATH
+
+RESOURCE_FILE --> SCHEMA_LOADER : schema\nconfiguration
+FILE_PATH --> SCHEMA_LOADER : schema\nconfiguration
+
+' Error handling
+component "Invalid Schema\nError Handler" as ERROR_HANDLER
+SCHEMA_LOADER --> ERROR_HANDLER : validation\nerrors
+
+' Notes and constraints
+note top of LUCENE
+  Constraint: Apache Lucene 5.2.0
+  ecosystem compatibility
+end note
+
+note top of MLTOOLS
+  Constraint: LIBSVM format
+  for ML interoperability
+end note
+
+note top of SCALA_ENV
+  Constraint: Scala implementation
+  and interaction context
+end note
+
+note right of CHART_DISPLAY
+  Experimental feature
+  Stability not guaranteed
+end note
+
+note right of SCHEMA_MODEL
+  Required: schema root object
+  Required: default analyzer
+  Required: field definitions
+  Optional: custom analyzers
+end note
+
+@enduml

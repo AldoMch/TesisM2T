@@ -1,0 +1,126 @@
+@startuml Campus_Helper_Architecture
+title Campus Helper Platform - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' Presentation Layer
+' =========================================================
+package "Presentation Layer" as PRES {
+  [Guest / Visitor UI] as UI_GUEST
+  [Registered User Mini Program UI\n(Browse / Favorites / Orders)] as UI_USER
+  [Seller Publishing UI] as UI_SELLER
+  [Customer Ordering UI] as UI_CUSTOMER
+  [Administrator Backend Console] as UI_ADMIN
+}
+
+' =========================================================
+' External Systems
+' =========================================================
+cloud "WeChat Mini Program Platform\n(WeChat 8.0+, Android 5.0+)" as WECHAT
+[Monitoring & Logging Platform] as MONITOR
+
+' =========================================================
+' Business Layer (Application Services)
+' =========================================================
+package "Business Layer" as BIZ {
+  [Authentication & Permission Service\n(login auth, role-based control)] as SVC_AUTH
+  [Product Browsing & Search Service\n(popular, category, detail)] as SVC_PRODUCT
+  [Order Service\n(create, remark, confirm, cancel)] as SVC_ORDER
+  [Personal Center Service\n(favorites, own orders)] as SVC_PROFILE
+  [Product Management Service\n(admin view/modify/delete)] as SVC_PRODMGMT
+  [Order Management Service\n(admin view/modify orders)] as SVC_ORDERMGMT
+  [User Management Service\n(admin view/modify users)] as SVC_USERMGMT
+  [Administration Log Service] as SVC_LOG
+}
+
+' =========================================================
+' Data Layer (Data Access)
+' =========================================================
+package "Data Layer" as DATA {
+  [Data Access / Repository Layer\n(DAO, transactions, input validation)] as DAO
+  [Search & Tag Query Component] as SEARCH
+}
+
+' =========================================================
+' Data Entity Layer (Database)
+' =========================================================
+database "Data Entity Layer (Database)" as DB {
+  [User & Permission Data\n(accounts, roles, auth status)] as D_USER
+  [Product Data\n(takeout / express / second-hand)] as D_PRODUCT
+  [Tag & Category Data] as D_TAG
+  [Order Data\n(remarks, status, address, contact)] as D_ORDER
+  [Favorite Data] as D_FAV
+  [Administration Log Data] as D_ADMINLOG
+  [Fault & Monitoring Data] as D_MON
+}
+
+' =========================================================
+' Relationships
+' =========================================================
+
+' Presentation -> External runtime
+UI_GUEST -up-> WECHAT
+UI_USER -up-> WECHAT
+UI_SELLER -up-> WECHAT
+UI_CUSTOMER -up-> WECHAT
+UI_ADMIN -up-> WECHAT
+
+' Presentation -> Business
+UI_GUEST --> SVC_PRODUCT
+UI_USER --> SVC_PRODUCT
+UI_USER --> SVC_ORDER
+UI_USER --> SVC_PROFILE
+UI_SELLER --> SVC_PRODUCT
+UI_SELLER --> SVC_ORDER
+UI_CUSTOMER --> SVC_PRODUCT
+UI_CUSTOMER --> SVC_ORDER
+UI_ADMIN --> SVC_AUTH
+UI_ADMIN --> SVC_PRODMGMT
+UI_ADMIN --> SVC_ORDERMGMT
+UI_ADMIN --> SVC_USERMGMT
+
+' Cross-service authentication dependency
+SVC_PRODUCT --> SVC_AUTH
+SVC_ORDER --> SVC_AUTH
+SVC_PROFILE --> SVC_AUTH
+SVC_PRODMGMT --> SVC_AUTH
+SVC_ORDERMGMT --> SVC_AUTH
+SVC_USERMGMT --> SVC_AUTH
+
+' Business -> Data layer
+SVC_AUTH --> DAO
+SVC_PRODUCT --> DAO
+SVC_PRODUCT --> SEARCH
+SVC_ORDER --> DAO
+SVC_PROFILE --> DAO
+SVC_PRODMGMT --> DAO
+SVC_PRODMGMT --> SEARCH
+SVC_ORDERMGMT --> DAO
+SVC_USERMGMT --> DAO
+SVC_LOG --> DAO
+
+' Data layer -> Database
+DAO --> D_USER
+DAO --> D_PRODUCT
+DAO --> D_TAG
+DAO --> D_ORDER
+DAO --> D_FAV
+DAO --> D_ADMINLOG
+DAO --> D_MON
+SEARCH --> D_PRODUCT
+SEARCH --> D_TAG
+
+' Cross-cutting observability
+SVC_AUTH ..> MONITOR
+SVC_PRODUCT ..> MONITOR
+SVC_ORDER ..> MONITOR
+SVC_PROFILE ..> MONITOR
+SVC_PRODMGMT ..> MONITOR
+SVC_ORDERMGMT ..> MONITOR
+SVC_USERMGMT ..> MONITOR
+MONITOR ..> D_MON
+
+@enduml

@@ -1,0 +1,77 @@
+@startuml
+title Help With COVID – Session and Task Workflow Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+
+actor "Authenticated User" as AuthUser
+actor "End User (Channel/Form)" as EndUser
+
+component "Env Config\n(FIREBASE_AUTH_DOMAIN\nFIREBASE_DATABASE_URL\nFIREBASE_PROJECT_ID\nFIREBASE_PUBLIC_API_KEY)" as EnvConfig <<config>>
+
+package "Frontend (Next.js)" as Frontend {
+  component "Session Handler" as SessionHandler
+  component "Frontend Form" as FrontendForm
+  component "Firebase JS SDK" as FirebaseClient <<library>>
+}
+
+package "Middleware" as Middleware {
+  component "Task Middleware\n(Address→Neighborhood,\nService-area check)" as TaskMW
+}
+
+package "Backend (Next.js API Routes + Firebase Functions)" as Backend {
+  component "/api/login (POST)" as LoginAPI
+  component "/api/logout (POST)" as LogoutAPI
+  component "Session Middleware\n(Server-side session)" as SessionMW
+  component "Task Handler" as TaskHandler
+  component "Firebase Admin\nToken Verification" as FirebaseAdmin <<service>>
+}
+
+cloud "OnFleet" as OnFleet
+component "External User Channel\n(Text/Call)" as ExternalChannel <<channel>>
+
+AuthUser --> SessionHandler : Firebase auth\n(user.getIdToken())
+SessionHandler --> FirebaseClient : Get ID token
+
+SessionHandler --> LoginAPI : POST /api/login\nContent-Type: application/json\ncredentials: same-origin\n{ token }
+SessionHandler --> LogoutAPI : POST /api/logout\ncredentials: same-origin
+
+LoginAPI ..> SessionMW : executes with\nserver-side session
+LogoutAPI ..> SessionMW : executes with\nserver-side session
+
+LoginAPI --> FirebaseAdmin : verifyIdToken(token)
+FirebaseAdmin --> LoginAPI : decoded token
+
+LoginAPI --> SessionMW : write session.auth = { decoded, token }
+LoginAPI --> SessionHandler : 200 JSON\n{ status, decoded }
+
+EnvConfig --> FirebaseClient : runtime config
+EnvConfig --> Backend : runtime config
+
+EndUser --> FrontendForm : submit help-task
+EndUser --> ExternalChannel : text/call request
+
+FrontendForm --> TaskMW : pass task request
+ExternalChannel --> TaskMW : pass task request
+
+TaskMW --> TaskHandler : eligible request
+TaskHandler --> OnFleet : create task
+TaskMW ..> EndUser : out-of-service-area\nresponse
+
+note right of LoginAPI
+- 400 if body missing
+- Extract token from req.body
+- Verify Firebase ID token
+- Store decoded token and token in session
+- Return 200 JSON on success
+end note
+
+note top of EnvConfig
+Runtime configuration from environment variables
+end note
+
+note "Run modes:\n- both servers\n- frontend-only\n- backend-only" as RunModes
+RunModes .. Frontend
+RunModes .. Backend
+
+@enduml

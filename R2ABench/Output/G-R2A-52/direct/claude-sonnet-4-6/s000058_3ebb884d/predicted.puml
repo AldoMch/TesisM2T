@@ -1,0 +1,125 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #003366
+  FontSize 13
+}
+skinparam database {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam cloud {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam node {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam component {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam arrow {
+  Color #336699
+  FontColor #003366
+  FontSize 11
+}
+skinparam title {
+  FontSize 18
+  FontColor #003366
+  FontStyle bold
+}
+
+title macpro-appian-connector\nSystem Architecture Diagram
+
+actor "Developer / Operator" as User
+
+node "Local Environment" as LocalEnv {
+  component "Terminal / Script Interface\n(nvm use, run listRunningStages)" as Terminal
+  component "AWS CLI\n(credentials configured)" as AWSCLI
+}
+
+node "GitHub" as GitHub {
+  component "GitHub Actions CI/CD\n(deploy.yml workflows)" as GHActions
+  component "GitHub Actions API\n(workflow run records)" as GHActionsAPI
+  component "GitHub Pull Requests API\n(closed PRs, base branch)" as GHPRAPI
+}
+
+node "Metrics Collection Module" as MetricsModule {
+  component "Deployment Metrics Collector\n(failedRuns, passedRuns)\n[paginated, per_page=100]" as DeployMetrics
+  component "PR Merge Time Collector\n(averageTimeToMerge)\n[whole-hour diff, default 0]" as PRMetrics
+}
+
+node "AWS Account / Region" as AWSAccount {
+
+  node "Stage Listing Service" as StageSvc {
+    component "listRunningStages Handler\noutput: runningStages=<csv>" as StageHandler
+  }
+
+  node "Connector Management Service" as ConnectorSvc {
+    component "Connector Configuration Handler\n(put, delete[empty set], restart)" as ConnectorHandler
+    component "Connector Management Library" as ConnectorLib
+    database "Connector Definitions\n(cluster, service, connectors)" as ConnectorDefs
+  }
+
+  node "Event Alerting Service" as AlertSvc {
+    component "AWS EventBridge\n(event routing rule\nwith filter criteria)" as EventBridge
+    component "AWS SNS Topic\n(notification topic)" as SNSTopic
+    component "SNS Subscription Management\n[manual, outside deployment]" as SNSSubs
+  }
+}
+
+node "CMS BigMAC" as BigMAC {
+  component "BigMAC Data Receiver" as BigMACRecv
+}
+
+node "Appian" as Appian {
+  component "Appian Data Source\n(data change events)" as AppianSrc
+}
+
+' User interactions
+User --> Terminal : runs stage-listing\nprocedure
+User --> SNSSubs : manually manages\nsubscriptions
+
+' Local env interactions
+Terminal --> AWSCLI : uses credentials
+AWSCLI --> StageHandler : AWS CLI query\n(current account/region)
+StageHandler --> User : runningStages=<csv>
+
+' Connector management
+User --> ConnectorHandler : invokes with\ncluster, service
+ConnectorHandler --> ConnectorDefs : reads connector\ndefinitions
+ConnectorHandler --> ConnectorLib : put connectors\ndelete[empty set]\nrestart connectors
+ConnectorLib --> BigMACRecv : updates connector\nstate on target\ncluster/service
+
+' Appian data flow
+AppianSrc --> ConnectorSvc : data changes\ntriggered via connector
+
+' Event alerting flow
+ConnectorSvc --> EventBridge : service runtime\nevents emitted
+EventBridge --> SNSTopic : matching events\nrouted (filter criteria met)
+SNSTopic --> SNSSubs : delivers to\nsubscription targets
+
+' GitHub Actions CI/CD
+GHActions --> AWSAccount : deployment\nworkflow runs
+
+' Metrics collection
+DeployMetrics --> GHActionsAPI : query deploy.yml\nworkflow runs\n(paginated)
+GHActionsAPI --> DeployMetrics : workflow run records\n(conclusion field)
+DeployMetrics --> User : failedRuns, passedRuns
+
+PRMetrics --> GHPRAPI : query closed PRs\nfor base branch\n(paginated)
+GHPRAPI --> PRMetrics : PR records\n(created_at, merged_at)
+PRMetrics --> User : averageTimeToMerge
+
+User --> DeployMetrics : provides branch name
+User --> PRMetrics : provides branch name
+
+MetricsModule --> GitHub : API calls\n(per_page=100,\npaginated aggregation)
+
+@enduml

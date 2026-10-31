@@ -1,0 +1,241 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Kafka Topic\\n(serialized AuditEvent JSON)",
+        "JVM Application::Kafka EventPublisher\\n(default implementation)"
+      ],
+      "gt_nodes": [
+        "Global::Kafka"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "JVM Application::Application Code"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::AuditEvent Builder",
+        "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::AuditEvent\\n(CREATED | UPDATED | DELETED)\\n(elements: name, updatedValue,\\npreviousValue, metadata.fqdn)",
+        "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::Auditing API",
+        "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::Change Detector",
+        "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::Element Filter Engine"
+      ],
+      "gt_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Downstream Consumers::Consumer Service\\n(deserializes AuditEvent)",
+      "reference_nodes": [
+        "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Kafka Topic\\n(serialized AuditEvent JSON)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::Application Code",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "JVM Application::AuditEventElementFilter",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::AuditorEventConfig\\n(applicationName, eventSource,\\neventSubType, metadata, filters)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "JVM Application::EventPublisher",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::InclusionFilter\\n(includes list)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::Kafka EventPublisher\\n(default implementation)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "JVM Application::Log Provider Impl",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "JVM Application::LogProvider",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::AuditEvent Builder",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::AuditEvent\\n(CREATED | UPDATED | DELETED)\\n(elements: name, updatedValue,\\npreviousValue, metadata.fqdn)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::Auditing API",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::Change Detector",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application::lowes/auditor Library (Kotlin/JVM 11)::Element Filter Engine",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Kafka Topic\\n(serialized AuditEvent JSON)",
+        "JVM Application::Kafka EventPublisher\\n(default implementation)"
+      ],
+      "gt_node": "Global::Kafka"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "JVM Application::Application Code"
+      ],
+      "gt_node": "Global::auditor-v1 app\\nserver"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "JVM Application::Application Code"
+      ],
+      "gt_node": "application 1::auditor-v1 client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "JVM Application::Application Code"
+      ],
+      "gt_node": "application 2::auditor-v1 client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "JVM Application::Application Code"
+      ],
+      "gt_node": "application 3::auditor-v1 client"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4025,
+      "completion_tokens": 574,
+      "total_tokens": 4599,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 3328
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+  ],
+  "unmatched_predicted_nodes": [
+    "Downstream Consumers::Consumer Service\\n(deserializes AuditEvent)",
+    "JVM Application::AuditEventElementFilter",
+    "JVM Application::AuditorEventConfig\\n(applicationName, eventSource,\\neventSubType, metadata, filters)",
+    "JVM Application::EventPublisher",
+    "JVM Application::InclusionFilter\\n(includes list)",
+    "JVM Application::Log Provider Impl",
+    "JVM Application::LogProvider"
+  ],
+  "_provenance": {
+    "fingerprint": "4546720f8baafa6e96843a0139e32ca8d781dc8873cca60d67e8ae15b3b97c5e",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

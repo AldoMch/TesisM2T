@@ -1,0 +1,83 @@
+@startuml
+title hAFL2 kAFL-based Hypervisor Fuzzing Architecture
+skinparam componentStyle rectangle
+left to right direction
+
+package "hAFL2 Platform" as H {
+  component "hAFL2 Controller" as Controller
+  component "Standalone Test Runner" as Standalone
+  component "kAFL-Fuzzer Tests (pytest)" as Pytest
+  Controller -down-> Standalone : invoke
+  Standalone -down-> Pytest : run tests suites\n(random, deterministic, havoc)
+}
+
+package "Linux Userspace Fuzzing" as L {
+  node "Linux Host" as Host {
+    component "Initrd Packager" as Packager
+    component "Shared Library Copier" as LibCopier
+    artifact "initrd" as Initrd
+    Packager -right-> Initrd
+    LibCopier -down-> Initrd : add required libs
+  }
+  node "Guest (Linux Userspace Target)" as Guest {
+    component "Embedded Forkserver" as Forkserver
+    component "Target Binary" as Target
+  }
+  Initrd -right-> Target : boot/launch with initrd
+  Target -down-> Forkserver : kAFL hypercalls
+  Forkserver ..> Controller : coverage/iteration feedback
+}
+
+package "Windows Hyper-V Fuzzing" as W {
+  node "Child Partition VM" as Child {
+    component "Harness/Driver" as Harness
+    artifact "loader.exe" as Loader
+    artifact "packet_sender.exe" as PacketSender
+  }
+  cloud "VMBus / netvsc" as VMBus
+  node "Root Partition VM" as Root {
+    component "Hyper-V VMSwitch (vmswitch.sys)" as VMSwitch
+    component "Crash Monitor" as CrashMon
+  }
+  Controller -down-> Loader : create fuzzing snapshot,\nload & execute packet_sender.exe
+  PacketSender -right-> VMSwitch : IOCTL triggers packet send
+  Harness -right-> VMBus : fuzzing payloads
+  VMBus -right-> VMSwitch : deliver to networking path
+  CrashMon ..> Controller : crash-monitoring result
+}
+
+Controller ..> Packager : select target binary
+Controller ..> LibCopier : copy shared libs
+
+note right of PacketSender
+Triggers packet-sending IOCTL toward
+Hyper-V networking path.
+end note
+
+note bottom of Loader
+Creates snapshot, loads and executes
+packet_sender.exe in child VM.
+end note
+
+note bottom of Root
+Crash monitoring returns status to hAFL2
+during Hyper-V fuzzing workflow.
+end note
+
+note bottom of W
+Windows build-specific offset configurable in source.
+Binaries compiled via:
+- bash ./hAFL2/targets/windows_86_64/compile.sh
+- Visual Studio for drivers
+Operational prerequisites:
+- Disable DSE from elevated prompt
+- Configure child VM while powered off
+end note
+
+note bottom of L
+Deterministic mutation operates on byte-array payloads
+and optional boolean effector maps.
+Restores original payload on exit.
+end note
+
+@enduml

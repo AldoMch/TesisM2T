@@ -1,0 +1,59 @@
+@startuml
+
+title IceFireDB Decentralized Database Infrastructure (Architecture-Level)
+
+package "Client Layer" {
+  [Redis-based Applications] as ClientRedis
+  [Pub/Sub Clients (Redis-style)] as ClientPubSub
+}
+
+package "Middleware Layer" {
+  component "IceFireDB-Redis-Proxy Agent A" as ProxyA
+  component "IceFireDB-Redis-Proxy Agent B" as ProxyB
+  component "IceFireDB-PubSub Node A" as PubA
+  component "IceFireDB-PubSub Node B" as PubB
+  component "Internal SQL/MySQL Result Handling\n(Internal data handling only)" as SQLInternal
+}
+
+package "Discovery & Routing" {
+  cloud "Kademlia DHT\n(libp2p/IPFS-style)" as DHT
+}
+
+package "Data Layer" {
+  database "Redis Standalone" as RedisSingle
+  database "Redis Cluster" as RedisCluster
+}
+
+' Client interactions
+ClientRedis --> ProxyA : Redis protocol commands
+ClientRedis --> ProxyB : Redis protocol commands
+ClientPubSub --> PubA : Redis-style Pub/Sub operations
+ClientPubSub --> PubB : Redis-style Pub/Sub operations
+
+' Proxy agent behavior and storage forwarding
+ProxyA <--> ProxyB : Instruction synchronization
+ProxyA --> RedisSingle : Forwarded commands / storage writes
+ProxyB --> RedisSingle : Forwarded commands / storage writes
+ProxyA --> RedisCluster : Cluster-aware routing & writes
+ProxyB --> RedisCluster : Cluster-aware routing & writes
+
+' PubSub network behavior
+PubA <--> PubB : Distributed Pub/Sub messages
+PubA ..> DHT : Peer discovery & routing
+PubB ..> DHT : Peer discovery & routing
+
+' Internal handling (non top-level feature)
+SQLInternal .. ProxyA : Internal packet/result parsing path
+
+' Notes and constraints
+note right of PubA
+- Multi-node operation across networks
+- NAT/private-network communication supported
+end note
+
+note bottom of RedisCluster
+Redis Proxy must support cluster-aware routing
+per SRS constraints and NFRs.
+end note
+
+@enduml

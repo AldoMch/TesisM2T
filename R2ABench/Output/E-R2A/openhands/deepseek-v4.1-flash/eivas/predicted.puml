@@ -1,0 +1,208 @@
+@startuml
+title EIVAS - Epidemiological Investigation and Analysis System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ============================================================
+' Actors / User Classes
+' ============================================================
+actor "Epidemiological Form Filler" as FILLER
+actor "Epidemiological Analyst" as ANALYST
+FILLER -[hidden]-> ANALYST
+
+' ============================================================
+' Client / Presentation Layer (Web Application)
+' ============================================================
+package "EIVAS Web Front-End (Browser)" as WEB {
+
+  package "Epidemiological Reporting" as UI_REPORT {
+    component "Reporting Form Page\\n(basic / disease / itinerary / imported-case)" as UI_REPORT_FORM
+    component "Activity Location Prompt" as UI_REPORT_PROMPT
+    component "Address Visual Confirmation" as UI_REPORT_CONFIRM
+    component "Case Info Edit / Completion" as UI_REPORT_EDIT
+  }
+
+  package "Case Management" as UI_CASE {
+    component "Case Management List\\n(name, ID, gender, phone,\\nage, residence, completion)" as UI_CASE_LIST
+    component "Search by Name" as UI_CASE_SEARCH
+    component "Sort by Age" as UI_CASE_SORT
+    component "Filter by Gender" as UI_CASE_FILTER
+  }
+
+  package "Individual Case Analysis" as UI_INDIV {
+    component "Case Itinerary Path Viewer" as UI_ITIN
+    component "Associated Case Query\\n(spatial / temporal thresholds)" as UI_ASSOC
+    component "Confirmed Case Relationship Graph" as UI_RELGRAPH
+  }
+
+  package "Overall Analysis" as UI_OVERALL {
+    component "Regional Flow Map View" as UI_FLOWMAP
+    component "Case Clustering Graph View" as UI_CLUSTER
+    component "Outbreak Overview Dashboard" as UI_OUTBREAK
+  }
+
+  package "Visualization & Charting" as UI_VIZ {
+    component "Map / Geographic Display" as UI_MAP
+    component "Graph Relationship Renderer" as UI_GRAPH_RENDER
+    component "Statistical Charts\\n(heat map, line, pie, bar)" as UI_CHARTS
+    component "Operation Prompts & Error Feedback" as UI_FEEDBACK
+  }
+}
+
+' ============================================================
+' Application / Service Layer (Back-End)
+' ============================================================
+package "EIVAS Back-End Services" as BACKEND {
+
+  component "API Gateway /\\nFront-End Interface Layer" as API
+
+  package "Security & Control" as SECURITY {
+    component "Personal Info Query\\nEncryption Handler" as SEC_ENCRYPT
+    component "Frequent-Query\\nIP Cooldown Guard" as SEC_COOLDOWN
+  }
+
+  package "DOMAIN SERVICES" as SERVICES {
+    component "Epidemiological Reporting Service\\nsubmission & formatting" as SVC_REPORT
+    component "Case Management Service\\nquery, complete, search, sort, filter" as SVC_CASE
+    component "Itinerary Analysis Service" as SVC_ITIN
+    component "Case Association Service\\ntime & space thresholds" as SVC_ASSOC
+    component "Data Quality & Validation Service" as SVC_QUALITY
+    component "Outbreak Statistics Service\\nage, occupation, transport, climate" as SVC_STATS
+  }
+}
+
+' ============================================================
+' Algorithm Module
+' ============================================================
+package "Algorithm Module" as ALGO {
+  component "Risk Calculation Engine" as ALGO_RISK
+  component "Regional Flow Map Generator" as ALGO_FLOW
+  component "Case Clustering Engine" as ALGO_CLUSTER
+  component "Relationship Graph Generator" as ALGO_GRAPH
+}
+
+' ============================================================
+' Data Layer
+' ============================================================
+database "Back-End Database" as DB {
+  component "Case Basic Information" as D_BASIC
+  component "Disease-Related Information" as D_DISEASE
+  component "Itinerary Trajectory Information" as D_ITIN
+  component "Imported-Case Information" as D_IMPORT
+  component "Case Management Record" as D_CASE
+  component "Associated Case Entry" as D_ASSOC
+  component "Analytical Chart Data" as D_CHART
+}
+
+database "Backup Database /\\nStandby Server" as BACKUP
+
+' ============================================================
+' External / Supporting Services
+' ============================================================
+cloud "Map / Geographic\\nVisualization Service" as MAPSVC
+
+' ============================================================
+' Relationships - Users to Web
+' ============================================================
+FILLER --> UI_REPORT
+FILLER --> UI_CASE
+ANALYST --> UI_CASE
+ANALYST --> UI_INDIV
+ANALYST --> UI_OVERALL
+
+' ============================================================
+' Relationships - Web internal
+' ============================================================
+UI_REPORT_FORM --> UI_REPORT_CONFIRM
+UI_REPORT_FORM --> UI_REPORT_PROMPT
+UI_REPORT --> UI_REPORT_EDIT
+UI_REPORT_CONFIRM --> UI_MAP
+UI_INDIV --> UI_ITIN
+UI_INDIV --> UI_ASSOC
+UI_INDIV --> UI_RELGRAPH
+UI_OVERALL --> UI_FLOWMAP
+UI_OVERALL --> UI_CLUSTER
+UI_OVERALL --> UI_OUTBREAK
+UI_OVERALL --> UI_CHARTS
+UI_FLOWMAP --> UI_MAP
+UI_MAP --> UI_GRAPH_RENDER
+UI_MAP --> UI_CHARTS
+UI_RELGRAPH --> UI_GRAPH_RENDER
+UI_INDIV --> UI_FEEDBACK
+UI_REPORT --> UI_FEEDBACK
+
+' ============================================================
+' Relationships - Web to Back-End
+' ============================================================
+UI_REPORT --> API : submit investigation data
+UI_CASE --> API : query / list requests
+UI_INDIV --> API : itinerary & association queries
+UI_OVERALL --> API : analysis & statistics requests
+
+' ============================================================
+' Relationships - Back-End internal
+' ============================================================
+API --> SEC_ENCRYPT : encrypt personal info queries
+API --> SEC_COOLDOWN : throttle frequent IPs
+API --> SVC_REPORT
+API --> SVC_CASE
+API --> SVC_ITIN
+API --> SVC_ASSOC
+API --> SVC_QUALITY
+API --> SVC_STATS
+
+SVC_REPORT --> SVC_QUALITY
+SVC_ITIN --> SVC_ASSOC
+SVC_ASSOC --> ALGO_GRAPH
+SVC_QUALITY --> ALGO_RISK
+
+' ============================================================
+' Relationships - Algorithm Module
+' ============================================================
+SVC_STATS --> ALGO_RISK
+ALGO_RISK --> ALGO_FLOW
+ALGO_RISK --> ALGO_CLUSTER
+ALGO_FLOW --> ALGO_GRAPH
+
+' ============================================================
+' Relationships - Back-End to Data
+' ============================================================
+SVC_REPORT --> DB : store investigation record
+SVC_CASE --> DB : read / update case records
+SVC_ITIN --> DB : read itinerary data
+SVC_ASSOC --> DB : read case & location data
+SVC_QUALITY --> DB : validate investigation data
+SVC_STATS --> DB : read statistics source data
+
+ALGO_RISK --> DB : read case investigation info
+ALGO_FLOW --> DB : read case investigation info
+ALGO_CLUSTER --> DB : read case investigation info
+
+SVC_REPORT --> D_BASIC
+SVC_REPORT --> D_DISEASE
+SVC_REPORT --> D_ITIN
+SVC_REPORT --> D_IMPORT
+SVC_CASE --> D_CASE
+SVC_ASSOC --> D_ASSOC
+SVC_STATS --> D_CHART
+
+' ============================================================
+' Relationships - External map service
+' ============================================================
+UI_MAP --> MAPSVC : geo visualization requests
+
+' ============================================================
+' Relationships - Reliability / Failover
+' ============================================================
+DB -[#red]-> BACKUP : replication / failover (<= 20 min)
+
+legend right
+  EIVAS Web architecture derived from the SRS.
+  Layers: Browser front-end, back-end services,
+  algorithm module, database, and map service.
+  Cross-cutting: personal-info query encryption,
+  frequent-IP cooldown, data quality checks.
+endlegend
+
+@enduml

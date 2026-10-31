@@ -1,0 +1,85 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BorderColor #555555
+  BackgroundColor #F8F8F8
+}
+skinparam database {
+  BorderColor #555555
+  BackgroundColor #E8F0FF
+}
+skinparam cloud {
+  BorderColor #555555
+  BackgroundColor #FFF8E0
+}
+skinparam interface {
+  BorderColor #555555
+}
+skinparam arrow {
+  Color #333333
+}
+
+title VirtualMotionTracker — System Architecture
+
+actor "External Control\nApplication Integrator" as user
+
+package "User Application" as UA {
+  component [User Application] as UserApp
+}
+
+package "VMT Manager" as VMTMgrPkg {
+  component [VMT Manager] as VMTMgr
+}
+
+package "VMT Driver" as VMTDrvPkg {
+  component [VMT Driver] as VMTDrv
+}
+
+package "Shared Memory IPC" as SHM {
+  database "Shared Memory" as SharedMem {
+    component [Manager → Driver Channel\n(JSON, send count,\nhandshake count,\nmessage length)] as M2D
+    component [Driver → Manager Channel\n(JSON, send count,\nhandshake count,\nmessage length)] as D2M
+  }
+}
+
+cloud "SteamVR / OpenVR Runtime" as SteamVR
+
+file "Legacy Controller\nBinding File\n(mycontroller)\n[JSON]" as BindingFile
+
+interface "OSC" as OSC_IF
+interface "OpenVR\nDriver Interface" as OVRDIF
+
+user --> UserApp : control input
+
+UserApp --> OSC_IF : sends control input
+OSC_IF --> VMTMgr : receives external\ncontrol input (FR-001)
+
+VMTMgr --> M2D : writes JSON message\n(manager-to-driver)
+M2D --> VMTDrv : reads JSON message
+
+VMTDrv --> D2M : writes JSON message\n(driver-to-manager)
+D2M --> VMTMgr : reads JSON message
+
+VMTDrv --> OVRDIF : exposes virtual motion\ntracking capability
+OVRDIF --> SteamVR : driver integration\n(FR-005, NFR-001)
+
+BindingFile --> SteamVR : loaded by runtime\n(controller_type: mycontroller,\nright-hand input mappings,\nmode: button, sub_mode: complex)
+
+note right of SharedMem
+  Bidirectional JSON IPC (FR-002, FR-003)
+  Sync fields per channel (FR-004, DR-003):
+  • send count
+  • handshake count
+  • message length
+end note
+
+note right of BindingFile
+  FR-006 / DR-004 / DR-005:
+  /user/hand/right/input/a → /actions/legacy/in/right_axis1_press
+  /user/hand/right/input/c → /actions/legacy/in/right_a_press
+  /user/hand/right/input/b → /actions/legacy/in/right_grip_press
+end note
+
+@enduml

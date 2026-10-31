@@ -1,0 +1,78 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #5A7FA3
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Kangrand Distributed Pollard Kangaroo" as Kangrand {
+    package "Distributed Search Group A" as SearchGroupA {
+        rectangle "Server\n-wsplit" as ServerA
+        rectangle "Client A1" as ClientA1
+        rectangle "Client A2" as ClientA2
+        rectangle "Client A3" as ClientA3
+        database "Kangaroo file A1" as KangarooFileA1
+        database "Kangaroo file A2" as KangarooFileA2
+        database "Kangaroo file A3" as KangarooFileA3
+        database "Work files\nHashTable A" as WorkFilesA
+        database "Result.txt A" as ResultA
+    }
+
+    package "Distributed Search Group B" as SearchGroupB {
+        rectangle "Server\n-wsplit" as ServerB
+        rectangle "Client B1" as ClientB1
+        rectangle "Client B2" as ClientB2
+        rectangle "Client B3" as ClientB3
+        database "Kangaroo file B1" as KangarooFileB1
+        database "Kangaroo file B2" as KangarooFileB2
+        database "Kangaroo file B3" as KangarooFileB3
+        database "Work files\nHashTable B" as WorkFilesB
+        database "Result.txt B" as ResultB
+    }
+
+    rectangle "Merger" as Merger
+    database "Master WorkFile\nHashTable" as MasterWorkFile
+}
+
+ServerA --> ClientA1 : distribute range work
+ServerA --> ClientA2 : distribute range work
+ServerA --> ClientA3 : distribute range work
+ClientA1 --> KangarooFileA1 : save kangaroo state
+ClientA2 --> KangarooFileA2 : save kangaroo state
+ClientA3 --> KangarooFileA3 : save kangaroo state
+ServerA --> WorkFilesA : wsplit backups\nreset hash table
+ServerA --> ResultA : solved key output
+
+ServerB --> ClientB1 : distribute range work
+ServerB --> ClientB2 : distribute range work
+ServerB --> ClientB3 : distribute range work
+ClientB1 --> KangarooFileB1 : save kangaroo state
+ClientB2 --> KangarooFileB2 : save kangaroo state
+ClientB3 --> KangarooFileB3 : save kangaroo state
+ServerB --> WorkFilesB : wsplit backups\nreset hash table
+ServerB --> ResultB : solved key output
+
+ServerA .. ServerB : parallel distributed search
+WorkFilesA --> Merger : merge work files
+WorkFilesB --> Merger : merge work files
+ResultA --> Merger : collision result
+ResultB --> Merger : collision result
+Merger --> MasterWorkFile : master work file\nmerged hash table
+@enduml

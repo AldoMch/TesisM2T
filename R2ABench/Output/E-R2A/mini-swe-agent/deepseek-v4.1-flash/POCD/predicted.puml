@@ -1,0 +1,161 @@
+@startuml POCD_Architecture
+title POCD - Persistent Object Consistency Detection - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' External Actors / Systems
+' =========================================================
+actor "Class Diagram Manager\n(Technical User)" as User
+actor "Unauthenticated /\nNew User" as Guest
+actor "Third-Party\nApplications" as ThirdParty
+
+' =========================================================
+' USER INTERFACE LAYER (Front-end, separated from back-end)
+' =========================================================
+package "User Interface Layer (Front-End SPA)" as UILayer {
+  component "Registration & Login UI" as UIReg
+  component "File Management UI\n(upload/modify/delete/download)" as UIFile
+  component "Detection Configuration UI\n(rules & exceptions)" as UIConfig
+  component "Detection Result UI\n(inconsistencies, matching,\nrepairs)" as UIResult
+  component "Detection Record UI\n(history & detail)" as UIHistory
+  component "Report Export UI" as UIReport
+  component "Help & Detection Case UI" as UIHelp
+}
+
+' =========================================================
+' BUSINESS LOGIC LAYER (Back-end Services)
+' =========================================================
+package "Business Logic Layer" as BLLLayer {
+
+  component "API Gateway /\nOpen API (REST)" as APIGW
+  component "Authentication &\nSession Service" as AuthSvc
+  component "Role-Based Access\nControl (RBAC)" as RBAC
+  component "Account Service\n(register/login)" as AccountSvc
+
+  component "File Management Service\n(upload/download/CRUD)" as FileSvc
+  component "Detection Configuration\nService (rules/exceptions)" as ConfigSvc
+
+  component "Class Diagram Parser\n(StarUML MDJ)" as MdjParser
+  component "Database Parser\n(MySQL design/script/JDBC)" as DbParser
+  component "Database Relationship\nExtractor" as RelExtractor
+  component "JSON Conversion Adapter\n(Jackson)" as JsonAdapter
+
+  component "Entity Matching Service\n(entity/attribute/relationship\nbipartite matching)" as MatchSvc
+  component "Consistency Detection\nEngine" as DetectEngine
+  component "Repair Suggestion &\nExecution Service\n(class diagram & database)" as RepairSvc
+  component "Report Export Service" as ReportSvc
+  component "Historical Record &\nOperation Log Service" as HistorySvc
+  component "Help & Detection\nCase Service" as HelpSvc
+
+  component "Async Task /\nJob Scheduler" as TaskSched
+
+  ' Detection Engine sub-capabilities (architecture-level grouping)
+  package "Detection Rules" as DetectRules {
+    component "Field / Type /\nAttribute-Column Checks" as Det1
+    component "Class-Table &\nRelationship Multiplicity Checks" as Det2
+    component "Relationship Type &\nMissing/Extra Relationship Checks" as Det3
+  }
+}
+
+' =========================================================
+' DATA ACCESS LAYER
+' =========================================================
+package "Data Access Layer" as DALLayer {
+  component "Repository / DAO\n(Account, File, Config,\nReport, History)" as Repo
+  component "JDBC Database\nConnector" as JdbcConn
+  component "File Storage\nAccess (I/O)" as FileAccess
+}
+
+' =========================================================
+' DATA STORES
+' =========================================================
+database "Application Database\n(users, files metadata, rules,\nexceptions, matching results,\nreports, repairs, history, logs)" as AppDB
+database "File Store\n(MDJ files, MySQL design/scripts,\nhelp docs, detection cases)" as FileStore
+
+' =========================================================
+' EXTERNAL SYSTEMS
+' =========================================================
+artifact "StarUML MDJ\nClass Diagram Files" as StarUML
+database "Target MySQL\nDatabase(s)" as MySQL
+artifact "Uploaded Database\nDesign Files / Scripts" as DbFiles
+
+' =========================================================
+' RELATIONSHIPS
+' =========================================================
+User --> UILayer
+Guest --> UIReg
+ThirdParty --> APIGW
+
+UILayer --> APIGW
+
+APIGW --> AccountSvc
+APIGW --> FileSvc
+APIGW --> ConfigSvc
+APIGW --> DetectEngine
+APIGW --> RepairSvc
+APIGW --> ReportSvc
+APIGW --> HistorySvc
+APIGW --> HelpSvc
+
+AuthSvc --> AccountSvc
+AuthSvc --> RBAC
+APIGW --> AuthSvc
+
+' Parsing & detection flow
+FileSvc --> MdjParser
+FileSvc --> DbParser
+MdjParser --> JsonAdapter
+DbParser --> JsonAdapter
+DbParser --> RelExtractor
+JsonAdapter --> MatchSvc
+RelExtractor --> MatchSvc
+MatchSvc --> DetectEngine
+DetectEngine --> Det1
+DetectEngine --> Det2
+ConfigSvc --> DetectEngine
+
+Det1 --> RepairSvc
+Det2 --> RepairSvc
+Det3 --> RepairSvc
+RepairSvc --> JdbcConn
+
+' Async processing
+DetectEngine --> TaskSched
+RepairSvc --> TaskSched
+
+' Data access layer usage
+AccountSvc --> Repo
+FileSvc --> Repo
+ConfigSvc --> Repo
+MatchSvc --> Repo
+DetectEngine --> Repo
+RepairSvc --> Repo
+ReportSvc --> Repo
+HistorySvc --> Repo
+HelpSvc --> Repo
+
+FileSvc --> FileAccess
+MdjParser --> FileAccess
+HelpSvc --> FileAccess
+ReportSvc --> FileAccess
+FileAccess --> FileStore
+
+Repo --> AppDB
+
+DbParser --> JdbcConn
+RepairSvc --> JdbcConn
+JdbcConn --> MySQL
+
+FileSvc --> DbFiles
+FileSvc --> StarUML
+
+' Cross-cutting security note
+note right of APIGW
+  All sensitive data transmission uses SSL.
+  Operation logs recorded for audit.
+end note
+
+@enduml

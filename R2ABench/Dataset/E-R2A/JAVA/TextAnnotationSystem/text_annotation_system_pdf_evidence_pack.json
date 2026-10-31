@@ -1,0 +1,113 @@
+{
+  "project": "TextAnnotationSystem",
+  "artifact_type": "SRS evidence pack",
+  "source_document": "Dataset/E-R2A/JAVA/TextAnnotationSystem/TextAnnotationSystem_origin.pdf",
+  "target_template": "",
+  "extraction_method": "pypdf text extraction with manual normalization against the SRS template",
+  "notes": [
+    "The source PDF is a software design document rather than a clean SRS, so requirements were normalized from system overview, role descriptions, function design sections, technology selection, database design, and UI section headings.",
+    "Adjacent TextAnnotationSystem_C.md and TextAnnotationSystem_E.md were inspected only for orientation. This evidence pack cites the PDF content as the normative source for the generated SRS.",
+    "Pages containing screenshots provide limited extractable text; only their explicit headings were used."
+  ],
+  "evidence": [
+    {
+      "id": "TAS-001",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.1-2",
+      "section": "1.1 系统概述; 1.2 编写目的; 1.3 文档范围",
+      "evidence_type": "explicit",
+      "summary": "ITAS is a system for system annotation administrators, data annotators, and researchers to process and analyze large text data. It consists of a text annotation subsystem and an intelligent mining subsystem. The design document is intended for development and testing across the whole project lifecycle.",
+      "excerpt": "智能文本标注系统（ITAS）旨在为系统标注管理员、数据标注员和科研人员提供工具；系统由文本标注子系统和智能挖掘子系统组成。"
+    },
+    {
+      "id": "TAS-002",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.3-4",
+      "section": "2.1 需求概述",
+      "evidence_type": "explicit",
+      "summary": "The system targets three user roles: system annotation administrator, data annotator, and researcher. Administrators define presets, upload documents, manage annotation projects, export annotation data, and participate in model training and validation. Annotators execute document annotation tasks. Researchers use the mining subsystem to extract key information. The system should support flexible role management and task switching.",
+      "excerpt": "ITAS系统面向三类主要用户：系统标注管理员、数据标注员和科研人员；用户可能需要在不同角色之间切换。"
+    },
+    {
+      "id": "TAS-003",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.5-7",
+      "section": "3 系统总体设计; 3.1 系统架构",
+      "evidence_type": "explicit",
+      "summary": "ITAS uses a front-end/back-end separated web architecture integrating web technologies and machine learning models. The front end uses Vue.js, Ant Design, vue-router, and Axios. The back end uses Spring Boot, Spring Cloud, Nginx, and Mybatis. MySQL stores structured data, Minio stores text and unstructured data, Redis provides caching, BERT locates paragraphs, GPT API annotates entities, RabbitMQ handles message queues, and Docker supports containerized deployment.",
+      "excerpt": "整体架构采用前后端分离；前端使用Vue.js和Ant Design；后端基于Spring Boot和Spring Cloud；MySQL、Minio、Redis、BERT、GPT API、RabbitMQ和Docker被纳入架构。"
+    },
+    {
+      "id": "TAS-004",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.7-8",
+      "section": "3.2 数据设计",
+      "evidence_type": "explicit",
+      "summary": "The data dictionary defines annotation, extraction, annotation dataset, paragraph, entity, model, paragraph model, entity model, preset, paragraph preset, and entity preset. Presets are rules/templates used to guide entity recognition, classification, and attribute extraction.",
+      "excerpt": "预设是一套预定义的规则和模板，旨在指导标注和抽取过程中的实体识别、分类及相关属性的提取。"
+    },
+    {
+      "id": "TAS-005",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.8-10",
+      "section": "3.3 技术选型; 3.4 开发软件及流程",
+      "evidence_type": "explicit",
+      "summary": "The selected technologies include Vue 3.0, vue-router, Pinia, Ant-Design-Vue, Axios, Spring Cloud, Spring Gateway, Spring Security, Spring MVC, Mybatis/Mybatis Plus, MySQL, Minio, Redis, BERT, GPT, Tencent Cloud, Docker, and RabbitMQ. RabbitMQ is used for asynchronous tasks such as file conversion. Gitee, Tencent Cloud, MySQL Workbench, Feishu, Postman, and GitLab support development and delivery.",
+      "excerpt": "Spring Gateway结合Spring Security进行用户认证和授权；RabbitMQ消息队列处理文件转换等异步任务，减少系统延迟。"
+    },
+    {
+      "id": "TAS-006",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.13-17",
+      "section": "4.2 标注子系统功能设计",
+      "evidence_type": "explicit",
+      "summary": "The annotation subsystem includes annotator management, file management, label management, login, literature management, annotation project management, result return, mark management, task management, and user management. Supported operations include adding/deleting annotators, downloading files, creating/editing/deleting/querying labels, user login/register/logout/profile, uploading/deleting/viewing/querying literature, creating/updating/listing/querying projects, returning results, adding/viewing/updating/deleting marks, assigning tasks, statistics, viewing tasks, querying tasks, and marking tasks completed.",
+      "excerpt": "任务管理支持任务分配、数据统计、查看所有任务、查看我的任务、根据id查询任务、标记已完成任务功能。"
+    },
+    {
+      "id": "TAS-007",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.17-19",
+      "section": "4.3.1 概念结构设计; 4.3.2 逻辑结构设计",
+      "evidence_type": "explicit",
+      "summary": "The annotation subsystem has five main entities: user, annotation project, document, tag, and annotation result. Users can be administrators or annotators. Relationships include administrator-to-project, project-to-document, project-to-tag, project-to-task, annotator-task-result, and result-to-tag. Relational storage keeps document indexes while document content is stored in non-relational/object storage.",
+      "excerpt": "标注子系统共有五类实体，分别是用户、标注项目、文档、标签、标注结果；文档内容存储在非关系型数据库中，关系型数据库存放文档索引。"
+    },
+    {
+      "id": "TAS-008",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.20-24",
+      "section": "4.3.3 物理结构设计",
+      "evidence_type": "explicit",
+      "summary": "The physical database design includes user, project, ossFile, paper, annotator, tag, task, and label tables. Important fields include IDs, usernames, passwords, roles, project names and introductions, object storage names and buckets, PDF/HTML/TXT document IDs, paper status, task completion flag, annotation content, remark, tag ID, location, start/end offsets, and creator information.",
+      "excerpt": "paper表包含pdfId、htmlId、txtId和status；label表包含content、remark、tagId、location、start、end、creatorId和creatorName。"
+    },
+    {
+      "id": "TAS-009",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.24-27",
+      "section": "5 挖掘子系统功能设计",
+      "evidence_type": "explicit",
+      "summary": "The mining subsystem provides document upload, model selection, and information extraction. Document upload supports user-uploaded documents and automatic format conversion. Model selection supports built-in presets, community-shared models, and third-party interfaces such as ChatGPT, with the implemented approach being third-party API invocation. Information extraction extracts paragraph annotation information and key data according to user needs.",
+      "excerpt": "系统提供文档上传功能并支持自动转换格式；模型选择包括预设模型、社区共享模型和第三方接口；模型可以根据用户需求提取段落标注信息以及关键的数据。"
+    },
+    {
+      "id": "TAS-010",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "pp.28-34",
+      "section": "6 用户界面设计",
+      "evidence_type": "explicit",
+      "summary": "The UI section lists prototype pages for registration/login, personal information management, mining main interface, mining file upload, mining result display, annotation project creation, annotation project management, and annotation task execution.",
+      "excerpt": "用户界面设计包括注册和登录界面、个人信息管理界面、挖掘主界面、挖掘文件上传、挖掘结果展示、标注项目创建、标注项目管理和标注任务执行。"
+    },
+    {
+      "id": "TAS-011",
+      "source": "TextAnnotationSystem_origin.pdf",
+      "page_range": "p.3",
+      "section": "1.6 参考文献",
+      "evidence_type": "explicit",
+      "summary": "The source document references GB/T 9385-2008 software requirements specification guidance and GB/T 8567-2006 software documentation guidance.",
+      "excerpt": "参考文献包括GB/T 9385-2008《计算机软件需求规格说明规范》和GB/T 8567-2006《计算机软件文档编制规范》。"
+    }
+  ]
+}

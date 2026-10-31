@@ -1,0 +1,141 @@
+@startuml
+title User-in-the-box Simulator Framework - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ============================================================
+' External Systems
+' ============================================================
+package "External Systems" {
+  [MuJoCo Simulation Engine] as MUJOCO <<external>>
+  [OpenAI Gym Runtime] as GYM <<external>>
+  [Python Execution Environment] as PYTHON <<external>>
+}
+
+' ============================================================
+' Configuration Layer
+' ============================================================
+package "Configuration Layer" {
+  [YAML Simulator Configuration] as YAML_CFG <<artifact>>
+  [MuJoCo XML Definitions\n(biomech + task)] as MJCF <<artifact>>
+}
+
+' ============================================================
+' Build / Composition Layer
+' ============================================================
+package "Simulator Build Layer" {
+  [Simulator Builder] as BUILDER
+  [YAML Configuration Loader] as CFG_LOADER
+  [MuJoCo XML Integration Layer] as XML_INTEG
+  [Component Initializer\n(Wrapper Classes)] as COMP_INIT
+  [Standalone Package Builder] as PKG_BUILDER
+}
+
+' ============================================================
+' Modular Component Layer
+' ============================================================
+package "Modular Components" {
+  package "Biomechanical Models" {
+    [Biomechanical Model Module\n(MuJoCo XML + actuation)] as BIOMECH
+  }
+  package "Perception Modules (by Modality)" {
+    [Egocentric Vision Module] as PERC_VISION
+    [Proprioception Module] as PERC_PROPRIO
+  }
+  package "Interaction Tasks" {
+    [Interaction Task Module\n(task MuJoCo environment)] as TASK
+  }
+}
+
+' ============================================================
+' Simulator Runtime Layer
+' ============================================================
+package "Simulator Runtime Layer" {
+  [Standalone Gym-Compatible Simulator\n(self-contained package)] as SIM_PKG
+  [Gym Interface Adapter\n(step / reset / action space)] as GYM_IF
+}
+
+' ============================================================
+' Training & Evaluation Layer
+' ============================================================
+package "Training & Evaluation Layer" {
+  [Reinforcement Learning Training Workflow] as RL_TRAIN
+  [Evaluation Runner] as EVAL
+  [Action Logger] as LOGGER
+}
+
+' ============================================================
+' Data / Artifact Stores
+' ============================================================
+package "Data Stores" {
+  database "Run Folder" as RUN_FOLDER {
+    database "Checkpoint Directory" as CKPT
+    database "evaluate Directory" as EVAL_DIR
+  }
+  database "Action Log File" as ACTION_LOG
+  database "Training Run Output" as TRAIN_OUT
+}
+
+' ============================================================
+' Relationships - Configuration & Build
+' ============================================================
+YAML_CFG --> CFG_LOADER
+MJCF --> XML_INTEG
+CFG_LOADER --> BUILDER
+BUILDER --> XML_INTEG
+BUILDER --> COMP_INIT
+XML_INTEG --> BIOMECH
+XML_INTEG --> TASK
+COMP_INIT --> BIOMECH
+COMP_INIT --> TASK
+COMP_INIT --> PERC_VISION
+COMP_INIT --> PERC_PROPRIO
+
+BUILDER --> BIOMECH
+BUILDER --> TASK
+BUILDER --> PERC_VISION
+BUILDER --> PERC_PROPRIO
+
+XML_INTEG --> MUJOCO
+BIOMECH --> MUJOCO
+TASK --> MUJOCO
+
+' ============================================================
+' Relationships - Runtime
+' ============================================================
+BUILDER --> SIM_PKG
+SIM_PKG --> PKG_BUILDER
+SIM_PKG --> GYM_IF
+GYM_IF --> GYM
+SIM_PKG --> MUJOCO
+
+' ============================================================
+' Relationships - Training
+' ============================================================
+RL_TRAIN --> BUILDER
+RL_TRAIN --> SIM_PKG
+RL_TRAIN --> GYM
+RL_TRAIN --> TRAIN_OUT
+TRAIN_OUT --> CKPT
+
+' ============================================================
+' Relationships - Evaluation
+' ============================================================
+EVAL --> RUN_FOLDER
+EVAL --> SIM_PKG
+EVAL --> CKPT
+EVAL --> EVAL_DIR
+EVAL --> GYM
+EVAL --> PYTHON
+EVAL --> LOGGER
+LOGGER --> ACTION_LOG
+
+' ============================================================
+' Relationships - Extensibility
+' ============================================================
+BIOMECH ..> BIOMECH : extensible
+TASK ..> TASK : extensible
+PERC_VISION ..> PERC_PROPRIO : base-class contract
+
+@enduml

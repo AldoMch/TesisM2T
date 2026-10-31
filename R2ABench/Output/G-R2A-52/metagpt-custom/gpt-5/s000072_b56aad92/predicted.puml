@@ -1,0 +1,102 @@
+@startuml
+
+package "Build & Verification Layer" {
+  component "run-embedded-tests.sh" as RunEmbeddedTests
+  component "Manual embedded hwloc workflow" as ManualHwlocWorkflow
+  component "Autogen (./autogen.sh)" as AutogenStep
+  component "Autotools build steps\n(./configure, make)" as AutotoolsBuild
+  component "Autotools test/cleanup steps\n(make check/clean/distclean)" as AutotoolsTestClean
+  component "Expand distribution tarball" as ExpandTarball
+  component "hwloc-tree/ directory rename" as HwlocTreeRename
+}
+
+package "Communication Design Layer" {
+  component "Communication lifecycle responsibilities documentation" as CommLifecycleDocs
+  component "One-to-many scatter transfer responsibility documentation" as ScatterRespDocs
+}
+
+package "Data Path / Send Path Layer" {
+  component "Send state machine" as SendStateMachine
+  component "Flow-control state" as FlowControlState
+  component "Network send descriptor preparation" as NetSendDescPrep
+  component "Packet buffer" as PacketBuffer
+  component "Rendezvous packet preparation logic" as RndvPrepLogic
+  component "Packet control fields\n(envelope, LIBA(OD), one LIBA, two LIBAs)" as PacketControlFields
+  component "Data Descriptor (non-direct-access payload)" as DataDescriptor
+  database "Pinned User Data" as PinnedUserData
+}
+
+package "Transport Integration Layer" {
+  component "Embedded Libfabric verbs provider" as EmbeddedVerbsProvider
+  component "Verbs communication management via librdmacm" as VerbsCM
+  component "Verbs control/data transfer via libibverbs" as VerbsDataCtrl
+  component "CH4 network-module integration context" as CH4Context
+}
+
+package "Build/Deploy Configuration Layer" {
+  component "Build/deploy configuration interface" as BuildDeployConfig
+  interface "CFLAGS" as CFLAGS
+  interface "LDFLAGS" as LDFLAGS
+  interface "LD_LIBRARY_PATH" as LDLIBPATH
+  interface "libibverbs headers" as IBVHeaders
+  interface "librdmacm headers" as RDMACMHeaders
+}
+
+cloud "Linux Verbs API" as LinuxVerbsAPI
+cloud "libibverbs" as Libibverbs
+cloud "librdmacm" as Librdmacm
+cloud "OFI/libfabric" as OFILibfabric
+cloud "UCX" as UCX
+cloud "hwloc distribution tarball" as HwlocTarball
+
+node "Network Device" as NetworkDevice
+
+' Build & Verification dependencies
+RunEmbeddedTests --> HwlocTarball
+RunEmbeddedTests --> AutotoolsBuild
+RunEmbeddedTests --> AutotoolsTestClean
+ManualHwlocWorkflow --> ExpandTarball
+ManualHwlocWorkflow --> HwlocTarball
+ExpandTarball --> HwlocTarball
+ManualHwlocWorkflow --> HwlocTreeRename
+ManualHwlocWorkflow --> AutogenStep
+ManualHwlocWorkflow --> AutotoolsBuild
+
+' Communication design dependencies
+ScatterRespDocs --> CommLifecycleDocs
+
+' Data path dependencies
+SendStateMachine --> FlowControlState
+SendStateMachine --> NetSendDescPrep
+NetSendDescPrep --> PinnedUserData
+SendStateMachine --> PacketBuffer
+SendStateMachine --> RndvPrepLogic
+RndvPrepLogic --> PacketControlFields
+PacketControlFields --> PacketBuffer
+DataDescriptor --> PacketBuffer
+RndvPrepLogic --> PacketBuffer
+SendStateMachine --> NetworkDevice
+
+' Transport integration dependencies
+EmbeddedVerbsProvider --> Libibverbs
+EmbeddedVerbsProvider --> Librdmacm
+EmbeddedVerbsProvider --> LinuxVerbsAPI
+EmbeddedVerbsProvider --> VerbsCM
+EmbeddedVerbsProvider --> VerbsDataCtrl
+VerbsCM --> Librdmacm
+VerbsDataCtrl --> Libibverbs
+CH4Context --> EmbeddedVerbsProvider
+CH4Context --> OFILibfabric
+CH4Context --> UCX
+
+' Build/Deploy configuration dependencies
+BuildDeployConfig --> CFLAGS
+BuildDeployConfig --> LDFLAGS
+BuildDeployConfig --> LDLIBPATH
+BuildDeployConfig --> IBVHeaders
+BuildDeployConfig --> RDMACMHeaders
+BuildDeployConfig --> EmbeddedVerbsProvider
+EmbeddedVerbsProvider --> IBVHeaders
+EmbeddedVerbsProvider --> RDMACMHeaders
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml
+!define RECTANGLE class
+
+title IceFireDB System Architecture
+
+package "IceFireDB" {
+  RECTANGLE "Redis Proxy" as RedisProxy {
+    + Proxy Redis commands
+    + Synchronize instructions
+    + Forward to Redis storage
+    + Support command categories
+  }
+
+  RECTANGLE "PubSub" as PubSub {
+    + Redis-compatible Pub/Sub
+    + Multi-node operation
+    + NAT/private network support
+    + Peer discovery & routing
+  }
+
+  RECTANGLE "SQLite SQL Handler" as SQLiteHandler {
+    + Internal SQL result parsing
+    + MySQL protocol handling
+  }
+}
+
+package "External Systems" {
+  RECTANGLE "Redis Standalone" as RedisStandalone
+  RECTANGLE "Redis Cluster" as RedisCluster
+  RECTANGLE "Redis Applications" as RedisApps
+  RECTANGLE "Pub/Sub Clients" as PubSubClients
+  RECTANGLE "SQL Clients" as SQLClients
+}
+
+RedisProxy --> RedisStandalone : Writes data
+RedisProxy --> RedisCluster : Writes data
+RedisProxy <-- RedisApps : Proxies commands
+PubSub <--> PubSubClients : Publish/Subscribe
+SQLiteHandler <-- SQLClients : Handles results
+
+note right of RedisProxy
+  Supports standalone and 
+  clustered Redis modes
+end note
+
+note right of PubSub
+  Uses Kademlia DHT with 
+  libp2p/IPFS-style routing
+end note
+
+note right of SQLiteHandler
+  Internal MySQL-style 
+  result processing only
+end note
+
+@enduml

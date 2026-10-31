@@ -1,0 +1,121 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define DATASTORE_COLOR #FFF0F0
+!define EXTERNAL_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<DataStore>> DATASTORE_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+title Kangrand: Pollard's Kangaroo ECDLP Solver Architecture
+
+package "External Systems" <<External>> {
+  [Operator CLI] as CLI
+  [Network Environment] as Network
+}
+
+package "Input Layer" <<Layer>> {
+  [Input File Parser] as Parser
+  [Configuration Manager] as ConfigManager
+}
+
+package "Core Solver Layer" <<Layer>> {
+  [Pollard's Kangaroo Algorithm] as SolverCore
+  [Distinguished Points Manager] as DPMgr
+  [Hash Table Manager] as HashTableMgr
+  [GPU Acceleration Module] as GPUModule
+}
+
+package "Distributed Execution Layer" <<Layer>> {
+  [Server Component] as Server
+  [Client Component] as Client
+  [Work Distribution Manager] as WorkDistributor
+}
+
+package "Persistence Layer" <<Layer>> {
+  [Work File Manager] as WorkFileMgr
+  [Result File Manager] as ResultFileMgr
+  [Merge Manager] as MergeMgr
+}
+
+package "Data Stores" <<DataStore>> {
+  [Input ASCII Files] as InputFiles
+  [Work Files] as WorkFiles
+  [Result Files] as ResultFiles
+  [Configuration Files] as ConfigFiles
+  [Split Backup Files] as BackupFiles
+}
+
+CLI --> Parser : "provides input file"
+CLI --> ConfigManager : "provides configuration"
+CLI --> SolverCore : "invokes solver"
+CLI --> Server : "starts server"
+CLI --> Client : "starts client"
+CLI --> MergeMgr : "invokes merge"
+
+Parser --> InputFiles : "reads from"
+Parser --> SolverCore : "provides problem definition"
+
+ConfigManager --> ConfigFiles : "reads from"
+ConfigManager --> Server : "provides configuration"
+ConfigManager --> Client : "provides configuration"
+
+SolverCore --> DPMgr : "uses distinguished points"
+SolverCore --> HashTableMgr : "manages hash table"
+SolverCore --> GPUModule : "optional GPU acceleration"
+SolverCore --> WorkFileMgr : "saves/loads state"
+SolverCore --> ResultFileMgr : "writes results"
+
+DPMgr --> SolverCore : "provides collision detection"
+HashTableMgr --> SolverCore : "stores walk points"
+GPUModule --> SolverCore : "accelerates computation"
+
+Server --> Network : "listens for connections"
+Client --> Network : "connects to server"
+Server --> WorkDistributor : "coordinates work"
+Client --> WorkDistributor : "requests/receives work"
+WorkDistributor --> Server : "distributes tasks"
+WorkDistributor --> Client : "assigns computation"
+
+WorkDistributor --> WorkFileMgr : "saves distributed work"
+WorkDistributor --> HashTableMgr : "manages distributed state"
+
+WorkFileMgr --> WorkFiles : "reads/writes"
+WorkFileMgr --> BackupFiles : "creates split backups"
+WorkFileMgr --> SolverCore : "provides resume capability"
+WorkFileMgr --> MergeMgr : "provides files for merging"
+
+ResultFileMgr --> ResultFiles : "writes"
+ResultFileMgr --> SolverCore : "receives solutions"
+
+MergeMgr --> WorkFiles : "reads multiple files"
+MergeMgr --> ResultFiles : "writes merged results"
+MergeMgr --> HashTableMgr : "creates master hash table"
+
+note right of HashTableMgr
+  Memory management:
+  - Reset after each wsplit backup
+  - Time/memory tradeoff via DP settings
+  - RAM required for merge operations
+end note
+
+note right of Server
+  Security constraint:
+  - No built-in authentication
+  - Operator-controlled network required
+end note
+
+note right of WorkFileMgr
+  Portability:
+  - Work files can be resumed/merged
+  across different hardware and DP settings
+  for same key and range
+end note
+
+@enduml

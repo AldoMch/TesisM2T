@@ -1,0 +1,100 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam component {
+    BackgroundColor #E6F3FF
+    BorderColor #0066CC
+    FontColor #003366
+}
+skinparam node {
+    BackgroundColor #FFF0E6
+    BorderColor #CC6600
+    FontColor #663300
+}
+skinparam queue {
+    BackgroundColor #E6FFE6
+    BorderColor #009900
+    FontColor #006600
+}
+skinparam database {
+    BackgroundColor #FFE6E6
+    BorderColor #CC0000
+    FontColor #660000
+}
+skinparam interface {
+    BackgroundColor #F0F0F0
+    BorderColor #666666
+    FontColor #333333
+}
+
+title Squatm3gator System Architecture
+
+package "External Systems" {
+  [Web Browser] as Browser
+  [GoDaddy API] as GoDaddy
+  database "Redis" as Redis {
+    component "Job Channel" as JobChannel
+    component "Reporting Channel" as ReportChannel
+  }
+}
+
+node "squatm3gator API Server" {
+  component "Web Server" as WebServer {
+    interface "HTTP API" as HTTP
+    interface "WebSocket" as WS
+  }
+
+  component "Session Manager" as SessionManager
+
+  component "Request Handler" as RequestHandler {
+    component "Attack Parser" as AttackParser
+    component "Job Creator" as JobCreator
+    component "Error Handler" as ErrorHandler
+  }
+
+  component "Background Consumer" as Consumer {
+    component "Job Processor" as JobProcessor
+    component "Result Router" as ResultRouter
+  }
+
+  component "squatm3 Engine Wrapper" as Squatm3Wrapper
+}
+
+Browser --> HTTP : "1. GET / (FR-001)"
+Browser --> HTTP : "2. API Requests (FR-003, FR-004, FR-006)"
+Browser <--> WS : "3. Async Updates (FR-005)"
+
+HTTP --> SessionManager : "Session Creation/Validation (FR-001, DR-001)"
+HTTP --> RequestHandler : "Route Requests"
+
+RequestHandler --> AttackParser : "Parse attack codes/flags (FR-003, DR-003, DR-004)"
+AttackParser --> JobCreator : "Construct options"
+JobCreator --> SessionManager : "Get session key as Job ID (DR-001)"
+JobCreator --> JobChannel : "4. Publish Job (FR-004)"
+RequestHandler --> ErrorHandler : "Handle errors (FR-007, FR-008)"
+
+Consumer --> JobChannel : "5. Listen for Jobs (FR-002)"
+Consumer --> JobProcessor : "Process Job"
+JobProcessor --> Squatm3Wrapper : "6. Execute domain generation (C-004)"
+Squatm3Wrapper --> GoDaddy : "7. Optional availability check (DR-005, DR-006)"
+Squatm3Wrapper --> ReportChannel : "8. Send results (DR-002)"
+
+Consumer --> ResultRouter : "9. Route messages"
+ResultRouter --> ReportChannel : "Listen for reports"
+ResultRouter --> SessionManager : "Validate session/job match (NFR-002)"
+ResultRouter --> WS : "10. Emit to session (FR-005)"
+
+note right of Consumer
+  Started as background thread
+  on service startup (FR-002)
+end note
+
+note right of Squatm3Wrapper
+  Invokes squatm3 CLI engine
+  with constructed options (C-004)
+end note
+
+@enduml

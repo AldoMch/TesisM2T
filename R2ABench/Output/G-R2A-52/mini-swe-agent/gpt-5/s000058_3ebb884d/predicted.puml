@@ -1,0 +1,72 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+title macpro-appian-connector – Architecture Overview
+
+actor "Developer / Operator" as User
+actor "Maintainer" as Maintainer
+
+package "Local Environment" {
+  component "Repository CLI & Scripts" as CLI
+  component "AWS CLI" as AWSCLI
+  component "Connector Mgmt Library" as ConnLib
+}
+
+package "Application Services" {
+  component "Stage Listing Procedure" as StageList
+  component "Connector Configurator" as ConnectorConfig
+  component "Alert Routing Setup" as AlertRouting
+  component "Metrics Collector" as MetricsCollector
+}
+
+package "CI/CD" {
+  component "GitHub Actions Runner" as GHRunner
+}
+
+cloud "AWS Account (Current Region)" as AWS {
+  component "EventBridge Rule(s)" as EventBridge
+  component "SNS Topic" as SNSTopic
+  component "Target Cluster & Service" as TargetCluster
+}
+
+package "GitHub" {
+  component "Actions API (deploy.yml runs)" as GHActionsAPI
+  component "Pull Requests API" as GHPRAPI
+}
+
+queue "SNS Subscribers (Manual Mgmt)" as Subscribers
+
+' User interactions
+User --> CLI : run stage listing, configure connectors,
+User --> CLI : manage alert routing setup
+User --> AWSCLI : provide AWS credentials
+
+' CLI to application services
+CLI --> StageList : invoke
+CLI --> ConnectorConfig : invoke
+CLI --> AlertRouting : configure rules
+
+' CI/CD triggers metrics
+User --> GHRunner : trigger workflows
+GHRunner --> MetricsCollector : run metrics jobs
+
+' Stage listing flow
+StageList --> AWSCLI : list running stages
+AWSCLI --> AWS : query runtime resources
+
+' Connector configuration flow
+ConnectorConfig --> ConnLib : put/delete/restart connectors
+ConnLib --> TargetCluster : apply to target cluster & service
+
+' Event routing and alerting
+AlertRouting --> EventBridge : define event patterns
+EventBridge --> SNSTopic : route matching events
+SNSTopic --> Subscribers : notify
+Maintainer --> Subscribers : manage subscriptions manually
+
+' Metrics collection
+MetricsCollector --> GHActionsAPI : query workflow runs
+MetricsCollector --> GHPRAPI : query closed PRs
+
+@enduml

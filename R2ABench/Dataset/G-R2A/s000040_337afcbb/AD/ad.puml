@@ -1,0 +1,53 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    BorderThickness 1
+}
+
+cloud "Internet" as Internet
+
+package "Internal Network" as InternalNetwork {
+    rectangle "PlugIt Proxy" as PlugItProxy
+    database "DB_Proxy" as DbProxy
+
+    rectangle "PlugIt Service 1" as PlugItService1
+    rectangle "PlugIt Service 2" as PlugItService2
+    rectangle "PlugIt Service 3" as PlugItService3
+
+    database "DB 1" as Db1
+    database "DB 2" as Db2
+    database "DB 3" as Db3
+}
+
+Internet --> PlugItProxy : external access
+PlugItProxy ..> PlugItService1 : PlugIt Protocol
+PlugItProxy ..> PlugItService2 : PlugIt Protocol
+PlugItProxy ..> PlugItService3 : PlugIt Protocol
+PlugItProxy --> DbProxy : proxy data access
+PlugItService1 --> Db1 : service data
+PlugItService2 --> Db2 : service data
+PlugItService3 --> Db3 : service data
+@enduml

@@ -1,0 +1,160 @@
+@startuml
+title Foot365 - AWS-based Football Information Web Application Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #4A6FA5
+skinparam ComponentBorderColor #4A6FA5
+
+' ============================================================
+' Users / Actors
+' ============================================================
+actor "Football Enthusiast" as Fan
+actor "Chatbot User" as ChatUser
+actor "Reminder Requester" as ReminderUser
+actor "Application Maintainer" as Maintainer
+
+' ============================================================
+' Client Layer (HTML / CSS / Bootstrap / jQuery)
+' ============================================================
+package "Client Layer" {
+  component "Foot365 Web Application\n[HTML / CSS / Bootstrap / jQuery]" as WebApp
+  component "Football Information Pages\n[fixtures, standings, schedules,\nresults, live scores, predictions]" as InfoPages
+  component "Chatbot Interface\n[message input / response display]" as ChatUI
+  component "Reminder Request Interface" as ReminderUI
+}
+
+' ============================================================
+' AWS Cloud
+' ============================================================
+package "AWS Cloud" {
+
+  package "Hosting" {
+    component "Amazon S3\n[static frontend hosting]" as S3
+  }
+
+  package "Security" {
+    component "Amazon Cognito\n[authentication]" as Cognito
+    component "AWS IAM\n[protected access / SigV4]" as IAM
+  }
+
+  package "API Layer [Python / Node]" {
+    component "Amazon API Gateway\n[execute-api, JSON defaults]" as APIGW
+    component "AWS Lambda\n[backend logic / routing]" as Lambda
+  }
+
+  package "Backend Services" {
+    component "Conversation Handler\n[chatbot intents / slots]" as ConvHandler
+    component "Recommendation Service\n[match-screening venues]" as Recommend
+    component "Match Information Service\n[fixtures, standings, results,\nlive scores]" as MatchInfo
+    component "Prediction Service\n[home win / draw / away win]" as Prediction
+    component "Reminder Service\n[reminder handling]" as ReminderSvc
+  }
+
+  package "Data Layer" {
+    component "Amazon DynamoDB\n[match results, statistics,\nfixtures]" as DynamoDB
+    component "Amazon Elasticsearch\n[match data search / retrieval]" as Elasticsearch
+  }
+
+  package "Machine Learning" {
+    component "Amazon SageMaker\n[prediction models]" as SageMaker
+  }
+
+  package "Notification" {
+    component "Amazon SQS\n[reminder queueing]" as SQS
+    component "Amazon SNS\n[SMS delivery]" as SNS
+    component "SMS Reminder Delivery" as SMS
+  }
+
+  package "Streaming" {
+    component "Amazon EC2" as EC2 {
+      component "Apache Kafka\n[live score topics]" as Kafka
+      component "Apache Avro\n[score event encoding]" as Avro
+    }
+  }
+}
+
+' ============================================================
+' User interactions
+' ============================================================
+Fan --> WebApp : views football information
+Fan --> InfoPages : views fixtures / results / predictions
+ChatUser --> ChatUI : enters football query
+ReminderUser --> ReminderUI : requests reminder
+Maintainer --> APIGW : configures AWS environment
+
+WebApp --> InfoPages
+WebApp --> ChatUI
+WebApp --> ReminderUI
+
+' ============================================================
+' Hosting
+' ============================================================
+S3 --> WebApp : serves static frontend assets
+
+' ============================================================
+' Security / authentication
+' ============================================================
+WebApp --> Cognito : authenticates users
+Cognito --> IAM : identity / access policies
+APIGW --> IAM : protected access (SigV4, execute-api)
+
+' ============================================================
+' API flow
+' ============================================================
+WebApp --> APIGW : HTTP requests\n[method, path, query, headers, body]
+ChatUI --> APIGW : chatbot message request
+ReminderUI --> APIGW : reminder request
+APIGW --> Lambda : routes API requests
+Lambda --> ConvHandler : intent handling
+Lambda --> Recommend : screening recommendations
+Lambda --> MatchInfo : match data queries
+Lambda --> Prediction : prediction requests
+Lambda --> ReminderSvc : reminder requests
+
+' ============================================================
+' Data flow
+' ============================================================
+MatchInfo --> DynamoDB : stores / retrieves match data
+MatchInfo --> Elasticsearch : searches match data
+DynamoDB --> Elasticsearch : connects match data for retrieval
+
+' ============================================================
+' Prediction flow
+' ============================================================
+Prediction --> SageMaker : generates outcome probabilities
+SageMaker --> DynamoDB : reads prepared match data\n[season matches minus final week]
+
+' ============================================================
+' Reminder / notification flow
+' ============================================================
+ReminderSvc --> SQS : queues reminder request
+SQS --> SNS : triggers notification
+SNS --> SMS : delivers SMS reminder
+
+' ============================================================
+' Streaming flow
+' ============================================================
+Kafka --> Avro : encodes live score updates
+Avro --> MatchInfo : live score update stream
+EC2 --> Kafka
+EC2 --> Avro
+
+' ============================================================
+' Notes
+' ============================================================
+note right of Lambda
+  Backend endpoints exposed via API Gateway.
+  Default content type: application/json.
+  AWS Signature Version 4 with execute-api.
+end note
+
+note bottom of Streaming
+  Live streaming = real-time live-score updates and
+  screening recommendations (no in-app video streaming).
+  C-011: solid arrows = explicitly required interactions.
+end note
+
+@enduml

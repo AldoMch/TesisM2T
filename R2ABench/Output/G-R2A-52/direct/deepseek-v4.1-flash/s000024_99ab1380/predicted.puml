@@ -1,0 +1,129 @@
+@startuml
+title OCI Jenkins Terraform Deployment - System Architecture
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Deployment Operator" as Op
+actor "Infrastructure Administrator" as Infra
+actor "DevOps Engineer" as DevOps
+actor "Tester" as Tester
+
+package "Configuration & Input" {
+  file "terraform.tfvars\n(OCI, SSH, Jenkins, Network)" as TFVars
+  file "JSON input files" as JSON
+  file "Terraform variable-file format" as TFVarFormat
+  component "Terraform variable definitions" as VarDefs
+}
+
+package "Terraform Execution Environment" {
+  component "Terraform CLI\ninit / plan / apply" as TFCLI
+  component "OCI Provider" as OCIProvider
+  component "Terraform Modules / Configuration" as TFModules
+  component "Existing-Infrastructure Workflow" as ExistingWF
+  component "Private-Network Workflow" as PrivateWF
+}
+
+package "Terraform Module Inputs" {
+  component "OCI Access Config\ntenancy_ocid, compartment_ocid,\nuser_ocid, region, fingerprint,\nprivate_key_path" as OCIAccess
+  component "SSH Access Config\nssh_authorized_keys,\nssh_private_key" as SSHAccess
+  component "Jenkins Cluster Config\nlabel_prefix, jenkins_version,\njenkins_password, http_port,\njnlp_port, plugins" as ClusterCfg
+  component "Jenkins Master Config\nmaster_ad, master_subnet_id,\nmaster_display_name, master_image_id,\nmaster_shape, master_user_data" as MasterCfg
+  component "Jenkins Slave/Agent Config\nslave_count, slave_ads,\nslave_subnet_ids, slave_display_name,\nslave_image_id, slave_shape,\nslave_user_data" as SlaveCfg
+  component "Bastion Access Config\nbastion_host, bastion_user,\nbastion_private_key" as BastionCfg
+  component "Cloud-Init Data\n(base64-encoded)\nmaster_user_data / slave_user_data" as CloudInit
+}
+
+package "OCI Tenancy" {
+  node "OCI Tenancy / Compartment" as Tenancy {
+    node "Region / Availability Domains" as Region
+    node "VCN" as VCN {
+      node "Route Tables" as RT
+      node "DHCP Options" as DHCP
+      node "Security Lists" as SecLists
+      node "Public Subnet\n(Master)" as PublicSubnet
+      node "Private Subnet(s)\n(Slave/Agent, NAT-enabled)" as PrivateSubnets
+    }
+    node "NAT Gateway" as NAT
+    node "Bastion Host" as Bastion
+    node "Load Balancer\n(public Jenkins access)" as LB
+    node "Compute Instances" as Compute {
+      node "Jenkins Master Instance\nHTTP port, JNLP port" as MasterInst
+      node "Jenkins Slave/Agent Instances\nJNLP" as SlaveInsts
+      node "VNIC" as VNIC
+    }
+  }
+}
+
+package "Jenkins Cluster" {
+  component "Jenkins Master\nplugins, jobs, credentials" as JenkinsMaster
+  component "Jenkins Slave/Agent\nJNLP remoting" as JenkinsSlaves
+}
+
+Op --> TFCLI : runs init / plan / apply
+Infra --> ExistingWF : prepares existing network objects
+DevOps --> TFVars : configures OCI / SSH / Jenkins / network
+Tester --> JSON : test / example inputs
+Tester --> TFCLI : verifies deployment
+
+TFVars --> VarDefs
+TFVarFormat --> VarDefs
+JSON --> VarDefs
+VarDefs --> TFModules
+TFCLI --> TFModules
+TFModules --> OCIProvider : uses provider
+TFModules --> OCIAccess
+TFModules --> SSHAccess
+TFModules --> ClusterCfg
+TFModules --> MasterCfg
+TFModules --> SlaveCfg
+TFModules --> BastionCfg
+TFModules --> CloudInit
+
+OCIAccess --> OCIProvider : authentication / identity
+SSHAccess --> MasterCfg : authorized keys / private key
+SSHAccess --> SlaveCfg : authorized keys / private key
+ClusterCfg --> MasterCfg : cluster settings
+ClusterCfg --> SlaveCfg : cluster settings
+BastionCfg --> MasterCfg : private access
+BastionCfg --> SlaveCfg : private access
+CloudInit --> MasterCfg : base64 Cloud-Init
+CloudInit --> SlaveCfg : base64 Cloud-Init
+
+TFModules --> ExistingWF : existing infrastructure
+TFModules --> PrivateWF : private network
+ExistingWF --> VCN : uses existing route tables,\nDHCP options, security lists, subnets
+PrivateWF --> NAT : requires NAT connectivity
+PrivateWF --> Bastion : bastion-mediated access
+PrivateWF --> LB : public load-balanced access
+
+OCIProvider --> Tenancy : provisions / manages
+
+MasterCfg --> MasterInst : provisions
+SlaveCfg --> SlaveInsts : provisions
+MasterInst --> VNIC : attached via VNIC
+SlaveInsts --> VNIC : attached via VNIC
+VNIC --> PublicSubnet : master network attachment
+VNIC --> PrivateSubnets : slave network attachment
+
+MasterInst --> JenkinsMaster : runs
+SlaveInsts --> JenkinsSlaves : runs
+JenkinsMaster <--> JenkinsSlaves : JNLP / configured ports
+Op --> MasterInst : SSH key-based access
+Bastion --> SlaveInsts : SSH via bastion
+Op --> Bastion : bastion_user / private key
+LB --> JenkinsMaster : public HTTP access
+JenkinsMaster --> RT : egress via route table
+SlaveInsts --> NAT : outbound via NAT
+SlaveInsts --> SecLists : security list rules
+MasterInst --> SecLists : security list rules
+MasterInst --> DHCP : DHCP options
+SlaveInsts --> DHCP : DHCP options
+
+note right of TFModules
+  Deployment sequence:
+  terraform init -> terraform plan -> terraform apply
+  Cloud-Init content is provided as base64-encoded
+  master_user_data and slave_user_data.
+end note
+
+@enduml

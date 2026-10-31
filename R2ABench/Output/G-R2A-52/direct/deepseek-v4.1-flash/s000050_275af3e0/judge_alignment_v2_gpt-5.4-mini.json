@@ -1,0 +1,303 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Fuzzing Operator"
+      ],
+      "gt_nodes": [
+        "Global::KVM (L0)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::hAFL2 fuzzing controller"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::hAFL2"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ],
+      "predicted_nodes": [
+        "Windows Environment::Child Partition VM::Child partition harness"
+      ],
+      "is_boundary_correct": false,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ],
+      "predicted_nodes": [
+        "Windows Environment::Root Partition VM::Root partition crash monitor"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Windows Environment::Root Partition VM::VMSwitch / vmswitch.sys\\n(Hyper-V networking target path)"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::KVM (L0)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::kAFL hypercall / AFL I/O",
+        "Global::netvsc / VMBus channel",
+        "Windows Environment::Child Partition VM::Child partition harness",
+        "Windows Environment::Root Partition VM::Root partition crash monitor",
+        "Windows Environment::Root Partition VM::VMSwitch / vmswitch.sys\\n(Hyper-V networking target path)",
+        "Windows Environment::packet_sender.exe\\n(triggers packet-sending IOCTL)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Windows Environment::Child Partition VM::Child partition harness"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Windows Environment::Child Partition VM::Child partition harness"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Windows Environment::Harness & crash-monitoring drivers\\n(Visual Studio build)",
+        "Windows Environment::Root Partition VM::Root partition crash monitor"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Windows Environment::Root Partition VM::Root partition crash monitor"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Windows Environment::Root Partition VM::VMSwitch / vmswitch.sys\\n(Hyper-V networking target path)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::hAFL2 fuzzing controller",
+        "Linux Environment::Embedded forkserver\\n(kAFL hypercall -> AFL-style guest I/O)",
+        "Linux Environment::Launch / build scripts (bash)",
+        "Linux Environment::kAFL-Fuzzer/test.py\\n(standalone entry point)",
+        "Linux Environment::pytest test suites\\nrandom | deterministic | havoc",
+        "Windows Environment::compile.sh\\n(hAFL2/targets/windows_86_64)",
+        "Windows Environment::loader.exe\\n(create snapshot, load & execute)"
+      ],
+      "gt_node": "KVM (L0)::hAFL2"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "Global::Fuzzing Operator",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::hAFL2 fuzzing controller",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::kAFL hypercall / AFL I/O",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::netvsc / VMBus channel",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Environment::Embedded forkserver\\n(kAFL hypercall -> AFL-style guest I/O)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Environment::Host shared-library collector",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Environment::Launch / build scripts (bash)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Environment::Linux userspace target binary",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Environment::initrd build workflow",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Environment::initrd\\n(target binary + required .so)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Environment::kAFL-Fuzzer/test.py\\n(standalone entry point)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux Environment::pytest test suites\\nrandom | deterministic | havoc",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Environment::Child Partition VM::Child partition harness",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Environment::Harness & crash-monitoring drivers\\n(Visual Studio build)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Environment::Root Partition VM::Root partition crash monitor",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Environment::Root Partition VM::VMSwitch / vmswitch.sys\\n(Hyper-V networking target path)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys",
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Environment::compile.sh\\n(hAFL2/targets/windows_86_64)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Environment::loader.exe\\n(create snapshot, load & execute)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Environment::packet_sender.exe\\n(triggers packet-sending IOCTL)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1400,
+      "completion_tokens": 173,
+      "total_tokens": 1573,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Global::kAFL hypercall / AFL I/O",
+    "Global::netvsc / VMBus channel",
+    "Linux Environment::Embedded forkserver\\n(kAFL hypercall -> AFL-style guest I/O)",
+    "Linux Environment::Host shared-library collector",
+    "Linux Environment::Launch / build scripts (bash)",
+    "Linux Environment::Linux userspace target binary",
+    "Linux Environment::initrd build workflow",
+    "Linux Environment::initrd\\n(target binary + required .so)",
+    "Linux Environment::kAFL-Fuzzer/test.py\\n(standalone entry point)",
+    "Linux Environment::pytest test suites\\nrandom | deterministic | havoc",
+    "Windows Environment::Harness & crash-monitoring drivers\\n(Visual Studio build)",
+    "Windows Environment::compile.sh\\n(hAFL2/targets/windows_86_64)",
+    "Windows Environment::loader.exe\\n(create snapshot, load & execute)",
+    "Windows Environment::packet_sender.exe\\n(triggers packet-sending IOCTL)"
+  ],
+  "_provenance": {
+    "fingerprint": "196ce66a2350846ee96781c365b4e8e0b781737f12f84caae0abf57e32e33d7a",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

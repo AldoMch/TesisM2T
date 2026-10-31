@@ -1,0 +1,66 @@
+@startuml
+skinparam componentStyle rectangle
+
+title Indoor Fitness App Architecture
+
+'' Layers
+package "Mobile Client" {
+  [Mobile App] as app
+  [Camera Module] as camera
+  [Screen Casting Module] as casting
+}
+
+package "Server Side" {
+  [Posture Evaluation Service] as evaluation
+  [Plan Recommendation Service] as recommendation
+  [Report Generation Service] as reporting
+  [User Management Service] as usermgmt
+  [Data Storage] as database
+}
+
+package "External Systems" {
+  [LAN Network] as lan
+}
+
+'' Relationships
+app --> camera : captures video
+app --> evaluation : sends video data
+app --> recommendation : requests plans
+app --> reporting : requests reports
+app --> usermgmt : authentication
+app --> casting : initiates casting
+
+evaluation --> database : stores/retrieves data
+recommendation --> database : stores/retrieves data
+reporting --> database : stores/retrieves data
+usermgmt --> database : manages user data
+
+casting --> lan : discovers devices
+lan --> casting : connects devices
+
+note right of app
+  Mobile Application with
+  exercise guidance features
+end note
+
+note right of evaluation
+  Pose estimation and
+  posture scoring
+end note
+
+note right of recommendation
+  AI-based training plan
+  generation and adjustment
+end note
+
+note right of reporting
+  Poster and report
+  generation service
+end note
+
+note right of casting
+  Real-time screen casting
+  to devices in LAN
+end note
+
+@enduml

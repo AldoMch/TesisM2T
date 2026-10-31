@@ -1,0 +1,153 @@
+@startuml
+package "Front-end/Presentation" {
+  component "Angular ClientApp" as ClientApp
+  component "Router/Route Guards" as Router
+  component "Login Page/Redirect Target" as LoginPage
+  component "Session Expired Page/Route" as SessionExpiredPage
+  component "Notifier Component" as Notifier
+}
+
+package "Security/Authentication" {
+  component "Login/Session Handler" as LoginSession
+}
+
+package "Client HTTP/Communication" {
+  component "HTTP Interceptor/Client HTTP Handler" as HttpHandler
+  component "Watchdog Timer" as Watchdog
+}
+
+package "Client State" {
+  component "NgRx Store" as NgRxStore
+  component "NgRx Actions/Reducers (Immutable State)" as NgRxActionsReducers
+  component "Controlled-list Loader" as ControlledListLoader
+}
+
+package "Client Service/API Wrapper" {
+  component "Evacuee Service Wrapper" as EvacueeSvc
+  component "Incident-task Service Wrapper" as IncidentTaskSvc
+  component "Organization Service Wrapper" as OrgSvc
+  component "Referral Service Wrapper" as ReferralSvc
+  component "Registration Service Wrapper" as RegistrationSvc
+  component "PDF Collection" as PdfCollection
+  component "Notification Queue Service" as NotificationQueueSvc
+  component "Cookie Service" as CookieSvc
+}
+
+package "Backend API" {
+  component ".NET Core WebAPI Server" as WebApiServer
+  component "Controllers" as Controllers
+}
+
+package "Domain" {
+  component "C# Domain Classes/Domain Services" as DomainServices
+}
+
+package "Data Access" {
+  component "Entity Framework/DbContext" as EFDbContext
+  component "Persistent Database Entities" as PersistenceEntities
+}
+
+package "Persistence" {
+  database "MS SQL Database" as MsSqlDb
+  component "SQL Data-Maintenance Scripts" as SqlScripts
+  component "Volunteer Deactivation Script (Volunteer.Active)" as VolunteerDeactScript
+  component "Database Backup Prerequisite" as DbBackupPrereq
+}
+
+package "Development/Diagnostics" {
+  component "Module Import Diagnostic" as ModuleDiag
+  component "Local Development Access Configuration" as LocalDevConfig
+  component "Proxy Configuration" as ProxyConfig
+  component "Role-paired Tokens" as RoleTokens
+  component "Development Back Door" as DevBackDoor
+}
+
+package "External Systems" {
+  cloud "SiteMinder" as SiteMinder
+  node "Web Browser" as WebBrowser
+  cloud "External URL Target" as ExternalUrl
+}
+
+node "Designated Development Environment" as DevEnv
+component "Developer" as Developer
+
+interface "Role input" as RoleInput
+
+ClientApp --> Router : routed UI
+ClientApp --> LoginPage : shows login/redirect
+ClientApp --> SessionExpiredPage : shows session-expired route
+ClientApp --> NgRxStore : selects shared state
+ClientApp --> NgRxActionsReducers : dispatches actions
+ClientApp --> WebBrowser : runs in
+ClientApp --> SiteMinder : front-end auth context
+
+Router --> RoleInput : role determines landing/access
+Router --> ExternalUrl : redirect guard
+Router --> LoginSession : login/route-role checks
+Router --> LoginPage : redirect unauthenticated
+Router --> SessionExpiredPage : session-expired route
+
+LoginPage --> LoginSession : submits login/redirect target
+LoginSession --> LoginPage : redirect target after login
+LoginSession --> SessionExpiredPage : session-expiry flow
+LoginSession --> RoleInput : provides role from SiteMinder/session
+LoginSession --> SiteMinder : authenticates/validates session
+
+HttpHandler --> LoginSession : 401 while logged in
+HttpHandler --> SessionExpiredPage : redirects on 401
+HttpHandler --> Watchdog : resets on each request
+HttpHandler --> WebApiServer : forwards API calls
+HttpHandler --> RoleTokens : uses role-paired token
+HttpHandler --> ProxyConfig : uses local dev proxy routes
+
+ClientApp --> HttpHandler : client HTTP requests
+ClientApp --> EvacueeSvc : uses
+ClientApp --> IncidentTaskSvc : uses
+ClientApp --> OrgSvc : uses
+ClientApp --> ReferralSvc : uses
+ClientApp --> RegistrationSvc : uses
+ClientApp --> NotificationQueueSvc : uses
+ClientApp --> CookieSvc : uses
+
+EvacueeSvc --> HttpHandler : read with params
+IncidentTaskSvc --> HttpHandler : create/read/update with params
+OrgSvc --> HttpHandler : create/read/update with params
+ReferralSvc --> HttpHandler : CRUD with params
+RegistrationSvc --> HttpHandler : create/read/update with params
+NotificationQueueSvc --> HttpHandler : notification API
+RegistrationSvc --> PdfCollection : PDF collection
+NotificationQueueSvc --> Notifier : observable notifications
+CookieSvc --> WebBrowser : get/set cookies
+
+Notifier --> WebBrowser : displays notifications
+
+NgRxActionsReducers --> NgRxStore : updates immutable state
+NgRxStore --> ClientApp : selectors/state
+ControlledListLoader --> NgRxStore : initialization load
+ControlledListLoader --> NgRxActionsReducers : dispatches load actions
+
+WebApiServer --> Controllers : hosts
+WebApiServer --> SiteMinder : validates API authorization
+Controllers --> DomainServices : interacts
+DomainServices --> EFDbContext : interacts
+EFDbContext --> PersistenceEntities : maps/loads
+PersistenceEntities --> MsSqlDb : stored in
+
+SqlScripts --> MsSqlDb : updates selected data
+SqlScripts --> VolunteerDeactScript : includes
+VolunteerDeactScript --> MsSqlDb : updates Volunteer.Active
+DbBackupPrereq --> SqlScripts : required before execution
+DbBackupPrereq --> VolunteerDeactScript : required before deactivation
+DbBackupPrereq --> MsSqlDb : backs up
+
+LocalDevConfig --> ProxyConfig : local dev requires
+LocalDevConfig --> RoleTokens : role-paired SM_TOKEN
+ProxyConfig --> ClientApp : dev server proxy
+ProxyConfig --> HttpHandler : routes API in local dev
+RoleTokens --> LoginSession : supplies role-paired SM_TOKEN
+RoleTokens --> HttpHandler : supplies role-paired SM_TOKEN
+RoleTokens --> WebApiServer : supplies role-paired SM_TOKEN
+DevBackDoor --> WebApiServer : backend-only access
+DevBackDoor --> DevEnv : enabled only in designated dev env
+ModuleDiag --> Developer : alerts on double-load
+@enduml

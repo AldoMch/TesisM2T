@@ -1,0 +1,88 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam classFontSize 12
+skinparam componentFontSize 12
+skinparam nodeFontSize 12
+skinparam rectangleFontSize 12
+skinparam arrowColor #333333
+skinparam rectangleBorderColor #333333
+skinparam componentBorderColor #333333
+skinparam nodeBorderColor #333333
+skinparam classBorderColor #333333
+
+title ReTool System Architecture
+
+node "Client Environment" {
+  rectangle "Web Browser\n(Google Chrome 81.0+)" as Browser
+  rectangle "Vue.js Frontend\n(User Interface)" as Frontend
+  Browser --> Frontend : Renders UI
+  Frontend --> Browser : User Interactions
+}
+
+node "Local Deployment" {
+  rectangle "API Gateway\n(Load Balancer / Router)" as Gateway
+
+  rectangle "User Management Service\n(Flask Microservice)" as UserService
+  rectangle "Project Management Service\n(Flask Microservice)" as ProjectService
+  rectangle "Requirements Management Service\n(Flask Microservice)" as ReqService
+
+  Gateway --> UserService : Routes Requests
+  Gateway --> ProjectService : Routes Requests
+  Gateway --> ReqService : Routes Requests
+}
+
+node "Server Deployment" {
+  rectangle "Algorithm Service\n(Flask Microservice)" as AlgorithmService
+  rectangle "NLP & PyTorch Engine\n(Word2vec, Heuristics)" as NLPEngine
+  AlgorithmService --> NLPEngine : Calls Analysis
+}
+
+database "MongoDB Database" as MongoDB {
+  rectangle "User Accounts\nRoles & Permissions" as UserDB
+  rectangle "Projects\nMembers & Baselines" as ProjectDB
+  rectangle "Requirement Items\nTree & Analysis Data" as ReqDB
+  rectangle "Logs & Audit Trails" as LogDB
+}
+
+UserService --> UserDB : CRUD Operations
+ProjectService --> ProjectDB : CRUD Operations
+ReqService --> ReqDB : CRUD Operations
+AlgorithmService --> ReqDB : Reads/Writes Analysis Data
+UserService --> LogDB : Writes Logs
+ProjectService --> LogDB : Writes Logs
+ReqService --> LogDB : Writes Logs
+AlgorithmService --> LogDB : Writes Logs
+
+Frontend --> Gateway : HTTP/HTTPS API Calls\n(JSON Data)
+Gateway --> Frontend : API Responses
+
+ReqService --> AlgorithmService : Requests Analysis\n(Itemization, Structuring,\nCommon ID, Conflict, Association)
+AlgorithmService --> ReqService : Returns Analysis Results
+
+note top of Frontend
+  Client: Windows 10 64-bit
+  Hardware: i7-6700HQ, 8GB RAM, 100MB+ storage
+end note
+
+note right of Gateway
+  Local Computer Deployment
+  (Gateway, User, Project, Req Services)
+end note
+
+note right of AlgorithmService
+  Server Deployment (EC2 t2.xlarge)
+  OS: Amazon Linux 2
+  High-Performance Requirement
+end note
+
+note left of MongoDB
+  Primary Data Store
+  CRUD Operations for all services
+  Periodic Backup & Disaster Recovery
+end note
+
+@enduml

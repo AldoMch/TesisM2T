@@ -1,0 +1,230 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A252F
+}
+skinparam node {
+  BackgroundColor #EAF7EA
+  BorderColor #27AE60
+  FontColor #1A252F
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+  FontColor #1A252F
+}
+skinparam actor {
+  BackgroundColor #FDEDEC
+  BorderColor #E74C3C
+}
+skinparam cloud {
+  BackgroundColor #F5EEF8
+  BorderColor #8E44AD
+}
+skinparam rectangle {
+  BackgroundColor #FDFEFE
+  BorderColor #7F8C8D
+}
+skinparam ArrowColor #2C3E50
+skinparam FontName Arial
+skinparam defaultFontSize 12
+
+title Indoor Fitness App — System Architecture Diagram
+
+actor "Amateur / Professional\nUser (Logged-in)" as User
+actor "Administrator\nUser" as Admin
+actor "Android Target\nDevice (Casting)" as CastTarget
+
+node "Mobile Device\n(Android 8.0+ / iOS 11.0+\nOcta-core 2.45GHz, 4GB RAM)" as MobileDevice {
+
+  component "Main Interface\nModule" as MainUI {
+    component "Today's Plan\nPreview" as PlanPreview
+    component "Complete Exercise\nPlan View" as FullPlan
+  }
+
+  component "Exercise Interface\nModule" as ExerciseUI {
+    component "Camera Capture\nComponent\n(≥30 fps)" as Camera
+    component "User Movement\nDisplay" as UserMovement
+    component "Standard Movement\nDisplay" as StdMovement
+    component "Posture Stick\nDiagram Display" as StickDiagram
+    component "Remaining Action\nTimer" as Timer
+    component "Real-time Posture\nEvaluation Display" as EvalDisplay
+  }
+
+  component "Pose Estimation\nEngine\n(≥20 fps, ≥95% accuracy)" as PoseEngine {
+    component "Skeleton\nExtractor" as SkeletonExtractor
+    component "Posture Scoring\n& Comparator" as PostureScorer
+    component "Occlusion\nRobustness Handler" as OcclusionHandler
+    component "Body Proportion\nNormalizer" as ProportionNorm
+  }
+
+  component "Exercise State\nMonitor" as StateMonitor {
+    component "Exercise Start/End\nDetector" as StartEndDetect
+    component "Plan Completion\nEvaluator" as CompletionEval
+  }
+
+  component "Training Plan\nModule" as PlanModule {
+    component "Custom Plan\nBuilder\n(Standard Videos)" as CustomPlanBuilder
+    component "Plan Recommender\n/ Adjuster\n(<1 sec)" as PlanRecommender
+    component "Rest Plan\nManager" as RestPlanMgr
+  }
+
+  component "Fun Sharing\nModule" as SharingModule {
+    component "Poster\nViewer" as PosterViewer
+    component "Report\nViewer\n(Charts & Text)" as ReportViewer
+  }
+
+  component "Exercise History\nModule" as HistoryModule {
+    component "Calendar\nHistory View" as CalendarView
+    component "Monthly Overview\nDisplay" as MonthlyOverview
+  }
+
+  component "Personal\nProfile Module" as ProfileModule {
+    component "Personal Info\nEditor" as PersonalInfoEditor
+    component "Exercise Preferences\nEditor" as PrefEditor
+    component "Historical Training\nRecords View" as TrainingRecordsView
+  }
+
+  component "Screen Casting\nModule\n(Android Only)" as CastingModule {
+    component "LAN Device\nDiscovery" as LANDiscovery
+    component "Casting Connection\nManager" as CastConnMgr
+    component "Video Stream\nSender\n(Latency ≤100ms)" as VideoSender
+    component "Command\nSender\n(Latency ≤50ms)" as CmdSender
+  }
+
+  component "Security\nModule" as SecurityModule {
+    component "Identity Verification\n& Auth" as AuthComp
+    component "Permission\nControl\n(Admin / User)" as PermControl
+    component "Data Leakage\nProtection\n(Clipboard, Screen,\nMemory)" as LeakProtect
+    component "SQL Injection\nPrevention\n(Filter, Bind,\nPrecompile)" as SQLProtect
+  }
+
+  component "Inter-Module\nInterface Bus" as InterfaceBus
+}
+
+node "Application Server\n(CPU Pentium 900M+,\n256MB RAM+)" as AppServer {
+
+  component "Plan Generation\nService\n(<1 sec)" as PlanGenService
+  component "Poster Generation\nService" as PosterGenService
+  component "Report Generation\nService\n(<3 sec)" as ReportGenService
+  component "Training Material\nCollector & Processor" as MaterialProcessor
+  component "User & Plan\nData Service" as UserDataService
+  component "Standard Movement\nData Service" as StdMovementService
+  component "Security &\nAccess Control Service" as ServerSecurity
+}
+
+database "Data Store\n(SQL-style, Injection\nProtected)" as DataStore {
+  component "Standard Videos\n& Skeleton Movements" as StdVideoDB
+  component "User Profile\n& Health Data" as UserProfileDB
+  component "Training Plans\n& Completion Data" as TrainingPlanDB
+  component "Exercise History\n& Monthly Records" as HistoryDB
+  component "Skeleton & Posture\nEvaluation Results" as EvalDB
+  component "Report & Poster\nMaterials" as ReportMaterialDB
+  component "Session & Auth\nData" as SessionDB
+}
+
+cloud "LAN Environment\n(Same Network)" as LAN
+
+' ─── User interactions ───
+User --> MainUI
+User --> ExerciseUI
+User --> SharingModule
+User --> HistoryModule
+User --> ProfileModule
+User --> CastingModule
+Admin --> SecurityModule
+
+' ─── Camera pipeline ───
+Camera --> PoseEngine
+PoseEngine --> SkeletonExtractor
+SkeletonExtractor --> OcclusionHandler
+OcclusionHandler --> ProportionNorm
+ProportionNorm --> PostureScorer
+PostureScorer --> EvalDisplay
+PostureScorer --> StickDiagram
+PostureScorer --> StateMonitor
+
+' ─── Exercise state ───
+StateMonitor --> StartEndDetect
+StateMonitor --> CompletionEval
+CompletionEval --> PlanRecommender
+
+' ─── Exercise UI assembly ───
+Camera --> UserMovement
+StdMovementService --> StdMovement
+Timer --> ExerciseUI
+
+' ─── Plan module ───
+CustomPlanBuilder --> PlanModule
+PlanRecommender --> PlanModule
+RestPlanMgr --> PlanModule
+PlanModule --> InterfaceBus
+
+' ─── Interface bus connects UI layers ───
+MainUI --> InterfaceBus
+ExerciseUI --> InterfaceBus
+SharingModule --> InterfaceBus
+HistoryModule --> InterfaceBus
+ProfileModule --> InterfaceBus
+CastingModule --> InterfaceBus
+SecurityModule --> InterfaceBus
+PoseEngine --> InterfaceBus
+
+' ─── Mobile to Server communication ───
+InterfaceBus --> AppServer : "App-Server API\n(Plan, Report, Poster)"
+AppServer --> InterfaceBus : "Response / Data"
+
+' ─── Server internal ───
+AppServer --> PlanGenService
+AppServer --> PosterGenService
+AppServer --> ReportGenService
+AppServer --> MaterialProcessor
+MaterialProcessor --> PosterGenService
+MaterialProcessor --> ReportGenService
+AppServer --> UserDataService
+AppServer --> StdMovementService
+AppServer --> ServerSecurity
+
+' ─── Server to Data Store ───
+UserDataService --> UserProfileDB
+UserDataService --> TrainingPlanDB
+UserDataService --> HistoryDB
+PlanGenService --> TrainingPlanDB
+ReportGenService --> ReportMaterialDB
+ReportGenService --> EvalDB
+PosterGenService --> ReportMaterialDB
+StdMovementService --> StdVideoDB
+ServerSecurity --> SessionDB
+InterfaceBus --> SQLProtect
+SQLProtect --> DataStore
+
+' ─── Casting flow ───
+CastingModule --> LAN : "LAN Device Discovery\n& Connection"
+LAN --> CastTarget : "Video Stream\n(≤100ms latency)"
+CmdSender --> CastTarget : "Control Commands\n(≤50ms latency)"
+VideoSender --> LAN
+CastConnMgr --> LAN
+
+' ─── Security flow ───
+AuthComp --> PermControl
+PermControl --> InterfaceBus
+LeakProtect --> InterfaceBus
+
+' ─── History & profile data ───
+HistoryModule --> HistoryDB : "via Server"
+ProfileModule --> UserProfileDB : "via Server"
+
+legend right
+  |= Symbol |= Meaning |
+  | Node (green) | Runtime environment / hardware tier |
+  | Component (blue) | Software module or component |
+  | Database (yellow) | Persistent data store |
+  | Cloud (purple) | Network environment |
+  | Actor | Human or external device |
+endlegend
+
+@enduml

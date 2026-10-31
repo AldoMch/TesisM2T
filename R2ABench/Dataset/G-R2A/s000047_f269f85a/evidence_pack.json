@@ -1,0 +1,119 @@
+{
+  "candidate": {
+    "sample_id": "s000047_f269f85a",
+    "repository_name": "SocialGouv/archifiltre-docs",
+    "image_url": "https://github.com/SocialGouv/archifiltre-docs/blob/dev/docs/architecture.png",
+    "source_ref": "a93230c0fa557fc0652703bdf2d105788b453aa8",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 13006,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 28,
+      "user_scenario": 11,
+      "api_io": 17,
+      "deployment": 3,
+      "constraints": 99,
+      "non_functional": 1
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "src/persistence/persistent-settings.test.ts",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.049880752779792245,
+      "text": "import { sanitizeUserSettings } from \"./persistent-settings\"; describe(\"persistent-settings\", () => { describe(\"sanitizeUserSettings\", () => { describe(\"with an empty object\", () => { it(\"should return default user settings\", () => { expect(sanitizeUserSettings({})).toEqual({ isTrackingEnabled: true, isMonitoringEnabled: true, language: \"en\", }); }); }); describe(\"with an empty string\", () => { it(\"should return default user settings\", () => { expect(sanitizeUserSettings(\"\")).toEqual({ isTrackingEnabled: true, isMonitoringEnabled: true, language: \"en\", }); }); }); describe(\"with undefined\", () => { it(\"should return default user settings\", () => { expect(sanitizeUserSettings(undefined)).t..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "src/exporters/csv/tree-csv-exporter.controller.ts",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.04813332447603547,
+      "text": "import translations from \"translations/translations\"; import { FilesAndFoldersMap } from \"reducers/files-and-folders/files-and-folders-types\"; import { backgroundWorkerProcess$ } from \"util/batch-process/batch-process-util\"; import TreeCsvExporterFork from \"./tree-csv-exporter.fork\"; /** * Asynchronously generates a tree csv export * @returns an observable that emits each time a file is computed and emits the export string as the last value * @param filesAndFoldersMap */ export const generateTreeCsvExport$ = ( filesAndFoldersMap: FilesAndFoldersMap ) => { const { language } = translations; return backgroundWorkerProcess$( { filesAndFoldersMap, language }, TreeCsvExporterFork ); };"
+    },
+    {
+      "evidence_id": "E003",
+      "path": "src/exporters/resip/resip-export.controller.ts",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053455839084149144,
+      "text": "import { Observable } from \"rxjs\"; import translations from \"translations/translations\"; import { addTracker } from \"logging/tracker\"; import { ActionTitle, ActionType } from \"logging/tracker-types\"; import { FilesAndFoldersMetadataMap } from \"reducers/files-and-folders-metadata/files-and-folders-metadata-types\"; import { AliasMap, CommentsMap, FilesAndFoldersMap, } from \"reducers/files-and-folders/files-and-folders-types\"; import { TagMap } from \"reducers/tags/tags-types\"; import { backgroundWorkerProcess$, filterResults, } from \"util/batch-process/batch-process-util\"; import ResipExportFork from \"./resip-export.fork\"; import { map } from \"rxjs/operators\"; interface ResipExportProgress {..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "src/hash-computer/hash-computer.controller.ts",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.052364881637153,
+      "text": "s: { basePath } }: ComputeHashesOptions ): DataProcessingStream => { const hashes$ = computeBatch$(paths, FileHashFork, { batchSize: BATCH_SIZE, initialValues: { basePath }, }); const userDataPath = remote.app.getPath(\"userData\"); const resultFileWriter = createBufferedFileWriter( path.join(userDataPath, \"hash-result-debug\") ); const errorFileWriter = createBufferedFileWriter( path.join(userDataPath, \"hash-error-debug\") ); const hashesMapMerger = (bufferedObjects: HashesMap[]): HashesMap => Object.assign({}, ...bufferedObjects); const bufferAndMerge = ( aggregator: (input: Input[]) => AggregatorOutput, merger: (input: AggregatorOutput[]) => Output ): OperatorFunction => compose( map(merge..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "src/exporters/csv/csv-exporter.controller.ts",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05388947969593132,
+      "text": "import translations from \"translations/translations\"; import { FilesAndFoldersMetadataMap } from \"reducers/files-and-folders-metadata/files-and-folders-metadata-types\"; import { AliasMap, CommentsMap, FilesAndFoldersMap, } from \"reducers/files-and-folders/files-and-folders-types\"; import { TagMap } from \"reducers/tags/tags-types\"; import { backgroundWorkerProcess$ } from \"util/batch-process/batch-process-util\"; import CsvExporterFork from \"./csv-exporter.fork\"; import { HashesMap } from \"reducers/hashes/hashes-types\"; export interface GenerateCsvExportOptions { aliases: AliasMap; comments: CommentsMap; filesAndFolders: FilesAndFoldersMap; filesAndFoldersMetadata: FilesAndFoldersMetadataMa..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "src/exporters/excel/excel-exporter-controller.ts",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05385943746599484,
+      "text": "import translations from \"translations/translations\"; import ExcelExporterWorker from \"./excel-exporter.fork\"; import { backgroundWorkerProcess$ } from \"util/batch-process/batch-process-util\"; import { CsvExporterData } from \"exporters/csv/csv-exporter.impl\"; export const generateExcelExport$ = (data: CsvExporterData) => { const { language } = translations; return backgroundWorkerProcess$({ ...data, language }, ExcelExporterWorker); };"
+    }
+  ]
+}

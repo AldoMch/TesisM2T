@@ -1,0 +1,120 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+title Configuration Anomaly Detection (CAD) - System Architecture
+
+left to right direction
+
+package "Users" {
+  component "SRE / Operations User" as UserSRE <<User>>
+  component "Deployment Engineer" as UserDE <<User>>
+  component "Developer / Contributor" as UserDev <<User>>
+}
+
+package "Repository Assets" {
+  component "Integration Library (pkg)" as Lib
+  component "PagerDuty Integration" as LibPD
+  component "AWS Integration" as LibAWS
+  component "OCM Integration" as LibOCM
+  artifact "Deployment Templates (YAML)" as Templates
+  component "Template Update Utility" as TmplUtil
+}
+
+package "CAD Runtime" {
+  node "Container Image: CAD CLI (UBI minimal)" as Image {
+    artifact "/bin/cadctl" as Cadctl
+  }
+}
+
+package "Build Environment" {
+  node "Go 1.17 Builder Image" as GoBuilder
+}
+
+package "Tekton Execution (Cluster)" {
+  node "Namespace: configuration-anomaly-detection" as Ns {
+    interface "Alert Webhook" as Webhook
+    component "Tekton EventListener" as EL
+    component "Tekton Trigger" as Trig
+    component "Pipeline: cad-checks-pipeline" as Pipe
+    component "PipelineRun (v1beta1)" as PR
+  }
+}
+
+package "External Systems" {
+  cloud "PagerDuty" as PD
+  cloud "AWS" as AWS
+  cloud "OCM" as OCM
+  component "External Alert Source" as AlertSource
+}
+
+artifact "JSON payload (event.data.id)" as Payload
+
+' Relationships: Repository organization
+Lib --> LibPD
+Lib --> LibAWS
+Lib --> LibOCM
+
+' Users and utilities
+UserDev --> TmplUtil : runs template update workflow\n(FR-010)
+TmplUtil --> Templates : updates deployment template artifacts\n(DR-004)
+
+' Build and runtime constraints
+GoBuilder -down-> Image : builds CAD CLI container image\n(NFR-002, C-002)
+note bottom of Image
+- Contains /bin/cadctl (FR-001, NFR-001, C-001)
+- Base: UBI minimal (NFR-001, C-003)
+- Standard image labels (NFR-003)
+end note
+
+' CLI and integrations
+UserSRE --> Cadctl : runs CAD workflows\n(CHGM, anomaly handling)\n(FR-002, FR-003, FR-004)
+Cadctl ..> Lib : uses integration library\n(FR-009, NFR-004)
+LibPD --> PD : incident/alert actions
+LibAWS --> AWS : infra/state queries
+LibOCM --> OCM : support-status, owner comms
+
+' Deployment assets provision Tekton resources
+Templates ..> EL : deploy/render\nEventListener (FR-005, DR-005)
+Templates ..> Trig : deploy/render\nTrigger (FR-005)
+Templates ..> Pipe : deploy/render\nPipeline (FR-005)
+Templates ..> PR : direct-exec manifest\n(v1beta1) (C-004)
+
+' Standard event-driven path
+AlertSource --> Webhook : sends alert
+Webhook --> EL : receive alert webhook\n(FR-005)
+EL --> Trig : filter/map event\n(FR-005)
+Trig --> PR : creates PipelineRun\n(FR-005)
+PR --> Pipe : references cad-checks-pipeline\nin configuration-anomaly-detection\n(FR-007, C-005)
+
+' Direct skip-webhook path
+UserDE --> PR : creates PipelineRun directly\n(skip-webhook) (FR-006, C-006)
+Cadctl --> PR : optional direct creation\n(skip-webhook) (FR-006, C-006)
+
+' Payload and data requirements
+Payload -down-> PR : parameter 'payload' (JSON)\nincludes event.data.id\n(FR-008, DR-001, DR-002)
+note right of PR
+- Tekton PipelineRun v1beta1 (C-004)
+- References 'cad-checks-pipeline' in
+  'configuration-anomaly-detection' (FR-007, C-005)
+- Accepts JSON 'payload' with 'event.data.id' (FR-008)
+end note
+
+' Pipeline executes CAD CLI
+PR ..> Image : runs CAD checks using cadctl\n(FR-003, FR-004)
+
+legend right
+  Paths:
+  - Standard: Alert Source -> Webhook -> EventListener -> Trigger -> PipelineRun -> Pipeline
+  - Skip-webhook: User/CLI -> PipelineRun (direct), bypassing EventListener (C-006)
+
+  Key Functions:
+  - cadctl provides CHGM and anomaly workflows (FR-001, FR-002, FR-003)
+  - Mitigation/disposition via integrations (FR-004, FR-009)
+
+  Deploy/Artifacts:
+  - Tekton assets and direct-exec manifests are YAML (DR-003)
+  - Template Update Utility maintains templates (FR-010)
+endlegend
+@enduml

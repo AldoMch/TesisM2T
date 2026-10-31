@@ -1,0 +1,177 @@
+@startuml
+!define RECTANGLE rectangle
+!define COMPONENT component
+!define DATABASE database
+!define CLOUD cloud
+!define NODE node
+!define FRAME frame
+!define ARROW ->
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam rectangle {
+  BackgroundColor #F0F8FF
+  BorderColor #4682B4
+  FontColor #000000
+}
+skinparam database {
+  BackgroundColor #FFF0F5
+  BorderColor #DB7093
+  FontColor #000000
+}
+skinparam cloud {
+  BackgroundColor #F5F5F5
+  BorderColor #808080
+  FontColor #000000
+}
+
+title EIVAS - Epidemiological Investigation Visualization and Analysis System
+caption System Architecture Diagram
+
+' ========== EXTERNAL ENTITIES ==========
+cloud "Web Browser" as browser #E6E6FA
+cloud "Epidemiological\nForm Filler" as filler #FFE4E1
+cloud "Epidemiological\nAnalyst" as analyst #E0FFFF
+
+' ========== FRONTEND COMPONENTS ==========
+frame "Web Application Frontend" as frontend {
+  rectangle "Epidemiological\nReporting Form" as reporting_form #FFEBCD
+  rectangle "Case Management\nList" as case_list #FFEBCD
+  rectangle "Map Display\nInterface" as map_display #FFEBCD
+  rectangle "Association\nInformation Display" as association_display #FFEBCD
+  rectangle "Graph Relationship\nDisplay" as graph_display #FFEBCD
+  rectangle "Statistical Charts\nDisplay" as charts_display #FFEBCD
+  
+  reporting_form -[hidden]d-> case_list
+  case_list -[hidden]d-> map_display
+  map_display -[hidden]d-> association_display
+  association_display -[hidden]d-> graph_display
+  graph_display -[hidden]d-> charts_display
+}
+
+' ========== BACKEND COMPONENTS ==========
+frame "Backend Application Server" as backend {
+  rectangle "Request Handler" as request_handler #F0FFF0
+  rectangle "Data Processing\n& Validation" as data_processor #F0FFF0
+  rectangle "Algorithm Module\nInterface" as algorithm_interface #F0FFF0
+  rectangle "Security Layer" as security_layer #F0FFF0
+  
+  request_handler -[hidden]r-> data_processor
+  data_processor -[hidden]r-> algorithm_interface
+  algorithm_interface -[hidden]r-> security_layer
+}
+
+' ========== DATA STORAGE ==========
+frame "Data Storage Layer" as storage {
+  database "Case Database" as case_db #FFE4E1 {
+    rectangle "Basic Case\nInformation" as basic_info #FFF0F5
+    rectangle "Disease-Related\nInformation" as disease_info #FFF0F5
+    rectangle "Itinerary\nTrajectory" as itinerary #FFF0F5
+    rectangle "Imported-Case\nInformation" as imported_info #FFF0F5
+    rectangle "Case Management\nRecords" as case_mgmt #FFF0F5
+    rectangle "Associated Case\nEntries" as associations #FFF0F5
+    
+    basic_info -[hidden]d-> disease_info
+    disease_info -[hidden]d-> itinerary
+    itinerary -[hidden]d-> imported_info
+    imported_info -[hidden]d-> case_mgmt
+    case_mgmt -[hidden]d-> associations
+  }
+  
+  database "Analytical Data\nRepository" as analytics_db #E6E6FA {
+    rectangle "Statistical\nChart Data" as chart_data #F5F5F5
+    rectangle "Data Quality\nState" as data_quality #F5F5F5
+    rectangle "Analysis\nResults" as analysis_results #F5F5F5
+    
+    chart_data -[hidden]d-> data_quality
+    data_quality -[hidden]d-> analysis_results
+  }
+}
+
+' ========== ALGORITHM MODULE ==========
+rectangle "Algorithm Module" as algorithm_module #FFFACD {
+  rectangle "Regional Flow\nMap Generator" as flow_map #FAFAD2
+  rectangle "Case Clustering\nGraph Generator" as clustering #FAFAD2
+  rectangle "Association\nAnalyzer" as association_analyzer #FAFAD2
+  rectangle "Risk Calculator" as risk_calculator #FAFAD2
+  
+  flow_map -[hidden]r-> clustering
+  clustering -[hidden]r-> association_analyzer
+  association_analyzer -[hidden]r-> risk_calculator
+}
+
+' ========== EXTERNAL SERVICES ==========
+cloud "Map/Geographic\nVisualization Service" as map_service #F0E68C
+cloud "Encryption Service" as encryption_service #DDA0DD
+cloud "Backup Server" as backup_server #D3D3D3
+
+' ========== USER INTERACTIONS ==========
+filler --> browser : Accesses
+analyst --> browser : Accesses
+browser --> frontend : Renders UI
+
+' ========== FRONTEND TO BACKEND FLOWS ==========
+reporting_form --> request_handler : Submits case investigation\n(FR-001, FR-004)
+case_list --> request_handler : Queries & filters cases\n(FR-005, FR-006, FR-007, FR-008)
+map_display --> request_handler : Requests location display\n(FR-003, FR-009)
+association_display --> request_handler : Queries associations\n(FR-010)
+graph_display --> request_handler : Requests relationship graph\n(FR-011)
+charts_display --> request_handler : Requests statistical charts\n(FR-012 to FR-018)
+
+' ========== BACKEND PROCESSING ==========
+request_handler --> data_processor : Processes & validates data
+data_processor --> security_layer : Applies security checks\n(NFR-004, NFR-005)
+security_layer --> algorithm_interface : Forwards analysis requests
+algorithm_interface --> algorithm_module : Invokes algorithms\n(AD-002)
+
+' ========== DATA ACCESS FLOWS ==========
+data_processor --> case_db : Stores/retrieves case data\n(AD-001)
+algorithm_module --> case_db : Reads case investigation data
+algorithm_module --> analytics_db : Stores analysis results
+data_processor --> analytics_db : Stores/retrieves analytical data
+
+' ========== EXTERNAL INTEGRATIONS ==========
+map_display --> map_service : Displays geographic data\n(AD-003)
+security_layer --> encryption_service : Encrypts personal info queries\n(NFR-004)
+backend --> backup_server : Failover capability\n(NFR-003, C-005)
+
+' ========== ALGORITHM OUTPUTS ==========
+algorithm_module --> flow_map : Generates regional flow maps\n(FR-012)
+algorithm_module --> clustering : Generates case clustering graphs\n(FR-013)
+algorithm_module --> association_analyzer : Identifies associations\n(FR-010, FR-011)
+algorithm_module --> risk_calculator : Calculates risk levels\n(FR-012)
+
+' ========== FEEDBACK LOOPS ==========
+case_db --> data_processor : Returns historical data for prompts\n(FR-002)
+analytics_db --> charts_display : Provides chart data\n(FR-014 to FR-018)
+algorithm_module --> graph_display : Provides relationship graphs\n(FR-011)
+algorithm_module --> map_display : Provides geographic visualizations\n(FR-009, FR-012)
+
+' ========== QUALITY OF SERVICE ==========
+note top of backend
+  **Performance Requirements:**
+  - Concurrent submission support (NFR-002)
+  - <1s response for 100 users
+  - Robust error handling (NFR-001)
+  - IP cooldown for frequent queries (NFR-005)
+end note
+
+note right of storage
+  **Data Requirements:**
+  - Personal info protection (DR-001, DR-002, DR-004)
+  - Data quality validation (DR-008)
+  - Statistical data integrity (DR-007)
+end note
+
+note left of algorithm_module
+  **Analysis Capabilities:**
+  - Regional flow maps
+  - Case clustering graphs
+  - Association analysis
+  - Risk calculation
+end note
+
+@enduml

@@ -1,0 +1,39 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Android Application" as App {
+  RECTANGLE "Main Activity/Fragments" as UI
+  RECTANGLE "GPS Logging Service" as GPSService
+  RECTANGLE "Event Bus" as EventBus
+  RECTANGLE "Location Listeners" as LocListeners
+  RECTANGLE "Loggers" as Loggers
+  RECTANGLE "Upload Jobs" as UploadJobs
+  RECTANGLE "Session Settings" as SessionSettings
+}
+
+RECTANGLE "External Services" as ExtServices {
+  RECTANGLE "OpenStreetMap" as OSM
+  RECTANGLE "Dropbox" as Dropbox
+  RECTANGLE "OpenGTS" as OpenGTS
+}
+
+RECTANGLE "Development Environment" as DevEnv {
+  RECTANGLE "Gradle Build System" as Gradle
+  RECTANGLE "Android SDK" as AndroidSDK
+  RECTANGLE "Google Play Services" as GPServices
+}
+
+App --> ExtServices : Integrates with\n(conditional)
+GPSService --> EventBus : Publishes location events
+EventBus --> UI : Delivers location updates
+LocListeners --> GPSService : Provides location data
+GPSService --> Loggers : Sends location for logging
+Loggers --> GPSService : Receives logging config
+GPSService --> UploadJobs : Triggers uploads
+UploadJobs --> ExtServices : Uploads to external services
+SessionSettings --> GPSService : Supplies configuration
+Gradle --> App : Injects credentials at build time
+DevEnv --> App : Required for building/running
+GPServices --> GPSService : Used for some features
+OpenGTS --> OpenGTS : UDP Communication
+@enduml

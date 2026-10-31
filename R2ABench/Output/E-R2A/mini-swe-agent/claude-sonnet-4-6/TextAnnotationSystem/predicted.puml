@@ -1,0 +1,69 @@
+@startuml
+title Intelligent Text Annotation System (ITAS) - Architecture
+
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+package "Client Layer" {
+    [Vue 3.0 Frontend] as Frontend
+}
+
+package "Network and Gateway Layer" {
+    [Nginx Reverse Proxy] as Nginx
+    [Spring Gateway] as Gateway
+}
+
+package "Application Layer" {
+    package "Annotation Subsystem" {
+        [Annotation Service] as AnnotationSvc
+    }
+    package "Mining Subsystem" {
+        [Mining Service] as MiningSvc
+    }
+    [User and Auth Service] as AuthSvc
+    [File Conversion Service] as ConvertSvc
+}
+
+package "Messaging Layer" {
+    [RabbitMQ] as RabbitMQ
+}
+
+package "ML and Model Layer" {
+    [BERT Model] as BERT
+    [GPT API] as GPTAPI
+}
+
+package "Data Layer" {
+    database "MySQL" as MySQL
+    database "Minio" as Minio
+    database "Redis" as Redis
+}
+
+cloud "Tencent Cloud - Docker" as Cloud
+
+Frontend --> Nginx : HTTPS
+Nginx --> Gateway : forward
+Gateway --> AuthSvc
+Gateway --> AnnotationSvc
+Gateway --> MiningSvc
+
+AnnotationSvc --> RabbitMQ : publish jobs
+RabbitMQ --> ConvertSvc : consume tasks
+ConvertSvc --> Minio : store converted files
+
+AnnotationSvc --> MySQL
+AnnotationSvc --> Minio
+AnnotationSvc --> Redis
+AnnotationSvc --> BERT : paragraph inference
+
+MiningSvc --> GPTAPI : entity extraction
+MiningSvc --> MySQL
+MiningSvc --> Minio
+MiningSvc --> Redis
+
+AuthSvc --> MySQL
+AuthSvc --> Redis
+
+AnnotationSvc ..> MiningSvc : annotated data
+
+@enduml

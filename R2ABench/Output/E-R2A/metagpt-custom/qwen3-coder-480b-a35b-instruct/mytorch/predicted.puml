@@ -1,0 +1,69 @@
+@startuml
+title MyTorch System Architecture - Component/Deployment Diagram
+
+' Presentation Layer
+node PresentationLayer {
+    component "Frontend UI" as frontendUI
+}
+
+' Application Layer
+node ApplicationLayer {
+    component "Main Interface" as mainInterface
+    component "Configuration Interface" as configInterface
+    component "Training Interface" as trainingInterface
+    component "Inference Interface" as inferenceInterface
+    component "Backend Service" as backendService
+}
+
+' Framework Layer
+node FrameworkLayer {
+    component "MyTorch Framework" as myTorchFramework
+    component "Data Loader" as dataLoader
+    component "Trainer" as trainer
+    component "Inferencer" as inferencer
+    component "Weight Initializer" as weightInitializer
+    component "Classic Models Repository" as classicModelsRepo
+    component "Preset Datasets" as presetDatasets
+    component "GPU Accelerator" as gpuAccelerator
+}
+
+' Data Layer
+node DataLayer {
+    database "SQLite Database" as sqliteDB
+}
+
+' External Systems
+cloud "GPU Hardware/API" as gpuHardware
+
+' Dependencies
+frontendUI --> mainInterface : User Interaction
+mainInterface --> configInterface : Configure Models
+mainInterface --> trainingInterface : Start Training
+mainInterface --> inferenceInterface : Run Inference
+
+configInterface --> backendService : Configuration Requests
+trainingInterface --> backendService : Training Orchestration
+inferenceInterface --> backendService : Inference Orchestration
+
+backendService --> myTorchFramework : Execute Operations
+backendService --> sqliteDB : Persist Results
+
+myTorchFramework --> dataLoader : Load Data
+myTorchFramework --> trainer : Initiate Training
+myTorchFramework --> inferencer : Initiate Inference
+myTorchFramework --> weightInitializer : Initialize Weights
+myTorchFramework --> classicModelsRepo : Access Models
+myTorchFramework --> presetDatasets : Access Datasets
+
+trainer --> dataLoader : Load Training Data
+inferencer --> dataLoader : Load Inference Data
+
+trainer --> gpuAccelerator : Use GPU for Training
+inferencer --> gpuAccelerator : Use GPU for Inference
+
+gpuAccelerator --> gpuHardware : Access GPU Resources
+
+trainer --> sqliteDB : Save Model Weights
+inferencer --> sqliteDB : Save Inference Results
+
+@enduml

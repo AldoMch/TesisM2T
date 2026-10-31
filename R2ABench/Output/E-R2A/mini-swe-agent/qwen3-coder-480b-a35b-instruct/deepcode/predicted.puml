@@ -1,0 +1,76 @@
+@startuml
+!define RECTANGLE class
+!define DATABASE rectangle
+!define COMPONENT rectangle
+!define INTERFACE rectangle
+
+skinparam componentStyle rectangle
+
+title DeepCode System Architecture
+
+' Presentation Layer
+package "Frontend Layer" {
+  [Vue 3 Client] as client
+}
+
+' Presentation/API Layer
+package "Presentation Layer" {
+  [RESTful API] as api
+}
+
+' Business Logic Layer
+package "Business Layer" {
+  [User Management] as userModule
+  [Problem Management] as problemModule
+  [Solution Management] as solutionModule
+  [Forum Management] as forumModule
+  [AI Assistant] as aiModule
+  [Judging Service] as judgeModule
+}
+
+' Data Access Layer
+package "Data Access Layer" {
+  [MySQL Database] as mysql
+  [Redis Cache] as redis
+  [MinIO Storage] as minio
+}
+
+' External Services
+package "External Services" {
+  [LangChain4j LLM] as llm
+  [SMTP Server] as smtp
+  [JudgeHost/JudgeCore] as judgeHost
+}
+
+' Connections
+client --> api : HTTP/HTTPS
+api --> userModule : Service Calls
+api --> problemModule : Service Calls
+api --> solutionModule : Service Calls
+api --> forumModule : Service Calls
+api --> aiModule : Service Calls
+api --> judgeModule : Service Calls
+
+userModule --> mysql : Data Access
+problemModule --> mysql : Data Access
+solutionModule --> mysql : Data Access
+forumModule --> mysql : Data Access
+aiModule --> mysql : Data Access
+judgeModule --> mysql : Data Access
+
+userModule --> redis : Cache
+problemModule --> redis : Cache
+solutionModule --> redis : Cache
+forumModule --> redis : Cache
+
+userModule --> minio : File Storage
+problemModule --> minio : File Storage
+solutionModule --> minio : File Storage
+forumModule --> minio : File Storage
+
+aiModule --> llm : AI Services
+userModule --> smtp : Email Notifications
+judgeModule --> judgeHost : Code Judging
+
+@enduml
+

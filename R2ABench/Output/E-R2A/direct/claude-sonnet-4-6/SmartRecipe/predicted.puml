@@ -1,0 +1,182 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+skinparam component {
+  BackgroundColor #EBF5EB
+  BorderColor #27AE60
+  FontColor #1A1A1A
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+  FontColor #1A1A1A
+}
+skinparam rectangle {
+  BackgroundColor #F9EBEA
+  BorderColor #C0392B
+  FontColor #1A1A1A
+}
+skinparam cloud {
+  BackgroundColor #F5EEF8
+  BorderColor #8E44AD
+  FontColor #1A1A1A
+}
+
+title Smart Recipe System — Architecture Diagram
+
+actor "General User" as GU
+actor "Health-Conscious User" as HCU
+actor "Food-Making User" as FMU
+actor "Food Critic" as FC
+actor "Catering Company" as CC
+actor "System Administrator" as SA
+
+node "Mobile Client Layer\n(Android / iOS)" {
+  component "Login Interface\n(FR-001, FR-002)" as UI_Login
+  component "User Main Interface\n(Search, Camera, Community)" as UI_Main
+  component "Photo Recognition Interface\n(FR-003)" as UI_Photo
+  component "Recipe Display Interface\n(FR-003, FR-004)" as UI_Recipe
+  component "Health Center / Nutrition\nAnalysis Interface\n(FR-005, FR-006, FR-007, FR-008)" as UI_Health
+  component "Community Sharing Interface\n(FR-009, FR-010, FR-015)" as UI_Community
+  component "Recommendation Interface\n(FR-011)" as UI_Recommend
+  component "Administrator Interface\n(FR-012, FR-013, FR-014)" as UI_Admin
+  component "Local Image Preprocessor\n(Validity Check, Cropping)" as LocalPrep
+}
+
+GU --> UI_Login
+HCU --> UI_Login
+FMU --> UI_Login
+FC --> UI_Login
+CC --> UI_Admin
+SA --> UI_Admin
+
+UI_Login --> UI_Main
+UI_Main --> UI_Photo
+UI_Main --> UI_Health
+UI_Main --> UI_Community
+UI_Main --> UI_Recommend
+UI_Photo --> LocalPrep
+UI_Photo --> UI_Recipe
+
+node "Backend Service Layer\n(Spring Boot — Business / Control / Service / Data Access)" {
+
+  rectangle "Control Layer" {
+    component "Auth Controller\n(FR-001, FR-002)" as AuthCtrl
+    component "Recipe Controller\n(FR-003, FR-004, FR-012, FR-013)" as RecipeCtrl
+    component "Health Controller\n(FR-005, FR-006, FR-007, FR-008)" as HealthCtrl
+    component "Community Controller\n(FR-009, FR-010, FR-015)" as CommunityCtrl
+    component "Recommendation Controller\n(FR-011)" as RecommendCtrl
+    component "Admin Controller\n(FR-012, FR-013, FR-014, FR-016)" as AdminCtrl
+  }
+
+  rectangle "Service Layer" {
+    component "User Service\n(Registration, Login, Profile)" as UserSvc
+    component "Recipe Service\n(Text Search, Recipe CRUD)" as RecipeSvc
+    component "Image Processing Service\n(Upload, URL Management)" as ImageSvc
+    component "Nutrition & Health Service\n(Analysis, Diet Plan, Check-in)" as NutritionSvc
+    component "Community Service\n(Share, Like, Comment, Review)" as CommunitySvc
+    component "Recommendation Service\n(Collaborative Filter, History)" as RecommendSvc
+    component "Merchant Service\n(Location, Map Display)" as MerchantSvc
+    component "Admin Management Service\n(User Mgmt, DB Mgmt, Feedback)" as AdminSvc
+    component "Catering Data Service\n(FR-016)" as CateringDataSvc
+  }
+
+  rectangle "Data Access Layer" {
+    component "User Repository" as UserRepo
+    component "Recipe Repository" as RecipeRepo
+    component "Health Repository" as HealthRepo
+    component "Community Repository" as CommunityRepo
+    component "Recommendation Repository" as RecommendRepo
+    component "Merchant Repository" as MerchantRepo
+  }
+}
+
+node "Flask Model Inference Service\n(Deep Learning)" {
+  component "Food Image Recognition Model\n(Preprocessed Matrix Input)" as MLModel
+  component "Recipe Generation Module" as RecipeGen
+  component "Ingredient Extraction Module" as IngredientExt
+}
+
+database "MySQL\n(Structured Data)" {
+  component "Users & Auth\n(DR-001, DR-002)" as DB_Users
+  component "Recipes & Ingredients\n(DR-004, DR-012, DR-013)" as DB_Recipes
+  component "Health & Chronic Disease\n(DR-005, DR-006, DR-007)" as DB_Health
+  component "Community & Comments\n(DR-011)" as DB_Community
+  component "Merchant & Food Recommend\n(DR-009, DR-010)" as DB_Merchant
+  component "User History & Recommend\n(DR-008, DR-014)" as DB_History
+  component "Images\n(DR-003)" as DB_Images
+}
+
+database "Redis Cache\n(NFR-004)" as Redis
+
+cloud "External / Infrastructure" {
+  component "Map Service\n(Merchant Location FR-015)" as MapService
+  component "Image Storage\n(URL-based DR-003)" as ImageStorage
+}
+
+' Mobile to Backend (Ajax / Direct Interaction)
+UI_Login ..> AuthCtrl : Ajax / Direct
+UI_Main ..> RecipeCtrl : Ajax / Direct
+UI_Photo ..> RecipeCtrl : Ajax / Direct
+UI_Health ..> HealthCtrl : Ajax / Direct
+UI_Community ..> CommunityCtrl : Ajax / Direct
+UI_Recommend ..> RecommendCtrl : Ajax / Direct
+UI_Admin ..> AdminCtrl : Ajax / Direct
+
+' Control to Service
+AuthCtrl --> UserSvc
+RecipeCtrl --> RecipeSvc
+RecipeCtrl --> ImageSvc
+HealthCtrl --> NutritionSvc
+CommunityCtrl --> CommunitySvc
+CommunityCtrl --> MerchantSvc
+RecommendCtrl --> RecommendSvc
+AdminCtrl --> AdminSvc
+AdminCtrl --> RecipeSvc
+AdminCtrl --> CateringDataSvc
+
+' Service to Flask Inference
+RecipeSvc --> MLModel : Image Matrix Vector
+MLModel --> RecipeGen
+RecipeGen --> IngredientExt
+MLModel ..> RecipeSvc : Recipe Result
+
+' Service to Data Access
+UserSvc --> UserRepo
+RecipeSvc --> RecipeRepo
+ImageSvc --> ImageStorage
+NutritionSvc --> HealthRepo
+NutritionSvc --> RecipeRepo
+CommunitySvc --> CommunityRepo
+RecommendSvc --> RecommendRepo
+RecommendSvc --> DB_History
+MerchantSvc --> MerchantRepo
+AdminSvc --> UserRepo
+AdminSvc --> RecipeRepo
+CateringDataSvc --> DB_History
+
+' Data Access to MySQL
+UserRepo --> DB_Users
+RecipeRepo --> DB_Recipes
+HealthRepo --> DB_Health
+CommunityRepo --> DB_Community
+MerchantRepo --> DB_Merchant
+RecommendRepo --> DB_History
+ImageSvc --> DB_Images
+
+' Redis Caching
+UserSvc ..> Redis : Cache Session / Token
+RecipeSvc ..> Redis : Cache Recipe Results
+NutritionSvc ..> Redis : Cache Nutrition Data
+RecommendSvc ..> Redis : Cache Recommendations
+
+' External
+MerchantSvc --> MapService : Merchant Coordinates
+
+@enduml

@@ -1,0 +1,47 @@
+@startuml
+title GKE Pub/Sub WebSocket Adapter - Architecture Overview
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam wrapWidth 200
+
+actor "Web Clients" as Clients
+
+cloud "Google Cloud Pub/Sub" as PubSub {
+  component "Topic" as Topic
+  component "Subscription\n(1 per running Pod)" as Subscription
+}
+
+node "GCP Project" as GCP {
+  node "GKE Cluster" as GKE {
+    component "Kubernetes ConfigMap\nitem: topic -> env SYMBOL" as ConfigMap
+    component "Kubernetes Service\nType: LoadBalancer\nTCP 80 -> Pod 8080" as LBService
+    component "Horizontal Pod Autoscaler (HPA)\nmin=1, max=2, CPU=80%" as HPA
+
+    node "Deployment: Adapter (1 topic per deployment)" as Deployment {
+      node "Pod (replicas N)" as Pod {
+        component "Adapter Container" as Container {
+          component "exec.sh\n(entrypoint)" as Exec
+          component "pulltop (Node.js)\nconsume topic messages" as Pulltop
+          component "websocketd\nlisten :8080" as Websocketd
+          database "Recent Message Cache\n(last 10 messages)" as Cache
+        }
+      }
+    }
+  }
+}
+
+' Relationships
+Clients --> LBService : WebSocket\n(TCP 80)
+LBService --> Websocketd : WS traffic -> :8080
+
+ConfigMap --> Container : Inject env SYMBOL
+Exec --> Pulltop : Start with\nSYMBOL parameter
+Topic --> Subscription : Messages
+Subscription --> Pulltop : Deliver messages
+Pulltop --> Cache : Store recent messages
+Cache --> Websocketd : Serve cached on connect
+Pulltop --> Websocketd : Stream messages
+
+HPA ..> Deployment : Scale replicas
+
+@enduml

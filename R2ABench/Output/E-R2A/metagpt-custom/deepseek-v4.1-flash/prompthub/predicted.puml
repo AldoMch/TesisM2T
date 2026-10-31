@@ -1,0 +1,125 @@
+@startuml
+
+package "Front-end Layer" {
+  component "Web UI" as FE_UI
+  component "Home / Artwork List UI" as FE_Home
+  component "Registration / Login / Account UI" as FE_Account
+  component "Artwork Detail UI" as FE_Detail
+  component "Upload / Edit UI" as FE_Upload
+  component "Favorite Management UI" as FE_Favorite
+  component "Administrator UI" as FE_Admin
+  component "Notification UI" as FE_Notification
+}
+
+package "Back-end Layer" {
+  interface "Business Service Facade" as BE_Facade
+  component "User Account Service" as BE_User
+  component "Artwork Service" as BE_Artwork
+  component "Review & Administration Service" as BE_Review
+  component "Favorite Service" as BE_Favorite
+  component "Comment & Reply Service" as BE_Comment
+  component "Social / Relationship Service" as BE_Social
+  component "Notification Service" as BE_Notification
+  component "Logging / Monitoring Component" as BE_Log
+  component "Email Verification / Alert Gateway" as BE_EmailGateway
+}
+
+package "Algorithm Support Layer" {
+  component "Recommendation Service" as ALG_Recommend
+  component "Recommendation Model Runtime" as ALG_Model
+}
+
+package "Data Persistence Layer" {
+  component "Data Access / Persistence" as DATA_Access
+  database "SQLite Database" as DB_SQLite
+  database "Future MySQL Migration Store" as DB_MySQL
+}
+
+package "Runtime / Deployment Layer" {
+  node "Ubuntu 22.04 Server" as NODE_Server {
+    node "Docker 20.10.17 Runtime" as NODE_Docker
+    component "Docker Reliability Restart" as DOCKER_Restart
+  }
+}
+
+package "Security & Communication Cross-Cutting Layer" {
+  component "Secure HTTP / TLS" as SEC_HTTP
+  component "User Authentication & Authorization" as SEC_Auth
+  component "Firewall / CORS / XSS / SQL-injection Protection" as SEC_Guard
+  component "Sensitive Data Encryption" as SEC_Crypto
+}
+
+cloud "Client Web Browsers" as EXT_Browser
+node "Client Operating Systems" as EXT_ClientOS
+cloud "Email Service" as EXT_Email
+cloud "Network Connectivity" as EXT_Network
+
+EXT_ClientOS --> EXT_Browser : hosts
+EXT_Browser --> FE_UI : uses
+EXT_Network --> EXT_Browser : connectivity
+EXT_Network --> NODE_Server : connectivity
+
+FE_UI --> FE_Home
+FE_UI --> FE_Account
+FE_UI --> FE_Detail
+FE_UI --> FE_Upload
+FE_UI --> FE_Favorite
+FE_UI --> FE_Admin
+FE_UI --> FE_Notification
+
+FE_UI --> SEC_HTTP : secure requests
+SEC_HTTP --> BE_Facade : routes
+FE_Home --> BE_Facade
+FE_Account --> BE_Facade
+FE_Detail --> BE_Facade
+FE_Upload --> BE_Facade
+FE_Favorite --> BE_Facade
+FE_Admin --> BE_Facade
+FE_Notification --> BE_Facade
+
+BE_Facade --> BE_User
+BE_Facade --> BE_Artwork
+BE_Facade --> BE_Review
+BE_Facade --> BE_Favorite
+BE_Facade --> BE_Comment
+BE_Facade --> BE_Social
+BE_Facade --> BE_Notification
+
+SEC_Auth --> BE_Facade : validates
+SEC_Guard --> BE_Facade : protects
+SEC_Crypto --> DATA_Access : encrypts sensitive data
+
+BE_User --> DATA_Access
+BE_Artwork --> DATA_Access
+BE_Review --> DATA_Access
+BE_Favorite --> DATA_Access
+BE_Comment --> DATA_Access
+BE_Social --> DATA_Access
+BE_Notification --> DATA_Access
+BE_Log --> DATA_Access
+
+DATA_Access --> DB_SQLite : persists / retrieves
+DB_SQLite ..> DB_MySQL : future migration
+
+BE_Artwork --> ALG_Recommend : requests popular / personalized recommendations
+BE_Social --> ALG_Recommend : supplies follow / browsing signals
+BE_Favorite --> ALG_Recommend : supplies favorite signals
+ALG_Recommend --> ALG_Model : uses
+ALG_Recommend --> DATA_Access : reads recommendation signals / preferences
+ALG_Recommend --> BE_Facade : returns recommended artworks
+
+BE_Comment --> BE_Notification : comment / reply events
+BE_Review --> BE_Notification : review progress events
+BE_Review --> BE_Artwork : approve / reject artworks
+BE_Review --> BE_Comment : view / delete comments and replies
+
+BE_User --> BE_EmailGateway : registration / password recovery
+BE_EmailGateway --> EXT_Email : sends verification codes and alerts
+BE_Log --> EXT_Email : sends error alerts
+
+DOCKER_Restart --> NODE_Docker : restarts on failure
+NODE_Docker --> BE_Facade : hosts
+NODE_Docker --> ALG_Recommend : hosts
+NODE_Server --> NODE_Docker : provides runtime
+
+@enduml

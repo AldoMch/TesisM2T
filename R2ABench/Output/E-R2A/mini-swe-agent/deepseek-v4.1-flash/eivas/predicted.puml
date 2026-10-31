@@ -1,0 +1,108 @@
+@startuml EIVAS_Architecture
+title EIVAS - Epidemiological Investigation & Visualization Analysis System (Layered Architecture)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' Presentation Layer (Web Client)
+' ============================================================
+package "Presentation Layer (Web Browser Client)" as PRES {
+  component "Epidemiological Reporting Form UI" as UI_FORM
+  component "Case Management List UI" as UI_CASE
+  component "Map Display Interface" as UI_MAP
+  component "Association Info / Relationship Graph UI" as UI_ASSOC
+  component "Statistical Charts UI\n(Heat Map, Flow Map, Line/Pie/Bar)" as UI_CHART
+}
+
+' ============================================================
+' Application / Service Layer (Back-End)
+' ============================================================
+package "Application / Service Layer (Back-End)" as APP {
+  component "Web API Gateway\n(Request Routing & Interface Facade)" as API
+
+  package "Business Services" as SVC {
+    component "Epidemiological Reporting Service" as SVC_REPORT
+    component "Case Management Service\n(Query/Search/Sort/Filter/Complete)" as SVC_CASE
+    component "Individual Case Analysis Service\n(Itinerary & Association Query)" as SVC_INDIV
+    component "Overall Analysis Service" as SVC_OVERALL
+    component "Outbreak Overview Service\n(Temperature/Climate Statistics)" as SVC_OUTBREAK
+  }
+
+  package "Support Services" as SUPPORT {
+    component "Data Quality & Validation Service\n(Error / Management Prompts)" as SVC_QUALITY
+    component "Security & Privacy Service\n(PI Query Encryption, IP Cooldown)" as SVC_SEC
+    component "Algorithm Module\n(Risk Calc, Clustering, Flow Graph)" as ALGO
+  }
+}
+
+' ============================================================
+' Data Layer
+' ============================================================
+package "Data Layer" as DATA {
+  database "Back-End Database" as DB {
+    component "Case Investigation Store\n(Basic / Disease / Imported-Case Info)" as DB_CASE
+    component "Itinerary Trajectory Store" as DB_ITIN
+    component "Association Analysis Store" as DB_ASSOC
+    component "Case Management Records" as DB_MGMT
+    component "Analytical / Statistical Chart Data" as DB_CHART
+  }
+}
+
+' ============================================================
+' External Systems
+' ============================================================
+package "External Systems" as EXT {
+  component "Map / Geographic Visualization Service" as EXT_MAP
+  component "Climate Data Source\n(Temperature & Humidity)" as EXT_CLIMATE
+}
+
+' ============================================================
+' Infrastructure / Deployment
+' ============================================================
+package "Infrastructure / Deployment" as INFRA {
+  node "Primary Application Server" as NODE_PRIMARY
+  node "Backup Application Server\n(failover < 20 min)" as NODE_BACKUP
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+UI_FORM --> API : submit investigation
+UI_CASE --> API : query / manage cases
+UI_MAP --> EXT_MAP : render paths & locations
+UI_ASSOC --> API : request association / graph
+UI_CHART --> API : request analysis charts
+
+API --> SVC_REPORT
+API --> SVC_CASE
+API --> SVC_INDIV
+API --> SVC_OVERALL
+API --> SVC_OUTBREAK
+
+SVC_REPORT --> SVC_QUALITY : validate input
+SVC_REPORT --> DB_CASE : store investigation
+SVC_CASE --> DB_MGMT : read / update records
+SVC_CASE --> DB_CASE : search / filter
+SVC_INDIV --> DB_ITIN : query itinerary
+SVC_INDIV --> DB_ASSOC : query associations
+SVC_INDIV --> ALGO : relationship graph
+SVC_OVERALL --> ALGO : flow map / clustering
+SVC_OVERALL --> DB_CASE : retrieve investigation data
+SVC_OVERALL --> SVC_QUALITY : data sufficiency check
+SVC_OUTBREAK --> DB_CHART : read statistics
+SVC_OUTBREAK --> EXT_CLIMATE : temperature & humidity
+
+ALGO --> DB_CASE
+ALGO --> DB_CHART : produce chart data
+
+SVC_SEC --> SVC_CASE : encrypt PI queries
+SVC_SEC --> API : IP cooldown enforcement
+SVC_QUALITY --> API : error / management prompts
+
+NODE_PRIMARY -down-> NODE_BACKUP : failover replication
+APP -down-> NODE_PRIMARY
+DATA -down-> NODE_PRIMARY
+
+@enduml

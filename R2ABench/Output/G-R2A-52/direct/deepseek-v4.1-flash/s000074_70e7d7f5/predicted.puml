@@ -1,0 +1,92 @@
+@startuml
+title Tengine Lite - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Developer / Integrator" as dev
+actor "Tool User" as tooluser
+
+package "Tengine Lite" {
+      component "Example Applications" as examples
+      note right of examples
+        Classification, Facial Landmark Detection,
+        SSD Object Detection, RetinaFace,
+        Yolact Instance Segmentation, U-Net,
+        YoloV3, YoloV4-tiny, YoloV5s,
+        NanoDet, EfficientDet,
+        OpenPose, HRNet,
+        CRNN Chinese Character Recognition
+      end note
+
+      component "C API\n(Original Tengine Compatible)" as capi
+      component "C++ API\n(Documentation Entry)" as cppapi
+      component "Python API\n(Documentation Entry)" as pyapi
+
+      package "Core Architecture" {
+            component "device" as device
+            note right of device : NN Operators backend
+
+            component "operator" as operator
+            note right of operator : Registration & initialization\nof NN Operators
+
+            component "scheduler" as scheduler
+            note right of scheduler : Scheduling & execution of\nNNIR, computation graphs,\nhardware resources, serializer
+
+            component "serializer" as serializer
+            note right of serializer : Decodes binary tmfile\ninto serialized model parameters
+      }
+
+      package "Model Conversion Tooling" {
+            component "Linux Pre-compiled\nConverter" as linuxconv
+            component "WebAssembly-based\nOnline Converter" as wasmconv
+      }
+}
+
+database "Local Assets\n(Images & Models)" as assets
+database "Binary tmfile Models" as tmfile
+database "Converted Model\nArtifacts" as artifacts
+
+node "Web Browser\n(WebAssembly Support)" as browser
+node "Linux Environment" as linux
+node "CMake Build\nEnvironment" as cmake
+
+' Relationships
+dev --> examples
+dev --> capi
+dev --> cppapi
+dev --> pyapi
+tooluser --> linuxconv
+tooluser --> wasmconv
+
+examples --> capi : uses
+examples ..> assets : reads local images/models
+
+capi --> scheduler
+cppapi --> scheduler
+pyapi --> scheduler
+
+scheduler --> device : uses backend
+scheduler --> operator : registers/initializes
+scheduler --> serializer : invokes decoding
+serializer --> tmfile : reads binary
+serializer --> assets : produces serialized params
+
+linuxconv --> artifacts : produces
+wasmconv --> artifacts : produces
+
+browser --> wasmconv : executes locally
+wasmconv ..> browser : runs in
+linuxconv ..> linux : runs on
+
+cmake ..> capi : builds
+cmake ..> cppapi : builds
+cmake ..> pyapi : builds
+cmake ..> examples : builds
+
+note bottom of wasmconv
+  Converts models locally in the browser.
+  No private data uploaded.
+end note
+
+@enduml

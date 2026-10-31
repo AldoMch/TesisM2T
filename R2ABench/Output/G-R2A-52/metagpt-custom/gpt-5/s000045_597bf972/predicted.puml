@@ -1,0 +1,82 @@
+@startuml
+
+node "Android Device" as Device {
+  node "Host Android App" as Host {
+    node "APM SDK Component" as SDK {
+      package "Scheduling Layer" {
+        component "WorkHandlerManager" as WorkHandlerManager
+        component "MainThreadHandlerProvider" as MainThreadHandlerProvider
+      }
+
+      package "Upload Processing Layer" {
+        component "UploadCoordinator" as UploadCoordinator
+        component "StoragePopper" as StoragePopper
+        component "UploadDirectoryAccessor" as UploadDirectoryAccessor
+        component "FileContentReader" as FileContentReader
+        component "ContextParamDeriver" as ContextParamDeriver
+        component "UploadResultHandler" as UploadResultHandler
+      }
+
+      package "Sender Integration Layer" {
+        component "SenderAdapter" as SenderAdapter
+      }
+
+      package "HTTP Instrumentation Layer" {
+        component "ResponseHandlerInstrumentor" as ResponseHandlerInstrumentor
+        component "ContentBufferingEntityWrapper" as ContentBufferingEntityWrapper
+        component "CountingInputStreamCache" as CountingInputStreamCache
+        component "TransactionStateRegistry" as TransactionStateRegistry
+      }
+
+      package "Platform/Environment Adapters Layer" {
+        component "NetworkConnectivityChecker" as NetworkConnectivityChecker
+      }
+    }
+  }
+
+  node "Android Handler/HandlerThread/Looper APIs" as AndroidLooperAPIs
+  interface "Android Context" as AndroidContext
+  cloud "Network Connectivity Environment" as NetworkEnv
+  node "Local Upload Directory / File System" as LocalFS
+  cloud "QAPM Configuration Manager" as QAPMConfig
+  interface "Configured Sender" as ConfiguredSender
+
+  package "Apache HttpClient" as ApacheHttp {
+    interface "ResponseHandler" as ApacheResponseHandler
+    interface "HttpResponse" as ApacheHttpResponse
+    interface "HttpEntity" as ApacheHttpEntity
+  }
+}
+
+UploadCoordinator --> WorkHandlerManager
+UploadCoordinator --> NetworkConnectivityChecker
+UploadCoordinator --> StoragePopper
+UploadCoordinator --> UploadDirectoryAccessor
+UploadCoordinator --> FileContentReader
+UploadCoordinator --> ContextParamDeriver
+UploadCoordinator --> SenderAdapter
+
+UploadDirectoryAccessor --> LocalFS
+UploadDirectoryAccessor --> AndroidContext
+FileContentReader --> UploadDirectoryAccessor
+ContextParamDeriver --> AndroidContext
+
+SenderAdapter --> QAPMConfig
+SenderAdapter --> ConfiguredSender
+SenderAdapter --> UploadResultHandler
+
+UploadResultHandler --> UploadDirectoryAccessor
+
+ResponseHandlerInstrumentor --> ApacheResponseHandler
+ResponseHandlerInstrumentor --> TransactionStateRegistry
+ResponseHandlerInstrumentor --> ApacheHttpResponse
+
+ContentBufferingEntityWrapper --> ApacheHttpEntity
+ContentBufferingEntityWrapper --> CountingInputStreamCache
+
+WorkHandlerManager --> AndroidLooperAPIs
+MainThreadHandlerProvider --> AndroidLooperAPIs
+
+NetworkConnectivityChecker --> NetworkEnv
+
+@enduml

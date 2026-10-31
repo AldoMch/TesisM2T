@@ -1,0 +1,154 @@
+@startuml HypnoLog_Server_Architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam packageBorderColor #555555
+skinparam packageFontStyle bold
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+}
+skinparam node {
+  BackgroundColor #EEF5EE
+  BorderColor #336633
+}
+
+'-------------------------------
+' External HTTP Producers
+'-------------------------------
+component [HTTP Logging Producers] as HTTPProducers
+
+'-------------------------------
+' Server Runtime Layer
+'-------------------------------
+node "Server Runtime Layer" {
+
+  component [StartupScript\n(bin/www)] as StartupScript
+  component [HttpServer\n(Node.js HTTP)] as HttpServer
+  component [ExpressApp\n(Express)] as ExpressApp
+
+  package "Middleware Layer" {
+    component [JsonBodyParser\n(express.json 50 mb limit)] as JsonBodyParser
+    component [StaticFileServer\n(express.static /public)] as StaticFileServer
+  }
+
+  package "Ingestion Layer" {
+    component [LoggingRouter\n(POST /logger/in\nGET /logger/status)] as LoggingRouter
+  }
+
+  package "Transport Layer" {
+    component [SocketIOServer\n(Socket.IO Server)] as SocketIOServer
+    component [ClientRegistry\n(Connected Client List)] as ClientRegistry
+  }
+
+}
+
+'-------------------------------
+' Browser Runtime
+'-------------------------------
+node "Browser Runtime" {
+
+  package "Browser Client Layer" {
+    component [BrowserSocketClient\n(Socket.IO Client)] as BrowserSocketClient
+    component [SchemaValidator\n(Ajv-compiled)] as SchemaValidator
+    component [AjvLibrary\n(Ajv npm bundle)] as AjvLib
+    component [ErrorWrapper\n(HypnoLog-error)] as ErrorWrapper
+    component [UIStateUpdater\n(last-update timestamp)] as UIStateUpdater
+    component [ReceivedDataStore\n(In-Memory Array)] as ReceivedDataStore
+  }
+
+  package "Window Dispatch Layer" {
+    component [WindowDispatcher] as WindowDispatcher
+    component [DefaultWindow] as DefaultWindow
+  }
+
+  package "Visualizer Layer" {
+    component [VisualizerConfig\n(Default Config)] as DefaultConfig
+    component [UserConfig\n(User Override Config)] as UserConfig
+    component [VisualizerLoader\n(Loads ordered list\nfrom config)] as VisualizerLoader
+    component [VisualizerDispatcher\n(Ordered first-match:\ncanDisplay then display)] as VisualizerDispatcher
+    component [VisualizerPlugins\n(Ordered Plugin Modules)] as VisualizerPlugins
+  }
+
+  package "Tag and Name UI Layer" {
+    component [TagFilter\n(CSS class / filter\nby tags)] as TagFilter
+    component [NameRenderer\n(variable-name\nprefix element)] as NameRenderer
+  }
+
+}
+
+'-------------------------------
+' Interfaces
+'-------------------------------
+() "POST /logger/in\nand\nGET /logger/status" as LoggerAPI
+() "Socket.IO notification event" as NotificationEvent
+() "Client URL stdout announcement" as URLAnnounce
+
+'-------------------------------
+' Server Runtime Relationships
+'-------------------------------
+StartupScript --> HttpServer : creates and starts\n(port 7000 or CLI arg)
+StartupScript --> URLAnnounce : prints client URL\nto stdout (FR-016)
+HttpServer --> ExpressApp : wraps
+ExpressApp --> JsonBodyParser : registers middleware\n(50 mb JSON limit)
+ExpressApp --> StaticFileServer : registers middleware\n(serves /public dir)
+ExpressApp --> LoggingRouter : mounts at /logger\n(after body parser)
+HttpServer --> SocketIOServer : Socket.IO attaches\nto HTTP server instance
+
+'-------------------------------
+' Client Registry Lifecycle
+'-------------------------------
+SocketIOServer --> ClientRegistry : registers client on connect\nremoves client on disconnect
+
+'-------------------------------
+' Ingestion Flow
+'-------------------------------
+HTTPProducers --> LoggerAPI
+LoggerAPI --> LoggingRouter
+LoggingRouter --> SocketIOServer : emit parsed body to\nconnected display clients
+
+'-------------------------------
+' Transport to Browser
+'-------------------------------
+SocketIOServer --> ClientRegistry : resolves connected\nclient sockets for emit
+SocketIOServer --> NotificationEvent : broadcasts to\nregistered clients
+
+'-------------------------------
+' Static Asset Loading
+'-------------------------------
+BrowserSocketClient ..> StaticFileServer : loads /client.html\nand JS bundles
+
+'-------------------------------
+' Browser Client Pipeline
+'-------------------------------
+NotificationEvent --> BrowserSocketClient : receives notification events
+BrowserSocketClient --> SchemaValidator : passes every\nnotification payload
+AjvLib --> SchemaValidator : compiles and executes\nschema validation
+SchemaValidator --> UIStateUpdater : valid payload triggers\nlast-update timestamp update
+SchemaValidator --> ErrorWrapper : invalid payloads\nwrapped as HypnoLog-error
+ErrorWrapper --> UIStateUpdater : error-wrapped payload\ntriggers timestamp update
+UIStateUpdater --> ReceivedDataStore : stores validated or\nerror-wrapped object
+UIStateUpdater --> WindowDispatcher : sends object to\nwindow dispatcher (FR-008)
+
+'-------------------------------
+' Window Dispatch Flow
+'-------------------------------
+WindowDispatcher --> DefaultWindow : dispatches to all\nregistered windows
+
+'-------------------------------
+' Visualizer Flow
+'-------------------------------
+DefaultConfig --> VisualizerLoader : provides default\nvisualizer order
+UserConfig --> VisualizerLoader : overrides default\nconfiguration (C-008)
+VisualizerLoader --> VisualizerDispatcher : supplies ordered\nvisualizer module list
+DefaultWindow --> VisualizerDispatcher : delegates\nDOM element creation
+VisualizerDispatcher --> VisualizerPlugins : iterates in order:\ncanDisplay() then display()\non first matching plugin (C-007)
+
+'-------------------------------
+' Tag and Name UI Flow
+'-------------------------------
+VisualizerPlugins --> TagFilter : applies tag-based\nCSS classes and filtering (FR-013)
+VisualizerPlugins --> NameRenderer : renders variable-name\nprefix element (FR-014)
+
+@enduml

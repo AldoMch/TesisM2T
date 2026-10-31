@@ -1,0 +1,118 @@
+@startuml
+left to right direction
+
+skinparam componentStyle rectangle
+
+actor "Administrator" as admin
+actor "MyEMS Component" as myems_client
+actor "Third-Party Application" as thirdparty
+
+node "Browser" as browser {
+  component "MyEMS Admin SPA" as admin_spa {
+    component "Admin Routing Config" as routing_cfg
+    component "API Base Path Resolver\n{protocol}//{hostname}:{port}/api/" as basepath
+    component "/user Route\nTitle: MENU.USERSETTING.USER\n(Lazy-loaded)" as user_route
+    component "/contact Route\nTitle: MENU.SETTINGS.CONTACT\n(Lazy-loaded)" as contact_route
+    component "Tariff Settings Module\n(optional)" as tariff_mod
+    component "Category Settings Module\n(optional)" as category_mod
+
+    component "Lazy-Loading Mechanism" as lazy_loader
+    component "User Services/Controllers\n(lazy-loaded)" as user_services
+    component "Login Services/Controllers\n(lazy-loaded)" as login_services
+    component "UI Libraries\n(lazy-loaded)" as ui_libs
+    component "Contact Modules\n(lazy-loaded)" as contact_modules
+  }
+}
+
+node "Same-Origin Web Host" as webhost {
+  node "Reverse Proxy (e.g., Nginx)\n(optional)" as proxy
+}
+
+node "Python Runtime Host" as runtime {
+  component "MyEMS REST API Service\n(WSGI application)" as api
+  database "MySQL Database\n(optional)" as mysql
+}
+
+' User interacts with Admin SPA
+admin --> admin_spa : Uses (browser)
+
+' Admin SPA internal structure and routing
+routing_cfg --> user_route
+routing_cfg --> contact_route
+routing_cfg ..> tariff_mod : configured where applicable
+routing_cfg ..> category_mod : configured where applicable
+admin_spa --> basepath : compute API base path
+
+' Lazy-loading dependencies
+lazy_loader --> user_route
+lazy_loader --> contact_route
+user_route ..> user_services : lazy-load
+user_route ..> login_services : lazy-load
+user_route ..> ui_libs : lazy-load
+contact_route ..> contact_modules : lazy-load
+
+' Admin SPA to API via same-origin /api/
+admin_spa --> proxy : HTTP/HTTPS to /api/
+proxy --> api : Forward /api/ requests
+
+' Alternative equivalent routing (without reverse proxy)
+admin_spa ..> api : /api/ (equivalent routing)\n(dashed = optional path)
+
+' External clients to API
+myems_client --> api : RESTful API calls
+thirdparty --> api : RESTful API calls
+
+' API to Database (optional)
+api --> mysql : DB connectivity (if enabled)
+
+' Notes for key requirements and constraints
+note right of basepath
+- Computes API base path from current browser:
+  {protocol}//{hostname}:{port}/api/
+- Enforces suffix: /api/
+- Same-origin access preferred (NFR-001)
+end note
+
+note right of user_route
+- Path: /user
+- Title key: MENU.USERSETTING.USER
+- Declares route-specific dependencies
+end note
+
+note right of contact_route
+- Path: /contact
+- Title key: MENU.SETTINGS.CONTACT
+- Declares route-specific dependencies
+end note
+
+note right of tariff_mod
+- Settings workflow coverage (if configured)
+end note
+
+note right of category_mod
+- Settings workflow coverage (if configured)
+end note
+
+note bottom of proxy
+- Optional reverse proxy to avoid CORS
+- Not the only valid routing mechanism
+end note
+
+note right of api
+- Python runtime with required deps:
+  REST framework, CORS, WSGI,
+  spreadsheet/image handling,
+  MySQL connector
+- Supports development quick-run:
+  Linux & Windows
+- Supports Docker-based installation
+- Provides RESTful interfaces for
+  MyEMS components and third-party apps
+end note
+
+note right of mysql
+- Provide compatible configuration
+  when MySQL-backed features are enabled
+end note
+
+@enduml

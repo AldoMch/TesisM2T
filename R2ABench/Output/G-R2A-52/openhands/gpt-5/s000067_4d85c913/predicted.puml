@@ -1,0 +1,87 @@
+@startuml
+title TraceLeft Architecture - Component View
+
+skinparam componentStyle rectangle
+
+rectangle "Userspace" {
+  [TraceLeft CLI] as CLI
+  [Trace Command] as TraceCmd
+  [Event Registration Parser] as RegParser
+  [TraceLeft Library] as Lib
+  [Probe Loader] as Loader
+  [Userspace Tracer/Dispatcher] as Tracer
+  [Generator Subsystem] as Generator
+  database "Event Config Metadata\n(Proto/JSON)" as EventConfig
+  artifact "Generated eBPF\nHandler Source Code" as GeneratedHandlers
+  [gobpf Integration] as Gobpf
+}
+
+node "Linux Kernel (eBPF)" as Kernel {
+  [Main eBPF Program] as MainProg
+  collections "Handler Maps\nhandle_NAME_progs\nhandle_NAME_progs_ret" as HandlerMaps
+  folder "kprobe/kretprobe Hooks" as Hooks
+  [Handler eBPF Programs\n(default + process-specific)] as Handlers
+  queue "Perf Event Channel" as Perf
+  [Common Event Header] as CommonHeader
+}
+
+CLI --> TraceCmd : invoke trace
+TraceCmd --> RegParser : parse args
+RegParser --> Loader : event registration {ProgramID,Pids,ELFPath}
+Loader --> Gobpf : load probes/handlers
+Gobpf --> MainProg : load & attach
+MainProg --> Hooks : attach
+MainProg --> HandlerMaps : select by process context
+MainProg --> Handlers : tail call/select handler
+Handlers --> Perf : emit events
+Perf --> Tracer : deliver events
+Tracer --> Lib : dispatch using header
+EventConfig --> Generator : read metadata
+Generator --> GeneratedHandlers : generate sources
+GeneratedHandlers --> Loader : compile/build & load handlers
+
+note right of RegParser
+Produces event registration structure:
+- ProgramID
+- Pids
+- ELFPath
+end note
+
+note right of Loader
+Loads default and process-specific handler probes.
+Recognizes naming scheme for maps and probes.
+end note
+
+note right of HandlerMaps
+Map naming:
+- handle_NAME_progs
+- handle_NAME_progs_ret
+Probe naming:
+- kprobe/handle_NAME
+- kretprobe/handle_NAME
+NAME identifies the traced function.
+end note
+
+note right of Handlers
+If no handler is configured for a probe,
+the probe performs no handler action and returns 0.
+end note
+
+note bottom of Perf
+Perf-based channel transferring events from kernel to userspace.
+end note
+
+note right of CommonHeader
+All emitted events begin with this common leading section,
+enabling userspace dispatch.
+end note
+
+note bottom of Kernel
+Requires Linux with eBPF, kprobe, and kretprobe support.
+end note
+
+note bottom of Gobpf
+Technology constraint: implementation integrates via gobpf.
+end note
+
+@enduml

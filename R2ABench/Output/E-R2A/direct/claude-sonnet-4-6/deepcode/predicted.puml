@@ -1,0 +1,200 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam component {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam package {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam arrow {
+  Color #333333
+}
+skinparam defaultFontSize 11
+
+title DeepCode System Architecture
+
+actor "Visitor / Unregistered User" as Visitor
+actor "Registered User" as RegUser
+actor "Administrator" as Admin
+
+cloud "CDN\n(Static Resources)" as CDN
+cloud "DNS" as DNS
+cloud "LLM / AI Service\n(LangChain4j)" as LLMService
+cloud "SMTP Mail Service" as SMTP
+cloud "PagerDuty /\nDingTalk Robot" as AlertSink
+
+node "Client Browser\n(HTML5, Edge/Chrome/Opera/Safari/Firefox)" as Browser {
+  component "Vue 3 Front-End\n(TypeScript, Vuex, vue-router,\nAnt Design Vue, CodeMirror,\nwangEditor, ECharts, Axios,\nWebpack / Vue CLI / ESLint)" as VueFE
+}
+
+node "Production Server\n(Ubuntu 22.04 LTS | 8+ CPU | 32GB+ RAM | 4TB+ Disk)" as ProdServer {
+
+  node "Nginx Reverse Proxy\n(HTTPS Termination)" as Nginx
+
+  node "Spring Boot Application\n(JDK 21-LTS, Spring Boot 3.1.2)" as SpringApp {
+
+    package "Presentation / API Layer\n(RESTful API, Swagger)" as APILayer {
+      component "User Controller" as UserCtrl
+      component "Problem Controller" as ProbCtrl
+      component "Solution Controller" as SolCtrl
+      component "Forum Controller" as ForumCtrl
+      component "AI Controller" as AICtrl
+      component "Admin Controller" as AdminCtrl
+      component "Submission Controller" as SubCtrl
+    }
+
+    package "Security / Proxy Layer\n(Filter / Interceptor)" as SecurityLayer {
+      component "Auth Filter\n(JWT / OAuth 2.0)" as AuthFilter
+      component "Permission Interceptor" as PermInt
+      component "Input Validator\n(XSS / SQL Injection)" as InputVal
+    }
+
+    package "Business Layer" as BizLayer {
+      component "User Service\n(Register, Login, Profile,\nFollow, Ban/Unban)" as UserSvc
+      component "Problem Service\n(Browse, Upload, Review,\nEdit, Soft-Delete)" as ProbSvc
+      component "Solution Service\n(View, Publish, Edit,\nLike, Comment)" as SolSvc
+      component "Forum Service\n(Post, Comment, Like,\nReply, Report, Draft)" as ForumSvc
+      component "Submission Service\n(Submit, Record, History)" as SubSvc
+      component "AI Service\n(Recommend, Analyze,\nExplain, Review, @AI)" as AISvc
+      component "Admin Service\n(User Mgmt, Problem Review,\nForum Mgmt)" as AdminSvc
+      component "Notification Service\n(Email via SMTP)" as NotifSvc
+    }
+
+    package "Access / Integration Layer" as AccessLayer {
+      component "MyBatis-Plus\nData Access" as MyBatis
+      component "Redis Cache Client" as RedisClient
+      component "MinIO Client" as MinioClient
+      component "Judge HTTP Client\n(HTTP calls to JudgeHost)" as JudgeClient
+      component "LangChain4j\nLLM Client" as LLMClient
+      component "Thread Pool\n(WebFlux / Async)" as ThreadPool
+    }
+  }
+
+  node "Judging Service" as JudgingService {
+    component "JudgeHost\n(Task Scheduling,\nQueue Management,\nThread Allocation)" as JudgeHost
+    component "JudgeCore\n(Docker Container,\nCompile & Execute,\nCPU/Memory/Output Limits,\nseccomp syscall restriction)" as JudgeCore
+  }
+
+  database "MySQL 5.7.44\n(Business Data)" as MySQL {
+    component "Users / Follow" as DB_User
+    component "Questions / TestCases / Tags" as DB_Problem
+    component "Solutions / SolutionTags\nSolutionLike / SolutionComment" as DB_Solution
+    component "Records / Languages" as DB_Record
+    component "Discussions\nDiscussionLike / DiscussionComment" as DB_Forum
+    component "AI Results" as DB_AI
+  }
+
+  database "Redis 7.4.6\n(Cache & Sessions)" as Redis
+
+  database "MinIO\n(Object Storage:\nImages, Test Cases, Files)" as MinIO
+
+  node "Monitoring & Observability" as Monitoring {
+    component "Prometheus\n(Metrics Collection)" as Prometheus
+    component "Grafana\n(Metrics Display)" as Grafana
+    component "Alert Manager\n(CPU>80%, Mem>80%,\nErr Rate>1%,\nDB Latency>15s)" as AlertMgr
+  }
+
+  node "CI/CD & Deployment" as CICD {
+    component "GitLab CI/CD\n(Automated Build)" as GitLabCI
+    component "Docker\n(Container Images)" as Docker
+    component "Private Image Registry" as ImgReg
+    component "Kubernetes\n(Deploy, Scale, Rollback)" as K8s
+  }
+}
+
+' ─── User to Browser ───
+Visitor --> Browser : Browse (HTTP/HTTPS)
+RegUser --> Browser : Browse + Interact (HTTPS)
+Admin --> Browser : Manage (HTTPS)
+
+' ─── Browser to CDN / DNS ───
+Browser --> CDN : Static Resources\n(JS, CSS, Images)
+Browser --> DNS : Domain Resolution
+
+' ─── Browser to Nginx ───
+Browser --> Nginx : HTTPS Requests\n(API calls via Axios)
+
+' ─── Nginx to App ───
+Nginx --> APILayer : Reverse Proxy\n(HTTP intranet)
+
+' ─── Security Layer flow ───
+APILayer --> SecurityLayer : All requests pass through
+SecurityLayer --> BizLayer : Validated & authorized requests
+
+' ─── Business → Access ───
+UserSvc --> MyBatis
+ProbSvc --> MyBatis
+SolSvc --> MyBatis
+ForumSvc --> MyBatis
+SubSvc --> MyBatis
+AISvc --> MyBatis
+AdminSvc --> MyBatis
+
+UserSvc --> RedisClient
+SubSvc --> RedisClient
+ForumSvc --> RedisClient
+ProbSvc --> RedisClient
+
+ProbSvc --> MinioClient
+ForumSvc --> MinioClient
+SubSvc --> MinioClient
+
+SubSvc --> JudgeClient
+AISvc --> LLMClient
+NotifSvc --> SMTP
+
+BizLayer --> ThreadPool
+
+' ─── Access → Storage ───
+MyBatis --> MySQL
+RedisClient --> Redis
+MinioClient --> MinIO
+
+' ─── Judge flow ───
+JudgeClient --> JudgeHost : HTTP Request\n(code, problem ID, user ID)
+JudgeHost --> JudgeCore : Execute in Docker\n(resource limits, seccomp)
+JudgeCore --> MinIO : Fetch test case files
+JudgeHost --> JudgeClient : Return judging result
+
+' ─── AI flow ───
+LLMClient --> LLMService : API call\n(recommend, analyze,\nexplain, review, @AI)
+
+' ─── Notification ───
+NotifSvc --> SMTP : Send email\n(review result, notifications)
+
+' ─── Monitoring ───
+Prometheus --> SpringApp : Scrape metrics
+Prometheus --> MySQL : DB metrics
+Prometheus --> Redis : Cache metrics
+Prometheus --> Grafana : Feed metrics
+AlertMgr --> Prometheus : Threshold evaluation
+AlertMgr --> AlertSink : Alert delivery
+
+' ─── CI/CD ───
+GitLabCI --> Docker : Build image
+Docker --> ImgReg : Push to private registry
+ImgReg --> K8s : Deploy / Scale / Rollback
+K8s --> ProdServer : Orchestrate containers
+
+@enduml

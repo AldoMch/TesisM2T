@@ -1,0 +1,332 @@
+{
+  "requirements": [
+    {
+      "id": "AI-DrivenTextAdventureGame-R001",
+      "description": "The system shall support community users' registration, login, logout, password recovery, and password changes, persist login-state data, and support administrator login and logout."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R002-A",
+      "description": "The system shall store user profiles, support viewing one's own and other users' homepages, and allow users to change their avatars and usernames."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R002-B",
+      "description": "The system shall store personal browsing history and allow users to query and view their own browsing history."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R003",
+      "description": "The system shall distinguish ordinary users from administrators and verify administrator identity during administrator login."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R004-A",
+      "description": "The system shall support administrator user management, including viewing user lists, banning violating users, and restoring banned accounts."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R004-B",
+      "description": "The system shall support administrator content management, including viewing and reviewing posts, managing comments and replies, and handling user reports and feedback."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R005",
+      "description": "The system shall support community content and post retrieval and lifecycle management, including searches by topic, user, and post content, as well as post publication, editing, deletion, detail viewing, review-status queries, and homepage recommendations."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R006",
+      "description": "The system shall support user-post interactions, including favoriting posts, viewing and removing favorites, commenting, replying to comments, and deleting users' own comments or replies."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R007",
+      "description": "The system shall support notification management and notification settings, including generating unread notifications for comments, replies, or post reviews, marking notifications as read, deleting notifications, and storing users' notification preferences."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R008",
+      "description": "The system shall support game-save management, including creating, viewing, deleting, continuing, and sharing saves; prioritize cloud saves with local temporary-save fallback when unavailable; and verify save integrity."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R009",
+      "description": "The system shall support an AI-driven text-adventure game flow in which players set background information and advance the plot through choices, while generated content and game state remain consistent with that background."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R010",
+      "description": "The system shall provide reliability and fault-recovery capabilities, including controlling unexpected-exception frequency, detecting and performing basic fault repair, maintaining service continuity during network or server failures, and providing fault tolerance."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R011",
+      "description": "The system shall protect sensitive data and privileged operations by encrypting sensitive data in transit and at rest, restricting sensitive functions to authorized administrators, managing vulnerabilities regularly, and logging and monitoring sensitive operations and system events."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R012",
+      "description": "The system shall provide responsive runtime performance for core interactions, including timely login, logout, and game entry or exit, support concurrent users, control service resource usage, and provide timely client feedback."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R013",
+      "description": "The system shall run compatibly across different client device types and operating-system versions and adapt to different resolutions and screen sizes."
+    },
+    {
+      "id": "AI-DrivenTextAdventureGame-R014",
+      "description": "The system shall use a modular, loosely coupled implementation that is easy to maintain and extend, and shall support automated testing."
+    }
+  ],
+  "components": [
+    {
+      "id": "COMP-CLIENT-UI",
+      "name": "Cross-Platform Responsive Client",
+      "type": "Client Application",
+      "description": "Handles adaptive UI rendering across diverse screen sizes, local caching, temporary offline save storage fallback, and client feedback.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R008",
+        "AI-DrivenTextAdventureGame-R010",
+        "AI-DrivenTextAdventureGame-R012",
+        "AI-DrivenTextAdventureGame-R013",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-API-GATEWAY",
+      "name": "API Gateway & Security Proxy",
+      "type": "Gateway",
+      "description": "Acts as the single entry point providing TLS termination, request throttling, routing, load distribution, and initial authorization token validation.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R010",
+        "AI-DrivenTextAdventureGame-R011",
+        "AI-DrivenTextAdventureGame-R012",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-AUTH-SVC",
+      "name": "Authentication & Access Control Service",
+      "type": "Microservice",
+      "description": "Manages user registration, login/logout, password change/recovery, role-based access control, session token lifecycle, and privileged administrator verification.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R001",
+        "AI-DrivenTextAdventureGame-R003",
+        "AI-DrivenTextAdventureGame-R011",
+        "AI-DrivenTextAdventureGame-R012",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-PROFILE-SVC",
+      "name": "User Profile & History Service",
+      "type": "Microservice",
+      "description": "Maintains user profile details, avatar/username configurations, and user browsing history.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R002-A",
+        "AI-DrivenTextAdventureGame-R002-B",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-ADMIN-SVC",
+      "name": "Admin Management & Moderation Service",
+      "type": "Microservice",
+      "description": "Enables administrators to inspect user lists, ban or unban accounts, moderate content, review flagged posts and comments, and handle user reports.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R003",
+        "AI-DrivenTextAdventureGame-R004-A",
+        "AI-DrivenTextAdventureGame-R004-B",
+        "AI-DrivenTextAdventureGame-R011",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-COMMUNITY-SVC",
+      "name": "Community & Interaction Service",
+      "type": "Microservice",
+      "description": "Manages post lifecycle, indexing, multi-criteria search, recommendations, and user interactions including comments, replies, and favorites.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R005",
+        "AI-DrivenTextAdventureGame-R006",
+        "AI-DrivenTextAdventureGame-R012",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-NOTIFICATION-SVC",
+      "name": "Notification Service",
+      "type": "Microservice",
+      "description": "Dispatches unread notification alerts for interactions and review events, manages notification read/deletion states, and stores user notification preferences.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R007",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-GAME-ENGINE",
+      "name": "AI Text-Adventure Engine",
+      "type": "Microservice",
+      "description": "Orchestrates background world setup, context maintenance, plot progression via player choices, and consistent narrative generation with external LLM backends.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R009",
+        "AI-DrivenTextAdventureGame-R010",
+        "AI-DrivenTextAdventureGame-R012",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-SAVE-MGR",
+      "name": "Game Save Management Service",
+      "type": "Microservice",
+      "description": "Handles cloud game saves, integrity validation, save sharing, save retrieval, and sync resolution with local client backups.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R008",
+        "AI-DrivenTextAdventureGame-R010",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-AUDIT-MONITOR",
+      "name": "Audit Logging & Observability Platform",
+      "type": "Infrastructure Service",
+      "description": "Collects audit logs of sensitive/privileged operations, monitors system health and resource consumption, handles alerting, and supports automated self-repair hooks.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R010",
+        "AI-DrivenTextAdventureGame-R011",
+        "AI-DrivenTextAdventureGame-R012",
+        "AI-DrivenTextAdventureGame-R014"
+      ]
+    },
+    {
+      "id": "COMP-DATA-STORE",
+      "name": "Encrypted Persistence Store",
+      "type": "Data Store",
+      "description": "Provides encrypted storage at rest for user accounts, profiles, community content, notifications, and cloud save states.",
+      "tracesTo": [
+        "AI-DrivenTextAdventureGame-R001",
+        "AI-DrivenTextAdventureGame-R002-A",
+        "AI-DrivenTextAdventureGame-R002-B",
+        "AI-DrivenTextAdventureGame-R005",
+        "AI-DrivenTextAdventureGame-R006",
+        "AI-DrivenTextAdventureGame-R008",
+        "AI-DrivenTextAdventureGame-R011"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "CONN-CLIENT-GATEWAY",
+      "source": "COMP-CLIENT-UI",
+      "target": "COMP-API-GATEWAY",
+      "protocol": "HTTPS / WSS",
+      "description": "Encrypted communication channel for client requests, UI events, and real-time narrative streaming."
+    },
+    {
+      "id": "CONN-GATEWAY-AUTH",
+      "source": "COMP-API-GATEWAY",
+      "target": "COMP-AUTH-SVC",
+      "protocol": "gRPC",
+      "description": "Routes identity, registration, login, and authorization validation requests."
+    },
+    {
+      "id": "CONN-GATEWAY-PROFILE",
+      "source": "COMP-API-GATEWAY",
+      "target": "COMP-PROFILE-SVC",
+      "protocol": "gRPC",
+      "description": "Routes user homepage queries, profile edits, and browsing history queries."
+    },
+    {
+      "id": "CONN-GATEWAY-ADMIN",
+      "source": "COMP-API-GATEWAY",
+      "target": "COMP-ADMIN-SVC",
+      "protocol": "gRPC",
+      "description": "Forwards privileged administrator operations and review workflows."
+    },
+    {
+      "id": "CONN-GATEWAY-COMMUNITY",
+      "source": "COMP-API-GATEWAY",
+      "target": "COMP-COMMUNITY-SVC",
+      "protocol": "gRPC",
+      "description": "Routes community content queries, post lifecycle commands, and comment/favorite actions."
+    },
+    {
+      "id": "CONN-GATEWAY-NOTIF",
+      "source": "COMP-API-GATEWAY",
+      "target": "COMP-NOTIFICATION-SVC",
+      "protocol": "gRPC",
+      "description": "Transfers notification settings and retrieval requests."
+    },
+    {
+      "id": "CONN-GATEWAY-ENGINE",
+      "source": "COMP-API-GATEWAY",
+      "target": "COMP-GAME-ENGINE",
+      "protocol": "gRPC / WSS",
+      "description": "Forwards player narrative choices and world initialization requests."
+    },
+    {
+      "id": "CONN-GATEWAY-SAVE",
+      "source": "COMP-API-GATEWAY",
+      "target": "COMP-SAVE-MGR",
+      "protocol": "gRPC",
+      "description": "Handles save game creation, synchronization, sharing, and download."
+    },
+    {
+      "id": "CONN-COMMUNITY-NOTIF",
+      "source": "COMP-COMMUNITY-SVC",
+      "target": "COMP-NOTIFICATION-SVC",
+      "protocol": "Async Message Queue",
+      "description": "Triggers notification events for post comments and replies."
+    },
+    {
+      "id": "CONN-ADMIN-NOTIF",
+      "source": "COMP-ADMIN-SVC",
+      "target": "COMP-NOTIFICATION-SVC",
+      "protocol": "Async Message Queue",
+      "description": "Triggers notification events when posts are reviewed or moderation actions occur."
+    },
+    {
+      "id": "CONN-ADMIN-COMMUNITY",
+      "source": "COMP-ADMIN-SVC",
+      "target": "COMP-COMMUNITY-SVC",
+      "protocol": "gRPC",
+      "description": "Applies administrative moderation actions on community posts and comments."
+    },
+    {
+      "id": "CONN-ADMIN-PROFILE",
+      "source": "COMP-ADMIN-SVC",
+      "target": "COMP-PROFILE-SVC",
+      "protocol": "gRPC",
+      "description": "Enforces user ban and restoration status on profile records."
+    },
+    {
+      "id": "CONN-ENGINE-SAVE",
+      "source": "COMP-GAME-ENGINE",
+      "target": "COMP-SAVE-MGR",
+      "protocol": "gRPC",
+      "description": "Persists and loads narrative game state snapshots and verification hashes."
+    },
+    {
+      "id": "CONN-SVC-DATASTORE",
+      "source": "COMP-AUTH-SVC",
+      "target": "COMP-DATA-STORE",
+      "protocol": "Database Protocol (TLS)",
+      "description": "Persists credentials, roles, and session records into the encrypted database."
+    },
+    {
+      "id": "CONN-COMM-DATASTORE",
+      "source": "COMP-COMMUNITY-SVC",
+      "target": "COMP-DATA-STORE",
+      "protocol": "Database Protocol (TLS)",
+      "description": "Stores and queries posts, replies, and interaction data."
+    },
+    {
+      "id": "CONN-SAVE-DATASTORE",
+      "source": "COMP-SAVE-MGR",
+      "target": "COMP-DATA-STORE",
+      "protocol": "Database Protocol (TLS)",
+      "description": "Stores cloud save binary/JSON blobs and integrity checksums."
+    },
+    {
+      "id": "CONN-GATEWAY-AUDIT",
+      "source": "COMP-API-GATEWAY",
+      "target": "COMP-AUDIT-MONITOR",
+      "protocol": "gRPC / OpenTelemetry",
+      "description": "Transfers access metrics, traffic spikes, and system performance telemetry."
+    },
+    {
+      "id": "CONN-ADMIN-AUDIT",
+      "source": "COMP-ADMIN-SVC",
+      "target": "COMP-AUDIT-MONITOR",
+      "protocol": "gRPC / Structured Logging",
+      "description": "Logs sensitive administrative operations and security audit trails."
+    }
+  ]
+}

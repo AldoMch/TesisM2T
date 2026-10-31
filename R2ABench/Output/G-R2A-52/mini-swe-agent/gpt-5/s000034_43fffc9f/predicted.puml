@@ -1,0 +1,90 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment left
+
+title torc_py Task-Based Parallelism - Layered Architecture
+
+package "Application Layer" {
+  component "Python Application" as app
+  component "App-level MPI code (optional)" as app_mpi
+}
+
+package "torc_py API Layer" {
+  component "torc Python Module" as torc_api
+  component "Task API\nsubmit | wait | map | future" as task_api
+  component "Callback API" as cb_api
+  component "SPMD API" as spmd_api
+}
+
+package "Runtime Layer" {
+  component "Task & Future Manager" as future_mgr
+  component "Scheduler & Worker Pool" as scheduler
+  component "Worker Queues" as queues <<Queue>>
+  component "Callback Dispatcher" as callback
+  component "Map Executor" as map_exec
+  component "Stealing Coordinator" as steal
+  component "SPMD Controller" as spmd_ctrl
+  component "Environment Config Reader" as envcfg
+  component "Timing / Monitoring" as timing
+  component "MPI Communicator (mpi4py)" as mpi_iface
+}
+
+package "External & Platform" {
+  component "Environment Variables\nTORC_WORKERS | TORC_STEALING |\nTORC_SERVER_YIELDTIME | TORC_WORKER_YIELDTIME" as env
+  component "MPI Runtime / mpirun" as mpi_rt
+  component "OS Threads" as os_threads
+  database "HDF5 Storage (examples)" as hdf5
+  component "Optional libs:\nNumPy / CMA / Pillow / h5py" as opt_libs
+}
+
+' Application -> API
+app --> task_api : submit/map/wait
+app --> cb_api : register/use callbacks
+app --> spmd_api : spmd(function)
+app_mpi ..> mpi_rt : uses (via mpi4py in SPMD)
+
+' API -> Runtime
+torc_api --|> task_api
+torc_api --|> cb_api
+torc_api --|> spmd_api
+
+task_api --> future_mgr
+task_api --> scheduler : schedule tasks
+cb_api --> callback
+spmd_api --> spmd_ctrl
+
+' Runtime internals and platform
+scheduler --> queues
+scheduler --> os_threads : execute tasks
+callback --> future_mgr : deliver completed results
+map_exec --> scheduler : partition & enqueue work
+steal --> queues : inspect/move tasks
+steal ..> mpi_iface : inter-process coordination (optional)
+spmd_ctrl ..> mpi_iface : broadcast/collective
+future_mgr ..> timing
+envcfg <-- env : read at startup
+envcfg --> scheduler : configure workers
+envcfg --> steal : enable/disable stealing
+mpi_iface --> mpi_rt
+
+' Example data flow (image preprocessing)
+app --> map_exec : map(images)
+map_exec ..> opt_libs : image ops (optional)
+map_exec ..> hdf5 : write processed data (via app)
+
+' External compatibility note
+note bottom of spmd_ctrl
+  SPMD mode executes a function on all MPI ranks
+  and allows application-level MPI calls while
+  hiding internal MPI details from normal task users.
+end note
+
+' Distribution & load balancing note
+note right of scheduler
+  Tasks are assigned cyclically across available workers by default.
+  When enabled, idle workers can steal tasks from other queues.
+end note
+
+@enduml

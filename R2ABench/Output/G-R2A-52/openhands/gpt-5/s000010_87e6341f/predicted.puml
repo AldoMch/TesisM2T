@@ -1,0 +1,98 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+left to right direction
+title Home Recipes Full-Stack Architecture
+
+rectangle "Shared Protocol Buffers Contract (.proto)" as Proto <<contract>>
+
+component "protoc + plugins\n(Dart, Go, gRPC-Gateway)" as Protoc <<tool>>
+component "Generated Dart gRPC Client" as DartStub <<generated>>
+component "Generated Go gRPC Server Stubs" as GoStub <<generated>>
+component "Generated HTTP Gateway Code" as GatewayGen <<generated>>
+
+Proto -[dashed]-> Protoc : code generation
+Protoc -[dashed]-> DartStub
+Protoc -[dashed]-> GoStub
+Protoc -[dashed]-> GatewayGen
+
+package "Client (Flutter/Dart)" as Client {
+  component "Home Recipes UI" as UI
+  DartStub -down-> UI : uses
+  note bottom
+    Multi-platform runtime:
+    Android, iOS, Web, macOS
+  end note
+}
+
+package "Middleware (gRPC-Gateway)" as Middleware {
+  component "gRPC-Gateway" as Gateway
+  GatewayGen -down-> Gateway : runtime
+  note right of Gateway
+    Exposed HTTP endpoints:
+    - POST /addRecipe (returns success indicator)
+    - GET /ListAllRecipes (server-streaming where applicable)
+    - GET /ListAllIngredientsAtHome (maps one Ingredient message per request)
+    - POST /GetAllIngredientsForRecipe (request contains a single Recipe object)
+  end note
+}
+
+package "Server (Go gRPC)" as Server {
+  component "Go gRPC Server" as GrpcSrv
+  component "RecipeService" as RecipeSvc
+  component "IngredientService" as IngredientSvc
+  GrpcSrv -down-> RecipeSvc
+  GrpcSrv -down-> IngredientSvc
+  note right of RecipeSvc
+    Operations:
+    - addRecipe
+    - ListAllRecipes (may stream)
+  end note
+  note right of IngredientSvc
+    Operations:
+    - ListAllIngredientsAtHome
+    - GetAllIngredientsForRecipe
+  end note
+}
+
+rectangle "API Consumer / Tester\n(e.g., curl)" as APITester
+
+UI --> Gateway : HTTP/JSON via Gateway (COM-002)
+APITester --> Gateway : HTTP requests
+Gateway --> GrpcSrv : gRPC mapped calls (COM-003)
+note on link
+  Streaming compatibility:
+  ListAllRecipes preserves server-streaming
+  when exposed via gateway (NFR-005).
+end note
+DartStub --> GrpcSrv : gRPC using generated stubs (COM-001)
+
+package "Deployment Options" as Deploy {
+  rectangle "Docker Image\n(Local container)" as Docker
+  rectangle "Kubernetes (Local cluster)" as K8s
+  rectangle "Azure Kubernetes Service (AKS)" as AKS
+}
+GrpcSrv -[dashed]-> Docker : deploy
+Gateway -[dashed]-> Docker : deploy
+GrpcSrv -[dashed]-> K8s : deploy
+Gateway -[dashed]-> K8s : deploy
+GrpcSrv -[dashed]-> AKS : deploy
+Gateway -[dashed]-> AKS : deploy
+
+Proto .. Client : shared contract
+Proto .. Middleware : shared contract
+Proto .. Server : shared contract
+
+note bottom of Middleware
+  Requires:
+  - gRPC-Gateway dependencies and annotations in .proto
+  - gRPC server available at runtime
+end note
+
+note bottom of Server
+  Requires:
+  - Go runtime, gRPC tooling
+  - protoc and protoc-gen-go installed
+end note
+
+@enduml

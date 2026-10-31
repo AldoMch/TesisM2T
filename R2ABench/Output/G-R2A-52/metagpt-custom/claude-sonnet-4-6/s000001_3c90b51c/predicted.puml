@@ -1,0 +1,147 @@
+@startuml JSeats Architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BorderColor #555555
+  FontStyle bold
+}
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #D6E8F7
+}
+skinparam database {
+  BorderColor #336699
+  BackgroundColor #D6E8F7
+}
+skinparam node {
+  BorderColor #555555
+  BackgroundColor #F0F0F0
+}
+skinparam cloud {
+  BorderColor #888888
+  BackgroundColor #EEEEEE
+}
+
+' ─── External Systems ────────────────────────────────────────────────
+node "Command-Line Shell Environment" as shell {
+  component [User / Operator] as user
+}
+
+node "File System" as fs {
+  database "XML Tally /\nConfiguration Files" as xmlfiles
+  database "XML Result /\nConfig Output Files" as xmloutfiles
+}
+
+node "Java Runtime Environment (JRE)" as jre {
+
+  ' ─── CLI Layer ───────────────────────────────────────────────────
+  package "CLI Layer" as cli_layer {
+    component [CommandLineLauncher] as launcher
+    component [MethodFilterDecoratorRegistry] as registry
+  }
+
+  ' ─── Caller-Facing API Layer ─────────────────────────────────────
+  package "Caller-Facing API Layer" as api_layer {
+    component [AllocationProcessor] as processor
+  }
+
+  ' ─── Processor / Workflow Layer ──────────────────────────────────
+  package "Processor / Workflow Layer" as proc_layer {
+    component [ProcessorConfiguration] as procconfig
+    interface TallyFilter as tallyfilter
+    interface ResultDecorator as resultdecorator
+    interface TieBreaker as tiebreaker
+  }
+
+  ' ─── Allocation Method Layer ─────────────────────────────────────
+  package "Allocation Method Layer" as method_layer {
+    interface AllocationMethodContract as methodcontract
+    component [MajorityMethods\n(Simple / Qualified / Absolute)] as majority
+    component [RankedMethod] as ranked
+    component [EqualProportionsMethod\n(Huntington-Hill)] as equalproportions
+    component [LargestRemainderMethods\n(Hare / Droop / Imperiali)] as largestremainder
+    component [HighestAveragesMethods\n(D'Hondt / Sainte-Lague / Webster\n/ Imperiali / Danish)] as highestaverages
+    note right of highestaverages
+      Sainte-Lague/Webster supports
+      user-provided first-divisor
+      parameterization (FR-003, C-003)
+    end note
+  }
+
+  ' ─── Data / Model Layer ──────────────────────────────────────────
+  package "Data / Model Layer" as data_layer {
+    component [Tally\n(+ TallyView + fromXML)] as tally
+    component [Candidate] as candidate
+    component [Result] as result
+    component [Properties] as properties
+    component [SeatAllocationException] as exception
+  }
+
+}
+
+' ─── External → CLI ──────────────────────────────────────────────────
+user --> launcher : invokes via shell args
+
+' ─── CLI reads XML files ──────────────────────────────────────────────
+launcher <-- xmlfiles : provides tally /\nconfig XML input
+
+' ─── Launcher triggers Tally.fromXML() which reads xmlfiles ──────────
+launcher --> tally : triggers fromXML()\nloading tally data
+tally <-- xmlfiles : reads XML tally data\nvia fromXML()
+
+' ─── CLI listing capability ──────────────────────────────────────────
+launcher --> registry : queries available\nmethods / filters /\ndecorators (FR-010)
+registry --> methodcontract : lists registered\nallocation methods
+registry --> tallyfilter : lists registered\ntally filters
+registry --> resultdecorator : lists registered\nresult decorators
+
+' ─── CLI → Processor ─────────────────────────────────────────────────
+launcher --> processor : drives allocation\nwith tally, method,\nproperties
+
+' ─── Processor → Configuration ───────────────────────────────────────
+processor --> procconfig : reads method,\nfilters, tie-breaking\nrules, decorators
+
+' ─── ProcessorConfiguration supplies workflow components ─────────────
+procconfig --> tallyfilter : supplies configured\ntally filters
+procconfig --> tiebreaker : supplies configured\ntie-breaking rules
+procconfig --> resultdecorator : supplies configured\nresult decorators
+
+' ─── Processor → Workflow steps ──────────────────────────────────────
+processor --> tallyfilter : applies filters\n(pre-allocation)
+tallyfilter --> tally : transforms\ntally data
+processor --> methodcontract : invokes selected\nallocation method
+processor --> tiebreaker : applies tie-breaking\nrules during allocation
+processor --> resultdecorator : applies decorators\n(post-allocation)
+resultdecorator --> result : transforms /\ndecorates result
+
+' ─── Allocation Method Implementations → Contract ────────────────────
+majority ..|> methodcontract
+ranked ..|> methodcontract
+equalproportions ..|> methodcontract
+largestremainder ..|> methodcontract
+highestaverages ..|> methodcontract
+
+' ─── Methods → Data Model ────────────────────────────────────────────
+methodcontract --> tally : receives\nimmutable TallyView
+
+' ─── Properties flow ─────────────────────────────────────────────────
+launcher --> properties : parses CLI args\ninto properties
+processor --> properties : reads allocation\nproperties / options
+highestaverages --> properties : reads first-divisor\nparameter (Sainte-Lague)
+
+' ─── Data Model relationships ────────────────────────────────────────
+tally --> candidate : contains
+api_layer --> candidate : caller creates tally\nby adding candidates\nwith vote counts
+
+' ─── Result / Exception flow ─────────────────────────────────────────
+processor --> result : produces
+processor --> exception : raises on failure
+launcher --> result : writes to stdout\nor output file
+launcher --> exception : surfaces to shell output
+
+' ─── XML output path ─────────────────────────────────────────────────
+launcher --> xmloutfiles : writes XML result /\nconfig output (FR-010, DR-008)
+
+@enduml

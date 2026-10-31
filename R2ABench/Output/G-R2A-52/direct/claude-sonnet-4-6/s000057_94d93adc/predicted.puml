@@ -1,0 +1,149 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam roundCorner 10
+skinparam componentStyle rectangle
+
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+
+skinparam database {
+  BackgroundColor #EAF5EA
+  BorderColor #27AE60
+  FontColor #1A1A1A
+}
+
+skinparam cloud {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+  FontColor #1A1A1A
+}
+
+skinparam node {
+  BackgroundColor #F5EEF8
+  BorderColor #8E44AD
+  FontColor #1A1A1A
+}
+
+skinparam rectangle {
+  BackgroundColor #FDEDEC
+  BorderColor #C0392B
+  FontColor #1A1A1A
+}
+
+skinparam arrow {
+  Color #555555
+  FontColor #333333
+  FontSize 11
+}
+
+title Soundzone — System Architecture Diagram
+
+actor "End User" as User
+actor "Maintainer / Operator" as Operator
+
+node "Browser Client" {
+  node "React Frontend" {
+    component "Upload UI\n(Sound & Image)" as UploadUI
+    component "Audio Playback UI" as PlaybackUI
+    component "Waveform Navigation UI" as WaveformUI
+    component "Follow UI" as FollowUI
+    component "Feed / Follow Views" as FeedUI
+    component "Form UI\n(Validation & Error Handling)" as FormUI
+    component "Registration / Profile UI" as AuthUI
+  }
+
+  node "Redux State Layer" {
+    component "Playback State\n(single current item,\ncontinuity across navigation)" as PlaybackState
+    component "Follow State" as FollowState
+    component "Sound State" as SoundState
+    component "Auth / User State" as AuthState
+    component "Feed State" as FeedState
+    component "Form / Error State" as FormState
+  }
+
+  component "Frontend Config\n(API Base URL,\nCloudinary URL,\nUpload Preset)" as FrontendConfig
+}
+
+node "Node / Express Backend" {
+  component "User & Auth API\n(register, login, user info)" as UserAPI
+  component "Sound API\n(create, retrieve, delete)" as SoundAPI
+  component "Follow API\n(follow, unfollow)" as FollowAPI
+  component "Feed API\n(followed users' sounds,\nuser sound lists)" as FeedAPI
+}
+
+database "PostgreSQL" {
+  component "Users" as DBUsers
+  component "Sounds\n(+ Cloudinary URL refs)" as DBSounds
+  component "Follow Relationships" as DBFollows
+  component "Media URL References\n(audio & image URLs)" as DBMediaURLs
+}
+
+cloud "Cloudinary\n(Media Storage)" {
+  component "Audio Asset Storage" as CloudAudio
+  component "Image Asset Storage\n(avatars, sound covers)" as CloudImage
+}
+
+' User interactions with UI
+User --> UploadUI : upload sounds / images
+User --> PlaybackUI : play sounds
+User --> WaveformUI : click waveform position
+User --> FollowUI : follow / unfollow users
+User --> FeedUI : browse followed users' sounds
+User --> FormUI : enter / submit form data
+User --> AuthUI : register / login
+
+' Operator configuration
+Operator --> FrontendConfig : configure env values\n(API URL, Cloudinary URL, preset)
+
+' UI to Redux
+UploadUI --> SoundState : dispatch upload actions
+PlaybackUI --> PlaybackState : dispatch play / pause / switch
+WaveformUI --> PlaybackState : dispatch scrub / seek position
+FollowUI --> FollowState : dispatch follow / unfollow
+FeedUI --> FeedState : dispatch feed fetch
+FormUI --> FormState : dispatch validation / error
+AuthUI --> AuthState : dispatch auth actions
+
+' Redux to UI (state consumption)
+PlaybackState --> PlaybackUI : current playback item\n& continuity state
+PlaybackState --> WaveformUI : current position
+FollowState --> FollowUI : follow status
+FeedState --> FeedUI : followed users' sounds
+FormState --> FormUI : validation feedback / errors
+AuthState --> AuthUI : auth status / errors
+SoundState --> FeedUI : sound records
+
+' Frontend config consumed
+FrontendConfig --> SoundState : API base URL,\nCloudinary config
+FrontendConfig --> AuthState : API base URL
+FrontendConfig --> FeedState : API base URL
+FrontendConfig --> FollowState : API base URL
+
+' Frontend → Cloudinary (direct upload)
+UploadUI --> CloudAudio : HTTP upload (audio file)\nusing Cloudinary URL + preset
+UploadUI --> CloudImage : HTTP upload (image file)\nusing Cloudinary URL + preset
+CloudAudio --> UploadUI : return hosted audio URL
+CloudImage --> UploadUI : return hosted image URL
+
+' Frontend → Backend (HTTP fetch)
+SoundState --> SoundAPI : HTTP fetch\n(create / retrieve / delete sound\n+ Cloudinary URL)
+AuthState --> UserAPI : HTTP fetch\n(register / login / user info)
+FollowState --> FollowAPI : HTTP fetch\n(follow / unfollow)
+FeedState --> FeedAPI : HTTP fetch\n(feed / user sound lists)
+
+' Backend → PostgreSQL
+UserAPI --> DBUsers : persist / query user records
+SoundAPI --> DBSounds : persist / query sound records\n(with Cloudinary URL refs)
+FollowAPI --> DBFollows : persist / query follow relationships
+FeedAPI --> DBFollows : query follow relationships
+FeedAPI --> DBSounds : query sounds for followed users
+SoundAPI --> DBMediaURLs : store audio & image URL refs
+UserAPI --> DBMediaURLs : store avatar URL refs
+DBMediaURLs --> DBSounds : referenced by sound records
+DBMediaURLs --> DBUsers : referenced by user records
+
+@enduml

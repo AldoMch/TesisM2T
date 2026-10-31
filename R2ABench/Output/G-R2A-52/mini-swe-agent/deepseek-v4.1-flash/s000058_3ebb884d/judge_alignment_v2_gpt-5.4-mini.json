@@ -1,0 +1,345 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::AWS EventBridge",
+        "Global::VPC peering\\nconnection"
+      ],
+      "predicted_nodes": [
+        "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud (current account & region)::AWS SNS\\n(notification topic + target policy)"
+      ],
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+        "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics"
+      ],
+      "predicted_nodes": [
+        "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::Chat notification",
+        "AWS Cloud\\nConnector Account::Email notification",
+        "AWS Cloud\\nConnector Account::Slack notification"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud (current account & region)::Manual SNS Subscription\\nAdministration"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application / Service Layer::Stage Listing Service\\n(list currently running stages)",
+        "Data Access / Integration Layer::AWS CLI Adapter\\n(stage queries)",
+        "Presentation / Interaction Layer::Onboarding Procedure",
+        "Presentation / Interaction Layer::Terminal / Script Interface\\n(nvm use, run listRunningStages)"
+      ],
+      "gt_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "AWS Cloud (current account & region)::AWS CLI Credentials",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::AWS EventBridge"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud (current account & region)::AWS SNS\\n(notification topic + target policy)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud (current account & region)::Manual SNS Subscription\\nAdministration",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::Chat notification",
+        "AWS Cloud\\nConnector Account::Email notification",
+        "AWS Cloud\\nConnector Account::Slack notification"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+        "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::AWS EventBridge",
+        "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / Service Layer::Stage Listing Service\\n(list currently running stages)",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Access / Integration Layer::AWS CLI Adapter\\n(stage queries)",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+        "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Access / Integration Layer::Event Routing Adapter",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::AWS EventBridge"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Layer::Connector Definitions Store\\n(connectors + cluster/service config)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+        "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Data Layer::Running Stage List Output\\n(runningStages=<csv>)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Layer::Topic & Event Pattern Config\\n(event filter criteria, SNS topic)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::AWS EventBridge",
+        "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Actors & Systems::Appian Data Source",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Actors & Systems::CMS BigMAC",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Actors & Systems::Developer / Operator",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Actors & Systems::GitHub Actions API\\n(workflow runs - deploy.yml)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Actors & Systems::GitHub Pull Requests API\\n(closed PRs, base branch)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Actors & Systems::Repository Maintainer",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation / Interaction Layer::Onboarding Procedure",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation / Interaction Layer::Terminal / Script Interface\\n(nvm use, run listRunningStages)",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::AWS EventBridge"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud (current account & region)::Manual SNS Subscription\\nAdministration"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::Chat notification"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud (current account & region)::Manual SNS Subscription\\nAdministration"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::Email notification"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud (current account & region)::AWS SNS\\n(notification topic + target policy)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud (current account & region)::Manual SNS Subscription\\nAdministration"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::Slack notification"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+        "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)",
+        "Data Layer::Connector Definitions Store\\n(connectors + cluster/service config)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+        "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)",
+        "Data Layer::Connector Definitions Store\\n(connectors + cluster/service config)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::VPC peering\\nconnection"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4697,
+      "completion_tokens": 868,
+      "total_tokens": 5565,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 3840
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+  ],
+  "unmatched_predicted_nodes": [
+    "AWS Cloud (current account & region)::AWS CLI Credentials",
+    "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+    "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)",
+    "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)",
+    "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)",
+    "Data Access / Integration Layer::Event Routing Adapter",
+    "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)",
+    "Data Layer::Connector Definitions Store\\n(connectors + cluster/service config)",
+    "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)",
+    "Data Layer::Running Stage List Output\\n(runningStages=<csv>)",
+    "Data Layer::Topic & Event Pattern Config\\n(event filter criteria, SNS topic)",
+    "External Actors & Systems::Appian Data Source",
+    "External Actors & Systems::CMS BigMAC",
+    "External Actors & Systems::Developer / Operator",
+    "External Actors & Systems::GitHub Actions API\\n(workflow runs - deploy.yml)",
+    "External Actors & Systems::GitHub Pull Requests API\\n(closed PRs, base branch)",
+    "External Actors & Systems::Repository Maintainer",
+    "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)"
+  ],
+  "_provenance": {
+    "fingerprint": "4664b6085680858cdcce4a8ff6f654375fe8e0e6e88e5b92727b333e86ec3674",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

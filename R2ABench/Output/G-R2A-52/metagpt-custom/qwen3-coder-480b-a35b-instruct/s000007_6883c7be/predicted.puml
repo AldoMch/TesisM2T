@@ -1,0 +1,61 @@
+@startuml
+
+' Deployment Nodes
+node "JVM Environment" {
+    node "Proxy Layer" {
+        component "HTTP Proxy"
+        component "Channel Manager"
+    }
+
+    node "Test Server Layer" {
+        component "Test Server"
+        component "File Handler"
+        component "Download Endpoint"
+        component "Upload Endpoint"
+        component "Request Queue"
+    }
+
+    node "Test Client Layer" {
+        component "Test Client"
+    }
+
+    node "Data Layer" {
+        component "Structured Response Builder"
+    }
+}
+
+cloud "External Systems" {
+    node "Upstream Server"
+    database "Local Filesystem"
+
+    node "Grizzly/Jersey HTTP Server Environment" {
+        component "Grizzly/Jersey HTTP Server"
+    }
+
+    node "Asynchronous HTTP Client Environment" {
+        component "Async HTTP Client"
+    }
+}
+
+' Component Dependencies
+"Channel Manager" --> "Upstream Server" : monitors channel state
+"HTTP Proxy" --> "Channel Manager" : checks activation status
+"HTTP Proxy" --> "Upstream Server" : forwards requests (when active)
+
+"Test Server" --> "Download Endpoint" : serves file downloads
+"Test Server" --> "Upload Endpoint" : processes file uploads
+"Download Endpoint" --> "File Handler" : retrieves file data
+"Upload Endpoint" --> "File Handler" : stores uploaded files
+"File Handler" --> "Local Filesystem" : reads/writes files
+
+"Test Client" --> "Async HTTP Client" : sends async requests
+"Test Client" --> "HTTP Proxy" : routes requests for proxy testing
+"Async HTTP Client" --> "Grizzly/Jersey HTTP Server" : executes workloads
+
+"Request Queue" --> "HTTP Proxy" : retains inbound requests
+"Test Server" --> "Upstream Server" : integration communication
+"Upload Endpoint" --> "Test Server" : returns filepath map
+
+"Structured Response Builder" --> "Test Client" : provides response objects
+
+@enduml

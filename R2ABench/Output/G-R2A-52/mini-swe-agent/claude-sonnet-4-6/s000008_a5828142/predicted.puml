@@ -1,0 +1,76 @@
+@startuml
+title Bunny Code - System Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> LightBlue
+  BorderColor<<layer>> DarkBlue
+}
+
+actor "Browser User" as User
+
+rectangle "Client Layer" {
+  component "[Vue Application]\nFrontend SPA" as VueApp
+}
+
+rectangle "Reverse Proxy Layer" {
+  component "[Nginx]\nReverse Proxy" as Nginx
+}
+
+rectangle "Application Layer" {
+  component "[Express]\nREST API Server" as ExpressAPI
+  component "[Socket.IO]\nWebSocket Server" as SocketIO
+}
+
+rectangle "Service Layer" {
+  component "[Auth Service]\nJWT Authentication" as AuthService
+  component "[Project Service]\nProject & Version Mgmt" as ProjectService
+  component "[Workspace Service]\nCollaboration & Editing" as WorkspaceService
+  component "[Code Execution Service]\nCompile & Run" as CodeExecService
+  component "[Replay Service]\nCoding Process Recording" as ReplayService
+  component "[Battle Service]\nReal-time Battle Mgmt" as BattleService
+  component "[File Distribution Service]\nUpload & Archive" as FileService
+}
+
+rectangle "Data Layer" {
+  database "[MySQL]\nRelational Data Store" as MySQL
+  database "[InfluxDB]\nTime-Series Store" as InfluxDB
+  database "[Redis]\nCache & State Store" as Redis
+}
+
+rectangle "Execution Sandbox" {
+  component "[Docker]\nCode Sandbox" as Docker
+}
+
+rectangle "Storage & Distribution Layer" {
+  component "[Object Storage]\nS3-Compatible Store" as ObjectStorage
+  component "[CDN]\nCloudFront-style Distribution" as CDN
+}
+
+User --> VueApp : HTTP/WebSocket
+VueApp --> Nginx : HTTP/HTTPS / WebSocket
+Nginx --> ExpressAPI : HTTP proxy
+Nginx --> SocketIO : WebSocket proxy
+Nginx --> CDN : static assets / CDN redirect
+
+ExpressAPI --> AuthService
+ExpressAPI --> ProjectService
+ExpressAPI --> CodeExecService
+ExpressAPI --> ReplayService
+ExpressAPI --> BattleService
+ExpressAPI --> FileService
+
+SocketIO --> WorkspaceService
+SocketIO --> BattleService
+
+AuthService --> MySQL : user data
+ProjectService --> MySQL : project, version, file data
+BattleService --> MySQL : battle records
+BattleService --> Redis : battle state & invitations
+WorkspaceService --> Redis : workspace & editing state
+ReplayService --> InfluxDB : coding-process records
+CodeExecService --> Docker : submit & retrieve results
+FileService --> ObjectStorage : upload files & archives
+ObjectStorage --> CDN : distribute assets
+
+@enduml

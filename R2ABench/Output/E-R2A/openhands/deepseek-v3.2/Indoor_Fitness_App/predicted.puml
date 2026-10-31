@@ -1,0 +1,263 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define CLOUD cloud
+!define COMPONENT component
+!define QUEUE queue
+!define STORAGE storage
+
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam nodeStyle rectangle
+skinparam databaseStyle rectangle
+skinparam rectangle {
+  BackgroundColor #E6F3FF
+  BorderColor #0066CC
+  FontColor #000000
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #FFF0E6
+  BorderColor #CC6600
+  FontColor #000000
+  FontSize 12
+}
+skinparam cloud {
+  BackgroundColor #F0F0F0
+  BorderColor #666666
+  FontColor #000000
+  FontSize 12
+}
+skinparam arrow {
+  Color #333333
+  FontColor #333333
+  FontSize 10
+}
+
+title Indoor Fitness App - System Architecture Diagram
+
+' ========== USER DEVICES LAYER ==========
+cloud "User Environment" as user_env #lightblue {
+  rectangle "Mobile Device (Android/iOS)" as mobile_device {
+    rectangle "Mobile App" as mobile_app {
+      rectangle "User Interface Layer" as ui_layer {
+        rectangle "Main Interface" as main_ui
+        rectangle "Exercise Interface" as exercise_ui
+        rectangle "Report Interface" as report_ui
+        rectangle "History Interface" as history_ui
+        rectangle "Personal Interface" as personal_ui
+        rectangle "Casting Interface" as casting_ui
+      }
+      
+      rectangle "App Services Layer" as app_services {
+        rectangle "Camera Capture Service" as camera_service
+        rectangle "Local Pose Estimation" as local_pose
+        rectangle "Real-time Display" as realtime_display
+        rectangle "Casting Client" as casting_client
+      }
+      
+      rectangle "Data Management" as app_data {
+        rectangle "Local Cache" as local_cache
+        rectangle "User Preferences" as user_prefs
+      }
+    }
+  }
+  
+  rectangle "Target Android Device" as target_android {
+    rectangle "Casting Receiver" as casting_receiver
+    rectangle "Display Interface" as target_display
+  }
+}
+
+' ========== NETWORK LAYER ==========
+cloud "Network Layer" as network #lightgray {
+  rectangle "LAN Network" as lan_network
+  rectangle "Internet Connection" as internet
+}
+
+' ========== SERVER LAYER ==========
+cloud "Server Environment" as server_env #lightgreen {
+  rectangle "Application Server" as app_server {
+    rectangle "API Gateway" as api_gateway
+    
+    rectangle "Core Services" as core_services {
+      rectangle "User Management Service" as user_service
+      rectangle "Training Plan Service" as plan_service
+      rectangle "Posture Evaluation Service" as posture_service
+      rectangle "Report Generation Service" as report_service
+      rectangle "Recommendation Engine" as recommendation_engine
+    }
+    
+    rectangle "Processing Services" as processing_services {
+      rectangle "Video Processing" as video_processing
+      rectangle "Pose Estimation Model" as pose_model
+      rectangle "Skeleton Analysis" as skeleton_analysis
+      rectangle "Similarity Scoring" as similarity_scoring
+    }
+    
+    rectangle "Data Services" as data_services {
+      rectangle "Data Processing" as data_processing
+      rectangle "Material Collection" as material_collection
+      rectangle "Chart Generation" as chart_generation
+    }
+  }
+  
+  rectangle "Database Server" as db_server {
+    database "User Database" as user_db {
+      rectangle "User Profiles" as user_profiles
+      rectangle "Training History" as training_history
+      rectangle "Personal Preferences" as db_preferences
+    }
+    
+    database "Content Database" as content_db {
+      rectangle "Standard Videos" as standard_videos
+      rectangle "Standard Movements" as standard_movements
+      rectangle "Exercise Plans" as exercise_plans
+      rectangle "Report Templates" as report_templates
+    }
+    
+    database "Session Database" as session_db {
+      rectangle "Training Sessions" as training_sessions
+      rectangle "Evaluation Results" as eval_results
+      rectangle "Casting Sessions" as casting_sessions
+    }
+  }
+  
+  rectangle "Security Layer" as security_layer {
+    rectangle "Authentication Service" as auth_service
+    rectangle "Authorization Service" as authz_service
+    rectangle "SQL Injection Protection" as sql_protection
+    rectangle "Data Leakage Protection" as leakage_protection
+  }
+}
+
+' ========== EXTERNAL SERVICES ==========
+cloud "External Services" as external #lightyellow {
+  rectangle "Camera Hardware" as camera_hardware
+  rectangle "Operating System" as os_layer
+  rectangle "Network Services" as network_services
+}
+
+' ========== KEY DATA FLOWS ==========
+
+' Camera to processing flow
+camera_hardware --> camera_service : "Video Stream (30+ fps)"
+camera_service --> local_pose : "Real-time video frames"
+local_pose --> pose_model : "Processed frames for analysis"
+
+' Real-time exercise flow
+exercise_ui --> camera_service : "Start/Stop capture"
+camera_service --> realtime_display : "Live video feed"
+local_pose --> realtime_display : "Pose overlay"
+realtime_display --> exercise_ui : "Display with overlay"
+
+' Server communication flow
+mobile_app --> internet : "HTTPS API calls"
+internet --> api_gateway : "API requests"
+api_gateway --> core_services : "Routed requests"
+
+' Data synchronization flow
+app_data --> user_db : "Sync user data"
+user_db --> app_data : "Retrieve preferences/history"
+
+' Training plan flow
+plan_service --> recommendation_engine : "User data & goals"
+recommendation_engine --> plan_service : "Personalized plans"
+plan_service --> mobile_app : "Plan delivery"
+
+' Posture evaluation flow
+local_pose --> posture_service : "Skeleton data"
+posture_service --> similarity_scoring : "Compare with standards"
+similarity_scoring --> posture_service : "Evaluation scores"
+posture_service --> mobile_app : "Real-time feedback"
+
+' Report generation flow
+data_processing --> material_collection : "Training data"
+material_collection --> report_service : "Collected materials"
+report_service --> chart_generation : "Data for visualization"
+chart_generation --> report_service : "Generated charts"
+report_service --> mobile_app : "Complete reports"
+
+' Casting flow
+casting_client --> lan_network : "Device discovery"
+lan_network --> casting_receiver : "Connection request"
+casting_receiver --> casting_client : "Connection established"
+realtime_display --> casting_client : "Exercise interface stream"
+casting_client --> casting_receiver : "Video stream transmission"
+casting_receiver --> target_display : "Display on target device"
+
+' Security flows
+api_gateway --> auth_service : "Authentication check"
+auth_service --> authz_service : "Permission validation"
+core_services --> sql_protection : "Database queries"
+sql_protection --> user_db : "Safe SQL execution"
+
+' ========== KEY INTERFACES ==========
+
+rectangle "Key Interfaces" as interfaces #pink {
+  rectangle "Camera Capture Interface" as camera_interface
+  rectangle "Posture Evaluation Interface" as posture_interface
+  rectangle "Server Processing Interface" as server_interface
+  rectangle "Data Exchange Interface" as data_interface
+  rectangle "Casting Video Interface" as casting_video_interface
+}
+
+camera_service ..> camera_interface : implements
+posture_service ..> posture_interface : implements
+api_gateway ..> server_interface : implements
+core_services ..> data_interface : implements
+casting_client ..> casting_video_interface : implements
+
+' ========== DEPENDENCIES ==========
+
+mobile_app ..> os_layer : "Requires Android 8.0+/iOS 11.0+"
+camera_service ..> camera_hardware : "Requires 30+ fps"
+casting_client ..> lan_network : "Requires same LAN"
+app_server ..> db_server : "Data persistence"
+
+' ========== LEGEND ==========
+
+legend right
+  |<color:#0066CC>█</color>| Application Components|
+  |<color:#CC6600>█</color>| Data Storage|
+  |<color:#666666>█</color>| Infrastructure|
+  |<color:#333333>→</color>| Data Flow|
+  |<color:#000000>··></color>| Implements Interface|
+  |<color:#000000>--></color>| Dependency|
+endlegend
+
+note right of mobile_device
+  <b>Mobile Requirements:</b>
+  - Octa-core 2.45 GHz CPU
+  - 4 GB RAM + 32 GB ROM
+  - Android 8.0+ or iOS 11.0+
+  - Camera with 30+ fps
+end note
+
+note right of app_server
+  <b>Server Requirements:</b>
+  - CPU Pentium 900M (rec: P4 1.2G)
+  - 256 MB RAM minimum
+  - Modular design
+  - Interface-based communication
+end note
+
+note right of db_server
+  <b>Data Categories:</b>
+  - User profiles & preferences
+  - Standard exercise content
+  - Training history & sessions
+  - Evaluation results
+  - Report materials
+end note
+
+note right of security_layer
+  <b>Security Features:</b>
+  - User authentication
+  - Permission control
+  - SQL injection protection
+  - Data leakage prevention
+  - Input validation
+end note
+
+@enduml

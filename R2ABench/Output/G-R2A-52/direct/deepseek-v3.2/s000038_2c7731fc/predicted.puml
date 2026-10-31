@@ -1,0 +1,120 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  ArrowColor #333333
+  FontColor #333333
+}
+
+title IceFireDB Decentralized Database Infrastructure - System Architecture
+
+package "External Clients & Applications" {
+  [Redis Client Application] as RedisClient
+  [Redis Pub/Sub Application] as PubSubClient
+  [SQL Protocol Client] as SQLClient
+}
+
+package "IceFireDB Core Components" {
+  component "IceFireDB-Redis-Proxy" as RedisProxy {
+    component "Redis Command Handler" as CmdHandler
+    component "Instruction Synchronizer" as Sync
+    component "Storage Forwarder" as Forwarder
+    component "Cluster-Aware Router" as ClusterRouter
+  }
+
+  component "IceFireDB-PubSub" as PubSub {
+    component "Redis Pub/Sub Protocol Handler" as PubSubProtocol
+    component "Message Dissemination" as MsgDiss
+    component "Peer Discovery & Routing" as PeerRouting
+  }
+
+  component "Internal SQL Result Handler" as SQLHandler {
+    component "Packet Parser" as Parser
+    component "Result Metadata Extractor" as MetadataExt
+    component "Row Data Processor" as RowProcessor
+  }
+}
+
+package "Decentralized Network" {
+  database "Redis Agent Network" as AgentNetwork
+  database "P2P Pub/Sub Network" as P2PNetwork
+  node "Kademlia DHT" as DHT
+}
+
+package "Storage Backends" {
+  database "Redis Standalone" as RedisStandalone
+  database "Redis Cluster" as RedisCluster
+  database "SQL/MySQL Protocol Data Source" as SQLDataSource
+}
+
+' External Client Connections
+RedisClient --> RedisProxy : "Redis Commands\n(String, Set, List, Hash,\nSorted Set, Stream, Control)"
+PubSubClient --> PubSub : "Redis Pub/Sub\nSemantics"
+SQLClient --> SQLHandler : "Packetized\nSQL/MySQL Result Data"
+
+' Redis Proxy Internal Flows
+RedisProxy --> CmdHandler : "Command Processing"
+CmdHandler --> Sync : "Instructions to Sync"
+CmdHandler --> Forwarder : "Write Operations"
+Forwarder --> ClusterRouter : "Cluster-Aware Routing"
+ClusterRouter --> RedisStandalone : "Data Persistence"
+ClusterRouter --> RedisCluster : "Data Persistence"
+
+' Redis Proxy Network Integration
+Sync --> AgentNetwork : "Synchronized Instructions"
+AgentNetwork --> Sync : "Instructions from Peers"
+
+' PubSub Internal Flows
+PubSub --> PubSubProtocol : "Protocol Handling"
+PubSubProtocol --> MsgDiss : "Messages to Distribute"
+PubSubProtocol --> PeerRouting : "Network Participation"
+MsgDiss --> P2PNetwork : "Pub/Sub Messages"
+PeerRouting --> DHT : "Discovery & Routing Data"
+DHT --> P2PNetwork : "Peer Network"
+P2PNetwork --> MsgDiss : "Incoming Messages"
+
+' SQL Handler Internal Flows
+SQLHandler --> Parser : "Raw Packets"
+Parser --> MetadataExt : "Field Metadata"
+Parser --> RowProcessor : "Row Data"
+MetadataExt --> RowProcessor : "Field Mappings"
+RowProcessor --> SQLDataSource : "Processed Results"
+
+' Network Environment Notes
+note top of AgentNetwork
+  Networked Redis Agents
+  for decentralized sync
+end note
+
+note top of P2PNetwork
+  Multi-Node Operation
+  (Same/Cross Network, NAT/Private)
+end note
+
+note right of DHT
+  libp2p/IPFS-style
+  Peer Discovery
+end note
+
+' Constraints & Scope Notes
+note left of RedisProxy
+  Constrained to:
+  - Standalone Redis
+  - Redis Cluster
+end note
+
+note right of PubSub
+  Constrained to:
+  - Redis Pub/Sub Semantics
+  - Kademlia DHT Routing
+end note
+
+note left of SQLHandler
+  Internal Data Handling Only
+  (Not a top-level product feature)
+end note
+
+@enduml

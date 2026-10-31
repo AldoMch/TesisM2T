@@ -1,0 +1,90 @@
+@startuml
+
+package "Core Engine Modules" as Core {
+  component "Device module" as Device
+  component "Scheduler module" as Scheduler
+  component "Operator module" as Operator
+  component "Serializer module" as Serializer
+}
+
+package "API Surface" as API {
+  interface "C API" as CAPI
+  component "C++ API documentation entry point" as CPPDocs
+  component "Python API documentation entry point" as PyDocs
+}
+
+package "Application Examples" as Apps {
+  component "Example Applications Suite" as ExamplesSuite
+  component "Classification Example" as Classification
+  component "Detection Example" as Detection
+  component "Segmentation Example" as Segmentation
+  component "Pose Estimation Example" as Pose
+  component "Landmark Detection Example" as Landmark
+  component "OCR Example" as OCR
+}
+
+package "Model Conversion Tooling" as Tooling {
+  component "Linux pre-compiled conversion tool" as LinuxTool
+  component "Browser WebAssembly online converter" as WasmConverter
+}
+
+package "Build and Packaging" as BuildPkg {
+  component "Cross-platform CMake build" as CMakeBuild
+}
+
+package "Data Artifacts" as Data {
+  artifact "tmfile binary model (DR-003)" as TMFile
+  artifact "Serialized model parameters (DR-004)" as SerializedParams
+  artifact "Converted model artifacts (DR-005)" as ConvertedArtifacts
+}
+
+cloud "Web browser with WebAssembly support" as WebBrowser
+node "Linux operating system" as LinuxOS
+node "CMake build environment" as CMakeEnv
+database "Local filesystem assets (models, images)" as LocalFS
+
+' Core internal dependencies
+Scheduler --> Operator
+Scheduler --> Device
+Scheduler --> Serializer
+
+' API to core (more precise)
+CAPI --> Scheduler
+CAPI --> Operator
+
+' Examples depend on C API
+Classification --> CAPI
+Detection --> CAPI
+Segmentation --> CAPI
+Pose --> CAPI
+Landmark --> CAPI
+OCR --> CAPI
+
+' Examples consume local assets
+ExamplesSuite --> LocalFS
+Classification --> LocalFS
+Detection --> LocalFS
+Segmentation --> LocalFS
+Pose --> LocalFS
+Landmark --> LocalFS
+OCR --> LocalFS
+
+' Serializer data flow: tmfile -> Serializer -> serialized params
+LocalFS --> TMFile
+TMFile --> Serializer
+Serializer --> SerializedParams
+SerializedParams --> LocalFS
+
+' Model conversion tooling I/O
+LocalFS --> LinuxTool
+LocalFS --> WasmConverter
+LinuxTool --> ConvertedArtifacts
+WasmConverter --> ConvertedArtifacts
+ConvertedArtifacts --> LocalFS
+
+' Runtime/host environments
+WasmConverter --> WebBrowser
+LinuxTool --> LinuxOS
+CMakeBuild --> CMakeEnv
+
+@enduml

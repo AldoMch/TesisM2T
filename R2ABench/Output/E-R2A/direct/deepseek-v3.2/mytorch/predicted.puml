@@ -1,0 +1,120 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    FontColor #000000
+    ArrowColor #333333
+}
+title MyTorch System Architecture
+
+package "User Layer" {
+    [Deep Learning Beginner] as User
+    [Developer / Team Member] as Developer
+    [Project Stakeholder] as Stakeholder
+}
+
+package "Presentation Layer" {
+    component "Frontend UI" as Frontend {
+        [Main Interface]
+        [Configuration Interface]
+        [Training Interface]
+        [Inference Interface]
+        [Guidance & Help]
+    }
+}
+
+package "Application Layer" {
+    component "Backend Service" as Backend {
+        [Model Initialization API]
+        [Model Training API]
+        [Task Inference API]
+        [Model Management API]
+    }
+}
+
+package "Framework Layer" {
+    component "MyTorch/NNE Framework" as MyTorch {
+        [Framework Core]
+        [GPU Acceleration Module]
+        [Weight Initialization Module]
+        [Classic Models Module]
+        [Preset Datasets Module]
+    }
+}
+
+package "Data Layer" {
+    component "SQLite Database" as Database {
+        [Models Storage]
+        [Datasets Metadata]
+        [Training Logs]
+        [Inference Logs]
+        [Backup & Recovery]
+    }
+    component "Local File System" as Filesystem {
+        [Model Files]
+        [Dataset Files]
+        [Backup Files]
+    }
+}
+
+' User interactions
+User --> Frontend : Uses visual interfaces
+Developer --> MyTorch : Extends framework
+Stakeholder --> Backend : Monitors progress
+
+' Frontend to Backend communication
+Frontend --> Backend : HTTP/REST API Calls
+Frontend <--> Backend : Real-time feedback & visualization
+
+' Backend to Framework integration
+Backend --> MyTorch : Calls deep learning functions
+Backend --> MyTorch : GPU acceleration requests
+Backend --> MyTorch : Model training/inference
+
+' Framework internal components
+[GPU Acceleration Module] --> [Framework Core] : Enhanced operations
+[Weight Initialization Module] --> [Framework Core] : Initialization methods
+[Classic Models Module] --> [Framework Core] : Model definitions
+[Preset Datasets Module] --> [Framework Core] : Data loading
+
+' Data persistence
+Backend --> Database : CRUD operations
+Backend --> Filesystem : File I/O operations
+Database --> Filesystem : Backup storage
+Filesystem --> Database : Recovery operations
+
+' Framework data flow
+MyTorch --> Filesystem : Loads/Saves models
+MyTorch --> Filesystem : Loads datasets
+[GPU Acceleration Module] --> [GPU Hardware] : Computation offload
+
+note right of MyTorch
+    Framework Extensions:
+    - GPU acceleration APIs
+    - Weight initialization (He, Xavier, etc.)
+    - Classic models (ResNet, VGG, Transformer)
+    - Preset datasets (CIFAR, ImageNet, etc.)
+end note
+
+note right of Database
+    Persistence Scope:
+    - Model configurations
+    - Training tasks & results
+    - Inference logs
+    - Performance metrics
+    - Error records
+end note
+
+note right of Backend
+    Service Interfaces:
+    - Model initialization
+    - Training execution
+    - Inference processing
+    - Model management
+    - Resource monitoring
+end note
+
+@enduml

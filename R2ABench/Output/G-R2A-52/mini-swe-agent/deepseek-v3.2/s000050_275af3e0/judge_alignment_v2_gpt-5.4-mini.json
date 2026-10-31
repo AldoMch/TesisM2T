@@ -1,0 +1,414 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host System::hAFL2 Fuzzing Platform",
+        "Host System::hAFL2 Fuzzing Platform::Fuzzing Controller",
+        "Host System::hAFL2 Fuzzing Platform::Linux Fuzzing Workflow",
+        "Host System::hAFL2 Fuzzing Platform::Test Runner",
+        "Host System::hAFL2 Fuzzing Platform::Windows Fuzzing Workflow",
+        "Host System::hAFL2 Fuzzing Platform::kAFL-Fuzzer"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::hAFL2"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Virtualization Layer",
+        "Virtualization Layer::Hypervisor"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Virtualization Layer::Windows Child Partition VM"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Virtualization Layer::Windows Root Partition VM"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Virtualization Layer::Windows Root Partition VM::Crash Monitor"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Host System",
+        "Global::External Systems"
+      ],
+      "gt_nodes": [
+        "Global::KVM (L0)"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Build Tools",
+      "reference_nodes": [
+        "Global::KVM (L0)",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Command Line Interface",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::VM Management",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::Visual Studio",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::External Systems",
+      "reference_nodes": [
+        "Global::KVM (L0)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Host System",
+      "reference_nodes": [
+        "Global::KVM (L0)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Virtualization Layer",
+      "reference_nodes": [
+        "Global::KVM (L0)",
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host System::Effector Maps",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host System::Mutation Payloads",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host System::Shared Libraries",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host System::Target Binaries",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System::hAFL2 Fuzzing Platform",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System::hAFL2 Fuzzing Platform::Fuzzing Controller",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System::hAFL2 Fuzzing Platform::Linux Fuzzing Workflow",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System::hAFL2 Fuzzing Platform::Test Runner",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System::hAFL2 Fuzzing Platform::Windows Fuzzing Workflow",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2",
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System::hAFL2 Fuzzing Platform::kAFL-Fuzzer",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Hypervisor",
+      "reference_nodes": [
+        "Global::KVM (L0)",
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Linux Guest VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Linux Guest VM::Embedded Forkserver",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Virtualization Layer::Linux Guest VM::Linux Target Binary",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Virtualization Layer::Linux Guest VM::initrd Image",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Windows Child Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Windows Child Partition VM::Crash Monitor",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Windows Child Partition VM::Harness Driver",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Windows Child Partition VM::loader.exe",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Windows Child Partition VM::packet_sender.exe",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Windows Root Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Windows Root Partition VM::Crash Monitor",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Virtualization Layer::Windows Root Partition VM::VMSwitch Target",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::External Systems",
+        "Global::Host System",
+        "Global::Virtualization Layer",
+        "Virtualization Layer::Hypervisor"
+      ],
+      "gt_node": "Global::KVM (L0)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Virtualization Layer",
+        "Virtualization Layer::Hypervisor",
+        "Virtualization Layer::Windows Root Partition VM",
+        "Virtualization Layer::Windows Root Partition VM::VMSwitch Target",
+        "Host System::hAFL2 Fuzzing Platform::Windows Fuzzing Workflow"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Virtualization Layer::Linux Guest VM",
+        "Virtualization Layer::Linux Guest VM::Embedded Forkserver",
+        "Virtualization Layer::Windows Child Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Virtualization Layer::Windows Child Partition VM::Harness Driver",
+        "Virtualization Layer::Windows Child Partition VM::loader.exe",
+        "Virtualization Layer::Windows Child Partition VM::packet_sender.exe",
+        "Virtualization Layer::Windows Child Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Virtualization Layer::Windows Root Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Virtualization Layer::Windows Child Partition VM::Crash Monitor",
+        "Virtualization Layer::Windows Root Partition VM::Crash Monitor"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Virtualization Layer::Windows Root Partition VM::VMSwitch Target",
+        "Virtualization Layer::Windows Root Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host System::hAFL2 Fuzzing Platform",
+        "Host System::hAFL2 Fuzzing Platform::Fuzzing Controller",
+        "Host System::hAFL2 Fuzzing Platform::Linux Fuzzing Workflow",
+        "Host System::hAFL2 Fuzzing Platform::Test Runner",
+        "Host System::hAFL2 Fuzzing Platform::Windows Fuzzing Workflow",
+        "Host System::hAFL2 Fuzzing Platform::kAFL-Fuzzer"
+      ],
+      "gt_node": "KVM (L0)::hAFL2"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5147,
+      "completion_tokens": 1013,
+      "total_tokens": 6160,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "External Systems::Build Tools",
+    "External Systems::Command Line Interface",
+    "External Systems::VM Management",
+    "External Systems::Visual Studio",
+    "Host System::Effector Maps",
+    "Host System::Mutation Payloads",
+    "Host System::Shared Libraries",
+    "Host System::Target Binaries",
+    "Virtualization Layer::Linux Guest VM",
+    "Virtualization Layer::Linux Guest VM::Embedded Forkserver",
+    "Virtualization Layer::Linux Guest VM::Linux Target Binary",
+    "Virtualization Layer::Linux Guest VM::initrd Image",
+    "Virtualization Layer::Windows Child Partition VM::Crash Monitor",
+    "Virtualization Layer::Windows Child Partition VM::Harness Driver",
+    "Virtualization Layer::Windows Child Partition VM::loader.exe",
+    "Virtualization Layer::Windows Child Partition VM::packet_sender.exe",
+    "Virtualization Layer::Windows Root Partition VM::VMSwitch Target"
+  ],
+  "_provenance": {
+    "fingerprint": "e0a4b8ac3030bafd2c753dcc8f10e0b9f5873c648aed65480566e782ee169f2c",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

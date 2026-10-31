@@ -1,0 +1,107 @@
+@startuml
+title Soundzone - System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "End User" as User
+actor "Maintainer / Operator" as Operator
+
+package "Client Runtime (Browser)" as Client {
+    component "React Frontend" as ReactApp {
+        component "Audio Playback UI\n(play sounds)" as PlaybackUI
+        component "Waveform Navigation UI\n(click to scrub)" as WaveformUI
+        component "Upload UI\n(audio & image)" as UploadUI
+        component "Follow UI" as FollowUI
+        component "Form UI\n(validation & errors)" as FormUI
+    }
+
+    component "Redux Store & Actions" as Redux {
+        component "Centralized Playback State\n(single current playback,\ncontinuity across navigation)" as PlaybackState
+        component "Users / Sounds / Follows State" as AppState
+        component "Form Validation State" as FormState
+    }
+
+    component "Frontend Configuration\n(API base URL, Cloudinary URL,\nCloudinary upload preset)" as Config
+}
+
+package "Server Runtime" as Server {
+    component "Node/Express Backend" as Express {
+        component "User / Auth API\n(register, login, user info)" as AuthAPI
+        component "Sound API\n(detail, create, delete)" as SoundAPI
+        component "Follow API\n(follow, unfollow)" as FollowAPI
+        component "Feed API\n(follow feeds, user sound lists)" as FeedAPI
+    }
+}
+
+database "PostgreSQL\n(application data &\nmedia URL references)" as Postgres {
+    entity "User records" as UserDB
+    entity "Sound records" as SoundDB
+    entity "Follow relationships" as FollowDB
+    entity "Media URL references\n(audio & image)" as MediaURLDB
+}
+
+cloud "Cloudinary\n(audio & image media storage)" as Cloudinary {
+    component "Upload API" as CloudUpload
+    component "Hosted Media Assets\n(audio files, images)" as CloudAssets
+}
+
+' User interactions
+User --> PlaybackUI
+User --> WaveformUI
+User --> UploadUI
+User --> FollowUI
+User --> FormUI
+
+Operator --> Config
+
+' UI to Redux
+PlaybackUI --> PlaybackState
+WaveformUI --> PlaybackState
+UploadUI --> AppState
+FollowUI --> AppState
+FormUI --> FormState
+PlaybackState --> AppState
+
+' Config consumed at runtime
+Config --> Redux
+
+' Redux/action flows to backend HTTP APIs
+Redux --> AuthAPI : fetch HTTP
+Redux --> SoundAPI : fetch HTTP
+Redux --> FollowAPI : fetch HTTP
+Redux --> FeedAPI : fetch HTTP
+
+' Direct media upload to Cloudinary
+UploadUI --> CloudUpload : HTTP direct upload
+CloudUpload --> CloudAssets : stores asset
+CloudAssets ..> UploadUI : hosted URL
+
+' Backend to database
+AuthAPI --> UserDB
+SoundAPI --> SoundDB
+SoundAPI --> MediaURLDB
+FollowAPI --> FollowDB
+FeedAPI --> SoundDB
+FeedAPI --> FollowDB
+FeedAPI --> UserDB
+
+' Backend persistence of Cloudinary URLs
+SoundAPI ..> Postgres : stores media URL references
+
+' Cross-cutting notes
+note right of PlaybackState
+  FR-005/FR-006, NFR-001/NFR-002:
+  one managed current playback;
+  state preserved across page
+  navigation and component switching
+end note
+
+note bottom of Cloudinary
+  FR-008, NFR-003, C-004/C-006:
+  media uploaded directly to Cloudinary;
+  only hosted URLs are persisted in PostgreSQL
+end note
+
+@enduml

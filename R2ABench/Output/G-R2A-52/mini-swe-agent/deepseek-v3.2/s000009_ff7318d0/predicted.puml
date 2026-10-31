@@ -1,0 +1,151 @@
+@startuml
+!define LAYER1 #LightBlue
+!define LAYER2 #LightGreen
+!define LAYER3 #LightYellow
+!define LAYER4 #LightPink
+!define LAYER5 #LightGray
+
+title Foot365 - AWS Football Information Web Application Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> White
+  BorderColor Black
+  ArrowColor Black
+}
+
+package "Presentation Layer" <<Layer>> {
+  component "Web Frontend" as Frontend {
+    [HTML/CSS/Bootstrap/jQuery]
+    [S3 Hosted]
+  }
+  
+  component "Mobile Users" as MobileUsers <<External>> {
+    [Football Enthusiasts]
+    [Chatbot Users]
+    [Reminder Requesters]
+  }
+}
+
+package "API Gateway Layer" <<Layer>> {
+  component "API Gateway" as APIGateway {
+    [REST APIs]
+    [Authentication]
+    [JSON Payloads]
+  }
+}
+
+package "Application Layer" <<Layer>> {
+  component "Lambda Functions" as Lambda {
+    [Python/Node.js]
+    [Backend Logic]
+  }
+  
+  component "Chatbot Handler" as Chatbot {
+    [Conversation Logic]
+    [Intent Processing]
+  }
+  
+  component "Prediction Service" as Prediction {
+    [SageMaker Integration]
+    [ML Predictions]
+  }
+  
+  component "Notification Service" as Notification {
+    [SQS Queue]
+    [SMS Delivery]
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "DynamoDB" as DynamoDB {
+    [Match Data]
+    [Fixtures/Results]
+  }
+  
+  component "Elasticsearch" as Elasticsearch {
+    [Search Index]
+    [Data Retrieval]
+  }
+}
+
+package "Streaming Layer" <<Layer>> {
+  component "Live Score Pipeline" as Streaming {
+    [Kafka on EC2]
+    [Apache Avro]
+  }
+}
+
+package "Security Layer" <<Layer>> {
+  component "Cognito" as Cognito {
+    [Authentication]
+    [User Management]
+  }
+  
+  component "IAM" as IAM {
+    [Access Control]
+    [Permissions]
+  }
+}
+
+' User interactions
+MobileUsers --> Frontend : "Access Web App"
+Frontend --> APIGateway : "API Requests\n(JSON)"
+APIGateway --> Lambda : "Invoke Functions"
+APIGateway --> Cognito : "Authenticate Requests"
+
+' Chatbot flow
+Frontend --> APIGateway : "Chatbot Messages"
+APIGateway --> Chatbot : "Process Intents"
+Chatbot --> DynamoDB : "Query Match Data"
+Chatbot --> Elasticsearch : "Search Data"
+
+' Prediction flow
+Lambda --> Prediction : "Request Predictions"
+Prediction --> DynamoDB : "Read Match Data"
+Prediction --> Lambda : "Return Probabilities"
+
+' Notification flow
+Lambda --> Notification : "Queue Reminders"
+Notification --> MobileUsers : "Send SMS"
+
+' Data management
+Lambda --> DynamoDB : "CRUD Operations"
+Lambda --> Elasticsearch : "Search Operations"
+DynamoDB --> Elasticsearch : "Data Sync"
+
+' Streaming pipeline
+Streaming --> DynamoDB : "Update Live Scores"
+Streaming --> Lambda : "Push Updates"
+
+' Security
+Cognito --> IAM : "Manage Permissions"
+IAM --> APIGateway : "Authorize Access"
+IAM --> Lambda : "Execution Roles"
+IAM --> DynamoDB : "Data Access"
+IAM --> Elasticsearch : "Search Access"
+IAM --> Prediction : "ML Access"
+IAM --> Notification : "Notification Access"
+
+' External dependencies
+component "External Data Sources" as ExternalData <<External>> {
+  [Live Score Feeds]
+  [Match Statistics]
+}
+ExternalData --> Streaming : "Live Score Updates"
+
+note right of Frontend
+  HTML, CSS, Bootstrap, jQuery
+  Hosted on Amazon S3
+end note
+
+note right of Lambda
+  Python and Node.js
+  Serverless Functions
+end note
+
+note right of Streaming
+  Kafka with Apache Avro
+  Running on EC2
+end note
+
+@enduml

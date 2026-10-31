@@ -1,0 +1,61 @@
+@startuml
+package "External Control Input Handling" {
+  cloud "User Application" as UserApp
+  interface "OSC Control Interface" as OSC
+}
+
+package "Manager-Driver Shared-Memory Communication" {
+  component "VMT Manager" as VMTManager
+  component "Shared-Memory JSON Interface" as ShmJson
+  component "Shared Memory IPC" as SharedMemory
+  component "Manager-to-Driver Channel" as MgrToDrvChannel
+  component "Driver-to-Manager Channel" as DrvToMgrChannel
+  component "Synchronization Metadata\nsend count\nhandshake count\nmessage length" as SyncMetadata
+}
+
+package "Runtime Driver Integration" {
+  component "VMT Driver" as VMTDriver
+  interface "OpenVR Driver Interface" as OpenVRDriver
+  node "OpenVR/SteamVR Runtime" as SteamVR
+}
+
+package "Controller Binding Definition" {
+  component "Legacy mycontroller Binding File" as MyControllerBinding
+  component "mycontroller legacy binding content\ncontroller_type=mycontroller\nthree right-hand mappings\nmode=button\nparameters.sub_mode=complex" as MyControllerBindingContent
+}
+
+package "OpenVR SDK Dependency Context" {
+  cloud "OpenVR SDK" as OpenVRSDK
+  component "OpenVR SDK Initialization" as SDKInit
+  component "OpenVR SDK Shutdown" as SDKShutdown
+  component "OpenVR Path Constants" as SDKPaths
+}
+
+node "Host Environment with Shared-Memory IPC" as HostEnvironment
+
+UserApp --> OSC : external control input
+OSC --> VMTManager : input for virtual motion tracking
+
+VMTManager --> ShmJson : manager-to-driver JSON
+VMTDriver --> ShmJson : driver-to-manager JSON
+ShmJson --> SharedMemory : shared-memory JSON
+SharedMemory --> MgrToDrvChannel : contains
+SharedMemory --> DrvToMgrChannel : contains
+MgrToDrvChannel --> SyncMetadata : uses
+DrvToMgrChannel --> SyncMetadata : uses
+VMTDriver --> MgrToDrvChannel : reads manager-to-driver JSON
+VMTManager --> DrvToMgrChannel : reads driver-to-manager JSON
+
+VMTDriver ..|> OpenVRDriver : implements/exposes
+SteamVR --> OpenVRDriver : loads and hosts driver
+VMTDriver --> OpenVRSDK : depends on SDK interfaces/version checks
+OpenVRDriver --> OpenVRSDK : uses SDK structures/version checks
+VMTDriver --> SDKInit : initialization
+VMTDriver --> SDKShutdown : shutdown
+VMTDriver --> SDKPaths : path-constant context
+
+MyControllerBinding --> MyControllerBindingContent : specifies
+MyControllerBinding --> SteamVR : legacy JSON binding consumed by OpenVR
+
+SharedMemory --> HostEnvironment : depends on shared-memory IPC capability
+@enduml

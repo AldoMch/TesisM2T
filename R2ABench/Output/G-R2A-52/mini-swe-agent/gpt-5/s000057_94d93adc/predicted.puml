@@ -1,0 +1,73 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+title Soundzone Architecture (Layered Component Diagram)
+
+package "Client Layer (React/Redux SPA)" as Client {
+  [Web UI: Upload / Playback / Follow] as WebUI
+  [Redux Store & Actions] as Redux
+  [Playback Manager] as PlaybackMgr
+  [HTTP API Client] as ApiClient
+}
+
+package "Backend Layer (Node/Express)" as Backend {
+  [Express REST API] as ExpressAPI
+  [Auth & Users API] as UsersAPI
+  [Follow & Feed API] as FollowAPI
+  [Sound API] as SoundAPI
+  [Data Access (ORM/Queries)] as DataAccess
+}
+
+database "PostgreSQL" as Postgres
+cloud "Cloudinary (Audio & Image Storage)" as Cloudinary
+
+' Frontend interactions
+WebUI --> PlaybackMgr : Play / Scrub waveform
+WebUI --> Redux : UI events, state updates
+PlaybackMgr --> Redux : Managed playback state
+Redux --> ApiClient : Async actions (thunks)
+
+' External media upload flow
+WebUI --> Cloudinary : Direct upload (audio/image)
+Cloudinary --> WebUI : Hosted URL (media)
+
+' Frontend to backend API
+ApiClient --> ExpressAPI : HTTPS JSON (API base URL)
+
+' Backend API routing and services
+ExpressAPI --> UsersAPI
+ExpressAPI --> FollowAPI
+ExpressAPI --> SoundAPI
+
+UsersAPI --> DataAccess
+FollowAPI --> DataAccess
+SoundAPI --> DataAccess
+
+DataAccess --> Postgres : Persist/retrieve application records
+
+' Notes for key constraints and NFRs
+note right of WebUI
+- Browser-based React UI
+- Form validation & errors
+- Waveform-based scrubbing
+end note
+
+note bottom of PlaybackMgr
+Maintain single current playback
+and continuity across page changes
+end note
+
+note right of ApiClient
+Uses env config:
+- API base URL
+- Cloudinary URL & upload preset
+end note
+
+note right of Cloudinary
+Frontend uploads media directly.
+Backend stores resulting URLs
+in PostgreSQL records.
+end note
+
+@enduml

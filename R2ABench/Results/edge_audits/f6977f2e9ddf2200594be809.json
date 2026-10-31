@@ -1,0 +1,724 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "6be7d94bf514fc9cf2ee857e30e40c2a1872f33f505f92647f7ab35aaf022b8e",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "e5d89d68f0247448cfd6dafdac8c58a479516b17e002d0ae591e7c7131f8c96b",
+  "predicted_edges_sha256": "2fe2e81d5e57ffba8929c46c71da7ed92860e220335f61a3aafd5f7f65918465",
+  "precision": 0.16216216216216217,
+  "recall": 0.6,
+  "f1": 0.25531914893617025,
+  "reference_edges": [
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+    ],
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Postgres"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 1"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 2"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 3"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker N"
+    ],
+    [
+      "Docker Compose Environment::Postgres",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Postgres"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "Data & Persistence Layer::Postgres 9.6\\nAirflow metadata (5432)",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Global::Host Machine",
+      "Global::Presentation & Access Layer (Service UIs)"
+    ],
+    [
+      "Host Machine::Host Port Mappings\\n5432 / 8282 / 8181 / 7077 / 8888 / 4040-4080",
+      "Global::Presentation & Access Layer (Service UIs)"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Data & Persistence Layer::Postgres 9.6\\nAirflow metadata (5432)"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Orchestration Layer::DAG Runtime\\nSpark test DAG loaded from mounted DAG dir"
+    ],
+    [
+      "Orchestration Layer::DAG Runtime\\nSpark test DAG loaded from mounted DAG dir",
+      "Orchestration Layer::SparkSubmitOperator\\nconn: spark_default"
+    ],
+    [
+      "Orchestration Layer::PySpark Runtime in Airflow image\\n(pinned deps + pyspark)",
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector"
+    ],
+    [
+      "Orchestration Layer::SparkSubmitOperator\\nconn: spark_default",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Airflow Web UI\\n(host 8282)",
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Jupyter Notebook UI\\n(host 8888)",
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Spark Application UI\\n(host 4040-4080)",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Spark Master Web UI\\n(host 8181)",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Cross-Cutting Concerns::Local Security Profile\\nRPC auth/encryption, SSL disabled"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Data & Persistence Layer::libsvm Datasets\\n(for bundled ML examples)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Spark Standalone Processing Layer::Swrk 2\\nspark-worker-2"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Spark Standalone Processing Layer::Swrk 3\\nspark-worker-3"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Spark Standalone Processing Layer::Worker Scaling Pattern\\n(additional workers)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 2\\nspark-worker-2",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 3\\nspark-worker-3",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Users (Actors)::Data Engineer",
+      "Presentation & Access Layer (Service UIs)::Airflow Web UI\\n(host 8282)"
+    ],
+    [
+      "Users (Actors)::Data Engineer",
+      "Presentation & Access Layer (Service UIs)::Spark Master Web UI\\n(host 8181)"
+    ],
+    [
+      "Users (Actors)::Notebook User",
+      "Presentation & Access Layer (Service UIs)::Jupyter Notebook UI\\n(host 8888)"
+    ],
+    [
+      "Users (Actors)::Platform Engineer",
+      "Global::Host Machine"
+    ],
+    [
+      "Users (Actors)::Tester",
+      "Presentation & Access Layer (Service UIs)::Spark Application UI\\n(host 4040-4080)"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)"
+    ],
+    [
+      "Docker Compose Environment::Airflow\\n(Spark Driver)",
+      "Docker Compose Environment::Postgres"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 1"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 2"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker 3"
+    ],
+    [
+      "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)",
+      "Docker Compose Environment::Spark Workers::Worker N"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Data & Persistence Layer::Postgres 9.6\\nAirflow metadata (5432)"
+    ],
+    [
+      "Orchestration Layer::SparkSubmitOperator\\nconn: spark_default",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Spark Standalone Processing Layer::Swrk 2\\nspark-worker-2"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Spark Standalone Processing Layer::Swrk 3\\nspark-worker-3"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Spark Standalone Processing Layer::Worker Scaling Pattern\\n(additional workers)"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "Docker Compose Environment::Postgres",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Airflow\\n(Spark Driver)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Jupyter Notebook\\n(Spark)"
+    ],
+    [
+      "Global::Data Engineer",
+      "Docker Compose Environment::Postgres"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "Data & Persistence Layer::Postgres 9.6\\nAirflow metadata (5432)",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Global::Host Machine",
+      "Global::Presentation & Access Layer (Service UIs)"
+    ],
+    [
+      "Host Machine::Host Port Mappings\\n5432 / 8282 / 8181 / 7077 / 8888 / 4040-4080",
+      "Global::Presentation & Access Layer (Service UIs)"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Orchestration Layer::DAG Runtime\\nSpark test DAG loaded from mounted DAG dir"
+    ],
+    [
+      "Orchestration Layer::DAG Runtime\\nSpark test DAG loaded from mounted DAG dir",
+      "Orchestration Layer::SparkSubmitOperator\\nconn: spark_default"
+    ],
+    [
+      "Orchestration Layer::PySpark Runtime in Airflow image\\n(pinned deps + pyspark)",
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Airflow Web UI\\n(host 8282)",
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Jupyter Notebook UI\\n(host 8888)",
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Spark Application UI\\n(host 4040-4080)",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Spark Master Web UI\\n(host 8181)",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Cross-Cutting Concerns::Local Security Profile\\nRPC auth/encryption, SSL disabled"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Data & Persistence Layer::libsvm Datasets\\n(for bundled ML examples)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 2\\nspark-worker-2",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 3\\nspark-worker-3",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Users (Actors)::Data Engineer",
+      "Presentation & Access Layer (Service UIs)::Airflow Web UI\\n(host 8282)"
+    ],
+    [
+      "Users (Actors)::Data Engineer",
+      "Presentation & Access Layer (Service UIs)::Spark Master Web UI\\n(host 8181)"
+    ],
+    [
+      "Users (Actors)::Notebook User",
+      "Presentation & Access Layer (Service UIs)::Jupyter Notebook UI\\n(host 8888)"
+    ],
+    [
+      "Users (Actors)::Platform Engineer",
+      "Global::Host Machine"
+    ],
+    [
+      "Users (Actors)::Tester",
+      "Presentation & Access Layer (Service UIs)::Spark Application UI\\n(host 4040-4080)"
+    ]
+  ],
+  "internal_reference_edges": [],
+  "internal_predicted_edges": [
+    [
+      "Orchestration Layer::SparkSubmitOperator\\nconn: spark_default",
+      "Orchestration Layer::PySpark Runtime in Airflow image\\n(pinned deps + pyspark)"
+    ]
+  ],
+  "reference_witnesses": [
+    {
+      "edge_index": 0,
+      "counterpart_index": 10,
+      "source_group": 1,
+      "target_group": 2
+    },
+    {
+      "edge_index": 1,
+      "counterpart_index": 5,
+      "source_group": 1,
+      "target_group": 0
+    },
+    {
+      "edge_index": 2,
+      "counterpart_index": 24,
+      "source_group": 2,
+      "target_group": 4
+    },
+    {
+      "edge_index": 3,
+      "counterpart_index": 25,
+      "source_group": 2,
+      "target_group": 5
+    },
+    {
+      "edge_index": 4,
+      "counterpart_index": 26,
+      "source_group": 2,
+      "target_group": 6
+    },
+    {
+      "edge_index": 5,
+      "counterpart_index": 27,
+      "source_group": 2,
+      "target_group": 7
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 5,
+      "counterpart_index": 1,
+      "source_group": 1,
+      "target_group": 0
+    },
+    {
+      "edge_index": 10,
+      "counterpart_index": 0,
+      "source_group": 1,
+      "target_group": 2
+    },
+    {
+      "edge_index": 24,
+      "counterpart_index": 2,
+      "source_group": 2,
+      "target_group": 4
+    },
+    {
+      "edge_index": 25,
+      "counterpart_index": 3,
+      "source_group": 2,
+      "target_group": 5
+    },
+    {
+      "edge_index": 26,
+      "counterpart_index": 4,
+      "source_group": 2,
+      "target_group": 6
+    },
+    {
+      "edge_index": 27,
+      "counterpart_index": 5,
+      "source_group": 2,
+      "target_group": 7
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "Docker Compose Environment::Airflow\\n(Spark Driver)": [
+      1
+    ],
+    "Docker Compose Environment::Cluster Manager\\n(Spark Standalone)": [
+      2
+    ],
+    "Docker Compose Environment::Jupyter Notebook\\n(Spark)": [
+      3
+    ],
+    "Docker Compose Environment::Postgres": [
+      0
+    ],
+    "Docker Compose Environment::Spark Workers": [
+      4,
+      5,
+      6,
+      7
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 1": [
+      4
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 2": [
+      5
+    ],
+    "Docker Compose Environment::Spark Workers::Worker 3": [
+      6
+    ],
+    "Docker Compose Environment::Spark Workers::Worker N": [
+      7
+    ],
+    "Global::Data Engineer": [
+      8
+    ],
+    "Global::Docker Compose Environment": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ]
+  },
+  "predicted_endpoint_anchors": {
+    "Cross-Cutting Concerns::Local Security Profile\\nRPC auth/encryption, SSL disabled": [],
+    "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs": [],
+    "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)": [],
+    "Data & Persistence Layer::Postgres 9.6\\nAirflow metadata (5432)": [
+      0
+    ],
+    "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data": [],
+    "Data & Persistence Layer::libsvm Datasets\\n(for bundled ML examples)": [],
+    "Global::Cross-Cutting Concerns": [],
+    "Global::Data & Persistence Layer": [
+      0
+    ],
+    "Global::Host Machine": [],
+    "Global::Orchestration Layer": [
+      1
+    ],
+    "Global::Presentation & Access Layer (Service UIs)": [],
+    "Global::Spark Standalone Processing Layer": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "Global::Users (Actors)": [
+      8
+    ],
+    "Host Machine::Docker Engine + Docker Compose (format 3.7)": [],
+    "Host Machine::Host Port Mappings\\n5432 / 8282 / 8181 / 7077 / 8888 / 4040-4080": [],
+    "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor": [
+      1
+    ],
+    "Orchestration Layer::DAG Runtime\\nSpark test DAG loaded from mounted DAG dir": [],
+    "Orchestration Layer::PySpark Runtime in Airflow image\\n(pinned deps + pyspark)": [
+      1
+    ],
+    "Orchestration Layer::SparkSubmitOperator\\nconn: spark_default": [
+      1
+    ],
+    "Presentation & Access Layer (Service UIs)::Airflow Web UI\\n(host 8282)": [],
+    "Presentation & Access Layer (Service UIs)::Jupyter Notebook UI\\n(host 8888)": [],
+    "Presentation & Access Layer (Service UIs)::Spark Application UI\\n(host 4040-4080)": [],
+    "Presentation & Access Layer (Service UIs)::Spark Master Web UI\\n(host 8181)": [],
+    "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector": [],
+    "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook": [
+      3
+    ],
+    "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077": [
+      2
+    ],
+    "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1": [
+      4
+    ],
+    "Spark Standalone Processing Layer::Swrk 2\\nspark-worker-2": [
+      5
+    ],
+    "Spark Standalone Processing Layer::Swrk 3\\nspark-worker-3": [
+      6
+    ],
+    "Spark Standalone Processing Layer::Worker Scaling Pattern\\n(additional workers)": [
+      7
+    ],
+    "Users (Actors)::Data Engineer": [
+      8
+    ],
+    "Users (Actors)::Notebook User": [],
+    "Users (Actors)::Platform Engineer": [],
+    "Users (Actors)::Tester": []
+  },
+  "reference_unanchored_edges": [],
+  "predicted_unanchored_edges": [
+    [
+      "Data & Persistence Layer::Postgres 9.6\\nAirflow metadata (5432)",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Global::Host Machine",
+      "Global::Presentation & Access Layer (Service UIs)"
+    ],
+    [
+      "Host Machine::Host Port Mappings\\n5432 / 8282 / 8181 / 7077 / 8888 / 4040-4080",
+      "Global::Presentation & Access Layer (Service UIs)"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor",
+      "Orchestration Layer::DAG Runtime\\nSpark test DAG loaded from mounted DAG dir"
+    ],
+    [
+      "Orchestration Layer::DAG Runtime\\nSpark test DAG loaded from mounted DAG dir",
+      "Orchestration Layer::SparkSubmitOperator\\nconn: spark_default"
+    ],
+    [
+      "Orchestration Layer::PySpark Runtime in Airflow image\\n(pinned deps + pyspark)",
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Airflow Web UI\\n(host 8282)",
+      "Orchestration Layer::Airflow Webserver + Scheduler\\nimage: docker-airflow-spark:latest\\nLocalExecutor"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Jupyter Notebook UI\\n(host 8888)",
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Spark Application UI\\n(host 4040-4080)",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Presentation & Access Layer (Service UIs)::Spark Master Web UI\\n(host 8181)",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Cross-Cutting Concerns::Local Security Profile\\nRPC auth/encryption, SSL disabled"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Data & Persistence Layer::libsvm Datasets\\n(for bundled ML examples)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector",
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Jupyter / PySpark Service\\njupyter/pyspark-notebook",
+      "Spark Standalone Processing Layer::Bundled Spark Distribution 2.4.5 / Hadoop 2.6\\n./bin/pyspark, ./bin/run-example, MASTER selector"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Cross-Cutting Concerns::Shared Compose Network\\n(service-name DNS resolution)"
+    ],
+    [
+      "Spark Standalone Processing Layer::Spark Master\\nbitnami/spark:latest\\nSPARK_MODE=master\\nspark://spark:7077",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1",
+      "Cross-Cutting Concerns::Observability\\nAirflow task logs, Spark UI, container logs"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 1\\nspark-worker-1",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 2\\nspark-worker-2",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Spark Standalone Processing Layer::Swrk 3\\nspark-worker-3",
+      "Data & Persistence Layer::Shared Mounted Volumes\\nDAGs / Spark apps / Notebooks / Input data"
+    ],
+    [
+      "Users (Actors)::Data Engineer",
+      "Presentation & Access Layer (Service UIs)::Airflow Web UI\\n(host 8282)"
+    ],
+    [
+      "Users (Actors)::Data Engineer",
+      "Presentation & Access Layer (Service UIs)::Spark Master Web UI\\n(host 8181)"
+    ],
+    [
+      "Users (Actors)::Notebook User",
+      "Presentation & Access Layer (Service UIs)::Jupyter Notebook UI\\n(host 8888)"
+    ],
+    [
+      "Users (Actors)::Platform Engineer",
+      "Global::Host Machine"
+    ],
+    [
+      "Users (Actors)::Tester",
+      "Presentation & Access Layer (Service UIs)::Spark Application UI\\n(host 4040-4080)"
+    ]
+  ]
+}

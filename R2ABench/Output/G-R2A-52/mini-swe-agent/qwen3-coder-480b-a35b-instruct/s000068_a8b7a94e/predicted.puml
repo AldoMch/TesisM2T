@@ -1,0 +1,72 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+title Layered Architecture for cFS Bundle (s000068_a8b7a94e)
+
+package "User Environment" {
+  [Operator] as Operator
+  [Developer] as Developer
+  [CI Maintainer] as CIMaintainer
+}
+
+package "Application Layer" {
+  [cFS Target Executable] as CFSTarget
+  [Host Command Utility] as CmdUtil
+}
+
+package "Framework Layer" {
+  [cFE (Core Flight Executive)] as cFE
+  [OSAL (Operating System Abstraction Layer)] as OSAL
+  [PSP (Platform Support Package)] as PSP
+  [Framework Applications] as FrameworkApps
+}
+
+package "Tooling & Utilities" {
+  [Build System (Make)] as BuildSystem
+  [Changelog Generator] as ChangelogGen
+  [Format Checker] as FormatChecker
+}
+
+package "CI/CD Infrastructure" {
+  [GitHub Actions Runner] as GitHubRunner
+  [Reusable Workflows] as ReusableWorkflows
+}
+
+package "Data Stores" {
+  [Telemetry Data Store] as TelemetryStore
+  [Configuration Files] as ConfigFiles
+}
+
+
+[Operator] --> [cFS Target Executable] : Sends commands/observes telemetry
+[Developer] --> [Build System (Make)] : Prepares and installs builds
+[CIMaintainer] --> [Changelog Generator] : Triggers changelog generation
+[CIMaintainer] --> [Format Checker] : Validates code format
+
+[cFS Target Executable] --> [cFE (Core Flight Executive)] : Built upon
+[cFS Target Executable] --> [Telemetry Data Store] : Produces telemetry
+
+[Host Command Utility] --> [cFS Target Executable] : Sends commands
+
+[Build System (Make)] --> [cFE (Core Flight Executive)] : Builds
+[Build System (Make)] --> [OSAL (Operating System Abstraction Layer)] : Builds
+[Build System (Make)] --> [PSP (Platform Support Package)] : Builds
+[Build System (Make)] --> [Framework Applications] : Builds
+
+[cFE (Core Flight Executive)] --> [OSAL (Operating System Abstraction Layer)] : Uses
+[cFE (Core Flight Executive)] --> [PSP (Platform Support Package)] : Uses
+
+[Framework Applications] --> [cFE (Core Flight Executive)] : Integrates with
+
+[Changelog Generator] --> [GitHub Actions Runner] : Executes on
+[Format Checker] --> [GitHub Actions Runner] : Executes on
+
+[Reusable Workflows] --> [GitHub Actions Runner] : Composed and executed on
+
+[Configuration Files] --> [cFS Target Executable] : Provides configuration
+[Configuration Files] --> [Build System (Make)] : Guides build process
+
+@enduml

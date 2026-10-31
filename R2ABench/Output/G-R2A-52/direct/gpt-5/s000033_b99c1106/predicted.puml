@@ -1,0 +1,93 @@
+@startuml
+title Airflow Spark Docker Integration - System Architecture
+
+' Host
+node "Host Machine" as host
+
+' Shared mounted directories
+folder "DAGs" as dag_dir
+folder "Spark Applications" as app_dir
+folder "Notebooks" as nb_dir
+folder "Input Data" as data_dir
+
+' Docker Compose network and services
+rectangle "Docker Compose Network (format 3.7)" as net {
+  database "Postgres 9.6\nPort: 5432" as postgres
+
+  node "Airflow Webserver (LocalExecutor)\nImage: docker-airflow-spark:latest\nUI: 8282\nIncludes: pyspark" as airflow
+
+  node "Spark Master (hostname: spark)\nImage: bitnami/spark:latest\nWeb UI: 8080 (host 8181)\nCluster: 7077" as spark_master
+
+  package "Spark Workers (scalable)" as workers {
+    node "spark-worker-1\nImage: bitnami/spark:latest" as w1
+    node "spark-worker-2\nImage: bitnami/spark:latest" as w2
+    node "spark-worker-3\nImage: bitnami/spark:latest" as w3
+    node "spark-worker-N\n(scale out pattern)" as wn
+  }
+
+  node "Jupyter PySpark Notebook\nImage: jupyter/pyspark-notebook\nUI: 8888\nSpark App UIs: 4040-4080" as jupyter
+}
+
+' Core communications inside Compose network
+airflow --> postgres : Airflow metadata (DB)
+airflow --> spark_master : SparkSubmitOperator via "spark_default"\nspark://spark:7077
+spark_master --> w1 : Worker registration & dispatch
+spark_master --> w2
+spark_master --> w3
+spark_master --> wn : Additional workers
+
+jupyter ..> spark_master : PySpark job submission (optional)
+
+' Host-to-service UI and cluster access (port mappings)
+host ..> airflow : 8282 (Airflow Web UI)
+host ..> postgres : 5432 (Postgres)
+host ..> spark_master : 8181 -> 8080 (Spark Master Web UI)
+host ..> spark_master : 7077 (Spark Cluster)
+host ..> jupyter : 8888 (Jupyter)
+host ..> jupyter : 4040-4080 (Spark App UIs)
+
+' Shared volume mounts
+dag_dir ..> airflow : Mount DAGs
+app_dir ..> airflow : Mount Spark apps
+app_dir ..> spark_master : Mount Spark apps
+app_dir ..> w1
+app_dir ..> w2
+app_dir ..> w3
+app_dir ..> wn
+
+data_dir ..> airflow : Mount input data
+data_dir ..> jupyter : Mount input data
+data_dir ..> spark_master : Mount input data
+data_dir ..> w1
+data_dir ..> w2
+data_dir ..> w3
+data_dir ..> wn
+
+nb_dir ..> jupyter : Mount notebooks
+
+' Notes and constraints
+note right of airflow
+- Airflow includes pyspark
+- Uses pinned deps:
+  celery 4.1.1, kombu 4.2.0,
+  tornado 5.1.1, werkzeug 0.16.0,
+  SQLAlchemy 1.3.15
+- Loads DAGs from mounted directory
+end note
+
+note right of spark_master
+- Spark Standalone 2.4.5 (Hadoop 2.6)
+- Endpoint: spark://spark:7077
+- Inherited capabilities:
+  ./bin/pyspark, ./bin/run-example
+  MASTER env supports local, local[N],
+  spark://..., mesos://..., yarn
+- Local dev/test: RPC auth/encryption & SSL disabled
+end note
+
+note bottom of workers
+Workers connect to spark://spark:7077
+and can be scaled by adding more
+spark-worker-* services.
+end note
+@enduml

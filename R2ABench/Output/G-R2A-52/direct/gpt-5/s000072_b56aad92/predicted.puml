@@ -1,0 +1,124 @@
+@startuml
+title ParaStation/psmpi System Architecture (s000072_b56aad92)
+
+skinparam componentStyle rectangle
+
+package "ParaStation/psmpi Repository" {
+  component "Communication Subsystem" as Comm
+  component "Progress Manager" as Progress
+  component "Connection Manager" as ConnMgr
+  component "One-to-Many Scatter" as Scatter
+  package "Send Path" {
+    component "Send State Machine" as SendSM
+  }
+
+  package "Embedded Libfabric Module" {
+    component "Verbs Provider" as VerbsProv
+  }
+}
+
+package "Send Path Data" {
+  component "Flow-Control State" as FlowState <<state>>
+  component "Packet Buffer" as PacketBuf <<buffer>>
+  component "Network Send Descriptor (DD)" as SendDesc <<descriptor>>
+  component "Data Descriptor (DD)" as DataDesc <<descriptor>>
+  component "Pinned User Data" as PinnedData <<memory>>
+  component "Envelope" as Envelope <<control>>
+  component "LIBA" as LIBA <<control>>
+  component "OD" as OD <<control>>
+}
+
+package "Transport Layers" {
+  component "OFI/libfabric" as OFI
+  component "UCX" as UCX
+}
+
+package "CH4 Integration Context" {
+  component "CH4 Netmod" as CH4
+}
+
+node "Linux Verbs Environment" as VerbsEnv {
+  component "libibverbs" as ibv
+  component "librdmacm" as rdma
+  node "Network Device" as NetDev
+}
+
+node "Build & Verification Environment" as BuildEnv {
+  component "run-embedded-tests.sh" as RunScript <<script>>
+  component "Autotools Workflow\n(autogen.sh, configure, make)" as Autotools <<build>>
+  component "hwloc tarball" as Tarball <<artifact>>
+  component "hwloc-tree/" as HwlocTree <<directory>>
+}
+
+' Communication Subsystem responsibilities and relationships
+Comm --> Progress : progress advancement\n+ blocking progress
+Comm --> ConnMgr : connection establishment
+Comm --> Scatter : one-to-many scatter responsibility
+Comm ..> SendSM : send path (design responsibility)
+Comm ..> CH4 : integration context
+
+note right of Comm
+- Documented design responsibilities:
+  - Initialization and finalization
+  - Progress advancement and blocking progress
+  - Connection establishment
+  - One-to-many scatter-style transfer
+- Design-note-derived behaviors are documented responsibilities
+  (not confirmed public APIs unless separately verified)
+end note
+
+' Send Path logic and data interactions
+SendSM --> FlowState : check flow status\n(defer or allow)
+SendSM --> SendDesc : prepare posted send
+SendDesc ..> OFI : post descriptor (when OFI is used)
+SendDesc ..> UCX : post descriptor (when UCX is used)
+
+' Direct-access vs packing alternatives
+SendDesc ..> PinnedData : direct-access binding\n(pinned user data)
+SendSM --> PacketBuf : prepare packet buffer
+DataDesc --> PacketBuf : pack payload (no direct access)
+
+' Rendezvous control-field handling
+note right of PacketBuf
+Rendezvous packet preparation:
+- rndv-rts: envelope + LIBA(OD)
+- rndv-cts: LIBA + LIBA
+- rndv-data: LIBA
+Packet buffer carries control info and payload\n(when direct access is not used)
+end note
+
+' Transport to Network Device
+OFI --> NetDev
+UCX --> NetDev
+
+' Embedded Libfabric verbs provider and constraints
+OFI ..> VerbsProv : provider integration (optional)
+VerbsProv --> ibv
+VerbsProv --> rdma
+
+note right of ibv
+Minimum version: libibverbs >= 1.1.8
+Matching headers required when building from source
+end note
+
+note right of rdma
+Minimum version: librdmacm >= 1.0.16
+Matching headers required when building from source
+end note
+
+' Build & Verification: embedded hwloc workflows
+RunScript --> Tarball : input tarball
+RunScript --> Autotools : executes embedded verification
+Autotools --> HwlocTree : build from renamed source dir
+
+note right of BuildEnv
+- Preferred verification: run-embedded-tests.sh <tarball>
+- Alternative manual workflow:
+  - Extract tarball, rename top-level dir to "hwloc-tree/"
+  - Run ./autogen.sh, ./configure, make
+- Verification is manual and not part of "make check"
+- Non-default include/lib locations can be set via
+  CFLAGS, LDFLAGS, LD_LIBRARY_PATH
+end note
+
+@enduml

@@ -1,0 +1,113 @@
+@startuml
+!define LAYER_COLOR #DDDDDD
+!define SERVICE_COLOR #CCCCFF
+!define DATASTORE_COLOR #FFCCCC
+!define EXTERNAL_COLOR #CCFFCC
+!define USER_COLOR #FFFFCC
+
+title Airflow Spark Docker Integration - Deployment Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Service>> SERVICE_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<User>> USER_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+package "Docker Compose Environment" {
+  component "Airflow Webserver" <<Service>> {
+    component "Airflow Scheduler"
+    component "Airflow Web UI"
+    note right: Port 8282\nLocalExecutor\nPySpark installed
+  }
+  
+  component "PostgreSQL" <<Datastore>> {
+    note right: Port 5432\nAirflow metadata
+  }
+  
+  component "Spark Master" <<Service>> {
+    note right: Port 7077 (cluster)\nPort 8181 (UI)\nspark://spark:7077
+  }
+  
+  component "Spark Worker 1" <<Service>> {
+    note right: Connects to master\nExecutes Spark jobs
+  }
+  
+  component "Spark Worker 2" <<Service>> {
+    note right: Connects to master\nExecutes Spark jobs
+  }
+  
+  component "Jupyter/PySpark" <<Service>> {
+    note right: Port 8888 (notebook)\nPorts 4040-4080 (Spark UI)\nInteractive PySpark
+  }
+}
+
+component "Host System" <<External>> {
+  note right: Docker host\nPort mappings\nFile mounts
+}
+
+component "Data Engineer" <<User>> {
+  note right: Configures Airflow\nRuns DAGs\nReviews logs
+}
+
+component "Spark Developer" <<User>> {
+  note right: Develops Spark apps\nTests via Airflow/Jupyter
+}
+
+component "Notebook User" <<User>> {
+  note right: Interactive PySpark\nJupyter notebooks
+}
+
+package "Shared File System" {
+  folder "DAGs" {
+    note right: Airflow workflows\nSparkSubmitOperator
+  }
+  
+  folder "Spark Applications" {
+    note right: Python Spark apps\nSubmitted by Airflow
+  }
+  
+  folder "Notebooks" {
+    note right: Jupyter notebooks\nInteractive development
+  }
+  
+  folder "Input Data" {
+    note right: Data files\nlibsvm datasets
+  }
+}
+
+' --- Dependencies and Connections ---
+"Airflow Webserver" --> "PostgreSQL" : Metadata storage\n(CI-001)
+"Airflow Webserver" --> "Spark Master" : Spark job submission\nvia spark://spark:7077\n(CI-002)
+"Spark Master" --> "Spark Worker 1" : Work distribution\n(CI-003)
+"Spark Master" --> "Spark Worker 2" : Work distribution\n(CI-003)
+
+"Data Engineer" --> "Airflow Webserver" : Web UI (port 8282)\nDAG configuration\n(UI-001)
+"Spark Developer" --> "Airflow Webserver" : Test Spark apps\nvia DAGs
+"Notebook User" --> "Jupyter/PySpark" : Notebook UI (port 8888)\n(UI-003)
+
+"Host System" --> "Docker Compose Environment" : Container orchestration\nPort mappings\n(FR-001, FR-002)
+
+"Airflow Webserver" --> "DAGs" : Loads DAG definitions\n(API-001)
+"Airflow Webserver" --> "Spark Applications" : Submits Spark apps\n(API-002)
+"Jupyter/PySpark" --> "Notebooks" : Interactive notebooks\n(API-006)
+"Jupyter/PySpark" --> "Input Data" : Data processing\n(API-009)
+"Spark Applications" --> "Input Data" : Data processing
+
+note top of "Spark Master"
+  Inherited Spark capabilities:
+  - ./bin/pyspark
+  - ./bin/run-example
+  - Spark 2.4.5, Hadoop 2.6
+end note
+
+note bottom of "Docker Compose Environment"
+  Shared Compose network
+  Service name resolution
+  (DEP-008)
+end note
+
+@enduml

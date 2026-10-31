@@ -1,0 +1,73 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+
+actor "Deployment Operator\n/ DevOps Engineer" as Operator
+actor "Infrastructure\nAdministrator" as InfraAdmin
+
+package "Local Workstation" {
+    component [Terraform CLI\n(init / plan / apply)] as TF
+    component [terraform.tfvars\n/ Variable Files] as TFVars
+    component [JSON Input Files] as JSONInput
+    component [SSH Key Material\n(public + private)] as SSHKeys
+}
+
+package "OCI Tenancy" {
+    component [OCI Identity & API\n(tenancy_ocid, user_ocid,\nfingerprint, private_key_path)] as OCIIdentity
+
+    package "Compartment" {
+
+        package "VCN (Virtual Cloud Network)" {
+
+            package "Public Subnet" {
+                component [Jenkins Master Instance\n(master_ad, master_shape,\nmaster_image_id, http_port,\njnlp_port, master_user_data)] as JenkinsMaster
+                component [Load Balancer\n(Public Entry Point)] as LoadBalancer
+                component [Bastion Host\n(bastion_host, bastion_user,\nbastion_private_key)] as Bastion
+            }
+
+            package "Private Subnet(s)\n(NAT-enabled outbound)" {
+                component [Jenkins Slave / Agent 1\n(slave_shape, slave_image_id,\nslave_user_data)] as Slave1
+                component [Jenkins Slave / Agent N\n(slave_count instances)] as SlaveN
+            }
+
+            component [NAT Gateway\n(Outbound for Private Nodes)] as NATGateway
+            component [Route Tables /\nDHCP Options /\nSecurity Lists] as NetworkObjects
+        }
+    }
+}
+
+' Operator interactions
+Operator --> TFVars : supplies OCI access,\nSSH, Jenkins, bastion\nvariable values
+Operator --> TF : runs terraform\ninit / plan / apply
+InfraAdmin --> NetworkObjects : prepares existing\nnetwork objects
+InfraAdmin --> NATGateway : configures NAT\nfor private subnets
+InfraAdmin --> Bastion : provisions bastion host
+
+' Terraform reads config
+TF --> TFVars : reads variable\nfile inputs
+TF --> JSONInput : reads example\n/ test inputs
+TF --> SSHKeys : references\nkey paths
+TF --> OCIIdentity : authenticates via\nOCI credentials
+
+' Terraform provisions OCI resources
+TF --> JenkinsMaster : provisions master instance\n(Cloud-Init / ssh_authorized_keys)
+TF --> Slave1 : provisions slave instances\n(Cloud-Init / authorized_keys)
+TF --> SlaveN : provisions slave instances\n(Cloud-Init / authorized_keys)
+
+' Network associations
+JenkinsMaster --> LoadBalancer : registered as\nbackend target
+LoadBalancer --> JenkinsMaster : routes public\nHTTP traffic (http_port)
+JenkinsMaster --> Slave1 : JNLP master-to-agent\ncommunication (jnlp_port)
+JenkinsMaster --> SlaveN : JNLP master-to-agent\ncommunication (jnlp_port)
+Bastion --> JenkinsMaster : SSH-mediated\nprivate access
+Bastion --> Slave1 : SSH-mediated\nprivate access
+Bastion --> SlaveN : SSH-mediated\nprivate access
+Slave1 --> NATGateway : outbound connectivity\nfor private nodes
+SlaveN --> NATGateway : outbound connectivity\nfor private nodes
+
+' Operator SSH access
+Operator --> Bastion : SSH (bastion_private_key)
+
+@enduml

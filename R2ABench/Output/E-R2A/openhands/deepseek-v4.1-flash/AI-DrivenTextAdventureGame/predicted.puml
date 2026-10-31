@@ -1,0 +1,182 @@
+@startuml
+title AI-Driven Text Adventure Game and Community Platform - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+' =========================================================
+' Client / Presentation Layer
+' =========================================================
+package "Client Layer" {
+    component "Web Client\n(Vue.js + Nuxt.js SSR)" as WebClient {
+        [Registration & Login UI] as AuthUI
+        [User Homepage & Profile UI] as ProfileUI
+        [Community Home & Post UI] as PostUI
+        [Favorites UI] as FavUI
+        [Notification UI] as NotifUI
+        [Administrator UI] as AdminUI
+        [Game UI] as GameUI
+    }
+}
+
+' =========================================================
+' Backend / Application Layer (Iris, Go)
+' =========================================================
+package "Backend Application Layer (Iris / Go)" {
+
+    component "API Gateway / Router\n(Iris MVC, Middleware, Sessions)" as APIGateway
+
+    package "Community User System" {
+        component "Account Service\n(Register/Login/Logout)" as AccountSvc
+        component "Profile Service\n(Avatar/Username/History)" as ProfileSvc
+        component "Auth & Session Service\n(Password Recovery/Change)" as AuthSvc
+    }
+
+    package "Game System" {
+        component "Game Session Service\n(New/Continue/Choice)" as GameSvc
+        component "Save Management Service\n(Cloud/Local/Delete/Share)" as SaveSvc
+        component "Background Service\n(Background Info/Story)" as BgSvc
+        component "Model Reasoning Client\n(Plot/Event/State Updates)" as ModelClient
+    }
+
+    package "Community System" {
+        component "Post Service\n(Publish/Edit/Delete/Search)" as PostSvc
+        component "Comment & Reply Service" as CommentSvc
+        component "Favorites Service" as FavSvc
+        component "Recommendation & Search Service" as SearchSvc
+    }
+
+    package "Community Administration System" {
+        component "User Governance Service\n(List/Ban/Restore)" as GovSvc
+        component "Post Review Service\n(Pending/Approve/Reject)" as ReviewSvc
+        component "Report & Feedback Service" as ReportSvc
+    }
+
+    package "Notification System" {
+        component "Notification Service\n(Create/Read/Delete)" as NotifSvc
+        component "Notification Settings Service" as NotifCfgSvc
+    }
+
+    component "Security & Access Control\n(Encryption/Access Control)" as Security
+    component "Observability\n(Logging/Monitoring)" as Observability
+}
+
+' =========================================================
+' Data Layer
+' =========================================================
+package "Data Layer" {
+    database "MySQL\n(Relational Database)" as MySQL
+    component "Gorm ORM\n(Data Access)" as Gorm
+    database "Save Store\n(Cloud Saves / Local Temp Saves)" as SaveStore
+    component "Model-Generated Content\n(Plot Text / AIGC Images / Audio)" as GeneratedData
+}
+
+' =========================================================
+' External Services
+' =========================================================
+package "External Services" {
+    component "Large Language Model Provider\n(Plot, Events, State Reasoning)" as LLM
+    component "AIGC Media Service\n(Images, Music, Sound Effects)" as AIGC
+    component "Email Service\n(Verification Codes)" as Email
+}
+
+' =========================================================
+' Deployment / Infrastructure
+' =========================================================
+package "Infrastructure & Operations" {
+    component "Docker Containers" as Docker
+    component "Kubernetes\n(Orchestration, Scaling, Management)" as K8s
+    cloud "Cloud Provider / Data Center" as DC
+}
+
+' =========================================================
+' Relationships
+' =========================================================
+
+' Client to backend
+WebClient --> APIGateway : HTTP/HTTPS API\n(encrypted)
+
+' Gateway to user system
+APIGateway --> AccountSvc
+APIGateway --> ProfileSvc
+APIGateway --> AuthSvc
+
+' Gateway to game system
+APIGateway --> GameSvc
+APIGateway --> SaveSvc
+APIGateway --> BgSvc
+
+' Gateway to community system
+APIGateway --> PostSvc
+APIGateway --> CommentSvc
+APIGateway --> FavSvc
+APIGateway --> SearchSvc
+
+' Gateway to admin system
+APIGateway --> GovSvc
+APIGateway --> ReviewSvc
+APIGateway --> ReportSvc
+
+' Gateway to notifications
+APIGateway --> NotifSvc
+APIGateway --> NotifCfgSvc
+
+' Internal game interactions
+GameSvc --> ModelClient
+GameSvc --> SaveSvc
+GameSvc --> BgSvc
+ModelClient --> LLM : model reasoning protocol\n(not specified)
+ModelClient --> GeneratedData
+SaveSvc --> SaveStore
+BgSvc --> MySQL
+
+' Community interactions
+PostSvc --> ReviewSvc : submit for review
+ReviewSvc --> NotifSvc : review progress event
+CommentSvc --> NotifSvc : comment/reply event
+FavSvc --> PostSvc
+SearchSvc --> PostSvc
+GovSvc --> AccountSvc : ban/restore
+
+' Save sharing to community
+SaveSvc --> PostSvc : share save as post
+
+' Notification triggers
+NotifSvc --> MySQL
+NotifCfgSvc --> MySQL
+
+' Cross-cutting
+APIGateway --> Security
+Security --> AuthSvc
+Observability --> MySQL
+Security --> MySQL : encrypted sensitive data
+
+' Email verification
+AccountSvc --> Email
+AuthSvc --> Email
+
+' AIGC media
+GameSvc --> AIGC
+
+' Persistence
+AccountSvc --> Gorm
+ProfileSvc --> Gorm
+PostSvc --> Gorm
+CommentSvc --> Gorm
+FavSvc --> Gorm
+NotifSvc --> Gorm
+ReviewSvc --> Gorm
+GovSvc --> Gorm
+SaveSvc --> Gorm
+Gorm --> MySQL
+
+' Deployment
+Docker --> K8s
+K8s --> DC
+WebClient ..> Docker : containerized
+APIGateway ..> Docker : containerized
+MySQL ..> Docker : containerized
+
+@enduml

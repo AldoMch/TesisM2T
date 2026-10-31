@@ -1,0 +1,66 @@
+@startuml
+title statlord - System Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+
+actor "Browser User\n(Editor)" as BrowserUser
+actor "API Client" as APIClient
+actor "Display Device\n(OLED/e-paper/LCD)" as DisplayDevice
+
+rectangle "Client Layer (TypeScript/React SPA)" as ClientLayer {
+    component "Browser Editor\n(Layout Editor UI)" as EditorUI
+    component "Redux Store\n(controls, elements, layouts,\ngauges, displays)" as ReduxStore
+    component "Viewer Interface\n(Display Renderer)" as ViewerUI
+}
+
+rectangle "Server Layer (Python/Django)" as ServerLayer {
+    component "Django Web Server\n(manage.py runserver)" as DjangoServer
+    component "REST API\n(Gauge, Display, Layout endpoints)" as RestAPI
+    component "Static Asset Server\n(Built Client Assets)" as StaticServer
+    component "Viewer Path\n(Display Rendering Logic)" as ViewerPath
+}
+
+rectangle "Data Layer" as DataLayer {
+    database "PostgreSQL\n(Gauge, Display, Layout)" as PostgreSQL
+}
+
+rectangle "Build & Packaging" as BuildLayer {
+    component "Node.js / npm Build\n(TypeScript/React → Static Assets)" as NodeBuild
+}
+
+BrowserUser --> EditorUI : "Layout editing,\nrender/delete requests"
+BrowserUser --> ViewerUI : "View display output"
+APIClient --> RestAPI : "POST gauge data,\nregister displays,\nconfigure layouts"
+DisplayDevice --> ViewerPath : "Fetch rendered view"
+
+EditorUI --> ReduxStore : "State management\n(controls, elements,\nlayouts, gauges, displays)"
+ViewerUI --> ReduxStore : "Read display state"
+EditorUI --> RestAPI : "API calls (CRUD)"
+ViewerUI --> RestAPI : "API calls (read)"
+
+DjangoServer --> RestAPI
+DjangoServer --> StaticServer
+DjangoServer --> ViewerPath
+
+RestAPI --> PostgreSQL : "Persist / query\nGauge, Display, Layout"
+ViewerPath --> PostgreSQL : "Read display & layout data"
+
+NodeBuild --> StaticServer : "Deploy built\nstatic assets"
+
+note right of ServerLayer
+  Development-grade deployment
+  (Django dev server, not production-ready)
+end note
+
+note right of DataLayer
+  Entities:
+  - Gauge (key, value)
+  - Display (key, available, resolution_x,
+    resolution_y, current_layout,
+    display_data, rotation)
+  - Layout (key, data, display_positions)
+end note
+
+@enduml

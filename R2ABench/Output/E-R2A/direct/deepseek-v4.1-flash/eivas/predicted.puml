@@ -1,0 +1,125 @@
+@startuml
+title EIVAS System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Epidemiological Form Filler" as Filler
+actor "Epidemiological Analyst" as Analyst
+
+package "Client Layer (Web Browser)" {
+  component "Epidemiological Reporting Form\n(FR-001, FR-004)" as ReportingForm
+  component "Case Management List\n(FR-005–FR-008)" as CaseMgmt
+  component "Map Display Interface\n(FR-003, FR-009)" as MapUI
+  component "Association Information Display\n(FR-010)" as AssocUI
+  component "Graph Relationship Display\n(FR-011)" as GraphUI
+  component "Statistical Charts\n(FR-012–FR-018)" as ChartsUI
+  component "Operation Prompts / Help\n(NFR-009)" as HelpUI
+}
+
+Filler --> ReportingForm
+Filler --> CaseMgmt
+Filler --> MapUI
+Filler --> HelpUI
+Analyst --> CaseMgmt
+Analyst --> MapUI
+Analyst --> AssocUI
+Analyst --> GraphUI
+Analyst --> ChartsUI
+Analyst --> HelpUI
+
+package "Application Layer (Backend)" {
+  component "Front-end / Back-end Interface\n(API Gateway)" as API
+  component "Reporting Service\n(FR-001, FR-004)" as ReportSvc
+  component "Case Management Service\n(FR-005–FR-008)" as CaseSvc
+  component "Individual Case Analysis Service\n(FR-009–FR-011)" as IndivSvc
+  component "Overall Analysis Service\n(FR-012, FR-013)" as OverallSvc
+  component "Outbreak Overview Service\n(FR-014–FR-018)" as OutbreakSvc
+  component "Data Quality Check\n(FR-012, FR-013, DR-008)" as DataQuality
+  component "Security / Privacy Component\n(NFR-004, NFR-005, C-004)" as Security
+  component "IP Cooldown / Rate Limiting\n(NFR-005)" as RateLimit
+  component "Data Access Layer\n(DR-001–DR-008)" as DAL
+  component "Algorithm Integration\n(AD-002)" as AlgoInt
+  component "Map Integration\n(AD-003)" as MapInt
+}
+
+ReportingForm --> API
+CaseMgmt --> API
+MapUI --> API
+AssocUI --> API
+GraphUI --> API
+ChartsUI --> API
+HelpUI --> API
+
+API --> Security
+Security --> RateLimit
+API --> ReportSvc
+API --> CaseSvc
+API --> IndivSvc
+API --> OverallSvc
+API --> OutbreakSvc
+
+ReportSvc --> DataQuality
+ReportSvc --> DAL
+CaseSvc --> DAL
+IndivSvc --> DAL
+IndivSvc --> AlgoInt
+IndivSvc --> MapInt
+OverallSvc --> DataQuality
+OverallSvc --> AlgoInt
+OverallSvc --> MapInt
+OutbreakSvc --> DAL
+OutbreakSvc --> MapInt
+DataQuality --> DAL
+AlgoInt --> DAL
+
+note right of Security
+  Personal information query requests
+  must be encrypted (NFR-004, C-004).
+end note
+
+note right of RateLimit
+  Frequently querying IP addresses
+  are cooled down (NFR-005).
+end note
+
+note bottom of API
+  Supports 100 concurrent submissions
+  with page response time < 1s (NFR-002).
+end note
+
+package "Data Layer" {
+  database "Backend Database" as DB
+  component "Basic Case Information\n(DR-001)" as D1 <<table>>
+  component "Disease-related Information\n(DR-002)" as D2 <<table>>
+  component "Itinerary Trajectory Information\n(DR-003)" as D3 <<table>>
+  component "Imported-case Information\n(DR-004)" as D4 <<table>>
+  component "Case Management Records\n(DR-005)" as D5 <<table>>
+  component "Associated Case Entries\n(DR-006)" as D6 <<table>>
+  component "Analytical Chart Data\n(DR-007)" as D7 <<table>>
+  component "Data Quality State\n(DR-008)" as D8 <<table>>
+}
+
+DAL --> DB
+DB --> D1
+DB --> D2
+DB --> D3
+DB --> D4
+DB --> D5
+DB --> D6
+DB --> D7
+DB --> D8
+
+package "External / Supporting Systems" {
+  component "Algorithm Module\n(Risk calculation, clustering,\nregional flow & clustering graphs)" as AlgoModule
+  component "Map / Geographic\nVisualization Service" as MapService
+  component "Backup Server\n(Failover target,\nNFR-003, C-005)" as Backup
+}
+
+AlgoInt --> AlgoModule
+MapInt --> MapService
+DB --> Backup : replication
+API ..> Backup : failover within 20 min
+
+@enduml

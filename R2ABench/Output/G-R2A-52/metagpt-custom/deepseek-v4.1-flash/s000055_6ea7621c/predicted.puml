@@ -1,0 +1,75 @@
+@startuml
+package "Frontend Input/Request Handling Layer" {
+  component "Browser Search UI" as BrowserUI
+  component "Frontend Helpers" as FEHelpers
+  component "Suggestions/List Output" as SuggestionsList
+}
+
+package "Backend Routing Layer" {
+  component "HTTP Router" as Router
+}
+
+package "Request Handling Layer" {
+  component "Request Handler" as ReqHandler
+  component "Static Content Type Mapper" as ContentType
+  component "Not-Found Handler" as NotFound
+}
+
+package "Search Algorithm Layer" {
+  component "Autocomplete/Search-Hint Algorithm" as Autocomplete
+}
+
+package "Local Data Access Layer" {
+  component "Backend Value Extractor" as ValueExtractor
+  database "Local Laureate JSON Data Source" as LaureateJSON
+}
+
+package "Static Asset Layer" {
+  component "Public Static Asset Directory" as StaticAssets
+  component "Home Page Asset (GET /)" as HomePage
+}
+
+node "Runtime/Deployment Layer" {
+  component "Node.js Start Script" as StartScript
+  component "CommonJS Server Runtime" as ServerRuntime
+}
+
+node "Web Browser" as Browser
+node "Node.js Runtime" as NodeRuntime
+cloud "Heroku" as Heroku
+node "Local Filesystem" as LocalFS
+
+Browser --> BrowserUI : hosts
+Browser --> SuggestionsList : displays suggestions/list
+BrowserUI --> FEHelpers : uses frontend helpers for search input, request formatting, output display
+BrowserUI --> Router : HTTP search request
+BrowserUI --> Router : HTTP GET / home page request
+BrowserUI --> Router : HTTP static asset requests (non-search)
+Router --> Autocomplete : delegates search requests with search string
+Router --> ReqHandler : delegates GET / home and static asset requests
+ReqHandler --> HomePage : serves GET / home page
+ReqHandler --> StaticAssets : reads static assets
+ReqHandler --> ContentType : sets Content-Type by extension
+ReqHandler --> NotFound : on asset read failure
+ValueExtractor --> LaureateJSON : extracts laureate field values
+ValueExtractor --> Autocomplete : supplies laureate-name array
+Autocomplete --> Router : returns filtered laureate-name suggestions array
+Router --> BrowserUI : returns search suggestions/list response (laureate-name array)
+Router --> BrowserUI : returns GET / home page response
+Router --> BrowserUI : returns static asset responses
+BrowserUI --> SuggestionsList : renders suggestions/list output
+BrowserUI --> Browser : renders home page/static asset responses
+StartScript --> ServerRuntime : starts
+Heroku --> StartScript : deploys/uses start script
+NodeRuntime --> ServerRuntime : provides runtime
+ServerRuntime --> Router : hosts/executes
+ServerRuntime --> ReqHandler : hosts/executes
+ServerRuntime --> Autocomplete : hosts/executes
+ServerRuntime --> ValueExtractor : hosts/executes
+ServerRuntime --> ContentType : hosts/executes
+ServerRuntime --> NotFound : hosts/executes
+LocalFS --> StaticAssets : stores
+LocalFS --> HomePage : stores
+LocalFS --> LaureateJSON : stores
+StaticAssets --> HomePage : contains
+@enduml

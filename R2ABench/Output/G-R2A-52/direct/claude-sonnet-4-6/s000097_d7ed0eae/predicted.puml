@@ -1,0 +1,132 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #F8FFF8
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+
+skinparam component {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #0D47A1
+}
+
+skinparam database {
+  BackgroundColor #FFF9C4
+  BorderColor #F57F17
+  FontColor #E65100
+}
+
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontColor #4A148C
+}
+
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+  FontColor #880E4F
+}
+
+skinparam arrow {
+  Color #555555
+  FontColor #333333
+  FontSize 11
+}
+
+title BeeGreen System Architecture
+
+node "Client Tier" as ClientTier {
+  component "React/TypeScript\nWebsite" as Website {
+    component "Shopping UI" as ShoppingUI
+    component "Sustainability\nDashboard" as Dashboard
+  }
+
+  component "Chrome Browser\nExtension" as Extension {
+    component "Page Scanner" as Scanner
+    component "Overlay UI" as Overlay
+  }
+}
+
+node "Backend API Tier\n(Node.js / LoopBack)" as BackendTier {
+
+  component "REST API Layer" as RestAPI {
+    component "UserController" as UserCtrl {
+      component "POST /users\n(FR-001)" as PostUsers
+      component "GET /users\n(FR-002)" as GetUsers
+      component "PATCH /users\n(FR-003)" as PatchUsers
+      component "GET /users/{id}\n(FR-004)" as GetUserById
+    }
+
+    component "PingController" as PingCtrl {
+      component "GET /ping\n(FR-005)" as GetPing
+    }
+  }
+
+  component "Repository Layer" as RepoLayer {
+    component "UserRepository" as UserRepo
+  }
+
+  component "Domain Models" as Models {
+    component "User Model\n(id, ip, creationDate,\npurchaseIds, username, region)" as UserModel
+    component "InventoryItem Model\n(id, stats, totalScore, category,\ndetails, comments, name,\nassociatedStores)" as InventoryModel
+    component "PingResponse\n(greeting, date, url, headers)" as PingModel
+  }
+}
+
+database "Persistent Storage" as DB {
+  component "User Records" as UserRecords
+  component "InventoryItem Records" as InventoryRecords
+}
+
+cloud "Data & Scoring Services" as DataServices {
+  component "Sustainability\nScoring Engine" as ScoringEngine
+  component "Product\nRecommendation\nWorkflow" as RecommendationWF
+  component "Product Data\nProcessor" as ProductProcessor
+}
+
+Website --> RestAPI : "HTTP/JSON\nREST requests"
+Extension --> RestAPI : "HTTP/JSON\nREST requests"
+
+UserCtrl --> UserRepo : "CRUD operations"
+PingCtrl --> PingModel : "builds response"
+
+UserRepo --> UserModel : "maps entity"
+UserRepo --> UserRecords : "read / write"
+
+InventoryModel --> InventoryRecords : "persisted"
+
+DataServices --> InventoryRecords : "reads/writes\nproduct data"
+ScoringEngine --> RecommendationWF : "feeds scores"
+ProductProcessor --> ScoringEngine : "processes data"
+
+RestAPI ..> InventoryModel : "data model\n(no external API\nspecified here)"
+
+note top of RestAPI
+  All documented endpoints use
+  application/json (NFR-001)
+  User & InventoryItem IDs are
+  string-typed and generated (C-003)
+end note
+
+note right of DataServices
+  Sustainability scoring and
+  recommendation workflows
+  are outside the detailed
+  API subset of this SRS
+end note
+
+note bottom of DB
+  User identifiers: generated string
+  InventoryItem identifiers: generated string
+  (C-003)
+end note
+
+@enduml

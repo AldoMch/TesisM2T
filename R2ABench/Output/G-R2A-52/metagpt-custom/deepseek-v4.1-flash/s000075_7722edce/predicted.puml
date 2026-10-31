@@ -1,0 +1,97 @@
+@startuml
+package "Client/Editor Layer" {
+  component "Browser Editor\n(TypeScript/React SPA)" as BrowserEditor
+  component "Layout Editing Interface" as LayoutEditor
+  component "Canvas Render/Delete Operations" as CanvasOps
+  component "Redux Store" as ReduxStore
+  component "Controls Slice" as ControlsSlice
+  component "Elements Slice" as ElementsSlice
+  component "Layouts Slice" as LayoutsSlice
+  component "Gauges Slice" as GaugesSlice
+  component "Displays Slice\n(Client Display State)" as ClientDisplayState
+}
+
+package "API/Server Layer" {
+  component "Django Server\n(Python/Django, API resources)" as DjangoServer
+  component "Django Dev Startup\n(./manage.py runserver)" as DjangoDevStartup
+  component "Gauge Resource" as GaugeResource
+  component "Display Resource" as DisplayResource
+  component "Layout Resource" as LayoutResource
+  component "Static Asset Serving" as StaticAssetServing
+}
+
+package "Viewer/Rendering Layer" {
+  component "Viewer" as Viewer
+}
+
+package "Data/Persistence Layer" {
+  database "PostgreSQL Database" as Postgres
+}
+
+package "Build/Deployment/Environment Layer" {
+  component "Build Pipeline\n(npm install / npm run build)" as BuildPipeline
+  component "Python Package Installation\n(pip/requirements)" as PythonPackageInstall
+  node "Docker/Container Runtime" as DockerRuntime
+  node "Python 3.7 Runtime" as PythonRuntime
+  node "Node.js/npm Runtime" as NodeNpm
+}
+
+package "External Systems" {
+  node "Browser" as Browser
+  node "OLED Displays" as OLED
+  node "E-paper Displays" as Epaper
+  node "LCD Displays" as LCD
+  component "API Clients" as APIClients
+}
+
+Browser --> BrowserEditor : hosts
+Browser --> Viewer : accesses viewer
+Browser --> StaticAssetServing : loads built editor assets
+BrowserEditor --> ReduxStore : uses state
+ReduxStore --> ControlsSlice : manages
+ReduxStore --> ElementsSlice : manages
+ReduxStore --> LayoutsSlice : manages
+ReduxStore --> GaugesSlice : manages
+ReduxStore --> ClientDisplayState : manages displays state
+BrowserEditor --> LayoutEditor : provides editing UI
+LayoutEditor --> CanvasOps : invokes render/delete
+LayoutEditor --> LayoutsSlice : composes layouts across displays
+LayoutEditor --> ElementsSlice : edits elements
+LayoutEditor --> ClientDisplayState : targets displays
+BrowserEditor --> DjangoServer : REST/API
+LayoutEditor --> DjangoServer : persists layout/display changes (REST/API)
+APIClients --> DjangoServer : API usage
+
+DjangoServer --> GaugeResource : exposes
+DjangoServer --> DisplayResource : exposes
+DjangoServer --> LayoutResource : exposes
+DjangoServer --> Postgres : persists Gauge/Display/Layout
+DisplayResource --> LayoutResource : current_layout
+LayoutResource ..> DisplayResource : on delete sets current_layout = null (DR-009)
+DjangoServer --> StaticAssetServing : serves built assets
+DockerRuntime --> DjangoDevStartup : starts
+DjangoDevStartup --> DjangoServer : runs
+DjangoServer --> PythonRuntime : runs on
+DjangoServer --> PythonPackageInstall : depends on installed packages
+
+Viewer --> DisplayResource : reads display_data
+Viewer --> LayoutResource : reads layout/display_positions
+Viewer --> OLED : renders B/W pixels
+Viewer --> Epaper : renders B/W pixels
+Viewer --> LCD : renders B/W pixels
+Viewer --> Browser : renders browser display target
+
+BuildPipeline --> NodeNpm : npm install / npm run build
+BuildPipeline --> StaticAssetServing : produces built client assets
+DockerRuntime --> BuildPipeline : runs build steps
+DockerRuntime --> PythonPackageInstall : installs Python packages
+PythonPackageInstall --> PythonRuntime : installs into
+DockerRuntime --> Postgres : runs
+
+DisplayResource ..> ClientDisplayState : source-of-truth fields mirrored in client (conceptual)
+
+note right of DjangoDevStartup
+  Development-grade / non-production
+  (C-005, C-006, NFR-004)
+end note
+@enduml

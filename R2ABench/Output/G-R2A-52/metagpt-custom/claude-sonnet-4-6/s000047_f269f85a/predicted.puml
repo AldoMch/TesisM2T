@@ -1,0 +1,152 @@
+@startuml archifiltre-docs Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam nodeBackgroundColor #FFF8E7
+skinparam databaseBackgroundColor #E8F5E9
+skinparam cloudBackgroundColor #FCE4EC
+skinparam defaultFontName Arial
+skinparam arrowColor #444444
+skinparam componentBorderColor #555555
+skinparam packageBorderColor #3366CC
+skinparam nodeBorderColor #CC6600
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+
+cloud "Electron Runtime" as ElectronRuntime {
+    component [app.getPath("userData")] as AppUserDataPath
+}
+
+database "Host Filesystem" as HostFilesystem {
+    component [hash-result-debug] as HashResultFile
+    component [hash-error-debug] as HashErrorFile
+}
+
+' ─────────────────────────────────────────────
+' TRANSLATION / LOCALIZATION LAYER
+' ─────────────────────────────────────────────
+
+package "Translation / Localization Layer" as TranslationLayer {
+    component [TranslationModule] as TranslationModule
+}
+
+' ─────────────────────────────────────────────
+' SETTINGS LAYER
+' ─────────────────────────────────────────────
+
+package "Settings Layer" as SettingsLayer {
+    component [SettingsSanitizer] as SettingsSanitizer
+    component [SettingsModel\n(isTrackingEnabled,\nisMonitoringEnabled,\nlanguage)] as SettingsModel
+}
+
+' ─────────────────────────────────────────────
+' INPUT DATA LAYER
+' ─────────────────────────────────────────────
+
+package "Input Data Layer" as InputDataLayer {
+
+    component [ResipInputData\n(files, folders, metadata,\naliases, comments, tags)] as ResipInputData
+    component [TreeCsvInputData\n(files-and-folders map)] as TreeCsvInputData
+    component [CsvInputData\n(aliases, comments, files,\nmetadata, tags, hashes)] as CsvInputData
+    component [ExcelInputData\n(CsvExporterData)] as ExcelInputData
+    component [HashInputParams\n(paths, basePath)] as HashInputParams
+
+}
+
+' ─────────────────────────────────────────────
+' PRESENTATION / CONTROLLER LAYER
+' ─────────────────────────────────────────────
+
+package "Presentation / Controller Layer" as ControllerLayer {
+
+    component [TreeCsvExportController] as TreeCsvCtrl
+    component [ResipExportController\n«filters & maps worker messages»] as ResipCtrl
+    component [CsvExportController] as CsvCtrl
+    component [ExcelExportController] as ExcelCtrl
+    component [HashComputationController] as HashCtrl
+
+}
+
+' ─────────────────────────────────────────────
+' BACKGROUND WORKER / BATCH PROCESSING LAYER
+' ─────────────────────────────────────────────
+
+package "Background Worker / Batch Processing Layer" as WorkerLayer {
+
+    component [TreeCsvExportWorker] as TreeCsvWorker
+    component [ResipExportWorker] as ResipWorker
+    component [CsvExportWorker] as CsvWorker
+    component [ExcelExportWorker] as ExcelWorker
+    component [HashBatchProcessor] as HashBatchProc
+    component [HashMapAggregator] as HashMapAgg
+
+}
+
+' ─────────────────────────────────────────────
+' FILESYSTEM / ELECTRON RUNTIME LAYER
+' ─────────────────────────────────────────────
+
+package "Filesystem / Electron Runtime Layer" as FilesystemLayer {
+
+    component [HashDebugWriter] as HashDebugWriter
+
+}
+
+' ─────────────────────────────────────────────
+' DEPENDENCY ARROWS
+' ─────────────────────────────────────────────
+
+' Settings sanitizer validates and produces the settings model
+SettingsSanitizer --> SettingsModel : validates & defaults
+
+' Settings model consumed by translation and controllers
+SettingsModel --> TranslationModule : language
+SettingsModel --> HashCtrl          : isTrackingEnabled,\nisMonitoringEnabled
+
+' Translation dependencies from controllers
+TreeCsvCtrl --> TranslationModule : reads language
+CsvCtrl     --> TranslationModule : reads language
+ExcelCtrl   --> TranslationModule : reads language
+
+' Input data flows into controllers
+ResipInputData   --> ResipCtrl   : input data
+TreeCsvInputData --> TreeCsvCtrl : input data
+CsvInputData     --> CsvCtrl     : input data
+ExcelInputData   --> ExcelCtrl   : input data
+HashInputParams  --> HashCtrl    : paths, basePath
+
+' Controller -> Worker dispatch (offload to background)
+TreeCsvCtrl --> TreeCsvWorker : dispatch
+ResipCtrl   --> ResipWorker   : dispatch
+CsvCtrl     --> CsvWorker     : dispatch
+ExcelCtrl   --> ExcelWorker   : dispatch
+HashCtrl    --> HashBatchProc : batched hash computation stream
+
+' Observable / stream return paths from workers back to controllers
+TreeCsvWorker --> TreeCsvCtrl : Observable results
+ResipWorker   --> ResipCtrl   : Observable messages\n(filtered & mapped)
+CsvWorker     --> CsvCtrl     : async Observable result
+ExcelWorker   --> ExcelCtrl   : async Observable result
+
+' Hash aggregation: batch processor -> aggregator -> controller
+HashBatchProc --> HashMapAgg : raw hash results
+HashMapAgg    --> HashCtrl   : aggregated hash maps
+
+' Hash debug writer initialization and usage
+HashCtrl      --> HashDebugWriter : initialize debug writers
+HashBatchProc --> HashDebugWriter : write hash debug output
+
+' HashDebugWriter -> Electron Runtime for user data path
+HashDebugWriter --> AppUserDataPath : getPath("userData")
+
+' AppUserDataPath resolves storage location on host filesystem
+AppUserDataPath --> HostFilesystem : resolves path for writes
+
+' HashDebugWriter -> Host Filesystem for file writes
+HashDebugWriter --> HashResultFile : write
+HashDebugWriter --> HashErrorFile  : write
+
+@enduml

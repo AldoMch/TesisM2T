@@ -1,0 +1,167 @@
+@startuml
+
+node "Mobile Device" {
+  package "Mobile Presentation Layer" as MobileUI {
+    component "Main Interface Module" as MainUI
+    component "Exercise Interface Module" as ExerciseUI
+    component "Exercise History Module" as HistoryUI
+    component "Personal Profile Module" as ProfileUI
+    component "Report Viewer Module" as ReportUI
+    component "Casting Control UI" as CastUI
+    component "Login & Registration Module" as LoginUI
+    component "Plan Builder UI" as PlanBuilderUI
+  }
+
+  package "On-Device Sensing & Evaluation Layer" as OnDevice {
+    component "Camera Capture Module" as CameraCap
+    component "Pose Estimation Engine" as PoseEst
+    component "Posture Evaluation Engine" as PostureEval
+    component "Exercise State Monitor" as StateMon
+    component "Audio Prompt & Voice Feedback" as AudioFB
+    component "Camera Capability Checker" as CamCheck
+  }
+
+  package "Casting Subsystem" as Casting {
+    component "Casting Discovery & Connection Module" as CastDisc
+    component "Casting Streaming Module" as CastStream
+    component "Casting Command Channel" as CastCmd
+    component "Screen Capture & Encoder" as ScreenCap
+  }
+
+  package "Integration & API Layer" as MobileAPI {
+    component "App–Server Communication Client" as AppClient
+    interface "Inter-Module Interface Contracts" as InterContracts
+  }
+
+  package "Security & Access Control" as MobileSec {
+    component "Data Leakage Protection Controls" as DLP
+  }
+
+  package "On-Device Data Cache" as MobileCache {
+    database "Local Standard Movement Cache" as StdCache
+  }
+
+  node "Android/iOS OS" {
+    interface "Mobile Camera API" as CamAPI
+    interface "Mobile Screen Capture API" as ScreenAPI
+    interface "Mobile Audio API" as AudioAPI
+  }
+}
+
+cloud "Network (Internet)" as Internet
+cloud "Same-LAN Network" as LAN
+
+node "Target Android Casting Device" {
+  interface "Casting Receiver" as CastRx
+  interface "Command Listener" as CmdListener
+}
+
+node "Server Infrastructure" {
+  package "Integration & API Layer" as ServerAPIpkg {
+    interface "Server API Endpoints" as ServerAPI
+  }
+
+  package "Server-side Application Layer" as ServerApp {
+    component "Recommendation Service" as RecoSvc
+    component "Poster Generation Service" as PosterSvc
+    component "Report Generation Service" as ReportSvc
+    component "Standard Content & Plan Management Service" as ContentSvc
+    component "Progress Tracking Service" as ProgSvc
+  }
+
+  package "Security & Access Control" as ServerSec {
+    component "Authentication & Authorization Service" as AuthzSvc
+    component "SQL Injection Protection Module" as SQLProt
+  }
+}
+
+node "Database System" {
+  package "Data Management Layer" as DataLayer {
+    database "Standard Movement Repository" as StdRepo
+    database "Training Plan Repository" as PlanRepo
+    database "Historical Records Repository" as HistRepo
+    database "User Identity & Profile Repository" as UserRepo
+    database "Evaluation Data Store" as EvalStore
+  }
+}
+
+/' Key dependencies within Mobile '/
+ExerciseUI --> CameraCap
+ExerciseUI --> PostureEval
+PostureEval --> PoseEst
+PoseEst --> CameraCap
+StateMon --> PostureEval
+
+/' Audio prompts and capability check '/
+StateMon --> AudioFB
+AudioFB --> AudioAPI
+ExerciseUI --> CamCheck
+CamCheck --> CamAPI
+
+/' External camera API '/
+CameraCap --> CamAPI
+
+/' On-device cached standards '/
+PostureEval --> StdCache
+
+/' Casting: screen capture and endpoints '/
+ExerciseUI --> ScreenCap
+ScreenCap --> ScreenAPI
+ScreenCap --> CastStream
+CastStream --> CastDisc
+CastDisc --> LAN
+CastStream --> LAN
+CastCmd --> LAN
+CastDisc --> CastRx
+CastStream --> CastRx
+CastCmd --> CmdListener
+CastUI --> CastDisc
+CastUI --> CastCmd
+CastUI --> CastStream
+
+/' App–Server communication '/
+MainUI --> AppClient
+HistoryUI --> AppClient
+ProfileUI --> AppClient
+ReportUI --> AppClient
+PlanBuilderUI --> AppClient
+LoginUI --> AppClient
+
+AppClient --> Internet
+Internet --> ServerAPI
+ServerAPI --> RecoSvc
+ServerAPI --> PosterSvc
+ServerAPI --> ReportSvc
+ServerAPI --> AuthzSvc
+ServerAPI --> ContentSvc
+ServerAPI --> ProgSvc
+
+/' Server services to data stores '/
+RecoSvc --> PlanRepo
+PosterSvc --> EvalStore
+PosterSvc --> HistRepo
+ReportSvc --> EvalStore
+ReportSvc --> HistRepo
+ContentSvc --> StdRepo
+ContentSvc --> PlanRepo
+ProgSvc --> EvalStore
+ProgSvc --> HistRepo
+ProgSvc --> PlanRepo
+
+/' Security & access control '/
+AuthzSvc --> UserRepo
+SQLProt --> StdRepo
+SQLProt --> PlanRepo
+SQLProt --> HistRepo
+SQLProt --> UserRepo
+SQLProt --> EvalStore
+DLP --> MobileUI
+
+/' State/persistence flow '/
+StateMon --> AppClient
+
+/' Inter-module contracts (cross-cutting) '/
+MobileUI --> InterContracts
+OnDevice --> InterContracts
+
+@enduml

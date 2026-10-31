@@ -1,0 +1,41 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #226655
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFF99
+    BorderColor #226655
+    BorderThickness 1
+}
+
+rectangle "Application" as Application #99FF66
+
+package "QAPM_SDK" as QapmSdkPackage {
+    rectangle "QAPM-SDK" as QapmSdk
+    rectangle "QAPM_Collect" as QapmCollect
+    rectangle "QAPM_Storage" as QapmStorage
+    rectangle "QAPM_Report" as QapmReport
+}
+
+package "QAPM_Plugin" as QapmPluginPackage {
+    rectangle "QAPM_Plugin" as QapmPlugin #66CCCC
+    rectangle "Plugin init compile" as PluginInitCompile #66CCCC
+}
+
+Application --> QapmSdk : Import QAPM_SDK
+QapmSdk --> QapmCollect : API
+QapmSdk --> QapmStorage : API
+QapmSdk --> QapmReport : API
+
+Application --> QapmPlugin : apply QAPM_Plugin
+QapmPlugin --> PluginInitCompile : initialize and compile
+@enduml

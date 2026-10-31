@@ -1,0 +1,127 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+actor "End User" as User
+actor "Maintainer/Operator" as Maint
+
+node "Browser (Client)" as Browser {
+  component "React App" as React
+  component "Redux Store\n(state/actions)" as Redux
+  component "Playback Manager\n(single current playback)" as Playback
+  component "Audio Player" as AudioPlayer
+  component "Waveform UI" as WaveformUI
+  component "Upload UI" as UploadUI
+  component "Follow/Feed UI" as FollowUI
+  component "Form Validation\n& Error Handling" as FormUI
+  component "HTTP Client (fetch)" as Fetch
+  component "Frontend Config\nAPI_BASE_URL, CLOUDINARY_URL,\nUPLOAD_PRESET" as FEConfig <<config>>
+}
+
+node "Server (Node/Express)" as Server {
+  component "Express Backend API" as Express
+  component "User/Auth API" as AuthAPI
+  component "Follow API" as FollowAPI
+  component "Feed API" as FeedAPI
+  component "Sound API" as SoundAPI
+}
+
+database "PostgreSQL" as PG
+
+node "Cloudinary (Media Platform)" as Cloudinary {
+  component "Upload API" as CloudUpload
+  component "Hosted Assets\n(Audio/Image URLs)" as HostedAssets
+}
+
+' User interactions
+User --> React : UI interactions\n(play, upload, follow, forms)
+React --> Redux : dispatch/actions\n(A-002)
+WaveformUI --> Playback : FR-004\n(scrub to position)
+Playback <--> AudioPlayer : FR-002, FR-005\n(play/pause/seek)
+React --> Playback : FR-005/FR-006\n(set current item, persist playback)
+
+' Frontend configuration
+Maint --> FEConfig : Configure env values\n(NFR-005)
+FEConfig ..> Fetch : Provide endpoints/presets\n(API_BASE_URL,\nCLOUDINARY_URL,\nUPLOAD_PRESET)
+
+' Frontend -> Backend and Cloudinary
+React --> Fetch : Initiate HTTP requests
+Fetch --> Express : HTTP(S) JSON\nFrontend-Backend API\n(A-003, C-005)
+Fetch --> CloudUpload : Direct media upload\n(C-006, A-001)
+
+' Media consumption
+AudioPlayer --> HostedAssets : Stream audio/image via URL
+
+' Backend internals and DB
+Express ..> AuthAPI : Exposes
+Express ..> FollowAPI : Exposes
+Express ..> FeedAPI : Exposes
+Express ..> SoundAPI : Exposes
+Express --> PG : Read/Write records\n(store Cloudinary URLs)\n(A-003, C-003)
+
+' Functional API usage
+React -[#blue]-> AuthAPI : Register/Login/User info
+React -[#blue]-> FollowAPI : Follow/Unfollow
+React -[#blue]-> FeedAPI : Retrieve feed/user sounds
+React -[#blue]-> SoundAPI : Create/Read/Delete sound
+
+' Upload workflow (high-level path)
+UploadUI -[#darkgreen]-> CloudUpload : FR-001/FR-008\n(audio/image file)
+CloudUpload -[#darkgreen]-> React : Return hosted URL
+React -[#darkgreen]-> SoundAPI : Persist sound metadata\n(with media URL)
+SoundAPI -[#darkgreen]-> PG : Insert/Update records
+
+' Follow/Feed workflow (high-level)
+FollowUI -[#darkblue]-> FollowAPI : FR-003\n(follow/unfollow)
+FeedAPI -[#darkblue]-> React : Follow-related lists/feeds
+
+' Form validation
+FormUI --> React : FR-007\n(validation feedback/errors)
+
+' Notes
+note top of Express
+APIs:
+- User/Auth: register, login, user info
+- Follow: follow/unfollow relationships
+- Feed: followed users' sounds, user lists
+- Sound: create/read/delete sounds
+Interfaces: HTTP(S) JSON
+end note
+
+note right of CloudUpload
+FR-001, FR-008, C-006:
+Frontend uploads media directly.
+Returns hosted URLs for assets.
+end note
+
+note right of PG
+Stores:
+- Users (DR-001)
+- Sounds (DR-002)
+- Follow relationships (DR-003)
+- Media URL references (DR-004..DR-006)
+NFR-003: Store URLs, not raw binaries.
+end note
+
+note bottom of Playback
+FR-005, FR-006; NFR-001, NFR-002:
+Centralized control ensures
+single current playback and
+continuity across navigation.
+end note
+
+note bottom of FEConfig
+NFR-005, C-005:
+Runtime configuration for
+backend API and Cloudinary.
+end note
+
+note bottom of Fetch
+A-003, A-001:
+HTTP requests via fetch:
+- Frontend -> Backend APIs
+- Frontend -> Cloudinary uploads
+end note
+@enduml

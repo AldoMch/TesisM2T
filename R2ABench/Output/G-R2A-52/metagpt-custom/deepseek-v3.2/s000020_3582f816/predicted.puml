@@ -1,0 +1,75 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam nodeStyle rectangle
+skinparam databaseStyle rectangle
+skinparam cloudStyle rectangle
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+
+title MyEMS System Architecture
+
+' ========== EXTERNAL SYSTEMS ==========
+cloud "Web Browser" as browser
+cloud "Third-Party Applications" as third_party
+cloud "MyEMS Components" as myems_components
+cloud "Reverse Proxy (e.g., Nginx)" as reverse_proxy
+database "Database (e.g., MySQL)" as mysql_db
+
+' ========== PRESENTATION LAYER ==========
+package "Presentation Layer" {
+  component "Admin Application" as admin_app {
+    component "Routing Configuration" as routing_config
+    component "API Base Path Resolver" as api_resolver
+    
+    ' Route-specific modules (lazy-loaded)
+    component "/user Route" as user_route
+    component "/contact Route" as contact_route
+    component "Tariff Settings Modules" as tariff_modules
+    component "Category Settings Modules" as category_modules
+  }
+}
+
+' ========== APPLICATION/SERVICE LAYER ==========
+package "Application/Service Layer" {
+  component "API Service" as api_service
+}
+
+' ========== DEVELOPMENT & DEPLOYMENT ==========
+package "Development & Deployment" {
+  component "Development Quick-Run Modes" as quick_run
+  component "Docker-based Installation" as docker_setup
+}
+
+' ========== ROUTING & DEPENDENCIES ==========
+admin_app --> api_service : "depends on\nvia /api/ path"
+api_service --> mysql_db : "connects to"
+admin_app --> routing_config : "uses"
+admin_app --> api_resolver : "uses"
+routing_config --> user_route : "lazy-loads"
+routing_config --> contact_route : "lazy-loads"
+routing_config --> tariff_modules : "lazy-loads"
+routing_config --> category_modules : "lazy-loads"
+api_resolver --> api_service : "computes base path\nfrom browser origin"
+
+' Route-specific dependencies
+user_route --> api_service : "uses /api/user"
+contact_route --> api_service : "uses /api/contact"
+tariff_modules --> api_service : "uses /api/tariff"
+category_modules --> api_service : "uses /api/category"
+
+' ========== EXTERNAL CONNECTIONS ==========
+browser --> admin_app : "accesses"
+browser --> api_service : "same-origin\nvia /api/"
+third_party --> api_service : "integrates via API"
+myems_components --> api_service : "uses"
+reverse_proxy --> api_service : "routes to"
+quick_run --> admin_app : "supports"
+quick_run --> api_service : "supports"
+docker_setup --> admin_app : "packages"
+docker_setup --> api_service : "packages"
+docker_setup --> mysql_db : "packages"
+
+@enduml

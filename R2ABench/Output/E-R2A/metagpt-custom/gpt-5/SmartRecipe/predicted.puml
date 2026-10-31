@@ -1,0 +1,106 @@
+@startuml
+
+package "Mobile App Layer" {
+  node "Android/iOS Mobile App" as MobileApp {
+    component "Mobile UI Shell" as MobileUI
+    component "Image Preprocessing & Validity Check" as Preproc
+    component "Admin Mobile Interface" as AdminUI
+    component "Merchant Display UI" as MerchantUI
+  }
+}
+
+node "Spring Boot Backend" as SpringBoot {
+  package "Control Layer" {
+    component "HTTP Controllers" as Controllers
+  }
+
+  package "Business Layer" as BL {
+    component "Auth & Account Management" as Auth
+    component "Recipe Management" as RecipeMgmt
+    component "Text Search Service" as TextSearch
+    component "Nutrition Analysis" as Nutrition
+    component "Personalized Advice" as Advice
+    component "Diet Plan" as DietPlan
+    component "Check-in & Evaluation" as CheckEval
+    component "Community Sharing & Interaction" as Community
+    component "Recommendation Engine" as Reco
+    component "Admin Review & Moderation" as AdminReview
+    component "Data Support Export" as DataExport
+    component "User Feedback Handling" as Feedback
+    component "Dataset Upload/Management" as DatasetUpload
+  }
+
+  package "Service Layer" {
+    component "Recipe Recognition Orchestrator" as Orchestrator
+  }
+
+  package "Data Access Layer" {
+    component "Data Access" as DataAccess
+  }
+}
+
+node "Flask Model Service" as Flask {
+  package "Model Inference Service" {
+    component "Model Inference API" as ModelAPI
+  }
+}
+
+package "Data Storage Layer (MySQL)" {
+  database "Relational Data Store" as MySQL
+}
+
+package "Caching Layer (Redis)" {
+  database "Redis Cache Manager" as Redis
+}
+
+' Mobile to Backend
+MobileUI --> Controllers : Ajax/HTTP
+AdminUI --> Controllers : Admin HTTP
+Preproc --> Controllers : Image processing results
+
+' Controllers routing to business/services
+Controllers --> Auth
+Controllers --> Orchestrator
+Controllers --> TextSearch
+Controllers --> Nutrition
+Controllers --> Advice
+Controllers --> DietPlan
+Controllers --> CheckEval
+Controllers --> Community
+Controllers --> Reco
+Controllers --> AdminReview
+Controllers --> RecipeMgmt
+Controllers --> DataExport
+Controllers --> Feedback
+Controllers --> DatasetUpload
+
+' Merchant display dependencies
+MerchantUI --> Controllers : Merchant data/location
+
+' Service and data dependencies
+Orchestrator --> ModelAPI
+Orchestrator --> DataAccess
+
+TextSearch --> DataAccess
+Nutrition --> DataAccess
+Advice --> Nutrition
+Advice --> DataAccess
+DietPlan --> DataAccess
+CheckEval --> DataAccess
+Community --> AdminReview
+Community --> DataAccess
+AdminReview --> DataAccess
+Reco --> DataAccess
+Auth --> DataAccess
+RecipeMgmt --> DataAccess
+DataExport --> DataAccess
+Feedback --> DataAccess
+DatasetUpload --> DataAccess
+
+' Cache usage by business layer
+BL ..> Redis : Caching
+
+' Persistence
+DataAccess --> MySQL
+
+@enduml

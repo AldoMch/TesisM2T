@@ -1,0 +1,310 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Layer::REST API (Amazon API Gateway)\\n- Endpoint Type: REGIONAL\\n- Stage: prod\\n- Methods: GET, POST, PUT, DELETE, OPTIONS\\n- CORS: AllowedHeaders = Content-Type, Authorization, X-Requested-With, X-Amz-Date, X-Api-Key, X-Amz-Security-Token; Preflight: 200\\n- Request Validation\\n- Access Logs: JSON, INFO\\n- Tracing: Enabled",
+        "API Layer::REST Endpoints (prod)"
+      ],
+      "gt_nodes": [
+        "AWS IoT Device Simulator::Amazon API Gateway\\nREST API"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application/Service Layer::API Lambda Handlers\\n(AWS Lambda)"
+      ],
+      "gt_nodes": [
+        "AWS IoT Device Simulator::AWS Lambda\\nSimulator API"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Data Layer::Amazon DynamoDB"
+      ],
+      "gt_nodes": [
+        "AWS IoT Device Simulator::Amazon DynamoDB\\nSimulator state"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Data Layer::Route Bucket (Amazon S3)\\nROUTE_BUCKET: JSON route payloads",
+        "Simulation Layer::Route Loader\\n(AWS Lambda)\\n- Reads route JSON from S3 (ROUTE_BUCKET)\\n- Key: routeInfo.routeName or route-{id}.json\\n- UTF-8 JSON parse; assemble route-state; propagate S3 errors"
+      ],
+      "gt_nodes": [
+        "AWS IoT Device Simulator::Amazon S3\\nRoute data bucket"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Presentation Layer::Web Management Console"
+      ],
+      "gt_nodes": [
+        "AWS IoT Device Simulator::Browser Web UI\\nstatic app client"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Provisioning/Deployment Layer::AWS CloudFormation\\n(Custom Resources)",
+        "Provisioning/Deployment Layer::Custom-Resource Processor\\n(AWS Lambda)\\n- Constructs CloudFormation response body\\n- Inputs: Stack Name, Solution ID, Solution Version"
+      ],
+      "gt_nodes": [
+        "AWS IoT Device Simulator::AWS CloudFormation\\nCustom resources"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Simulation Layer::AWS IoT",
+        "Simulation Layer::IoT Publisher\\n(AWS Lambda)"
+      ],
+      "gt_nodes": [
+        "AWS IoT Device Simulator::AWS IoT Core"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Simulation Layer::Device Simulator\\n(AWS Lambda)"
+      ],
+      "gt_nodes": [
+        "AWS IoT Device Simulator::AWS Step Functions\\nSimulation workflow"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "API Layer::REST API (Amazon API Gateway)\\n- Endpoint Type: REGIONAL\\n- Stage: prod\\n- Methods: GET, POST, PUT, DELETE, OPTIONS\\n- CORS: AllowedHeaders = Content-Type, Authorization, X-Requested-With, X-Amz-Date, X-Api-Key, X-Amz-Security-Token; Preflight: 200\\n- Request Validation\\n- Access Logs: JSON, INFO\\n- Tracing: Enabled",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::Amazon API Gateway\\nREST API"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Layer::REST Endpoints (prod)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application/Service Layer::API Lambda Handlers\\n(AWS Lambda)",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::AWS Lambda\\nSimulator API"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Layer::Amazon DynamoDB",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::Amazon DynamoDB\\nSimulator state"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Layer::Route Bucket (Amazon S3)\\nROUTE_BUCKET: JSON route payloads",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::Amazon S3\\nRoute data bucket"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Identity and Access Layer::Identity Provider\\n(e.g., Cognito/OIDC)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Observability Layer::AWS X-Ray",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Observability Layer::Amazon CloudWatch Logs\\n(Access Logs)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Orchestration Layer::Orchestrator\\n(AWS Step Functions)",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::AWS Step Functions\\nSimulation workflow"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation Layer::Web Management Console",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::Browser Web UI\\nstatic app client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Provisioning/Deployment Layer::AWS CloudFormation\\n(Custom Resources)",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::AWS CloudFormation\\nCustom resources"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Provisioning/Deployment Layer::Custom-Resource Processor\\n(AWS Lambda)\\n- Constructs CloudFormation response body\\n- Inputs: Stack Name, Solution ID, Solution Version",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::AWS CloudFormation\\nCustom resources"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Simulation Layer::AWS IoT",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::AWS IoT Core"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Simulation Layer::Device Simulator\\n(AWS Lambda)",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::AWS Step Functions\\nSimulation workflow"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Simulation Layer::IoT Publisher\\n(AWS Lambda)",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::AWS IoT Core"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Simulation Layer::Route Loader\\n(AWS Lambda)\\n- Reads route JSON from S3 (ROUTE_BUCKET)\\n- Key: routeInfo.routeName or route-{id}.json\\n- UTF-8 JSON parse; assemble route-state; propagate S3 errors",
+      "reference_nodes": [
+        "AWS IoT Device Simulator::Amazon S3\\nRoute data bucket"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Provisioning/Deployment Layer::AWS CloudFormation\\n(Custom Resources)",
+        "Provisioning/Deployment Layer::Custom-Resource Processor\\n(AWS Lambda)\\n- Constructs CloudFormation response body\\n- Inputs: Stack Name, Solution ID, Solution Version"
+      ],
+      "gt_node": "AWS IoT Device Simulator::AWS CloudFormation\\nCustom resources"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Simulation Layer::AWS IoT",
+        "Simulation Layer::IoT Publisher\\n(AWS Lambda)"
+      ],
+      "gt_node": "AWS IoT Device Simulator::AWS IoT Core"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application/Service Layer::API Lambda Handlers\\n(AWS Lambda)"
+      ],
+      "gt_node": "AWS IoT Device Simulator::AWS Lambda\\nSimulator API"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Simulation Layer::Device Simulator\\n(AWS Lambda)"
+      ],
+      "gt_node": "AWS IoT Device Simulator::AWS Step Functions\\nSimulation workflow"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Layer::REST API (Amazon API Gateway)\\n- Endpoint Type: REGIONAL\\n- Stage: prod\\n- Methods: GET, POST, PUT, DELETE, OPTIONS\\n- CORS: AllowedHeaders = Content-Type, Authorization, X-Requested-With, X-Amz-Date, X-Api-Key, X-Amz-Security-Token; Preflight: 200\\n- Request Validation\\n- Access Logs: JSON, INFO\\n- Tracing: Enabled",
+        "API Layer::REST Endpoints (prod)"
+      ],
+      "gt_node": "AWS IoT Device Simulator::Amazon API Gateway\\nREST API"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "AWS IoT Device Simulator::Amazon CloudFront"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "AWS IoT Device Simulator::Amazon Cognito"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Layer::Amazon DynamoDB"
+      ],
+      "gt_node": "AWS IoT Device Simulator::Amazon DynamoDB\\nSimulator state"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data Layer::Route Bucket (Amazon S3)\\nROUTE_BUCKET: JSON route payloads",
+        "Simulation Layer::Route Loader\\n(AWS Lambda)\\n- Reads route JSON from S3 (ROUTE_BUCKET)\\n- Key: routeInfo.routeName or route-{id}.json\\n- UTF-8 JSON parse; assemble route-state; propagate S3 errors"
+      ],
+      "gt_node": "AWS IoT Device Simulator::Amazon S3\\nRoute data bucket"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "AWS IoT Device Simulator::Amazon S3\\nWeb UI bucket"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Presentation Layer::Web Management Console"
+      ],
+      "gt_node": "AWS IoT Device Simulator::Browser Web UI\\nstatic app client"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "AWS IoT Device Simulator::Users"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4648,
+      "completion_tokens": 732,
+      "total_tokens": 5380,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 3840
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "AWS IoT Device Simulator::Amazon CloudFront",
+    "AWS IoT Device Simulator::Amazon Cognito",
+    "AWS IoT Device Simulator::Amazon S3\\nWeb UI bucket",
+    "AWS IoT Device Simulator::Users"
+  ],
+  "unmatched_predicted_nodes": [
+    "Identity and Access Layer::Identity Provider\\n(e.g., Cognito/OIDC)",
+    "Observability Layer::AWS X-Ray",
+    "Observability Layer::Amazon CloudWatch Logs\\n(Access Logs)",
+    "Orchestration Layer::Orchestrator\\n(AWS Step Functions)"
+  ],
+  "_provenance": {
+    "fingerprint": "298a87e98dd573f0de4b7ae42d713e35c122e1881c0caf6c156a54aacf7a7d79",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

@@ -1,0 +1,65 @@
+@startuml
+title EIVAS System Architecture - Component/Deployment Diagram
+
+' Presentation Layer
+package "Presentation Layer" {
+    component "Reporting Form Interface [FR-001]" as ReportingForm
+    component "Map Visualization Component [AD-003]" as MapVis
+}
+
+' Application Layer
+package "Application Layer" {
+    component "Case Management Module [FR-004 to FR-008]" as CaseMgmt
+    component "Itinerary Analysis Module [FR-009, FR-010]" as ItinAnalysis
+    component "Outbreak Analysis Module [FR-012 to FR-018]" as OutbreakAnalysis
+    component "Authentication/Authorization Module [AD-004]" as AuthModule
+    component "Data Validation & Sanitization Layer [NFR-001, DR-008]" as DataValidator
+    component "Logging & Monitoring Component [NFR-003]" as Logger
+    component "Security Encryption Module [NFR-004, C-004]" as Encryptor
+    component "Rate Limiting/Cooldown Mechanism [NFR-005]" as RateLimiter
+}
+
+' Algorithm Layer
+package "Algorithm Layer" {
+    component "Internal Algorithm Processing Module [AD-002]" as AlgModule
+}
+
+' Data Layer
+package "Data Layer" {
+    database "Database Storage System" as Database
+    component "Cache Layer [NFR-002]" as Cache
+}
+
+' External Systems
+cloud "Map Service Provider [AD-003]" as MapService
+
+' Internal Connections
+ReportingForm --> DataValidator : Validates input
+DataValidator --> CaseMgmt : Passes clean data
+CaseMgmt --> Database : CRUD operations (FR-004 to FR-008)
+ItinAnalysis --> Database : Queries itinerary data (FR-009)
+OutbreakAnalysis --> Database : Retrieves case data for charts (FR-012, FR-013)
+AlgModule --> Database : Fetches data for processing (AD-002)
+MapVis --> Database : Gets location data (AD-003)
+ItinAnalysis --> CaseMgmt : Provides case data
+OutbreakAnalysis --> CaseMgmt : Uses managed case data
+ItinAnalysis <--> AlgModule : Supplies itinerary for analysis (FR-010)
+OutbreakAnalysis --> AlgModule : Requests statistical analysis (FR-014 to FR-018)
+ReportingForm --> CaseMgmt : Sends form data (FR-001)
+MapVis --> ItinAnalysis : Requests path visualization (FR-009)
+
+' Cross-layer Infrastructure
+AuthModule --> CaseMgmt : Secures access
+AuthModule --> ItinAnalysis : Secures access
+AuthModule --> OutbreakAnalysis : Secures access
+Encryptor --> Database : Encrypts stored data
+Logger --> CaseMgmt : Logs activity
+Logger --> ItinAnalysis : Logs activity
+Logger --> OutbreakAnalysis : Logs activity
+RateLimiter --> ReportingForm : Controls submission rate
+Cache --> Database : Caches frequent queries
+
+' External connections
+AlgModule <--> MapService : Delegates map-related computations (AD-003)
+
+@enduml

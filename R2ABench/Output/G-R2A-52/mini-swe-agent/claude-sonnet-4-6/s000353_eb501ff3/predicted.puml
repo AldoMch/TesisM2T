@@ -1,0 +1,92 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> LightGray
+}
+
+title Turing System - Architecture Diagram
+
+actor "API Client" as apiClient
+actor "Platform Operator" as operator
+
+rectangle "Turing API Server" <<layer>> {
+  rectangle "Middleware Layer" {
+    component "Authorization Middleware" as authMW
+    component "OpenAPI Validation Middleware" as validationMW
+  }
+
+  rectangle "HTTP API Layer" {
+    component "Router API Handler" as routerAPI
+    component "Ensembler API Handler" as ensemblerAPI
+  }
+
+  rectangle "Service Layer" {
+    component "Router Service" as routerSvc
+    component "Ensembler Service" as ensemblerSvc
+  }
+
+  rectangle "Cluster Management Layer" {
+    component "Router Deployment Controller" as deployCtrl
+  }
+}
+
+rectangle "PyFuncEnsembler Runtime" <<layer>> {
+  component "PyFuncEnsembler Webservice" as pyfuncSvc
+  component "Image Build Pipeline" as imageBuild
+}
+
+database "Data Store" as dataStore {
+  component "Router Data" as routerData
+  component "Ensembler Data" as ensemblerData
+}
+
+cloud "External Systems" {
+  component "Kubernetes Cluster" as k8s
+  component "MLflow Model Registry" as mlflow
+  component "Jaeger Tracing" as jaeger
+}
+
+apiClient --> authMW : HTTP Request
+authMW --> validationMW
+validationMW --> routerAPI
+validationMW --> ensemblerAPI
+
+routerAPI --> routerSvc
+ensemblerAPI --> ensemblerSvc
+
+routerSvc --> routerData
+ensemblerSvc --> ensemblerData
+
+routerSvc --> deployCtrl
+deployCtrl --> k8s : Create/Update/Delete\nRouter Deployments
+
+operator --> k8s : Operate Deployments
+
+pyfuncSvc --> ensemblerSvc : Used by Turing Routers
+imageBuild --> mlflow : Download Model Artifacts
+imageBuild --> pyfuncSvc : Build & Deploy Docker Image
+
+routerSvc --> jaeger : Request Tracing (optional)
+
+note right of authMW
+  Mounted when authorization
+  configuration is enabled
+end note
+
+note right of validationMW
+  Mounted when OpenAPI validation
+  configuration is enabled
+end note
+
+note right of k8s
+  Router user containers
+  use port 8080 by default
+  (overridable via ports.containerPort)
+end note
+
+note bottom of pyfuncSvc
+  Exposes user-defined ensemblers
+  as a webservice (HTTP_JSON or UPI_V1)
+end note
+
+@enduml

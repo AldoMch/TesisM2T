@@ -1,0 +1,148 @@
+@startuml
+title Kangrand - Interval ECDLP Solver on SECP256K1
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Local Operator" as LocalOp
+actor "Distributed Operator" as DistOp
+actor "Offline Analyst" as Analyst
+
+package "Kangrand Solver (SECP256K1)" {
+
+  component "Command-Line Interface" as CLI {
+    component "Input File Selection" as InFileSel
+    component "Work-File Save and Resume Options" as WorkOpts
+    component "Distinguished-Point Sizing" as DPOpts
+    component "Distributed Server/Client Options" as DistOpts
+    component "GPU Execution Options" as GPUOpts
+  }
+
+  component "Input Parser" as Parser {
+    component "Hex Value Parser" as HexParse
+    component "Public-Key Parser\n(compressed / uncompressed)" as PubKeyParse
+  }
+
+  component "Pollard's Kangaroo Engine" as Kangaroo {
+    component "Tame Herd Walk" as TameHerd
+    component "Wild Herd Walk" as WildHerd
+    component "Distinguished-Point Detector" as DPFinder
+    component "Interval ECDLP Solver Core" as SolverCore
+  }
+
+  component "Collision / Hash Table Store" as HashStore
+
+  component "Work-File Manager" as WorkMgr {
+    component "Periodic Save (-w, -wi)" as PeriodicSave
+    component "Resume from Work File (-i)" as Resume
+    component "Kangaroo State Persistence (-ws, -d)" as StateSave
+    component "Work-File Inspector" as Inspector
+    component "Wsplit Backup Handler" as Wsplit
+  }
+
+  component "Offline Merger" as Merger {
+    component "Multi Work-File Merge" as MultiMerge
+    component "Master Work File / Hash Table Builder" as MasterBuilder
+    component "Merge Result Detector" as MergeResult
+  }
+
+  component "Distributed Server" as Server {
+    component "Server Configuration Loader" as SrvConfig
+    component "Backup Interval Scheduler" as BackupSched
+    component "Distinguished-Point Setting" as SrvDP
+    component "Server Result / Artifact Writer" as SrvWriter
+  }
+
+  component "Distributed Client" as Client {
+    component "Server Connection" as SrvConn
+    component "GPU-Accelerated Computation" as GpuCompute
+    component "Local Kangaroo / Work Data Producer" as LocalData
+  }
+}
+
+database "Input ASCII File\n(hex values, public keys)" as InputFile
+folder "Work Files" as WorkFiles
+file "Split-Work Backup Files\n(prefixed)" as SplitFiles
+file "Server Configuration File" as ServerCfg
+folder "Result / Intermediate Files" as ResultFiles
+
+LocalOp --> CLI
+DistOp --> Server
+DistOp --> Client
+Analyst --> Merger
+
+InFileSel --> InputFile
+InFileSel --> Parser
+Parser --> HexParse
+Parser --> PubKeyParse
+PubKeyParse --> InputFile
+
+HexParse --> Kangaroo
+PubKeyParse --> Kangaroo
+
+SolverCore --> TameHerd
+SolverCore --> WildHerd
+TameHerd --> DPFinder
+WildHerd --> DPFinder
+DPFinder --> HashStore
+HashStore --> SolverCore
+SolverCore --> SolverCore : "detect collision /\nreport solved key"
+
+WorkOpts --> WorkMgr
+DPOpts --> DPFinder
+DPOpts --> StateSave
+PeriodicSave --> WorkFiles
+Resume --> WorkFiles
+StateSave --> WorkFiles
+Inspector --> WorkFiles
+Wsplit --> SplitFiles
+Wsplit --> HashStore : "reset in-memory\nhash table per cycle"
+
+MultiMerge --> WorkFiles
+MultiMerge --> MasterBuilder
+MasterBuilder --> ResultFiles
+MergeResult --> ResultFiles
+
+DistOpts --> Server
+DistOpts --> Client
+GPUOpts --> GpuCompute
+
+SrvConfig --> ServerCfg
+SrvConfig --> BackupSched
+SrvDP --> Server
+BackupSched --> SrvWriter
+SrvWriter --> WorkFiles
+SrvWriter --> HashStore
+SrvWriter --> ResultFiles
+
+SrvConn --> Server : "client/server model\n(no authentication)"
+GpuCompute --> Kangaroo
+LocalData --> WorkFiles
+LocalData --> ResultFiles
+
+Client --> Server : "connect to specified server"
+
+WorkFiles --> MultiMerge : "offline merge"
+WorkFiles --> Resume
+WorkFiles --> Inspector
+
+note right of Server
+  No built-in authentication mechanism.
+  Operator must stop existing clients when
+  server is restarted with changed config
+  (especially changed range/target key).
+end note
+
+note bottom of HashStore
+  Only distinguished points are retained
+  to reduce stored walk data (NFR-001).
+  DP bit count trades memory vs. overhead.
+end note
+
+note bottom of WorkFiles
+  A work file is resumable/mergeable for the
+  same key and range across different hardware,
+  DP bit counts, or kangaroo-count settings.
+end note
+
+@enduml

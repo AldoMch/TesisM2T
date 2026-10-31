@@ -1,0 +1,114 @@
+@startuml
+title QAPM Android Component - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =========================================================
+' Layer 1 - Host / Consumer Layer
+' =========================================================
+package "Host Application Layer" {
+  [Android Host Application] as HOSTAPP
+  [Apache HttpClient User Code] as HTTPCLIENTUSER
+}
+
+' =========================================================
+' Layer 2 - SDK Access / Configuration Layer
+' =========================================================
+package "QAPM SDK Access & Configuration Layer" {
+  [QAPM SDK Entrypoint] as SDKENTRY
+  [QAPM Configuration Manager] as CONFIGMGR
+}
+
+' =========================================================
+' Layer 3 - Background Scheduling Layer
+' =========================================================
+package "Background Scheduling Layer" {
+  [QAPM Handler Thread Component] as HANDLERTHREADCOMP
+  [Work Handler Manager] as WORKHANDLERMGR
+  [Background HandlerThread & Looper] as BGLOOPER
+  [Work Handler (background looper)] as WORKHANDLER
+  [Main-Thread Handler] as MAINHANDLER
+}
+
+' =========================================================
+' Layer 4 - Upload Processing Layer
+' =========================================================
+package "Upload Processing Layer" {
+  [Upload Processor] as UPLOADPROC
+  [Network Connectivity Gate] as NETGATE
+  [Forced-Send Storage Popper] as FORCEDPOP
+  [Upload File Scanner] as FILESCANNER
+  [Parameter Builder (bParam / cParam)] as PARAMBUILDER
+  [Upload Sender Client] as SENDERCLIENT
+  [Send Callback Handler (cleanup / logging)] as CALLBACKHANDLER
+}
+
+' =========================================================
+' Layer 5 - HTTP Instrumentation Layer
+' =========================================================
+package "Apache HttpClient Instrumentation Layer" {
+  [ResponseHandler Instrumentation Wrapper] as RESPHANDLERWRAP
+  [Transaction State Instrumentation] as TRANSTATE
+  [Content-Buffering Entity Wrapper] as ENTITYWRAP
+  [Counting InputStream] as COUNTINGSTREAM
+}
+
+' =========================================================
+' Layer 6 - Data Stores
+' =========================================================
+package "Data Stores" {
+  database "Local Upload Directory" as UPLOADDIR
+  database "Pending Upload Data Store" as PENDINGSTORE
+}
+
+' =========================================================
+' External Systems
+' =========================================================
+package "External Systems" {
+  cloud "Remote Reporting Backend (Sender Endpoint)" as REMOTEBACKEND
+  node "Android Platform Services\n(Handler / HandlerThread / Looper / Context)" as ANDROIDPLATFORM
+  node "Network Connectivity Service" as CONNECTIVITY
+  node "Apache HttpClient Runtime" as APACHERUNTIME
+}
+
+' ---------------- Layered dependencies ----------------
+HOSTAPP --> SDKENTRY
+HTTPCLIENTUSER --> RESPHANDLERWRAP
+HTTPCLIENTUSER --> ENTITYWRAP
+
+SDKENTRY --> CONFIGMGR
+SDKENTRY --> WORKHANDLERMGR
+CONFIGMGR --> SENDERCLIENT
+
+WORKHANDLERMGR --> BGLOOPER
+WORKHANDLERMGR --> WORKHANDLER
+WORKHANDLERMGR --> MAINHANDLER
+WORKHANDLER --> UPLOADPROC
+HANDLERTHREADCOMP --> BGLOOPER
+HANDLERTHREADCOMP --> MAINHANDLER
+BGLOOPER ..> ANDROIDPLATFORM : uses
+MAINHANDLER ..> ANDROIDPLATFORM : uses
+
+UPLOADPROC --> NETGATE
+UPLOADPROC --> FORCEDPOP
+UPLOADPROC --> FILESCANNER
+UPLOADPROC --> PARAMBUILDER
+UPLOADPROC --> SENDERCLIENT
+UPLOADPROC --> CALLBACKHANDLER
+
+NETGATE ..> CONNECTIVITY : queries
+FORCEDPOP --> PENDINGSTORE : pops pending data
+FILESCANNER --> UPLOADDIR : enumerates files
+PARAMBUILDER ..> ANDROIDPLATFORM : Context-derived cParam
+CALLBACKHANDLER --> UPLOADDIR : deletes on success
+SENDERCLIENT ..> REMOTEBACKEND : submit bParam/cParam
+REMOTEBACKEND ..> CALLBACKHANDLER : success / failure callback
+
+RESPHANDLERWRAP --> TRANSTATE
+RESPHANDLERWRAP ..> APACHERUNTIME : delegates wrapped ResponseHandler
+ENTITYWRAP --> COUNTINGSTREAM
+ENTITYWRAP ..> APACHERUNTIME : delegates wrapped HttpEntity / writeTo
+
+UPLOADDIR ..> UPLOADPROC
+@enduml

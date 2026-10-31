@@ -1,0 +1,96 @@
+@startuml
+!define LAYER1 #E6F3FF
+!define LAYER2 #FFE6E6
+!define LAYER3 #E6FFE6
+!define LAYER4 #FFF0E6
+!define LAYER5 #F0E6FF
+
+title macpro-appian-connector Architecture
+
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+package "External Systems" {
+  component "Appian" as appian
+  component "CMS BigMAC" as bigmac
+  component "GitHub" as github
+  component "AWS CLI" as awscli
+}
+
+package "AWS Services" {
+  component "EventBridge" as eventbridge
+  component "SNS" as sns
+  component "AWS Account/Region" as awsaccount
+  database "Connector Configuration" as connectorconfig
+}
+
+package "Core System" {
+  component "Terminal Interface" as terminal
+  component "Stage Listing Service" as stagelisting
+  component "Connector Management Service" as connectormanager
+  component "Event Routing Service" as eventrouter
+  component "Metrics Collection Service" as metricscollector
+  component "GitHub Actions CI/CD" as githubactions
+}
+
+package "Data Stores" {
+  database "Deployment Metrics" as deploymentmetrics
+  database "PR Merge Metrics" as prmetrics
+  database "Running Stages Cache" as stagescache
+}
+
+' External connections
+appian --> eventbridge : "Service Events"
+eventbridge --> sns : "Matching Events"
+sns --> terminal : "Alerts (via manual subscriptions)"
+awscli --> stagelisting : "AWS Credentials"
+github --> metricscollector : "API Data"
+github --> githubactions : "Workflow Triggers"
+
+' Internal connections
+terminal --> stagelisting : "listRunningStages"
+terminal --> connectormanager : "configureConnectors"
+terminal --> metricscollector : "getMetrics"
+
+stagelisting --> awsaccount : "Query Stages"
+stagelisting --> stagescache : "Cache Results"
+
+connectormanager --> connectorconfig : "Put/Delete/Restart"
+connectormanager --> awsaccount : "Cluster/Service Operations"
+
+eventrouter --> eventbridge : "Configure Rules"
+eventrouter --> sns : "Setup Topic"
+
+metricscollector --> deploymentmetrics : "Store/Retrieve"
+metricscollector --> prmetrics : "Store/Retrieve"
+metricscollector --> github : "API Calls"
+
+githubactions --> connectormanager : "Deployment Triggers"
+githubactions --> eventrouter : "Configuration Updates"
+
+' Data flow
+bigmac <--> connectorconfig : "Data Transfer"
+connectormanager --> bigmac : "Appian Data"
+
+' Manual management
+terminal --> sns : "Manual Subscription Mgmt"
+
+note right of sns
+  Subscription management
+  is manual, not automated
+end note
+
+note right of githubactions
+  CI/CD pipeline for
+  deployment and metrics
+end note
+
+note left of connectormanager
+  Manages Appian-to-BigMAC
+  data transfer connectors
+end note
+
+@enduml

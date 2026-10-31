@@ -1,0 +1,186 @@
+@startuml
+
+package "Client/Presentation Layer" {
+  component "Vue.js/Nuxt.js Frontend" as FE
+}
+
+package "Application/API Layer" {
+  component "Iris API/Application Backend" as API
+}
+
+package "Domain/Business Service Layer" {
+  component "Game System" as Game
+  component "Game Save Management" as GameSave
+  component "Achievement / Currency / Item / Reward System" as Rewards
+  component "Community System" as Community
+  component "Community User System" as User
+  component "Community Administration System" as Admin
+  component "Favorites System" as Fav
+  component "Notification System" as Notif
+  component "Notification Settings" as NotifSettings
+  component "Search / Recommendation" as Search
+  component "Content Compliance / Community Monitoring" as Compliance
+}
+
+package "Data Access/Persistence Layer" {
+  component "Gorm Persistence/Repository" as Gorm
+  database "MySQL Database" as MySQL
+}
+
+package "External Integration Layer" {
+  component "Model Reasoning Integration" as ModelInt
+  component "AIGC Media Integration" as AIGC
+  component "Email Delivery Adapter (implementation assumption)" as EmailAdapter
+}
+
+package "Infrastructure/Deployment Layer" {
+  node "Docker/Kubernetes Deployment" as K8s
+}
+
+package "Cross-Cutting Security/Observability/Reliability Layer" {
+  component "Security & Access Control" as Security
+  component "Logging, Monitoring & Audit" as Observability
+  component "Reliability / Fault Tolerance / Recovery / Backup" as Reliability
+}
+
+package "External Systems" {
+  cloud "Large Language Model / Model Reasoning Service" as LLM
+  cloud "Cloud Provider / Self-Built Data Center" as CloudInfra
+  cloud "Player Client Devices & OS" as Devices
+}
+
+Devices --> FE : uses
+FE --> API : UI/SSR/API calls
+
+API --> Game : dispatch game requests
+API --> GameSave : save/load/profile requests
+API --> Rewards : achievement/currency/item requests
+API --> Community : dispatch community requests
+API --> User : dispatch user requests
+API --> Admin : dispatch admin requests
+API --> Fav : dispatch favorites requests
+API --> Notif : dispatch notification requests
+API --> NotifSettings : notification settings requests
+API --> Search : search/recommendation requests
+API --> Compliance : compliance/moderation requests
+
+Game --> GameSave : save/load/checkpoint
+Game --> Rewards : reward/currency/item events
+Game --> ModelInt : plot/event/state requests
+Game --> AIGC : request images/music/sound effects
+AIGC --> Game : generated media feedback
+ModelInt --> LLM : invokes
+
+GameSave --> Gorm : save persistence
+Rewards --> Gorm : rewards/currency/items persistence
+Rewards --> User : award/associate rewards
+
+Community --> Gorm : posts/comments/replies
+Community --> Notif : comment/reply events
+Community --> Search : content index/update
+Community --> Compliance : content review/reporting
+
+User --> Gorm : accounts/profiles
+User --> EmailAdapter : verification/password emails
+User --> NotifSettings : configure preferences
+
+Admin --> Gorm : moderation/account status
+Admin --> Community : post review/reports
+Admin --> User : ban/restore accounts
+Admin --> Notif : review results/notifications
+Admin --> Compliance : moderation/compliance actions
+
+Fav --> Gorm : favorites
+Fav --> Community : post reference/validation
+Fav --> User : favorite owner association
+
+Notif --> Gorm : notifications
+Notif --> User : user association/unread counts
+Notif --> NotifSettings : preference lookup
+
+NotifSettings --> Gorm : settings persistence
+
+Search --> Gorm : search index/recommendation data
+Search --> Community : query posts/content
+Search --> User : profile/recommendation signals
+
+Compliance --> Gorm : review records
+Compliance --> Community : monitor/review content
+Compliance --> Admin : escalations/reports
+Compliance --> Notif : compliance alerts
+
+K8s --> FE : deploys/scales/manages
+K8s --> API : deploys/scales/manages
+K8s --> Game : deploys/scales/manages
+K8s --> GameSave : deploys/scales/manages
+K8s --> Rewards : deploys/scales/manages
+K8s --> Community : deploys/scales/manages
+K8s --> User : deploys/scales/manages
+K8s --> Admin : deploys/scales/manages
+K8s --> Fav : deploys/scales/manages
+K8s --> Notif : deploys/scales/manages
+K8s --> NotifSettings : deploys/scales/manages
+K8s --> Search : deploys/scales/manages
+K8s --> Compliance : deploys/scales/manages
+K8s --> Gorm : deploys/scales/manages
+K8s --> MySQL : deploys/scales/manages
+K8s --> ModelInt : deploys/scales/manages
+K8s --> AIGC : deploys/scales/manages
+K8s --> EmailAdapter : deploys/scales/manages
+K8s --> Security : deploys/scales/manages
+K8s --> Observability : deploys/scales/manages
+K8s --> Reliability : deploys/scales/manages
+K8s --> CloudInfra : runs on
+
+Security --> FE : encryption/access control
+Security --> API : authn/authz/session security
+Security --> Game : sensitive data/access control
+Security --> GameSave : save access control
+Security --> Rewards : reward integrity/access control
+Security --> Community : access control
+Security --> User : credential security
+Security --> Admin : privileged access control
+Security --> Fav : access control
+Security --> Notif : access control
+Security --> NotifSettings : settings access control
+Security --> Search : search/recommendation access control
+Security --> Compliance : moderation access control
+Security --> ModelInt : model call security
+Security --> AIGC : media call security
+Security --> EmailAdapter : email security
+Security --> Gorm : encryption at rest
+Security --> MySQL : encryption/audit
+Security --> K8s : vulnerability management
+Security --> LLM : model call security
+
+Observability --> FE : monitoring
+Observability --> API : logs/metrics/traces
+Observability --> Game : system events
+Observability --> GameSave : save/load logs
+Observability --> Rewards : reward/currency/item logs
+Observability --> Community : system events
+Observability --> User : security audit
+Observability --> Admin : admin audit
+Observability --> Fav : system events
+Observability --> Notif : system events
+Observability --> NotifSettings : settings audit
+Observability --> Search : search/recommendation logs
+Observability --> Compliance : compliance audit
+Observability --> ModelInt : model call logs
+Observability --> AIGC : media call logs
+Observability --> EmailAdapter : email delivery logs
+Observability --> Gorm : persistence logs
+Observability --> MySQL : DB monitoring
+Observability --> K8s : infrastructure monitoring
+Observability --> LLM : model call logs
+
+Reliability --> API : resilience/fault tolerance
+Reliability --> Game : state recovery
+Reliability --> GameSave : save recovery
+Reliability --> Rewards : reward data recovery
+Reliability --> Gorm : transactional recovery
+Reliability --> MySQL : backup/recovery
+Reliability --> K8s : failover/recovery
+Reliability --> CloudInfra : DR infrastructure
+
+@enduml

@@ -1,0 +1,129 @@
+@startuml hAFL2_Architecture
+title hAFL2 - kAFL-based Hypervisor Fuzzing System (Layered Architecture)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' Layer 1: User / Operator Access
+' ============================================================
+package "Operator / CLI Layer" as CLI {
+  [Standalone Test Entry\n(test.py)] as TESTENTRY
+  [pytest Test Runner] as PYTEST
+  [Linux Launch Scripts\n(bash)] as LAUNCHSCRIPTS
+  [Windows Build Script\n(compile.sh)] as BUILDSCRIPT
+  actor "Fuzzing Operator" as OPS
+}
+
+' ============================================================
+' Layer 2: Test Harness & Fuzzing Core
+' ============================================================
+package "Test Harness and Fuzzing Core" as CORE {
+  [kAFL-Fuzzer Test Suites\n(random / deterministic / havoc)] as TESTSUITES
+  [Mutation Engine\n(bitflip / deterministic mutators)] as MUTATION
+  [Effector Map Handler\n(boolean map over payload)] as EFFECTOR
+  [Embedded Forkserver\n(kAFL hypercall <-> AFL I/O)] as FORKSERVER
+}
+
+' ============================================================
+' Layer 3: Linux Userspace Fuzzing Workflow
+' ============================================================
+package "Linux Userspace Fuzzing Workflow" as LINUX {
+  [initrd Builder] as INITRD
+  [Shared Library Collector\n(host -> initrd)] as LIBS
+  [Target Launcher\n(kAFL workflow)] as TLAUNCH
+}
+
+' ============================================================
+' Layer 4: Windows Hyper-V Fuzzing Workflow
+' ============================================================
+package "Windows Hyper-V Fuzzing Workflow" as WINDOWS {
+  [packet_sender.exe\n(IOCTL trigger)] as PACKETSENDER
+  [loader.exe\n(snapshot load + exec)] as LOADER
+  [Harness Driver\n(child partition)] as HARNESS
+  [Crash-Monitoring Driver\n(root partition)] as CRASHMON
+}
+
+' ============================================================
+' Layer 5: Hyper-V Virtualization Platform
+' ============================================================
+package "Hyper-V Platform (Root / Child Partitions)" as HYPERV {
+  [Child Partition VM\n(harness execution)] as CHILDVM
+  [Root Partition VM\n(VMSwitch / Hyper-V networking)] as ROOTVM
+  [VMBus / netvsc Channels] as VMBUS
+}
+
+' ============================================================
+' Layer 6: Data Stores
+' ============================================================
+package "Data Stores / Artifacts" as DATA {
+  database "initrd Artifact\n(target + shared libs)" as D_INITRD
+  database "Payload / Effector Map\n(byte arrays + boolean map)" as D_PAYLOAD
+  database "Fuzzing Snapshot" as D_SNAPSHOT
+  database "Crash-Monitoring Results" as D_CRASH
+  database "Windows Build Offset Config" as D_OFFSET
+}
+
+' ============================================================
+' External Systems / Tooling
+' ============================================================
+cloud "External Tooling" as EXT {
+  [Visual Studio] as VS
+  [Hyper-V Hypervisor] as HYPERVISOR
+  [Host OS / Shared Libraries] as HOSTLIBS
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+
+' Operator access
+OPS --> TESTENTRY
+OPS --> PYTEST
+OPS --> LAUNCHSCRIPTS
+OPS --> BUILDSCRIPT
+
+' Test entry points into core
+TESTENTRY --> TESTSUITES
+PYTEST --> TESTSUITES
+TESTSUITES --> MUTATION
+MUTATION --> EFFECTOR
+EFFECTOR --> D_PAYLOAD
+MUTATION --> D_PAYLOAD
+
+' Linux userspace workflow
+LAUNCHSCRIPTS --> INITRD
+LAUNCHSCRIPTS --> TLAUNCH
+INITRD --> LIBS
+LIBS --> HOSTLIBS
+INITRD --> D_INITRD
+TLAUNCH --> FORKSERVER
+TLAUNCH --> D_INITRD
+FORKSERVER --> D_PAYLOAD
+FORKSERVER ..> TLAUNCH : coverage / I/O feedback
+
+' Windows build and helper binaries
+BUILDSCRIPT --> PACKETSENDER
+BUILDSCRIPT --> LOADER
+VS --> HARNESS
+VS --> CRASHMON
+D_OFFSET --> BUILDSCRIPT
+PACKETSENDER --> D_PAYLOAD
+LOADER --> D_SNAPSHOT
+LOADER --> PACKETSENDER
+
+' Hyper-V child/root partition workflow
+PACKETSENDER --> HARNESS
+HARNESS --> CHILDVM
+CHILDVM --> ROOTVM : fuzzing payloads (DR-006)
+CHILDVM --> VMBUS
+ROOTVM --> VMBUS
+ROOTVM ..> HYPERVISOR
+CHILDVM ..> HYPERVISOR
+VMBUS ..> ROOTVM : VMSwitch path
+CRASHMON --> ROOTVM
+CRASHMON --> D_CRASH
+D_CRASH --> CORE : crash feedback (FR-007 / DR-007)
+
+@enduml

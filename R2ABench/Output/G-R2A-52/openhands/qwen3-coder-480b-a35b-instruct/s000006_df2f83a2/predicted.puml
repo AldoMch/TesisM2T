@@ -1,0 +1,99 @@
+@startuml
+!define RECTANGLE rectangle
+!define COMPONENT component
+!define INTERFACE interface
+!define DATABASE database
+!define FRAME frame
+
+' Title and Theme
+title User-in-the-box Simulator Framework Architecture
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+' Core Framework Components
+package "Framework Core" {
+  [YAML\nConfiguration] as yaml_config
+  [Simulator Builder] as builder
+  [MuJoCo XML\nIntegration Layer] as xml_integration
+}
+
+' Module Components
+package "Modular Components" {
+  package "Biomechanical Models" {
+    [Muscle Actuated\nModels] as bio_models
+  }
+  
+  package "Perception Modules" {
+    [Egocentric Vision] as vision_perception
+    [Proprioception] as prop_perception
+    [Other Modalities] as other_perception
+  }
+  
+  package "Interaction Tasks" {
+    [HCI Task Environments] as interaction_tasks
+  }
+}
+
+' Workflow Components
+package "Workflows" {
+  [Reinforcement Learning\nTraining] as rl_training
+  [Simulator Packaging] as packaging
+  [Evaluation Runner] as evaluation
+}
+
+' External Interfaces
+package "Interfaces" {
+  [OpenAI Gym\nInterface] as gym_interface
+}
+
+' External Artifacts
+package "Artifacts" {
+  database "Run Folders" as run_folders {
+    folder "Checkpoints" as checkpoints
+    folder "Evaluation Outputs" as eval_outputs
+  }
+  folder "Standalone\nSimulator Packages" as simulator_packages
+}
+
+' Relationships
+yaml_config --> builder : configures
+builder --> xml_integration : integrates with
+xml_integration --> bio_models : incorporates
+xml_integration --> interaction_tasks : incorporates
+builder --> vision_perception : selects
+builder --> prop_perception : selects
+builder --> other_perception : selects
+builder --> gym_interface : exposes as
+gym_interface --> rl_training : used by
+rl_training --> packaging : produces
+packaging --> simulator_packages : outputs to
+evaluation --> run_folders : reads from
+run_folders --> evaluation : provides
+evaluation --> eval_outputs : writes to
+builder --> packaging : feeds
+bio_models --> rl_training : trained in
+interaction_tasks --> rl_training : trained in
+vision_perception --> rl_training : used in
+prop_perception --> rl_training : used in
+
+' Notes
+note right of builder
+  Constructs simulators by
+  integrating components
+  according to YAML config
+end note
+
+note right of rl_training
+  Trains biomechanical user
+  models or control policies
+  using reinforcement learning
+end note
+
+note left of evaluation
+  Evaluates trained simulators
+  using stored run folders
+  and generates outputs
+end note
+
+@enduml

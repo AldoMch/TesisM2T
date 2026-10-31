@@ -1,0 +1,94 @@
+@startuml
+title NLP4L (attic-nlp4l) - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Lucene Ecosystem User" as LU
+actor "Machine Learning\nWorkflow User" as MLU
+actor "Scala Interactive User" as SIU
+actor "Schema Configuration User" as SCU
+
+rectangle "External Data & Tools" {
+  database "Lucene Index\n(document + analyzer-normalized term data)" as LUCENE
+  file "LIBSVM File\n(document vectors)" as LIBSVM
+  file "Word Count Data" as WORDCOUNT
+  component "External ML Tools\n(Spark / Mahout)" as MLTOOLS
+}
+
+package "NLP4L (Scala Library / Tool)" {
+
+  component "Interactive Scala Interface\n(ad hoc / conversational usage)" as SCALA_UI
+
+  package "Core NLP Processing" {
+    component "Document Data Processor\n[FR-001]" as DOC_PROC
+    component "Term Data Access\n[FR-002a]" as TERM_ACCESS
+    component "Search Capability\n[FR-002b]\nquery / filter / count / sort" as SEARCH
+    component "Document Vector Creator\n[FR-003]" as VEC_CREATE
+    component "LIBSVM Writer\n[FR-003, NFR-002]" as LIBSVM_WRITER
+  }
+
+  package "Schema Subsystem" {
+    component "Schema Loader\n[FR-006]\nresource name or file path" as SCHEMA_LOADER
+    component "Schema Parser\n[FR-006]\nroot / default analyzer /\nfield definitions / custom analyzers" as SCHEMA_PARSER
+    component "Schema Model\n[DR-007, DR-008]" as SCHEMA_MODEL
+    component "Schema Validator\n[FR-006, DR-005, DR-006]" as SCHEMA_VALIDATOR
+    file "Schema Configuration\nresource or file path" as SCHEMA_FILE
+  }
+
+  package "Experimental" {
+    component "Chart Display\n[FR-005, NFR-004]\n(experimental)" as CHART
+  }
+}
+
+' User interactions
+LU --> SCALA_UI
+MLU --> VEC_CREATE
+SIU --> SCALA_UI
+SCU --> SCHEMA_FILE
+
+' Scala interface drives core processing
+SCALA_UI --> DOC_PROC
+SCALA_UI --> SEARCH
+SCALA_UI --> VEC_CREATE
+SCALA_UI --> CHART
+
+' Core data flows
+LUCENE --> DOC_PROC
+DOC_PROC --> TERM_ACCESS
+LUCENE --> SEARCH
+LUCENE --> VEC_CREATE
+VEC_CREATE --> LIBSVM_WRITER
+LIBSVM_WRITER --> LIBSVM
+LIBSVM --> MLTOOLS
+WORDCOUNT --> CHART
+
+' Schema subsystem flows
+SCHEMA_FILE --> SCHEMA_LOADER
+SCHEMA_LOADER --> SCHEMA_PARSER
+SCHEMA_PARSER --> SCHEMA_MODEL
+SCHEMA_LOADER --> SCHEMA_VALIDATOR
+SCHEMA_VALIDATOR --> SCHEMA_MODEL
+
+' Schema drives processing
+SCHEMA_MODEL --> DOC_PROC
+SCHEMA_MODEL --> TERM_ACCESS
+SCHEMA_MODEL --> SEARCH
+SCHEMA_MODEL --> VEC_CREATE
+
+note right of SCHEMA_VALIDATOR
+  Invalid schema error when:
+  - load source unavailable
+  - missing "schema" root object
+  - missing default analyzer
+  - missing / empty field definitions
+end note
+
+note bottom of LUCENE
+  Constraints:
+  - Scala implementation language (C-001)
+  - Apache Lucene 5.2.0 ecosystem (C-002, NFR-001)
+  - LIBSVM interchange format (C-003, NFR-002)
+end note
+
+@enduml

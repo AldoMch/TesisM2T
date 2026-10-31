@@ -1,0 +1,73 @@
+@startuml
+title Deployment / Component Diagram
+
+package "Presentation / Web Frontend" {
+  component "Web Frontend\n(HTML/CSS/JS/Bootstrap)" as WebFrontend
+}
+
+package "Application / Web Backend" {
+  component "Web Backend\n(Golang/Gin)" as WebBackend {
+    component "Account / Auth Service" as AuthService
+    component "Follow / Favorite Service" as FollowService
+    component "Score Management\n(upload/download/search)" as ScoreManagement
+    component "Model Management" as ModelManagement
+    component "Hot Chart Update Service" as HotChartUpdate
+    component "Recommendation Retrieval / Display Service" as RecommendationRetrieval
+  }
+}
+
+package "Scheduling / Task Orchestration" {
+  component "Scheduling Module" as Scheduling
+}
+
+package "Algorithm Service" {
+  component "Algorithm Service" as AlgorithmService {
+    component "Online Music Generation" as OnlineGen {
+      component "Score Generation" as ScoreGeneration
+    }
+    component "Offline Model Iterative Upgrade" as OfflineUpgrade {
+      component "User-Specific Model Training" as UserModelTraining
+    }
+    component "Score Classification" as ScoreClassification
+    component "Song Recommendation" as SongRecommendation
+  }
+}
+
+package "Data / Persistence" {
+  database "Data Storage\n(User, Score, Favorite/Follow, Model, MIDI/ABC, Seed, LSTM, Label, Task, Hot Chart)\n3 replicas" as DataStore
+}
+
+package "Messaging / Queue" {
+  component "RabbitMQ 3.8.14\nTask Queue / MQ" as TaskQueue
+}
+
+node "Infrastructure / Gateway" {
+  component "Nginx 1.19.8\nGateway / Load Balancer" as Nginx
+}
+
+package "External Software Interfaces" {
+  component "etcd 3.4.15" as etcd
+  component "Apache Hadoop 3.2.2" as Hadoop
+}
+
+WebFrontend --> Nginx : HTTPS/API requests
+Nginx --> WebBackend : reverse proxy / load-balanced requests
+
+WebBackend --> Scheduling : generation task trigger / coordination
+WebBackend --> DataStore : data storage / search
+
+AuthService --> DataStore : user/account data
+FollowService --> DataStore : follow/favorite data
+ScoreManagement --> DataStore : score upload/download/search
+ModelManagement --> DataStore : model management
+HotChartUpdate --> DataStore : update hot chart
+RecommendationRetrieval --> DataStore : read recommendations/hot chart
+
+Scheduling --> TaskQueue : serialize & push task metadata
+Scheduling --> DataStore : task metadata/status/logs
+TaskQueue --> AlgorithmService : deliver queued tasks
+AlgorithmService --> DataStore : read/write model, scores, labels, seeds, MIDI/ABC, LSTM representations, task status/logs
+AlgorithmService --> WebBackend : conversion failure notifications / restore model params
+AlgorithmService --> Scheduling : training conversion failure notification
+
+@enduml

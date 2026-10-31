@@ -1,0 +1,293 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::Ethereum-compatible Node\\n(HTTP JSON-RPC endpoint)",
+        "Integration / Adapter Layer::Web3j Ethereum Client\\n(HTTP transport)"
+      ],
+      "gt_nodes": [
+        "LwM2M Blockchain Platform::Blockchain Network\\nEthereum / Web3j"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Data Layer::Client/Bootstrap Smart Contract Storage\\n(endpoint, bootstrap server URL/identity/key,\\nserver URL/identity/key)",
+        "Integration / Adapter Layer::Smart-Contract Interaction Adapter\\n(addClient / getAllClients / getClientByEndpoint)"
+      ],
+      "gt_nodes": [
+        "LwM2M Blockchain Platform::BootstrapStore\\nSmart Contract"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "LwM2M Blockchain Platform::External Applications\\nusing LwM2M",
+        "LwM2M Blockchain Platform::LwM2M Client\\nDevice 1",
+        "LwM2M Blockchain Platform::LwM2M Client\\nDevice 2"
+      ],
+      "predicted_nodes": [
+        "External Systems::LwM2M Service Component\\n(bootstrap data consumer)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Presentation / API Layer (Spring HTTP)::Blockchain Client/Bootstrap\\nHTTP API Endpoint"
+      ],
+      "gt_nodes": [
+        "LwM2M Blockchain Platform::LwM2M Bootstrap Server"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Integration / Adapter Layer::Leshan / LwM2M Model Adapter\\n(node, object, instance, resource types)"
+      ],
+      "gt_nodes": [
+        "LwM2M Blockchain Platform::LwM2M Server\\nLeshan server component"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Presentation / API Layer (Spring HTTP)::User Management HTTP Controller\\nGET user retrieval\\nPOST /add user creation",
+        "Security / Access Control Layer::Token Access Control\\n(JwtUtility.isValidToken(auth,1))\\n401 / 403 / 400 outcomes"
+      ],
+      "gt_nodes": [
+        "LwM2M Blockchain Platform::Secure API\\nAuthenticated HTTP endpoints"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Application / Service Layer::Blockchain Client/Bootstrap Service\\n(retrieve all clients\\nadd client data\\nretrieve client by endpoint)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::BootstrapStore\\nSmart Contract"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / Service Layer::LwM2M Node Deserialization Service\\n(JSON -> typed node structures)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::LwM2M Server\\nLeshan server component"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / Service Layer::Security Information Conversion Service\\n(contract results -> security-info collection)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::BootstrapStore\\nSmart Contract"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / Service Layer::User Service\\n(user retrieval, user creation)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::Secure API\\nAuthenticated HTTP endpoints"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data Layer::Client/Bootstrap Smart Contract Storage\\n(endpoint, bootstrap server URL/identity/key,\\nserver URL/identity/key)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::BootstrapStore\\nSmart Contract",
+        "LwM2M Blockchain Platform::LwM2M Bootstrap Server"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Data Layer::User Data Store",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Ethereum-compatible Node\\n(HTTP JSON-RPC endpoint)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::Blockchain Network\\nEthereum / Web3j"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::LwM2M Service Component\\n(bootstrap data consumer)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::External Applications\\nusing LwM2M",
+        "LwM2M Blockchain Platform::LwM2M Bootstrap Server",
+        "LwM2M Blockchain Platform::LwM2M Client\\nDevice 1",
+        "LwM2M Blockchain Platform::LwM2M Client\\nDevice 2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Authenticated API Client\\n(HTTP + Authorization header)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::Secure API\\nAuthenticated HTTP endpoints"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Integration / Adapter Layer::Fixed 32-byte ASCII\\nEncode / Decode Utility",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::BootstrapStore\\nSmart Contract",
+        "LwM2M Blockchain Platform::LwM2M Bootstrap Server"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Integration / Adapter Layer::Leshan / LwM2M Model Adapter\\n(node, object, instance, resource types)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::LwM2M Server\\nLeshan server component"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Integration / Adapter Layer::Smart-Contract Interaction Adapter\\n(addClient / getAllClients / getClientByEndpoint)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::BootstrapStore\\nSmart Contract"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Integration / Adapter Layer::Web3j Ethereum Client\\n(HTTP transport)",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::Blockchain Network\\nEthereum / Web3j"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation / API Layer (Spring HTTP)::Blockchain Client/Bootstrap\\nHTTP API Endpoint",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::BootstrapStore\\nSmart Contract"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation / API Layer (Spring HTTP)::User Management HTTP Controller\\nGET user retrieval\\nPOST /add user creation",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::Secure API\\nAuthenticated HTTP endpoints"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Security / Access Control Layer::Token Access Control\\n(JwtUtility.isValidToken(auth,1))\\n401 / 403 / 400 outcomes",
+      "reference_nodes": [
+        "LwM2M Blockchain Platform::Secure API\\nAuthenticated HTTP endpoints"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::Ethereum-compatible Node\\n(HTTP JSON-RPC endpoint)",
+        "Integration / Adapter Layer::Web3j Ethereum Client\\n(HTTP transport)"
+      ],
+      "gt_node": "LwM2M Blockchain Platform::Blockchain Network\\nEthereum / Web3j"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / Service Layer::Blockchain Client/Bootstrap Service\\n(retrieve all clients\\nadd client data\\nretrieve client by endpoint)",
+        "Data Layer::Client/Bootstrap Smart Contract Storage\\n(endpoint, bootstrap server URL/identity/key,\\nserver URL/identity/key)",
+        "Integration / Adapter Layer::Smart-Contract Interaction Adapter\\n(addClient / getAllClients / getClientByEndpoint)",
+        "Integration / Adapter Layer::Fixed 32-byte ASCII\\nEncode / Decode Utility"
+      ],
+      "gt_node": "LwM2M Blockchain Platform::BootstrapStore\\nSmart Contract"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::LwM2M Service Component\\n(bootstrap data consumer)"
+      ],
+      "gt_node": "LwM2M Blockchain Platform::External Applications\\nusing LwM2M"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::LwM2M Service Component\\n(bootstrap data consumer)",
+        "Integration / Adapter Layer::Fixed 32-byte ASCII\\nEncode / Decode Utility",
+        "Presentation / API Layer (Spring HTTP)::Blockchain Client/Bootstrap\\nHTTP API Endpoint"
+      ],
+      "gt_node": "LwM2M Blockchain Platform::LwM2M Bootstrap Server"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "External Systems::LwM2M Service Component\\n(bootstrap data consumer)"
+      ],
+      "gt_node": "LwM2M Blockchain Platform::LwM2M Client\\nDevice 1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "External Systems::LwM2M Service Component\\n(bootstrap data consumer)"
+      ],
+      "gt_node": "LwM2M Blockchain Platform::LwM2M Client\\nDevice 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / Service Layer::LwM2M Node Deserialization Service\\n(JSON -> typed node structures)",
+        "Integration / Adapter Layer::Leshan / LwM2M Model Adapter\\n(node, object, instance, resource types)"
+      ],
+      "gt_node": "LwM2M Blockchain Platform::LwM2M Server\\nLeshan server component"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "LwM2M Blockchain Platform::Management Web UI"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / Service Layer::User Service\\n(user retrieval, user creation)",
+        "Global::Authenticated API Client\\n(HTTP + Authorization header)",
+        "Presentation / API Layer (Spring HTTP)::User Management HTTP Controller\\nGET user retrieval\\nPOST /add user creation",
+        "Security / Access Control Layer::Token Access Control\\n(JwtUtility.isValidToken(auth,1))\\n401 / 403 / 400 outcomes"
+      ],
+      "gt_node": "LwM2M Blockchain Platform::Secure API\\nAuthenticated HTTP endpoints"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4737,
+      "completion_tokens": 720,
+      "total_tokens": 5457,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 3840
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "LwM2M Blockchain Platform::Management Web UI"
+  ],
+  "unmatched_predicted_nodes": [
+    "Application / Service Layer::Blockchain Client/Bootstrap Service\\n(retrieve all clients\\nadd client data\\nretrieve client by endpoint)",
+    "Application / Service Layer::LwM2M Node Deserialization Service\\n(JSON -> typed node structures)",
+    "Application / Service Layer::Security Information Conversion Service\\n(contract results -> security-info collection)",
+    "Application / Service Layer::User Service\\n(user retrieval, user creation)",
+    "Data Layer::User Data Store",
+    "Global::Authenticated API Client\\n(HTTP + Authorization header)",
+    "Integration / Adapter Layer::Fixed 32-byte ASCII\\nEncode / Decode Utility"
+  ],
+  "_provenance": {
+    "fingerprint": "a271058aa2296c5fea216e3a3b77d46306bdaf9ef39f45dbdeaac59bfac7a5c8",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

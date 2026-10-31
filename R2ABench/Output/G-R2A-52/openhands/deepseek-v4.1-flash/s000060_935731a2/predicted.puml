@@ -1,0 +1,95 @@
+@startuml
+title lowes/auditor - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =========================================================
+' External actors / consumers
+' =========================================================
+actor "Integrating\nApplication Developer" as Dev
+actor "Infrastructure\nIntegrator" as Infra
+
+package "JVM Application (host)" as HostApp {
+  component "Calling Service" as CallingService
+}
+
+' =========================================================
+' lowes/auditor client library
+' =========================================================
+package "lowes/auditor (Kotlin client library)" as Auditor {
+
+  component "Auditing API" as AuditAPI
+
+  component "Audit Configuration\nAuditorEventConfig" as Config
+
+  component "Audit Comparator /\nEvent Generator" as Generator
+
+  component "Element Filter\n(AuditEventElementFilter /\nInclusionFilter)" as Filter
+
+  component "Logging Support\n(LogProvider)" as Logger
+
+  component "Event Publishing\n(EventPublisher)" as Publisher <<interface>>
+
+  component "Kafka Event Publisher\n(default implementation)" as KafkaPublisher
+
+  component "AuditEvent\n(JSON payload model)" as AuditEvent
+}
+
+' =========================================================
+' External infrastructure / downstream
+' =========================================================
+cloud "Kafka Event Stream\n(topic)" as KafkaTopic
+
+package "Downstream Services\n(out of scope)" as Downstream {
+  component "Event Consumer" as Consumer
+  component "Audit Persistence" as Persistence
+}
+
+database "Audit Store" as AuditStore
+
+' =========================================================
+' Relationships
+' =========================================================
+
+Dev --> AuditAPI : integrate / invoke
+Infra --> Publisher : implement
+Infra --> Logger : implement
+Infra --> Filter : implement
+
+CallingService --> AuditAPI : audit(oldObject,\nnewObject, config?)
+
+AuditAPI --> Config : applies\napplicationName,\neventSource,\neventSubType,\nmetadata, filters
+AuditAPI --> Generator : delegates comparison
+AuditAPI --> Logger : logs
+AuditAPI --> Publisher : publishes event
+
+Generator --> AuditEvent : produces\n(UPDATED / CREATED / DELETED)
+Generator --> Filter : element inclusion
+Generator ..> Config : reads filter settings
+
+Filter .> AuditAPI : filtered elements
+
+Publisher <|.. KafkaPublisher : implements
+KafkaPublisher --> KafkaTopic : serialized JSON\nAuditEvent
+
+KafkaTopic --> Consumer : consumes
+Consumer --> Persistence : deserializes into\nAuditEvent
+Persistence --> AuditStore : stores
+
+AuditEvent ..> Consumer : deserialized payload
+
+note right of AuditEvent
+  Element fields:
+  name, updatedValue,
+  previousValue,
+  metadata.fqdn
+end note
+
+note bottom of Filter
+  Only elements matching the
+  configured "includes" list
+  appear in the AuditEvent.
+end note
+
+@enduml

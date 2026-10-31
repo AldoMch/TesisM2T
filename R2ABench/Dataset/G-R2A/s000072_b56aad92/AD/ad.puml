@@ -1,0 +1,119 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "Applications\nHPC, AI, ML, Big Data" as Applications
+
+package "Programming Models and Frameworks" as Frameworks {
+    rectangle "MPI\nMPICH, Open-MPI" as MpiApps
+    rectangle "PGAS / SHMEM\nOpenSHMEM, UPC, CAF, X10, Chapel" as PgasApps
+    rectangle "Task Runtimes\nParsec, OCR, Legion" as TaskApps
+    rectangle "AI / ML Frameworks\nTensorFlow, Burst Buffer" as MlApps
+}
+
+package "UCX" as Ucx {
+    package "UCP Protocols\nHigh Level API" as Ucp {
+        rectangle "Transport Selection" as TransportSelection
+        rectangle "Cross-Transport Multi-Rail" as MultiRail
+        rectangle "Fragmentation" as Fragmentation
+        rectangle "Software Protocols" as SoftwareProtocols
+        rectangle "Message Passing API\nTag Matching, Rendezvous" as MessagePassingDomain
+        rectangle "PGAS API\nRMAs, Atomics" as PgasDomain
+        rectangle "Task Based API\nActive Messages" as TaskDomain
+        rectangle "I/O API\nStream" as IoDomain
+    }
+
+    package "UCT Hardware Transports\nLow Level API" as Uct {
+        rectangle "RDMA Verbs Transport\nInfiniBand, ROCE, OPA" as RdmaTransport
+        rectangle "RC" as Rc
+        rectangle "UD" as Ud
+        rectangle "DCT" as Dct
+        rectangle "Gemini / Aries Transport\nGNI" as GniTransport
+        rectangle "Intra-node Host Memory\nSYSV, POSIX, KNEM, CMA, XPMEM" as HostMemoryTransport
+        rectangle "GPU Transport\nNVIDIA CUDA, AMD ROCm" as GpuTransport
+        rectangle "Ethernet Transport\nTCP/IP Sockets" as EthernetTransport
+    }
+
+    package "UCS Services\nCommon Utilities" as Ucs {
+        rectangle "Utilities" as Utilities
+        rectangle "Data Structures" as DataStructures
+        rectangle "Memory Management" as MemoryManagement
+    }
+
+    package "UCM Memory Services" as Ucm {
+        rectangle "Memory Hooks" as MemoryHooks
+    }
+}
+
+package "Drivers and Kernels" as DriverLayer {
+    rectangle "RDMA Verbs Driver" as RdmaDriver
+    rectangle "Cray Driver" as CrayDriver
+    rectangle "OS Kernel\nHost Memory" as HostKernel
+    rectangle "ROCm / CUDA" as GpuRuntime
+    rectangle "OS Kernel\nEthernet" as EthernetKernel
+    rectangle "OS Kernel\nMemory Hooks" as MemoryKernel
+}
+
+rectangle "Hardware" as Hardware
+
+Applications --> MpiApps
+Applications --> PgasApps
+Applications --> TaskApps
+Applications --> MlApps
+
+MpiApps --> MessagePassingDomain
+PgasApps --> PgasDomain
+TaskApps --> TaskDomain
+MlApps --> IoDomain
+
+MessagePassingDomain --> TransportSelection
+PgasDomain --> TransportSelection
+TaskDomain --> TransportSelection
+IoDomain --> TransportSelection
+TransportSelection --> MultiRail
+MultiRail --> Fragmentation
+Fragmentation --> SoftwareProtocols
+
+SoftwareProtocols --> RdmaTransport
+SoftwareProtocols --> GniTransport
+SoftwareProtocols --> HostMemoryTransport
+SoftwareProtocols --> GpuTransport
+SoftwareProtocols --> EthernetTransport
+
+RdmaTransport --> Rc
+RdmaTransport --> Ud
+RdmaTransport --> Dct
+
+RdmaTransport --> RdmaDriver
+GniTransport --> CrayDriver
+HostMemoryTransport --> HostKernel
+GpuTransport --> GpuRuntime
+EthernetTransport --> EthernetKernel
+MemoryHooks --> MemoryKernel
+
+Ucp --> Ucs : common utilities
+Uct --> Ucs : utility services
+Uct --> Ucm : memory hooks
+
+RdmaDriver --> Hardware
+CrayDriver --> Hardware
+HostKernel --> Hardware
+GpuRuntime --> Hardware
+EthernetKernel --> Hardware
+MemoryKernel --> Hardware
+@enduml

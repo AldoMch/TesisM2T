@@ -1,0 +1,164 @@
+@startuml
+title QAPM Android Component - Architecture (Checked SRS Subset)
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 28
+skinparam ranksep 34
+skinparam defaultFontName Arial
+
+skinparam component {
+  BackgroundColor #FDFDFD
+  BorderColor #4A4A4A
+}
+skinparam package {
+  BackgroundColor #F4F7FB
+  BorderColor #37567F
+}
+
+' =========================================================
+' Actors / Drivers
+' =========================================================
+actor "Android Application\nIntegrator" as AppIntegrator
+actor "Test Engineer" as TestEngineer
+
+' =========================================================
+' Host Application Context
+' =========================================================
+package "Host Android Application (Out-of-Scope Consumer)" as HostApp {
+  component "Application Code\n(invokes QAPM work & upload APIs)" as AppCode
+  component "Apache HttpClient Usage\n(host HTTP calls)" as HostHttpUsage
+}
+
+' =========================================================
+' QAPM SDK - In-scope subset
+' =========================================================
+package "QAPM SDK - In-Scope Checked Subset" as QAPM {
+
+  package "Background Execution Subsystem\n(FR-001, FR-002, FR-010, NFR-001)" as BgExec {
+    component "QAPMHandlerThread\n- default background HandlerThread\n- main-thread Handler\n(FR-010, DR-002)" as HandlerThreadComp
+    component "WorkHandlerManager\n- creates HandlerThread looper\n- builds work Handler\n(FR-001, DR-001)" as WorkHandlerManager
+    component "Async Work Dispatcher\n- post(runnable)\n- post(upload request)\n(FR-002, NFR-001)" as AsyncDispatcher
+  }
+
+  package "Upload Subsystem\n(FR-003 .. FR-007, NFR-002, NFR-005)" as Upload {
+    component "Upload Processor\n- orchestrates upload run\n(FR-003, FR-005)" as UploadProcessor
+    component "Network Connectivity Gate\n- aborts before file scan\nwhen offline\n(FR-003, NFR-002)" as NetworkGate
+    component "Forced-Send Storage Pop\n- pops pending stored data\nbefore directory scan\n(FR-004)" as ForcedSendPop
+    component "Upload File Scanner\n- resolves upload dir\n- enumerates matching files\n(FR-005, DR-003, DR-004)" as FileScanner
+    component "Upload Parameter Builder\n- reads file content -> bParam\n- derives cParam from Context\n(FR-005, FR-006, DR-005, DR-006)" as ParamBuilder
+    component "Upload Sender Invoker\n- submits bParam/cParam pair\n(FR-006, DR-007, NFR-005)" as SenderInvoker
+    component "Sender Callback Handler\n- success: delete upload file\n- failure: log failure\n(FR-007, DR-008, NFR-005)" as CallbackHandler
+  }
+
+  package "HTTP Instrumentation Subsystem\n(FR-008, FR-009, NFR-003, NFR-004)" as HttpInstr {
+    component "Transaction-Aware\nResponse Handler Wrapper\n- inspects/instruments txn state\n- delegates to wrapped handler\n(FR-008, DR-009)" as ResponseHandlerWrapper
+    component "Transaction State\n(DR-009)" as TxnState
+    component "Content-Buffering\nResponse Entity Wrapper\n- rejects null entity\n(FR-009, NFR-003, DR-011)" as EntityWrapper
+    component "Counting Input Stream\n- cached/reused\nfor getContent()\n(FR-009, DR-010)" as CountingStream
+  }
+}
+
+' =========================================================
+' QAPM shared services / configuration
+' =========================================================
+package "QAPM Configuration & Reporting Services\n(dependency, partially out-of-scope)" as ConfigServices {
+  component "QAPM Configuration Manager\n- provides configured sender\n(AD-003)" as ConfigManager
+  component "Data Sender\n- reports success / failure\n(DR-007, DR-008)" as DataSender
+  component "APM Collection / Storage /\nReporting / Plugin Pipeline\n(OUT OF SCOPE: AD-005, C-004)" as OutOfScope
+}
+
+' =========================================================
+' External environment
+' =========================================================
+package "Android Platform APIs\n(C-001, NFR-004)" as AndroidPlatform {
+  component "Handler / HandlerThread /\nLooper" as AndroidHandlers
+  component "Context" as AndroidContext
+  component "Connectivity State" as AndroidNetwork
+}
+
+package "Apache HttpClient Abstractions\n(C-002, NFR-004)" as Apache {
+  component "ResponseHandler / HttpResponse" as ApacheResponseHandler
+  component "HttpEntity / OutputStream" as ApacheEntity
+}
+
+database "Local Upload Storage\n(upload directory + files)\n(AD-002, DR-003, DR-004)" as UploadStorage
+
+' =========================================================
+' Relationships - Background execution
+' =========================================================
+AppCode --> AsyncDispatcher : submit runnable / upload request
+WorkHandlerManager --> AndroidHandlers : uses Looper / Handler API
+HandlerThreadComp --> AndroidHandlers : uses HandlerThread + main Looper
+WorkHandlerManager -up-> HandlerThreadComp : default handlers
+AsyncDispatcher --> WorkHandlerManager : posts work to background Handler
+AsyncDispatcher --> UploadProcessor : dispatches upload work\n(never inline on caller thread)
+UploadProcessor --> HandlerThreadComp : background execution context
+HandlerThreadComp --> UploadProcessor : main-thread dispatch where needed
+
+' =========================================================
+' Relationships - Upload pipeline
+' =========================================================
+UploadProcessor --> NetworkGate : 1. check connectivity
+NetworkGate --> AndroidNetwork : query current network state
+UploadProcessor --> ForcedSendPop : 2. if forced send enabled
+ForcedSendPop --> ConfigServices : pop stored pending data
+UploadProcessor --> FileScanner : 3. when connected
+FileScanner --> UploadStorage : enumerate matching upload files
+FileScanner --> ParamBuilder : per-file processing
+ParamBuilder --> UploadStorage : read file content -> bParam
+ParamBuilder --> AndroidContext : derive cParam
+ParamBuilder --> SenderInvoker : bParam / cParam pair
+SenderInvoker --> ConfigManager : obtain configured sender
+SenderInvoker --> DataSender : send(bParam, cParam)
+DataSender --> CallbackHandler : success / failure callback
+CallbackHandler --> UploadStorage : delete file on success
+CallbackHandler --> UploadProcessor : log failure on error\n(NFR-005)
+
+' =========================================================
+' Relationships - HTTP instrumentation
+' =========================================================
+HostHttpUsage --> ResponseHandlerWrapper : wraps host ResponseHandler
+ResponseHandlerWrapper --> ApacheResponseHandler : delegate handleResponse
+ResponseHandlerWrapper --> TxnState : inspect / instrument txn state
+HostHttpUsage --> EntityWrapper : construct with non-null HttpEntity
+EntityWrapper --> ApacheEntity : retain & delegate compatible ops
+EntityWrapper --> CountingStream : getContent() returns/reuses counted stream
+CountingStream --> ApacheEntity : reads underlying content
+EntityWrapper --> ApacheEntity : writeTo(OutputStream) delegates
+
+' =========================================================
+' Actors / testers
+' =========================================================
+AppIntegrator --> HostApp : integrates QAPM SDK
+TestEngineer --> QAPM : verifies scheduling, upload,\nHTTP wrapper behavior
+
+' =========================================================
+' Out-of-scope boundary
+' =========================================================
+note right of OutOfScope
+  Out of scope for this SRS:
+  full metric schema, collection modules,
+  storage internals, plugin injection,
+  remote reporting protocol (C-004, AD-005)
+end note
+
+note bottom of UploadStorage
+  Upload files remain in local storage
+  until sender success permits deletion
+  (DR-008, Section 6.1)
+end note
+
+note top of HttpInstr
+  Constrained to Apache HttpClient abstractions:
+  ResponseHandler, HttpResponse, HttpEntity (C-002)
+end note
+
+note top of BgExec
+  Constrained to Android platform services:
+  Handler, HandlerThread, Looper, Context (C-001)
+end note
+
+@enduml

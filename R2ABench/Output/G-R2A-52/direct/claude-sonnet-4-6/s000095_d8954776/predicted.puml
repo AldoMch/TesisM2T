@@ -1,0 +1,141 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+}
+
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+
+skinparam arrow {
+  Color #333333
+  FontSize 10
+}
+
+title GPSLogger Android Application — System Architecture
+
+node "Android Device / Emulator\n(Android 2.2+, API 17+ for Google Play features)" {
+
+  node "Android Application Process" {
+
+    component "Main Activity\n& UI Fragments" as UI {
+      component "Location Display\nFragment" as LocFrag
+      component "Settings\nFragment" as SetFrag
+    }
+
+    component "Event Bus" as EventBus
+
+    component "GPS Logging Service" as GPSService {
+      component "Location Listener" as LocListener
+      component "Session &\nApp Settings" as SessionSettings
+    }
+
+    component "Log Output Manager" as LogMgr
+
+    component "GPX Logger" as GPXLogger
+    component "KML Logger" as KMLLogger
+    component "Text File Logger" as TxtLogger
+
+    component "OpenGTS Uploader" as OpenGTSUploader {
+      component "GPRMC Encoder\n(SerializableLocation → GPRMC string)" as GPRMCEncoder
+      component "UDP Sender" as UDPSender
+      component "OpenGTS Config\n(server, port, method,\ndevice ID, [path])" as OpenGTSConfig
+    }
+
+    component "Dropbox Uploader" as DropboxUploader
+
+    component "OpenStreetMap\nUploader" as OSMUploader
+
+    component "Google Play\nServices Client" as GPSClient
+  }
+
+  database "Local File Storage" as LocalFiles {
+    component "GPX Files" as GPXFiles
+    component "KML Files" as KMLFiles
+    component "Text Log Files" as TxtFiles
+  }
+
+}
+
+node "Build System\n(Gradle / Android SDK)" as BuildSystem {
+  component "gradle.properties\n(~/.gradle/gradle.properties)\n[GPSLOGGER_OSM_CONSUMERKEY,\nGPSLOGGER_OSM_CONSUMERSECRET,\nGPSLOGGER_DROPBOX_APPKEY,\nGPSLOGGER_DROPBOX_APPSECRET]" as GradleProps
+  component "local.properties\n(sdk.dir)" as LocalProps
+  component "Build Config\nGenerator" as BuildConfig
+  component "Android SDK\nBuild Tools 19.0.3\n+ Support Libs\n+ Google Play Services\n+ Google Repository" as SDKComponents
+}
+
+cloud "External Services" {
+  component "Dropbox API" as DropboxAPI
+  component "OpenStreetMap\nOAuth API" as OSMAPI
+  component "OpenGTS Server\n(UDP endpoint)" as OpenGTSServer
+  component "Google Play\nServices Framework" as GPSFramework
+}
+
+' Build-time flows
+GradleProps --> BuildConfig : injects OSM & Dropbox\ncredentials at build time
+LocalProps --> BuildConfig : provides sdk.dir
+SDKComponents --> BuildConfig : SDK dependencies
+BuildConfig --> UI : generated AppConfig\n(credentials injected)
+BuildConfig --> DropboxUploader : Dropbox AppKey/AppSecret
+BuildConfig --> OSMUploader : OSM ConsumerKey/Secret
+
+' Location acquisition and event bus
+LocListener --> EventBus : publish LocationEvent\n(FR-001)
+EventBus --> LocFrag : consume LocationEvent
+EventBus --> LogMgr : consume LocationEvent
+
+' GPS Service internal
+GPSService --> LocListener : manages
+GPSService --> SessionSettings : reads user config
+GPSService --> GPSClient : uses Google Play\nServices (NFR-001,NFR-002)
+
+' Log output
+LogMgr --> GPXLogger : enabled output (FR-007)
+LogMgr --> KMLLogger : enabled output (FR-007)
+LogMgr --> TxtLogger : enabled output (FR-007)
+GPXLogger --> GPXFiles : writes
+KMLLogger --> KMLFiles : writes
+TxtLogger --> TxtFiles : writes
+
+' OpenGTS flow
+EventBus --> OpenGTSUploader : consume LocationEvent
+OpenGTSUploader --> OpenGTSConfig : uses config\n(server, port, method,\ndevice ID, [path]) (FR-004)
+OpenGTSUploader --> GPRMCEncoder : encode SerializableLocation\nto GPRMC string (FR-006)
+GPRMCEncoder --> UDPSender : GPRMC string
+UDPSender --> OpenGTSServer : UDP datagram\n(account + device +\nGPRMC) (FR-005)
+
+' Dropbox flow
+DropboxUploader --> DropboxAPI : upload log files\n(OAuth credentials)
+
+' OSM flow
+OSMUploader --> OSMAPI : OAuth requests\n(consumer key/secret)
+
+' Google Play Services
+GPSClient --> GPSFramework : API calls
+
+@enduml

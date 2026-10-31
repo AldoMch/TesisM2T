@@ -1,0 +1,63 @@
+@startuml
+title VirtualMotionTracker - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam database {
+  BackgroundColor #FFFACD
+  BorderColor #DAA520
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+
+actor "External Control\nApplication" as UserApp
+
+package "VirtualMotionTracker System" {
+
+  package "Management Layer" {
+    component "VMT Manager" as VmtManager {
+      component "OSC Input Handler" as OscHandler
+      component "Shared Memory\nMessage Producer" as ShmProducer
+      component "Shared Memory\nMessage Consumer" as ShmConsumer
+    }
+  }
+
+  package "IPC Layer" {
+    database "Shared Memory\n(JSON Messages)" as SharedMem {
+      component "Manager-to-Driver Channel\n(send count, handshake count,\nmessage length, JSON payload)" as M2D
+      component "Driver-to-Manager Channel\n(send count, handshake count,\nmessage length, JSON payload)" as D2M
+    }
+  }
+
+  package "Driver Layer" {
+    component "VMT Driver" as VmtDriver {
+      component "Shared Memory\nMessage Consumer" as DrvConsumer
+      component "Shared Memory\nMessage Producer" as DrvProducer
+      component "OpenVR Driver\nInterface Adapter" as OvrAdapter
+    }
+    artifact "Controller Binding\n(mycontroller legacy JSON)" as BindingFile
+    OvrAdapter --> BindingFile : loads
+  }
+}
+
+package "External Runtime" {
+  component "SteamVR / OpenVR Runtime" as SteamVR
+}
+
+UserApp --> OscHandler : OSC control input
+OscHandler --> ShmProducer
+ShmProducer --> M2D : write JSON message
+M2D --> DrvConsumer : read JSON message
+DrvProducer --> D2M : write JSON message
+D2M --> ShmConsumer : read JSON message
+OvrAdapter --> SteamVR : OpenVR Driver Interface
+SteamVR --> OvrAdapter : loads / hosts VMT Driver
+
+@enduml

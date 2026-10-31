@@ -1,0 +1,108 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE Browser {
+  Users access through browser
+}
+
+RECTANGLE "Front End" as frontend {
+  Account management interface
+  Model search and viewing interface
+  Model contribution and editing interface
+  Evolution relationship editing interface
+  User management interface
+  Navigation interface
+}
+
+RECTANGLE "Back End" as backend {
+  Account management
+  Model search and viewing
+  Model upload and modification
+  Evolution relationship definition
+  User management
+}
+
+RECTANGLE "Algorithm Support" as algorithm {
+  ONNX processing
+  PyTorch code processing
+  Model analysis
+  Evolution relationship computation
+}
+
+RECTANGLE "Neo4j Database" as neo4j {
+  Model evolution relationships
+  Graph-based data storage
+}
+
+RECTANGLE "MySQL Database" as mysql {
+  User data
+  Model attributes
+  Permission data
+}
+
+RECTANGLE "External Interfaces" as external {
+  Python libraries
+  Browser Console
+  Communication protocols
+}
+
+' Relationships
+Browser --> frontend : HTTP/HTTPS
+frontend --> backend : API calls
+backend --> neo4j : Store/query graph data
+backend --> mysql : Store/query relational data
+backend --> algorithm : Request processing
+algorithm --> external : Use libraries
+algorithm --> neo4j : Query model data
+algorithm --> mysql : Query metadata
+
+' User roles
+RECTANGLE "Learner" as learner {
+  Browse/search models
+  View evolution relationships
+}
+
+RECTANGLE "Model Contributor" as contributor {
+  Upload/modify models
+  Define evolution relationships
+}
+
+RECTANGLE "Administrator" as admin {
+  Manage users
+  Review permissions
+}
+
+learner --> frontend : Read-only access
+contributor --> frontend : Read/write access
+admin --> frontend : Full access
+
+note right of frontend
+  Web-based interface
+  Responsive UI
+end note
+
+note right of backend
+  Business logic layer
+  API endpoints
+  Authentication & Authorization
+end note
+
+note right of algorithm
+  Model processing
+  Evolution analysis
+  Computational operations
+end note
+
+note right of neo4j
+  Graph database for
+  model relationships
+  and evolution paths
+end note
+
+note right of mysql
+  Relational database for
+  user accounts
+  model metadata
+  permissions
+end note
+@enduml

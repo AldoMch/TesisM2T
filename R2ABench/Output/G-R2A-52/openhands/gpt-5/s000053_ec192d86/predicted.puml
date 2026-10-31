@@ -1,0 +1,89 @@
+@startuml
+title Configuration Anomaly Detection (CAD) - Architecture Overview
+
+skinparam componentStyle rectangle
+
+' External sources and users
+rectangle "Alerting System\n(external)" as Alert
+rectangle "SRE / Operations User" as SRE
+rectangle "Deployment Engineer" as Deploy
+rectangle "Developer / Contributor" as Dev
+
+' CLI runtime container and library
+node "CLI Runtime Container\nUBI minimal\ncontains /bin/cadctl" as Runtime {
+  component "cadctl CLI" as CLI
+  package "Integration Library" as IntLib {
+    component "PagerDuty Integration" as PD
+    component "AWS Integration" as AWS
+    component "OCM Integration" as OCM
+  }
+}
+
+' Tekton orchestration (default namespace)
+node "Tekton (configuration-anomaly-detection namespace)" as Tekton {
+  component "EventListener" as EL
+  component "Trigger" as TR
+  component "cad-checks-pipeline" as PIPE
+  component "PipelineRun" as PR
+}
+
+' Direct execution helper (skip-webhook)
+component "Skip-Webhook Direct Executor\n(create PipelineRun directly)" as DirectExec
+
+' Template update utility and artifacts
+component "Template Update Utility" as TmplUtil
+folder "Deployment Template Artifacts\n(YAML manifests)" as Templates
+
+' Data artifact
+artifact "payload (JSON)\ncontains event.data.id" as Payload
+
+' External operations systems
+cloud "PagerDuty" as ExtPD
+cloud "AWS" as ExtAWS
+cloud "OCM" as ExtOCM
+
+' Relationships: webhook-driven path
+Alert --> EL : alert webhook
+EL --> TR : event delivery
+TR --> PR : create PipelineRun
+PR --> PIPE : reference pipeline
+
+' Execution of CAD checks using CLI inside pipeline tasks
+PR ..> CLI : execute CAD checks\n(container steps)
+CLI --> PD : communications/alerts
+CLI --> AWS
+CLI --> OCM
+
+' Direct path (skip-webhook)
+SRE --> DirectExec : invoke direct execution
+DirectExec --> PR : create PipelineRun directly
+
+' Provide payload JSON
+TR --> Payload : supply payload
+DirectExec --> Payload : supply payload
+Payload --> PR : param: payload JSON
+
+' User interactions
+SRE --> CLI : run CAD workflows\n(e.g., CHGM)
+Deploy --> EL : operate EventListener/Trigger
+Deploy --> PR : manage PipelineRun
+Dev --> TmplUtil : run updates
+TmplUtil --> Templates : update manifests
+
+' Notes for requirements
+note right of CLI
+- Provides cadctl entrypoint
+- Performs CHGM workflow
+- Detects anomalies and sends communications
+- Executes mitigation/disposition actions
+end note
+
+note right of Tekton
+Supports both execution paths:\n1) Webhook: EventListener -> Trigger -> PipelineRun\n2) Skip-webhook: direct PipelineRun creation
+end note
+
+note bottom of Runtime
+Build: Go 1.17 builder\nImage: UBI minimal\nLabels: vendor, name, description, displayName,\nversion, build-date, VCS ref, Dockerfile path
+end note
+
+@enduml

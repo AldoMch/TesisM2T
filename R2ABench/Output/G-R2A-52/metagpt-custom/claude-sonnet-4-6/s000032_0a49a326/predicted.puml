@@ -1,0 +1,162 @@
+@startuml Activiti7_Architecture_Refined
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #5566AA
+  FontColor #222244
+  FontStyle bold
+}
+skinparam node {
+  BackgroundColor #EAF7EA
+  BorderColor #337733
+  FontColor #114411
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #336699
+  FontColor #112244
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #AA8800
+}
+skinparam cloud {
+  BackgroundColor #E8F4FD
+  BorderColor #2266AA
+}
+skinparam arrow {
+  Color #444488
+  FontColor #333366
+  FontSize 10
+}
+
+' EXTERNAL SYSTEMS
+
+cloud "External Clients" as ExternalClients {
+  component [Authenticated User] as AuthUser
+  component [Human Participant\n(FR-006, API-008)] as HumanParticipant
+  component [Task API User\n(ROLE_ACTIVITI_USER)\n(FR-005, C-002, API-007)] as TaskAPIUser
+}
+
+cloud "Keycloak (SSO / Identity Provider)" as KeycloakCloud {
+  component [Keycloak\nToken Issuer] as Keycloak
+}
+
+node "Kubernetes / GKE\n(Container Orchestration and Cloud Hosting)" as K8sGKE {
+
+  ' API GATEWAY / INGRESS LAYER
+  package "API Gateway / Ingress Layer" as IngressLayer {
+    component [NGINX Ingress Controller\n(Public IP to Internal Services)] as NGINX
+  }
+
+  ' APPLICATION FRAMEWORK LAYER
+  package "Application Framework Layer" as AppFrameworkLayer {
+    component [Spring Boot Application\n(App Context and Security Config)] as SpringBoot
+    component [Spring Security\n(User / Group / Role Management\nand Token Validation)] as SpringSecurity
+  }
+
+  ' PROCESS AND TASK RUNTIME LAYER
+  package "Process and Task Runtime Layer" as RuntimeLayer {
+    component [Example Runtime Bundle\n(Process Definitions and Instance Lifecycle\nincl. SimpleProcess)] as RuntimeBundle
+    component [ProcessRuntime API\n(Definition Listing and Instance Start)] as ProcessRuntime
+    component [TaskRuntime API\n(Task Interaction - ROLE_ACTIVITI_USER)] as TaskRuntime
+  }
+
+  ' OBSERVATION LAYER
+  package "Observation Layer" as ObservationLayer {
+    component [Audit Service\n(Audit Event Records)] as AuditService
+    component [Query Service\n(Process Execution State - Read)] as QueryService
+  }
+
+  ' CLOUD DEPLOYMENT AND CONFIGURATION LAYER
+  package "Cloud Deployment and Configuration Layer" as DeployLayer {
+    component [Deployment Descriptors\n(Replica Counts, Input Rate Params)] as DeployDescriptors
+  }
+
+  ' ARCHITECTURE BACKGROUND LAYER
+  package "Architecture Background Layer\n(Contextual - No Functional Requirements Assigned)" as BackgroundLayer {
+    component [Notification Service] as NotificationService
+    component [Cloud Connectors] as CloudConnectors
+    component [Registry / Config Maps\n(Section 2.5, C-006)] as RegistryConfigMaps
+    component [API Gateway\n(Routed Access - Background)\n(Section 2.5, C-006)] as APIGatewayBG
+  }
+
+}
+
+' INTERFACES
+
+interface "Token Request" as ITokenRequest
+interface "Token / Role Data" as ITokenData
+interface "RBAC Enforcement" as IRBAC
+interface "Ingress Routes" as IIngressRoutes
+interface "OIDC / Realm Config" as IOIDCConfig
+
+' DEPENDENCY ARROWS
+
+' External users obtain tokens from Keycloak
+AuthUser --> ITokenRequest
+HumanParticipant --> ITokenRequest
+TaskAPIUser --> ITokenRequest
+ITokenRequest --> Keycloak : "FR-001: Obtain Auth Token"
+
+' Keycloak → Spring Security (token + role data consumed)
+Keycloak --> ITokenData
+ITokenData --> SpringSecurity : "FR-001, DR-006, C-001:\nToken Validation and Role Data"
+
+' Spring Boot → Spring Security (app context)
+SpringBoot --> SpringSecurity : "C-001: App Context\nfor Security Modules"
+
+' Spring Boot → Keycloak OIDC/realm configuration dependency (M-03, C-001)
+SpringBoot --> IOIDCConfig
+IOIDCConfig --> Keycloak : "C-001: OIDC / Realm\nConfiguration Dependency"
+
+' Spring Security → ProcessRuntime and TaskRuntime via single RBAC interface
+SpringSecurity --> IRBAC
+IRBAC --> ProcessRuntime : "FR-002, FR-003, CI-001:\nAuthenticated User Context"
+IRBAC --> TaskRuntime : "FR-005, C-002, API-007:\nROLE_ACTIVITI_USER Required"
+IRBAC --> AuditService : "FR-001, NFR-003:\nRole Enforcement on Audit Endpoint"
+IRBAC --> QueryService : "FR-001, NFR-003:\nRole Enforcement on Query Endpoint"
+
+' ProcessRuntime API → Example Runtime Bundle
+ProcessRuntime --> RuntimeBundle : "FR-002, FR-003, API-003, API-004:\nDefinition Lookup and Instance Start"
+
+' NGINX Ingress → Internal Services
+NGINX --> IIngressRoutes
+IIngressRoutes --> RuntimeBundle : "FR-007, CI-002, C-003:\nRoute to Runtime Bundle"
+IIngressRoutes --> AuditService  : "FR-007, CI-002, C-003:\nRoute to Audit Service"
+IIngressRoutes --> QueryService  : "FR-007, CI-002, C-003:\nRoute to Query Service"
+
+' External users → NGINX (with Bearer Token per CI-003)
+AuthUser --> NGINX : "External HTTP + Bearer Token\n(CI-003, FR-001)"
+HumanParticipant --> NGINX : "External HTTP + Bearer Token\n(CI-003, FR-006, API-008)"
+TaskAPIUser --> NGINX : "External HTTP + Bearer Token\n(CI-003, FR-005, API-007)"
+
+' AuthUser → AuditService user-initiated audit inspection (FR-004, API-005, D-01)
+AuthUser --> AuditService : "FR-004, API-005:\nUser-Initiated Audit Inspection\n(via Ingress)"
+
+' AuthUser → QueryService user-initiated query (API-006, DR-005, D-02)
+AuthUser --> QueryService : "API-006, DR-005:\nUser-Initiated Process State Query\n(via Ingress)"
+
+' Audit Service <- Runtime Bundle (event production)
+RuntimeBundle --> AuditService : "FR-004, DR-004:\nRuntime Events -> Audit Records"
+
+' Query Service <- Runtime Bundle (noted as background per D-04)
+RuntimeBundle ..> QueryService : "DR-005 (background):\nExecution State Feed\n(integration pattern unspecified)"
+
+' Human Participant combined usage of ProcessRuntime and TaskRuntime (FR-006, API-008)
+HumanParticipant --> ProcessRuntime : "FR-006, API-008:\nCombined Human-Participant\nProcess Interaction"
+HumanParticipant --> TaskRuntime : "FR-006, API-008:\nCombined Human-Participant\nTask Interaction"
+
+' Task API User → TaskRuntime
+TaskAPIUser --> TaskRuntime : "FR-005, API-007:\nTask API User Interaction"
+
+' Deployment Descriptors → internal services (not the enclosing node)
+DeployDescriptors --> RuntimeBundle    : "NFR-002, AD-005, DR-007:\nReplica and Rate Config"
+DeployDescriptors --> AuditService     : "NFR-002, AD-005:\nReplica Config"
+DeployDescriptors --> QueryService     : "NFR-002, AD-005:\nReplica Config"
+DeployDescriptors --> RegistryConfigMaps : "NFR-002, DR-007:\nConfig Map Parameters"
+
+@enduml

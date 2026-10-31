@@ -1,0 +1,156 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam roundcorner 8
+
+title AwesomeMusic System Architecture
+
+actor "General User" as User
+actor "Music Beginner" as Beginner
+actor "Composer" as Composer
+actor "Music Appreciator" as Appreciator
+
+package "Client Layer" {
+  component "Web Frontend\nHTML / CSS / JavaScript / Bootstrap" as FE {
+  }
+  component "Registration & Login UI" as AuthUI
+  component "Homepage UI" as HomeUI
+  component "Search & List UI" as SearchUI
+  component "Song Detail UI" as DetailUI
+  component "Song Generation UI" as GenUI
+  component "Personal Center UI" as PersonalUI
+}
+
+package "Edge / Gateway Layer" {
+  component "Nginx Gateway\nHTTPS / TCP/IP\nLoad Balancing\nInternal-External Boundary" as Nginx
+}
+
+package "Application Layer" {
+  package "Web Backend (Golang / Gin)" {
+    component "API Controllers / Routers" as BackendAPI
+    component "User Service" as UserSvc
+    component "Score Service" as ScoreSvc
+    component "Model Service" as ModelSvc
+    component "Search Service" as SearchSvc
+    component "Recommendation Service" as RecSvc
+    component "Hot Chart Service" as HotSvc
+    component "Task Submission Service" as TaskSubmit
+    component "Task Status Poller" as TaskPoll
+  }
+
+  package "Scheduling Module" {
+    component "Daily Scheduler\n02:00 training / classification / recommendation" as DailyScheduler
+    component "Generation Task Scheduler" as GenScheduler
+    component "Retry & Logging Handler" as RetryLog
+  }
+}
+
+package "Messaging Layer" {
+  queue "RabbitMQ\nTask Queue / MQ" as MQ
+}
+
+package "Algorithm Service" {
+  package "Online Generation Service" {
+    component "MIDI <-> ABC Converter" as MidiAbc
+    component "Track Seed Extractor\n(5 seeds)" as SeedExtractor
+    component "GPT-2 Score Generator" as Gpt2Gen
+    component "Fallback / Retry Handler" as Fallback
+  }
+
+  package "Offline Model Iterative Upgrade" {
+    component "MIDI to ABC Preprocessor" as Preproc
+    component "GPT-2 Model Trainer" as Trainer
+    component "LSTM Score Classifier" as Classifier
+    component "Song Recommender\n(Cosine Similarity)" as Recommender
+  }
+}
+
+package "Data Layer" {
+  database "User DB\nAccounts, Follows, Favorites" as UserDB
+  database "Score DB\nABC, MIDI, Metadata" as ScoreDB
+  database "Model DB\nGPT-2 Params, Model Favorites" as ModelDB
+  database "Recommendation & Hot Chart DB" as RecDB
+  database "Task Metadata & Logs DB" as TaskDB
+}
+
+package "Infrastructure / External Software" {
+  component "etcd\nService Registry / Config" as Etcd
+  component "Hadoop\nOffline Data Processing" as Hadoop
+  component "Ubuntu 18.04 LTS VMs\n4 x (4 CPU, 8GB RAM, 200GB Storage)" as VMs
+}
+
+' Actor access
+User --> Nginx : HTTPS
+Beginner --> Nginx
+Composer --> Nginx
+Appreciator --> Nginx
+
+' Gateway and frontend/backend
+Nginx --> FE : serves static assets
+Nginx --> BackendAPI : REST / API
+FE --> BackendAPI : API calls
+
+' Backend internal wiring
+BackendAPI --> UserSvc
+BackendAPI --> ScoreSvc
+BackendAPI --> ModelSvc
+BackendAPI --> SearchSvc
+BackendAPI --> RecSvc
+BackendAPI --> HotSvc
+BackendAPI --> TaskSubmit
+BackendAPI --> TaskPoll
+
+' Backend to data
+UserSvc --> UserDB
+ScoreSvc --> ScoreDB
+ModelSvc --> ModelDB
+SearchSvc --> ScoreDB
+RecSvc --> RecDB
+HotSvc --> RecDB
+
+' Task submission and scheduling
+TaskSubmit --> MQ : enqueue generation metadata
+DailyScheduler --> MQ : enqueue training / classification / recommendation metadata
+GenScheduler --> MQ : enqueue user generation task
+RetryLog --> TaskDB : write retry / error logs
+TaskPoll --> MQ : poll task status
+TaskPoll --> TaskDB : read / write task status
+
+' Messaging to algorithm services
+MQ --> MidiAbc : online generation task
+MQ --> Preproc : offline daily task
+
+' Online algorithm internals
+MidiAbc --> SeedExtractor
+SeedExtractor --> Gpt2Gen
+Gpt2Gen --> Fallback
+Gpt2Gen --> ModelDB : read user model params
+Gpt2Gen --> ScoreDB : read seed / write generated score
+Fallback --> TaskDB : status / exception logs
+
+' Offline algorithm internals
+Preproc --> Trainer
+Trainer --> ModelDB : save updated GPT-2 params
+Preproc --> Classifier
+Classifier --> ScoreDB : save score labels
+Classifier --> RecDB : save representations / labels
+Recommender --> RecDB : save recommendation lists
+Recommender --> Hadoop : offline processing
+Trainer --> Hadoop : offline processing
+OfflineAlgo_Status --> TaskDB : status / logs
+
+' Infrastructure dependencies
+BackendAPI --> Etcd : service discovery / config
+DailyScheduler --> Etcd
+GenScheduler --> Etcd
+MidiAbc --> Etcd
+Preproc --> Etcd
+Hadoop --> VMs
+Nginx --> VMs
+BackendAPI --> VMs
+MidiAbc --> VMs
+Preproc --> VMs
+
+@enduml

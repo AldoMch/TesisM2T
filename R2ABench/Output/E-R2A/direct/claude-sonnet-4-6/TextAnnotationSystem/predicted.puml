@@ -1,0 +1,182 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontSize 13
+}
+skinparam component {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontSize 12
+}
+skinparam queue {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+  FontSize 12
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #4527A0
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontSize 12
+}
+skinparam arrow {
+  Color #333333
+  FontSize 11
+}
+
+title Intelligent Text Annotation System (ITAS) — System Architecture
+
+actor "System Annotation\nAdministrator" as Admin
+actor "Data Annotator" as Annotator
+actor "Researcher" as Researcher
+
+cloud "Tencent Cloud Deployment" {
+
+  node "Client Tier\n(Browser)" as ClientTier {
+    component "Vue 3.0 SPA\n(vue-router, Pinia, Axios)" as VueSPA
+    component "Ant Design Vue\nUI Components" as AntDesign
+    VueSPA -[hidden]- AntDesign
+  }
+
+  node "Edge / Proxy Tier" as ProxyTier {
+    component "Nginx\n(Reverse Proxy / Load Balancer)" as Nginx
+  }
+
+  node "API Gateway & Security Tier" as GatewayTier {
+    component "Spring Cloud Gateway" as Gateway
+    component "Spring Security\n(AuthN / AuthZ)" as Security
+    Gateway -right- Security
+  }
+
+  node "Microservice Tier" as ServiceTier {
+
+    rectangle "Annotation Subsystem" as AnnotationSubsystem {
+      component "User & Auth Service\n(Login, Register, Profile)" as UserSvc
+      component "Project Management Service\n(Project CRUD, Annotator Mgmt)" as ProjectSvc
+      component "Document Service\n(Upload, Download, Metadata)" as DocSvc
+      component "Tag & Label Service\n(Tag / Label CRUD)" as TagSvc
+      component "Task Service\n(Assignment, Completion, Stats)" as TaskSvc
+      component "Annotation Mark Service\n(Mark CRUD)" as MarkSvc
+      component "Result Export Service\n(Result Return / Export)" as ExportSvc
+    }
+
+    rectangle "Mining Subsystem" as MiningSubsystem {
+      component "Mining Upload Service\n(Document Ingestion)" as MiningUploadSvc
+      component "Format Conversion Service\n(PDF / HTML / TXT)" as ConversionSvc
+      component "Model Selection Service\n(Preset / Community / 3rd-party)" as ModelSelSvc
+      component "Extraction Service\n(Paragraph & Entity Extraction)" as ExtractionSvc
+    }
+
+    component "Spring Cloud\nService Discovery &\nConfig Management\n(Eureka / Config Server)" as ServiceDiscovery
+  }
+
+  node "ML / Model Tier" as MLTier {
+    component "BERT Model\n(Paragraph Localization)" as BERT
+    component "GPT / GPT API\n(Entity Recognition,\nFew-Shot Extraction)" as GPT
+  }
+
+  node "Messaging Tier" as MessagingTier {
+    queue "RabbitMQ\n(Async Task Queue:\nFile Conversion etc.)" as RabbitMQ
+  }
+
+  node "Data Tier" as DataTier {
+    database "MySQL\n(Structured Storage:\nUsers, Projects, Tasks,\nAnnotations, Tags)" as MySQL
+    database "Minio\n(Object Storage:\nPDF, HTML, TXT Files)" as Minio
+    database "Redis\n(Cache:\nSessions, Hot Data)" as Redis
+  }
+
+  node "Containerization" as ContainerTier {
+    component "Docker\n(All Services Containerized)" as Docker
+  }
+
+}
+
+' User to Client
+Admin --> VueSPA : uses
+Annotator --> VueSPA : uses
+Researcher --> VueSPA : uses
+
+' Client to Nginx
+VueSPA --> Nginx : HTTP/HTTPS (Axios)
+
+' Nginx to Gateway
+Nginx --> Gateway : forwarded requests
+
+' Gateway to Services
+Gateway --> UserSvc
+Gateway --> ProjectSvc
+Gateway --> DocSvc
+Gateway --> TagSvc
+Gateway --> TaskSvc
+Gateway --> MarkSvc
+Gateway --> ExportSvc
+Gateway --> MiningUploadSvc
+Gateway --> ModelSelSvc
+Gateway --> ExtractionSvc
+
+' Service Discovery
+ServiceDiscovery ..> UserSvc : discovers
+ServiceDiscovery ..> ProjectSvc : discovers
+ServiceDiscovery ..> DocSvc : discovers
+ServiceDiscovery ..> TagSvc : discovers
+ServiceDiscovery ..> TaskSvc : discovers
+ServiceDiscovery ..> MarkSvc : discovers
+ServiceDiscovery ..> ExportSvc : discovers
+ServiceDiscovery ..> MiningUploadSvc : discovers
+ServiceDiscovery ..> ConversionSvc : discovers
+ServiceDiscovery ..> ModelSelSvc : discovers
+ServiceDiscovery ..> ExtractionSvc : discovers
+
+' Annotation subsystem internal
+ProjectSvc --> TaskSvc : task assignment
+TaskSvc --> MarkSvc : mark context
+MarkSvc --> ExportSvc : results feed
+ExportSvc --> MiningSubsystem : annotation outputs\n(AD-001)
+
+' Mining subsystem internal
+MiningUploadSvc --> ConversionSvc : triggers conversion
+MiningUploadSvc --> RabbitMQ : enqueues conversion job
+RabbitMQ --> ConversionSvc : async processing (AD-004)
+ConversionSvc --> ModelSelSvc : converted doc refs
+ModelSelSvc --> ExtractionSvc : model + doc config
+
+' ML integration
+ExtractionSvc --> BERT : paragraph localization\n(FR-021)
+ExtractionSvc --> GPT : entity recognition,\nfew-shot extraction\n(API-003, FR-022)
+ModelSelSvc --> GPT : 3rd-party API invocation\n(AD-002)
+
+' Data access (Mybatis / Mybatis Plus)
+UserSvc --> MySQL : Mybatis/Mybatis Plus
+ProjectSvc --> MySQL : Mybatis/Mybatis Plus
+DocSvc --> MySQL : metadata index
+DocSvc --> Minio : file objects
+TagSvc --> MySQL : Mybatis/Mybatis Plus
+TaskSvc --> MySQL : Mybatis/Mybatis Plus
+MarkSvc --> MySQL : Mybatis/Mybatis Plus
+ExportSvc --> MySQL : result read
+ConversionSvc --> Minio : store PDF/HTML/TXT
+MiningUploadSvc --> Minio : store uploaded docs
+ExtractionSvc --> MySQL : write results
+
+' Cache
+UserSvc --> Redis : session cache
+Gateway --> Redis : token / session validation
+
+' Docker wraps everything
+Docker .up.> ServiceTier : containerizes
+Docker .up.> DataTier : containerizes
+Docker .up.> MessagingTier : containerizes
+Docker .up.> MLTier : containerizes
+
+@enduml

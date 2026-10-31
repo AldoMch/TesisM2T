@@ -1,0 +1,76 @@
+@startuml
+title Soundzone Web Application Architecture
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+rectangle "Client Layer (Browser)" {
+    component [React UI\n(Playback, Upload,\nFollow, Feed, Forms)] as ReactUI
+    component [Redux Store\n(State Management)] as Redux
+    component [Waveform\nPlayer Component] as Waveform
+}
+
+rectangle "Frontend Configuration" {
+    component [Environment Config\n(API Base URL,\nCloudinary URL,\nUpload Preset)] as EnvConfig
+}
+
+rectangle "Backend Layer (Node/Express)" {
+    component [Express Server] as ExpressServer
+
+    rectangle "API Routes" {
+        component [User / Auth API\n(/register, /login,\n/user info)] as UserAPI
+        component [Sound API\n(/sounds: create,\nretrieve, delete)] as SoundAPI
+        component [Follow API\n(/follow, /unfollow)] as FollowAPI
+        component [Feed API\n(/feed, /user sounds)] as FeedAPI
+    }
+}
+
+database "PostgreSQL\n(Application Data)" as PostgreSQL {
+    storage "Users" as UsersTable
+    storage "Sounds\n(URL references)" as SoundsTable
+    storage "Follow\nRelationships" as FollowTable
+}
+
+cloud "Cloudinary\n(Media Storage)" as Cloudinary {
+    storage "Audio Files" as AudioStore
+    storage "Image Files\n(avatars, covers)" as ImageStore
+}
+
+' Frontend internal relationships
+ReactUI --> Redux : dispatch actions /\nread state
+Redux --> ReactUI : state updates
+Waveform --> Redux : playback position\n/ scrub events
+EnvConfig --> ReactUI : runtime config values
+
+' Frontend to Backend
+Redux --> ExpressServer : HTTP API requests\n(API Base URL)
+ExpressServer --> UserAPI
+ExpressServer --> SoundAPI
+ExpressServer --> FollowAPI
+ExpressServer --> FeedAPI
+
+' Frontend to Cloudinary (direct upload)
+ReactUI --> Cloudinary : direct media upload\n(audio + images)
+
+' Backend to Database
+UserAPI --> PostgreSQL : read/write user data
+SoundAPI --> PostgreSQL : read/write sound records\n(Cloudinary URLs)
+FollowAPI --> PostgreSQL : read/write follow relationships
+FeedAPI --> PostgreSQL : query follow-based\nsound feeds
+
+' After upload: frontend sends Cloudinary URL to backend
+Cloudinary --> ReactUI : returns hosted URL
+ReactUI --> ExpressServer : POST data with\nCloudinary media URL
+
+note bottom of Cloudinary
+  Media binaries stored in Cloudinary.
+  Only URL references stored in PostgreSQL.
+end note
+
+note bottom of Redux
+  Centralized playback state ensures
+  continuity across page/component changes
+  and single active playback item.
+end note
+
+@enduml

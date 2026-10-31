@@ -1,0 +1,116 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> #E8F4FD
+  BorderColor<<layer>> #2196F3
+}
+
+title veinmind-tools Container Security Tool Suite - Architecture
+
+' External Systems
+package "External Systems" {
+  [Docker Runtime] as DockerRuntime
+  [Containerd] as Containerd
+  [DockerHub] as DockerHub
+  [Docker Registry] as DockerRegistry
+  [Harbor] as Harbor
+}
+
+' CLI / Entry Layer
+package "CLI Layer" {
+  [scan-image CLI] as ScanImageCLI
+  [scan-container CLI] as ScanContainerCLI
+  [scan-iac CLI] as ScanIacCLI
+  [run.sh (Startup Script)] as RunScript
+}
+
+' Runner / Execution Layer
+package "Runner Execution Layer" {
+  [veinmind-runner] as Runner
+  [Parallel-Container Startup Scripts] as ParallelScript
+  [Python Plugin Example\n(veinmind/python3.6:1.3.1-stretch)] as PythonPlugin
+}
+
+' Core Scanning Services Layer
+package "Core Scanning Services" {
+  [Image Scanner] as ImageScanner
+  [Container Scanner] as ContainerScanner
+  [IaC Scanner] as IaCScanner
+  [Docker Authorization Router] as AuthRouter
+}
+
+' SDK / Library Layer
+package "SDK / Library Layer" {
+  [veinmind-sdk / libveinmind] as VeinmindSDK
+}
+
+' IaC Scanning Sub-components
+package "IaC Scanning Components" {
+  [Policy Library Loader] as PolicyLoader
+  [IaC Rule Engine] as RuleEngine
+  [Alert Detail Builder] as AlertBuilder
+  [Report Event Publisher] as ReportPublisher
+}
+
+' Data / Reporting Layer
+package "Report Data Store" {
+  database "Malicious-File Report\n(MaliciousFileInfo, ReportData,\nReportImage, ReportLayer)" as MaliciousFileReport
+  database "IaC Alert Report\n(IaC rule metadata,\nfile-location detail,\nalert detail)" as IaCReport
+}
+
+' CLI to Scanning Services
+ScanImageCLI --> ImageScanner
+ScanContainerCLI --> ContainerScanner
+ScanIacCLI --> IaCScanner
+RunScript --> ParallelScript
+
+' Runner / Startup to Services
+ParallelScript --> Runner
+Runner --> ImageScanner
+Runner --> ContainerScanner
+
+' Python Plugin
+PythonPlugin --> VeinmindSDK
+
+' Core Services to SDK
+ImageScanner --> VeinmindSDK
+ContainerScanner --> VeinmindSDK
+IaCScanner --> VeinmindSDK
+
+' IaC Sub-components
+IaCScanner --> PolicyLoader
+IaCScanner --> RuleEngine
+IaCScanner --> AlertBuilder
+AlertBuilder --> ReportPublisher
+
+' Auth Router
+AuthRouter --> DockerRuntime : "authorization request\n(method + URI)"
+
+' Scan results to data store
+ImageScanner --> MaliciousFileReport : "scan findings"
+ContainerScanner --> MaliciousFileReport : "scan findings"
+ReportPublisher --> IaCReport : "alert details"
+
+' Compatibility: Image Registries
+ImageScanner --> DockerHub : "pull/scan"
+ImageScanner --> DockerRegistry : "pull/scan"
+ImageScanner --> Harbor : "pull/scan"
+
+' Container Runtimes
+ImageScanner --> DockerRuntime : "image access"
+ContainerScanner --> DockerRuntime : "container access"
+ImageScanner --> Containerd : "image access"
+ContainerScanner --> Containerd : "container access"
+
+note right of AuthRouter
+  Returns Docker plugin action
+  (matched route or NoneDockerPlugin
+  as fallback)
+end note
+
+note right of PythonPlugin
+  Entrypoint: /tool/entrypoint.sh
+  Invokes: python scan.py $*
+  Base: veinmind/python3.6:1.3.1-stretch
+end note
+@enduml

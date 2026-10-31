@@ -1,0 +1,109 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6CC
+!define DATASTORE_COLOR #E6FFE6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title IceFireDB Decentralized Database Infrastructure Architecture
+
+package "Application Layer" <<Layer>> {
+  component "Redis Applications" <<External>> {
+    [Redis Clients]
+    [Pub/Sub Clients]
+  }
+  
+  component "SQL Protocol Clients" <<External>> {
+    [SQL Clients]
+  }
+}
+
+package "Middleware Layer" <<Layer>> {
+  component "Redis Proxy" <<Component>> {
+    [Proxy Core]
+    [Command Handler]
+    [Synchronization Engine]
+  }
+  
+  component "PubSub System" <<Component>> {
+    [PubSub Core]
+    [Message Router]
+    [Peer Discovery]
+  }
+  
+  component "Internal SQL Handler" <<Component>> {
+    [Result Parser]
+    [Packet Processor]
+  }
+}
+
+package "Storage Layer" <<Layer>> {
+  database "Redis Storage" <<Datastore>> {
+    [Standalone Redis]
+    [Redis Cluster]
+  }
+  
+  database "Peer Network" <<Datastore>> {
+    [Kademlia DHT]
+    [Peer Routing]
+  }
+}
+
+' Application Layer to Middleware Layer connections
+"Redis Clients" --> "Redis Proxy" : Redis Commands
+"Pub/Sub Clients" --> "PubSub System" : Pub/Sub Operations
+"SQL Clients" --> "Internal SQL Handler" : SQL/MySQL Protocol
+
+' Middleware Layer internal connections
+"Redis Proxy" --> "PubSub System" : Coordination
+"Redis Proxy" --> "Internal SQL Handler" : Data Handling
+
+' Middleware Layer to Storage Layer connections
+"Redis Proxy" --> "Redis Storage" : Data Writes
+"PubSub System" --> "Peer Network" : Peer Discovery & Routing
+
+' Storage Layer internal connections
+"Standalone Redis" --> "Redis Cluster" : Cluster Mode
+
+' External systems
+cloud "External Networks" <<External>> {
+  [Same Network]
+  [Cross Network]
+  [NAT/Private Network]
+}
+
+"PubSub System" --> "External Networks" : Multi-node Communication
+
+note right of "Redis Proxy"
+  Supports:
+  - Standalone & Clustered Redis
+  - Command synchronization
+  - Decentralized data sync
+  - Redis command categories
+end note
+
+note right of "PubSub System"
+  Features:
+  - Redis Pub/Sub semantics
+  - Kademlia DHT peer discovery
+  - Multi-node operation
+  - NAT/private-network support
+end note
+
+note right of "Internal SQL Handler"
+  Internal processing:
+  - SQL/MySQL result parsing
+  - Field metadata extraction
+  - Row data processing
+  - Warning/status handling
+end note
+
+@enduml

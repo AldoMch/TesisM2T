@@ -1,0 +1,200 @@
+@startuml EMBC_ESS_Architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam packageBorderColor #555555
+skinparam packageFontStyle bold
+skinparam componentBorderColor #336699
+skinparam componentBackgroundColor #D6E8F7
+skinparam nodeBorderColor #446644
+skinparam nodeBackgroundColor #DFF0D8
+skinparam databaseBorderColor #884400
+skinparam databaseBackgroundColor #FFF0CC
+skinparam cloudBorderColor #666699
+skinparam cloudBackgroundColor #EEEEFF
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "SiteMinder\n(Authentication / Access Control)" as SiteMinder
+cloud "External URLs" as ExtURLs
+
+' ─────────────────────────────────────────────
+' WEB BROWSER
+' ─────────────────────────────────────────────
+cloud "Web Browser" as Browser {
+
+  ' ───────────────────────────────────────────
+  ' PRESENTATION LAYER
+  ' ───────────────────────────────────────────
+  package "Presentation Layer" as PL #E8F4FD {
+    component "AngularClientApp" as App
+    component "RoleBasedRouter" as RBRouter
+    component "AuthGuard" as AuthGuard
+    component "RedirectGuard" as RedirectGuard
+    component "SessionExpiredPage" as SessionExpiredPage
+    component "NotifierComponent" as Notifier
+    component "ModuleImportDiagnostic" as ModDiag
+    component "NotificationQueueService" as NotifQueue
+    component "CookieService" as CookieSvc
+
+    package "API Service Wrappers" as Wrappers #D0E8FA {
+      component "EvacueeServiceWrapper" as EvacueeSvc
+      component "IncidentTaskServiceWrapper" as IncidentSvc
+      component "OrganizationServiceWrapper" as OrgSvc
+      component "ReferralServiceWrapper" as ReferralSvc
+      component "RegistrationServiceWrapper\n<<PDF collection>>" as RegSvc
+    }
+  }
+
+  ' ───────────────────────────────────────────
+  ' CLIENT STATE LAYER
+  ' ───────────────────────────────────────────
+  package "Client State Layer" as CSL #EAF7EA {
+    component "NgRxStore\n(Actions / Reducers)" as NgRx
+    component "ControlledListLoader" as CtrlListLoader
+  }
+
+  ' ───────────────────────────────────────────
+  ' HTTP COMMUNICATION LAYER
+  ' ───────────────────────────────────────────
+  package "HTTP Communication Layer" as HCL #FFF8E1 {
+    component "HttpInterceptor" as Interceptor
+    component "WatchdogTimer" as Watchdog
+  }
+}
+
+' ─────────────────────────────────────────────
+' LOCAL DEVELOPMENT PROXY
+' ─────────────────────────────────────────────
+node "Local Development Proxy" as DevProxy {
+  component "SM_TOKEN Injector\n(volunteer / local authority / provincial admin)" as SMTokenInjector
+}
+
+' ─────────────────────────────────────────────
+' APPLICATION SERVER
+' ─────────────────────────────────────────────
+node "Application Server (.NET Core)" as AppServer {
+
+  ' ───────────────────────────────────────────
+  ' API / SERVER LAYER
+  ' ───────────────────────────────────────────
+  package "API / Server Layer" as ASL #F5EEF8 {
+    component "WebAPIControllers" as Controllers
+  }
+
+  ' ───────────────────────────────────────────
+  ' DOMAIN SERVICE LAYER
+  ' ───────────────────────────────────────────
+  package "Domain Service Layer" as DSL #FDEBD0 {
+    component "DomainServices" as DomainSvc
+    component "C# Domain Classes\n(Domain Model / Entities)" as DomainClasses
+  }
+
+  ' ───────────────────────────────────────────
+  ' DATA ACCESS LAYER
+  ' ───────────────────────────────────────────
+  package "Data Access Layer" as DAL #FDEDEC {
+    component "DbContext\n(Entity Framework / ADO.NET)" as DbCtx
+    component "Persistent Database Entities" as DBEntities
+  }
+}
+
+' ─────────────────────────────────────────────
+' DATABASE NODE
+' ─────────────────────────────────────────────
+node "Database Server" as DBNode #DFF0D8 {
+  database "MS SQL Database" as MSSQL
+  component "SQLMaintenanceScripts" as SQLScripts
+
+  note right of MSSQL
+    CON-005 / §6.3:
+    Database backup required
+    before executing maintenance
+    scripts (DN-002)
+  end note
+}
+
+' ─────────────────────────────────────────────
+' INTRA-BROWSER DEPENDENCIES
+' ─────────────────────────────────────────────
+
+' App bootstrap
+App --> RBRouter : bootstraps routing
+App --> ModDiag : triggers module\nload diagnostic\n(FR-009)
+ModDiag --> RBRouter : alerts on double-load\n(FR-009)
+
+' Routing guards
+RBRouter --> AuthGuard : activates guard\nduring route resolution
+AuthGuard --> NgRx : reads auth & role state
+AuthGuard --> RBRouter : redirects unauthenticated\nusers to login (FR-002)
+RBRouter --> RedirectGuard : activates guard\nfor external routes
+RedirectGuard --> ExtURLs : delegates navigation
+
+' Notifications (observable pattern FR-007)
+App --> NotifQueue : enqueues notifications
+NotifQueue --> Notifier : observable queue\n(subscribed, FR-007)
+
+' Cookie service (§3.2 get/set operations)
+App --> CookieSvc : get / set cookies\n(SiteMinder context)
+CookieSvc --> Interceptor : supplies SiteMinder\ncookie on outbound requests
+
+' API service wrappers -> HTTP interceptor
+EvacueeSvc --> Interceptor
+IncidentSvc --> Interceptor
+OrgSvc --> Interceptor
+ReferralSvc --> Interceptor
+RegSvc --> Interceptor
+
+' App -> service wrappers
+App --> EvacueeSvc
+App --> IncidentSvc
+App --> OrgSvc
+App --> ReferralSvc
+App --> RegSvc
+
+' HTTP Interceptor -> Watchdog / State / Router
+Interceptor --> Watchdog : reset on each request
+Interceptor --> NgRx : dispatch logout action\n(on 401 in logged-in state)
+Interceptor --> RBRouter : navigate to SessionExpiredPage\non session termination (FR-003)
+RBRouter --> SessionExpiredPage : activates SessionExpiredPage\nroute (FR-003)
+
+' Client State
+App --> CtrlListLoader : triggers at startup
+CtrlListLoader --> NgRx : dispatch actions to\npopulate controlled lists\n(init data load, CON-006)
+
+' ─────────────────────────────────────────────
+' BROWSER -> SERVER DEPENDENCIES
+' ─────────────────────────────────────────────
+Interceptor --> Controllers : HTTP REST requests\n(intercepted & forwarded)
+
+' SiteMinder integration — browser respects auth context
+App --> SiteMinder : respects SiteMinder\nauth context (NFR-001)
+
+' Controllers validate SiteMinder context (read-only enforcement)
+Controllers --> SiteMinder : validates SiteMinder\nauth context (NFR-001)\n[dev bypass via SM_TOKEN: CON-003]
+
+' ─────────────────────────────────────────────
+' LOCAL DEV PROXY — sits between browser and server
+' ─────────────────────────────────────────────
+Interceptor --> SMTokenInjector : dev-server requests\nrouted through proxy
+SMTokenInjector --> Controllers : forwards request\nwith injected SM_TOKEN\n(CON-002, DR-008)
+
+' ─────────────────────────────────────────────
+' SERVER INTERNAL DEPENDENCIES
+' ─────────────────────────────────────────────
+Controllers --> DomainSvc : delegate business logic
+DomainSvc --> DomainClasses : uses domain model\n(§2.2, §2.3)
+DomainClasses --> DbCtx : mapped via EF
+DomainSvc --> DbCtx : access / persist data
+DbCtx --> DBEntities : materialises / persists\nentity objects (§2.2)
+DbCtx --> MSSQL : EF / ADO.NET connection
+
+' ─────────────────────────────────────────────
+' DATABASE LAYER DEPENDENCIES
+' ─────────────────────────────────────────────
+DBEntities --> MSSQL : maps to DB tables
+SQLScripts --> MSSQL : direct SQL execution\n(data maintenance, CON-005)
+
+@enduml

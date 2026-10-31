@@ -1,0 +1,84 @@
+@startuml  
+!define LAYER_COLOR #E6F3FF  
+!define COMPONENT_COLOR #F0F8FF  
+!define DATABASE_COLOR #FFF0F5  
+!define EXTERNAL_COLOR #F5F5DC  
+  
+skinparam component {  
+  BackgroundColor<<Layer>> LAYER_COLOR  
+  BackgroundColor<<Component>> COMPONENT_COLOR  
+  BackgroundColor<<Database>> DATABASE_COLOR  
+  BackgroundColor<<External>> EXTERNAL_COLOR  
+  BorderColor #333333  
+  ArrowColor #333333  
+} 
+  
+title MyTorch Deep Learning System - Layered Architecture  
+  
+package "Presentation Layer" <<Layer>> {  
+  component "Web Frontend" <<Component>> {  
+    component "Main Interface"  
+    component "Configuration Interface"  
+    component "Training Interface"  
+    component "Inference Interface"  
+    component "Guidance ^& Help System"  
+  }  
+} 
+  
+package "Application Layer" <<Layer>> {  
+  component "Backend Services" <<Component>> {  
+    component "Model Initialization Service"  
+    component "Model Training Service"  
+    component "Model Inference Service"  
+    component "Model Management Service"  
+    component "Task Orchestrator"  
+  }  
+  
+  component "API Gateway" <<Component>> {  
+    component "REST API Endpoints"  
+  }  
+} 
+  
+package "Framework Layer" <<Layer>> {  
+  component "MyTorch/NNE Framework" <<Component>> {  
+    component "Deep Learning Core"  
+    component "GPU Acceleration Module"  
+    component "Weight Initialization"  
+    component "Classic Models (ResNet, VGG, Transformer)"  
+    component "Data Loader ^& Augmentation"  
+  }  
+} 
+  
+package "Data Layer" <<Layer>> {  
+  database "SQLite Database" <<Database>> {  
+    component "Models Storage"  
+    component "Training Datasets"  
+    component "Training Logs"  
+    component "Inference Logs"  
+    component "History Records"  
+  }  
+  
+  component "Data Persistence Service" <<Component>> {  
+    component "Backup ^& Recovery"  
+    component "Data Migration"  
+  }  
+} 
+  
+package "Infrastructure Layer" <<Layer>> {  
+  component "GPU Hardware" <<External>> {  
+    component "CUDA/NVIDIA GPU"  
+    component "GPU Memory"  
+  }  
+  
+  component "External Datasets" <<External>> {  
+    component "Public Datasets"  
+    component "Course Datasets"  
+  }  
+  
+  component "Python Runtime" <<External>> {  
+    component "Python 3.8+"  
+    component "Required Libraries"  
+  }  
+}  
+  
+@enduml 

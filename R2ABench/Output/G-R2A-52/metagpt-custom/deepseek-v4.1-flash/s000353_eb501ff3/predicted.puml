@@ -1,0 +1,87 @@
+@startuml
+package "API/HTTP Interface Layer" {
+  component "HTTP API" as HTTPAPI
+  component "OpenAPI Specifications 3.0.3" as OpenAPI
+  component "Routers API" as RoutersAPI
+  component "Ensemblers API" as EnsemblersAPI
+  interface "Ensembler JSON" as EnsemblerJSON
+  interface "EnsemblerId JSON" as EnsemblerIdJSON
+  component "Path Parameter project_id" as ProjectIdParam
+  component "Path Parameter ensembler_id" as EnsemblerIdParam
+}
+
+package "Middleware Layer" {
+  component "Authorization Middleware" as AuthMW
+  component "OpenAPI Request Validation Middleware" as ValidationMW
+}
+
+package "Service/Cluster Management Layer" {
+  component "Service Components" as ServiceComponents
+  component "Cluster Components" as ClusterComponents
+  component "Service Configuration" as ServiceConfig
+}
+
+package "Router/Runtime Layer" {
+  component "Router Component" as Router
+  component "Router User Container" as RouterUserContainer
+  component "Router Configuration" as RouterConfig
+  component "Deployment Configuration" as DeploymentConfig
+  component "Protocol Configuration (HTTP_JSON | UPI_V1)" as ProtocolConfig
+  component "Timeout Pattern ^[0-9]+(ms|s|m|h)$" as TimeoutPattern
+  component "Traffic Rule Field Source Constraint" as TrafficRuleConstraint
+  component "Default Port 8080" as DefaultPort
+}
+
+package "Ensembler Runtime Layer" {
+  component "PyFuncEnsembler Service" as PyFuncService
+  component "PyFuncEnsemblerRunner" as PyFuncRunner
+}
+
+package "Build/Packaging Layer" {
+  component "PyFuncEnsembler Local Image Build Flow" as LocalBuild
+  component "Docker-Based Packaging" as DockerPackaging
+}
+
+package "Observability Layer" {
+  component "Jaeger Client" as JaegerClient
+  component "Jaeger Tracer Configuration (enabled/sampling)" as JaegerTracerConfig
+}
+
+node "Kubernetes cluster" as K8s
+database "MLflow model registry" as MLflow
+cloud "Jaeger" as Jaeger
+
+HTTPAPI --> OpenAPI : defined by
+RoutersAPI --> OpenAPI : defined by
+EnsemblersAPI --> OpenAPI : defined by
+ValidationMW --> OpenAPI : validates requests against
+HTTPAPI --> RoutersAPI : exposes
+HTTPAPI --> EnsemblersAPI : exposes
+HTTPAPI --> AuthMW : uses
+HTTPAPI --> ValidationMW : uses
+RoutersAPI --> Router : lists routers
+EnsemblersAPI --> EnsemblerJSON : create/retrieve/update/delete
+EnsemblersAPI --> EnsemblerIdJSON : delete response
+EnsemblersAPI --> ProjectIdParam : requires
+EnsemblersAPI --> EnsemblerIdParam : requires
+AuthMW --> ServiceConfig : mounting depends on
+ValidationMW --> ServiceConfig : mounting depends on
+ServiceComponents --> ClusterComponents : lifecycle management
+ClusterComponents --> K8s : create/update/delete
+HTTPAPI --> ServiceComponents : create/update/delete deployment
+RoutersAPI --> ServiceComponents : create/update/delete router deployment
+Router --> JaegerClient : initializes
+Router --> RouterConfig : uses protocol/timeouts
+RouterConfig --> TimeoutPattern : validates against
+RouterConfig --> ProtocolConfig : includes selected protocol
+ProtocolConfig --> TrafficRuleConstraint : constrains legal field sources
+RouterUserContainer --> DefaultPort : default port
+DeploymentConfig --> RouterUserContainer : overrides port (ports.containerPort)
+PyFuncService --> DockerPackaging : packaged using
+LocalBuild --> DockerPackaging : uses
+LocalBuild --> MLflow : downloads model artifacts
+PyFuncService --> PyFuncRunner : hosts/runs
+PyFuncService --> Router : for use with Turing routers
+JaegerClient --> JaegerTracerConfig : uses
+JaegerClient --> Jaeger : traces to
+@enduml

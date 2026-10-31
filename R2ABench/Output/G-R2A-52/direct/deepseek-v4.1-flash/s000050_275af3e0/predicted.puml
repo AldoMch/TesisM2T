@@ -1,0 +1,102 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam arrowThickness 1.2
+skinparam defaultFontSize 12
+skinparam rectangle {
+  BackgroundColor #FDFDFD
+  BorderColor #4A4A4A
+}
+
+title hAFL2 - System Architecture
+
+actor "Fuzzing Operator" as Op
+
+component "hAFL2 fuzzing controller" as HAFL2
+
+package "Linux Environment" {
+  component "kAFL-Fuzzer/test.py\n(standalone entry point)" as TestPy
+  component "pytest test suites\nrandom | deterministic | havoc" as Suites
+  component "Launch / build scripts (bash)" as Launch
+  component "initrd build workflow" as InitrdBuild
+  component "Host shared-library collector" as LibCopy
+  component "Embedded forkserver\n(kAFL hypercall -> AFL-style guest I/O)" as Forkserver
+  component "Linux userspace target binary" as LinuxTarget
+  artifact "initrd\n(target binary + required .so)" as Initrd
+}
+
+package "Windows Environment" {
+  component "compile.sh\n(hAFL2/targets/windows_86_64)" as Compile
+  component "packet_sender.exe\n(triggers packet-sending IOCTL)" as PacketSender
+  component "loader.exe\n(create snapshot, load & execute)" as Loader
+  component "Harness & crash-monitoring drivers\n(Visual Studio build)" as WinDrivers
+
+  package "Child Partition VM" {
+    component "Child partition harness" as ChildHarness
+  }
+
+  package "Root Partition VM" {
+    component "VMSwitch / vmswitch.sys\n(Hyper-V networking target path)" as VMSwitch
+    component "Root partition crash monitor" as CrashMonitor
+  }
+}
+
+interface "kAFL hypercall / AFL I/O" as IKAFL
+interface "netvsc / VMBus channel" as IVMBus
+
+Op --> TestPy
+Op --> Launch
+Op --> Compile
+
+HAFL2 --> TestPy : invokes test runner
+HAFL2 --> Launch : drives fuzzing workflow
+
+TestPy --> Suites : executes random,\ndeterministic, havoc
+Launch --> InitrdBuild
+InitrdBuild --> LibCopy : copies required\nlibraries from host
+InitrdBuild --> Initrd : packages
+Initrd --> LinuxTarget : contains
+LinuxTarget --> Forkserver
+
+Forkserver -up- IKAFL
+IKAFL -up- HAFL2 : guest I/O mapped\nto hypercalls
+
+Compile --> PacketSender
+Compile --> Loader
+WinDrivers --> CrashMonitor : builds
+Loader --> PacketSender : creates snapshot,\nloads and executes
+PacketSender --> ChildHarness : packet-sending IOCTL
+
+ChildHarness --> VMSwitch : fuzzing payload
+ChildHarness -right- IVMBus
+IVMBus -right- VMSwitch : communication over\nnetvsc / VMBus
+
+CrashMonitor --> VMSwitch : monitors target
+CrashMonitor --> HAFL2 : crash status /\nmonitoring result
+
+note right of InitrdBuild
+  DR-001 / DR-002: initrd holds the selected
+  target binary plus its host-sourced
+  shared libraries.
+end note
+
+note right of Loader
+  DR-005 / NFR-005: Windows-build-specific
+  offset identified and set in source
+  before compilation when required.
+end note
+
+note bottom of CrashMonitor
+  FR-007 / DR-007 / NFR-004: crash-monitoring
+  feedback returned from root partition
+  workflow to hAFL2.
+end note
+
+note bottom of ChildHarness
+  FR-006 / DR-006: payloads sent from child
+  partition harness toward the root
+  partition VMSwitch path.
+end note
+
+@enduml

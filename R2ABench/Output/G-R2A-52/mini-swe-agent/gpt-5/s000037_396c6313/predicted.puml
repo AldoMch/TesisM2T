@@ -1,0 +1,73 @@
+@startuml
+title veinmind-tools Layered Architecture
+
+skinparam componentStyle rectangle
+
+actor "Security Operator" as Operator
+actor "Plugin Developer" as Dev
+actor "Deployment Operator" as Deploy
+
+package "Presentation / CLI Layer" {
+  component "CLI Commands\n- scan-image\n- scan-container\n- scan-iac" as CLI
+  component "Quick-Start Script\n./run.sh scan-host image" as RunScript
+}
+
+package "Application Layer" {
+  component "Scan Orchestrator" as Orchestrator
+  component "Runner Controller" as RunnerCtl
+}
+
+package "Domain / Services" {
+  component "Image Scanner" as ImgScanner
+  component "Container Scanner" as CtrScanner
+  component "IaC Scanner" as IacScanner
+  component "Authorization Router\n(Docker AuthZ Plugin)" as AuthRouter
+  component "Plugin Packaging Example\n(Python tool)" as PyExample
+}
+
+package "Data Layer" {
+  database "Scan Report Data\n(Structured objects)" as ReportDB
+}
+
+package "Infrastructure / External Systems" {
+  component "veinmind-sdk / libveinmind" as SDK
+  node "Docker Engine" as Docker
+  node "Containerd" as Containerd
+  component "veinmind-runner Image" as RunnerImage
+  cloud "Image Registries\n- DockerHub\n- Docker Registry\n- Harbor" as Registries
+  component "Policy Libraries" as PolicyLibs
+  component "Startup Script\nparallel-container" as StartupScript
+}
+
+Operator --> CLI
+Operator --> RunScript
+Deploy --> StartupScript
+Dev --> PyExample
+
+CLI --> Orchestrator
+RunScript --> RunnerCtl
+StartupScript --> RunnerCtl
+
+Orchestrator --> ImgScanner
+Orchestrator --> CtrScanner
+Orchestrator --> IacScanner
+
+ImgScanner --> SDK
+CtrScanner --> SDK
+IacScanner --> PolicyLibs
+IacScanner --> SDK
+
+SDK --> Docker
+SDK --> Containerd
+Docker --> Registries : Pull images
+
+RunnerCtl --> Docker : Start scanning containers
+RunnerCtl --> RunnerImage : Use runner base image
+
+Docker --> AuthRouter : Authorization requests
+AuthRouter --> Docker : Allow/Deny action
+
+ImgScanner --> ReportDB : Write image findings
+CtrScanner --> ReportDB : Write container findings
+IacScanner --> ReportDB : Write IaC alerts
+@enduml

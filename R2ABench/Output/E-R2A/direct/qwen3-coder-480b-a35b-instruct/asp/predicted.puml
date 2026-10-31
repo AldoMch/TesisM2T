@@ -1,0 +1,161 @@
+@startuml
+!define RECTANGLE class
+
+title Zhiyan Tongjie Academic Achievement Sharing Platform - System Architecture
+
+' Define styles
+skinparam rectangle {
+    borderColor #333333
+    borderWidth 1
+    backgroundColor #ffffff
+    fontColor #000000
+}
+
+skinparam component {
+    borderColor #333333
+    borderWidth 1
+    backgroundColor #f0f8ff
+    fontColor #000000
+}
+
+skinparam package {
+    borderColor #666666
+    borderWidth 1
+    backgroundColor #f5f5f5
+    fontColor #000000
+}
+
+' Define packages/layers
+package "Application Layer" {
+    [Web Frontend\n(Vue 3.3)] as frontend
+    [Account & Portal Service] as accountService
+    [Literature Discovery Service] as discoveryService
+    [Achievement Management Service] as achievementService
+    [Institution Management Service] as institutionService
+    [Communication Service] as communicationService
+    [Administration Service] as adminService
+}
+
+package "Support Layer" {
+    [Authentication & Authorization\n(Django Auth)] as authModule
+    [Semantic Processing Engine] as semanticEngine
+    [Profiling & Recommendation Engine] as profileEngine
+    [Analysis Engine] as analysisEngine
+    [Moderation & Review Workflow] as moderationWorkflow
+}
+
+package "Infrastructure Layer" {
+    [Django Application Server\n(Python/Django 4.2 LTS)] as appServer
+    [MySQL Database Cluster\n(MySQL 8.0)] as database
+    [Storage System\n(Unstructured Content)] as storage
+    [External Data Acquisition\n(Crawlers & APIs)] as dataAcquisition
+    [Backup & Recovery System] as backupSystem
+}
+
+' Define external entities
+actor "Visitor" as visitor
+actor "Registered User" as regUser
+actor "Certified Scholar" as certScholar
+actor "Institution Administrator" as instAdmin
+actor "Expert Reviewer" as expertReviewer
+actor "System Administrator" as sysAdmin
+actor "External Academic Databases" as extDB
+
+' Define connections
+visitor --> frontend : Browse/Search
+regUser --> frontend : Authenticate & Interact
+certScholar --> frontend : Manage Achievements
+instAdmin --> frontend : Institution Control
+expertReviewer --> frontend : Review Disputes
+sysAdmin --> frontend : Administer System
+
+frontend --> appServer : HTTP Requests
+appServer --> database : ORM Queries
+appServer --> storage : File Operations
+appServer --> dataAcquisition : Fetch External Data
+appServer --> backupSystem : Backup Operations
+
+' Application Layer to Support Layer
+accountService --> authModule : Validate Credentials
+discoveryService --> semanticEngine : Process Queries
+discoveryService --> profileEngine : Personalize Results
+achievementService --> moderationWorkflow : Handle Claims
+institutionService --> moderationWorkflow : Process Applications
+communicationService --> moderationWorkflow : Moderate Content
+adminService --> analysisEngine : Generate Reports
+adminService --> moderationWorkflow : Final Reviews
+
+' Support Layer to Infrastructure
+authModule --> database : Store/Auth Users
+semanticEngine --> database : Retrieve Metadata
+profileEngine --> database : Get User Preferences
+analysisEngine --> database : Analyze Data
+moderationWorkflow --> database : Track Workflows
+backupSystem --> database : Backup/Restore
+
+' External integrations
+dataAcquisition --> extDB : Crawl/API Access
+dataAcquisition --> database : Normalize & Store
+
+note right of frontend
+  Browser-based UI
+  Supports Chrome, Edge, Firefox
+  on Windows, Linux, macOS
+end note
+
+note right of appServer
+  Python/Django 4.2 LTS
+  Implements business logic
+  Enforces authorization
+end note
+
+note right of database
+  MySQL 8.0 Cluster
+  Structured data persistence
+  Supports scalability
+end note
+
+note right of storage
+  Unstructured content
+  Academic documents
+  Annotations, etc.
+end note
+
+note right of dataAcquisition
+  Scheduled processes
+  Crawlers and APIs
+  Daily synchronization
+end note
+
+note right of backupSystem
+  Daily full backups
+  Hourly incrementals
+  30-day retention
+end note
+
+note top of semanticEngine
+  Multilingual search
+  Semantic correction
+  Cross-language mapping
+end note
+
+note bottom of profileEngine
+  Personalized presentation
+  Cross-disciplinary recommendations
+  Diversity rules enforcement
+end note
+
+note bottom of analysisEngine
+  Research hotspot reports
+  Scholar influence profiles
+  Periodic processing
+end note
+
+note right of moderationWorkflow
+  Certification workflows
+  Claim verification
+  Dispute resolution
+  Content moderation
+end note
+
+@enduml

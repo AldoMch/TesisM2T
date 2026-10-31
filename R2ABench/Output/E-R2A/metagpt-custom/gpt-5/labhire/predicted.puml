@@ -1,0 +1,105 @@
+@startuml
+package "Presentation Layer" {
+  component "Student/Mentor UI" as UIStudent
+  component "Admin UI" as UIAdmin
+}
+
+package "Application/API Layer" {
+  component "User Account & Session" as AppSession
+}
+
+package "Domain Services Layer" {
+  component "Project Catalog Service" as SProject
+  component "Search & Mentor Directory Service" as SSearch
+  component "Recommendation Engine" as SReco
+  component "Application & Screening Service" as SApply
+  component "Favorites Service" as SFav
+  component "Profile & Resume Service" as SProfile
+  component "Community Service" as SCommunity
+  component "Mutual Evaluation Service" as SEval
+}
+
+package "Communication & Notification Layer" {
+  component "Messaging & Verification Gateway" as Msg
+  component "Chat Service" as Chat
+}
+
+package "Security & Governance Layer" {
+  component "Review & Moderation Service" as Review
+  component "Access Control & Permissions" as Access
+  component "Abuse Prevention" as Abuse
+  component "Risk-Control & Audit Logging" as Risk
+}
+
+package "Data Layer" {
+  database "Data Repository" as DB
+  component "File Storage" as FS
+}
+
+cloud "Email service provider" as Email
+cloud "SMS service provider" as SMS
+
+UIStudent -> AppSession
+UIStudent -> SProject
+UIStudent -> SSearch
+UIStudent -> SReco
+UIStudent -> SApply
+UIStudent -> SFav
+UIStudent -> SProfile
+UIStudent -> SCommunity
+UIStudent -> Chat
+UIStudent -> SEval
+
+UIAdmin -> AppSession
+UIAdmin -> Review
+UIAdmin -> Access
+UIAdmin -> Risk
+
+AppSession -> Msg
+AppSession -> DB
+AppSession -> Access
+AppSession -> Risk
+
+Review -> Msg
+Review -> Access
+Review -> DB
+
+SProject -> DB
+SProject -> Access
+
+SSearch -> DB
+SReco -> DB
+
+SApply -> Msg
+SApply -> DB
+SApply -> Access
+
+SFav -> Msg
+SFav -> DB
+
+SCommunity -> Review
+SCommunity -> Access
+SCommunity -> DB
+SCommunity -> Msg
+SCommunity -> Risk
+SCommunity -> Abuse
+
+Chat -> Access
+Chat -> DB
+
+SProfile -> FS
+SProfile -> Access
+SProfile -> DB
+SProfile -> Msg
+
+SEval -> DB
+SEval -> Access
+
+Risk -> DB
+Msg -> Email
+Msg -> SMS
+Msg -> DB
+
+AppSession -> Abuse
+Abuse -> Msg
+@enduml

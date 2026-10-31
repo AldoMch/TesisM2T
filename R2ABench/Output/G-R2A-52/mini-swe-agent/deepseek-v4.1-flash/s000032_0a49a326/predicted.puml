@@ -1,0 +1,109 @@
+@startuml
+title Activiti 7 Guide-Documented Platform - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ===== Actors / Users =====
+package "Users / Actors" {
+  actor "Authenticated User" as AUTH_USER
+  actor "Task API User\n(ACTIVITI_USER)" as TASK_USER
+  actor "Human Participant" as HUMAN
+  actor "Cluster Operator" as OPERATOR
+  actor "Developer / Integrator" as DEV
+}
+
+' ===== External Systems =====
+package "External Systems" {
+  component "Keycloak\nIdentity Provider" as KEYCLOAK
+  cloud "Kubernetes / GKE Cluster" as K8S
+  component "NGINX Ingress Controller" as INGRESS
+  component "Public IP Endpoint" as PUBLIC_IP
+}
+
+' ===== Experience / Access Layer =====
+package "Access Layer" {
+  component "API Gateway\n(routed cloud access)" as GATEWAY
+  component "REST / User Endpoints" as REST_EP
+  component "Authentication Filter\n(token validation)" as AUTH_FILTER
+}
+
+' ===== Application / Security Layer =====
+package "Application & Security Layer (Spring Boot)" {
+  component "Spring Boot Application Context" as SPRING_BOOT
+  component "Spring Security\n(user, group, role context)" as SPRING_SEC
+}
+
+' ===== Runtime / Service Layer =====
+package "Activiti Runtime & Services" {
+  component "Example Runtime Bundle\n(deployed process definitions,\nprocess instances)" as RUNTIME_BUNDLE
+  component "ProcessRuntime API" as PROCESS_RUNTIME
+  component "TaskRuntime API\n(ROLE_ACTIVITI_USER)" as TASK_RUNTIME
+  component "SimpleProcess\n(process definition)" as SIMPLE_PROCESS
+  component "Audit Service" as AUDIT_SVC
+  component "Query Service" as QUERY_SVC
+  component "Notification Service\n(background)" as NOTIF_SVC
+  component "Cloud Connectors\n(background)" as CLOUD_CONN
+}
+
+' ===== Data Layer =====
+package "Data Stores" {
+  database "Process Definition Store" as DB_PROC_DEF
+  database "Process Instance Store" as DB_PROC_INST
+  database "Audit Event Store" as DB_AUDIT
+  database "Process Execution / Query Store" as DB_QUERY
+  database "User / Group / Role Store" as DB_IAM
+}
+
+' ===== Configuration Layer =====
+package "Configuration & Deployment" {
+  component "Deployment Descriptors\n(input rate, replica count)" as DEPLOY_DESC
+  component "Kubernetes Registry / ConfigMaps" as CONFIGMAP
+}
+
+' ---- Actor access ----
+AUTH_USER --> REST_EP : user endpoint requests
+TASK_USER --> TASK_RUNTIME : task API operations
+HUMAN --> TASK_RUNTIME : human task participation
+DEV --> REST_EP : example API usage
+OPERATOR --> INGRESS : configure ingress
+OPERATOR --> DEPLOY_DESC : configure scalability
+
+' ---- External ingress / auth ----
+PUBLIC_IP --> INGRESS : external traffic
+INGRESS --> GATEWAY : routes to internal services
+AUTH_USER --> KEYCLOAK : obtain token
+KEYCLOAK --> AUTH_FILTER : issued token
+REST_EP --> AUTH_FILTER : protected request
+
+' ---- Access to application ----
+AUTH_FILTER --> SPRING_SEC : validate token / logged-in user
+GATEWAY --> RUNTIME_BUNDLE : routed calls
+REST_EP --> SPRING_BOOT : endpoint handling
+SPRING_BOOT --> SPRING_SEC : security setup
+
+' ---- Runtime API interactions ----
+PROCESS_RUNTIME --> RUNTIME_BUNDLE : process definition / instance ops
+TASK_RUNTIME --> SPRING_SEC : authorization check
+SPRING_SEC --> DB_IAM : user / group / role data
+TASK_RUNTIME --> RUNTIME_BUNDLE : task interaction
+RUNTIME_BUNDLE --> SIMPLE_PROCESS : start instance
+RUNTIME_BUNDLE --> DB_PROC_DEF : read definitions
+RUNTIME_BUNDLE --> DB_PROC_INST : persist instances
+
+' ---- Services ----
+AUDIT_SVC --> DB_AUDIT : audit events
+QUERY_SVC --> DB_QUERY : process execution info
+RUNTIME_BUNDLE --> AUDIT_SVC : emit audit events
+RUNTIME_BUNDLE --> QUERY_SVC : expose execution info
+RUNTIME_BUNDLE --> NOTIF_SVC : notifications
+RUNTIME_BUNDLE --> CLOUD_CONN : cloud integration
+
+' ---- Deployment / configuration ----
+K8S --> INGRESS : hosts ingress
+K8S --> RUNTIME_BUNDLE : hosts services
+CONFIGMAP --> RUNTIME_BUNDLE : config
+DEPLOY_DESC --> CONFIGMAP : deployment parameters
+CONFIGMAP --> K8S : applied configuration
+
+@enduml

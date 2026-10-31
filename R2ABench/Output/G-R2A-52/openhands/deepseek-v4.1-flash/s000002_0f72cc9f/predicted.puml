@@ -1,0 +1,85 @@
+@startuml
+title Escape - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontName Helvetica
+skinparam shadowing false
+
+actor "Anonymous Visitor" as Visitor
+actor "Registered User" as User
+
+package "Web Client (Browser)" as Client {
+    package "Authentication Views" as AuthViews {
+        component "Sign-up View\n\"Escape Signup\"" as SignupUI
+        component "Sign-in View\n\"Escape Signin\"" as SigninUI
+        component "Shared Credential Input Handlers\n(email / password change)" as SharedHandlers
+        component "Shared Credential Submission\n(JSON POST to auth route)" as CredSubmit
+    }
+    component "Client State\n(email, password, paragraphs)" as ClientState
+    component "Content Retrieval Module\n(sequential title-based async fetch)" as ContentRetrieval
+    component "Error Indicator" as ErrorUI
+    package "Scene Rendering (A-Frame / aframe-react)" as SceneStack {
+        component "Lobby / SF / Louvre / Berlin" as SceneA
+        component "Milan / Rome / Hack" as SceneB
+        component "Camera / Sky / Plane / TextPlane" as SceneC
+    }
+}
+
+package "Web Server (Node.js / Express-style)" as Server {
+    component "HTTP Routing Layer" as Routes
+    component "User Controller" as UserController
+    component "Password Authentication\n(bcrypt-nodejs comparison)" as AuthService
+    component "User Model / Persistence Interface" as UserModel
+}
+
+package "Data & Storage Services" as DataLayer {
+    database "MariaDB Database\n(users, likes, photos, comments)" as DB
+    component "Redis-style Cache" as Cache
+    component "AWS S3-style Image Storage Service" as ImageStore
+}
+
+Visitor --> SignupUI
+Visitor --> SigninUI
+User --> SigninUI
+
+SignupUI --> SharedHandlers
+SigninUI --> SharedHandlers
+SignupUI --> SigninUI : "navigate to sign-in"
+SigninUI --> SignupUI : "navigate to sign-up"
+
+SharedHandlers --> ClientState : "update email/password"
+SignupUI --> CredSubmit : "submit view"
+SigninUI --> CredSubmit : "submit view"
+CredSubmit --> ClientState : "read email/password"
+
+CredSubmit --> Routes : "HTTP POST credentials (JSON)"
+Routes --> UserController
+UserController --> UserModel
+UserController --> AuthService
+AuthService --> UserModel : "retrieve stored user"
+AuthService --> AuthService : "bcrypt-nodejs compare"
+
+UserModel --> DB : "create / save / query users"
+UserModel --> Cache
+DB --> ImageStore : "photo/image references"
+
+Routes --> CredSubmit : "registration / authentication response"
+CredSubmit --> User : "authenticated navigation \n(application area)"
+
+ContentRetrieval --> ClientState : "accumulate paragraph results"
+ContentRetrieval --> Routes : "async title-based content request"
+Routes --> ContentRetrieval : "paragraph/content result"
+ContentRetrieval --> ErrorUI : "on failure: log + show error"
+
+note right of AuthViews
+  Shared input handling centralized in the
+  top-level client application component (NFR-005).
+end note
+
+note right of DataLayer
+  Consistency across the web server, database,
+  cache, and image storage service (C-006).
+end note
+
+@enduml

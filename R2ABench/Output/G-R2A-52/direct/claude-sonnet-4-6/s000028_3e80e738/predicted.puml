@@ -1,0 +1,142 @@
+@startuml
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v18.0/dist
+!include <awslib/AWSCommon>
+!include <awslib/General/all>
+!include <awslib/SecurityIdentityCompliance/all>
+!include <awslib/ApplicationIntegration/all>
+!include <awslib/NetworkingContentDelivery/all>
+!include <awslib/ManagementGovernance/all>
+
+skinparam rectangle {
+    RoundCorner 10
+    BorderColor #555555
+    FontSize 13
+}
+skinparam node {
+    BorderColor #555555
+    FontSize 13
+}
+skinparam cloud {
+    BorderColor #555555
+}
+skinparam arrow {
+    Color #333333
+    FontSize 11
+}
+skinparam defaultFontName Arial
+skinparam backgroundColor #FAFAFA
+skinparam shadowing false
+
+title PN Infra: Cognito, API Gateway, and VPC Endpoint Architecture
+
+rectangle "Installation & Orchestration Layer" as InstallLayer #EAF4FB {
+    rectangle "Installation Scripts / AWS CLI" as InstallScript #D0E8F5 {
+        rectangle "Environment Inputs\n(EnvName, AWS Profiles,\nDNS/Domain, API Keys,\nAccount IDs, Cert IDs)" as InstallInputs
+    }
+    rectangle "CloudFormation Templates\n(Format: 2010-09-09)" as CFNTemplates #D0E8F5
+}
+
+rectangle "Cognito Account" as CognitoAccount #EDF7ED {
+
+    rectangle "Cognito CloudFormation Stack" as CognitoStack #C8ECC8 {
+
+        rectangle "Cognito User Pool" as UserPool #FFFFFF {
+            rectangle "User Pool Client\n(Readable/Writable Attrs:\ncustom:Role, email)" as UserPoolClient
+            rectangle "Token Validity Units\n(Access / ID / Refresh:\ndays | hours | minutes | seconds)" as TokenValidity
+        }
+
+        rectangle "Cognito Identity Pool\n(Named from AuthName)\n(Unauthenticated Identities: Enabled)" as IdentityPool #FFFFFF
+
+        rectangle "Cognito Identity Provider Link\n(ClientId + ProviderName)" as IdPLink #FFFFFF
+
+        rectangle "IAM Roles" as IAMRoles #FFFFFF {
+            rectangle "Authenticated IAM Role" as AuthRole
+            rectangle "Unauthenticated IAM Role\n(Trust: sts:AssumeRoleWithWebIdentity\nFederated: cognito-identity.amazonaws.com\nAudience: Identity Pool\nAuth Method: unauthenticated)" as UnauthRole
+        }
+
+        rectangle "Identity Pool Role Attachment\n(Authenticated + Unauthenticated)" as RoleAttachment #FFFFFF
+    }
+
+    rectangle "Cognito Stack Output" as CognitoOutput #C8ECC8 {
+        rectangle "User Pool ARN" as UserPoolARN
+    }
+}
+
+rectangle "API Gateway Account" as APIGWAccount #FFF8E7 {
+
+    rectangle "API Gateway CloudFormation Stack" as APIGWStack #FFE9A0 {
+
+        rectangle "Cognito User-Pool Authorizer\n(Type: Cognito User Pools)\n(Uses: User Pool ARN from Cognito Account)" as CognitoAuthorizer #FFFFFF
+
+        rectangle "API Gateway REST API" as RestAPI #FFFFFF {
+
+            rectangle "WhoAmI Method\n(Auth: Cognito Authorizer)\n(Response Header: x-pagopa-pn-cx-role [optional])\n(Integration Response: maps custom:Role claim\nto x-pagopa-pn-cx-role)\n(HTTP 200 path defined)" as WhoAmIMethod
+
+            rectangle "ECS Proxy Method\n(Auth: Cognito Authorizer)\n(Integration: VPC Link → NLB ARN)\n(Request Header Forward:\ncustom:Role claim → x-pagopa-pn-cx-role)" as ECSMethod
+
+            rectangle "VPC Link\n(NLB ARN: from input parameter)" as VPCLink
+        }
+
+        rectangle "API Gateway Deployment\n(Stage: configured stage name)\n(Depends on: WhoAmI + ECS Methods)" as APIGWDeployment #FFFFFF
+
+        rectangle "Stack Output\nCallbackURL\n(API Gateway Endpoint:\nAPIGW ID + Region + Stage)" as CallbackOutput #FFFFFF
+    }
+}
+
+rectangle "VPC Networking (API Gateway Account / VPC)" as VPCLayer #F5EEFF {
+
+    rectangle "VPC Endpoint CloudFormation Stack" as VPCEndpointStack #E8D5FF {
+
+        rectangle "SQS Interface VPC Endpoint\n(Type: Interface)\n(Service: com.amazonaws.{region}.sqs)\n(VpcId: configured)\n(Subnets: configured list)\n(Private DNS: Enabled)" as SQSEndpoint #FFFFFF
+
+        rectangle "SQS Endpoint Security Group\n(VPC: configured)\n(Ingress: TCP 0-65535\nfrom VPC CIDR only)" as SQSSecGroup #FFFFFF
+    }
+
+    rectangle "Amazon SQS\n(Private Access)" as SQSService #E8D5FF
+}
+
+rectangle "Network Configuration Inputs" as NetConfig #F5EEFF {
+    rectangle "VpcId\nSubnets\nVpcCidr\nRegional SQS Service Name" as NetParams
+}
+
+rectangle "API Clients" as APIClients #F0F0F0 {
+    rectangle "External API Consumers\n(Call API Gateway Endpoint\nConsume x-pagopa-pn-cx-role header)" as ExternalClients
+}
+
+rectangle "ECS Backend" as ECSBackend #F0F0F0 {
+    rectangle "ECS Proxy Target\n(via Network Load Balancer)" as ECSTarget
+}
+
+InstallInputs --> CFNTemplates : "provides parameters to"
+CFNTemplates --> CognitoStack : "deploys"
+CFNTemplates --> APIGWStack : "deploys"
+CFNTemplates --> VPCEndpointStack : "deploys"
+
+UserPool --> UserPoolClient : "contains"
+UserPool --> TokenValidity : "configures"
+UserPool --> IdPLink : "provides provider name"
+UserPoolClient --> IdPLink : "provides client id"
+IdPLink --> IdentityPool : "links provider to"
+IdentityPool --> RoleAttachment : "role attachment for"
+IAMRoles --> RoleAttachment : "mapped by"
+UnauthRole --> IdentityPool : "trust audience"
+
+UserPoolARN --> CognitoAuthorizer : "cross-account ARN input"
+
+CognitoAuthorizer --> WhoAmIMethod : "authorizes"
+CognitoAuthorizer --> ECSMethod : "authorizes"
+WhoAmIMethod --> APIGWDeployment : "dependency"
+ECSMethod --> APIGWDeployment : "dependency"
+ECSMethod --> VPCLink : "integrates via"
+VPCLink --> ECSTarget : "routes to NLB → ECS"
+APIGWDeployment --> CallbackOutput : "publishes"
+
+NetParams --> SQSEndpoint : "configures"
+NetParams --> SQSSecGroup : "configures CIDR"
+SQSSecGroup --> SQSEndpoint : "associated with"
+SQSEndpoint --> SQSService : "private DNS enabled\nTCP access"
+
+ExternalClients --> RestAPI : "HTTPS requests\n(with Cognito token)"
+RestAPI --> SQSService : "private SQS calls\nvia VPC endpoint"
+
+@enduml

@@ -1,0 +1,281 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::Kafka Topic\\n(Audit Event Stream)"
+      ],
+      "gt_nodes": [
+        "Global::Kafka"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "Global::Auditor Client Library (Kotlin / JVM 11)"
+      ],
+      "gt_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "JVM Application Layer::Integrating Application"
+      ],
+      "match_type": "N:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::Kafka Topic\\n(Audit Event Stream)",
+        "Infrastructure / Plugin Layer::Kafka Event Publisher\\n(Default EventPublisher impl)"
+      ],
+      "gt_node": "Global::Kafka"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Auditor Client Library (Kotlin / JVM 11)::Audit Engine\\n(Object Diff / Change Detection)",
+        "Auditor Client Library (Kotlin / JVM 11)::AuditEvent Builder\\n(CREATED / UPDATED / DELETED)",
+        "Auditor Client Library (Kotlin / JVM 11)::Auditing API\\n(accept oldObject, newObject,\\nAuditorEventConfig)",
+        "Auditor Client Library (Kotlin / JVM 11)::Element Filter\\n(AuditEventElementFilter)",
+        "Auditor Client Library (Kotlin / JVM 11)::Event Publisher Abstraction\\n(EventPublisher interface)",
+        "Auditor Client Library (Kotlin / JVM 11)::Log Provider Abstraction\\n(LogProvider interface)",
+        "Global::Auditor Client Library (Kotlin / JVM 11)",
+        "Global::Infrastructure / Plugin Layer",
+        "Global::JVM Application Layer",
+        "Infrastructure / Plugin Layer::Custom Element Filter\\n(AuditEventElementFilter impl)",
+        "Infrastructure / Plugin Layer::Logger Implementation\\n(LogProvider impl)"
+      ],
+      "gt_node": "Global::auditor-v1 app\\nserver"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Application Developer\\n(Integrating Application)",
+        "Global::Auditor Client Library (Kotlin / JVM 11)",
+        "Global::JVM Application Layer",
+        "JVM Application Layer::Integrating Application"
+      ],
+      "gt_node": "application 1::auditor-v1 client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Application Developer\\n(Integrating Application)",
+        "Global::Auditor Client Library (Kotlin / JVM 11)",
+        "Global::JVM Application Layer",
+        "JVM Application Layer::Integrating Application"
+      ],
+      "gt_node": "application 2::auditor-v1 client"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Application Developer\\n(Integrating Application)",
+        "Global::Auditor Client Library (Kotlin / JVM 11)",
+        "Global::JVM Application Layer",
+        "JVM Application Layer::Integrating Application"
+      ],
+      "gt_node": "application 3::auditor-v1 client"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Auditor Client Library (Kotlin / JVM 11)::Audit Engine\\n(Object Diff / Change Detection)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Auditor Client Library (Kotlin / JVM 11)::AuditEvent Builder\\n(CREATED / UPDATED / DELETED)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Auditor Client Library (Kotlin / JVM 11)::Auditing API\\n(accept oldObject, newObject,\\nAuditorEventConfig)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Auditor Client Library (Kotlin / JVM 11)::Element Filter\\n(AuditEventElementFilter)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Auditor Client Library (Kotlin / JVM 11)::Event Publisher Abstraction\\n(EventPublisher interface)",
+      "reference_nodes": [
+        "Global::Kafka",
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Auditor Client Library (Kotlin / JVM 11)::Log Provider Abstraction\\n(LogProvider interface)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Downstream Consumer\\n(deserializes AuditEvent JSON)",
+      "reference_nodes": [
+        "Global::Databases / Filestores\\nElastic, Hadoop, etc.",
+        "Global::Kafka",
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Kafka Topic\\n(Audit Event Stream)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Application Developer\\n(Integrating Application)",
+      "reference_nodes": [
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Auditor Client Library (Kotlin / JVM 11)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::External Systems",
+      "reference_nodes": [
+        "Global::Databases / Filestores\\nElastic, Hadoop, etc.",
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Infrastructure / Plugin Layer",
+      "reference_nodes": [
+        "Global::Kafka",
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::JVM Application Layer",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver",
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure / Plugin Layer::Custom Element Filter\\n(AuditEventElementFilter impl)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure / Plugin Layer::Kafka Event Publisher\\n(Default EventPublisher impl)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure / Plugin Layer::Logger Implementation\\n(LogProvider impl)",
+      "reference_nodes": [
+        "Global::auditor-v1 app\\nserver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "JVM Application Layer::Integrating Application",
+      "reference_nodes": [
+        "application 1::auditor-v1 client",
+        "application 2::auditor-v1 client",
+        "application 3::auditor-v1 client"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1152,
+      "completion_tokens": 79,
+      "total_tokens": 1231,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Global::Databases / Filestores\\nElastic, Hadoop, etc."
+  ],
+  "unmatched_predicted_nodes": [
+    "Auditor Client Library (Kotlin / JVM 11)::Audit Engine\\n(Object Diff / Change Detection)",
+    "Auditor Client Library (Kotlin / JVM 11)::AuditEvent Builder\\n(CREATED / UPDATED / DELETED)",
+    "Auditor Client Library (Kotlin / JVM 11)::Auditing API\\n(accept oldObject, newObject,\\nAuditorEventConfig)",
+    "Auditor Client Library (Kotlin / JVM 11)::Element Filter\\n(AuditEventElementFilter)",
+    "Auditor Client Library (Kotlin / JVM 11)::Event Publisher Abstraction\\n(EventPublisher interface)",
+    "Auditor Client Library (Kotlin / JVM 11)::Log Provider Abstraction\\n(LogProvider interface)",
+    "External Systems::Downstream Consumer\\n(deserializes AuditEvent JSON)",
+    "Global::Application Developer\\n(Integrating Application)",
+    "Global::External Systems",
+    "Global::Infrastructure / Plugin Layer",
+    "Global::JVM Application Layer",
+    "Infrastructure / Plugin Layer::Custom Element Filter\\n(AuditEventElementFilter impl)",
+    "Infrastructure / Plugin Layer::Kafka Event Publisher\\n(Default EventPublisher impl)",
+    "Infrastructure / Plugin Layer::Logger Implementation\\n(LogProvider impl)"
+  ],
+  "_provenance": {
+    "fingerprint": "fe9389446c3f1094a577d34be3200df97e4b063a2a1db3e21227f0f5cd83ff23",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

@@ -1,0 +1,181 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #FEFEFE
+skinparam classBorderColor #000000
+skinparam arrowColor #000000
+
+title DeepCode System Architecture
+
+package "External Users & Services" {
+  [Web Browser (HTML5)] as Browser
+  [AI Service (LLM)] as AI
+  [SMTP Server] as SMTP
+  [CDN] as CDN
+}
+
+package "Frontend Layer (Vue 3)" {
+  [Vue Application] as VueApp
+  [Axios Client] as Axios
+}
+
+package "Presentation Layer" {
+  [Nginx Reverse Proxy] as Nginx
+}
+
+package "Proxy Layer (Spring Boot)" {
+  [API Gateway / Controller] as Gateway
+  [Authentication Filter] as AuthFilter
+  [Interceptor] as Interceptor
+}
+
+package "Business Layer (Spring Boot Modules)" {
+  [User Module] as UserModule
+  [Problem Module] as ProblemModule
+  [Solution Module] as SolutionModule
+  [Forum Module] as ForumModule
+  [AI Integration Module] as AIModule
+  [Judging Orchestrator] as JudgeOrchestrator
+  [Email Service] as EmailService
+}
+
+package "Access Layer" {
+  [MyBatis-Plus] as MyBatis
+  [Redis Client] as RedisClient
+  [MinIO Client] as MinIOClient
+  [LangChain4j Client] as LangChainClient
+  [HTTP Judge Client] as JudgeClient
+}
+
+package "Data Storage" {
+  database "MySQL" as MySQL {
+    folder "User Tables" as UserTables
+    folder "Problem Tables" as ProblemTables
+    folder "Solution Tables" as SolutionTables
+    folder "Forum Tables" as ForumTables
+    folder "AI Cache Tables" as AITables
+  }
+  database "Redis (Cache)" as Redis
+  database "MinIO (Object Storage)" as MinIO {
+    folder "Test Cases"
+    folder "Images"
+    folder "Other Files"
+  }
+}
+
+package "Judging Subsystem" {
+  [JudgeHost (Scheduler)] as JudgeHost
+  [JudgeCore (Sandbox)] as JudgeCore
+  [Docker Container] as DockerContainer
+}
+
+package "Infrastructure & Ops" {
+  [Prometheus] as Prometheus
+  [Grafana] as Grafana
+  [Alert Manager] as AlertManager
+  [Kubernetes] as K8S
+  [GitLab CI/CD] as CICD
+}
+
+' External connections
+Browser --> CDN : Static Resources (CSS, JS, Images)
+Browser --> Nginx : HTTPS Requests
+AI --> LangChainClient : LLM API Calls
+SMTP --> EmailService : Send Email
+
+' Frontend to Presentation
+VueApp --> Axios
+Axios --> Nginx : RESTful API Calls
+
+' Presentation to Proxy
+Nginx --> Gateway : Route Requests
+
+' Proxy to Business
+Gateway --> AuthFilter : Request
+AuthFilter --> Interceptor : Permission Check
+Interceptor --> UserModule : Auth/User Requests
+Interceptor --> ProblemModule : Problem Requests
+Interceptor --> SolutionModule : Solution Requests
+Interceptor --> ForumModule : Forum Requests
+Interceptor --> AIModule : AI Requests
+Interceptor --> JudgeOrchestrator : Submission Requests
+Interceptor --> EmailService : Email Requests
+
+' Business Internal
+UserModule --> ProblemModule : User Context
+ProblemModule --> SolutionModule : Problem Context
+ForumModule --> AIModule : @AI Requests
+JudgeOrchestrator --> JudgeClient : Submit Code
+
+' Business to Access
+UserModule --> MyBatis
+ProblemModule --> MyBatis
+SolutionModule --> MyBatis
+ForumModule --> MyBatis
+AIModule --> MyBatis
+UserModule --> RedisClient : Session/Cache
+ProblemModule --> RedisClient : Cache
+SolutionModule --> RedisClient : Cache
+ForumModule --> RedisClient : Cache
+ProblemModule --> MinIOClient : Test Case Files
+ForumModule --> MinIOClient : Image Uploads
+UserModule --> MinIOClient : Avatar Uploads
+AIModule --> LangChainClient : AI Prompts
+JudgeOrchestrator --> JudgeClient : HTTP Call
+
+' Access to Storage
+MyBatis --> MySQL : CRUD Operations
+RedisClient --> Redis : Get/Set Cache
+MinIOClient --> MinIO : Store/Retrieve Objects
+LangChainClient --> AI : External Call
+JudgeClient --> JudgeHost : HTTP Request
+
+' Judging Subsystem
+JudgeHost --> JudgeCore : Execute Task
+JudgeCore --> DockerContainer : Isolated Execution
+DockerContainer --> MinIO : Fetch Test Cases
+
+' Monitoring & Ops
+Prometheus --> MySQL : Metrics
+Prometheus --> Redis : Metrics
+Prometheus --> Nginx : Metrics
+Prometheus --> K8S : Infrastructure Metrics
+Prometheus --> Grafana : Data Source
+Grafana --> AlertManager : Trigger Alerts
+CICD --> K8S : Deploy Containers
+
+' Data Storage Internal Structure (Optional detail)
+UserTables ..[hidden].. ProblemTables
+ProblemTables ..[hidden].. SolutionTables
+SolutionTables ..[hidden].. ForumTables
+ForumTables ..[hidden].. AITables
+
+note right of VueApp
+  Technologies:
+  Vue 3, TypeScript, Vuex,
+  vue-router, Ant Design Vue,
+  CodeMirror, wangEditor,
+  ECharts, Webpack, ESLint
+end note
+
+note left of Gateway
+  Technologies:
+  Spring Boot 3.1.2, JDK 21,
+  Lombok, Swagger, JWT,
+  WebFlux, Thread Pools
+end note
+
+note bottom of JudgeCore
+  Security: seccomp, resource
+  limits (CPU, memory, output)
+  in Docker container
+end note
+
+note top of K8S
+  Deployment: GitLab CI/CD,
+  Docker, Private Registry,
+  Auto-scaling, Rollback
+end note
+
+@enduml

@@ -1,0 +1,73 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+
+title GKE Pub/Sub WebSocket Adapter Architecture
+
+' Kubernetes Components
+package "Kubernetes Cluster" {
+  [ConfigMap\n(topic identifier)] as configmap
+  [Deployment\n(adapter pods)] as deployment
+  [Service\n(LoadBalancer)] as service
+  [HPA\n(horizontal pod autoscaler)] as hpa
+  
+  deployment ..> configmap : reads topic config
+  hpa ..> deployment : scales
+  service ..> deployment : routes to
+}
+
+' Runtime Components
+package "Adapter Pod" {
+  package "Container" {
+    [exec.sh\n(entrypoint)] as entrypoint
+    [pulltop\n(Node.js process)] as pulltop
+    [websocketd\n(port 8080)] as websocketd
+    
+    entrypoint --> pulltop : executes
+    pulltop --> websocketd : streams output
+  }
+}
+
+' External Systems
+rectangle "Pub/Sub Topic" as pubsub #lightblue
+rectangle "WebSocket Clients" as clients #lightgreen
+
+' Relationships
+deployment ..> pubsub : consumes messages
+websocketd --> service : binds to port 8080
+service --> clients : exposes port 80
+clients --> service : connects via WebSocket
+pubsub --> pulltop : sends messages
+
+note right of pubsub
+  Configured topic:
+  projects/<project-id>/topics/<topic-name>
+end note
+
+note right of service
+  External port: 80
+  Container port: 8080
+end note
+
+note right of configmap
+  Key: "topic"
+  Value: topic identifier
+end note
+
+note left of entrypoint
+  Reads SYMBOL env var
+  from ConfigMap
+end note
+
+note bottom of deployment
+  Horizontal scaling:
+  Min: 1 replica
+  Max: 2 replicas
+  Target CPU: 80%
+end note
+
+@enduml

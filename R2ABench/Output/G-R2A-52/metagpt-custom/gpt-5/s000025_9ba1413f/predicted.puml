@@ -1,0 +1,65 @@
+@startuml
+
+package "Frontend (Next.js)" {
+  component "NextJsFrontendApp" as FrontendApp
+  component "SessionHandler" as SessionHandler
+  component "TaskEntryForm" as TaskEntryForm
+}
+
+package "API (Next.js API Routes)" {
+  component "LoginApiRoute (/api/login)" as LoginApi
+  component "LogoutApiRoute (/api/logout)" as LogoutApi
+}
+
+package "Middleware (Session & Task Workflow)" {
+  component "SessionMiddleware" as SessionMW
+  component "TaskWorkflowMiddleware" as TaskMW
+  component "ChannelGateway" as ChannelGateway
+}
+
+package "Backend (Firebase Functions & OnFleet Integration)" {
+  node "Firebase Functions" as FirebaseFunctions {
+    component "BackendTaskHandler" as BackendHandler
+  }
+}
+
+package "Authentication (Firebase Integration)" {
+  component "FirebaseTokenVerifier" as TokenVerifier
+  cloud "Firebase Authentication" as FirebaseAuth
+  cloud "Firebase Admin" as FirebaseAdmin
+}
+
+package "Configuration (Environment-backed runtime)" {
+  component "RuntimeConfigLoader" as ConfigLoader
+  node "Environment Variables (FIREBASE_* )" as EnvVars
+}
+
+cloud "OnFleet" as OnFleet
+cloud "External Channels (Text/Call)" as ExtChannels
+
+' Frontend flows
+FrontendApp -> TaskEntryForm : Presents form-based entry path
+SessionHandler -> LoginApi : POST /api/login (FR-001, SI-001, CI-001)
+SessionHandler -> LogoutApi : POST /api/logout (FR-002, SI-002, CI-002)
+SessionHandler -> FirebaseAuth : Obtain Firebase ID token
+
+' API and middleware interactions
+SessionMW -> LoginApi : Wraps/intercepts for session (FR-006, SI-004)
+SessionMW -> LogoutApi : Wraps/intercepts for session (FR-006, SI-004)
+LoginApi -> TokenVerifier : Verify ID token (FR-005, SI-003)
+
+' Task routing workflow
+FrontendApp -> TaskMW : Help-task request (FR-010, CI-003)
+ExtChannels -> ChannelGateway : Inbound text/call
+ChannelGateway -> TaskMW : Normalized task requests (CI-003)
+TaskMW -> BackendHandler : Eligible task forwarding (FR-012, CI-004)
+BackendHandler -> OnFleet : Create tasks (SI-005, FR-012)
+
+' Configuration
+EnvVars -> ConfigLoader : FIREBASE_* values
+ConfigLoader -> SessionHandler : Runtime Firebase config (FR-008)
+
+' Authentication verification
+TokenVerifier -> FirebaseAdmin : Verify token
+
+@enduml

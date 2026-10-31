@@ -1,0 +1,91 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+actor "Administrators / Operators" as Admin
+actor "API Clients" as ApiClient
+actor "AWS CloudFormation (Deployment)" as CFN
+
+node "AWS Account / Region" as AWS {
+  node "Web Management Console\n(Hosted & Distributed)" as WebConsole
+  component "Identity & Auth Service\n(e.g., Cognito / OIDC)" as IdP
+
+  component "Amazon API Gateway\nREST API (Stage: prod, Type: REGIONAL)" as APIGW
+  component "AWS Lambda\nAPI Backend" as LambdaAPI
+
+  component "AWS Step Functions\nSimulation Orchestrator" as Orchestrator
+  component "AWS Lambda\nRoute Loader" as RouteLoader
+  component "AWS Lambda\nDevice Simulator Worker" as SimWorker
+
+  database "Amazon DynamoDB\nTables: Simulations, DeviceTypes" as DDB
+  folder "Amazon S3\nROUTE_BUCKET" as S3
+  cloud "AWS IoT Core\nIoT Topics" as IoT
+
+  queue "Amazon CloudWatch Logs\nAPI Access Logs (JSON)" as Logs
+  component "AWS X-Ray\nTracing Enabled" as XRay
+
+  component "AWS Lambda\nCustom Resource Handler" as CfnHandler
+}
+
+' End-user and client access
+Admin --> WebConsole
+WebConsole --> IdP : Authenticate
+WebConsole --> APIGW : HTTPS (CORS)
+ApiClient --> APIGW : HTTPS
+APIGW ..> IdP : Authorize requests
+
+' API layer and integrations
+APIGW --> LambdaAPI : Lambda proxy integration
+APIGW --> Logs : Access logs (JSON, INFO)
+APIGW --> XRay : Traces
+
+' Backend services and data stores
+LambdaAPI --> DDB : Manage simulations & device types
+LambdaAPI --> Orchestrator : Start simulation
+
+' Simulation workflow
+Orchestrator --> RouteLoader : Task: Load route state
+RouteLoader --> S3 : Get route JSON\n(key = routeName or route-{id}.json)
+Orchestrator --> SimWorker : Task: Execute simulation
+SimWorker --> IoT : Publish simulated messages
+
+' Deployment-time custom resource
+CFN --> CfnHandler : Invoke custom resource
+CfnHandler --> CFN : Construct & send response body
+
+' Notes capturing key requirements and constraints
+note right of APIGW
+- Methods: GET, POST, PUT, DELETE, OPTIONS
+- CORS preflight enabled (200)
+- Allowed headers:
+  Authorization, Content-Type,
+  X-Amz-Date, X-Amz-Security-Token, X-Api-Key
+- Request validation: parameters & body
+- Endpoint Type: REGIONAL
+- Tracing enabled
+end note
+
+note right of Logs
+API access logging:
+- JSON format with standard fields
+- Method logging level: INFO
+end note
+
+note right of RouteLoader
+Route loading from S3:
+- Bucket: ROUTE_BUCKET
+- Reads UTF-8 JSON object
+- Uses routeInfo.routeName as key, or
+  generates default: route-{randomId}.json
+- Assembles route state:
+  routeName, odometer, routeStage,
+  burndown, burndownCalc, routeEnded,
+  route, randomTriggers
+- Error propagated on S3 retrieval failure
+end note
+
+note right of IoT
+Simulated device messages
+published to AWS IoT topics
+end note
+@enduml

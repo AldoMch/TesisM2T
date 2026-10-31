@@ -1,0 +1,121 @@
+{
+  "candidate": {
+    "sample_id": "s000037_396c6313",
+    "repository_name": "chaitin/veinmind-tools",
+    "image_url": "https://github.com/chaitin/veinmind-tools/blob/master/docs/architecture.png",
+    "source_ref": "baa3a04d1e5d2e0f4b85a97611c8dfe53fb7167f",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 12453,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "deployment_config",
+      "readme",
+      "requirements_like",
+      "schema_model"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 198,
+      "user_scenario": 4,
+      "api_io": 56,
+      "deployment": 35,
+      "constraints": 22,
+      "non_functional": 5
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "example/python/Dockerfile",
+      "doc_type": "deployment_config",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05154304041275568,
+      "text": "FROM veinmind/python3.6:1.3.1-stretch WORKDIR /tool ADD . . RUN pip install -r requirements.txt RUN echo \"#!/bin/bash\\n\\npython scan.py \\$*\" > /tool/entrypoint.sh && chmod +x /tool/entrypoint.sh ENTRYPOINT [\"/tool/entrypoint.sh\"]"
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.en.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.04977528196110685,
+      "text": "veinmind-tools Documentation veinmind-tools is self-developed by chaitin technology ，a container security toolset based on veinmind-sdk ## 🔥 Demo ## 🕹️ Quick Start ### 1. Make sure docker is installed correctly on the machine ### 2. Install veinmind-runner image ### 3. Download veinmind-runner parallel container startup script ### 4. Quick scan local images ## 🔨 Toolset PS: All tools currently support running in parallel containers ## 🧑‍💻 Coding Plugins Use exmaple to create a veinmind-tool plugin quickly, see more at veinmind-example ## ☁️ Cloud-native infrastructure compatibility ## 🛴 Architecture ## 🏘️ Contact Us 1. You can make bug feedback and feature suggestions directly through Git..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "example/go/cmd/cli.go",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05395772499789238,
+      "text": "package main import ( \"os\" \"time\" api \"github.com/chaitin/libveinmind/go\" \"github.com/chaitin/libveinmind/go/cmd\" \"github.com/chaitin/libveinmind/go/plugin\" \"github.com/chaitin/libveinmind/go/plugin/log\" \"github.com/chaitin/veinmind-common-go/service/report\" ) var rootCmd = &cmd.Command{} var scanImageCmd = &cmd.Command{ Use: \"scan-image\", Short: \"scan image command\", } var scanContainerCmd = &cmd.Command{ Use: \"scan-container\", Short: \"scan container command\", } // scanImage is func that used to do some action with Images // you can write your plugin scan code here func scanImage(c *cmd.Command, image api.Image) error { defer func() { err := image.Close() if err != nil { log.Error(err) }..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "veinmind-runner/pkg/authz/route/docker_plugin_action.go",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05245552098989828,
+      "text": "uthorization.Request) action.DockerPlugin { for re, route := range routeRegexes { if route.method == req.RequestMethod { if re.MatchString(req.RequestURI) { return route.action } } } return action.NoneDockerPlugin }"
+    },
+    {
+      "evidence_id": "E005",
+      "path": "plugins/go/veinmind-malicious/database/model/model.go",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05433467741935484,
+      "text": "package model import ( \"gorm.io/gorm\" ) type MaliciousFileInfo struct { gorm.Model Engine string ImageID string LayerID string RelativePath string FileName string FileSize string FileMd5 string FileSha256 string FileCreated string Description string } type ReportData struct { gorm.Model ScanImageCount int64 MaliciousFileCount int64 ScanSpendTime string ScanStartTime string ScanFileCount int ScanImageResult []ReportImage } type ReportImage struct { gorm.Model ImageName string ImageID string MaliciousFileCount int64 ScanFileCount int ImageCreatedAt string MaliciousFileInfos []MaliciousFileInfo Layers []ReportLayer } type ReportLayer struct { gorm.Model ImageID string LayerID string Maliciou..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "plugins/go/veinmind-iac/cmd/cli.go",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053890556453474944,
+      "text": "r.\", Policies: make(map[string]*ast.Module), } scanner.LoadLibs() res, err := scanner.Scan(c.Context(), iac) if err != nil { log.Error(err) return err } uniqueAppend(res) reportDetails := make([]report.AlertDetail, 0) for _, data := range res { for _, risk := range data.Risks { reportDetails = append(reportDetails, report.AlertDetail{ IaCDetail: &report.IaCDetail{ RuleInfo: report.IaCRule{ Id: data.Rule.Id, Name: data.Rule.Name, Description: data.Rule.Description, Reference: data.Rule.Reference, Severity: data.Rule.Severity, Solution: data.Rule.Solution, Type: data.Rule.Type, }, FileInfo: report.IaCData{ StartLine: risk.StartLine, EndLine: risk.EndLine, FilePath: risk.FilePath, Original:..."
+    }
+  ]
+}

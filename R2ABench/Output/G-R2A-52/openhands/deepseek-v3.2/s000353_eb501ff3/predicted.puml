@@ -1,0 +1,144 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam nodesep 20
+skinparam ranksep 30
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F0F0F0
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+skinparam arrowThickness 1.5
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor #CCCC99
+
+title Turing System Architecture
+
+' =========== EXTERNAL SYSTEMS ===========
+component "API Clients" as clients {
+  rectangle "HTTP Client" as http_client
+  rectangle "Platform Operator" as platform_operator
+  rectangle "User" as user_client
+}
+
+component "External Services" as external {
+  rectangle "MLflow Model Registry" as mlflow #LightBlue
+  rectangle "Jaeger Tracing" as jaeger #LightGreen
+}
+
+component "Kubernetes Cluster" as k8s_cluster #LightYellow {
+  rectangle "Router Deployment" as router_deployment1
+  rectangle "Router Deployment" as router_deployment2
+  rectangle "Router Deployment" as router_deployment3
+}
+
+' =========== TURING CORE COMPONENTS ===========
+rectangle "Turing API Server" as turing_api_server #LightCyan {
+  rectangle "HTTP API Layer" as http_api_layer {
+    rectangle "Routers API" as routers_api
+    rectangle "Ensemblers API" as ensemblers_api
+  }
+  
+  rectangle "Middleware Layer" as middleware_layer {
+    rectangle "Authorization" as auth_middleware
+    rectangle "OpenAPI Validation" as validation_middleware
+  }
+  
+  rectangle "Service Layer" as service_layer {
+    rectangle "Router Service" as router_service
+    rectangle "Ensembler Service" as ensembler_service
+  }
+  
+  rectangle "Cluster Components" as cluster_components {
+    rectangle "Deployment Manager" as deployment_manager
+    rectangle "Lifecycle Controller" as lifecycle_controller
+  }
+}
+
+rectangle "PyFuncEnsembler Service" as pyfunc_service #LightPink {
+  rectangle "Webservice Runtime" as webservice_runtime
+  rectangle "Ensembler Runner" as ensembler_runner
+  rectangle "Local Image Builder" as local_image_builder
+}
+
+' =========== DATA FLOWS AND RELATIONSHIPS ===========
+
+' API Clients to Turing API Server
+clients --> turing_api_server : "HTTP API Calls\n(GET/POST/PUT/DELETE)"
+note on link
+  Endpoints:
+  - /projects/{project_id}/routers
+  - /projects/{project_id}/ensemblers
+  - /projects/{project_id}/ensemblers/{ensembler_id}
+end note
+
+' Internal API Server flow
+http_api_layer --> middleware_layer : "Request Flow"
+middleware_layer --> service_layer : "Validated Request"
+service_layer --> cluster_components : "Deployment Operations"
+
+' Turing API Server to Kubernetes
+cluster_components --> k8s_cluster : "Create/Update/Delete\nRouter Deployments"
+note on link
+  Uses Kubernetes interfaces
+  for lifecycle management
+end note
+
+' Turing API Server to PyFuncEnsembler Service
+service_layer --> pyfunc_service : "Deployment/Run Requests"
+note on link
+  For user-defined
+  ensemblers as webservice
+end note
+
+' PyFuncEnsembler Service to MLflow
+local_image_builder --> mlflow : "Download Model Artifacts"
+note on link
+  For local Docker
+  image building
+end note
+
+' Tracing integration
+turing_api_server --> jaeger : "Optional Tracing"
+note on link
+  Based on configuration
+  and sampling
+end note
+
+k8s_cluster --> jaeger : "Router Traces"
+
+' Router deployments use PyFuncEnsembler
+router_deployment1 --> pyfunc_service : "Call User-defined\nEnsemblers"
+router_deployment2 --> pyfunc_service
+router_deployment3 --> pyfunc_service
+
+' =========== PROTOCOL AND DATA FORMATS ===========
+note top of turing_api_server
+  **Protocols Supported:**
+  - HTTP_JSON
+  - UPI_V1
+  
+  **Data Formats:**
+  - JSON for API responses
+  - Timeout pattern: ^[0-9]+(ms|s|m|h)$
+  
+  **Constraints:**
+  - OpenAPI 3.0.3
+  - Kubernetes cluster required
+  - Default port 8080 (configurable)
+end note
+
+note top of pyfunc_service
+  **PyFuncEnsembler Runtime:**
+  - Exposes user-defined ensemblers
+  - Docker-based packaging
+  - Webservice for Turing routers
+end note
+
+note bottom of k8s_cluster
+  **Router Deployments:**
+  - Managed by Turing cluster components
+  - Use PyFuncEnsembler service
+  - Configurable container port
+end note
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml
+
+package "CLI Layer" {
+    component "cadctl" as cli
+    component "CHGM Workflow" as chgm
+}
+
+package "Integration Layer" {
+    component "Integration Library" as lib
+}
+
+package "Orchestration Layer" {
+    rectangle "EventListener" <<Tekton Resource>> as listener
+    rectangle "Trigger" <<Tekton Resource>> as trigger
+    rectangle "PipelineRun" <<Tekton Resource>> as pipeline
+    note right of pipeline
+        Name: cad-checks-pipeline
+        Namespace: configuration-anomaly-detection
+    end note
+}
+
+package "Deployment/Asset Layer" {
+    component "Container Runtime" as runtime
+    component "Template Update Utility" as template
+}
+
+cloud "External Systems" {
+    component "PagerDuty" as pd
+    component "AWS" as aws
+    component "OCM" as ocm
+}
+
+frame "Tekton Execution Environment" {
+    component "Tekton" as tekton
+}
+
+cloud "Alert Source" {
+    component "Alert Webhook" as webhook
+}
+
+webhook --> listener : "alert webhook\n(JSON payload)"
+cli --> lib : "uses"
+listener --> trigger : "triggers"
+trigger --> pipeline : "creates"
+cli --> pipeline : "direct execution\n(skip-webhook path)\nJSON payload with event.data.id"
+lib --> pd : "interacts"
+lib --> aws : "interacts"
+lib --> ocm : "interacts"
+pipeline --> tekton : "executes on"
+runtime --> cli : "contains /bin/cadctl"
+runtime --> lib : "contains integration libraries"
+template ..> "Deployment Templates" : "updates"
+cli --> chgm : "invokes"
+chgm --> lib : "uses for\nmitigation actions"
+
+@enduml

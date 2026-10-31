@@ -1,0 +1,173 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #003366
+}
+skinparam package {
+  BackgroundColor #F0F8FF
+  BorderColor #336699
+}
+skinparam database {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam cloud {
+  BackgroundColor #F0FFF0
+  BorderColor #228B22
+}
+skinparam actor {
+  BackgroundColor #FFE4B5
+  BorderColor #8B6914
+}
+
+actor "Student User" as Student
+actor "Enterprise-Certified\nStudent" as EntStudent
+actor "Mentor User" as Mentor
+actor "Administrator" as Admin
+
+package "Client Layer" {
+  component "Mobile Client\n(Android / iOS / WeChat)" as MobileClient
+  component "Desktop Web Client\n(Chrome / Firefox / Edge)" as WebClient
+}
+
+package "Application Server" {
+
+  package "Authentication & Account Module" {
+    component "Registration & Login Service\n(Email Verification Code)" as AuthService
+    component "Permission & Access Control" as AccessControl
+  }
+
+  package "Project Module" {
+    component "Recommendation Engine\n(Collaborative Filtering /\nTag Matching / Cold-Start)" as RecommendEngine
+    component "Project Publication &\nManagement Service" as ProjectMgmtService
+    component "Project Search Service" as SearchService
+    component "Project Application Service" as ApplicationService
+    component "Favorites Service\n(Projects / Mentors / Posts)" as FavoritesService
+    component "Mutual Evaluation Service" as EvalService
+  }
+
+  package "Personal Information Module" {
+    component "Profile & Resume Service\n(Student / Mentor)" as ProfileService
+    component "Enterprise Certification Service\n(Enterprise Email Verification)" as EntCertService
+    component "Two-Way Selection\nPermission View" as TwoWayView
+  }
+
+  package "Community Module" {
+    component "Post Service\n(Ordinary / Referral Posts)" as PostService
+    component "Comment Service" as CommentService
+    component "Popularity Ranking Service\n(Like / View / Comment / Time Decay)" as PopularityService
+  }
+
+  package "Administration Module" {
+    component "Identity Review Service\n(First-Round University Review)" as IdentityReviewService
+    component "Enterprise Qualification\nReview Service" as EntReviewService
+    component "Content Moderation Service\n(Post & Comment Review)" as ModerationService
+    component "Admin Account Management" as AdminAccountMgmt
+  }
+
+  package "Notification & Messaging Module" {
+    component "Notification Service\n(In-Site Messages / Email Push)" as NotificationService
+    component "Chat Service\n(Encrypted)" as ChatService
+  }
+
+  package "Security & Audit Module" {
+    component "Risk Control & Abuse Prevention\n(IP / Behavior Limits / CAPTCHA)" as RiskControl
+    component "Audit Log Service" as AuditLog
+  }
+}
+
+package "External Services" {
+  cloud "Email Service\n(Verification Code / Push)" as EmailService
+}
+
+database "Back-End Database\n(Accounts / Projects /\nProfiles / Posts /\nApplications / Reviews /\nChats / Logs)" as DB
+
+Student --> MobileClient
+Student --> WebClient
+EntStudent --> MobileClient
+EntStudent --> WebClient
+Mentor --> MobileClient
+Mentor --> WebClient
+Admin --> WebClient
+
+MobileClient --> AuthService
+MobileClient --> RecommendEngine
+MobileClient --> ProjectMgmtService
+MobileClient --> SearchService
+MobileClient --> ApplicationService
+MobileClient --> FavoritesService
+MobileClient --> EvalService
+MobileClient --> ProfileService
+MobileClient --> EntCertService
+MobileClient --> PostService
+MobileClient --> CommentService
+MobileClient --> PopularityService
+MobileClient --> ChatService
+MobileClient --> NotificationService
+
+WebClient --> AuthService
+WebClient --> RecommendEngine
+WebClient --> ProjectMgmtService
+WebClient --> SearchService
+WebClient --> ApplicationService
+WebClient --> FavoritesService
+WebClient --> EvalService
+WebClient --> ProfileService
+WebClient --> EntCertService
+WebClient --> PostService
+WebClient --> CommentService
+WebClient --> PopularityService
+WebClient --> ChatService
+WebClient --> NotificationService
+WebClient --> IdentityReviewService
+WebClient --> EntReviewService
+WebClient --> ModerationService
+WebClient --> AdminAccountMgmt
+
+AuthService --> AccessControl
+AuthService --> EmailService
+AuthService --> DB
+
+EntCertService --> EmailService
+EntCertService --> DB
+EntCertService --> AccessControl
+
+RecommendEngine --> DB
+ProjectMgmtService --> DB
+SearchService --> DB
+ApplicationService --> DB
+ApplicationService --> NotificationService
+FavoritesService --> DB
+FavoritesService --> NotificationService
+EvalService --> DB
+ProfileService --> DB
+TwoWayView --> AccessControl
+TwoWayView --> DB
+
+PostService --> AccessControl
+PostService --> DB
+PostService --> ModerationService
+CommentService --> DB
+CommentService --> ModerationService
+PopularityService --> DB
+
+IdentityReviewService --> NotificationService
+IdentityReviewService --> DB
+EntReviewService --> DB
+EntReviewService --> AccessControl
+ModerationService --> DB
+ModerationService --> AuditLog
+AdminAccountMgmt --> DB
+
+NotificationService --> EmailService
+NotificationService --> DB
+ChatService --> DB
+
+RiskControl --> AuditLog
+RiskControl --> AuthService
+AuditLog --> DB
+
+@enduml

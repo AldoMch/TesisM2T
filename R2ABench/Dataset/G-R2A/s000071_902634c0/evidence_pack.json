@@ -1,0 +1,120 @@
+{
+  "candidate": {
+    "sample_id": "s000071_902634c0",
+    "repository_name": "allegroai/clearml-agent",
+    "image_url": "https://github.com/allegroai/clearml-agent/blob/master/docs/clearml_architecture.png",
+    "source_ref": "27cf7dd67f8c6f17aedf02fde961cd4066af524b",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 142458,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "deployment_config",
+      "readme",
+      "requirements_like",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 108,
+      "user_scenario": 319,
+      "api_io": 1005,
+      "deployment": 137,
+      "constraints": 124,
+      "non_functional": 27
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|dense|hyde",
+      "score": 0.039600409836065574,
+      "text": "integration flavours** - Spin ClearML-Agent as a long-lasting service pod - use clearml-agent docker image - map docker socket into the pod (soon replaced by podman) - allow the clearml-agent to manage sibling dockers - benefits: full use of the ClearML scheduling, no need to worry about wrong container images / lost pods etc. - downside: Sibling containers - Kubernetes Glue, map ClearML jobs directly to K8s jobs - Run the clearml-k8s glue on a K8s cpu node - The clearml-k8s glue pulls jobs from the ClearML job execution queue and prepares a K8s job (based on provided yaml template) - Inside the pod itself the clearml-agent will install the job (experiment) environment and spin and monito..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "clearml_agent/backend_api/config/default/sdk.conf",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code",
+      "score": 0.029296668429402435,
+      "text": "de with Pigar, analyze with detect_with_pip_freeze: false # Development mode worker worker { # Status report period in seconds report_period_sec: 2 # ping to the server - check connectivity ping_period_sec: 30 # Log all stdout & stderr log_stdout: true # compatibility feature, report memory usage for the entire machine # default (false), report only on the running process and its sub-processes report_global_mem_used: false } } }"
+    },
+    {
+      "evidence_id": "E003",
+      "path": "clearml_agent/backend_api/session/client/client.py",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "code|dense|hyde",
+      "score": 0.038459536820192555,
+      "text": "self, self.session.send(request_cls(*args, **kwargs)).response ) elif action == \"create\": @wrap def get(self, *args, **kwargs): return entity( self, Namespace( id=self.session.send(request_cls(*args, **kwargs)).response.id ), ) elif action in [\"get_all\", \"get_all_ex\"]: dest = service.response_mapping[request_cls]._get_data_props().popitem()[0] @wrap def get(self, *args, **kwargs): return TableResponse( service=self, entity=entity, result=self.session.send(request_cls(*args, **kwargs)), dest=dest, fields=kwargs.pop(\"only_fields\", None), ) else: assert False get.__name__ = get.__qualname__ = action return get @six.add_metaclass(abc.ABCMeta) class Service(object): \"\"\" Superclass for action-g..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "clearml_agent/backend_api/services/v2_5/events.py",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|dense|hyde",
+      "score": 0.03725414025761603,
+      "text": "onse(Response): \"\"\" Response of events.multi_task_scalar_metrics_iter_histogram endpoint. \"\"\" _service = \"events\" _action = \"multi_task_scalar_metrics_iter_histogram\" _version = \"2.5\" _schema = {'additionalProperties': True, 'definitions': {}, 'type': 'object'} class ScalarMetricsIterHistogramRequest(Request): \"\"\" Get histogram data of all the vector metrics and variants in the task :param task: Task ID :type task: str :param samples: The amount of histogram points to return (0 to return all the points). Optional, the default value is 10000. :type samples: int :param key: Histogram x axis to use: iter - iteration number iso_time - event time as ISO formatted string timestamp - event times..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "clearml_agent/backend_api/services/v2_4/models.py",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "code|dense|hyde",
+      "score": 0.03460235056601053,
+      "text": "ype model: str :param force: Force. Required if there are tasks that use the model as an execution model, or if the model's creating task is published. :type force: bool \"\"\" _service = \"models\" _action = \"delete\" _version = \"2.4\" _schema = { 'definitions': {}, 'properties': { 'force': { 'description': \"Force. Required if there are tasks that use the model as an execution model, or if the model's creating task is published.\\n \", 'type': 'boolean', }, 'model': {'description': 'Model ID', 'type': 'string'}, }, 'required': ['model'], 'type': 'object', } def __init__( self, model, force=None, **kwargs): super(DeleteRequest, self).__init__(**kwargs) self.model = model self.force = force @schema..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "clearml_agent/backend_api/services/v2_4/models.py",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "code|dense|hyde",
+      "score": 0.03435915492957746,
+      "text": "._property_pattern = value @schema_property('fields') def fields(self): return self._property_fields @fields.setter def fields(self, value): if value is None: self._property_fields = None return self.assert_isinstance(value, \"fields\", (list, tuple)) self.assert_isinstance(value, \"fields\", six.string_types, is_array=True) self._property_fields = value class Model(NonStrictDataModel): \"\"\" :param id: Model id :type id: str :param name: Model name :type name: str :param user: Associated user id :type user: str :param company: Company id :type company: str :param created: Model creation time :type created: datetime.datetime :param task: Task ID of task in which the model was created :type task..."
+    }
+  ]
+}

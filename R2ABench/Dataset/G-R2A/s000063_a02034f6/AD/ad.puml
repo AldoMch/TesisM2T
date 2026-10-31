@@ -1,0 +1,85 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFF2D8
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam queue {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Clients" as Clients {
+    rectangle "iOS" as IosClient
+    rectangle "Android" as AndroidClient
+    rectangle "Web" as WebClient
+    rectangle "PC" as PcClient
+}
+
+package "Access Layer" as AccessLayer {
+    rectangle "Gateway" as Gateway
+    rectangle "Auth Session" as AuthSession
+    rectangle "Session" as Session
+    rectangle "Status" as Status
+}
+
+rectangle "BFF" as Bff
+
+package "Services" as ServiceLayer {
+    rectangle "DFS" as Dfs
+    rectangle "Services" as Services
+    rectangle "Msg" as Msg
+}
+
+package "Storages" as Storages {
+    database "Redis" as Redis
+    database "MySQL" as Mysql
+    database "MinIO" as Minio
+}
+
+rectangle "Push" as Push
+rectangle "Sync" as Sync
+queue "Kafka" as Kafka
+
+IosClient <--> Gateway : tcp
+AndroidClient <--> Gateway : tcp
+WebClient <--> Gateway : websocket
+PcClient <--> Gateway : websocket
+
+Gateway <--> Session : session routing
+Session --> AuthSession : auth state
+Session --> Status : presence status
+Session --> Redis : session state
+Session --> Bff : rpc
+
+Bff --> Dfs : file rpc
+Bff --> Services : business rpc
+Bff --> Msg : message rpc
+Bff --> Kafka : publish async events
+Sync --> Gateway : rpc
+
+Services --> Redis : cache data
+Services --> Mysql : persistent data
+Dfs --> Minio : object storage
+Msg --> Kafka : publish message events
+Kafka --> Sync : message stream
+Sync --> Push : push delivery
+@enduml

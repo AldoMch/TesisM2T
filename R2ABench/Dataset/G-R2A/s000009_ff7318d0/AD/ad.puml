@@ -1,0 +1,111 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam queue {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+rectangle "User" as User
+cloud "S3" as S3
+rectangle "Cognito" as Cognito
+rectangle "API Gateway" as ApiGateway
+
+package "Live Score Pipeline" as LiveScorePipeline {
+    rectangle "live_score\nLambda" as LiveScoreLambda
+    database "DynamoDB\nLive Scores" as LiveScoreDynamo
+    database "Elasticsearch" as LiveScoreSearch
+    node "EC2" as LiveScoreEC2 {
+        queue "Kafka" as Kafka
+        rectangle "M4" as M4
+        rectangle "foot app" as FootApp
+    }
+}
+
+package "Standing Service" as StandingService {
+    rectangle "standing\nLambda" as StandingLambda
+    database "DynamoDB\nStandings" as StandingDynamo
+    database "Elasticsearch" as StandingSearch
+}
+
+package "Recommendation Service" as RecommendationService {
+    rectangle "recommendation\nLambda" as RecommendationLambda
+    rectangle "Lex" as Lex
+}
+
+package "Fixtures Service" as FixturesService {
+    rectangle "fixtures\nLambda" as FixturesLambda
+    queue "SQS" as Sqs
+}
+
+package "Notification Service" as NotificationService {
+    queue "SQS" as NotificationSqs
+    rectangle "SNS" as Sns
+}
+
+package "Prediction Service" as PredictionService {
+    rectangle "prediction\nLambda" as PredictionLambda
+    rectangle "SageMaker" as SageMaker
+    database "DynamoDB\nPredictions" as PredictionDynamo
+    database "Elasticsearch" as PredictionSearch
+}
+
+User --> S3 : load web app
+User --> Cognito : sign in
+User --> ApiGateway : API request
+ApiGateway ..> Cognito : authorize token
+
+ApiGateway --> LiveScoreLambda : live_score
+ApiGateway --> StandingLambda : standing
+ApiGateway --> RecommendationLambda : recommendation
+ApiGateway --> FixturesLambda : fixtures
+ApiGateway --> PredictionLambda : prediction
+
+LiveScoreLambda --> LiveScoreDynamo
+LiveScoreLambda --> LiveScoreSearch
+FootApp --> M4
+M4 --> Kafka
+Kafka --> LiveScoreLambda : stream events
+
+StandingLambda --> StandingDynamo
+StandingLambda --> StandingSearch
+
+RecommendationLambda --> Lex
+RecommendationLambda --> LiveScoreSearch
+RecommendationLambda --> StandingSearch
+
+FixturesLambda --> Sqs
+Sqs --> NotificationSqs
+NotificationSqs --> Sns
+Sns --> User : SMS reminder
+
+PredictionLambda --> SageMaker
+PredictionLambda --> PredictionDynamo
+PredictionLambda --> PredictionSearch
+SageMaker --> PredictionDynamo
+@enduml

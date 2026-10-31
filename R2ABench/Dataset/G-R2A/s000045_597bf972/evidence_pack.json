@@ -1,0 +1,118 @@
+{
+  "candidate": {
+    "sample_id": "s000045_597bf972",
+    "repository_name": "qunarcorp/m_adr_qapm_open_source",
+    "image_url": "https://github.com/qunarcorp/m_adr_qapm_open_source/blob/master/image/qapm-Architecture.png",
+    "source_ref": "5e46e7416b2a54d49bf34c571807033be0b34562",
+    "total_score": 93,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 3653,
+    "document_count": 10,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "config",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 1,
+      "user_scenario": 2,
+      "api_io": 4,
+      "deployment": 26,
+      "constraints": 1
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "introduction_scope",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 12,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 93
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "qapm/src/main/java/com/mqunar/qapm/core/QAPMHandlerThread.java",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05547329455314648,
+      "text": "package com.mqunar.qapm.core; import android.os.Handler; import android.os.HandlerThread; import android.os.Looper; import android.util.Log; import com.mqunar.qapm.logging.AgentLogManager; import com.mqunar.qapm.logging.AndroidAgentLog; import java.util.HashSet; import java.util.Iterator; public class QAPMHandlerThread { private static final String TAG = \"QAPMHandlerThread\"; public static final String QAPM_THREAD_NAME = \"default_qapm_thread\"; private static volatile HandlerThread defaultHandlerThread; private static volatile Handler defaultHandler; private static volatile Handler defaultMainHandler = new Handler(Looper.getMainLooper()); private static HashSet handlerThreads = new HashSet<..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "qapm/src/main/java/com/mqunar/qapm/schedule/WorkHandlerManager.java",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.054699894235854044,
+      "text": "able runnable) { //防止主线程调用引起ANR mWorkHandler.post(runnable); } public void postToUpload(final Context context, final boolean isForceSend) { //防止主线程调用引起ANR mWorkHandler.post(new Runnable() { @Override public void run() { if (!NetWorkUtils.isNetworkConnected(context)) {// 没有网络先不处理 return; } if (isForceSend) { Storage.newStorage().popData(); } String uploadDir = IOUtils.getUploadDir(context); if (uploadDir != null) { String[] uploadFiles = IOUtils.getFileByNameFilter(uploadDir); if (uploadFiles != null && uploadFiles.length > 0) { for (final String fileName : uploadFiles) { String bParam = IOUtils.file2Str(fileName); String cParam = AndroidUtils.getCParam(context); ConfigManager.getInstance(..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "qapm/src/main/java/com/mqunar/qapm/network/instrumentation/httpclient/ResponseHandlerImpl.java",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05573770491803279,
+      "text": "package com.mqunar.qapm.network.instrumentation.httpclient; import com.mqunar.qapm.network.instrumentation.TransactionState; import com.mqunar.qapm.network.instrumentation.TransactionStateUtil; import org.apache.http.HttpResponse; import org.apache.http.client.ClientProtocolException; import org.apache.http.client.ResponseHandler; import java.io.IOException; /** * Created by jingmin.xing on 2015/8/29. */ public class ResponseHandlerImpl implements ResponseHandler { private final ResponseHandler impl; private final TransactionState transactionState; private ResponseHandlerImpl(ResponseHandler impl, TransactionState transactionState) { this.impl = impl; this.transactionState = transactionSt..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "qapm/src/main/java/com/mqunar/qapm/core/QAPMHandlerThread.java",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "code",
+      "score": 0.012903225806451613,
+      "text": "package com.mqunar.qapm.core; import android.os.Handler; import android.os.HandlerThread; import android.os.Looper; import android.util.Log; import com.mqunar.qapm.logging.AgentLogManager; import com.mqunar.qapm.logging.AndroidAgentLog; import java.util.HashSet; import java.util.Iterator; public class QAPMHandlerThread { private static final String TAG = \"QAPMHandlerThread\"; public static final String QAPM_THREAD_NAME = \"default_qapm_thread\"; private static volatile HandlerThread defaultHandlerThread; private static volatile Handler defaultHandler; private static volatile Handler defaultMainHandler = new Handler(Looper.getMainLooper()); private static HashSet handlerThreads = new HashSet<..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "qapm/src/main/java/com/mqunar/qapm/schedule/WorkHandlerManager.java",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05420256944660466,
+      "text": "able runnable) { //防止主线程调用引起ANR mWorkHandler.post(runnable); } public void postToUpload(final Context context, final boolean isForceSend) { //防止主线程调用引起ANR mWorkHandler.post(new Runnable() { @Override public void run() { if (!NetWorkUtils.isNetworkConnected(context)) {// 没有网络先不处理 return; } if (isForceSend) { Storage.newStorage().popData(); } String uploadDir = IOUtils.getUploadDir(context); if (uploadDir != null) { String[] uploadFiles = IOUtils.getFileByNameFilter(uploadDir); if (uploadFiles != null && uploadFiles.length > 0) { for (final String fileName : uploadFiles) { String bParam = IOUtils.file2Str(fileName); String cParam = AndroidUtils.getCParam(context); ConfigManager.getInstance(..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "qapm/src/main/java/com/mqunar/qapm/network/instrumentation/httpclient/ContentBufferingResponseEntityImpl.java",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.054063964709126,
+      "text": "package com.mqunar.qapm.network.instrumentation.httpclient; import com.mqunar.qapm.network.instrumentation.io.CountingInputStream; import org.apache.http.Header; import org.apache.http.HttpEntity; import java.io.IOException; import java.io.InputStream; import java.io.OutputStream; /** * Created by jingmin.xing on 2015/8/29. */ public class ContentBufferingResponseEntityImpl implements HttpEntity { final HttpEntity impl; private CountingInputStream contentStream; public ContentBufferingResponseEntityImpl(HttpEntity impl) { if(impl == null) { throw new IllegalArgumentException(\"Missing wrapped entity\"); } else { this.impl = impl; } } public void consumeContent() throws IOException { this.im..."
+    }
+  ]
+}

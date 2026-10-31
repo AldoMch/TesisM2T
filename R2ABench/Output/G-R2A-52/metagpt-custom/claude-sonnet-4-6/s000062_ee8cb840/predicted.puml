@@ -1,0 +1,158 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BackgroundColor #EEF2FF
+  BorderColor #5B6EAE
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #455A64
+}
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+' ─────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────
+cloud "External Systems" {
+  component "Udacity Capstone\nProject Simulator" as UdacitySimulator
+  component "Recorded Training\nBag Player" as TrainingBagPlayer
+}
+
+' ─────────────────────────────────────────
+' INFRASTRUCTURE / ENVIRONMENT LAYER
+' ─────────────────────────────────────────
+node "Infrastructure / Environment Layer\n(Docker Container)" as InfraLayer {
+
+  component "ROSMaster\n(Topic Broker &\nComm Backbone)" as ROSMaster
+
+}
+
+' ─────────────────────────────────────────
+' LAUNCH / CONFIGURATION LAYER
+' ─────────────────────────────────────────
+package "Launch / Configuration Layer" as LaunchLayer {
+
+  component "StyxLaunchConfig\n(styx.launch —\nSimulator Mode)" as StyxLaunchConfig
+
+  component "SiteLaunchConfig\n(site.launch —\nSite / Bag Mode)" as SiteLaunchConfig
+}
+
+note right of StyxLaunchConfig
+  One-shot startup script;
+  initializes all nodes
+  (simulator mode)
+end note
+
+note right of SiteLaunchConfig
+  One-shot startup script;
+  initializes all nodes
+  (site / bag mode)
+end note
+
+' ─────────────────────────────────────────
+' STYX BRIDGE
+' ─────────────────────────────────────────
+package "Styx WebSocket Bridge" as StyxBridgeLayer {
+  component "StyxBridge\n(bridge.py / server.py)\nWebSocket ↔ ROS adapter" as StyxBridge
+}
+
+' ─────────────────────────────────────────
+' PERCEPTION LAYER
+' ─────────────────────────────────────────
+package "Perception Layer" as PerceptionLayer {
+
+  component "TLDetectorClassifier\n(tl_detector node)\n- subscribes: /image_color,\n  base_waypoints, current_pose\n- detects & classifies\n  traffic light state\n- publishes: /traffic_waypoint\n  (stop waypoint index)" as TLDetectorClassifier
+
+}
+
+' ─────────────────────────────────────────
+' PLANNING LAYER
+' ─────────────────────────────────────────
+package "Planning Layer" as PlanningLayer {
+
+  component "WaypointLoader\n- loads waypoints from CSV\n- publishes: /base_waypoints\n  (incl. target speeds)" as WaypointLoader
+
+  component "WaypointUpdater\n- subscribes: /base_waypoints,\n  /current_pose, /traffic_waypoint\n- publishes: /final_waypoints\n  (velocity-adjusted window)" as WaypointUpdater
+
+}
+
+' ─────────────────────────────────────────
+' CONTROL LAYER
+' ─────────────────────────────────────────
+package "Control Layer" as ControlLayer {
+
+  component "WaypointFollower\n- subscribes: /final_waypoints,\n  /current_pose\n- publishes: /twist_cmd\n  (linear & angular velocity)" as WaypointFollower
+
+  component "DBWNode\n(Drive-By-Wire)\n- subscribes: /twist_cmd,\n  vehicle state\n- publishes: /vehicle_cmd\n  (throttle, steering, brake)" as DBWNode
+
+}
+
+' ─────────────────────────────────────────
+' STYX BRIDGE ↔ SIMULATOR
+' ─────────────────────────────────────────
+UdacitySimulator <--> StyxBridge : "WebSocket\n(vehicle cmds /\nsensor & pose data)"
+
+' ─────────────────────────────────────────
+' STYX BRIDGE → ROS TOPICS (simulator mode)
+' ─────────────────────────────────────────
+StyxBridge ..> ROSMaster : "publishes /image_color\n(simulated camera feed)"
+StyxBridge ..> ROSMaster : "publishes /current_pose\n(simulated vehicle pose)"
+
+' ─────────────────────────────────────────
+' BAG PLAYER → ROS TOPICS (site / bag mode)
+' ─────────────────────────────────────────
+TrainingBagPlayer ..> ROSMaster : "publishes /image_color\n(recorded real images)"
+TrainingBagPlayer ..> ROSMaster : "publishes /current_pose\n(recorded pose data)"
+
+' ─────────────────────────────────────────
+' base_waypoints — pub/sub via ROSMaster
+' ─────────────────────────────────────────
+WaypointLoader ..> ROSMaster : "publishes /base_waypoints"
+ROSMaster ..> WaypointUpdater : "/base_waypoints"
+ROSMaster ..> TLDetectorClassifier : "/base_waypoints"
+
+' ─────────────────────────────────────────
+' current_pose — pub/sub via ROSMaster
+' ─────────────────────────────────────────
+ROSMaster ..> WaypointUpdater : "/current_pose"
+ROSMaster ..> TLDetectorClassifier : "/current_pose"
+ROSMaster ..> WaypointFollower : "/current_pose"
+
+' ─────────────────────────────────────────
+' image_color — pub/sub via ROSMaster
+' ─────────────────────────────────────────
+ROSMaster ..> TLDetectorClassifier : "/image_color"
+
+' ─────────────────────────────────────────
+' traffic_waypoint — pub/sub via ROSMaster
+' ─────────────────────────────────────────
+TLDetectorClassifier ..> ROSMaster : "publishes /traffic_waypoint\n(stop waypoint index)"
+ROSMaster ..> WaypointUpdater : "/traffic_waypoint"
+
+' ─────────────────────────────────────────
+' final_waypoints — pub/sub via ROSMaster
+' ─────────────────────────────────────────
+WaypointUpdater ..> ROSMaster : "publishes /final_waypoints"
+ROSMaster ..> WaypointFollower : "/final_waypoints"
+
+' ─────────────────────────────────────────
+' twist_cmd — pub/sub via ROSMaster
+' ─────────────────────────────────────────
+WaypointFollower ..> ROSMaster : "publishes /twist_cmd"
+ROSMaster ..> DBWNode : "/twist_cmd"
+
+' ─────────────────────────────────────────
+' vehicle_cmd — pub/sub via ROSMaster → bridge
+' ─────────────────────────────────────────
+DBWNode ..> ROSMaster : "publishes /vehicle_cmd\n(throttle / steering / brake)"
+ROSMaster ..> StyxBridge : "/vehicle_cmd\n(forwarded to simulator\nvia WebSocket)"
+
+@enduml

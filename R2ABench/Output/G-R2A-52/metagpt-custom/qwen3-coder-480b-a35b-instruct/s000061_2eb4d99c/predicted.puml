@@ -1,0 +1,84 @@
+@startuml
+' IoT Device Simulator - Refined Component/Deployment Diagram
+
+' Presentation Layer
+node "Frontend" {
+    component "Web Console" as webConsole
+}
+
+' API Layer
+node "API Gateway" {
+    component "API Gateway REST" as apiGateway
+    component "CORS Configuration" as corsConfig
+    component "Request Validator" as requestValidator
+    component "Access Logger" as accessLogger
+    component "Tracing Config" as tracingConfig
+    component "Method Logging" as methodLogging
+}
+
+' Service Layer
+node "Compute" {
+    component "Route Management Lambda" as routeLambda
+    component "Simulation Control Lambda" as simLambda
+    component "Custom Resource Lambda" as customLambda
+}
+
+' Processing Components
+component "Route Loader" as routeLoader
+component "Device Simulator" as deviceSimulator
+component "Message Publisher" as messagePublisher
+
+' Integration
+node "AWS Services" {
+    component "AWS IoT Core" as awsIoT
+}
+
+' Data Layer
+node "Storage" {
+    database "Amazon S3" as s3
+    database "CloudWatch Logs" as cloudWatch
+}
+
+' Operating Environment (Referenced Only)
+cloud "AWS Environment" {
+    [Step Functions] as stepFunctions
+}
+
+' Frontend to API
+webConsole --> apiGateway : HTTP Requests
+
+' API Internal Components
+apiGateway --> corsConfig : Handles Preflight
+apiGateway --> requestValidator : Validates Requests
+apiGateway --> accessLogger : Logs Access
+apiGateway --> tracingConfig : Enables X-Ray
+apiGateway --> methodLogging : Logs Methods (INFO)
+apiGateway --> routeLambda : Routes /routes
+apiGateway --> simLambda : Routes /simulations
+
+' Lambda to Storage
+routeLambda --> s3 : Load Route Data
+routeLambda --> cloudWatch : Log Errors
+simLambda --> cloudWatch : Log Activity
+
+' Error Propagation
+s3 --> routeLambda : Error Response
+routeLambda --> apiGateway : Error Propagation
+
+' Processing Flow
+routeLambda --> routeLoader : Trigger Load
+routeLoader --> deviceSimulator : Provide Routes
+simLambda --> deviceSimulator : Start Simulation
+deviceSimulator --> messagePublisher : Send Telemetry
+messagePublisher --> awsIoT : Publish Messages
+
+' Custom Resource Handling
+customLambda --> cloudWatch : Log Events
+[CloudFormation] as cf
+cf --> customLambda : Invoke Custom Resources
+customLambda --> cf : Respond
+
+' Operating Environment Reference
+stepFunctions ..> simLambda : Orchestration Context
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+left to right direction
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor User
+
+package Presentation_Layer {
+  [Browser Frontend SPA] as Frontend
+}
+
+package Application_Layer {
+  [Web Server / API Gateway] as Gateway
+  [Backend API Service Python] as Backend
+  [Realtime Gateway WebSocket] as Realtime
+}
+
+package Processing_Layer {
+  [Auth & Permission Service] as Auth
+  [File Ingestion Service] as Ingest
+  [Recognition Service OCR + DL] as Recognizer
+  [LaTeX Generation Service] as TexGen
+  [Rendering Service] as Renderer
+  [Project & Workspace Service] as Projects
+  [Collaboration & Version Control] as Collab
+  [Export Service] as Exporter
+}
+
+package Data_Layer {
+  [Relational Database] as DB
+  [File/Object Storage] as Storage
+}
+
+package External_Dependencies {
+  [LaTeX Engine TeX Live / MiKTeX] as TeXEngine
+}
+
+User --> Frontend : UI interactions
+Frontend --> Gateway : HTTPS REST
+Frontend ..> Realtime : WebSocket
+Gateway --> Backend
+Gateway --> Realtime
+
+Backend --> Auth
+Backend --> Ingest
+Backend --> Projects
+Backend --> Collab
+Backend --> Recognizer
+Backend --> Exporter
+Backend --> DB : Users, sessions
+
+Recognizer --> TexGen
+TexGen --> Renderer
+Renderer --> Storage : Preview/Artifacts
+
+Auth --> DB
+Projects --> DB
+Collab --> DB
+Ingest --> Storage
+Exporter --> Storage : Exports
+
+Renderer --> TeXEngine
+
+@enduml
+

@@ -1,0 +1,132 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6CC
+!define DATA_COLOR #E6FFE6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Data>> DATA_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title User-in-the-box Simulator Framework Architecture
+
+' === LAYERS ===
+component "User Interface Layer" as UILayer <<Layer>> {
+  component "Simulator Builder" as SimBuilder
+  component "Training User" as TrainingUser
+  component "Evaluator" as Evaluator
+  component "Module Developer" as ModuleDev
+}
+
+component "Core Framework Layer" as CoreLayer <<Layer>> {
+  component "Simulator Construction Engine" as SimEngine
+  component "MuJoCo XML Integration" as MuJoCoXML
+  component "Component Registry" as CompRegistry
+}
+
+component "Component Layer" as CompLayer <<Layer>> {
+  component "Biomechanical Models" as BioModels <<Component>> {
+    component "Muscle-Actuated Models" as MuscleModels
+  }
+  
+  component "Perception Modules" as PerceptionMods <<Component>> {
+    component "Egocentric Vision" as VisionModule
+    component "Proprioception" as ProprioModule
+  }
+  
+  component "Interaction Tasks" as InteractionTasks <<Component>>
+}
+
+component "Runtime Layer" as RuntimeLayer <<Layer>> {
+  component "OpenAI Gym Interface" as GymInterface
+  component "Reinforcement Learning Training" as RLTrainer
+  component "Evaluation Runner" as EvalRunner
+}
+
+component "Data Storage Layer" as DataLayer <<Layer>> {
+  component "YAML Configuration Files" as YAMLConfig <<Data>>
+  component "MuJoCo XML Files" as MuJoCoFiles <<Data>>
+  component "Run Folders" as RunFolders <<Data>> {
+    component "Checkpoint Directory" as CheckpointDir
+    component "Evaluation Output Directory" as EvalOutputDir
+  }
+}
+
+component "External Systems Layer" as ExternalLayer <<Layer>> {
+  component "MuJoCo Simulation Engine" as MuJoCoEngine <<External>>
+  component "OpenAI Gym Runtime" as GymRuntime <<External>>
+  component "Reinforcement Learning Libraries" as RLLibraries <<External>>
+}
+
+' === CONNECTIONS ===
+' User Interface to Core Framework
+SimBuilder --> SimEngine : "YAML config"
+TrainingUser --> RLTrainer : "training workflow"
+Evaluator --> EvalRunner : "evaluation request"
+ModuleDev --> CompRegistry : "register components"
+
+' Core Framework internal connections
+SimEngine --> MuJoCoXML : "XML integration"
+SimEngine --> CompRegistry : "component lookup"
+
+' Core Framework to Components
+SimEngine --> BioModels : "select model"
+SimEngine --> PerceptionMods : "add perception"
+SimEngine --> InteractionTasks : "configure task"
+
+' Core Framework to Runtime
+SimEngine --> GymInterface : "create simulator"
+RLTrainer --> GymInterface : "train simulator"
+EvalRunner --> GymInterface : "evaluate simulator"
+
+' Runtime to External Systems
+GymInterface --> MuJoCoEngine : "simulation calls"
+GymInterface --> GymRuntime : "interface compliance"
+RLTrainer --> RLLibraries : "training algorithms"
+
+' Data Storage connections
+YAMLConfig --> SimBuilder : "read config"
+MuJoCoFiles --> MuJoCoXML : "read XML"
+RunFolders --> EvalRunner : "load artifacts"
+CheckpointDir --> EvalRunner : "load checkpoints"
+EvalOutputDir <-- EvalRunner : "write outputs"
+
+' Component extensions
+BioModels --> MuJoCoXML : "XML definitions"
+InteractionTasks --> MuJoCoXML : "XML definitions"
+
+' Standalone simulator packaging
+SimEngine --> GymInterface : "package as\nstandalone simulator"
+
+' Evaluation outputs
+EvalRunner --> EvalOutputDir : "action logs,\nrecordings"
+
+' Constraints and dependencies note
+note right of MuJoCoEngine
+  Constraint C-001:
+  MuJoCo-based HCI
+  interaction simulation
+end note
+
+note right of YAMLConfig
+  Constraint C-002:
+  YAML configuration
+end note
+
+note right of GymInterface
+  Constraint C-003:
+  OpenAI Gym interface
+end note
+
+note right of PerceptionMods
+  Constraint C-004:
+  Modality-based organization
+  and base-class inheritance
+end note
+
+@enduml

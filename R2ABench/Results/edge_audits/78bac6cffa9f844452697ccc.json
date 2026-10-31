@@ -1,0 +1,866 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "9a647dc869368e8c986494a7779a7e167613e1fce39841df09ee4e02df2de136",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "c769bc965d042957accc0695f081b425dddd55024677fad5428eebab79fdd895",
+  "predicted_edges_sha256": "9a48369640951a4248b4fbd6911eced685b4f59d2f5c2bbb5fb0602c6a75c126",
+  "precision": 0.0967741935483871,
+  "recall": 0.11538461538461539,
+  "f1": 0.10526315789473684,
+  "reference_edges": [
+    [
+      "Fixtures Service::SQS",
+      "Notification Service::SQS"
+    ],
+    [
+      "Fixtures Service::fixtures\\nLambda",
+      "Fixtures Service::SQS"
+    ],
+    [
+      "Global::API Gateway",
+      "Fixtures Service::fixtures\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Global::Cognito"
+    ],
+    [
+      "Global::API Gateway",
+      "Live Score Pipeline::live_score\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Prediction Service::prediction\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Recommendation Service::recommendation\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Standing Service::standing\\nLambda"
+    ],
+    [
+      "Global::User",
+      "Global::API Gateway"
+    ],
+    [
+      "Global::User",
+      "Global::Cognito"
+    ],
+    [
+      "Global::User",
+      "Global::S3"
+    ],
+    [
+      "Live Score Pipeline::EC2::Kafka",
+      "Live Score Pipeline::live_score\\nLambda"
+    ],
+    [
+      "Live Score Pipeline::EC2::M4",
+      "Live Score Pipeline::EC2::Kafka"
+    ],
+    [
+      "Live Score Pipeline::EC2::foot app",
+      "Live Score Pipeline::EC2::M4"
+    ],
+    [
+      "Live Score Pipeline::live_score\\nLambda",
+      "Live Score Pipeline::DynamoDB\\nLive Scores"
+    ],
+    [
+      "Live Score Pipeline::live_score\\nLambda",
+      "Live Score Pipeline::Elasticsearch"
+    ],
+    [
+      "Notification Service::SNS",
+      "Global::User"
+    ],
+    [
+      "Notification Service::SQS",
+      "Notification Service::SNS"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::DynamoDB\\nPredictions"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::Elasticsearch"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::SageMaker"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Live Score Pipeline::Elasticsearch"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Recommendation Service::Lex"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Standing Service::Elasticsearch"
+    ],
+    [
+      "Standing Service::standing\\nLambda",
+      "Standing Service::DynamoDB\\nStandings"
+    ],
+    [
+      "Standing Service::standing\\nLambda",
+      "Standing Service::Elasticsearch"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Chatbot / Conversation Handler"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Reminder Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Screening Recommendation Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Security Layer::AWS IAM\\nProtected Access / SigV4"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Chatbot / Conversation Handler",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service",
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service",
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service",
+      "Machine Learning Layer::Amazon SageMaker\\nMatch Outcome Prediction\\n(home win / draw / away win)"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Reminder Service",
+      "Notification Layer::Amazon SQS\\nReminder Queue"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Screening Recommendation Service",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Client Layer::Application Maintainer",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Client Layer::Chatbot User",
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display"
+    ],
+    [
+      "Client Layer::Football Enthusiast",
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery"
+    ],
+    [
+      "Client Layer::Reminder Requester",
+      "Presentation Layer (Amazon S3)::Reminder Request UI"
+    ],
+    [
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Machine Learning Layer::Amazon SageMaker\\nMatch Outcome Prediction\\n(home win / draw / away win)",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service"
+    ],
+    [
+      "Notification Layer::Amazon SNS\\nSMS Delivery",
+      "External Systems::SMS Mobile Device"
+    ],
+    [
+      "Notification Layer::Amazon SQS\\nReminder Queue",
+      "Notification Layer::Amazon SNS\\nSMS Delivery"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Football Info Views\\nfixtures, standings, schedules,\\nresults, live scores, predictions",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Reminder Request UI",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Football Info Views\\nfixtures, standings, schedules,\\nresults, live scores, predictions"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Reminder Request UI"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Security Layer::Amazon Cognito\\nAuthentication"
+    ],
+    [
+      "Security Layer::Amazon Cognito\\nAuthentication",
+      "Security Layer::AWS IAM\\nProtected Access / SigV4"
+    ],
+    [
+      "Streaming Layer (Amazon EC2)::Apache Kafka\\nLive Score Topics",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service"
+    ],
+    [
+      "Streaming Layer (Amazon EC2)::Apache Kafka\\nLive Score Topics",
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "Global::User",
+      "Global::API Gateway"
+    ],
+    [
+      "Global::User",
+      "Global::S3"
+    ],
+    [
+      "Notification Service::SQS",
+      "Notification Service::SNS"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "Client Layer::Application Maintainer",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Client Layer::Football Enthusiast",
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery"
+    ],
+    [
+      "Notification Layer::Amazon SQS\\nReminder Queue",
+      "Notification Layer::Amazon SNS\\nSMS Delivery"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "Fixtures Service::SQS",
+      "Notification Service::SQS"
+    ],
+    [
+      "Fixtures Service::fixtures\\nLambda",
+      "Fixtures Service::SQS"
+    ],
+    [
+      "Global::API Gateway",
+      "Fixtures Service::fixtures\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Global::Cognito"
+    ],
+    [
+      "Global::API Gateway",
+      "Live Score Pipeline::live_score\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Prediction Service::prediction\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Recommendation Service::recommendation\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Standing Service::standing\\nLambda"
+    ],
+    [
+      "Global::User",
+      "Global::Cognito"
+    ],
+    [
+      "Live Score Pipeline::EC2::Kafka",
+      "Live Score Pipeline::live_score\\nLambda"
+    ],
+    [
+      "Live Score Pipeline::EC2::M4",
+      "Live Score Pipeline::EC2::Kafka"
+    ],
+    [
+      "Live Score Pipeline::EC2::foot app",
+      "Live Score Pipeline::EC2::M4"
+    ],
+    [
+      "Live Score Pipeline::live_score\\nLambda",
+      "Live Score Pipeline::DynamoDB\\nLive Scores"
+    ],
+    [
+      "Live Score Pipeline::live_score\\nLambda",
+      "Live Score Pipeline::Elasticsearch"
+    ],
+    [
+      "Notification Service::SNS",
+      "Global::User"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::DynamoDB\\nPredictions"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::Elasticsearch"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::SageMaker"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Live Score Pipeline::Elasticsearch"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Recommendation Service::Lex"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Standing Service::Elasticsearch"
+    ],
+    [
+      "Standing Service::standing\\nLambda",
+      "Standing Service::DynamoDB\\nStandings"
+    ],
+    [
+      "Standing Service::standing\\nLambda",
+      "Standing Service::Elasticsearch"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Chatbot / Conversation Handler"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Reminder Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Screening Recommendation Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Security Layer::AWS IAM\\nProtected Access / SigV4"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Chatbot / Conversation Handler",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service",
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service",
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service",
+      "Machine Learning Layer::Amazon SageMaker\\nMatch Outcome Prediction\\n(home win / draw / away win)"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Reminder Service",
+      "Notification Layer::Amazon SQS\\nReminder Queue"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Screening Recommendation Service",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Client Layer::Chatbot User",
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display"
+    ],
+    [
+      "Client Layer::Reminder Requester",
+      "Presentation Layer (Amazon S3)::Reminder Request UI"
+    ],
+    [
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Machine Learning Layer::Amazon SageMaker\\nMatch Outcome Prediction\\n(home win / draw / away win)",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service"
+    ],
+    [
+      "Notification Layer::Amazon SNS\\nSMS Delivery",
+      "External Systems::SMS Mobile Device"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Football Info Views\\nfixtures, standings, schedules,\\nresults, live scores, predictions",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Reminder Request UI",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Football Info Views\\nfixtures, standings, schedules,\\nresults, live scores, predictions"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Reminder Request UI"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Security Layer::Amazon Cognito\\nAuthentication"
+    ],
+    [
+      "Security Layer::Amazon Cognito\\nAuthentication",
+      "Security Layer::AWS IAM\\nProtected Access / SigV4"
+    ],
+    [
+      "Streaming Layer (Amazon EC2)::Apache Kafka\\nLive Score Topics",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service"
+    ],
+    [
+      "Streaming Layer (Amazon EC2)::Apache Kafka\\nLive Score Topics",
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures"
+    ]
+  ],
+  "internal_reference_edges": [
+    [
+      "Prediction Service::SageMaker",
+      "Prediction Service::DynamoDB\\nPredictions"
+    ]
+  ],
+  "internal_predicted_edges": [
+    [
+      "Streaming Layer (Amazon EC2)::Apache Avro\\nScore Event Encoding",
+      "Streaming Layer (Amazon EC2)::Apache Kafka\\nLive Score Topics"
+    ]
+  ],
+  "reference_witnesses": [
+    {
+      "edge_index": 8,
+      "counterpart_index": 13,
+      "source_group": 3,
+      "target_group": 0
+    },
+    {
+      "edge_index": 10,
+      "counterpart_index": 15,
+      "source_group": 3,
+      "target_group": 2
+    },
+    {
+      "edge_index": 17,
+      "counterpart_index": 20,
+      "source_group": 8,
+      "target_group": 7
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 13,
+      "counterpart_index": 8,
+      "source_group": 3,
+      "target_group": 0
+    },
+    {
+      "edge_index": 15,
+      "counterpart_index": 10,
+      "source_group": 3,
+      "target_group": 2
+    },
+    {
+      "edge_index": 20,
+      "counterpart_index": 17,
+      "source_group": 8,
+      "target_group": 7
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "Fixtures Service::SQS": [],
+    "Fixtures Service::fixtures\\nLambda": [],
+    "Global::API Gateway": [
+      0
+    ],
+    "Global::Cognito": [
+      1
+    ],
+    "Global::Fixtures Service": [],
+    "Global::Live Score Pipeline": [
+      4,
+      5,
+      6
+    ],
+    "Global::Notification Service": [
+      7,
+      8
+    ],
+    "Global::Prediction Service": [
+      6,
+      9
+    ],
+    "Global::Recommendation Service": [
+      10
+    ],
+    "Global::S3": [
+      2
+    ],
+    "Global::Standing Service": [
+      4
+    ],
+    "Global::User": [
+      3
+    ],
+    "Live Score Pipeline::DynamoDB\\nLive Scores": [
+      4
+    ],
+    "Live Score Pipeline::EC2": [
+      5
+    ],
+    "Live Score Pipeline::EC2::Kafka": [],
+    "Live Score Pipeline::EC2::M4": [],
+    "Live Score Pipeline::EC2::foot app": [],
+    "Live Score Pipeline::Elasticsearch": [
+      6
+    ],
+    "Live Score Pipeline::live_score\\nLambda": [],
+    "Notification Service::SNS": [
+      7
+    ],
+    "Notification Service::SQS": [
+      8
+    ],
+    "Prediction Service::DynamoDB\\nPredictions": [
+      9
+    ],
+    "Prediction Service::Elasticsearch": [
+      6
+    ],
+    "Prediction Service::SageMaker": [
+      9
+    ],
+    "Prediction Service::prediction\\nLambda": [],
+    "Recommendation Service::Lex": [
+      10
+    ],
+    "Recommendation Service::recommendation\\nLambda": [],
+    "Standing Service::DynamoDB\\nStandings": [
+      4
+    ],
+    "Standing Service::Elasticsearch": [],
+    "Standing Service::standing\\nLambda": []
+  },
+  "predicted_endpoint_anchors": {
+    "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default": [
+      0
+    ],
+    "Backend Service Layer (AWS Lambda - Python / Node)::Chatbot / Conversation Handler": [],
+    "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service": [],
+    "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service": [],
+    "Backend Service Layer (AWS Lambda - Python / Node)::Reminder Service": [],
+    "Backend Service Layer (AWS Lambda - Python / Node)::Screening Recommendation Service": [
+      10
+    ],
+    "Client Layer::Application Maintainer": [
+      3
+    ],
+    "Client Layer::Chatbot User": [
+      3
+    ],
+    "Client Layer::Football Enthusiast": [
+      3
+    ],
+    "Client Layer::Reminder Requester": [
+      3
+    ],
+    "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures": [
+      4
+    ],
+    "Data Layer::Elasticsearch\\nmatch data search / retrieval": [
+      6
+    ],
+    "External Systems::SMS Mobile Device": [],
+    "Global::API Layer (Amazon API Gateway)": [
+      0
+    ],
+    "Global::Backend Service Layer (AWS Lambda - Python / Node)": [
+      10
+    ],
+    "Global::Client Layer": [
+      3
+    ],
+    "Global::Data Layer": [
+      4,
+      6
+    ],
+    "Global::External Systems": [],
+    "Global::Machine Learning Layer": [
+      9
+    ],
+    "Global::Notification Layer": [
+      7,
+      8
+    ],
+    "Global::Presentation Layer (Amazon S3)": [
+      2
+    ],
+    "Global::Security Layer": [
+      1
+    ],
+    "Global::Streaming Layer (Amazon EC2)": [
+      5
+    ],
+    "Machine Learning Layer::Amazon SageMaker\\nMatch Outcome Prediction\\n(home win / draw / away win)": [
+      9
+    ],
+    "Notification Layer::Amazon SNS\\nSMS Delivery": [
+      7
+    ],
+    "Notification Layer::Amazon SQS\\nReminder Queue": [
+      8
+    ],
+    "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display": [],
+    "Presentation Layer (Amazon S3)::Football Info Views\\nfixtures, standings, schedules,\\nresults, live scores, predictions": [],
+    "Presentation Layer (Amazon S3)::Reminder Request UI": [],
+    "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery": [
+      2
+    ],
+    "Security Layer::AWS IAM\\nProtected Access / SigV4": [],
+    "Security Layer::Amazon Cognito\\nAuthentication": [
+      1
+    ],
+    "Streaming Layer (Amazon EC2)::Apache Avro\\nScore Event Encoding": [
+      5
+    ],
+    "Streaming Layer (Amazon EC2)::Apache Kafka\\nLive Score Topics": [
+      5
+    ]
+  },
+  "reference_unanchored_edges": [
+    [
+      "Fixtures Service::SQS",
+      "Notification Service::SQS"
+    ],
+    [
+      "Fixtures Service::fixtures\\nLambda",
+      "Fixtures Service::SQS"
+    ],
+    [
+      "Global::API Gateway",
+      "Fixtures Service::fixtures\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Live Score Pipeline::live_score\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Prediction Service::prediction\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Recommendation Service::recommendation\\nLambda"
+    ],
+    [
+      "Global::API Gateway",
+      "Standing Service::standing\\nLambda"
+    ],
+    [
+      "Live Score Pipeline::EC2::Kafka",
+      "Live Score Pipeline::live_score\\nLambda"
+    ],
+    [
+      "Live Score Pipeline::EC2::M4",
+      "Live Score Pipeline::EC2::Kafka"
+    ],
+    [
+      "Live Score Pipeline::EC2::foot app",
+      "Live Score Pipeline::EC2::M4"
+    ],
+    [
+      "Live Score Pipeline::live_score\\nLambda",
+      "Live Score Pipeline::DynamoDB\\nLive Scores"
+    ],
+    [
+      "Live Score Pipeline::live_score\\nLambda",
+      "Live Score Pipeline::Elasticsearch"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::DynamoDB\\nPredictions"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::Elasticsearch"
+    ],
+    [
+      "Prediction Service::prediction\\nLambda",
+      "Prediction Service::SageMaker"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Live Score Pipeline::Elasticsearch"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Recommendation Service::Lex"
+    ],
+    [
+      "Recommendation Service::recommendation\\nLambda",
+      "Standing Service::Elasticsearch"
+    ],
+    [
+      "Standing Service::standing\\nLambda",
+      "Standing Service::DynamoDB\\nStandings"
+    ],
+    [
+      "Standing Service::standing\\nLambda",
+      "Standing Service::Elasticsearch"
+    ]
+  ],
+  "predicted_unanchored_edges": [
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Chatbot / Conversation Handler"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Reminder Service"
+    ],
+    [
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default",
+      "Security Layer::AWS IAM\\nProtected Access / SigV4"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Chatbot / Conversation Handler",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service",
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service",
+      "Data Layer::Elasticsearch\\nmatch data search / retrieval"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service",
+      "Data Layer::Amazon DynamoDB\\nmatch results, stats, fixtures"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service",
+      "Machine Learning Layer::Amazon SageMaker\\nMatch Outcome Prediction\\n(home win / draw / away win)"
+    ],
+    [
+      "Backend Service Layer (AWS Lambda - Python / Node)::Reminder Service",
+      "Notification Layer::Amazon SQS\\nReminder Queue"
+    ],
+    [
+      "Client Layer::Chatbot User",
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display"
+    ],
+    [
+      "Client Layer::Reminder Requester",
+      "Presentation Layer (Amazon S3)::Reminder Request UI"
+    ],
+    [
+      "Machine Learning Layer::Amazon SageMaker\\nMatch Outcome Prediction\\n(home win / draw / away win)",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Prediction Service"
+    ],
+    [
+      "Notification Layer::Amazon SNS\\nSMS Delivery",
+      "External Systems::SMS Mobile Device"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Football Info Views\\nfixtures, standings, schedules,\\nresults, live scores, predictions",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Reminder Request UI",
+      "API Layer (Amazon API Gateway)::API Gateway\\nexecute-api, SigV4, JSON default"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Chatbot UI\\nmessage input + response display"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Football Info Views\\nfixtures, standings, schedules,\\nresults, live scores, predictions"
+    ],
+    [
+      "Presentation Layer (Amazon S3)::Web Application\\nHTML / CSS / Bootstrap / jQuery",
+      "Presentation Layer (Amazon S3)::Reminder Request UI"
+    ],
+    [
+      "Security Layer::Amazon Cognito\\nAuthentication",
+      "Security Layer::AWS IAM\\nProtected Access / SigV4"
+    ],
+    [
+      "Streaming Layer (Amazon EC2)::Apache Kafka\\nLive Score Topics",
+      "Backend Service Layer (AWS Lambda - Python / Node)::Match Information Service"
+    ]
+  ]
+}

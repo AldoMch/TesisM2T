@@ -1,0 +1,93 @@
+@startuml
+' GPSLogger System Architecture Diagram
+' Generated from SRS for mendhak/gpslogger repository
+
+package "Android Device" {
+  component "Android OS" as android_os
+  component "Google Play Services" as gps_services
+}
+
+package "External Services" {
+  component "OpenStreetMap API" as osm_api
+  component "Dropbox API" as dropbox_api
+  component "OpenGTS Server" as opengts_server
+}
+
+package "GPSLogger Application" {
+  component "Main Activity/Fragments" as ui_fragments
+  component "Event Bus" as event_bus
+  component "GPS Logging Service" as gps_service
+  
+  package "Log Outputs" {
+    component "GPX Logger" as gpx_logger
+    component "KML Logger" as kml_logger  
+    component "Text File Logger" as text_logger
+  }
+  
+  package "External Integrations" {
+    component "OpenStreetMap Integration" as osm_integration
+    component "Dropbox Integration" as dropbox_integration
+    component "OpenGTS Integration" as opengts_integration
+  }
+  
+  component "Configuration System" as config_system
+}
+
+' Data stores
+database "Local Storage" as local_storage
+file "gradle.properties" as gradle_props
+file "local.properties" as local_props
+
+' Relationships and interfaces
+android_os --> gps_service : "Location Updates"
+gps_service --> event_bus : "Publishes Location Events"
+event_bus --> ui_fragments : "Location Events"
+event_bus --> gpx_logger : "Location Data"
+event_bus --> kml_logger : "Location Data"
+event_bus --> text_logger : "Location Data"
+
+gpx_logger --> local_storage : "Writes GPX Files"
+kml_logger --> local_storage : "Writes KML Files"
+text_logger --> local_storage : "Writes Text Files"
+
+config_system --> gradle_props : "Reads\nGPSLOGGER_OSM_CONSUMERKEY\nGPSLOGGER_OSM_CONSUMERSECRET\nGPSLOGGER_DROPBOX_APPKEY\nGPSLOGGER_DROPBOX_APPSECRET"
+config_system --> local_props : "Reads sdk.dir"
+
+config_system --> osm_integration : "Provides Credentials"
+config_system --> dropbox_integration : "Provides Credentials"
+
+osm_integration --> osm_api : "Authenticated API Calls"
+dropbox_integration --> dropbox_api : "Authenticated API Calls"
+
+opengts_integration --> opengts_server : "Sends GPRMC via UDP\n(server:port:device_id)"
+gps_service --> opengts_integration : "SerializableLocation"
+
+' Google Play Services dependency
+gps_services --> gps_service : "Required for\nsome features"
+
+' Android build dependencies
+component "Android Build System" as android_build
+gradle_props --> android_build : "Build-time injection"
+android_build --> config_system : "Generated Configuration"
+
+' Note constraints
+note right of gps_services
+  Compatible with:
+  - Android 4.2.2+ (API 17+) emulator
+  - Android 2.2+ phones with framework
+end note
+
+note right of opengts_integration
+  Encodes location as GPRMC string:
+  $GPRMC, UTC time, valid status,
+  lat/lon, speed(knots), heading,
+  UTC date, checksum
+end note
+
+note right of config_system
+  Credentials supplied via:
+  - ~/.gradle/gradle.properties
+  - Build-time configuration injection
+end note
+
+@enduml

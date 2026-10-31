@@ -1,0 +1,136 @@
+@startuml
+title Prediction Cards - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ===================== Presentation Layer =====================
+package "Presentation Layer (Browser Frontend)" {
+  component "Wallet-Connected Frontend App\n(React)" as Frontend
+
+  package "Frontend UI / Views" {
+    component "Prediction Creation UI" as CreateUI
+    component "Prediction Viewing UI" as ViewUI
+    component "Outcome NFT Operations UI\n(fund / rent / withdraw / claim)" as NftUI
+    component "Prediction Media Display" as MediaUI
+  }
+
+  component "Frontend Provider / Context API\n(wallet-backed prediction ops)" as FrontendAPI
+  component "Time Conversion\n(local time -> ms timestamp)" as TimeConv
+}
+
+' ===================== Wallet / SDK Integration =====================
+package "Wallet & SDK Integration" {
+  component "Aeternity Wallet Client" as Wallet
+  component "Aeternity SDK\n(contract interaction)" as Sdk
+}
+
+' ===================== On-Chain Layer =====================
+package "On-Chain Layer (Aeternity Blockchain)" {
+  component "PredictionCards Smart Contract\n(Sophia)" as Contract
+  component "AENS Name Resolution" as Aens
+
+  database "On-Chain State\n(predictions, outcome NFTs,\nfunds, rentals, rewards)" as OnChainState
+}
+
+' ===================== Service Layer =====================
+package "Service Layer (Backend Services)" {
+  package "Oracle Service (Quarkus)" {
+    component "Oracle Registration &\nValidity Manager" as OracleValidity
+    component "Pending Query Checker\n(scheduled)" as QueryChecker
+    component "Price Comparison Engine" as PriceCompare
+    component "Oracle Response Submitter" as OracleResponder
+    component "Runtime Configuration" as OracleConfig
+  }
+
+  package "Prediction-Processing Service" {
+    component "Closed-Prediction Discovery\n(scheduled)" as ClosedDiscovery
+    component "Oracle Query Initiator" as QueryInitiator
+    component "Result-Processing Driver" as ResultDriver
+  }
+}
+
+' ===================== External Systems =====================
+package "External Systems" {
+  component "External Price Provider" as PriceProvider
+  component "Prediction Media Storage\n(IPFS-compatible)" as MediaStorage
+  component "Aeternity Node" as Node
+  component "Compiler Service" as Compiler
+}
+
+' ===================== Local Test Environment =====================
+package "Local Contract Integration-Test Environment" {
+  component "Test Proxy\n(CORS: GET/POST/OPTIONS,\nContent-Type, Cache-Control,\nContent-Range, Range)" as TestProxy
+  component "Index / Debug Endpoint" as IndexDebug
+  component "Contract Integration Tests" as IntegrationTests
+}
+
+' ===================== Relationships =====================
+Frontend --> CreateUI
+Frontend --> ViewUI
+Frontend --> NftUI
+Frontend --> FrontendAPI
+CreateUI --> FrontendAPI
+ViewUI --> FrontendAPI
+NftUI --> FrontendAPI
+MediaUI --> MediaStorage
+
+FrontendAPI --> TimeConv : converts time inputs
+FrontendAPI --> Wallet : uses connected wallet
+FrontendAPI --> Sdk
+Wallet --> Sdk
+Sdk --> Contract : submit creation / read state / fund / claim
+Sdk --> Aens : resolve contract name
+Aens --> Contract : locates deployed contract
+
+Contract --> OnChainState : maintains prediction & outcome state
+
+QueryChecker --> Contract : checks pending oracle queries
+QueryChecker --> PriceCompare
+PriceCompare --> PriceProvider : obtains price data
+PriceCompare --> OracleResponder : price-comparison result
+OracleResponder --> Contract : submits oracle response
+OracleValidity --> Contract : register / extend oracle validity
+OracleConfig --> OracleValidity
+OracleConfig --> QueryChecker
+OracleConfig --> OracleResponder
+OracleConfig --> Node
+OracleConfig --> Compiler
+
+ClosedDiscovery --> Contract : discovers closed predictions
+ClosedDiscovery --> QueryInitiator
+QueryInitiator --> Contract : initiates oracle query
+ResultDriver --> Contract : drives on-chain result processing
+ResultDriver --> OnChainState : updates outcome & reward state
+
+OnChainState --> FrontendAPI : exposes outcome / reward state
+
+IntegrationTests --> TestProxy
+TestProxy --> Node
+Node --> Contract
+Compiler --> Contract
+TestProxy --> IndexDebug
+NftUI --> OnChainState : claim rewards / withdraw
+
+' ===================== Notes on Constraints =====================
+note right of OracleConfig
+  C-001 / C-004 / C-005: Quarkus-based;
+  complete runtime config required
+  before startup (keys, node/compiler,
+  network, scheduling, fees, validity).
+end note
+
+note bottom of TestProxy
+  C-006: local test CORS/proxy only;
+  not a production nginx/reverse-proxy
+  requirement.
+end note
+
+note bottom of FrontendAPI
+  C-003 / NFR-001: contract interaction
+  limited to Aeternity wallet + SDK.
+  C-008 / NFR-007: timezone rule for
+  local-time input must be defined.
+end note
+
+@enduml

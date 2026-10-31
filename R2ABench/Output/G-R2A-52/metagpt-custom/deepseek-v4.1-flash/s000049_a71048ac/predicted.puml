@@ -1,0 +1,46 @@
+@startuml
+
+[Interactive Scala Interface] as InteractiveScala
+[Chart Display] as ChartDisplay
+
+[Lucene Index Processor] as LuceneIndexProcessor
+[Term Data Access] as TermDataAccess
+[Search Service] as SearchService
+
+[Schema Loader/Validator] as SchemaLoader
+[Schema Model] as SchemaModel
+
+[Document Vector Generator] as DocVectorGenerator
+[LIBSVM Writer] as LibsvmWriter
+
+database "Word Count Data" as WordCountData
+
+node "Apache Lucene 5.2.0 Ecosystem" {
+  database "Lucene Index" as LuceneIndex
+}
+
+cloud "External ML Tools (LIBSVM)" as ExternalML
+cloud "Previously Obtained Word Counts" as ExternalWordCounts
+
+InteractiveScala --> LuceneIndexProcessor
+InteractiveScala --> SchemaLoader
+InteractiveScala --> SearchService
+InteractiveScala --> TermDataAccess
+InteractiveScala --> DocVectorGenerator
+
+SearchService --> LuceneIndex
+TermDataAccess --> LuceneIndex
+DocVectorGenerator --> LuceneIndexProcessor
+
+DocVectorGenerator --> LibsvmWriter
+LibsvmWriter --> ExternalML
+
+SchemaLoader --> SchemaModel
+LuceneIndexProcessor --> SchemaModel
+
+ChartDisplay --> WordCountData
+ExternalWordCounts --> WordCountData
+
+LuceneIndexProcessor --> LuceneIndex
+
+@enduml

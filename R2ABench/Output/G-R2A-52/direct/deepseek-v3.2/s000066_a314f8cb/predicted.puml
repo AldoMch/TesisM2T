@@ -1,0 +1,78 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+title Earth Defender System Architecture
+
+package "Client Environment" {
+  [Browser Client\n(Three.js)] as Client
+  [Web Server\n(Static Assets)] as WebServer
+}
+
+package "Server Environment" {
+  [Game Server\n(Erlang/OTP)] as GameServer
+  [Replica Server\n(Erlang/OTP)] as ReplicaServer
+}
+
+package "Network & Protocols" {
+  [DNS/Load Balancer] as DNS
+  [HTTP/WebSocket] as Protocol
+}
+
+' Core connections and data flow
+DNS --> WebServer : "Resolves address"
+Client --> WebServer : "1. HTTP GET\n(HTML, CSS, JS, Images)"
+Client --> Protocol : "2. WebSocket over HTTP"
+Protocol --> GameServer : "Multiplayer runtime\ncommunication"
+
+' Internal server structure
+GameServer "master" -- "slave" ReplicaServer : "Fault tolerance\nreplication"
+
+' Communication details
+note right of Client
+  **Outbound Message:**
+  JSON array [event, data]
+  **Events include:**
+  - ping (heartbeat)
+  - room creation/join
+  - reconnect context
+end note
+
+note left of GameServer
+  **Inbound Message:**
+  JSON array [action, data?]
+  **Actions include:**
+  - game_reconnect
+  - room_players_number
+  - servers_list
+  - servers_list_redirect
+  - server_error
+  - pong
+end note
+
+' Heartbeat mechanism
+Client -> GameServer : "ping (60s interval)"
+GameServer --> Client : "pong response"
+
+' Reconnection flow
+Client -> GameServer : "Reconnect on close\nSend [room_id, player_id, index]"
+GameServer --> Client : "game_reconnect\nRestore ship & gameplay"
+
+' Server list management
+GameServer --> Client : "servers_list\nUpdate list"
+GameServer --> Client : "servers_list_redirect\nUpdate list & disconnect"
+
+' Constraints and exclusions
+note bottom of Protocol
+  **Constraints:**
+  - No client-to-client P2P
+  - Client initiates all connections
+  - WebSocket over HTTP only
+end note
+
+@enduml

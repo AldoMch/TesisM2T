@@ -1,0 +1,128 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam component {
+    BackgroundColor #E6F3FF
+    BorderColor #0066CC
+    FontColor #003366
+    ArrowColor #0066CC
+}
+skinparam node {
+    BackgroundColor #FFF0E6
+    BorderColor #CC6600
+    FontColor #663300
+}
+skinparam database {
+    BackgroundColor #E6FFE6
+    BorderColor #009900
+    FontColor #006600
+}
+skinparam queue {
+    BackgroundColor #FFE6E6
+    BorderColor #CC0000
+    FontColor #660000
+}
+skinparam interface {
+    BackgroundColor #F0F0F0
+    BorderColor #666666
+    FontColor #333333
+}
+
+title System Architecture: lowes/auditor Client Library
+
+package "Integrating Application" {
+    [Application Code] as APP
+    [Domain Objects] as DOM
+    APP - DOM : Contains
+}
+
+package "Auditor Client Library" {
+    interface "Auditing API" as API
+    [Auditor Core] as CORE
+    [AuditEvent Generator] as GEN
+    [Configuration Handler] as CONF
+    [Element Filter Engine] as FILTER
+
+    API - CORE : Invokes
+    CORE - GEN : Uses
+    CORE - CONF : Uses
+    CORE - FILTER : Uses
+}
+
+package "Infrastructure Abstractions" {
+    interface "EventPublisher" as PUB
+    interface "LogProvider" as LOG
+    interface "AuditEventElementFilter" as FILTER_IF
+}
+
+package "Default Implementations" {
+    [Kafka Publisher] as KAFKA
+    [SLF4J Logger] as SLF4J
+    [Inclusion Filter] as INCL_FILTER
+}
+
+package "Downstream Systems" {
+    queue "Kafka Topic" as TOPIC
+    database "Event Consumers" as CONSUMER
+}
+
+' Primary Data Flow
+APP --> API : oldObject, newObject,\nAuditorEventConfig
+API --> CORE : Processes Request
+CORE --> GEN : Generate AuditEvent
+GEN --> FILTER : Apply Filtering
+FILTER --> FILTER_IF : Delegates
+FILTER_IF --> INCL_FILTER : Uses (Default)
+CORE --> CONF : Apply Configuration
+CORE --> PUB : Publish Event
+PUB --> KAFKA : Delegates (Default)
+KAFKA --> TOPIC : Sends Serialized JSON
+TOPIC --> CONSUMER : Consumes Events
+
+' Logging Flow
+CORE --> LOG : Log Operations
+LOG --> SLF4J : Delegates (Default)
+
+' Configuration & Filtering Details
+CONF ..> DOM : Reads Metadata
+FILTER ..> DOM : Inspects Elements
+INCL_FILTER ..> FILTER : Provides Includes List
+
+' Dependencies & Integration
+APP ..> API : Depends On
+CORE ..> PUB : Requires Implementation
+CORE ..> LOG : Requires Implementation
+CORE ..> FILTER_IF : Requires Implementation
+
+note right of API
+    Accepts:
+    - oldObject
+    - newObject
+    - AuditorEventConfig
+    (appName, source, subtype,
+    metadata, filters)
+end note
+
+note right of GEN
+    Produces AuditEvent with:
+    - Type (CREATED/UPDATED/DELETED)
+    - Changed Elements
+    (name, previousValue,
+    updatedValue, metadata.fqdn)
+end note
+
+note left of KAFKA
+    Default Publisher
+    Sends JSON payload
+    to configured topic.
+end note
+
+note right of CONSUMER
+    Deserializes JSON
+    into AuditEvent objects.
+end note
+
+@enduml

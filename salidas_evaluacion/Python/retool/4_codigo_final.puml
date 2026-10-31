@@ -1,0 +1,19 @@
+@startuml
+component "Algorithm & Analysis Service" as compalgorithmservice
+component "API Gateway & Security Boundary" as compapigateway
+component "Frontend Web Application" as compfrontendapp
+component "MongoDB Database" as compmongodbcluster
+component "Project Management Microservice" as compprojectservice
+component "Requirement Lifecycle Microservice" as comprequirementservice
+component "User Management Microservice" as compuserservice
+compalgorithmservice --> compmongodbcluster : MongoDB Wire Protocol
+compapigateway --> compprojectservice : gRPC/HTTP
+compapigateway --> comprequirementservice : gRPC/HTTP
+compapigateway --> compuserservice : gRPC/HTTP
+compfrontendapp --> compapigateway : HTTPS/WSS
+compprojectservice --> compmongodbcluster : MongoDB Wire Protocol
+compprojectservice --> comprequirementservice : gRPC/HTTP
+comprequirementservice --> compalgorithmservice : gRPC/REST
+comprequirementservice --> compmongodbcluster : MongoDB Wire Protocol
+compuserservice --> compmongodbcluster : MongoDB Wire Protocol
+@enduml

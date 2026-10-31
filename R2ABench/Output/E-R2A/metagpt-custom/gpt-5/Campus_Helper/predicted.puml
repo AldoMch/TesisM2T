@@ -1,0 +1,129 @@
+@startuml
+node "WeChat Mini Program Platform (WeChat 8.0+)" as WeChatPlatform {
+  package "Presentation Layer" {
+    component "WeChatMiniProgramUI" as WeChatUI
+  }
+}
+
+node "Admin Web Browser" as AdminBrowser {
+  package "Presentation Layer" {
+    component "AdminBackendUI" as AdminUI
+  }
+}
+
+node "Application Server" as AppServer {
+  package "Business Layer" {
+    component "ProductBrowsingService" as PBS
+    component "PopularityRankingModule" as PRM
+    component "OrderService" as OS
+    component "FavoritesService" as FS
+    component "AdminProductManagementService" as APMS
+    component "AdminOrderManagementService" as AOMS
+    component "AdminUserManagementService" as AUMS
+    component "AdminLogManagementService" as ALMS
+    component "AuthenticationAuthorization" as Auth
+    component "SecurityBotDetection" as SBD
+    component "DataReviewPrivacyControl" as DRPC
+    component "MonitoringAndLogging" as MONLOG
+  }
+  package "Data Layer" {
+    component "ProductRepository" as ProdRepo
+    component "OrderRepository" as OrdRepo
+    component "UserRepository" as UserRepo
+    component "FavoritesRepository" as FavRepo
+    component "AdminLogRepository" as AdminLogRepo
+    component "MonitoringMetricsStore" as MetricsStore
+  }
+}
+
+package "Data Entity Layer" as DEL {
+  database "Database" as DB
+}
+
+cloud "Monitoring/Logging Infrastructure" as ExtMon
+
+' UI to business services
+WeChatUI --> PBS : browse/products/details
+WeChatUI --> OS : orders
+WeChatUI --> FS : favorites
+
+AdminUI --> APMS : manage products
+AdminUI --> AOMS : manage orders
+AdminUI --> AUMS : manage users
+AdminUI --> ALMS : view/search logs
+
+' Business logic dependencies
+PBS --> PRM : popularity rules
+PRM --> ProdRepo : ranking data
+
+PBS --> ProdRepo
+OS --> OrdRepo
+FS --> FavRepo
+
+APMS --> ProdRepo
+APMS --> AdminLogRepo
+AOMS --> OrdRepo
+AOMS --> AdminLogRepo
+AUMS --> UserRepo
+AUMS --> AdminLogRepo
+ALMS --> AdminLogRepo
+
+' Security and privacy enforcement
+PBS --> Auth
+OS --> Auth
+FS --> Auth
+APMS --> Auth
+AOMS --> Auth
+AUMS --> Auth
+ALMS --> Auth
+
+Auth --> UserRepo : validate credentials/roles
+Auth --> AdminLogRepo : login/audit logs
+
+PBS --> DRPC
+OS --> DRPC
+FS --> DRPC
+APMS --> DRPC
+AOMS --> DRPC
+AUMS --> DRPC
+ALMS --> DRPC
+
+DRPC --> ProdRepo
+DRPC --> OrdRepo
+DRPC --> UserRepo
+DRPC --> FavRepo
+
+' Bot detection applied by services (server-side validation)
+PBS --> SBD
+OS --> SBD
+FS --> SBD
+APMS --> SBD
+AOMS --> SBD
+AUMS --> SBD
+ALMS --> SBD
+
+' Monitoring and logging flows
+PBS --> MONLOG
+OS --> MONLOG
+FS --> MONLOG
+APMS --> MONLOG
+AOMS --> MONLOG
+AUMS --> MONLOG
+ALMS --> MONLOG
+Auth --> MONLOG
+SBD --> MONLOG
+DRPC --> MONLOG
+
+MONLOG --> MetricsStore
+
+' Storage
+ProdRepo --> DB
+OrdRepo --> DB
+UserRepo --> DB
+FavRepo --> DB
+AdminLogRepo --> DB
+MetricsStore --> DB
+
+' External monitoring/logging infrastructure
+MetricsStore --> ExtMon
+@enduml

@@ -1,0 +1,117 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Application Developer" as AppDev
+RECTANGLE "HPC Developer" as HPCDev
+RECTANGLE "MPI Developer" as MPIDev
+RECTANGLE "Data Preprocessing User" as DataUser
+RECTANGLE "Tester" as Tester
+
+package "torc_py Library" {
+    RECTANGLE "torc.submit()" as Submit
+    RECTANGLE "torc.wait()" as Wait
+    RECTANGLE "torc.map()" as Map
+    RECTANGLE "torc.as_completed()" as AsCompleted
+    RECTANGLE "torc.start()" as Start
+    RECTANGLE "torc.init()" as Init
+    RECTANGLE "torc.launch()" as Launch
+    RECTANGLE "torc.shutdown()" as Shutdown
+    RECTANGLE "torc.spmd()" as SPMD
+    RECTANGLE "torc.enable_stealing()" as EnableSteal
+    RECTANGLE "torc.disable_stealing()" as DisableSteal
+    RECTANGLE "torc.gettime()" as GetTime
+    RECTANGLE "torc.worker_id()" as WorkerId
+    RECTANGLE "torc.num_workers()" as NumWorkers
+    RECTANGLE "torc.node_id()" as NodeId
+    RECTANGLE "torc.num_nodes()" as NumNodes
+    
+    RECTANGLE "Task Descriptor" as TaskDesc {
+        input()
+        result()
+    }
+    
+    RECTANGLE "Worker Threads" as Workers
+    RECTANGLE "MPI Processes" as MPIProcs
+    RECTANGLE "Task Queues" as TaskQueues
+    RECTANGLE "Task Stealing" as TaskSteal
+    RECTANGLE "Callback Execution" as CallbackExec
+}
+
+package "Runtime Environment" {
+    RECTANGLE "Python Runtime" as PythonRT
+    RECTANGLE "MPI Runtime" as MPIRT
+    RECTANGLE "Environment Variables" as EnvVars {
+        TORC_WORKERS
+        TORC_STEALING
+        TORC_SERVER_YIELDTIME
+        TORC_WORKER_YIELDTIME
+    }
+}
+
+AppDev --> Submit : uses
+AppDev --> Wait : uses
+AppDev --> Map : uses
+AppDev --> TaskDesc : accesses
+
+HPCDev --> SPMD : uses
+HPCDev --> WorkerId : queries
+HPCDev --> NumWorkers : queries
+HPCDev --> NodeId : queries
+HPCDev --> NumNodes : queries
+
+MPIDev --> SPMD : integrates with
+
+DataUser --> Map : uses for preprocessing
+
+Tester --> Submit : validates
+Tester --> Wait : validates
+Tester --> Map : validates
+Tester --> AsCompleted : validates
+Tester --> TaskDesc : inspects
+Tester --> EnvVars : configures
+
+Submit --> TaskDesc : creates
+Submit --> TaskQueues : queues tasks
+Wait --> TaskDesc : waits for completion
+Map --> Submit : internally uses
+AsCompleted --> TaskDesc : iterates completed
+Start --> Init : initializes
+Start --> Launch : launches
+Start --> Shutdown : shuts down
+Init --> Workers : initializes
+Init --> MPIProcs : initializes
+Launch --> Workers : starts execution
+Shutdown --> Workers : stops
+Shutdown --> MPIProcs : finalizes
+SPMD --> MPIProcs : executes on all ranks
+EnableSteal --> TaskSteal : enables
+DisableSteal --> TaskSteal : disables
+
+TaskQueues --> Workers : assigns tasks
+TaskSteal --> TaskQueues : steals from
+TaskSteal --> Workers : coordinates with
+
+CallbackExec --> TaskDesc : receives completed task
+Submit --> CallbackExec : triggers on completion
+
+Workers --> PythonRT : executes in
+MPIProcs --> MPIRT : communicates via
+EnvVars --> PythonRT : configures runtime
+EnvVars --> MPIRT : configures behavior
+
+note right of TaskSteal
+  Adaptive Load Balancing
+  Through Task Stealing
+end note
+
+note right of SPMD
+  Single Program Multiple Data
+  Execution Mode
+end note
+
+note bottom of EnvVars
+  Runtime Configuration
+  Through Environment Variables
+end note
+
+@enduml

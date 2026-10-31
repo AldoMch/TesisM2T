@@ -1,0 +1,61 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 2
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 2
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 2
+}
+skinparam file {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 2
+}
+
+file "Candidates\nand votes" as CandidatesVotes
+
+package "Seat Allocation Configuration" as Config {
+    rectangle "Parameters" as Parameters
+    rectangle "Seat Allocation\nMethod" as SeatAllocationMethod
+    rectangle "TallyFilters" as TallyFilters
+    rectangle "TieBreaker" as TieBreaker
+    rectangle "ResultDecorators" as ResultDecorators
+}
+
+rectangle "Tally" as Tally
+
+package "Seat Allocation Processor" as Processor {
+    rectangle "Filter" as Filter
+    rectangle "Process" as Process
+    rectangle "Decorate" as Decorate
+
+    Filter --> Process
+    Process --> Decorate
+}
+
+rectangle "Result" as Result
+file "Candidates\nand seats" as CandidatesSeats
+
+CandidatesVotes --> Tally
+Tally --> Processor
+Config --> Processor
+
+Parameters --> Filter
+SeatAllocationMethod --> Process
+TallyFilters --> Filter
+TieBreaker --> Process
+ResultDecorators --> Decorate
+
+Decorate --> Result
+Result --> CandidatesSeats
+@enduml

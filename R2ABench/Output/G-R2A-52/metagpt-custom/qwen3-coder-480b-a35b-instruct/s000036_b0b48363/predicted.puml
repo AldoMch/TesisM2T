@@ -1,0 +1,53 @@
+@startuml
+' Deployment nodes representing physical or logical deployment units
+node "Server Environment" {
+    node "Node.js Runtime" {
+        package "Server Layer" {
+            component "ExpressServer"
+            component "LoggingRouter"
+            component "StatusEndpoint"
+            component "SocketIOServer"
+            component "JSONBodyParser"
+            component "StaticFileServer"
+            component "ClientConnectionManager"
+            component "ErrorMessageHandler"
+        }
+    }
+}
+
+node "Browser Environment" {
+    package "Browser Client Layer" {
+        component "BrowserClient"
+        component "SchemaValidator"
+        component "WindowManager"
+        component "VisualizerDispatcher"
+        component "VisualizerModules"
+    }
+}
+
+cloud "External Systems" {
+    component "LoggingProducerClients"
+    component "WebBrowser"
+}
+
+' Dependencies and interfaces
+ExpressServer --> LoggingRouter : routes /logger requests
+ExpressServer --> StatusEndpoint : handles /logger/status
+LoggingRouter --> JSONBodyParser : parses JSON body
+LoggingRouter --> ErrorMessageHandler : wraps invalid messages
+ErrorMessageHandler --> SocketIOServer : forwards valid logs
+BrowserClient --> SocketIOServer : connects via Socket.IO
+SchemaValidator <-- BrowserClient : validates log objects
+SchemaValidator --> ErrorMessageHandler : passes invalid objects
+ErrorMessageHandler --> WindowManager : passes valid objects
+WindowManager --> VisualizerDispatcher : dispatches to visualizers
+VisualizerDispatcher --> VisualizerModules : selects & invokes
+VisualizerModules --> VisualizerDispatcher : callbacks
+StaticFileServer --> BrowserClient : serves client assets
+SocketIOServer --> ClientConnectionManager : tracks connections
+
+' External system interactions
+LoggingProducerClients --> ExpressServer : sends JSON logs
+WebBrowser --> StaticFileServer : loads client UI
+
+@enduml

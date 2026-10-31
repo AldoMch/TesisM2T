@@ -1,0 +1,47 @@
+@startuml
+!define RECTANGLE class
+
+title System Architecture Diagram
+
+skinparam componentStyle rectangle
+
+package "Docker Network" {
+    [React Frontend] as frontend
+    [FastAPI Backend] as backend
+    [Elasticsearch] as elasticsearch
+    [Kibana] as kibana
+}
+
+[Genius API] as genius_api
+
+frontend --> backend : API-001\n(FR-001, UI-001)
+backend --> elasticsearch : API-002\n(FR-002, FR-004, FR-005,\nNFR-004)
+backend --> genius_api : API-003\n(FR-003, C-005)
+kibana --> elasticsearch : API-004\n(FR-006, UI-002)
+
+note right of frontend
+    Container Service
+    (C-001, C-006)
+end note
+
+note right of backend
+    Container Service
+    (C-002, C-006)
+end note
+
+note right of elasticsearch
+    Container Service
+    (C-003, C-006)
+end note
+
+note right of kibana
+    Container Service
+    (C-004, C-006)
+end note
+
+note right of genius_api
+    External Dependency
+    (C-005, C-007)
+end note
+
+@enduml

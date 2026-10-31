@@ -1,0 +1,27 @@
+@startuml
+component "Score Classification Algorithm Service" as CMPALGOCLASSSVC
+component "Score Generation Algorithm Service" as CMPALGOGENSVC
+component "Model Training Algorithm Service" as CMPALGOTRAINSVC
+component "Web Presentation Module" as CMPFRONTENDUI
+component "Hot-Chart and Popularity Service" as CMPRANKINGSVC
+component "Personalized Recommendation Service" as CMPRECOMMENDATIONSVC
+component "Replicated Data and Storage Layer" as CMPREPLICATEDSTORAGE
+component "Task Scheduling and Orchestration Service" as CMPSCHEDULERSVC
+component "Score Catalog Service" as CMPSCORESVC
+component "User and Social Management Service" as CMPUSERAUTHSVC
+CMPALGOCLASSSVC --> CMPREPLICATEDSTORAGE : metadata_persistence
+CMPALGOGENSVC --> CMPSCORESVC : status_callback
+CMPALGOTRAINSVC --> CMPREPLICATEDSTORAGE : model_artifact_persistence
+CMPFRONTENDUI --> CMPRANKINGSVC : https_api
+CMPFRONTENDUI --> CMPRECOMMENDATIONSVC : https_api
+CMPFRONTENDUI --> CMPSCORESVC : https_api
+CMPFRONTENDUI --> CMPUSERAUTHSVC : https_api
+CMPRANKINGSVC --> CMPREPLICATEDSTORAGE : database_persistence
+CMPRECOMMENDATIONSVC --> CMPREPLICATEDSTORAGE : database_query
+CMPSCHEDULERSVC --> CMPALGOCLASSSVC : job_dispatch_and_polling
+CMPSCHEDULERSVC --> CMPALGOGENSVC : job_dispatch_and_polling
+CMPSCHEDULERSVC --> CMPALGOTRAINSVC : job_dispatch_and_polling
+CMPSCORESVC --> CMPREPLICATEDSTORAGE : database_persistence
+CMPSCORESVC --> CMPSCHEDULERSVC : async_task_submission
+CMPUSERAUTHSVC --> CMPREPLICATEDSTORAGE : database_persistence
+@enduml

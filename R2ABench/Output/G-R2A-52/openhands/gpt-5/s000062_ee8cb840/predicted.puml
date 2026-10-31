@@ -1,0 +1,99 @@
+@startuml
+title Udacity SDC Capstone – ROS System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam ArrowColor #444444
+skinparam PackageBorderColor #777777
+skinparam ComponentBorderColor #555555
+skinparam DefaultTextAlignment left
+
+rectangle "Docker Container\n(ROS Environment)" as docker {
+  package "System Nodes (ROS)" as ros_system {
+    package "Perception Subsystem" as perception {
+      component "Traffic Light Detector" as tldet
+      component "Traffic Light Classifier" as tlcls
+      component "Traffic Waypoint Publisher" as twpub
+    }
+
+    package "Planning Subsystem" as planning {
+      component "Waypoint Loader" as wpload
+      component "Waypoint Updater" as wpup
+    }
+
+    package "Control Subsystem" as control {
+      component "Twist Controller" as twctrl
+      component "Drive-By-Wire Node" as dbw
+    }
+  }
+}
+
+' External execution contexts and launch entry points
+component "Launch: styx.launch\n(simulator mode)" as styx
+component "Launch: site.launch\n(site mode)" as site
+component "Udacity Simulator" as sim
+component "Recorded Training Bag\n(playback)" as bag
+
+' ROS topic interfaces (logical channels)
+interface "current_pose" as t_pose
+interface "base_waypoints\n(twist.twist.linear.x carries target speed)" as t_base_wp
+interface "traffic_waypoint" as t_traf_wp
+interface "final_waypoints" as t_final_wp
+interface "twist_cmd" as t_twist
+interface "vehicle_cmd" as t_vehicle
+
+' Launch orchestration
+styx ..> docker : start simulator-mode nodes
+site ..> docker : start site-mode nodes
+styx ..> sim : attach simulator
+site ..> bag : attach bag playback
+
+' Topic publications from external sources
+sim --> t_pose : publish
+bag --> t_pose : publish
+bag --> tldet : camera images
+
+' Perception flow
+(tldet) --> (tlcls)
+(tlcls) --> (twpub)
+(twpub) --> t_traf_wp
+
+' Planning flow
+wpload --> t_base_wp
+note right of t_base_wp
+  Waypoint target top speed upper bound
+  encoded in twist.twist.linear.x
+end note
+
+t_base_wp --> wpup
+wpup <-- t_traf_wp : consume
+wpup <-- t_pose : consume
+wpup --> t_final_wp
+
+' Control flow
+(t_final_wp) --> (twctrl)
+(twctrl) --> t_twist
+(t_twist) --> (dbw)
+(dbw) --> t_vehicle
+
+' Actuation/simulation sink
+(t_vehicle) --> sim : simulator vehicle command
+
+note bottom of docker
+  - ROS-based multi-node architecture
+  - Perception: traffic light detection/classification and stop waypoint output
+  - Planning: waypoint loading/updating to produce final waypoints
+  - Control: follow final waypoints to generate twist/vehicle commands
+end note
+
+note right of site
+  Site mode supports real-world validation by
+  playing back the recorded training bag.
+end note
+
+note right of styx
+  Simulator mode supports waypoint following
+  and top-speed compliance in the simulator.
+end note
+
+@enduml

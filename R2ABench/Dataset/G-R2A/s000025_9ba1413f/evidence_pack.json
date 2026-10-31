@@ -1,0 +1,115 @@
+{
+  "candidate": {
+    "sample_id": "s000025_9ba1413f",
+    "repository_name": "Neighbor-Army/help-with-covid",
+    "image_url": "https://github.com/neighbor-army/help-with-covid/blob/develop/docs/images/architecture-2.png",
+    "source_ref": "b540315578f533e035b704a9d4b8b27b7ae8d3a0",
+    "total_score": 86,
+    "prd_srs_convertibility_score": 13,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 566,
+    "document_count": 5,
+    "document_types": [
+      "code_api_route",
+      "config",
+      "readme"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 5,
+      "user_scenario": 4,
+      "api_io": 2,
+      "deployment": 12,
+      "constraints": 3
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 6,
+    "doc_diversity_score": 12,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 13,
+    "total_score": 86
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "utils/auth/firebaseSessionHandler.js",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05460829493087557,
+      "text": "// From: // import fetch from \"isomorphic-unfetch\"; export const setSession = user => { // Log in. if (user) { return user.getIdToken().then(token => { return fetch(\"/api/login\", { method: \"POST\", // eslint-disable-next-line no-undef headers: new Headers({ \"Content-Type\": \"application/json\" }), credentials: \"same-origin\", body: JSON.stringify({ token }) }); }); } // Log out. return fetch(\"/api/logout\", { method: \"POST\", credentials: \"same-origin\" }); };"
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05460252406973719,
+      "text": "# Getting Started ## Clone the repo ## Environment Variables - Ask for an invitation to the channel in Slack and find the file. - Check the file in the repo as reference - Add your file to the root directory of the repo ## Installation This will install the dependencies for both the front-end & backend. ## Run the Servers will start both the front-end & back-end server. ### Start only Frontend Server will start just the frontend server ### Start the Backend Server The backend is broken up into two parts. There is the firebase functions which are serverless functions that allow us to deploy our own APIs. Then there's OnFleet which is our task handling system. will start just the backend se..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "utils/auth/firebaseSessionHandler.js",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05555261766261238,
+      "text": "// From: // import fetch from \"isomorphic-unfetch\"; export const setSession = user => { // Log in. if (user) { return user.getIdToken().then(token => { return fetch(\"/api/login\", { method: \"POST\", // eslint-disable-next-line no-undef headers: new Headers({ \"Content-Type\": \"application/json\" }), credentials: \"same-origin\", body: JSON.stringify({ token }) }); }); } // Log out. return fetch(\"/api/logout\", { method: \"POST\", credentials: \"same-origin\" }); };"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "code|dense|hyde",
+      "score": 0.03849153886832364,
+      "text": "# Getting Started ## Clone the repo ## Environment Variables - Ask for an invitation to the channel in Slack and find the file. - Check the file in the repo as reference - Add your file to the root directory of the repo ## Installation This will install the dependencies for both the front-end & backend. ## Run the Servers will start both the front-end & back-end server. ### Start only Frontend Server will start just the frontend server ### Start the Backend Server The backend is broken up into two parts. There is the firebase functions which are serverless functions that allow us to deploy our own APIs. Then there's OnFleet which is our task handling system. will start just the backend se..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "pages/api/login.js",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05534108937070333,
+      "text": "import commonMiddleware from \"../../utils/middleware/commonMiddleware\"; import { verifyIdToken } from \"../../utils/auth/firebaseAdmin\"; const handler = (req, res) => { if (!req.body) { return res.status(400); } const { token } = req.body; // Here, we decode the user's Firebase token and store it in a cookie. Use // express-session (or similar) to store the session data server-side. // An alternative approach is to use Firebase's . See: // // Firebase docs: // \"This is a low overhead operation. The public certificates are initially // queried and cached until they expire. Session cookie verification can be // done with the cached public certificates without any additional network // reques..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "next.config.js",
+      "doc_type": "config",
+      "section": "data_requirements",
+      "retrievers": "code",
+      "score": 0.013114754098360656,
+      "text": "require(\"./env.js\"); const withSass = require(\"@zeit/next-sass\"); const withCSS = require(\"@zeit/next-css\"); module.exports = withCSS( withSass({ webpack(config) { config.module.rules.push({ test: /\\.(png|jpg|gif|svg|eot|ttf|woff|woff2)$/, use: { loader: \"url-loader\", options: { limit: 100000 } } }); return config; }, env: { FIREBASE_AUTH_DOMAIN: process.env.FIREBASE_AUTH_DOMAIN, FIREBASE_DATABASE_URL: process.env.FIREBASE_DATABASE_URL, FIREBASE_PROJECT_ID: process.env.FIREBASE_PROJECT_ID, FIREBASE_PUBLIC_API_KEY: process.env.FIREBASE_PUBLIC_API_KEY // API_URI: process.env.API_URI } }) );"
+    }
+  ]
+}

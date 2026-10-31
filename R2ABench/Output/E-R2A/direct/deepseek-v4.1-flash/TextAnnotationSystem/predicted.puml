@@ -1,0 +1,119 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam nodesep 15
+skinparam ranksep 25
+skinparam ArrowColor #555555
+skinparam ComponentFontSize 12
+skinparam PackageFontSize 14
+skinparam NoteFontSize 12
+
+title ITAS — Intelligent Text Annotation System Architecture
+
+actor "System Annotation\nAdministrator" as Admin
+actor "Data Annotator" as Annotator
+actor "Researcher" as Researcher
+
+package "Client Tier (Browser)" {
+  component "Vue 3 SPA\n[UI-001..UI-005]\nvue-router | Pinia | Ant Design Vue" as SPA
+  component "Axios HTTP Client" as Axios
+}
+
+cloud "Tencent Cloud Deployment (Docker Containers)" as Cloud {
+  node "Nginx\nReverse Proxy / Load Balancer" as Nginx
+
+  package "Gateway & Security" {
+    component "Spring Gateway" as Gateway
+    component "Spring Security\nAuthN / AuthZ" as Security
+  }
+
+  package "Annotation Subsystem" {
+    component "Annotation Controllers\nAnnotator | File | Label | Login\nPaper | Project | Result Export\nTag | Task | User" as AnnCtrl
+    component "Annotation Service" as AnnSvc
+    component "Preset / Rule Management" as Preset
+    component "Task & Annotation Result Mgmt" as TaskMgmt
+  }
+
+  package "Mining Subsystem" {
+    component "Mining Controllers\nDocument Upload | Model Selection\nInformation Extraction" as MineCtrl
+    component "Mining Workflow Service" as MineSvc
+    component "Few-shot Extraction" as FewShot
+  }
+
+  package "Spring Cloud Platform" {
+    component "Service Discovery" as Discovery
+    component "Config Management" as Config
+    component "Load Balancing" as LB
+  }
+
+  package "Data Access Layer" {
+    component "MyBatis / MyBatis Plus ORM" as ORM
+  }
+
+  database "MySQL\nStructured Records" as MySQL
+  component "Minio\nObject Storage" as Minio
+  component "Redis\nCache" as Redis
+  queue "RabbitMQ" as MQ
+  component "File Conversion Worker" as Converter
+
+  package "ML / Model Layer" {
+    component "BERT\nParagraph Model" as BERT
+    component "GPT / GPT API\nEntity Model" as GPT
+  }
+}
+
+cloud "Third-party ChatGPT-like API" as ChatGPT
+
+Admin --> SPA : uses
+Annotator --> SPA : uses
+Researcher --> SPA : uses
+
+SPA --> Axios
+Axios --> Nginx : HTTPS / REST
+Nginx --> Gateway
+Gateway --> Security
+Gateway --> AnnCtrl : routes
+Gateway --> MineCtrl : routes
+
+AnnCtrl --> AnnSvc
+AnnSvc --> Preset
+AnnSvc --> TaskMgmt
+TaskMgmt --> ORM
+Preset --> ORM
+
+MineCtrl --> MineSvc
+MineSvc --> FewShot
+
+MineSvc --> BERT
+MineSvc --> GPT
+GPT --> ChatGPT : API invocation
+FewShot --> GPT
+
+AnnSvc --> ORM
+MineSvc --> ORM
+ORM --> MySQL
+
+AnnSvc --> Minio
+MineSvc --> Minio
+AnnSvc --> Redis
+MineSvc --> Redis
+
+AnnSvc --> MQ : async tasks
+MineSvc --> MQ : async file conversion
+MQ --> Converter
+Converter --> Minio
+Converter --> MySQL
+
+AnnSvc ..> MineSvc : annotation results\n(DIO-003)
+
+Discovery -[hidden]-> Config
+Config -[hidden]-> LB
+
+note right of Cloud
+  All backend services deployed as Docker containers
+  Spring Boot / Spring Cloud microservices
+  Tencent Cloud hosting
+end note
+
+@enduml

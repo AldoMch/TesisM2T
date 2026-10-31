@@ -1,0 +1,67 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Browser Client\n(Three.js)" as Client {
+    +Download static assets
+    +WebSocket connection
+    +Send/receive JSON messages
+    +Ping/pong heartbeat
+    +Reconnect logic
+    +Handle game_reconnect
+    +Update player count
+    +Manage server list
+}
+
+RECTANGLE "Web Server" as WebServer {
+    +Serve static assets\n(HTML, CSS, JS, Images)
+}
+
+RECTANGLE "Erlang Game Server\n(Master Node)" as MasterServer {
+    +Handle WebSocket connections
+    +Process game messages
+    +Room management
+    +Player session management
+    +Replica coordination
+}
+
+RECTANGLE "Erlang Game Server\n(Replica Node)" as ReplicaServer {
+    +Fault tolerance backup
+    +State synchronization
+}
+
+Client --> WebServer : HTTP GET\n(Static Assets)
+Client --> MasterServer : WebSocket\n(Game Messages)
+MasterServer <--> ReplicaServer : State Sync\n(Fault Tolerance)
+
+note right of Client
+  [event, data] - Outbound
+  [action, data?] - Inbound
+end note
+
+note right of MasterServer
+  Supports:
+  - Room creation/joining
+  - Player sessions
+  - Message routing
+  - Reconnection handling
+end note
+
+note right of ReplicaServer
+  Backup for fault tolerance
+end note
+
+cloud "DNS/Load Balancer" as LB {
+}
+
+Client --> LB : Resolve server address
+LB --> MasterServer : Route connection
+
+rectangle "External Systems" {
+  RECTANGLE "Player" as Player1
+  RECTANGLE "Player" as Player2
+}
+
+Player1 --> Client : Interacts with
+Player2 --> Client : Interacts with
+
+@enduml

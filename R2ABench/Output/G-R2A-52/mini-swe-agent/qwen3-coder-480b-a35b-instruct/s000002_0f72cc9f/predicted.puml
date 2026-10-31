@@ -1,0 +1,54 @@
+@startuml
+title Escape Application Architecture
+
+skinparam componentStyle rectangle
+
+package "Web Client" {
+  [React App] as client
+  [A-Frame Renderer] as renderer
+}
+
+package "Web Server" {
+  [Node.js Server] as server
+  [User Controller] as userController
+  [Auth Routes] as authRoutes
+}
+
+package "Data Layer" {
+  [Database] as db
+  [Cache] as cache
+  [Image Storage] as imageStorage
+}
+
+package "External Services" {
+  [AWS S3] as s3
+  [Redis] as redis
+  [MariaDB] as mariadb
+}
+
+client --> authRoutes : Submit Credentials
+authRoutes --> userController : Process Auth
+userController --> db : User CRUD
+userController --> cache : Session/Caching
+renderer --> imageStorage : Load Assets
+imageStorage --> s3 : Store/Fetch Images
+cache --> redis : Cache Ops
+db --> mariadb : Persist Data
+
+note right of client
+  - React + React-Router
+  - A-Frame + aframe-react
+  - Shared credential handling
+end note
+
+note right of server
+  - Node.js + Express-style
+  - User controller/model
+  - bcrypt-nodejs for passwords
+end note
+
+note right of db
+  - Users, likes, photos, comments
+end note
+
+@enduml

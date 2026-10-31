@@ -1,0 +1,112 @@
+@startuml
+title Gran-Book Backend Platform Architecture
+
+' ─── Skin ────────────────────────────────────────────────
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+}
+skinparam database {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+' ─── Client Layer ─────────────────────────────────────────
+package "Client Layer" {
+  [Native Mobile Applications] as MobileApp
+  [Administrative Web Application] as AdminApp
+}
+
+' ─── GCP Infrastructure ───────────────────────────────────
+node "GCP Infrastructure" {
+
+  rectangle "Load Balancer" as LB
+
+  ' BFF / Gateway Layer
+  package "Gateway / BFF Layer" {
+    [API Gateway / BFF] as GW
+  }
+
+  ' Backend Services (GKE Container Cluster)
+  package "Backend Services (GKE)" {
+    [Authentication API] as AuthAPI
+    [User Management API\n(Golang)] as UserAPI
+    [Book Management API\n(Golang)] as BookAPI
+    [EC Site API\n(Golang)] as EcAPI
+    [Support / Info API\n(Golang)] as SupportAPI
+    [Admin Service] as AdminSvc
+    [Message Management Service] as MsgSvc
+    [Notification Service] as NotifSvc
+  }
+
+  ' Data Stores
+  package "Data Stores" {
+    database "MySQL\n(User Data)" as MySQLUser
+    database "MySQL\n(Book Data)" as MySQLBook
+    database "MySQL\n(EC Site Data)" as MySQLEc
+    database "NoSQL Storage\n(Message Data)" as NoSQL
+    database "Object Storage / GCS\n(Thumbnails & Files)" as ObjStore
+  }
+
+  ' VM Operations
+  package "VM Operations (GCE)" {
+    [Operational VM\n(Cloud SDK, TLS Certs)] as OpsVM
+  }
+}
+
+' ─── External Services ────────────────────────────────────
+cloud "External Services" {
+  [Firebase Authentication] as FirebaseAuth
+  [Book-Search API] as BookSearchAPI
+  [Stripe\n(Payment)] as Stripe
+  [Push Notification Provider] as PushNotif
+  [Email Notification Provider] as EmailNotif
+}
+
+' ─── Relationships: Clients → LB → Gateway ────────────────
+MobileApp --> LB : HTTPS
+AdminApp --> LB : HTTPS
+LB --> GW
+
+' ─── Gateway → Backend Services ──────────────────────────
+GW --> AuthAPI
+GW --> UserAPI
+GW --> BookAPI
+GW --> EcAPI
+GW --> SupportAPI
+GW --> AdminSvc
+GW --> MsgSvc
+
+' ─── Backend Services → Data Stores ──────────────────────
+UserAPI --> MySQLUser
+BookAPI --> MySQLBook
+EcAPI --> MySQLEc
+MsgSvc --> NoSQL
+BookAPI --> ObjStore : thumbnails
+UserAPI --> ObjStore : profile objects
+
+' ─── Backend Services → External Services ────────────────
+AuthAPI --> FirebaseAuth : OAuth / JWT
+BookAPI --> BookSearchAPI : book lookup
+EcAPI --> Stripe : payment processing
+NotifSvc --> PushNotif : push notifications
+NotifSvc --> EmailNotif : email notifications
+
+' ─── Internal dependencies ───────────────────────────────
+EcAPI --> NotifSvc
+SupportAPI --> NotifSvc
+
+' ─── Ops VM ──────────────────────────────────────────────
+OpsVM ..> GW : TLS / cluster ops
+OpsVM ..> LB : certificate provisioning
+
+@enduml

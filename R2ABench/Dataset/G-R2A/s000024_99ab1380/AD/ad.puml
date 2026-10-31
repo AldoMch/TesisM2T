@@ -1,0 +1,91 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #D28A45
+    BorderThickness 1
+}
+skinparam node {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+cloud "Internet" as Internet
+
+package "Oracle Cloud Infrastructure (Region)" as OciRegion {
+    package "VCN" as Vcn {
+        cloud "Internet\nGateway" as InternetGateway
+        cloud "NAT\nGateway" as NatGateway
+
+        package "Subnet 1\n(Public/Regional)" as Subnet1 {
+            rectangle "Security List" as Subnet1Security
+            rectangle "Route Table" as Subnet1Route
+            rectangle "Load Balancer\n(primary)" as LoadBalancerPrimary
+            rectangle "Load Balancer\n(standby)" as LoadBalancerStandby
+        }
+
+        package "Subnet 2\n(Public/Regional)" as Subnet2 {
+            rectangle "Security List" as Subnet2Security
+            rectangle "Route Table" as Subnet2Route
+            node "Bastion\nHost" as BastionHost
+        }
+
+        package "Subnet 3\n(Private/Regional)" as Subnet3 {
+            rectangle "Security List" as Subnet3Security
+            rectangle "Route Table" as Subnet3Route
+            node "Jenkins\nController" as JenkinsController
+            rectangle "Healthcheck" as Healthcheck
+        }
+
+        package "Subnet 4\n(Private/Regional)" as Subnet4 {
+            rectangle "Security List" as Subnet4Security
+            rectangle "Route Table" as Subnet4Route
+            node "Agent Node\n(Fault Domain X)" as AgentNodeX
+        }
+
+        package "Subnet 5\n(Private/Regional)" as Subnet5 {
+            rectangle "Security List" as Subnet5Security
+            rectangle "Route Table" as Subnet5Route
+            node "Agent Node\n(Fault Domain Y)" as AgentNodeY
+        }
+    }
+}
+
+Internet --> InternetGateway
+InternetGateway --> LoadBalancerPrimary
+InternetGateway --> BastionHost
+
+LoadBalancerPrimary <--> LoadBalancerStandby
+LoadBalancerPrimary --> JenkinsController
+LoadBalancerStandby --> JenkinsController
+
+BastionHost --> JenkinsController : SSH
+BastionHost --> AgentNodeX : SSH
+BastionHost --> AgentNodeY : SSH
+
+JenkinsController --> AgentNodeX : Jenkins agent traffic
+JenkinsController --> AgentNodeY : Jenkins agent traffic
+JenkinsController --> Healthcheck
+
+JenkinsController --> NatGateway : outbound updates
+AgentNodeX --> NatGateway : outbound updates
+AgentNodeY --> NatGateway : outbound updates
+NatGateway --> Internet
+@enduml

@@ -1,0 +1,76 @@
+@startuml
+skinparam componentStyle rectangle
+
+title Tengine Lite Architecture (Component & Deployment View)
+
+package "Client Layer" {
+  component "Example Applications\n(Classification, Detection, Segmentation,\nPose Estimation, Landmark, OCR)" as ExampleApps
+  component "Online Model Converter (WASM)" as OnlineConverter
+  component "Linux Model Converter (CLI)" as LinuxConverter
+}
+
+package "API Layer" {
+  component "C API" as CAPI
+  component "C++ API Docs" as CPPDocs
+  component "Python API Docs" as PyDocs
+}
+
+package "Core Engine Layer" {
+  component "Scheduler" as Scheduler
+  component "Operator Module" as Operator
+  component "Device Backend" as Device
+  component "Serializer\n(tmfile decoder)" as Serializer
+}
+
+package "Data Layer" {
+  database "Local Model Files\n(tmfile)" as ModelFiles
+  database "Local Image Files" as ImageFiles
+  database "Converted Model Artifacts" as ConvertedArtifacts
+  artifact "Serialized Model Parameters" as SerializedParams
+}
+
+package "Execution & Build Environment" {
+  node "Web Browser\n(WASM Runtime)" as Browser
+  node "Linux Environment" as LinuxEnv
+  artifact "CMake Build System" as CMake
+}
+
+'Example applications use C API for inference'
+ExampleApps --> CAPI
+'API accesses core engine services'
+CAPI --> Scheduler
+CAPI --> Serializer
+Scheduler --> Operator
+Scheduler --> Device
+Operator --> Device
+
+'Serializer loads tmfile models and produces serialized parameters'
+Serializer --> ModelFiles
+Serializer --> SerializedParams
+
+'Example applications consume local images'
+ExampleApps --> ImageFiles
+
+'Model conversion tooling operates locally and produces converted artifacts'
+OnlineConverter --> ModelFiles
+OnlineConverter --> ConvertedArtifacts
+LinuxConverter --> ModelFiles
+LinuxConverter --> ConvertedArtifacts
+
+'Hosting of tooling in target environments'
+Browser --> OnlineConverter : hosts/executes
+LinuxEnv --> LinuxConverter : runs
+
+'Build system relation (cross-platform via CMake)'
+CMake ..> CAPI : builds
+CMake ..> Scheduler
+CMake ..> Operator
+CMake ..> Device
+CMake ..> Serializer
+
+note right of OnlineConverter
+  Executes locally in the browser via WebAssembly.
+  No external network communication is required.
+end note
+
+@enduml

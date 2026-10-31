@@ -1,0 +1,76 @@
+@startuml
+
+package "Admin UI Layer" {
+  node "Browser Environment" as Browser {
+    component "Admin Application (MyEMS Admin)" as AdminApp
+    component "Admin Routing Configuration" as RoutingConfig
+    component "User Settings Route Module (/user)" as UserModule
+    component "Contact Settings Route Module (/contact)" as ContactModule
+    component "Tariff Settings Modules" as TariffModules
+    component "Category Settings Modules" as CategoryModules
+    component "Route Lazy-Loading Mechanism" as LazyLoader
+    component "API Base Path Resolver" as ApiBaseResolver
+  }
+}
+
+package "API Service Layer" {
+  node "Python Runtime" as PyRuntime {
+    component "REST API Service" as RestApi
+    interface "REST API (/api/*)" as RestApiInterface
+  }
+}
+
+package "Data/Persistence Layer" {
+  component "API Runtime Configuration Data" as RuntimeConfig
+  component "Database Connectivity (MySQL-compatible)" as DbConnectivity
+}
+
+package "Deployment & Delivery Layer" {
+  node "Reverse Proxy (e.g., Nginx)" as Nginx {
+    component "Reverse Proxy Routing (/api/ -> REST API)" as ReverseRouting
+  }
+  component "Development Quick-Run Paths" as DevQuickRun
+  component "Docker-based Setup" as DockerSetup
+  component "Python Dependency Set" as PythonDeps
+}
+
+cloud "MyEMS Components" as MyEMSComponents
+cloud "Third-party Applications" as ThirdPartyApps
+database "MySQL-compatible Database" as MySQLDB
+cloud "Docker Engine" as DockerEngine
+
+' UI dependencies
+RoutingConfig --> LazyLoader
+RoutingConfig --> UserModule
+RoutingConfig --> ContactModule
+RoutingConfig --> TariffModules
+RoutingConfig --> CategoryModules
+AdminApp --> ApiBaseResolver
+AdminApp --> RoutingConfig
+
+' API interface exposure
+RestApi - RestApiInterface
+
+' Browser-to-API communication
+AdminApp --> RestApiInterface : HTTP/HTTPS same-origin "/api/" (direct)
+AdminApp --> ReverseRouting : HTTP/HTTPS "/api/" (via reverse proxy)
+ReverseRouting --> RestApiInterface : forwards "/api/"
+
+' API service dependencies
+RestApi --> PythonDeps : requires
+RestApi --> RuntimeConfig : reads
+RestApi --> DbConnectivity : uses
+
+' Persistence connectivity
+DbConnectivity --> MySQLDB : connects
+
+' External integrations
+MyEMSComponents --> RestApiInterface
+ThirdPartyApps --> RestApiInterface
+
+' Delivery & setup paths
+DockerSetup --> RestApi : prepares runtime
+DockerSetup --> DockerEngine : uses
+DevQuickRun --> RestApi : development startup
+
+@enduml

@@ -1,0 +1,89 @@
+@startuml
+' Tengine Lite Component/Deployment Diagram
+
+' Define Nodes for Deployment Environments
+node "Linux Environment" {
+    component "Model Conversion Tool\n(Linux Pre-compiled)" as linuxConverter
+}
+
+node "Web Browser\n(WebAssembly Support)" {
+    component "Model Conversion Tool\n(Browser-local WASM)" as wasmConverter
+}
+
+node "Build Targets" {
+    component "Linux Executable" as linuxTarget
+    component "Android Library" as androidTarget
+    component "WebAssembly Module" as wasmTarget
+}
+
+cloud "CMake Build System" as cmakeSystem
+
+' Define Packages for Architecture Layers
+package "API Layer" {
+    component "C API" as cApi
+    component "C++ API" as cppApi
+    component "Python API" as pythonApi
+    component "C++ API Docs" as cppDocs
+    component "Python API Docs" as pythonDocs
+}
+
+package "Core Architecture Layer" {
+    component "Device Module\n(NN Operators Backend)" as deviceModule
+    component "Scheduler Module\n(Scheduling & Execution)" as schedulerModule
+    component "Operator Module\n(Operator Registration)" as operatorModule
+    component "Serializer Module\n(tmfile Decoder)" as serializerModule
+}
+
+package "Model Handling Layer" {
+    component "linuxConverter" as linuxConvRef
+    component "wasmConverter" as wasmConvRef
+}
+
+package "Execution Layer" {
+    component "Classification App" as classifyApp
+    component "Detection App" as detectApp
+    component "Segmentation App" as segmentApp
+    component "Pose Estimation App" as poseApp
+    component "Landmark Detection App" as landmarkApp
+    component "Character Recognition App" as ocrApp
+}
+
+package "Build/Deployment Layer" {
+    component "cmakeSystem" as cmakeRef
+}
+
+' Define Data Stores
+database "tmfile Models" as tmfileStore
+
+' Define Interfaces
+interface "NNIR Interface" as nnirInterface
+
+' Component Dependencies
+schedulerModule --> serializerModule : uses for model decoding
+schedulerModule --> deviceModule : manages hardware resources
+operatorModule --> schedulerModule : registers operators
+schedulerModule --> nnirInterface : manages
+
+' Model Flow
+linuxConvRef --> tmfileStore : writes converted models
+wasmConvRef --> tmfileStore : writes converted models
+serializerModule --> tmfileStore : reads binary data
+
+' API Documentation Links
+cppApi --> cppDocs : documented at
+pythonApi --> pythonDocs : documented at
+
+' Example Application Dependencies
+classifyApp --> cApi : integrates via
+detectApp --> cppApi : integrates via
+segmentApp --> pythonApi : integrates via
+poseApp --> cApi : integrates via
+landmarkApp --> cppApi : integrates via
+ocrApp --> pythonApi : integrates via
+
+' Build System Connections
+cmakeSystem --> linuxTarget : builds
+cmakeSystem --> androidTarget : builds
+cmakeSystem --> wasmTarget : builds
+
+@enduml

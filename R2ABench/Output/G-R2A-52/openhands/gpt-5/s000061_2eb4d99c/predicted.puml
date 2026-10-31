@@ -1,0 +1,80 @@
+@startuml
+title AWS IoT Device Simulator - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam arrowThickness 1
+skinparam defaultTextAlignment center
+
+actor "Admin/Operator" as Admin
+actor "API Client" as ApiClient
+actor "AWS CloudFormation" as Cfn
+
+component "Web Management Console" as Console
+
+package "AWS (Regional)" as AWS {
+  [Amazon API Gateway\nREST API\n(stage: prod,\nCORS + Validation,\nAccess Logs JSON,\nMethod Logging: INFO,\nTracing Enabled)] as APIGW
+  component "AWS Lambda\nSimulation API" as LambdaApi
+  component "AWS Lambda\nRoute Loader" as LambdaRoute
+  component "AWS Lambda\nCustom Resource\n(Deployment-Time)" as LambdaCR
+  database "Amazon DynamoDB\n(Config & State)" as DDB
+  collections "Amazon S3\nROUTE_BUCKET\n(Route JSON)" as S3
+  component "AWS Step Functions\nSimulation Orchestration" as SFN
+  queue "AWS IoT\nTopics" as IoT
+  component "Identity Service\n(e.g., Cognito)" as Auth
+  component "Logging & Tracing\n(CloudWatch Logs, X-Ray)" as Logs
+}
+
+' Users and Clients
+Admin --> Console
+Console --> APIGW : HTTPS
+ApiClient --> APIGW : HTTPS
+
+' AuthN
+Console ..> Auth : authenticate
+APIGW ..> Auth : authorize
+
+' API integrations
+APIGW --> LambdaApi : Invoke
+APIGW --> LambdaRoute : Route APIs
+
+' Data and state
+LambdaApi --> DDB : CRUD sim/device-type\nmetadata
+LambdaApi --> SFN : Start/Manage\nsimulation
+
+' Route loading
+LambdaRoute --> S3 : Get route JSON\n(key=routeName OR\nroute-{id}.json)
+LambdaRoute --> DDB : Update route state
+
+' Simulation execution & messaging
+SFN --> IoT : Publish simulated\nmessages
+
+' Deployment-time custom resource
+Cfn --> LambdaCR : Invoke on\nCreate/Update/Delete
+LambdaCR --> Cfn : Send response\n(JSON body)
+
+' Observability
+APIGW --> Logs : Access logs\n(JSON)
+APIGW ..> Logs : Tracing
+LambdaApi --> Logs
+LambdaRoute --> Logs
+LambdaCR --> Logs
+SFN --> Logs
+
+note right of APIGW
+Supports methods:
+GET, POST, PUT,
+DELETE, OPTIONS
+end note
+
+note bottom of LambdaRoute
+Parses UTF-8 JSON routes,
+assembles route state:
+routeName, odometer,
+routeStage, burndown,
+burndownCalc, routeEnded,
+route, randomTriggers.
+Propagates S3 errors.
+end note
+
+@enduml

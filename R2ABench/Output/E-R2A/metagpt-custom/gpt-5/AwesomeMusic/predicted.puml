@@ -1,0 +1,53 @@
+@startuml
+
+package "Presentation Layer" {
+  component "Web Frontend\n(HTML/CSS/JS + Bootstrap)" as WebFrontend
+}
+
+package "Edge/Gateway Layer" {
+  node "API Gateway\n(Nginx 1.19.8)" as Nginx
+}
+
+package "Application/API Layer" {
+  component "Web Backend\n(Golang/Gin)" as Backend
+}
+
+package "Algorithm/ML Layer" {
+  component "Algorithm Service\n(Generation/Training/Classification/Recommendation\nmidi↔abc)" as Algo
+}
+
+package "Scheduling Layer" {
+  component "Scheduling Module\n(Cron 02:00 + On-demand,\nserialize tasks, retries, logs)" as Scheduler
+}
+
+package "Messaging Layer" {
+  cloud "Message Queue\n(RabbitMQ 3.8.14)" as MQ
+}
+
+package "Data/Storage Layer" {
+  database "Application Database" as AppDB
+  cloud "Artifact/Big-Data Storage\n(Hadoop 3.2.2 - HDFS)" as Hadoop
+  cloud "Coordination Store\n(etcd 3.4.15)" as Etcd
+}
+
+WebFrontend --> Nginx : HTTPS requests
+Nginx --> Backend : HTTP/REST routing
+
+Backend --> Scheduler : submit task/relay user request
+Scheduler --> Backend : status/callback updates
+
+Scheduler --> MQ : push tasks (AMQP)
+MQ --> Scheduler : task status/results (AMQP)
+
+MQ --> Algo : deliver task metadata (AMQP)
+Algo --> MQ : publish status/results (AMQP)
+
+Algo --> Backend : callbacks: exceptions, labels, recommendations
+
+Backend --> AppDB : persist/query domain data (SQL)
+Backend --> Hadoop : artifacts/models (HDFS)
+Algo --> Hadoop : read/write datasets/artifacts (HDFS)
+Backend --> Etcd : coordination/configuration
+Scheduler --> Etcd : coordination/configuration
+
+@enduml

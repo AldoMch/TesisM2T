@@ -1,0 +1,103 @@
+@startuml
+title HTTP Proxy System - Layered Architecture (G-R2A-52 / s000007_6883c7be)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' 1. CLIENT / PRESENTATION LAYER
+' ============================================================
+package "Client Layer" <<Layer>> {
+  [External HTTP Client] as EXT_CLIENT <<external>>
+  component "Test Client Workload Generator" as TEST_CLIENT {
+    component "Async HTTP Client\n(GET requests)" as ASYNC_HTTP
+    component "Success Counter\n(HTTP status == 200)" as SUCCESS_COUNTER
+  }
+  component "Fixed Thread Pool Executor\n(50 threads x 1000 GETs)" as THREAD_POOL
+  note right of EXT_CLIENT : No GUI required for in-scope workflows
+}
+
+' ============================================================
+' 2. PROXY / GATEWAY LAYER
+' ============================================================
+package "Proxy Layer" <<Layer>> {
+  component "HTTP Proxy Component" as PROXY {
+    component "Inbound Request Handler\n(retains FullHttpRequest)" as INBOUND_HANDLER
+    component "Upstream Channel Activation Listener" as CHANNEL_LISTENER
+    component "Forwarding Handler\n(write + flush retained request)" as FORWARD_HANDLER
+  }
+  component "Debug Logging Adapter\n(URI / headers / body)" as DEBUG_LOG
+}
+
+' ============================================================
+' 3. TEST SERVER / APPLICATION SERVICE LAYER
+' ============================================================
+package "Test Server Layer\n(Grizzly / Jersey)" <<Layer>> {
+  component "Embedded HTTP Server Bootstrap" as SERVER_BOOT
+  component "GET /download Endpoint Handler" as DOWNLOAD_HANDLER
+  component "File Upload Handler" as UPLOAD_HANDLER
+  component "Response Resource" as RESPONSE_RESOURCE
+}
+
+' ============================================================
+' 4. DOMAIN / DATA MODEL LAYER
+' ============================================================
+package "Domain & Data Model Layer" <<Layer>> {
+  component "Structured Response Object\ncode: Integer\nmsg: String\ndata: Object" as RESP_OBJ
+  component "File-Handling Map Payload\nfilepath -> fileName" as MAP_PAYLOAD
+}
+
+' ============================================================
+' 5. DATA / PERSISTENCE LAYER
+' ============================================================
+package "Data Layer" <<Layer>> {
+  database "Local Filesystem\n(target download file)" as FILESYSTEM
+}
+
+' ============================================================
+' 6. EXTERNAL SYSTEMS
+' ============================================================
+package "External Systems" <<Layer>> {
+  component "Upstream Server\n(Netty-style channel)" as UPSTREAM <<external>>
+}
+
+' ============================================================
+' DEPENDENCIES
+' ============================================================
+EXT_CLIENT --> PROXY : HTTP request (URI, headers, body)
+TEST_CLIENT --> SERVER_BOOT : HTTP GET /download
+TEST_CLIENT --> THREAD_POOL : submits workload
+THREAD_POOL --> ASYNC_HTTP : drives async requests
+ASYNC_HTTP --> PROXY : HTTP GET requests
+ASYNC_HTTP --> SUCCESS_COUNTER : completes -> count 200
+
+PROXY --> CHANNEL_LISTENER : channelActive(Netty ctx)
+INBOUND_HANDLER --> FORWARD_HANDLER : retained FullHttpRequest
+CHANNEL_LISTENER --> FORWARD_HANDLER : triggers write/flush
+FORWARD_HANDLER --> DEBUG_LOG : current request URI/headers/body
+FORWARD_HANDLER --> UPSTREAM : forwarded HTTP request
+DEBUG_LOG --> UPSTREAM : diagnostics only (no modification)
+
+SERVER_BOOT --> DOWNLOAD_HANDLER : exposes GET /download
+SERVER_BOOT --> UPLOAD_HANDLER : exposes upload handling
+DOWNLOAD_HANDLER --> FILESYSTEM : read target file (if exists)
+UPLOAD_HANDLER --> MAP_PAYLOAD : creates filepath map
+DOWNLOAD_HANDLER --> RESP_OBJ : builds response
+UPLOAD_HANDLER --> RESP_OBJ : builds response
+RESPONSE_RESOURCE --> RESP_OBJ : serializes code/msg/data
+
+SERVER_BOOT --> RESP_OBJ : serves structured responses
+UPSTREAM --> PROXY : HTTP response / status code
+PROXY --> EXT_CLIENT : HTTP response
+
+' ============================================================
+' BUILD / PLATFORM (multi-module Maven)
+' ============================================================
+package "Build & Platform" <<Layer>> {
+  component "Maven Multi-Module Build\nroot/test-server: Java 1.8\nproxy SDK: Java 1.7" as BUILD
+}
+BUILD ..> PROXY : compiles
+BUILD ..> SERVER_BOOT : compiles
+
+@enduml

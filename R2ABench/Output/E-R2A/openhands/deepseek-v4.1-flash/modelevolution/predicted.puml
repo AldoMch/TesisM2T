@@ -1,0 +1,183 @@
+@startuml
+title Model Evolution Version Management Visualization Tool - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' Actors / User Classes
+' =========================================================
+actor "Learner" as Learner
+actor "Model Contributor" as Contributor
+actor "Administrator" as Admin
+
+' =========================================================
+' Presentation Layer (B/S Front End)
+' =========================================================
+package "Front End (Browser-based B/S Client)" as FE {
+  component "Navigation Interface\n(<=10 nav entries)" as UI_Nav
+  component "Account Management UI\n(register/login/logout/password/permission-apply)" as UI_Account
+  component "Model Search & Viewing UI\n(search / basic text / topology)" as UI_SearchView
+  component "Model Contribution & Editing UI\n(ONNX upload / PyTorch upload & online edit / profile)" as UI_Contribute
+  component "Evolution Relationship Editing UI\n(version & layer reuse)" as UI_Evolution
+  component "User Management UI\n(manage/delete/review permissions)" as UI_UserMgmt
+
+  component "Evolution Topology Renderer\n(basic info, evolution graph, evolution details)" as UI_Topology
+  component "Responsive UI Layer\n(HTML structure / CSS layout)" as UI_Responsive
+}
+
+' =========================================================
+' Back End (Application / Business Logic)
+' =========================================================
+package "Back End (Application Server)" as BE {
+  component "API Gateway / Controller Layer" as API_GW
+
+  component "Authentication & Session Service\n(2FA, OAuth 2.0, login/logout)" as SVC_Auth
+  component "Authorization & RBAC Service\n(learner / contributor / administrator)" as SVC_RBAC
+  component "Account & Profile Service\n(registration, password change)" as SVC_Account
+  component "Permission-Change Workflow Service\n(apply, review, adjust)" as SVC_PermChange
+
+  component "Model Search Service" as SVC_Search
+  component "Model Viewing & Attribute Service" as SVC_ViewModel
+  component "Model Upload Service\n(ONNX / PyTorch source)" as SVC_Upload
+  component "PyTorch Online Editing Service" as SVC_Editor
+  component "Model Profile & Deletion Service" as SVC_ModelMgmt
+
+  component "Evolution Relationship Service\n(add/delete/modify relationships)" as SVC_Evolution
+  component "Evolution Detail Service\n(operator/layer changes, layer reuse)" as SVC_EvolutionDetail
+  component "Dataset & Trained Model Service" as SVC_Dataset
+
+  component "User Management Service\n(manage/delete users)" as SVC_UserMgmt
+
+  component "Security & Encryption Service\n(TLS, AES/DES model encryption,\ntamper & spoofing protection, privacy)" as SVC_Security
+}
+
+' =========================================================
+' Algorithm Support Module
+' =========================================================
+package "Algorithm Support Module" as ALG {
+  component "Model Parsing Engine\n(ONNX / PyTorch structure)" as ALG_Parse
+  component "Operator & Layer Analyzer" as ALG_Analyze
+  component "Evolution Relationship Computation\n(diff, reuse detection)" as ALG_Evolution
+  component "Topology Graph Builder" as ALG_Topology
+  component "Performance Metrics Evaluation\n(execution time, accuracy)" as ALG_Metrics
+  component "Python Library Interfaces" as ALG_PyLib
+}
+
+' =========================================================
+' Data Layer
+' =========================================================
+package "Data Layer" as DATA {
+  database "Neo4j\n(evolution relationships / topology graph)" as DB_Neo4j
+  database "MySQL\n(users, roles, model attributes, datasets,\ntrained models, permission applications)" as DB_MySQL
+}
+
+' =========================================================
+' External Interfaces
+' =========================================================
+cloud "External Interfaces\nHTTP / HTTPS / TCP / IP / FTP / SMTP / UDP\nBrowser Console, Python Libraries" as EXT
+
+' =========================================================
+' Actor - Front End connections
+' =========================================================
+Learner --> UI_SearchView
+Learner --> UI_Account
+Contributor --> UI_SearchView
+Contributor --> UI_Contribute
+Contributor --> UI_Evolution
+Admin --> UI_UserMgmt
+Admin --> UI_Evolution
+
+' =========================================================
+' Front End internal / to Back End
+' =========================================================
+UI_Nav --> UI_Responsive
+UI_Account --> UI_Responsive
+UI_SearchView --> UI_Responsive
+UI_Contribute --> UI_Responsive
+UI_Evolution --> UI_Responsive
+UI_UserMgmt --> UI_Responsive
+UI_Responsive --> UI_Topology
+
+UI_Account --> API_GW
+UI_SearchView --> API_GW
+UI_Contribute --> API_GW
+UI_Evolution --> API_GW
+UI_UserMgmt --> API_GW
+UI_Topology --> API_GW
+
+' =========================================================
+' Back End internal routing
+' =========================================================
+API_GW --> SVC_Auth
+API_GW --> SVC_RBAC
+API_GW --> SVC_Account
+API_GW --> SVC_PermChange
+API_GW --> SVC_Search
+API_GW --> SVC_ViewModel
+API_GW --> SVC_Upload
+API_GW --> SVC_Editor
+API_GW --> SVC_ModelMgmt
+API_GW --> SVC_Evolution
+API_GW --> SVC_EvolutionDetail
+API_GW --> SVC_Dataset
+API_GW --> SVC_UserMgmt
+
+SVC_Auth --> SVC_RBAC
+SVC_RBAC --> SVC_ModelMgmt
+SVC_RBAC --> SVC_UserMgmt
+SVC_PermChange --> SVC_RBAC
+SVC_ModelMgmt --> SVC_Evolution
+
+' =========================================================
+' Back End to Algorithm Support
+' =========================================================
+SVC_Upload --> ALG_Parse
+SVC_Editor --> ALG_Parse
+SVC_ViewModel --> ALG_Analyze
+SVC_Search --> ALG_Analyze
+SVC_Evolution --> ALG_Evolution
+SVC_EvolutionDetail --> ALG_Evolution
+SVC_Dataset --> ALG_Metrics
+
+ALG_Parse --> ALG_Analyze
+ALG_Analyze --> ALG_Evolution
+ALG_Evolution --> ALG_Topology
+ALG_Metrics --> ALG_Topology
+ALG_Topology --> ALG_PyLib
+
+' =========================================================
+' Algorithm Support to Front End topology rendering
+' =========================================================
+ALG_Topology --> UI_Topology
+
+' =========================================================
+' Data Layer connections
+' =========================================================
+SVC_Auth --> DB_MySQL
+SVC_Account --> DB_MySQL
+SVC_PermChange --> DB_MySQL
+SVC_UserMgmt --> DB_MySQL
+SVC_Search --> DB_MySQL
+SVC_ViewModel --> DB_MySQL
+SVC_ModelMgmt --> DB_MySQL
+SVC_Dataset --> DB_MySQL
+
+SVC_Evolution --> DB_Neo4j
+SVC_EvolutionDetail --> DB_Neo4j
+ALG_Evolution --> DB_Neo4j
+ALG_Topology --> DB_Neo4j
+
+SVC_Security --> DB_MySQL
+SVC_Security --> DB_Neo4j
+SVC_Security --> API_GW
+
+' =========================================================
+' External interface connections
+' =========================================================
+API_GW --> EXT
+ALG_PyLib --> EXT
+UI_Responsive --> EXT
+
+@enduml

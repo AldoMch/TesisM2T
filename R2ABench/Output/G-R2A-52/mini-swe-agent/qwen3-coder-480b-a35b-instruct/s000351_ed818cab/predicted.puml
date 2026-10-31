@@ -1,0 +1,54 @@
+@startuml
+title Kangrand System Architecture
+
+skinparam componentStyle rectangle
+
+package "Kangrand Solver" {
+  [CLI Interface] as cli
+  [Kangaroo Engine] as engine
+  [Work File Manager] as wfmanager
+  [Distributed Client] as client
+  [Distributed Server] as server
+  [Offline Merger] as merger
+  [GPU Accelerator] as gpu
+}
+
+database "File System" {
+  [Input Files] as input
+  [Work Files] as workfiles
+  [Config Files] as config
+  [Result Files] as results
+}
+
+node "Network" {
+  [Client-Server Network] as network
+}
+
+cli --> engine : triggers
+cli --> wfmanager : controls
+engine --> wfmanager : persists/resumes
+engine --> gpu : uses (optional)
+wfmanager --> workfiles : reads/writes
+client --> server : connects via
+server --> network : exposes
+network --> client : communicates
+merger --> workfiles : reads
+merger --> results : writes
+input --> cli : provides problem
+config --> server : configures
+server --> workfiles : outputs
+server --> results : outputs
+
+note right of server
+  No authentication
+end note
+
+note right of merger
+  Offline operation
+end note
+
+note bottom of engine
+  Uses Pollards Kangaroo Algorithm
+end note
+
+@enduml

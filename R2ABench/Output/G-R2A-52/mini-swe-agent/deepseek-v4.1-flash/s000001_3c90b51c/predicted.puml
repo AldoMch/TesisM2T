@@ -1,0 +1,133 @@
+@startuml JSeats_Architecture
+title JSeats - Electoral Seat Allocation (Layered Component Architecture)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' External Actors / Environments
+' =========================================================
+actor "Application Developer\n(Java API user)" as DEV
+actor "Operator / Analyst\n(CLI user)" as OP
+
+package "External Environment" <<External>> {
+  component "Java Runtime\nEnvironment (JRE)" as JRE <<external>>
+  component "Command-line Shell" as SHELL <<external>>
+  component "Local File System\n(XML / Tally / Config / Result files)" as FS <<external>>
+}
+
+' =========================================================
+' Interface / Presentation Layer
+' =========================================================
+package "Interface Layer" <<Layer>> {
+  component "Command-Line Launcher\n(list methods/filters/decorators,\ninputs, method selection, outputs)" as CLI
+  component "Caller-Facing Allocation API\n(entry point: tally + method + properties -> Result)" as API
+}
+
+' =========================================================
+' Application / Orchestration Layer
+' =========================================================
+package "Application Layer" <<Layer>> {
+  component "Seat Allocation Processor\n(configured workflow orchestration)" as PROCESSOR
+  component "Processor Configuration\n(properties, method, tally, filters,\ntie-break rules, decorators)" as CONFIG
+  component "Allocation Method Contract\n(protected tally view + properties -> Result)" as CONTRACT <<interface>>
+  component "Allocation Method Registry\n(method lookup / availability listing)" as REGISTRY
+  component "Tally Filter Chain\n(pre-allocation transformations)" as FILTERS
+  component "Tie-Breaking Resolver" as TIEBREAK
+  component "Result Decoration Chain\n(post-allocation decoration)" as DECORATORS
+}
+
+' =========================================================
+' Domain / Algorithm Layer
+' =========================================================
+package "Allocation Method Layer" <<Layer>> {
+  component "Majority Methods\n(simple, qualified, absolute)" as MAJORITY
+  component "Ranked Method\n(by votes)" as RANKED
+  component "Equal Proportions\n(Huntington-Hill)" as EQUALPROP
+  component "Largest Remainder\n(Hare, Droop, Imperiali)" as LARGESTREM
+  component "Highest Averages\n(D'Hondt, Sainte-Lague/Webster,\nImperiali, Danish;\ndivisor-sequence driven)" as HIGHESTAVG
+}
+
+' =========================================================
+' Data / Model Layer
+' =========================================================
+package "Data & Model Layer" <<Layer>> {
+  component "Tally\n(candidates + vote counts,\npotential votes, protected view)" as TALLY
+  component "Candidate / Vote Entries" as CANDIDATE
+  component "Result / Decorated Result" as RESULT
+  component "Properties\n(method & processor parameters)" as PROPS
+  component "SeatAllocationException\n(error signalling)" as EXCEPTION
+  component "XML Tally / Config I/O\n(Tally.fromXML, XML result output)" as XMLIO
+}
+
+' =========================================================
+' Relationships
+' =========================================================
+OP --> SHELL
+SHELL --> CLI
+DEV --> API
+
+CLI --> PROCESSOR
+CLI --> REGISTRY
+CLI --> XMLIO
+API --> PROCESSOR
+API --> REGISTRY
+API --> TALLY
+API --> PROPS
+
+PROCESSOR --> CONFIG
+PROCESSOR --> FILTERS
+PROCESSOR --> CONTRACT
+PROCESSOR --> TIEBREAK
+PROCESSOR --> DECORATORS
+CONFIG --> PROPS
+CONFIG --> TALLY
+
+REGISTRY --> CONTRACT
+CONTRACT <|.. MAJORITY
+CONTRACT <|.. RANKED
+CONTRACT <|.. EQUALPROP
+CONTRACT <|.. LARGESTREM
+CONTRACT <|.. HIGHESTAVG
+
+FILTERS --> TALLY
+TIEBREAK --> TALLY
+MAJORITY --> TALLY
+RANKED --> TALLY
+EQUALPROP --> TALLY
+LARGESTREM --> TALLY
+HIGHESTAVG --> TALLY
+
+MAJORITY --> EXCEPTION
+CONTRACT --> EXCEPTION
+PROCESSOR --> EXCEPTION
+DECORATORS --> RESULT
+CONTRACT --> RESULT
+PROCESSOR --> RESULT
+CLI --> RESULT
+
+XMLIO --> TALLY
+XMLIO --> CONFIG
+XMLIO --> FS
+CLI --> FS
+RESULT --> FS
+CANDIDATE --> TALLY
+
+CLI ..> JRE
+API ..> JRE
+PROCESSOR ..> JRE
+
+note right of HIGHESTAVG
+  FR-006: variant-specific
+  divisor sequences determine
+  per-round candidate priority
+end note
+
+note bottom of API
+  C-002: immutable-tally constraint
+  applies only to the allocation-method
+  contract, not to the caller API.
+end note
+
+@enduml

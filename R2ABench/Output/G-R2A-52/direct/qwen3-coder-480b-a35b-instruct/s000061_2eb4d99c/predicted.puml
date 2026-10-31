@@ -1,0 +1,83 @@
+@startuml
+!define AWSPrefix(x) aws-x
+!define AWSService(x) rectangle x <<service>> #LightBlue
+!define Component(x) rectangle x <<component>> #LightGreen
+!define Interface(x) rectangle x <<interface>> #LightYellow
+!define DataStore(x) database x <<datastore>> #LightGray
+
+title IoT Device Simulator System Architecture
+
+' AWS Services
+AWSService(AWS_API_Gateway)
+AWSService(AWS_Lambda)
+AWSService(AWS_S3)
+AWSService(AWS_IoT_Core)
+AWSService(AWS_CloudFormation)
+AWSService(AWS_DynamoDB)
+AWSService(AWS_Step_Functions)
+
+' System Components
+Component(Web_Management_Console)
+Component(Simulation_Engine)
+Component(Route_Loader)
+Component(Device_Simulator)
+Component(Custom_Resource_Handler)
+Component(Message_Publisher)
+
+' Interfaces
+Interface(REST_API_Interface)
+Interface(CloudFormation_Custom_Resource_Interface)
+Interface(IoT_Message_Publication_Interface)
+
+' Data Stores
+DataStore(Route_Data_Store)
+DataStore(Device_State_Store)
+
+' Relationships
+Web_Management_Console --> REST_API_Interface : Uses
+REST_API_Interface --> AWS_API_Gateway : Exposes
+AWS_API_Gateway --> AWS_Lambda : Integrates
+AWS_Lambda --> Simulation_Engine : Executes
+Simulation_Engine --> Route_Loader : Loads Routes
+Route_Loader --> AWS_S3 : Retrieves Data
+AWS_S3 --> Route_Data_Store : Stores
+Route_Loader --> Device_Simulator : Provides Routes
+Device_Simulator --> Message_Publisher : Sends Messages
+Message_Publisher --> AWS_IoT_Core : Publishes To
+AWS_Lambda --> Custom_Resource_Handler : Handles
+Custom_Resource_Handler --> AWS_CloudFormation : Responds To
+AWS_Lambda --> AWS_DynamoDB : Manages State
+Device_Simulator --> AWS_Step_Functions : Orchestrates
+Device_Simulator --> Device_State_Store : Updates
+
+note right of Web_Management_Console
+  Web-based UI for managing
+  simulations and device types
+end note
+
+note right of Route_Loader
+  Loads route data from S3
+  using ROUTE_BUCKET parameter
+end note
+
+note right of Custom_Resource_Handler
+  Processes CloudFormation
+  custom resource events
+end note
+
+note right of Message_Publisher
+  Publishes simulated device
+  messages to AWS IoT topics
+end note
+
+note bottom of AWS_API_Gateway
+  Regional REST API with
+  CORS and request validation
+end note
+
+note bottom of AWS_S3
+  Stores route JSON files
+  in UTF-8 format
+end note
+
+@enduml

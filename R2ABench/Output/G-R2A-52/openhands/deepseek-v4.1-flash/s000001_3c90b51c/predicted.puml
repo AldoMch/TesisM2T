@@ -1,0 +1,81 @@
+@startuml
+title JSeats - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Java Developer" as Dev
+actor "Command-Line User" as CliUser
+
+package "JSeats (Java)" {
+
+  component "Command-Line Launcher\n(CLI)" as CLI
+
+  component "Caller-Facing Allocation API\n(Entry Point)" as API
+
+  component "Configurable Allocation Processor\n(Workflow Orchestration)" as Processor
+
+  component "Tally Filter API" as FilterAPI
+  component "Result Decoration API" as DecorAPI
+
+  interface "Allocation-Method Contract" as MethodContract
+  interface "Tally Filter" as TallyFilter
+  interface "Result Decorator" as ResultDecorator
+
+  package "Allocation Methods" {
+    component "Majority\n(simple, qualified, absolute)" as Majority
+    component "Ranked\n(by votes)" as Ranked
+    component "Equal Proportions\n(Huntington-Hill)" as EP
+    component "Largest Remainder\n(Hare, Droop, Imperiali)" as LR
+    component "Highest Averages\n(D'Hondt, Sainte-Lague/Webster,\nImperiali, Danish)" as HA
+  }
+
+  package "Data Model" {
+    component "Tally" as Tally
+    component "Candidate" as Candidate
+    component "Result" as Result
+    component "Properties" as Properties
+  }
+
+  component "XML I/O\n(Tally.fromXML, config/results)" as XML
+  component "SeatAllocationException" as Ex
+
+}
+
+Dev --> API : uses
+CliUser --> CLI : invokes
+
+API --> Processor : submits tally,\nmethod, parameters
+CLI --> Processor : options / files
+
+Processor --> FilterAPI : applies pre-processing
+Processor --> DecorAPI : applies post-processing
+Processor --> MethodContract : executes selected method
+
+FilterAPI ..> TallyFilter : <<realizes>>
+DecorAPI ..> ResultDecorator : <<realizes>>
+
+MethodContract <|.. Majority
+MethodContract <|.. Ranked
+MethodContract <|.. EP
+MethodContract <|.. LR
+MethodContract <|.. HA
+
+MethodContract --> Tally : protected view
+MethodContract --> Properties : configuration
+MethodContract --> Result : returns
+
+API --> Result : returns
+API --> Ex : reports failure
+
+Processor --> Ex : signals failure
+
+CLI --> XML : reads/writes
+API --> XML : loads tally
+
+Tally "1" o-- "*" Candidate : contains
+Processor --> Tally
+Processor --> Properties
+Processor --> Result
+
+@enduml

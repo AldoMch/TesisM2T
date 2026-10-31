@@ -1,0 +1,65 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam rectangleBorderColor #444444
+skinparam packageBorderColor #666666
+skinparam cloudBorderColor #666666
+skinparam databaseBorderColor #666666
+
+actor "Developer /\nOperator" as User
+
+package "macpro-appian-connector" {
+    component [Stage Listing\nHandler] as StageListing
+    component [Connector\nConfiguration Handler] as ConnectorConfig
+    component [Connector\nManagement Library] as ConnectorLib
+    component [Deployment\nMetrics Collector] as DeployMetrics
+    component [PR Metrics\nCollector] as PRMetrics
+}
+
+cloud "AWS" {
+    component [AWS CLI] as AWSCLI
+    component [EventBridge\n(Event Routing Rules)] as EventBridge
+    component [SNS Topic] as SNSTopic
+    component [SNS Subscriptions\n(manually managed)] as SNSSubs
+    component [Target Cluster\n& Service] as ClusterService
+}
+
+cloud "GitHub" {
+    component [GitHub Actions\n(CI/CD)] as GHActions
+    component [Workflow Runs API\n(deploy.yml)] as WorkflowAPI
+    component [Pull Requests API] as PRAPI
+}
+
+component [Appian] as Appian
+database "CMS BigMAC" as BigMAC
+
+User --> AWSCLI : obtain & set credentials
+User --> StageListing : run listRunningStages
+AWSCLI --> StageListing : credentials
+StageListing --> ClusterService : query running stages\n(current AWS account/region)
+StageListing --> User : runningStages=<stages>
+
+User --> ConnectorConfig : invoke (cluster, service,\nconnector definitions)
+ConnectorConfig --> ConnectorLib : put / delete (empty set) / restart
+ConnectorLib --> ClusterService : apply connector\ndefinitions & restart
+
+Appian --> ClusterService : data changes
+ClusterService --> BigMAC : data transfer\n(via connectors)
+
+ClusterService --> EventBridge : runtime service events
+EventBridge --> SNSTopic : route matching events\n(filtered by rule pattern)
+SNSTopic --> SNSSubs : publish to subscribers
+User --> SNSSubs : manage subscriptions manually\n(outside deployment automation)
+
+GHActions --> WorkflowAPI : workflow run records
+GHActions --> PRAPI : pull request records
+
+User --> DeployMetrics : provide branch name
+DeployMetrics --> WorkflowAPI : query deploy.yml runs\n(paginated, per_page=100)
+DeployMetrics --> User : failedRuns, passedRuns
+
+User --> PRMetrics : provide branch name
+PRMetrics --> PRAPI : query closed PRs\n(paginated, per_page=100)
+PRMetrics --> User : averageTimeToMerge
+
+@enduml

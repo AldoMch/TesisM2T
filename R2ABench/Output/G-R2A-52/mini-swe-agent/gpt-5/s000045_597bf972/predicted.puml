@@ -1,0 +1,64 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+package "Host Android Application" {
+  component "Host Android Application" as HostApp
+}
+
+package "QAPM SDK" {
+  component "WorkHandlerManager" as WorkHandlerManager
+  component "UploadProcessor" as UploadProcessor
+  component "DataSender" as DataSender
+  package "HttpClientInstrumentation" {
+    component "ResponseHandlerWrapper" as RespHandlerWrapper
+    component "ResponseEntityWrapper" as RespEntityWrapper
+    component "TransactionState" as TransactionState
+    component "CountingInputStream" as CountingInputStream
+  }
+}
+
+package "Android Platform" {
+  component "HandlerThread/Looper" as HandlerThreadLooper
+  component "Main Looper" as MainLooper
+  component "Context" as AndroidContext
+  component "NetworkConnectivityService" as NetService
+}
+
+package "Local Storage" {
+  database "Upload Directory" as UploadDir
+}
+
+package "Apache HttpClient Library" {
+  component "HttpClient" as ApacheHttpClient
+  interface "ResponseHandler" as ApacheResponseHandler
+  component "HttpEntity" as ApacheHttpEntity
+}
+
+package "Remote Systems" {
+  node "Remote Reporting Endpoint" as RemoteEndpoint
+}
+
+HostApp --> WorkHandlerManager : initialize, schedule tasks
+HostApp --> UploadProcessor : request upload / forced-send
+
+WorkHandlerManager --> HandlerThreadLooper : bind background handler
+WorkHandlerManager --> MainLooper : maintain main-thread handler
+
+UploadProcessor --> NetService : check connectivity
+UploadProcessor --> UploadDir : enumerate/read files, delete on success
+UploadProcessor --> AndroidContext : derive cParam
+UploadProcessor --> DataSender : submit bParam/cParam
+
+DataSender --> ApacheHttpClient : send payloads
+ApacheHttpClient --> RemoteEndpoint : HTTP requests
+
+DataSender ..> RespHandlerWrapper : transaction-aware response handling
+RespHandlerWrapper --> ApacheResponseHandler : delegate
+RespHandlerWrapper --> TransactionState : instrument state
+
+RespEntityWrapper --> ApacheHttpEntity : wrap entity
+RespEntityWrapper --> CountingInputStream : cached getContent()
+ApacheHttpClient ..> RespEntityWrapper : entity instrumentation
+
+@enduml

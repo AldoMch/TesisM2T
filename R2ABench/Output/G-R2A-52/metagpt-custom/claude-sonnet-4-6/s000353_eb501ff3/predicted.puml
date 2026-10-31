@@ -1,0 +1,156 @@
+@startuml Turing Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #6366F1
+skinparam packageFontColor #1E1B4B
+skinparam packageFontStyle bold
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentBorderColor #6366F1
+skinparam componentFontColor #1E1B4B
+skinparam nodeBackgroundColor #F0FDF4
+skinparam nodeBorderColor #16A34A
+skinparam nodeFontColor #14532D
+skinparam databaseBackgroundColor #FFF7ED
+skinparam databaseBorderColor #EA580C
+skinparam databaseFontColor #7C2D12
+skinparam cloudBackgroundColor #EFF6FF
+skinparam cloudBorderColor #2563EB
+skinparam cloudFontColor #1E3A8A
+skinparam interfaceBackgroundColor #F5F3FF
+skinparam interfaceBorderColor #7C3AED
+skinparam arrowColor #4B5563
+skinparam arrowFontColor #374151
+skinparam arrowFontSize 10
+
+' ─── External Systems ───────────────────────────────────────────
+
+node "Kubernetes Cluster" as K8S {
+  component "Kubernetes API" as K8S_API
+}
+
+cloud "MLflow Model Registry" as MLflow
+
+cloud "Jaeger\n(Distributed Tracing Backend)" as Jaeger
+
+' ─── OpenAPI Specification ──────────────────────────────────────
+
+package "OpenAPI Specification (v3.0.3)" as OpenAPISpec {
+  component "Endpoint Schemas" as EndpointSchemas
+}
+
+' ─── API Layer ──────────────────────────────────────────────────
+
+package "API Layer" as APILayer {
+  component "HTTP API Server" as APIServer
+  component "Router Handler" as RouterHandler
+  note right of RouterHandler : GET /projects/{project_id}/routers
+  component "Ensembler Handler" as EnsemblerHandler
+  note right of EnsemblerHandler : CRUD endpoints\nDelete returns EnsemblerId JSON
+}
+
+' ─── Middleware Layer ────────────────────────────────────────────
+
+package "Middleware Layer" as MiddlewareLayer {
+  component "Authorization Middleware\n(conditional)" as AuthMiddleware
+  component "OpenAPI Validation Middleware\n(conditional)" as ValidationMiddleware
+}
+
+' ─── Service / Business Logic Layer ─────────────────────────────
+
+package "Service / Business Logic Layer" as ServiceLayer {
+  component "Router Service" as RouterService
+  note right of RouterService : protocol constraints,\ntimeout validation,\ndeployment lifecycle orchestration
+  component "Ensembler Service" as EnsemblerService
+  note right of EnsemblerService : CRUD, referential integrity check\n(400 if ensembler in use by router),\nJSON serialization
+}
+
+' ─── Cluster Management Layer ───────────────────────────────────
+
+package "Cluster Management Layer" as ClusterLayer {
+  component "Kubernetes Cluster Manager" as K8sManager
+  note right of K8sManager : create / update / delete\nrouter deployments\ncontainerPort default: 8080
+}
+
+' ─── PyFuncEnsembler Runtime Layer ──────────────────────────────
+
+package "PyFuncEnsembler Runtime Layer" as PyFuncLayer {
+  component "PyFuncEnsembler Image Builder" as PyFuncBuilder
+  note right of PyFuncBuilder : build-time: local Docker image build,\nmodel artifact download from MLflow
+  component "PyFuncEnsemblerRunner\n(webservice)" as PyFuncRunner
+  note right of PyFuncRunner : user-defined ensembler webservice\npackaged as pre-built Docker image
+}
+
+' ─── Observability Layer ─────────────────────────────────────────
+
+package "Observability Layer" as ObsLayer {
+  component "Jaeger Tracing Client" as JaegerClient
+  note right of JaegerClient : sampling-based trace propagation
+}
+
+' ─── Interfaces ─────────────────────────────────────────────────
+
+interface "HTTP Endpoints\n(Client Inbound)" as HTTPIn
+interface "PyFuncEnsembler HTTP Interface" as PyFuncHTTP
+interface "Cluster API Interface" as ClusterIface
+interface "Artifact Download Interface" as ArtifactIface
+interface "Trace Export Interface" as TraceIface
+
+' ─── Dependency Arrows ──────────────────────────────────────────
+
+' Inbound HTTP to API Server
+HTTPIn --> APIServer
+
+' API Server governed by OpenAPI Specification
+APIServer ..> OpenAPISpec : governed by
+
+' API Server mounts middleware conditionally
+APIServer --> AuthMiddleware : mounts conditionally\n(auth enabled)
+APIServer --> ValidationMiddleware : mounts conditionally\n(validation enabled)
+
+' Validation Middleware validates against OpenAPI Spec
+ValidationMiddleware ..> OpenAPISpec : validates against
+
+' Middleware outbound into handler pipeline
+AuthMiddleware --> RouterHandler : authorized request\nforwarded
+AuthMiddleware --> EnsemblerHandler : authorized request\nforwarded
+ValidationMiddleware --> RouterHandler : validated request\nforwarded
+ValidationMiddleware --> EnsemblerHandler : validated request\nforwarded
+
+' API Layer internal routing
+APIServer --> RouterHandler
+APIServer --> EnsemblerHandler
+
+' Handlers -> Services
+RouterHandler    --> RouterService
+EnsemblerHandler --> EnsemblerService
+
+' Ensembler Service referential-integrity check against Router Service
+EnsemblerService --> RouterService : referential integrity check\n(400 if ensembler used by router)
+
+' Service -> Cluster Management
+RouterService --> K8sManager : delegates deployment\nlifecycle operations
+
+' Cluster Management -> External Kubernetes
+K8sManager --> ClusterIface
+ClusterIface --> K8S_API
+
+' API Server -> Jaeger Tracing Client (Router component integrates tracing per NFR-002)
+APIServer --> JaegerClient : integrates Jaeger\ntracing capability
+
+' Observability -> External Jaeger
+JaegerClient --> TraceIface
+TraceIface --> Jaeger
+
+' PyFuncEnsembler build-time: Image Builder downloads artifacts from MLflow
+PyFuncBuilder --> ArtifactIface : downloads\nmodel artifacts
+ArtifactIface --> MLflow
+
+' PyFuncRunner deployed as webservice; inbound HTTP interface
+PyFuncHTTP --> PyFuncRunner : inbound HTTP\nrequests
+
+' PyFuncRunner integrated with Turing Router (FR-006)
+PyFuncRunner --> RouterService : ensembler webservice\nfor use with Turing routers
+
+@enduml

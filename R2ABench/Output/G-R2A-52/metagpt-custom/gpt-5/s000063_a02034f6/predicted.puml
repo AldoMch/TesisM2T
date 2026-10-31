@@ -1,0 +1,85 @@
+@startuml
+
+cloud "Telegram-compatible Clients" as Clients
+
+node "Docker Deployment Environment" {
+  node "Go Multi-Service Server (Go-based)" {
+
+    package "Client Access Layer" {
+      component "MTProto Frontend" as MTProtoFrontend
+    }
+
+    package "Access-Facing (BFF) Layer" {
+      component "Access/BFF Service" as BFF
+    }
+
+    package "Business/Service Layer" {
+      component "Authorization & Salt Service" as AuthSalt
+      component "Session Service" as SessionSvc
+      component "Service Message Handler" as ServiceMsgHandler
+      component "Registration & Verification Service" as RegVerify
+    }
+
+    package "Asynchronous/Supporting Components Layer" {
+      component "Async Event Hub" as AsyncHub
+      component "Push/Sync Dispatcher" as Dispatcher
+      component "Media Wrapper" as MediaWrapper
+    }
+
+    package "Storage/Infrastructure Integration Layer" {
+      component "MySQL Adapter" as MySQLAdapter
+      component "Redis Adapter" as RedisAdapter
+      component "etcd Adapter" as EtcdAdapter
+      component "MinIO Adapter" as MinIOAdapter
+    }
+  }
+}
+
+database "MySQL" as MySQL
+database "Redis" as Redis
+database "etcd Cluster" as Etcd
+cloud "Kafka Cluster" as Kafka
+cloud "MinIO Object Storage" as MinIO
+component "External Verification Code Service (optional)" as ExtVerify
+component "FFmpeg (optional)" as FFmpeg
+component "FFProbe (optional)" as FFProbe
+
+Clients --> MTProtoFrontend
+
+MTProtoFrontend --> BFF
+
+BFF --> AuthSalt
+BFF --> SessionSvc
+BFF --> ServiceMsgHandler
+BFF --> RegVerify
+
+ServiceMsgHandler --> SessionSvc
+
+RegVerify --> ExtVerify
+
+AuthSalt --> MySQLAdapter
+SessionSvc --> RedisAdapter
+
+' Connect internal components to etcd for config/service discovery
+BFF --> EtcdAdapter
+SessionSvc --> EtcdAdapter
+
+MySQLAdapter --> MySQL
+RedisAdapter --> Redis
+EtcdAdapter --> Etcd
+MinIOAdapter --> MinIO
+
+' Asynchronous producers to complete the event pipeline
+SessionSvc --> AsyncHub
+ServiceMsgHandler --> AsyncHub
+RegVerify --> AsyncHub
+
+AsyncHub --> Kafka
+AsyncHub --> Dispatcher
+Dispatcher --> MTProtoFrontend
+
+MediaWrapper --> FFmpeg
+MediaWrapper --> FFProbe
+MediaWrapper --> MinIOAdapter
+
+@enduml

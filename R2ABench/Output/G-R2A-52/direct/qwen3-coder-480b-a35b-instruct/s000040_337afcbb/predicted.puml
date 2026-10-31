@@ -1,0 +1,88 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "External Users/\nSystems" as external_users
+
+RECTANGLE "PlugIt Proxy" as proxy {
+    RECTANGLE "Proxy API Endpoint" as proxy_api
+    RECTANGLE "Proxy Data Store" as proxy_db
+    RECTANGLE "Mail Workflow\n(Standalone Example)" as mail_workflow
+}
+
+RECTANGLE "PlugIt Service 1" as service1 {
+    RECTANGLE "Service API Client" as client1
+    RECTANGLE "Service Config" as config1
+    RECTANGLE "Service Data Store" as db1
+}
+
+RECTANGLE "PlugIt Service 2" as service2 {
+    RECTANGLE "Service API Client" as client2
+    RECTANGLE "Service Config" as config2
+    RECTANGLE "Service Data Store" as db2
+}
+
+RECTANGLE "PlugIt Service N" as servicen {
+    RECTANGLE "Service API Client" as clientn
+    RECTANGLE "Service Config" as confign
+    RECTANGLE "Service Data Store" as dbn
+}
+
+RECTANGLE "Configuration Files\n(Project & Local)" as config_files
+RECTANGLE "Database Technology\n(MySQL, SQLite, etc.)" as database_tech
+RECTANGLE "Inbound Email\nMessages" as email_source
+
+' Connections
+external_users --> proxy_api : Access Services
+proxy_api --> service1 : PlugIt Protocol
+proxy_api --> service2 : PlugIt Protocol
+proxy_api --> servicen : PlugIt Protocol
+
+service1 --> client1
+service1 --> config1
+service1 --> db1
+
+service2 --> client2
+service2 --> config2
+service2 --> db2
+
+servicen --> clientn
+servicen --> confign
+servicen --> dbn
+
+config1 --> config_files
+config2 --> config_files
+confign --> config_files
+
+db1 --> database_tech
+db2 --> database_tech
+dbn --> database_tech
+
+mail_workflow --> email_source : Process Inbound Mail
+mail_workflow ..> proxy_api : Part of Proxy
+
+note right of proxy
+    Central access point for all services.
+    Manages unified user experience.
+end note
+
+note right of service1
+    Isolated service with its own
+    data and configuration.
+end note
+
+note right of mail_workflow
+    Standalone example workflow
+    for processing inbound emails.
+end note
+
+note top of config_files
+    Contains project and local
+    (private) configuration settings.
+end note
+
+note bottom of database_tech
+    External database provisioned
+    and configured per service needs.
+end note
+
+@enduml

@@ -1,0 +1,105 @@
+@startuml
+title Soundzone - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================
+' Client / Presentation Layer
+' ============================
+package "Client Layer (Browser)" as CLIENT {
+
+  component "React SPA" as SPA
+
+  package "Redux State and Action Layer" as RSTATE {
+    component "Redux Store\n(user, sound, follow,\nplayback state)" as REDUX
+    component "Actions / Thunks\n(fetch request flows)" as ACTIONS
+  }
+
+  package "User Interface Components" as UICOMP {
+    component "Upload UI\n(audio + image)" as UI_UPLOAD
+    component "Audio Playback UI" as UI_PLAY
+    component "Waveform Navigation UI\n(click-to-scrub)" as UI_WAVE
+    component "Follow / Feed UI\n(follow lists, following feed)" as UI_FOLLOW
+    component "Form UI\n(validation + errors)" as UI_FORM
+  }
+
+  component "Centralized Playback Manager\n(single current track, continuity\nacross navigation)" as PLAYBACK
+  component "Frontend Runtime Config\n(API base URL, Cloudinary URL,\nupload preset)" as FECONF
+  component "HTTP API Client\n(fetch-based)" as HTTPCLIENT
+  component "Cloudinary Upload Client\n(direct media upload)" as CLOUDUP
+}
+
+' ============================
+' Backend / Service Layer
+' ============================
+package "Server Layer (Node/Express)" as SERVER {
+
+  component "Express Application / Router" as EXPRESS
+
+  package "Backend API Services" as APISVC {
+    component "User / Auth API\n(register, login, user info)" as API_USER
+    component "Follow API\n(follow / unfollow)" as API_FOLLOW
+    component "Feed API\n(follow feeds, user sound lists)" as API_FEED
+    component "Sound API\n(detail, create, delete)" as API_SOUND
+  }
+
+  component "Application / Domain Logic\n(media URL references,\nrecord coordination)" as LOGIC
+  component "Database Access Layer\n(PostgreSQL client)" as DAL
+}
+
+' ============================
+' Data Layer
+' ============================
+database "PostgreSQL\n(user records, sound records,\nfollow relationships,\nCloudinary URL references)" as POSTGRES
+
+' ============================
+' External Systems
+' ============================
+package "External Systems" as EXTERNAL {
+  cloud "Cloudinary\n(hosted audio and image assets)" as CLOUDINARY
+}
+
+' ============================
+' Relationships
+' ============================
+' Client internals
+UI_UPLOAD --> ACTIONS
+UI_PLAY --> PLAYBACK
+UI_WAVE --> PLAYBACK
+UI_FOLLOW --> ACTIONS
+UI_FORM --> ACTIONS
+ACTIONS --> REDUX
+REDUX --> SPA
+UI_UPLOAD --> CLOUDUP
+UI_FORM --> CLOUDUP
+PLAYBACK --> FECONF
+
+' Client to backend
+ACTIONS --> HTTPCLIENT
+HTTPCLIENT --> EXPRESS : HTTP (fetch)\nconfigured API base URL
+
+' Client direct to Cloudinary
+CLOUDUP --> CLOUDINARY : HTTPS upload\n(audio + images)
+FECONF --> CLOUDUP
+
+' Backend internals
+EXPRESS --> API_USER
+EXPRESS --> API_FOLLOW
+EXPRESS --> API_FEED
+EXPRESS --> API_SOUND
+API_USER --> LOGIC
+API_FOLLOW --> LOGIC
+API_FEED --> LOGIC
+API_SOUND --> LOGIC
+LOGIC --> DAL
+
+' Backend to data store
+DAL --> POSTGRES : SQL\npersists records + media URLs
+
+' Media URL reference handoff
+CLOUDINARY ..> HTTPCLIENT : hosted media URLs
+HTTPCLIENT ..> LOGIC : application data + media URLs
+
+@enduml

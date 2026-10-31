@@ -1,0 +1,86 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+left to right direction
+title IceFireDB Decentralized Database Infrastructure - System Architecture
+
+' External clients
+node "Redis-based Application\n(Client uses Redis protocol)" as RedisApp
+node "Pub/Sub App (Publisher)" as PubApp
+node "Pub/Sub App (Subscriber)" as SubApp
+
+' IceFireDB Redis Proxy subsystem
+package "IceFireDB - Redis Proxy" as RedisProxyPkg {
+  component "Redis Proxy Agent A" as RPA
+  component "Redis Proxy Agent B" as RPB
+}
+
+cloud "Redis Agent Sync Network\n(Instruction synchronization across agents)" as AgentNet
+
+database "Redis Storage\n(Standalone or Cluster)" as RedisDB
+
+' IceFireDB PubSub subsystem
+package "IceFireDB - PubSub" as PubSubPkg {
+  frame "Site A (Private/NAT)" as SiteA {
+    component "PubSub Node A" as PSA
+  }
+  frame "Site B (Private/NAT)" as SiteB {
+    component "PubSub Node B" as PSB
+  }
+}
+
+cloud "P2P Pub/Sub Network\nKademlia DHT + libp2p/IPFS-style\nPeer discovery & routing" as PubSubNet
+
+' Internal SQLite-related path (non top-level feature)
+package "IceFireDB - SQLite (internal)" as SQLitePkg {
+  component "SQL/MySQL Result Parser\n- Fields & metadata\n- Rows\n- Warnings & status" as SQLRes
+}
+
+' Connectivity: Redis-based application to Redis Proxy
+RedisApp --> RPA : Redis protocol\n(commands/instructions)
+
+' Redis Proxy Agents: synchronization and storage forwarding
+RPA <..> AgentNet : synchronize\nsupported instructions
+RPB <..> AgentNet : synchronize\nsupported instructions
+
+RPA --> RedisDB : Forward reads/writes\ncluster-aware when configured
+RPB --> RedisDB : Forward reads/writes\ncluster-aware when configured
+
+' Pub/Sub: clients and nodes
+PubApp --> PSA : PUBLISH\n(Redis-style semantics)
+SubApp --> PSB : SUBSCRIBE\n(Redis-style semantics)
+
+PSA <..> PubSubNet : Pub/Sub messages\nPeer discovery & routing
+PSB <..> PubSubNet : Pub/Sub messages\nPeer discovery & routing
+
+' Notes capturing key requirements and constraints
+note right of RPA
+- Proxies Redis-backed application traffic (FR-001)
+- Synchronizes supported commands across agents (FR-002, FR-004)
+- Forwards writes to configured Redis storage (FR-003)
+- Cluster-aware routing for Redis Cluster (FR-010)
+- Supports command categories:
+  String, Set, List, Hash, Sorted Set, Stream, basic control (FR-011)
+Compatibility: Standalone & Clustered Redis (NFR-001)
+end note
+
+note right of RedisDB
+Represents configured Redis target:
+- Standalone OR Cluster (FR-001, NFR-001)
+- Cluster-state/failover behavior to be validated (NFR-003)
+end note
+
+note bottom of PubSubNet
+Decentralized Pub/Sub:
+- Redis publish/subscribe semantics (FR-005, FR-006, NFR-002)
+- Multi-node across same/cross/NAT/private networks (FR-007, FR-008, NFR-004)
+- Kademlia DHT with libp2p/IPFS-style discovery & routing (FR-009, C-003)
+end note
+
+note bottom of SQLitePkg
+Internal data handling only (C-006):
+Parses packetized SQL/MySQL-style result data:
+- Fields/metadata, rows, warnings, status
+(Not a top-level product feature within this scope)
+end note
+@enduml

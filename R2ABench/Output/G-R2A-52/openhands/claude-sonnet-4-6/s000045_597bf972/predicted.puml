@@ -1,0 +1,97 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #555555
+skinparam componentBorderColor #555555
+skinparam packageBorderColor #888888
+skinparam arrowColor #333333
+
+package "QAPM Android SDK" {
+
+  package "Background Scheduling" {
+    component [QAPM Handler Manager] as QHM
+    component [Background HandlerThread] as BHT
+    component [Work Handler] as WH
+    component [Main Thread Handler] as MTH
+  }
+
+  package "Upload Processing" {
+    component [Upload Scheduler] as US
+    component [Network Connectivity Gate] as NCG
+    component [Forced-Send Storage Pop] as FSP
+    component [Upload File Enumerator] as UFE
+    component [File Content Reader\n(bParam)] as FCR
+    component [Context Param Deriver\n(cParam)] as CPD
+    component [Upload Sender Dispatcher] as USD
+    component [Upload Callback Handler] as UCH
+  }
+
+  package "Apache HttpClient Instrumentation" {
+    component [ResponseHandler Wrapper] as RHW
+    component [Transaction State Inspector] as TSI
+    component [HttpEntity Wrapper] as HEW
+    component [Counting InputStream Cache] as CIS
+  }
+
+  component [QAPM Config Manager] as QCM
+}
+
+package "Android Platform APIs" {
+  component [Handler] as HAND
+  component [HandlerThread / Looper] as HTL
+  component [Android Context] as CTX
+  component [Network Connectivity API] as NCA
+}
+
+package "Local Upload Storage" {
+  component [Upload Directory] as UD
+  component [Upload Files] as UF
+}
+
+package "Apache HttpClient" {
+  interface "ResponseHandler" as IResponseHandler
+  interface "HttpResponse" as IHttpResponse
+  interface "HttpEntity" as IHttpEntity
+}
+
+component [Data Sender\n(Remote Endpoint)] as DS
+
+QHM --> BHT : creates and starts
+BHT --> HTL : provides background Looper
+QHM --> WH : creates bound to background Looper
+QHM --> MTH : creates bound to main Looper
+WH --> HAND : uses Android Handler API
+
+US --> WH : posts upload work asynchronously
+US --> NCG : checks connectivity before processing
+NCG --> NCA : queries network state
+US --> FSP : invokes on forced-send mode
+FSP --> UD : pops pending stored data
+
+NCG --> UFE : permits file enumeration when connected
+UFE --> UD : obtains upload directory path
+UFE --> UF : enumerates matching upload files
+UFE --> FCR : reads file content
+FCR --> USD : provides bParam
+USD --> CPD : requests cParam
+CPD --> CTX : derives cParam from Android Context
+USD --> QCM : obtains configured data sender
+USD --> DS : submits bParam + cParam pair
+USD --> UCH : registers success/failure callbacks
+UCH --> UF : deletes file on sender success
+UCH --> QHM : logs failure on sender failure
+
+RHW --> IResponseHandler : wraps delegate ResponseHandler
+RHW --> TSI : inspects and instruments transaction state
+TSI --> IHttpResponse : inspects HTTP response
+RHW --> IResponseHandler : delegates handleResponse()
+
+HEW --> IHttpEntity : wraps underlying HttpEntity
+HEW --> CIS : creates or reuses counting InputStream
+CIS --> IHttpEntity : reads getContent() from wrapped entity
+HEW --> IHttpEntity : delegates writeTo(OutputStream)
+
+QCM --> US : provides sender configuration
+QHM --> HTL : binds handlers to Looper
+
+@enduml

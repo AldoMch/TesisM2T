@@ -1,0 +1,152 @@
+@startuml
+title MyTorch System Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<frontend>> #E8F1FF
+  BackgroundColor<<backend>> #FFF4E6
+  BackgroundColor<<framework>> #EEF8ED
+  BackgroundColor<<db>> #F7F7F7
+  BackgroundColor<<infra>> #F0F0FF
+}
+left to right direction
+
+actor "Deep Learning Beginner" as Beginner
+actor "Developer / Team Member" as Dev
+actor "Project Participant / Stakeholder" as Stakeholder
+
+node "User Device" as UserDevice {
+  package "Visual Front End" <<frontend>> as FE {
+    [Main Interface] as MainUI
+    [Configuration Interface] as ConfigUI
+    [Training Interface] as TrainUI
+    [Inference Interface] as InferUI
+    [Guidance & Help] as HelpUI
+    [Real-time Visualization Panel] as VizUI
+  }
+}
+
+node "Compute Host" as Compute {
+  package "System Back End" <<backend>> as Backend {
+    [API Layer] as APILayer
+    [Security & Privacy Guard] as Security
+    [Model Config Manager] as ModelConfig
+    [Dataset Manager & Data Loader] as DataLoader
+    [Training Orchestrator] as TrainSvc
+    [Inference Orchestrator (Inferencer)] as InferSvc
+    [Model Manager] as ModelMgr
+    [Weight Initialization Service] as WeightInit
+    [Classic Models Registry] as ModelsLib
+    [GPU Acceleration Service] as GPUAccel
+    [Resource Manager (GPU Auto-Detect)] as ResourceMgr
+    [Monitoring & Logging Service] as MonitorLog
+    [Fault Handler] as FaultHandler
+    [Persistence Service] as Persist
+    [Backup & Recovery Service] as BackupSvc
+  }
+
+  package "MyTorch / NNE Framework" <<framework>> as Framework {
+    [Core NN Ops & Tensor Engine] as NNECore
+    [Optimizers / Losses / LR Schedulers] as OptLoss
+    [GPU Kernels Adapter] as GPUKernels
+  }
+
+  database "SQLite Local Database" <<db>> as SQLite
+  folder "Backup Files" as BackupFiles
+
+  node "GPU Device" <<infra>> as GPU {
+    [GPU API / Driver] as GPUAPI
+  }
+}
+
+cloud "Public Datasets" as PublicData
+
+' Users to Front End
+Beginner --> MainUI : uses
+Dev --> MainUI : uses
+Stakeholder --> MainUI : view progress/status
+
+' Front End internal
+MainUI --> ConfigUI
+MainUI --> TrainUI
+MainUI --> InferUI
+MainUI --> HelpUI
+TrainUI --> VizUI
+InferUI --> VizUI
+
+' Front End to Back End
+ConfigUI --> APILayer : FR-001 Configure Model
+TrainUI --> APILayer : FR-004 Start Training\nFR-006 Terminate Training
+InferUI --> APILayer : FR-007 Init Inferencer\nFR-008 Load Model\nFR-009 Execute Inference
+VizUI <-- MonitorLog : FR-022 Real-time feedback & visualization
+HelpUI <-- APILayer : NFR-008 Guidance/Help
+
+' API Layer routing and security
+APILayer --> Security : NFR-016..018 Confidentiality/Integrity
+APILayer --> ModelConfig : FR-001
+APILayer --> DataLoader : FR-002, FR-003
+APILayer --> TrainSvc : FR-004, FR-006
+APILayer --> InferSvc : FR-007..FR-009
+APILayer --> ModelMgr : FR-019 Model management
+APILayer --> MonitorLog : NFR-011..NFR-012 metrics/logs
+APILayer --> Persist : DR-001..DR-012 persistence commands
+
+' Dataset management and public datasets
+DataLoader --> PublicData : FR-018 Preset dataset links/download
+DataLoader --> Persist : DR-002, DR-003 save configs/metadata
+
+' Training flow
+TrainSvc --> WeightInit : FR-016 Select methods
+TrainSvc --> ModelsLib : FR-017 Preset models
+TrainSvc --> DataLoader : Training data
+TrainSvc --> NNECore : FR-004 Training execution
+TrainSvc --> MonitorLog : NFR-011 Fault monitoring\nNFR-012 KPI metrics
+TrainSvc --> FaultHandler : NFR-013 Fault handling
+TrainSvc --> Persist : FR-005 Save trained model & eval\nDR-004 Training task records
+
+' Inference flow
+InferSvc --> ModelMgr : Load/switch models
+InferSvc --> DataLoader : Inference data
+InferSvc --> NNECore : FR-009 forward()
+InferSvc --> MonitorLog : Inference logs/metrics
+InferSvc --> FaultHandler : Error handling
+InferSvc --> Persist : DR-005, DR-009 save results/logs
+
+' Model management and persistence
+ModelMgr --> Persist : FR-020 Persist models
+Persist --> SQLite : DR-010 Local storage\nNFR-002 time precision
+MonitorLog --> Persist : DR-009, DR-011 logs & errors
+BackupSvc --> SQLite : FR-021 Backup/Recovery
+BackupSvc --> BackupFiles : Store backup files
+
+' Framework internals and GPU acceleration
+NNECore --> OptLoss : Use training primitives
+NNECore --> GPUKernels : Low-level ops
+NNECore --> GPUAccel : FR-010..FR-014 GPU-accelerated ops
+GPUAccel --> ResourceMgr : FR-012 Auto-detect/config resources
+GPUAccel --> GPUAPI : FR-010..FR-011 GPU memory copy/compute
+GPUKernels --> GPUAPI : Kernel execution
+ResourceMgr --> GPUAPI : Device query/config
+GPUAccel --> FaultHandler : FR-015 Acceleration errors
+
+' Security boundaries
+Security --> Persist : Data protection (NFR-016..NFR-018)
+Security --> APILayer : Request validation & access control
+Security --> MonitorLog : Error reporting & privacy controls
+
+' Notes for key quality constraints
+note right of SQLite
+NFR-001 Floating-point >= numpy.float32
+NFR-002 Time precision to seconds
+FR-021 Auto backup & recovery
+end note
+
+note bottom of GPU
+FR-010 GPU-accelerated matrix ops\nFR-011 Add/Mul/Scalar/Mean/Extremum/Elem-wise
+FR-012 Auto resource configuration
+FR-013 Simple GPU APIs
+FR-014 Compatibility with original framework
+FR-015 Defined error handling
+end note
+
+@enduml

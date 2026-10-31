@@ -1,0 +1,54 @@
+@startuml
+!theme plain
+skinparam rectangleLineWidth 1
+skinparam rectangleFontStyle plain
+skinparam noteFontSize 10
+
+' Main Components'
+rectangle "Application\n(Integrating Service)" as App #LightBlue
+rectangle "Auditor\nLibrary" as Auditor #LightGreen {
+  rectangle "Auditing API" as Api
+  rectangle "Audit Engine" as Engine
+  rectangle "Configuration Handler" as Config
+  rectangle "Element Filter" as Filter
+  rectangle "Event Publisher" as Publisher
+  rectangle "Logging Provider" as Logger
+}
+
+' External Systems'
+rectangle "Kafka\n(Default Event Stream)" as Kafka #LightYellow
+rectangle "Downstream\nConsumers" as Consumers #LightGray
+
+' Relationships'
+App --> Api : "Invokes with\noldObject,\nnewObject,\nconfig"
+Api --> Engine : "Processes\ncomparison"
+Engine --> Config : "Uses"
+Engine --> Filter : "Applies"
+Engine --> Publisher : "Publishes\nAuditEvent"
+Publisher --> Kafka : "Sends serialized\nevents (default)"
+Kafka --> Consumers : "Delivers events"
+Logger -up-> Engine : "Provides\nlogging"
+
+' Notes'
+note right of Auditor
+  JVM Library Component
+  Kotlin Implementation
+  Java 11 Compatible
+end note
+
+note right of Publisher
+  Pluggable Interface
+  Default: Kafka-based
+end note
+
+note right of Filter
+  Element Inclusion/Exclusion
+  Configurable
+end note
+
+note bottom of Kafka
+  Default Event Transport
+  Serialized JSON Payloads
+end note
+
+@enduml

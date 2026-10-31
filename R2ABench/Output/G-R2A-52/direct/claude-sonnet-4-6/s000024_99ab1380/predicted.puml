@@ -1,0 +1,183 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam rectangle {
+  BackgroundColor #EEF4FF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam component {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+}
+skinparam actor {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+skinparam arrow {
+  Color #336699
+  FontColor #336699
+}
+
+title OCI Jenkins Terraform Deployment — System Architecture
+
+actor "Deployment Operator\n/ DevOps Engineer" as Operator
+actor "Infrastructure\nAdministrator" as InfraAdmin
+
+package "Local Workstation / CI Host" {
+
+  rectangle "Configuration Layer" as ConfigLayer {
+    component "terraform.tfvars\n/ Variable Files\n[DI-002, DR-007]" as TFVars
+    component "JSON Input Files\n[DI-001]" as JSONInput
+    component "SSH Key Material\n(public + private)\n[DR-002, FR-002]" as SSHKeys
+  }
+
+  rectangle "Terraform Execution Engine\n[CON-004, FR-013]" as TFEngine {
+    component "terraform init\n[FR-013]" as TFInit
+    component "terraform plan\n[FR-013]" as TFPlan
+    component "terraform apply\n[FR-013]" as TFApply
+  }
+
+  rectangle "Input Variable Aggregator\n[SI-003, FR-001..FR-006]" as VarAggregator {
+    component "OCI Access Config\n(tenancy_ocid, compartment_ocid,\nuser_ocid, region, fingerprint,\nprivate_key_path)\n[DR-001, FR-001]" as OCIAccessVars
+    component "SSH Access Config\n(ssh_authorized_keys,\nssh_private_key)\n[DR-002, FR-002]" as SSHVars
+    component "Jenkins Cluster Config\n(label_prefix, jenkins_version,\njenkins_password, http_port,\njnlp_port, plugins)\n[DR-003, FR-004]" as ClusterVars
+    component "Jenkins Master Config\n(master_ad, master_subnet_id,\nmaster_display_name,\nmaster_image_id, master_shape,\nmaster_user_data)\n[DR-004, FR-005]" as MasterVars
+    component "Jenkins Slave/Agent Config\n(slave_count, slave_ads,\nslave_subnet_ids,\nslave_display_name,\nslave_image_id, slave_shape,\nslave_user_data)\n[DR-005, FR-006]" as SlaveVars
+    component "Bastion Access Config\n(bastion_host, bastion_user,\nbastion_private_key)\n[DR-006, FR-011, CON-006]" as BastionVars
+    component "Cloud-Init Data\n(base64-encoded master_user_data\n& slave_user_data)\n[DR-008, DI-003, CON-005]" as CloudInitData
+  }
+
+  rectangle "Terraform Modules" as TFModules {
+    component "Jenkins Master Module\n[FR-005, FR-007]" as MasterModule
+    component "Jenkins Slave/Agent Module\n[FR-006, FR-007]" as SlaveModule
+  }
+}
+
+cloud "Oracle Cloud Infrastructure (OCI)\n[CON-001, NFR-001]" as OCI {
+
+  rectangle "Identity & Access\n[FR-001, DR-001]" as OCIIdentity {
+    component "Tenancy / Compartment\n(tenancy_ocid,\ncompartment_ocid)" as Tenancy
+    component "OCI API Endpoint\n(region, fingerprint,\nprivate_key_path)" as OCIAPI
+  }
+
+  rectangle "OCI Networking (Pre-existing)\n[FR-009, CON-002]" as OCINetwork {
+    component "VCN\n[CON-001]" as VCN
+    component "Public Subnet\n(Jenkins Master)\n[FR-005]" as PublicSubnet
+    component "Private Subnet(s)\n(Jenkins Slave/Agent)\n[FR-010, NFR-005]" as PrivateSubnet
+    component "Route Table /\nDHCP Options /\nSecurity Lists\n[FR-009, CON-002]" as NetworkObjects
+    component "NAT Gateway\n(private node outbound)\n[FR-010, CON-003]" as NATGateway
+    component "VNIC-based\nInstance Networking\n[CI-004, CON-001]" as VNIC
+  }
+
+  rectangle "Compute Instances\n[FR-007]" as OCICompute {
+    node "Jenkins Master Instance\n(master_shape, master_image_id,\nmaster_ad)\n[FR-005, FR-007]" as JenkinsMaster {
+      component "Jenkins Master Service\n(http_port, jnlp_port)\n[FR-004, CI-002]" as JenkinsMasterSvc
+      component "Cloud-Init / SSH\nAuthorized Keys\n[FR-003, DI-003]" as MasterCloudInit
+    }
+    node "Jenkins Slave/Agent Instance(s)\n(slave_shape, slave_image_id,\nslave_ads) x slave_count\n[FR-006, FR-007]" as JenkinsSlave {
+      component "Jenkins Agent\n(JNLP / jnlp_port)\n[CI-002, FR-004]" as JenkinsAgentSvc
+      component "Cloud-Init / SSH\nAuthorized Keys\n[FR-003, DI-003]" as SlaveCloudInit
+    }
+  }
+
+  rectangle "Private-Network Access Layer\n[CON-003, NFR-005]" as PrivateAccess {
+    node "Bastion Host\n(bastion_host, bastion_user,\nbastion_private_key)\n[FR-011, CI-003, CON-006]" as BastionHost
+    component "Load Balancer\n(public entry point)\n[FR-012, CON-003]" as LoadBalancer
+  }
+}
+
+' Operator interactions
+Operator --> TFVars : edits variable files\n[FR-008, UI-001]
+Operator --> JSONInput : supplies example/test inputs\n[DI-001]
+Operator --> SSHKeys : provides SSH key material\n[FR-002]
+Operator --> TFEngine : runs terraform init/plan/apply\n[UI-002, FR-013]
+
+InfraAdmin --> OCINetwork : prepares VCN, subnets,\nroute tables, security lists\n[CON-002]
+InfraAdmin --> PrivateAccess : prepares bastion host,\nNAT, load balancer\n[CON-003]
+
+' Config to variable aggregator
+TFVars --> VarAggregator : supplies all variables\n[SI-003]
+JSONInput --> VarAggregator : additional inputs\n[DI-001]
+SSHKeys --> SSHVars : key paths\n[FR-002]
+CloudInitData --> MasterVars : base64 master_user_data\n[CON-005]
+CloudInitData --> SlaveVars : base64 slave_user_data\n[CON-005]
+
+' Aggregator to engine
+VarAggregator --> TFEngine : resolved input variables\n[SI-003]
+OCIAccessVars --> TFEngine
+SSHVars --> TFEngine
+ClusterVars --> TFEngine
+MasterVars --> MasterModule
+SlaveVars --> SlaveModule
+BastionVars --> MasterModule
+BastionVars --> SlaveModule
+
+' Terraform execution sequence
+TFInit --> TFPlan : initializes providers\n[FR-013]
+TFPlan --> TFApply : plan reviewed\n[FR-013]
+
+' Modules driven by engine
+TFEngine --> TFModules : orchestrates\n[CON-004]
+MasterModule --> JenkinsMaster : provisions master instance\n[FR-007]
+SlaveModule --> JenkinsSlave : provisions slave instances\n[FR-007]
+
+' OCI API authentication
+TFApply --> OCIAPI : authenticated API calls\n(fingerprint, region)\n[FR-001, SI-001]
+OCIAPI --> Tenancy : resolves compartment\n[FR-001]
+
+' Networking attachment
+JenkinsMaster --> PublicSubnet : attached via VNIC\n[CI-004, FR-005]
+JenkinsSlave --> PrivateSubnet : attached via VNIC\n[CI-004, FR-006, NFR-005]
+PublicSubnet --> VCN
+PrivateSubnet --> VCN
+PrivateSubnet --> NATGateway : outbound NAT\n[FR-010]
+NetworkObjects --> VCN
+VNIC --> OCICompute
+
+' Jenkins communication
+JenkinsMasterSvc --> JenkinsAgentSvc : master-to-slave\nJNLP (jnlp_port)\n[CI-002, FR-007]
+
+' SSH / Bastion access
+BastionHost --> JenkinsMaster : bastion SSH\n[CI-003, FR-011]
+BastionHost --> JenkinsSlave : bastion SSH\n[CI-003, FR-011]
+LoadBalancer --> JenkinsMasterSvc : public HTTP access\n(http_port)\n[FR-012]
+
+' Cloud-Init on instances
+MasterCloudInit --> JenkinsMasterSvc : initializes Jenkins master\n[DI-003]
+SlaveCloudInit --> JenkinsAgentSvc : initializes Jenkins agent\n[DI-003]
+
+' NFR labels
+note right of VarAggregator
+  NFR-006: All Jenkins sizing, image,
+  ports, plugins, and Cloud-Init values
+  are configurable via Terraform variables
+end note
+
+note right of PrivateAccess
+  NFR-005: Private-network deployments
+  use private subnets, NAT, bastion, and
+  load-balancer for controlled access
+end note
+
+note bottom of TFEngine
+  NFR-004: Repeatable deployment —
+  same variable files produce consistent
+  Terraform plans (CON-004)
+end note
+
+@enduml

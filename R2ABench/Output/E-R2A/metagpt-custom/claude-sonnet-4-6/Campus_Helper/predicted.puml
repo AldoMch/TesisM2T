@@ -1,0 +1,187 @@
+@startuml Campus_Helper_Platform_Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle uml2
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam package {
+  BorderColor #4A6FA5
+  FontColor #2C3E50
+  FontStyle bold
+  BackgroundColor #EAF2FB
+}
+
+skinparam component {
+  BorderColor #2980B9
+  BackgroundColor #D6EAF8
+  FontColor #1A252F
+}
+
+skinparam node {
+  BorderColor #1E8449
+  BackgroundColor #D5F5E3
+  FontColor #1A252F
+}
+
+skinparam database {
+  BorderColor #7D3C98
+  BackgroundColor #E8DAEF
+  FontColor #1A252F
+}
+
+skinparam cloud {
+  BorderColor #E67E22
+  BackgroundColor #FDEBD0
+  FontColor #1A252F
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS  (S-003: node for OS; H-002: DBMS removed; H-003: out-of-scope node removed)
+' ─────────────────────────────────────────────
+cloud "WeChat Platform / Runtime\n(WeChat 8.0+)" as WeChatRuntime
+node "Android OS (5.0+)" as AndroidOS
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER
+' ─────────────────────────────────────────────
+package "Presentation Layer" as PresentationLayer {
+  component "WeChat Mini Program UI\n(User & Admin Interfaces)" as MiniProgramClient <<MiniProgramClient>>
+}
+
+' ─────────────────────────────────────────────
+' BUSINESS LAYER
+' ─────────────────────────────────────────────
+package "Business Layer" as BusinessLayer {
+
+  component "Input Validation\nSQL Injection Prevention\nBot / Malicious Behavior Detection\n(>=98% recognition rate)" as SecurityFilter <<SecurityFilter>>
+
+  component "Permission Control\nRole Enforcement\n(Guest / User / Customer\n/ Seller / Admin)" as AuthorizationGuard <<AuthorizationGuard>>
+
+  component "Account Management\nAuthentication\nRole Assignment" as UserService <<UserService>>
+
+  component "Popularity-Sorted Listing\nCategory-Filtered Browse\nProduct Detail Display" as ProductBrowsingService <<ProductBrowsingService>>
+
+  component "Order Lifecycle Management\n(Create / Modify Remark\n/ Confirm / Cancel)" as OrderService <<OrderService>>
+
+  component "Personal Center\nFavorites Viewing\nOrder Record Viewing" as PersonalCenterService <<PersonalCenterService>>
+
+  component "Favorite Relationship\nStore & Retrieve" as FavoritesService <<FavoritesService>>
+
+  component "Product Overview / Detail\nSearch / Modify\nSingle & Batch Delete\n(Second-Confirmation Flow)" as AdminProductMgmt <<AdminProductManagementService>>
+
+  component "All Orders View\nOrder Detail\nOrder Modification" as AdminOrderMgmt <<AdminOrderManagementService>>
+
+  component "All Users View\nUser Detail\nUser Modification" as AdminUserMgmt <<AdminUserManagementService>>
+
+}
+
+' ─────────────────────────────────────────────
+' DATA LAYER  (H-001: AdminLogService moved here)
+' ─────────────────────────────────────────────
+package "Data Layer" as DataLayer {
+
+  component "Data Review & Privacy Gate\n(Pre-write review enforcement\nper NFR-004 / DR-008)" as DataReviewGate <<DataReviewGate>>
+
+  component "CRUD Abstraction\nPrivacy Protection\n(Sole Gateway to DB)" as DataAccessRepository <<DataAccessRepository>>
+
+  component "Keyword / Publisher / Status\nName / Number Search\n(Response-Time SLA)" as SearchService <<SearchService>>
+
+  component "Admin Operation Recording\nMulti-Condition Log Retrieval" as AdminLogService <<AdminLogService>>
+
+  component "CPU / Memory / I/O / Connections\nQPS / Response Time / Error Codes\nDB Load / Slow Queries\nCache / Queue / Storage Metrics" as MonitoringService <<MonitoringAndObservabilityService>>
+
+}
+
+' ─────────────────────────────────────────────
+' DATA ENTITY LAYER
+' ─────────────────────────────────────────────
+package "Data Entity Layer" as DataEntityLayer {
+
+  database "Database\n[User | Product | Tag/Category\n| Order | Favorite\n| AdminLog | FaultMonitoringData]\n(<=100K rows/table, <=100 GB total)" as Database
+
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEM RELATIONSHIPS
+' ─────────────────────────────────────────────
+MiniProgramClient ..> WeChatRuntime : <<depends on>>\nMini Program Runtime
+MiniProgramClient ..> AndroidOS : <<runs on>>\nDevice OS
+
+' ─────────────────────────────────────────────
+' PRESENTATION → BUSINESS LAYER
+' ─────────────────────────────────────────────
+MiniProgramClient --> SecurityFilter : all inbound requests\npass through security filter
+SecurityFilter --> AuthorizationGuard : validated request\nforwarded for auth check
+AuthorizationGuard --> UserService : authentication &\nregistration requests
+AuthorizationGuard --> ProductBrowsingService : authorized browse\n& detail requests
+AuthorizationGuard --> OrderService : authorized order\ncreate / modify / confirm / cancel
+AuthorizationGuard --> PersonalCenterService : authorized personal\ncenter access
+AuthorizationGuard --> AdminProductMgmt : admin product\noperations
+AuthorizationGuard --> AdminOrderMgmt : admin order\noperations
+AuthorizationGuard --> AdminUserMgmt : admin user\noperations
+
+' ─────────────────────────────────────────────
+' PERSONAL CENTER → SUPPORTING SERVICES
+' ─────────────────────────────────────────────
+PersonalCenterService --> FavoritesService : favorites\nstore & retrieve
+PersonalCenterService --> OrderService : order record\nretrieval
+
+' ─────────────────────────────────────────────
+' BUSINESS → SEARCH SERVICE  (D-001: correct invocation direction)
+' ─────────────────────────────────────────────
+AdminProductMgmt --> SearchService : product search by\npublisher / name / status
+AdminUserMgmt --> SearchService : user search by\nkey fields
+ProductBrowsingService --> SearchService : keyword\nproduct search
+
+' ─────────────────────────────────────────────
+' ADMIN SERVICES → LOG SERVICE
+' ─────────────────────────────────────────────
+AdminProductMgmt --> AdminLogService : log admin\nproduct operations
+AdminOrderMgmt --> AdminLogService : log admin\norder operations
+AdminUserMgmt --> AdminLogService : log admin\nuser operations
+
+' ─────────────────────────────────────────────
+' SECURITY EVENTS → LOG / MONITORING  (D-003)
+' ─────────────────────────────────────────────
+SecurityFilter --> AdminLogService : log security events\n(injection / bot detection)
+SecurityFilter --> MonitoringService : security event\nmetrics
+
+' ─────────────────────────────────────────────
+' ADMIN USER MGMT ↔ USER SERVICE  (D-004)
+' ─────────────────────────────────────────────
+AdminUserMgmt --> UserService : shared user account\nlookup & logic
+
+' ─────────────────────────────────────────────
+' APPLICATION SERVICES → MONITORING  (M-003 / D-002)
+' ─────────────────────────────────────────────
+OrderService --> MonitoringService : QPS / response time\n/ error codes
+ProductBrowsingService --> MonitoringService : QPS / response time\n/ error codes
+UserService --> MonitoringService : service-level\nmetrics
+FavoritesService --> MonitoringService : service-level\nmetrics
+
+' ─────────────────────────────────────────────
+' BUSINESS → DATA LAYER  (write path via DataReviewGate)
+' ─────────────────────────────────────────────
+ProductBrowsingService --> DataReviewGate : product / tag /\nfavorite queries
+OrderService --> DataReviewGate : order lifecycle\nstate writes & updates
+FavoritesService --> DataReviewGate : favorite\nread & write
+UserService --> DataReviewGate : user account\npersistence
+AdminProductMgmt --> DataReviewGate : product read /\nupdate / delete
+AdminOrderMgmt --> DataReviewGate : order read\n& update
+AdminUserMgmt --> DataReviewGate : user read\n& update
+AdminLogService --> DataReviewGate : admin log\nwrite & retrieve
+SearchService --> DataAccessRepository : search queries\nrouted via data layer
+
+' ─────────────────────────────────────────────
+' DATA REVIEW GATE → REPOSITORY  (M-004)
+' ─────────────────────────────────────────────
+DataReviewGate --> DataAccessRepository : reviewed & sanitised\ndata forwarded
+
+' ─────────────────────────────────────────────
+' DATA LAYER → DATA ENTITY LAYER
+' ─────────────────────────────────────────────
+DataAccessRepository --> Database : sole gateway —\nall CRUD persistence
+MonitoringService --> Database : collect DB load /\nslow query / storage metrics
+
+@enduml

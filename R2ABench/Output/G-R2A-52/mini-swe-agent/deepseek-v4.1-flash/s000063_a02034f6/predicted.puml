@@ -1,0 +1,112 @@
+@startuml
+title teamgram-server - Layered Architecture (MTProto-compatible server)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' External Actors / Systems
+' ============================================================
+actor "Telegram-compatible\nClient" as Client
+
+package "External Systems" {
+  component "External Verification\nCode Service" as VerifySvc
+  component "FFmpeg / FFProbe\n(optional media tools)" as FFmpeg
+}
+
+' ============================================================
+' Client Access Layer
+' ============================================================
+package "Client Access Layer" {
+  component "MTProto Gateway\n(TCP/Transport, MTProto framing)" as MtprotoGw
+  component "Authorization Key &\nSalt Manager" as AuthKeySvc
+  component "Session Manager\n(session_id, encrypted sessions)" as SessionSvc
+  component "Service-Message Handler\n(rpc_drop_answer, destroy_session)" as SvcMsgHandler
+}
+
+' ============================================================
+' BFF / Access-Facing Service Layer
+' ============================================================
+package "BFF / Access-Facing Layer" {
+  component "Sync Service" as SyncSvc
+  component "Push Service" as PushSvc
+  component "BFF / API Aggregation" as Bff
+}
+
+' ============================================================
+' Business / Service Layer
+' ============================================================
+package "Business / Service Layer" {
+  component "Auth Service\n(registration, phone verification)" as AuthSvc
+  component "User Service" as UserSvc
+  component "Messaging Service" as MsgSvc
+  component "Media Wrapper\n(optional)" as MediaWrapper
+}
+
+' ============================================================
+' Infrastructure Integration / Data Access Layer
+' ============================================================
+package "Storage-Facing / Infrastructure Integration" {
+  component "Cache Access" as CacheAccess
+  component "Relational Data Access" as RdbAccess
+  component "Service Discovery Client" as EtcdClient
+  component "Async / Event Publisher" as KafkaProducer
+  component "Object Storage Client" as MinioClient
+}
+
+' ============================================================
+' Data Stores / Infrastructure
+' ============================================================
+database "MySQL" as MySQL
+database "Redis" as Redis
+database "etcd" as Etcd
+queue "Kafka" as Kafka
+database "MinIO" as MinIO
+
+' ============================================================
+' Deployment / Runtime
+' ============================================================
+cloud "Docker / Manual Build and Install\n(Go runtime)" as Runtime
+
+' ============================================================
+' Dependencies
+' ============================================================
+Client --> MtprotoGw : MTProto client-server
+
+MtprotoGw --> AuthKeySvc
+MtprotoGw --> SessionSvc
+MtprotoGw --> SvcMsgHandler
+MtprotoGw --> Bff
+
+AuthKeySvc --> SessionSvc : authorization key / server salt
+SessionSvc --> SyncSvc
+SvcMsgHandler --> SessionSvc
+
+Bff --> AuthSvc
+Bff --> UserSvc
+Bff --> MsgSvc
+Bff --> SyncSvc
+Bff --> PushSvc
+
+AuthSvc --> VerifySvc : verify code (external, optional)
+AuthSvc --> CacheAccess
+UserSvc --> RdbAccess
+MsgSvc --> RdbAccess
+MsgSvc --> CacheAccess
+MsgSvc --> KafkaProducer
+PushSvc --> KafkaProducer
+
+MediaWrapper --> FFmpeg : media processing
+Bff --> MediaWrapper
+
+CacheAccess --> Redis
+RdbAccess --> MySQL
+EtcdClient --> Etcd
+KafkaProducer --> Kafka
+MinioClient --> MinIO
+Bff --> MinioClient
+Bff --> EtcdClient
+
+Runtime ..> MtprotoGw : hosts
+
+@enduml

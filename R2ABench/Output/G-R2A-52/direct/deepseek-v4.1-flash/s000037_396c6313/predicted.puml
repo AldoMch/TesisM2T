@@ -1,0 +1,141 @@
+@startuml
+title veinmind-tools - System Architecture (SRS-derived)
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam ArrowColor #37474F
+skinparam ArrowFontSize 10
+skinparam ComponentBackgroundColor #E3F2FD
+skinparam ComponentBorderColor #1E88E5
+skinparam PackageBackgroundColor #FAFAFA
+skinparam PackageBorderColor #90A4AE
+skinparam NoteBackgroundColor #FFF8E1
+skinparam NoteBorderColor #FFB300
+
+left to right direction
+
+package "User Roles" {
+  component "Security Operator" as OP
+  component "Plugin Developer" as DEV
+  component "Deployment Operator" as DEPLOY
+  component "Integrator" as INT
+}
+
+package "Command-Line Interfaces" {
+  component "scan-image\n(CLI-001, FR-001)" as CLI_IMAGE
+  component "scan-container\n(CLI-002, FR-002)" as CLI_CONT
+  component "scan-iac\n(CLI-003, FR-007)" as CLI_IAC
+}
+
+package "Quick-Start / Runner Execution" {
+  component "run.sh parallel-container\nstartup script\n(CLI-004, FR-003, CON-003)" as RUNSH
+  component "veinmind-runner image\n(CON-002)" as RUNNER
+  component "Docker Engine\n(CON-001)" as DOCKER
+}
+
+package "Scanning Tools" {
+  component "Image Scanner\n(FR-001)" as IMG_SCAN
+  component "Container Scanner\n(FR-002)" as CONT_SCAN
+  component "IaC Scanner\n(FR-007)" as IAC_SCAN
+  component "Policy Library Loader" as POLICY
+  component "Result Merger & Alert Builder" as ALERT
+}
+
+package "Plugin Packaging Example" {
+  component "Python Example Container\nbase: veinmind/python3.6:1.3.1-stretch\n(NFR-003, CON-005)" as PY_EX
+  component "entrypoint.sh\n-> python scan.py $*\n(FR-006, CON-006)" as ENTRY
+}
+
+package "SDK / Library Family" {
+  component "veinmind-sdk / libveinmind\n(API-001, CON-004)" as SDK
+}
+
+package "Docker Authorization Routing" {
+  component "Docker Authorization Request\nmethod + URI\n(API-002)" as REQ_IN
+  component "Route Matcher\n(FR-004)" as MATCHER
+  component "Plugin Action Resolver" as RESOLVER
+  component "Docker Plugin Action\n(DAT-IF-003)" as ACTION
+  component "NoneDockerPlugin fallback\n(FR-005)" as NONE
+}
+
+package "Reporting Data Model" {
+  component "MaliciousFileInfo\n(DR-001)" as MFI
+  component "ReportData\n(DR-002)" as RD
+  component "ReportImage\n(DR-003)" as RI
+  component "ReportLayer\n(DR-004)" as RL
+  component "IaC Rule Metadata\n(DR-005)" as IAC_RULE
+  component "IaC File-Location Detail\n(DR-006)" as IAC_LOC
+  component "IaC Alert Detail\n(DR-007)" as IAC_ALERT
+}
+
+component "Report Event Mechanism\n(API-003)" as REPORT_EVENT
+
+' user interactions
+OP --> CLI_IMAGE
+OP --> CLI_CONT
+OP --> CLI_IAC
+OP --> RUNSH : ./run.sh scan-host image
+DEPLOY --> DOCKER
+DEPLOY --> RUNNER
+DEPLOY --> RUNSH
+DEV --> PY_EX
+DEV --> SDK
+INT --> REQ_IN
+INT --> ACTION
+INT --> RD
+
+' quick-start / runner
+RUNSH --> DOCKER : requires
+RUNSH --> RUNNER : starts parallel containers (NFR-001)
+RUNNER --> IMG_SCAN
+RUNNER --> CONT_SCAN
+
+' CLI to tools
+CLI_IMAGE --> IMG_SCAN
+CLI_CONT --> CONT_SCAN
+CLI_IAC --> IAC_SCAN
+
+' tools to SDK and data
+IMG_SCAN --> SDK
+CONT_SCAN --> SDK
+IAC_SCAN --> SDK
+IAC_SCAN --> POLICY
+POLICY --> ALERT
+ALERT --> REPORT_EVENT : publishes IaC alert details
+REPORT_EVENT --> IAC_ALERT
+IMG_SCAN --> RD
+CONT_SCAN --> RI
+
+' python example
+PY_EX --> ENTRY
+ENTRY --> SDK
+
+' authorization routing
+REQ_IN --> MATCHER
+MATCHER --> RESOLVER : first matching route
+RESOLVER --> ACTION : matched route
+RESOLVER --> NONE : no route matches
+
+' data relationships
+RD *-- RI : ScanImageResult
+RI *-- RL : Layers
+RL *-- MFI : MaliciousFileInfos
+RI *-- MFI : MaliciousFileInfos
+IAC_ALERT *-- IAC_RULE
+IAC_ALERT *-- IAC_LOC
+
+note right of RUNNER
+  DEP-002: runner image and startup script
+  prepared before quick-start scanning.
+  CON-002: runner image installed.
+end note
+
+note bottom of RD
+  NFR-002 compatibility:
+  image registries: DockerHub, Docker Registry, Harbor;
+  container runtimes: Docker, Containerd.
+  DR-008 / DR-009: relationships preserved.
+end note
+
+@enduml

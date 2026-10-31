@@ -1,0 +1,79 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam rectangle {
+    BackgroundColor<<frontend>> LightBlue
+    BackgroundColor<<backend>> LightGreen
+    BackgroundColor<<database>> LightPink
+    BorderColor Black
+}
+
+skinparam component {
+    BackgroundColor<<service>> LightYellow
+    BackgroundColor<<data>> LightGray
+}
+
+' Frontend Layer
+rectangle "ClientApp\n(Angular Frontend)" as clientApp <<frontend>> {
+    [NgRx Store] as ngrx
+    [Routing & Auth] as routing
+    [HTTP Interceptor] as interceptor
+    [Service Wrappers] as services
+    
+    services -down-> interceptor
+    interceptor -down-> ngrx : uses
+    routing -right-> ngrx : uses
+}
+
+' Backend Layer
+rectangle "Backend API\n(.NET Core WebAPI)" as backend <<backend>> {
+    [Controllers] as controllers
+    [Domain Services] as domainServices
+    [Entity Framework/\nDbContext] as ef
+}
+
+' Database Layer
+rectangle "Database\n(MS SQL)" as database <<database>> {
+    [Persistent Entities] as entities
+    [SQL Scripts] as sqlScripts
+}
+
+' External Systems
+rectangle "SiteMinder\n(Authentication)" as siteminder
+rectangle "Browser" as browser
+
+' Relationships
+browser -right-> clientApp : hosts
+clientApp -right-> backend : HTTP requests
+backend -down-> database : data access
+domainServices -down-> ef : uses
+controllers -down-> domainServices : uses
+ef -down-> entities : manages
+sqlScripts -up-> entities : maintains
+
+' Authentication flow
+siteminder .down.> clientApp : authentication context
+siteminder .down.> backend : authentication context
+
+' Service components
+package "Frontend Services" {
+    [Evacuee Service] as evacueeSvc
+    [Incident-Task Service] as incidentSvc
+    [Organization Service] as orgSvc
+    [Referral Service] as referralSvc
+    [Registration Service] as regSvc
+    [Notification Service] as notifSvc
+    [Controlled-List Loader] as clLoader
+}
+
+services -down-> evacueeSvc : contains
+services -down-> incidentSvc : contains
+services -down-> orgSvc : contains
+services -down-> referralSvc : contains
+services -down-> regSvc : contains
+services -down-> notifSvc : contains
+services -down-> clLoader : contains
+
+clLoader -right-> ngrx : initializes
+
+@enduml

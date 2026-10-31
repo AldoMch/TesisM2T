@@ -1,0 +1,70 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam roundCorner 10
+skinparam shadowing false
+
+title TraceLeft System Architecture
+
+package "Userspace" {
+  [CLI Entry Point] as CLI
+  [Trace Command] as TraceCmd
+  [Userspace Tracer] as Tracer
+  [Event Configuration Metadata] as Config
+  [Handler Generator] as Generator
+  [Generated eBPF Handler Source] as HandlerSource
+}
+
+package "Kernel Space" {
+  [Linux Kernel] as Kernel
+  [eBPF Subsystem] as eBPF
+  [kprobe/kretprobe] as Probes
+  [Perf Event Channel] as PerfChannel
+}
+
+package "eBPF Programs" {
+  [Main eBPF Program] as MainBPF
+  [Handler eBPF Programs] as HandlerBPF
+  [Handler Maps] as HandlerMaps
+}
+
+CLI --> TraceCmd : "dispatches\ntrace command"
+TraceCmd --> Tracer : "initiates\ntracing session"
+TraceCmd --> Config : "reads event\nconfiguration"
+Config --> Generator : "provides metadata\n(Proto/JSON)"
+Generator --> HandlerSource : "generates\nsource code"
+HandlerSource --> eBPF : "loaded as\neBPF programs"
+
+Tracer --> eBPF : "loads eBPF programs\nvia gobpf"
+eBPF --> MainBPF : "loads main program"
+eBPF --> HandlerBPF : "loads handler programs"
+eBPF --> HandlerMaps : "creates/updates maps"
+
+MainBPF --> Probes : "attaches to\nkprobe/kretprobe hooks"
+Probes --> HandlerMaps : "keys by\nprocess context"
+HandlerMaps --> HandlerBPF : "selects handler\nprograms"
+HandlerBPF --> PerfChannel : "emits events\nwith common header"
+PerfChannel --> Tracer : "delivers events\nfor dispatch"
+
+note right of HandlerMaps
+  Naming scheme:
+  handle_NAME_progs
+  handle_NAME_progs_ret
+end note
+
+note right of HandlerBPF
+  Naming scheme:
+  kprobe/handle_NAME
+  kretprobe/handle_NAME
+end note
+
+note right of PerfChannel
+  Events contain common
+  leading section for
+  userspace dispatch
+end note
+
+@enduml

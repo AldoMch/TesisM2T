@@ -1,0 +1,377 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "CLI Layer::CLI Entry Point",
+        "CLI Layer::Trace Command",
+        "Userspace Library/Tracer Layer::TraceLeft Library"
+      ],
+      "gt_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Event Handler eBPF Programs::Default Handler Probes",
+        "Event Handler eBPF Programs::Handler Probe\\nhandle_syscall_write",
+        "Event Handler eBPF Programs::Process Specific\\nHandler Probes"
+      ],
+      "predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Handler eBPF Programs"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Global::Perf Event Map\\nshared event map",
+        "Global::Prog ID Map\\npid to id",
+        "Main eBPF Program::Prog Map\\npid to fd",
+        "Main eBPF Program::Prog Maps\\nhandler mappings",
+        "Main eBPF Program::Ret Prog Map\\npid to fd"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Main eBPF Program"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::kprobe/kretprobe"
+      ],
+      "gt_nodes": [
+        "Main eBPF Program::Kprobe / Kretprobe\\nother traced calls"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Linux Kernel Functions::inet_csk_accept()",
+        "Linux Kernel Functions::sys_open()",
+        "Linux Kernel Functions::sys_write()"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Linux OS Environment::Linux kernel eBPF subsystem"
+      ],
+      "match_type": "N:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "CLI Layer::CLI Entry Point",
+      "reference_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "CLI Layer::Event Registration Parser",
+      "reference_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "CLI Layer::Event Registration Structure\\n(ProgramID, Pids, ELFPath)",
+      "reference_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "CLI Layer::Trace Command",
+      "reference_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Code Generation Layer::Code Generator",
+      "reference_nodes": [
+        "Event Handler eBPF Programs::Process Specific\\nHandler Probes"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Linux OS Environment",
+      "reference_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Proto/JSON Event Configuration Source",
+      "reference_nodes": [
+        "Event Handler eBPF Programs::Process Specific\\nHandler Probes"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::gobpf",
+      "reference_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux OS Environment::Kernel eBPF Runtime Layer::Handler Maps and Return-Program Maps",
+      "reference_nodes": [
+        "Event Handler eBPF Programs::Default Handler Probes",
+        "Event Handler eBPF Programs::Process Specific\\nHandler Probes",
+        "Global::Perf Event Map\\nshared event map",
+        "Global::Prog ID Map\\npid to id",
+        "Main eBPF Program::Kprobe / Kretprobe\\nother traced calls",
+        "Main eBPF Program::Prog Map\\npid to fd",
+        "Main eBPF Program::Prog Maps\\nhandler mappings",
+        "Main eBPF Program::Ret Prog Map\\npid to fd"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux OS Environment::Kernel eBPF Runtime Layer::Handler eBPF Programs",
+      "reference_nodes": [
+        "Event Handler eBPF Programs::Default Handler Probes",
+        "Event Handler eBPF Programs::Handler Probe\\nhandle_syscall_write",
+        "Event Handler eBPF Programs::Process Specific\\nHandler Probes",
+        "Linux Kernel Functions::inet_csk_accept()",
+        "Linux Kernel Functions::sys_open()",
+        "Linux Kernel Functions::sys_write()",
+        "Main eBPF Program::Kprobe / Kretprobe\\nother traced calls"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux OS Environment::Kernel eBPF Runtime Layer::Linux perf event channel",
+      "reference_nodes": [
+        "Global::Perf Event Map\\nshared event map"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux OS Environment::Kernel eBPF Runtime Layer::Main eBPF Program",
+      "reference_nodes": [
+        "Main eBPF Program::Kprobe / Kretprobe\\nother traced calls",
+        "Main eBPF Program::Kprobe\\nentry probe",
+        "Main eBPF Program::Kretprobe\\nreturn probe",
+        "Main eBPF Program::Prog Map\\npid to fd",
+        "Main eBPF Program::Prog Maps\\nhandler mappings",
+        "Main eBPF Program::Ret Prog Map\\npid to fd"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Linux OS Environment::Kernel eBPF Runtime Layer::kprobe/kretprobe",
+      "reference_nodes": [
+        "Main eBPF Program::Kprobe / Kretprobe\\nother traced calls",
+        "Main eBPF Program::Kprobe\\nentry probe",
+        "Main eBPF Program::Kretprobe\\nreturn probe"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Linux OS Environment::Linux kernel eBPF subsystem",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Userspace Library/Tracer Layer::Common Event Header",
+      "reference_nodes": [
+        "Global::Perf Event Map\\nshared event map"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Userspace Library/Tracer Layer::Handler Naming Scheme",
+      "reference_nodes": [
+        "Event Handler eBPF Programs::Default Handler Probes",
+        "Event Handler eBPF Programs::Process Specific\\nHandler Probes"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Userspace Library/Tracer Layer::Probe Loader/Installer",
+      "reference_nodes": [
+        "Event Handler eBPF Programs::Default Handler Probes",
+        "Event Handler eBPF Programs::Process Specific\\nHandler Probes"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Userspace Library/Tracer Layer::TraceLeft Library",
+      "reference_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Userspace Library/Tracer Layer::Userspace Tracer",
+      "reference_nodes": [
+        "Global::TraceLeft\\nCLI and library tracer"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Handler eBPF Programs",
+        "Userspace Library/Tracer Layer::Probe Loader/Installer"
+      ],
+      "gt_node": "Event Handler eBPF Programs::Default Handler Probes"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Handler eBPF Programs",
+        "Userspace Library/Tracer Layer::Probe Loader/Installer"
+      ],
+      "gt_node": "Event Handler eBPF Programs::Handler Probe\\nhandle_syscall_write"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Handler eBPF Programs",
+        "Userspace Library/Tracer Layer::Probe Loader/Installer"
+      ],
+      "gt_node": "Event Handler eBPF Programs::Process Specific\\nHandler Probes"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Linux perf event channel",
+        "Userspace Library/Tracer Layer::Common Event Header"
+      ],
+      "gt_node": "Global::Perf Event Map\\nshared event map"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Prog ID Map\\npid to id"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "CLI Layer::CLI Entry Point",
+        "CLI Layer::Trace Command",
+        "Userspace Library/Tracer Layer::TraceLeft Library",
+        "Userspace Library/Tracer Layer::Userspace Tracer"
+      ],
+      "gt_node": "Global::TraceLeft\\nCLI and library tracer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Linux kernel eBPF subsystem"
+      ],
+      "gt_node": "Linux Kernel Functions::inet_csk_accept()"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Linux kernel eBPF subsystem"
+      ],
+      "gt_node": "Linux Kernel Functions::sys_open()"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Linux kernel eBPF subsystem"
+      ],
+      "gt_node": "Linux Kernel Functions::sys_write()"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Main eBPF Program",
+        "Linux OS Environment::Kernel eBPF Runtime Layer::kprobe/kretprobe"
+      ],
+      "gt_node": "Main eBPF Program::Kprobe / Kretprobe\\nother traced calls"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Main eBPF Program",
+        "Linux OS Environment::Kernel eBPF Runtime Layer::kprobe/kretprobe"
+      ],
+      "gt_node": "Main eBPF Program::Kprobe\\nentry probe"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Main eBPF Program",
+        "Linux OS Environment::Kernel eBPF Runtime Layer::kprobe/kretprobe"
+      ],
+      "gt_node": "Main eBPF Program::Kretprobe\\nreturn probe"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Handler Maps and Return-Program Maps",
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Main eBPF Program"
+      ],
+      "gt_node": "Main eBPF Program::Prog Map\\npid to fd"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Handler Maps and Return-Program Maps",
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Main eBPF Program"
+      ],
+      "gt_node": "Main eBPF Program::Prog Maps\\nhandler mappings"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Handler Maps and Return-Program Maps",
+        "Linux OS Environment::Kernel eBPF Runtime Layer::Main eBPF Program"
+      ],
+      "gt_node": "Main eBPF Program::Ret Prog Map\\npid to fd"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4797,
+      "completion_tokens": 952,
+      "total_tokens": 5749,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 4352
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Main eBPF Program::Kprobe\\nentry probe",
+    "Main eBPF Program::Kretprobe\\nreturn probe"
+  ],
+  "unmatched_predicted_nodes": [
+    "CLI Layer::Event Registration Parser",
+    "CLI Layer::Event Registration Structure\\n(ProgramID, Pids, ELFPath)",
+    "Code Generation Layer::Code Generator",
+    "Global::Linux OS Environment",
+    "Global::Proto/JSON Event Configuration Source",
+    "Global::gobpf",
+    "Linux OS Environment::Kernel eBPF Runtime Layer::Handler Maps and Return-Program Maps",
+    "Linux OS Environment::Kernel eBPF Runtime Layer::Linux perf event channel",
+    "Userspace Library/Tracer Layer::Common Event Header",
+    "Userspace Library/Tracer Layer::Handler Naming Scheme",
+    "Userspace Library/Tracer Layer::Probe Loader/Installer",
+    "Userspace Library/Tracer Layer::Userspace Tracer"
+  ],
+  "_provenance": {
+    "fingerprint": "61b3584e760bb9af7e34988da915d326d9f73c794d78421cfffd15d7c85cbc8d",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

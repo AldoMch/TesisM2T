@@ -1,0 +1,89 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #F8F8F8
+  BorderColor #333333
+}
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+}
+skinparam database {
+  BackgroundColor #FDEBD0
+  BorderColor #E67E22
+}
+skinparam cloud {
+  BackgroundColor #E8F8F0
+  BorderColor #27AE60
+}
+skinparam ArrowColor #555555
+skinparam defaultFontSize 12
+
+actor "End User" as User
+
+node "Browser / React Frontend" as Frontend {
+  rectangle "Redux State Layer" as Redux {
+    component "Auth Actions & State" as AuthState
+    component "Sound Actions & State" as SoundState
+    component "Follow Actions & State" as FollowState
+    component "Playback State\n(centralized)" as PlaybackState
+  }
+
+  rectangle "UI Components" as UI {
+    component "Audio Playback UI" as PlaybackUI
+    component "Waveform Navigation UI" as WaveformUI
+    component "Upload UI\n(Audio & Image)" as UploadUI
+    component "Follow UI" as FollowUI
+    component "Feed / Sound List UI" as FeedUI
+    component "Form UI\n(Validation & Errors)" as FormUI
+  }
+
+  rectangle "Frontend Configuration" as Config {
+    component "API Base URL" as APIConfig
+    component "Cloudinary URL &\nUpload Preset" as CloudinaryConfig
+  }
+
+  Redux -[hidden]- UI
+  UI -[hidden]- Config
+}
+
+node "Node / Express Backend" as Backend {
+  component "User / Auth API\n(register, login, user info)" as UserAPI
+  component "Sound API\n(create, retrieve, delete)" as SoundAPI
+  component "Follow API\n(follow, unfollow)" as FollowAPI
+  component "Feed API\n(follow feed, user sounds)" as FeedAPI
+}
+
+database "PostgreSQL" as DB {
+  component "Users" as UsersTable
+  component "Sounds\n(incl. Cloudinary URL refs)" as SoundsTable
+  component "Follow Relationships" as FollowTable
+}
+
+cloud "Cloudinary" as Cloudinary {
+  component "Audio Asset Storage" as AudioStorage
+  component "Image Asset Storage" as ImageStorage
+}
+
+' User interactions
+User --> UI : interacts with
+
+' Frontend to Backend (HTTP/fetch via API Base URL)
+UserAPI <-- Frontend : HTTP fetch\n(auth, user info)
+SoundAPI <-- Frontend : HTTP fetch\n(sound CRUD)
+FollowAPI <-- Frontend : HTTP fetch\n(follow / unfollow)
+FeedAPI <-- Frontend : HTTP fetch\n(feed & sound lists)
+
+' Frontend to Cloudinary (direct media upload)
+Frontend --> Cloudinary : HTTP (direct media upload\naudio & images)
+
+' Backend to PostgreSQL
+UserAPI --> DB : persist / query\nuser records
+SoundAPI --> DB : persist / query\nsound records & URLs
+FollowAPI --> DB : persist / query\nfollow relationships
+FeedAPI --> DB : query\nfeed & sound data
+
+' Cloudinary returns hosted URLs (represented as data flow note)
+Cloudinary ..> Frontend : hosted media URLs
+
+@enduml

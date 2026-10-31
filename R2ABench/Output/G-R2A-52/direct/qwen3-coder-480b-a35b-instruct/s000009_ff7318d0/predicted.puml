@@ -1,0 +1,68 @@
+@startuml
+!define AWSPrefix(x) x
+!define AWS(x,y) AWSPrefix(x) y
+
+title Foot365 System Architecture
+
+skinparam componentStyle rectangle
+
+package "AWS Cloud" {
+  [S3\n(Static Website Hosting)] as s3
+  [API Gateway] as api_gateway
+  [Lambda] as lambda
+  [Cognito] as cognito
+  [IAM] as iam
+  [DynamoDB] as dynamodb
+  [Elasticsearch] as elasticsearch
+  [SageMaker] as sagemaker
+  [SQS] as sqs
+  [SNS] as sns
+  [EC2\n(Kafka + Avro)] as ec2_kafka
+}
+
+actor "Football Enthusiast" as user
+actor "Application Maintainer" as admin
+
+user --> s3 : Access Web App
+s3 --> api_gateway : API Calls
+api_gateway --> lambda : Invoke Backend Logic
+lambda --> dynamodb : Store/Retrieve Data
+lambda --> elasticsearch : Search Data
+lambda --> sagemaker : Get Predictions
+lambda --> sqs : Queue Reminders
+sqs --> sns : Send SMS
+sns --> user : SMS Notification
+ec2_kafka --> lambda : Live Score Updates
+lambda --> ec2_kafka : Fetch Live Scores
+cognito --> lambda : Authenticate Users
+iam --> lambda : Authorize Access
+lambda --> s3 : Serve Dynamic Content
+
+admin --> iam : Configure Access
+admin --> cognito : Manage Auth
+admin --> s3 : Deploy Frontend
+admin --> lambda : Deploy Backend
+admin --> dynamodb : Manage DB
+admin --> elasticsearch : Manage Search
+admin --> sagemaker : Train Models
+admin --> sqs : Monitor Queues
+admin --> sns : Configure Notifications
+admin --> ec2_kafka : Manage Streaming
+
+note right of s3
+  HTML, CSS, Bootstrap, jQuery
+end note
+
+note right of lambda
+  Python, Node.js
+end note
+
+note right of ec2_kafka
+  Kafka + Apache Avro
+end note
+
+note bottom of api_gateway
+  execute-api, JSON defaults
+end note
+
+@enduml

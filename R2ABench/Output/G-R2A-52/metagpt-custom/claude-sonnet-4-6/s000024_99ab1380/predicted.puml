@@ -1,0 +1,134 @@
+@startuml OCI_Jenkins_Terraform_Deployment
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #5566AA
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+}
+skinparam node {
+  BackgroundColor #FFF8E8
+  BorderColor #CC8800
+}
+skinparam database {
+  BackgroundColor #E8F8E8
+  BorderColor #338833
+}
+skinparam cloud {
+  BackgroundColor #EEF8FF
+  BorderColor #0077CC
+}
+
+' ─────────────────────────────────────────────
+' OPERATOR INTERFACE LAYER
+' ─────────────────────────────────────────────
+package "Operator Interface Layer" as OIL {
+  component [TerraformVariableFiles\n(terraform.tfvars)] as TVF
+  component [JSONInputFiles\n(.json examples)] as JIF
+
+  component [SSHKeyInputs\n(ssh_authorized_keys\nssh_private_key)] as SSHI
+
+  component [ClusterConfigVars\n(label_prefix · jenkins_version\njenkins_password · http_port\njnlp_port · plugins)] as CCV
+
+  component [LBAddressInput\n(load_balancer_public_address\n— operator-supplied prerequisite)] as LBAI
+}
+
+' ─────────────────────────────────────────────
+' TERRAFORM ORCHESTRATION LAYER
+' ─────────────────────────────────────────────
+package "Terraform Orchestration Layer" as TOL {
+  component [TerraformCLI\n(init / plan / apply)] as TCLI
+  component [TerraformRootModule\n(variables · provider · wiring)] as TRM
+
+  component [OCIProviderConfig\n(tenancy_ocid · user_ocid\ncompartment_ocid · fingerprint\nregion · private_key_path)] as OProv
+}
+
+' ─────────────────────────────────────────────
+' TERRAFORM MODULE LAYER
+' ─────────────────────────────────────────────
+package "Terraform Module Layer" as TML {
+  component [JenkinsMasterModule\n(master_ad · master_subnet_id\nmaster_image_id · master_shape\nmaster_user_data · master_display_name\nhttp_port · jnlp_port)] as JMM
+
+  component [JenkinsSlaveModule\n(slave_count · slave_ads\nslave_subnet_ids · slave_image_id\nslave_shape · slave_user_data\nslave_display_name · bastion params)] as JSM
+
+  component [MasterOutputs\n(master_address\nhttp_port · jnlp_port)] as MOut
+}
+
+' ─────────────────────────────────────────────
+' OCI RESOURCE LAYER
+' ─────────────────────────────────────────────
+package "OCI Resource Layer" as ORL {
+  component [Jenkins Master Instance\n(VNIC · Cloud-Init\nssh_authorized_keys → default user)] as JMI
+  component [Jenkins Slave Instances\n(VNIC · Cloud-Init · ×slave_count\nssh_authorized_keys → default user)] as JSI
+
+  database [ExistingOCINetworkObjects\n(VCN · Subnets · Route Tables\nDHCP Options · Security Lists)] as ENO
+}
+
+' ─────────────────────────────────────────────
+' PRIVATE NETWORK ACCESS LAYER
+' ─────────────────────────────────────────────
+package "Private Network Access Layer\n(Operator-Prepared Prerequisites)" as PNAL {
+  node "BastionHost\n(SSH proxy · bastion_host\nbastion_user · bastion_private_key)" as BH
+  node "NATGateway\n(outbound connectivity\nfor private slave subnets)" as NATGW
+  node "LoadBalancer\n(public ingress to Jenkins\nin private-network scenarios)" as LB
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "Oracle Cloud Infrastructure" as OCI_EXT {
+  component [OCI IAM\n(tenancy · user · compartment\nfingerprint · private_key_path)] as IAM
+}
+
+' ─────────────────────────────────────────────
+' DEPENDENCY ARROWS
+' ─────────────────────────────────────────────
+
+' Operator Interface → Orchestration
+TVF --> TCLI : "supplies variable values\n(credentials · cluster config)"
+JIF --> TCLI : "optional JSON\ninput values"
+SSHI --> TCLI : "ssh_authorized_keys\nssh_private_key"
+CCV --> TCLI : "label_prefix · jenkins_version\njenkins_password · http_port\njnlp_port · plugins"
+LBAI --> LB : "operator supplies\nLB public address\n(FR-012 / DR-009)"
+
+' Orchestration wiring
+TCLI --> TRM : "invokes (init / plan / apply)"
+TRM --> OProv : "configures OCI provider\n(compartment_ocid included)"
+OProv --> IAM : "authenticates\nAPI calls"
+
+' Root Module → Child Modules (including network identifier pass-through — FR-009)
+TRM --> JMM : "passes master params\n(master_ad · master_subnet_id\nmaster_image_id · master_shape\nmaster_user_data · master_display_name\nhttp_port · jnlp_port · label_prefix\njenkins_version · jenkins_password\nplugins · ssh_authorized_keys)"
+TRM --> JSM : "passes slave params\n(slave_count · slave_ads\nslave_subnet_ids · slave_image_id\nslave_shape · slave_user_data\nslave_display_name · label_prefix\nssh_authorized_keys · bastion values)"
+
+' Master → Slave inter-module
+JMM --> MOut : "exposes"
+MOut --> JSM : "provides master_address\nhttp_port · jnlp_port\n(JNLP communication)"
+
+' Module → OCI Resources (modules drive provisioning; instances do not independently attach)
+JMM --> JMI : "provisions\n(VNIC attached to master_subnet_id\nssh_authorized_keys → default user)"
+JSM --> JSI : "provisions (×slave_count)\n(VNICs attached to slave_subnet_ids\nssh_authorized_keys → default user)"
+
+' Module → Existing Network Objects (existing network identifier consumption — FR-009 / D-04 fix)
+JMM --> ENO : "references master_subnet_id\nfrom existing VCN"
+JSM --> ENO : "references slave_subnet_ids\nfrom existing VCN"
+
+' Bastion access
+JSM --> BH : "routes SSH provisioning\n(private-network scenarios)"
+JMM --> BH : "routes SSH provisioning\n(private-network scenarios)"
+
+' Slave → NAT Gateway
+JSI --> NATGW : "outbound internet\n(private subnets)"
+
+' Load Balancer → Master (public ingress path — FR-012)
+LB --> JMI : "public ingress\nto Jenkins master HTTP port\n(private-network scenarios)"
+
+' OCI Provider → IAM (via TRM already covered; provider authenticates to OCI)
+TRM --> IAM : "provisions compute &\nmanages OCI resources\nvia authenticated provider"
+
+@enduml

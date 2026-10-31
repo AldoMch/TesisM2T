@@ -1,0 +1,196 @@
+{
+  "requirements": [
+    {
+      "id": "mytorch-R001",
+      "description": "The system shall let users configure model structure and parameters through the visual front end and persist the resulting configuration data."
+    },
+    {
+      "id": "mytorch-R002",
+      "description": "The system shall support preset dataset loading and configurable data-loading preparation, including preprocessing, augmentation, and dataset splitting."
+    },
+    {
+      "id": "mytorch-R003",
+      "description": "The system shall execute model training according to user configuration, support manual termination during training, and evaluate and save the trained model and evaluation results when training completes."
+    },
+    {
+      "id": "mytorch-R004",
+      "description": "The system shall create the inferencer workflow, initialize loaders, load a model by address, execute forward inference on the target dataset, and return results or load errors."
+    },
+    {
+      "id": "mytorch-R005",
+      "description": "The system shall provide GPU-accelerated matrix computation, automatic GPU resource detection and configuration, easy-to-use GPU APIs, compatibility with the existing framework, and improved training efficiency when GPU acceleration is used."
+    },
+    {
+      "id": "mytorch-R006",
+      "description": "The system shall support selectable weight initialization methods and provide integrated classic model definitions that can be created, configured, trained, and added to the NNE API."
+    },
+    {
+      "id": "mytorch-R007",
+      "description": "The back end shall call the MyTorch deep learning framework and extend the existing NNE code to provide service interfaces for model initialization, training, inference, and model management to the visual system."
+    },
+    {
+      "id": "mytorch-R008",
+      "description": "The system shall persist models, datasets, training logs, inference logs, and history in a local SQLite database, and provide automatic backup and automatic/manual recovery."
+    },
+    {
+      "id": "mytorch-R009",
+      "description": "The front end shall provide a simple and intuitive interactive experience with training and inference visualization, real-time feedback, and guidance/help for users."
+    },
+    {
+      "id": "mytorch-R010",
+      "description": "The system shall monitor training, inference, and GPU runtime exceptions, record error and performance information, apply defined fault-handling strategies, and present troubleshooting guidance."
+    },
+    {
+      "id": "mytorch-R011",
+      "description": "The system shall protect user and model data with confidentiality and integrity controls and comply with relevant privacy regulations and standards."
+    }
+  ],
+  "components": [
+    {
+      "id": "comp-visual-frontend",
+      "name": "Visual Front-End Interface",
+      "description": "Provides the interactive UI for model configuration, real-time training/inference visualization, feedback, and user guidance.",
+      "tracesTo": ["mytorch-R001", "mytorch-R009"]
+    },
+    {
+      "id": "comp-backend-service",
+      "name": "Backend Service & NNE Extension Layer",
+      "description": "Exposes unified service interfaces to the front end, wrapping MyTorch core APIs for model initialization, training, inference, and model management.",
+      "tracesTo": ["mytorch-R007"]
+    },
+    {
+      "id": "comp-model-registry",
+      "name": "Model Registry & Initializer",
+      "description": "Manages integrated classic model definitions, configurable architectures, and selectable weight initialization algorithms.",
+      "tracesTo": ["mytorch-R001", "mytorch-R006"]
+    },
+    {
+      "id": "comp-dataset-manager",
+      "name": "Dataset & Preprocessing Pipeline",
+      "description": "Handles preset and custom dataset ingestion, augmentation, preprocessing transformations, and split operations.",
+      "tracesTo": ["mytorch-R002"]
+    },
+    {
+      "id": "comp-training-engine",
+      "name": "Training & Evaluation Engine",
+      "description": "Orchestrates training loops, supports execution interruption/termination, and computes validation metrics on model completion.",
+      "tracesTo": ["mytorch-R003"]
+    },
+    {
+      "id": "comp-inference-engine",
+      "name": "Inference Execution Engine",
+      "description": "Coordinates model loading from address, constructs inference pipelines, executes forward passes, and handles inference errors.",
+      "tracesTo": ["mytorch-R004"]
+    },
+    {
+      "id": "comp-gpu-acceleration",
+      "name": "GPU Acceleration & Hardware Abstraction",
+      "description": "Performs GPU auto-detection, resource configuration, and accelerated tensor/matrix computation routines.",
+      "tracesTo": ["mytorch-R005"]
+    },
+    {
+      "id": "comp-persistence-manager",
+      "name": "SQLite Persistence & Backup Manager",
+      "description": "Persists model metadata, logs, dataset records, and execution history in local SQLite with backup and recovery capabilities.",
+      "tracesTo": ["mytorch-R008"]
+    },
+    {
+      "id": "comp-monitoring-fault-handler",
+      "name": "Runtime Monitor & Fault Handler",
+      "description": "Captures training, inference, and GPU exceptions, logs telemetry, applies recovery policies, and generates diagnostic suggestions.",
+      "tracesTo": ["mytorch-R010"]
+    },
+    {
+      "id": "comp-security-privacy",
+      "name": "Security & Data Protection Guard",
+      "description": "Enforces data confidentiality, integrity validation, and compliance controls for user configurations and trained model artifacts.",
+      "tracesTo": ["mytorch-R011"]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn-frontend-to-backend",
+      "source": "comp-visual-frontend",
+      "target": "comp-backend-service",
+      "description": "Transfers user configuration, execution commands, and visualization data requests via REST/WebSocket APIs."
+    },
+    {
+      "id": "conn-backend-to-model-registry",
+      "source": "comp-backend-service",
+      "target": "comp-model-registry",
+      "description": "Requests model template retrieval, structure instantiation, and parameter initialization."
+    },
+    {
+      "id": "conn-backend-to-dataset-manager",
+      "source": "comp-backend-service",
+      "target": "comp-dataset-manager",
+      "description": "Invokes dataset loading, preprocessing, and batch pipeline creation."
+    },
+    {
+      "id": "conn-backend-to-training-engine",
+      "source": "comp-backend-service",
+      "target": "comp-training-engine",
+      "description": "Triggers training jobs, sends termination signals, and queries training status."
+    },
+    {
+      "id": "conn-backend-to-inference-engine",
+      "source": "comp-backend-service",
+      "target": "comp-inference-engine",
+      "description": "Dispatches inference workflows and receives forward prediction outputs or failure reports."
+    },
+    {
+      "id": "conn-training-to-gpu",
+      "source": "comp-training-engine",
+      "target": "comp-gpu-acceleration",
+      "description": "Offloads matrix calculations and tensor optimizations to detected GPU resources."
+    },
+    {
+      "id": "conn-inference-to-gpu",
+      "source": "comp-inference-engine",
+      "target": "comp-gpu-acceleration",
+      "description": "Leverages accelerated forward-pass computation on available GPU hardware."
+    },
+    {
+      "id": "conn-training-to-persistence",
+      "source": "comp-training-engine",
+      "target": "comp-persistence-manager",
+      "description": "Saves trained weights, checkpoints, metrics, and execution history."
+    },
+    {
+      "id": "conn-inference-to-persistence",
+      "source": "comp-inference-engine",
+      "target": "comp-persistence-manager",
+      "description": "Stores inference execution records and access logs."
+    },
+    {
+      "id": "conn-backend-to-persistence",
+      "source": "comp-backend-service",
+      "target": "comp-persistence-manager",
+      "description": "Reads and writes model configurations, dataset metadata, and backup snapshots."
+    },
+    {
+      "id": "conn-monitor-to-training",
+      "source": "comp-monitoring-fault-handler",
+      "target": "comp-training-engine",
+      "description": "Monitors training execution states and captures runtime exceptions."
+    },
+    {
+      "id": "conn-monitor-to-gpu",
+      "source": "comp-monitoring-fault-handler",
+      "target": "comp-gpu-acceleration",
+      "description": "Tracks GPU health, memory utilization, and hardware-level failures."
+    },
+    {
+      "id": "conn-monitor-to-frontend",
+      "source": "comp-monitoring-fault-handler",
+      "target": "comp-visual-frontend",
+      "description": "Sends troubleshooting guidelines, runtime alerts, and error summaries to the UI."
+    },
+    {
+      "id": "conn-security-to-persistence",
+      "source": "comp-security-privacy",
+      "target": "comp-persistence-manager",
+      "description": "Applies integrity verification and encryption mechanisms to persisted models and database records."
+    }
+  ]
+}

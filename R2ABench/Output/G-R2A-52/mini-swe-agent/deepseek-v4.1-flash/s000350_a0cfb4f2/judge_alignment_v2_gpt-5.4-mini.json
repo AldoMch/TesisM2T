@@ -1,0 +1,311 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Processing & Integration Layer::GoDaddy Integration Adapter"
+      ],
+      "gt_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application / API Layer (squatm3gator API)::Request Parser & Validator",
+        "Application / API Layer (squatm3gator API)::Session Manager",
+        "Application / API Layer (squatm3gator API)::Attack Option Builder",
+        "Application / API Layer (squatm3gator API)::Homoglyph-Complete Resource (GET)"
+      ],
+      "gt_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application / API Layer (squatm3gator API)::Web Entry Point (GET / -> index.html)",
+        "Client Layer::Web Browser UI"
+      ],
+      "gt_nodes": [
+        "Global::Web UI\\nindex.html"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Global::Redis\\nCommand and reporting queues",
+        "Global::Workers\\nCommand consumers"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application / API Layer (squatm3gator API)::Background Consumer Thread"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application / API Layer (squatm3gator API)::Socket.IO / WebSocket Gateway"
+      ],
+      "gt_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Processing & Integration Layer::squatm3 CLI Wrapper",
+        "External Systems::squatm3 CLI Engine (subprocess)"
+      ],
+      "gt_nodes": [
+        "Global::Squatm3\\nDomain generation engine"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::GoDaddy Domain Availability API (sso-key auth)",
+        "Processing & Integration Layer::GoDaddy Integration Adapter"
+      ],
+      "gt_node": "Global::GoDaddy API\\nDomain availability"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / API Layer (squatm3gator API)::HTTP API / Router",
+        "Application / API Layer (squatm3gator API)::Request Parser & Validator",
+        "Application / API Layer (squatm3gator API)::Session Manager",
+        "Application / API Layer (squatm3gator API)::Web Entry Point (GET / -> index.html)",
+        "Application / API Layer (squatm3gator API)::Attack Option Builder",
+        "Application / API Layer (squatm3gator API)::Homoglyph-Complete Resource (GET)"
+      ],
+      "gt_node": "Global::HTTP API\\nSession and attack requests"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data & Infrastructure Layer::Redis (Job & Reporting Channel, configured URI)",
+        "Application / API Layer (squatm3gator API)::Job Publisher",
+        "Application / API Layer (squatm3gator API)::Reporting Message Parser (WORKER_ID#JOB_UUID#{MESSAGE/RESULT})",
+        "Application / API Layer (squatm3gator API)::Background Consumer Thread",
+        "Data & Infrastructure Layer::Configuration Store (Redis URI, GoDaddy key/secret/base URL/endpoints)"
+      ],
+      "gt_node": "Global::Redis\\nCommand and reporting queues"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / API Layer (squatm3gator API)::Socket.IO / WebSocket Gateway"
+      ],
+      "gt_node": "Global::Socket.io\\nWebSocket result channel"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::squatm3 CLI Engine (subprocess)",
+        "Processing & Integration Layer::squatm3 CLI Wrapper"
+      ],
+      "gt_node": "Global::Squatm3\\nDomain generation engine"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / API Layer (squatm3gator API)::Web Entry Point (GET / -> index.html)",
+        "Client Layer::Web Browser UI"
+      ],
+      "gt_node": "Global::Web UI\\nindex.html"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application / API Layer (squatm3gator API)::Background Consumer Thread",
+        "Processing & Integration Layer::squatm3 CLI Wrapper",
+        "External Systems::squatm3 CLI Engine (subprocess)"
+      ],
+      "gt_node": "Global::Workers\\nCommand consumers"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Attack Option Builder",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Background Consumer Thread",
+      "reference_nodes": [
+        "Global::Workers\\nCommand consumers",
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Error Handler (plain-text 400/404/500)",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::HTTP API / Router",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests",
+        "Global::Web UI\\nindex.html"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Homoglyph-Complete Resource (GET)",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Job Publisher",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Reporting Message Parser (WORKER_ID#JOB_UUID#{MESSAGE/RESULT})",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Request Parser & Validator",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Session Manager",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Socket.IO / WebSocket Gateway",
+      "reference_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application / API Layer (squatm3gator API)::Web Entry Point (GET / -> index.html)",
+      "reference_nodes": [
+        "Global::Web UI\\nindex.html",
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Layer::API Client Application",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Layer::Socket.IO / WebSocket Client",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Layer::Web Browser UI",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Infrastructure Layer::Configuration Store (Redis URI, GoDaddy key/secret/base URL/endpoints)",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues",
+        "Global::GoDaddy API\\nDomain availability"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Infrastructure Layer::Redis (Job & Reporting Channel, configured URI)",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::GoDaddy Domain Availability API (sso-key auth)",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::squatm3 CLI Engine (subprocess)",
+      "reference_nodes": [
+        "Global::Squatm3\\nDomain generation engine",
+        "Global::Workers\\nCommand consumers"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Processing & Integration Layer::GoDaddy Integration Adapter",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Processing & Integration Layer::squatm3 CLI Wrapper",
+      "reference_nodes": [
+        "Global::Squatm3\\nDomain generation engine",
+        "Global::Workers\\nCommand consumers"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1335,
+      "completion_tokens": 152,
+      "total_tokens": 1487,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Application / API Layer (squatm3gator API)::Error Handler (plain-text 400/404/500)",
+    "Application / API Layer (squatm3gator API)::HTTP API / Router",
+    "Application / API Layer (squatm3gator API)::Job Publisher",
+    "Application / API Layer (squatm3gator API)::Reporting Message Parser (WORKER_ID#JOB_UUID#{MESSAGE/RESULT})",
+    "Client Layer::API Client Application",
+    "Client Layer::Socket.IO / WebSocket Client",
+    "Data & Infrastructure Layer::Configuration Store (Redis URI, GoDaddy key/secret/base URL/endpoints)",
+    "Data & Infrastructure Layer::Redis (Job & Reporting Channel, configured URI)",
+    "External Systems::GoDaddy Domain Availability API (sso-key auth)"
+  ],
+  "_provenance": {
+    "fingerprint": "1cf29555fb39eb68d6af408cf67997c7417304d39e86b2973f8171c83209c3d8",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

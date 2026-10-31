@@ -1,0 +1,33 @@
+@startuml
+
+node "Docker Host / Multi-Tier Runtime" {
+  package "Presentation / UI Layer" {
+    node "React Frontend Container" {
+      component "React Frontend" as ReactFrontend
+    }
+    node "Kibana Container" {
+      component "Kibana Auxiliary UI" as Kibana
+    }
+  }
+
+  package "Application / API Layer" {
+    node "FastAPI Backend Container" {
+      component "FastAPI Backend" as FastAPI
+    }
+  }
+
+  package "Data / Storage Layer" {
+    node "Elasticsearch Container" {
+      database "Elasticsearch" as Elasticsearch
+    }
+  }
+}
+
+cloud "Genius API" as GeniusAPI
+
+ReactFrontend --> FastAPI : song lookup requests
+FastAPI --> Elasticsearch : query/write song & mood data
+FastAPI --> GeniusAPI : search missing songs
+Kibana --> Elasticsearch : inspect stored data
+
+@enduml

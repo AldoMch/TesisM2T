@@ -1,0 +1,112 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam classFontSize 10
+skinparam componentFontSize 10
+skinparam arrowFontSize 9
+hide circle
+title QAPM Android Component - System Architecture
+
+package "Android Host Application" {
+    [Android Application Integrator]
+    [Network Instrumentation Integrator]
+}
+
+package "QAPM SDK" {
+    package "Background Scheduling" {
+        [Main Thread Handler] as MTH
+        [Work Handler Manager] as WHM
+        [Background HandlerThread] as BHT
+        [Work Handler] as WH
+    }
+
+    package "Upload Processing" {
+        [Upload Processor] as UP
+        [Network Connectivity Gate] as NCG
+        [Storage Pop Module] as SPM
+        [File Enumerator] as FE
+        [Parameter Deriver] as PD
+    }
+
+    package "Data Sender" {
+        [QAPM Configuration Manager] as QCM
+        [Configured Sender] as CS
+    }
+
+    package "HTTP Instrumentation" {
+        [Response Handler Wrapper] as RHW
+        [Transaction State] as TS
+        [Response Entity Wrapper] as REW
+        [Counting InputStream] as CIS
+    }
+
+    package "Local Storage" {
+        [Upload Directory] as UD
+        [Upload Files] as UF
+    }
+
+    package "External Dependencies" {
+        [Android Context] as AC
+        [Apache HttpClient] as AHC
+        [Network State] as NS
+    }
+}
+
+' ==== Relationships and Data Flows ====
+
+' **Background Scheduling**
+WHM --> BHT : creates/starts
+WHM --> WH : creates from looper
+MTH --> WHM : accesses
+WH --> WH : enqueues work
+
+' **Upload Processing Flow**
+UP --> NCG : checks
+NCG --> NS : queries connectivity
+UP --> SPM : invokes (if forced)
+SPM --> UD : pops data before scan
+UP --> FE : triggers enumeration
+FE --> UD : scans directory
+FE --> UF : reads files
+UP --> PD : triggers derivation
+PD --> AC : derives cParam
+UP --> QCM : requests sender
+QCM --> CS : provides sender
+UP --> CS : submits bParam, cParam
+CS --> UP : returns success/failure
+UP --> UF : deletes on success
+
+' **HTTP Instrumentation Flow**
+RHW --> TS : inspects/instruments
+RHW --> AHC : wraps ResponseHandler
+RHW --> AHC : delegates handling
+REW --> AHC : wraps HttpEntity
+REW --> CIS : provides/manages
+CIS --> AHC : reads from wrapped entity
+REW --> AHC : delegates writeTo
+
+' **External Integrations**
+[Android Application Integrator] ..> WHM : uses scheduling
+[Android Application Integrator] ..> UP : triggers upload
+[Network Instrumentation Integrator] ..> RHW : uses wrapper
+[Network Instrumentation Integrator] ..> REW : uses wrapper
+AC ..> PD : provides context
+NS ..> NCG : provides state
+AHC ..> RHW : provides handler to wrap
+AHC ..> REW : provides entity to wrap
+UD ..> FE : provides path
+UF ..> FE : provides content
+
+' **Component Dependencies (Non-Functional)**
+note top of WH : NFR-001: Async execution
+note top of NCG : NFR-002: Skips if no network
+note top of REW : NFR-003: Rejects null entity
+note top of UP : NFR-005: Separated steps
+
+' **Constraints**
+note right of WHM : C-001: Android APIs
+note right of RHW : C-002: Apache HttpClient
+note right of UP : C-003: Network & File dependent
+note bottom of QCM : C-004: Broader pipeline out of scope
+
+@enduml

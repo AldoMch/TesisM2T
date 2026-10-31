@@ -1,0 +1,124 @@
+@startuml
+title AI-Driven Text Adventure Game and Community Platform - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+actor "Guest" as Guest
+actor "Registered User / Player" as User
+actor "Community Administrator" as Admin
+
+package "Client Layer" {
+  component "Vue.js / Nuxt.js Web Client\n(Game, Community, Admin UIs)" as WebClient
+}
+
+package "Backend Layer (Iris / Go)" {
+  component "Iris API Gateway / MVC Router" as APIGateway
+  component "Session and Access Control Middleware" as AuthMW
+
+  package "Community User System" {
+    component "Registration / Login / Password Service" as UserSvc
+    component "Profile / Browsing History Service" as ProfileSvc
+  }
+
+  package "Community System" {
+    component "Post Service" as PostSvc
+    component "Comment and Reply Service" as CommentSvc
+    component "Favorites Service" as FavSvc
+    component "Search and Recommendation Service" as SearchSvc
+    component "Notification Service" as NotifSvc
+  }
+
+  package "Game System" {
+    component "Game Save Service" as SaveSvc
+    component "Background / Choice / Dialogue Service" as GameSvc
+    component "Achievement / Currency / Item Service" as RewardSvc
+  }
+
+  package "Community Administration System" {
+    component "Admin User / Post Governance Service" as AdminSvc
+    component "Report / Feedback Handling Service" as ReportSvc
+  }
+}
+
+package "AI / Model Layer" {
+  component "Large Language Model Provider" as LLM
+  component "AIGC Image / Audio Service" as AIGC
+}
+
+package "Data Layer" {
+  component "Gorm ORM / Repository" as Gorm
+  database "MySQL" as MySQL
+  component "Object / File Storage" as FileStore
+}
+
+package "Infrastructure and Operations" {
+  component "Docker Container Runtime" as Docker
+  component "Kubernetes Orchestration" as K8s
+  component "Monitoring / Logging / Audit" as Monitor
+  component "CI/CD / Version Control" as CICD
+  node "Cloud Provider / Data Center" as Cloud
+}
+
+Guest --> WebClient
+User --> WebClient
+Admin --> WebClient
+
+WebClient --> APIGateway
+APIGateway --> AuthMW
+
+APIGateway --> UserSvc
+APIGateway --> ProfileSvc
+APIGateway --> PostSvc
+APIGateway --> CommentSvc
+APIGateway --> FavSvc
+APIGateway --> SearchSvc
+APIGateway --> NotifSvc
+APIGateway --> SaveSvc
+APIGateway --> GameSvc
+APIGateway --> RewardSvc
+APIGateway --> AdminSvc
+APIGateway --> ReportSvc
+
+UserSvc --> Gorm
+ProfileSvc --> Gorm
+PostSvc --> Gorm
+CommentSvc --> Gorm
+FavSvc --> Gorm
+SearchSvc --> Gorm
+NotifSvc --> Gorm
+SaveSvc --> Gorm
+GameSvc --> Gorm
+RewardSvc --> Gorm
+AdminSvc --> Gorm
+ReportSvc --> Gorm
+
+Gorm --> MySQL
+
+PostSvc --> FileStore
+ProfileSvc --> FileStore
+AIGC --> FileStore
+
+GameSvc --> LLM
+GameSvc --> AIGC
+GameSvc --> SaveSvc
+SaveSvc --> PostSvc : share save
+PostSvc --> NotifSvc : review event
+CommentSvc --> NotifSvc : comment/reply event
+AdminSvc --> NotifSvc : review result
+AdminSvc --> ReportSvc
+PostSvc --> RewardSvc : posting reward
+GameSvc --> RewardSvc : item reward
+
+K8s --> Docker : orchestrates containers
+Docker --> APIGateway : hosts services
+Docker --> MySQL : hosts database
+Monitor --> APIGateway : monitors/audits
+Monitor --> MySQL : monitors
+CICD --> Docker : builds images
+CICD --> K8s : deploys
+Cloud --> K8s : hosts cluster
+
+@enduml

@@ -1,0 +1,57 @@
+@startuml
+
+cloud "Kubernetes" as K8s {
+  component "DaemonSet Controller" as DaemonSetCtrl
+}
+
+cloud "HTTP Clients" as Clients
+
+cloud "Go Toolchain (build tags)" as GoToolchain {
+  component "Provider-specific Test Selector" as TestSelector
+  component "Provider-specific Test Suites" as TestSuites
+}
+
+node "Linux Host (Kubernetes Node)" as Host {
+  node "Linux Filesystem Paths (/etc, /run, /var/lib)" as FS
+
+  node "DaemonSet Pod (Privileged)" as Pod {
+    package "API Layer" {
+      component "HTTP Service" as HttpService
+      interface "HTTP API" as HttpAPI
+      interface "JSON Processing Interface" as JsonIface
+    }
+
+    package "Processing/Logic Layer" {
+      component "Host Information Collector" as HostInfoCollector
+      component "CNI Directory Resolver" as CniResolver
+      component "JSON Sanitizer" as JsonSanitizer
+    }
+
+    package "Configuration/Input Layer" {
+      component "Runtime and Process Configuration Input Handler" as InputHandler
+    }
+  }
+}
+
+' External interactions
+Clients ..> HttpAPI
+DaemonSetCtrl ..> Pod
+
+' Test/build relations
+TestSelector --> TestSuites
+
+' API to internal components
+HttpService - HttpAPI
+HttpService ..> JsonIface
+JsonSanitizer - JsonIface
+HttpService --> HostInfoCollector
+HttpService --> CniResolver
+
+' Processing dependencies
+CniResolver --> InputHandler
+
+' Interactions with host environment
+CniResolver --> FS
+InputHandler --> FS
+
+@enduml

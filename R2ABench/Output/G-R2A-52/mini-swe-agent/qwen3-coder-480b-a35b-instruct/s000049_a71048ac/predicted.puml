@@ -1,0 +1,52 @@
+@startuml
+title NLP4L System Architecture
+
+skinparam componentStyle rectangle
+
+package "NLP4L Core (Scala)" {
+  [Document Processor] as docProc
+  [Term Data Accessor] as termAccessor
+  [Search Engine Interface] as searchInterface
+  [Vector Generator] as vecGen
+  [LIBSVM Exporter] as libsvmExporter
+  [Schema Loader] as schemaLoader
+  [Schema Model] as schemaModel
+  [Chart Visualizer] as chartVis
+}
+
+database "Lucene Index" as luceneIndex {
+  [Document Data] as docData
+  [Analyzer-normalized Term Data] as termData
+}
+
+file "LIBSVM File" as libsvmFile
+file "Schema Configuration" as schemaConfig
+file "Word Count Data" as wordCountData
+
+docProc --> docData : reads
+termAccessor --> termData : accesses
+searchInterface --> luceneIndex : queries
+vecGen --> docData : processes
+vecGen --> termData : uses
+vecGen --> libsvmExporter : provides data
+libsvmExporter --> libsvmFile : writes
+schemaLoader --> schemaConfig : loads
+schemaLoader --> schemaModel : populates
+docProc --> schemaModel : uses
+termAccessor --> schemaModel : uses
+vecGen --> schemaModel : uses
+chartVis --> wordCountData : visualizes
+
+note right of chartVis
+  Experimental
+end note
+
+note bottom of libsvmExporter
+  For ML tools
+end note
+
+note top of schemaLoader
+  Resource or file path
+end note
+
+@enduml

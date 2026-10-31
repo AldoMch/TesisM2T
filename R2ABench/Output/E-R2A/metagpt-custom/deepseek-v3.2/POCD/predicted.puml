@@ -1,0 +1,97 @@
+@startuml
+
+' ========== LAYERS ==========
+package "User Interface Layer" as UI {
+    component "Web UI" as WebUI
+    component "Open API Interface" as API
+}
+
+package "Business Logic Layer" as BLL {
+    component "Security/Authentication" as SEC
+    component "User Account Manager" as UAM
+    component "File Manager" as FM
+    component "MDJ Parser" as MDJP
+    component "Database Connector" as DBC
+    component "JSON Converter" as JC
+    component "Entity Matcher" as EM
+    component "Consistency Detector" as CD
+    component "Repair Engine" as RE
+    component "Configuration Manager" as CM
+    component "Report Generator" as RG
+    component "Help & Case Manager" as HCM
+    component "History Manager" as HM
+    component "Detection Exception Manager" as DEM
+    component "Asynchronous Task Manager" as ATM
+    component "Operation Logger" as OL
+}
+
+package "Data Access Layer" as DAL {
+    database "Application Database" as AppDB
+}
+
+' ========== EXTERNAL SYSTEMS ==========
+cloud "StarUML" as StarUML
+database "MySQL Database" as TargetDB
+
+' ========== DEPENDENCIES ==========
+' User Interface -> Business Logic
+WebUI --> SEC
+WebUI --> UAM
+WebUI --> FM
+WebUI --> CM
+WebUI --> RG
+WebUI --> HCM
+WebUI --> HM
+WebUI --> DEM
+API --> SEC
+API --> UAM
+API --> FM
+API --> RG
+API --> HCM
+API --> HM
+
+' Business Logic Internal Dependencies
+SEC --> UAM
+UAM --> OL
+FM --> MDJP
+FM --> DBC
+FM --> OL
+MDJP --> JC
+DBC --> JC
+JC --> EM
+EM --> CD
+CD --> CM
+CD --> DEM
+CD --> OL
+RE --> CD
+RE --> CM
+RE --> DEM
+RE --> OL
+RG --> CD
+RG --> OL
+CM --> OL
+HCM --> OL
+HM --> OL
+DEM --> OL
+ATM --> OL
+ATM --> RE
+ATM --> RG
+
+' Business Logic -> Data Access
+SEC --> AppDB
+UAM --> AppDB
+FM --> AppDB
+CM --> AppDB
+RG --> AppDB
+HCM --> AppDB
+HM --> AppDB
+DEM --> AppDB
+OL --> AppDB
+ATM --> AppDB
+
+' Business Logic -> External Systems
+MDJP --> StarUML : reads .mdj files
+DBC --> TargetDB : JDBC connection
+RE --> TargetDB : executes repairs
+
+@enduml

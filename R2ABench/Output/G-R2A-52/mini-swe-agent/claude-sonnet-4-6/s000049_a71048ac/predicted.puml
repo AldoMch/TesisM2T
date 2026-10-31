@@ -1,0 +1,100 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+
+title NLP4L (attic-nlp4l) Architecture
+
+actor "Lucene Ecosystem User" as LuceneUser
+actor "Machine Learning\nWorkflow User" as MLUser
+actor "Scala Interactive User" as ScalaUser
+actor "Schema Configuration User" as SchemaUser
+
+package "NLP4L System (Scala)" {
+
+    package "User Interaction Layer" {
+        component "Scala Interactive\nShell / REPL" as REPL
+        component "Chart Display\n(Experimental)" as ChartDisplay
+    }
+
+    package "Core NLP Processing Layer" {
+        component "Index Access\nService" as IndexAccess
+        component "Analyzer-Normalized\nTerm Data Provider" as TermDataProvider
+        component "Search Engine\nService" as SearchService
+        component "Document Vector\nCreator" as VectorCreator
+    }
+
+    package "Schema Management Layer" {
+        component "Schema Loader" as SchemaLoader
+        component "Schema Validator" as SchemaValidator
+        component "Schema Model\n(Default Analyzer, Fields,\nCustom Analyzers)" as SchemaModel
+    }
+
+    package "Export Layer" {
+        component "LIBSVM Format\nWriter" as LIBSVMWriter
+    }
+}
+
+database "Lucene Index\n(Document & Term Data)" as LuceneIndex
+
+package "External Systems" {
+    component "Apache Lucene 5.2.0\nAnalyzers & Index API" as LuceneAPI
+    component "Machine Learning Tools\n(Apache Spark / Mahout)" as MLTools
+}
+
+file "Schema Configuration\n(Resource / File Path)" as SchemaConfig
+file "LIBSVM Output File" as LIBSVMFile
+
+' User interactions
+LuceneUser --> IndexAccess
+LuceneUser --> SearchService
+ScalaUser --> REPL
+MLUser --> VectorCreator
+SchemaUser --> SchemaLoader
+
+' REPL connects to core services
+REPL --> IndexAccess
+REPL --> SearchService
+REPL --> VectorCreator
+REPL --> ChartDisplay
+
+' Core processing layer dependencies
+IndexAccess --> LuceneAPI
+TermDataProvider --> LuceneAPI
+SearchService --> LuceneAPI
+SearchService --> TermDataProvider
+VectorCreator --> IndexAccess
+VectorCreator --> TermDataProvider
+
+' Schema management
+SchemaLoader --> SchemaConfig
+SchemaLoader --> SchemaValidator
+SchemaValidator --> SchemaModel
+IndexAccess --> SchemaModel
+SearchService --> SchemaModel
+VectorCreator --> SchemaModel
+
+' Export
+VectorCreator --> LIBSVMWriter
+LIBSVMWriter --> LIBSVMFile
+LIBSVMFile --> MLTools
+
+' Lucene index as primary data store
+LuceneAPI --> LuceneIndex
+
+' Chart display
+ChartDisplay ..> VectorCreator : word count data
+
+note right of ChartDisplay
+  Experimental feature;
+  not guaranteed stable
+  across revisions
+end note
+
+note bottom of LuceneIndex
+  Primary input corpus:
+  document data and
+  analyzer-normalized term data
+end note
+
+@enduml

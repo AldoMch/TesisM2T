@@ -1,0 +1,168 @@
+@startuml squatm3gator_architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BorderColor #555555
+}
+skinparam packageFontStyle bold
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+}
+skinparam database {
+  BackgroundColor #FFF3CC
+  BorderColor #CC9900
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "External Systems" {
+  [GoDaddy API] as GoDaddyAPI
+  [squatm3 CLI binary] as Squatm3CLI
+}
+
+database "Redis\n(Job Channel + Reporting Channel)" as Redis
+
+' ─────────────────────────────────────────────
+' CONFIGURATION LAYER
+' ─────────────────────────────────────────────
+package "Configuration Layer" #EDE7F6 {
+  [AppConfig] as AppConfig
+}
+
+' ─────────────────────────────────────────────
+' PRESENTATION LAYER
+' ─────────────────────────────────────────────
+package "Presentation Layer" #E3F2FD {
+  [WebEntryController\n(GET /)] as WebEntryController
+  [index.html Template] as IndexTemplate
+}
+
+' ─────────────────────────────────────────────
+' API LAYER
+' ─────────────────────────────────────────────
+package "API Layer" #E8EAF6 {
+  [SessionManager] as SessionManager
+  [AttackOptionParser] as AttackOptionParser
+  [QueryStringFailureHandler\n(FR-008)] as QueryStringFailureHandler
+  [JobController] as JobController
+  [HomoglyphEndpoint] as HomoglyphEndpoint
+  [ErrorHandler\n(400 / 404 / 500)] as ErrorHandler
+}
+
+' ─────────────────────────────────────────────
+' MESSAGING LAYER
+' ─────────────────────────────────────────────
+package "Messaging Layer" #FFF8E1 {
+  [RedisProducer] as RedisProducer
+  [RedisReportingReader] as RedisReportingReader
+}
+
+' ─────────────────────────────────────────────
+' ASYNC NOTIFICATION LAYER
+' ─────────────────────────────────────────────
+package "Async Notification Layer" #E0F7FA {
+  [WebSocketNotifier\n(Socket.IO)] as WebSocketNotifier
+  [WebSocket Session Channel] as WSChannel
+}
+
+' ─────────────────────────────────────────────
+' WORKER / CONSUMER LAYER
+' ─────────────────────────────────────────────
+package "Worker / Consumer Layer" #F1F8E9 {
+  [BackgroundConsumerThread] as ConsumerThread
+}
+
+' ─────────────────────────────────────────────
+' DOMAIN GENERATION LAYER
+' ─────────────────────────────────────────────
+package "Domain Generation Layer" #FBE9E7 {
+  [Squatm3Wrapper] as Squatm3Wrapper
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL INTEGRATION LAYER
+' ─────────────────────────────────────────────
+package "External Integration Layer" #FCE4EC {
+  [GoDaddyClient] as GoDaddyClient
+}
+
+' ─────────────────────────────────────────────
+' CLIENT
+' ─────────────────────────────────────────────
+[Browser / HTTP Client] as BrowserClient
+
+' ═══════════════════════════════════════════
+' DEPENDENCY ARROWS
+' ═══════════════════════════════════════════
+
+' Client → Presentation / API
+BrowserClient --> WebEntryController  : HTTP GET /
+BrowserClient --> HomoglyphEndpoint   : HTTP GET (homoglyph attack)
+BrowserClient --> JobController       : HTTP (authenticated job request)
+BrowserClient --> WSChannel           : WebSocket connect
+
+' Presentation Layer internal
+WebEntryController --> IndexTemplate  : render template (FR-001)
+
+' API Layer — startup trigger (M-003 / FR-002)
+JobController      ..> ConsumerThread : start at service startup\nor first request (FR-002)
+
+' API Layer internal
+WebEntryController --> SessionManager        : create session
+JobController      --> SessionManager        : validate session;\nsession key == job ID (DR-001)
+JobController      --> AttackOptionParser    : parse & build attack options
+JobController      --> RedisProducer         : publish job\n(session key as job ID)
+
+' FR-008 query-string failure path (M-002)
+AttackOptionParser ..> QueryStringFailureHandler : on parse exception\n→ "Something went wrong\nwhile parsing the query string"
+
+' HomoglyphEndpoint — session validation (D-004)
+HomoglyphEndpoint  --> SessionManager        : validate session
+
+' API → Error handling (FR-007)
+ErrorHandler       ..> JobController         : intercept 400/404/500
+ErrorHandler       ..> HomoglyphEndpoint     : intercept 400/404/500
+
+' Messaging Layer → Redis
+RedisProducer          --> Redis             : PUBLISH job channel
+Redis                  --> ConsumerThread    : SUBSCRIBE job channel
+
+' Worker execution flow
+ConsumerThread         --> Squatm3Wrapper    : invoke subprocess
+
+' Domain Generation → External CLI
+Squatm3Wrapper         --> Squatm3CLI        : subprocess exec (domain variants)
+
+' GoDaddy checks within worker flow (D-001 / H-001 fix)
+ConsumerThread         --> GoDaddyClient     : domain availability check\n(when godaddy option set)
+GoDaddyClient          --> GoDaddyAPI        : HTTPS (sso-key auth)\ndomain availability check
+
+' Reporting path
+Squatm3Wrapper         --> Redis             : PUBLISH reporting channel\n(WORKER_ID#JOB_UUID#MSG)
+Redis                  --> RedisReportingReader : SUBSCRIBE reporting channel
+
+' Reporting → WebSocket with session correlation (D-003)
+RedisReportingReader   --> SessionManager    : lookup session key\nfor job UUID correlation (NFR-002)
+RedisReportingReader   --> WebSocketNotifier : matched job UUID → route message
+WebSocketNotifier      --> WSChannel         : emit to session-scoped channel
+WSChannel              --> BrowserClient     : stream progress & results
+
+' Configuration consumed by dependent components (D-002 fix)
+AppConfig ..> ConsumerThread        : Redis URI
+AppConfig ..> RedisProducer         : Redis URI
+AppConfig ..> RedisReportingReader  : Redis URI
+AppConfig ..> GoDaddyClient         : key / secret / base URL / endpoints
+
+@enduml

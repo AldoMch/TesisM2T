@@ -1,0 +1,96 @@
+@startuml
+title attic-nlp4l System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+package "attic-nlp4l (Scala Library)" as nlp {
+  component "SchemaLoader" as SchemaLoader
+  component "SchemaModel" as SchemaModel
+  component "IndexProcessor" as IndexProcessor
+  component "TermAccess" as TermAccess
+  component "SearchService" as SearchService
+  component "Vectorizer" as Vectorizer
+  component "LibSVMExporter" as LibSVMExporter
+  component "ChartDisplay" as ChartDisplay <<experimental>>
+  component "InteractiveAPI" as InteractiveAPI <<Scala REPL>>
+}
+
+database "Lucene Index\n(5.2.0)" as LuceneIndex
+component "Lucene Analyzers\n(5.2.0)" as LuceneAnalyzers
+folder "Schema Configuration\n(resource or file path)" as SchemaConfig
+file "LIBSVM Format File" as LibSVMFile
+component "External ML Tools\n(e.g., Spark, Mahout)" as MLTools
+queue "Word Count Data" as WordCount
+
+rectangle "Lucene Ecosystem User" as UserLucene
+rectangle "Machine Learning Workflow User" as UserML
+rectangle "Scala Interactive User" as UserScala
+rectangle "Schema Configuration User" as UserSchema
+
+' Data and control flows
+SchemaConfig --> SchemaLoader : load source
+SchemaLoader --> SchemaModel : parse + validate
+note right of SchemaLoader
+Produces in-memory schema or invalid schema error
+end note
+
+SchemaModel --> IndexProcessor : configuration
+SchemaModel --> TermAccess : analyzer + field defs
+SchemaModel --> SearchService : field mappings + attributes
+SchemaModel --> Vectorizer : field/term-vector config
+
+LuceneIndex --> IndexProcessor : document corpus
+LuceneIndex --> TermAccess : term data
+LuceneIndex --> SearchService : indexed docs
+LuceneIndex --> Vectorizer : source documents
+
+LuceneAnalyzers --> TermAccess : normalized terms
+LuceneAnalyzers --> IndexProcessor : analysis
+
+Vectorizer --> LibSVMExporter : document vectors
+LibSVMExporter --> LibSVMFile : write LIBSVM
+
+LibSVMFile --> MLTools : consume vectors
+
+WordCount --> ChartDisplay : visualize
+
+InteractiveAPI --> SearchService : search
+InteractiveAPI --> TermAccess : term access
+InteractiveAPI --> Vectorizer : vector generation
+InteractiveAPI --> SchemaLoader : schema operations
+InteractiveAPI --> ChartDisplay : chart workflow
+InteractiveAPI --> IndexProcessor : processing
+
+' Users
+UserScala --> InteractiveAPI : ad hoc processing
+UserSchema --> SchemaConfig : supply schema
+UserLucene --> SearchService : search queries
+UserLucene --> TermAccess : term inspection
+UserML --> Vectorizer : request export
+UserML --> LibSVMFile : consume output
+
+' Notes and constraints
+note top of nlp
+Implementation language: Scala
+Interactive Scala usage supported
+end note
+
+note right of LuceneIndex
+Primary input: Lucene-indexed documents
+Analyzer-normalized term data available
+end note
+
+note bottom of LibSVMFile
+Interoperability: LIBSVM format for ML tools
+end note
+
+note left of nlp
+Compatibility: Apache Lucene 5.2.0 ecosystem
+end note
+
+note right of ChartDisplay
+Experimental; stability not guaranteed
+end note
+@enduml

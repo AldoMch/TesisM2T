@@ -1,0 +1,75 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Electron Desktop Application" as electron {
+  RECTANGLE "User Settings Sanitization" as settingsSanitizer
+  RECTANGLE "Tree CSV Export Controller" as treeCsvController
+  RECTANGLE "RESIP Export Controller" as resipController
+  RECTANGLE "CSV Export Controller" as csvController
+  RECTANGLE "Excel Export Controller" as excelController
+  RECTANGLE "Hash Computation Controller" as hashController
+  RECTANGLE "Translation Module" as translationModule
+}
+
+RECTANGLE "Background Workers" as workers {
+  RECTANGLE "Tree CSV Export Worker" as treeCsvWorker
+  RECTANGLE "RESIP Export Worker" as resipWorker
+  RECTANGLE "CSV Export Worker" as csvWorker
+  RECTANGLE "Excel Export Worker" as excelWorker
+  RECTANGLE "Hash Computation Worker" as hashWorker
+}
+
+RECTANGLE "File System" as fileSystem {
+  RECTANGLE "Application User Data Directory" as userDataDir
+}
+
+settingsSanitizer --> translationModule : reads language
+treeCsvController --> treeCsvWorker : invokes
+treeCsvController --> translationModule : reads language
+resipController --> resipWorker : invokes
+csvController --> csvWorker : invokes
+csvController --> translationModule : reads language
+excelController --> excelWorker : invokes
+excelController --> translationModule : reads language
+hashController --> hashWorker : invokes
+hashWorker --> userDataDir : writes debug files
+hashWorker --> fileSystem : processes paths
+
+treeCsvWorker ..> translationModule : receives language
+resipWorker ..> translationModule : receives language
+csvWorker ..> translationModule : receives language
+excelWorker ..> translationModule : receives language
+
+note right of settingsSanitizer
+  FR-001, FR-002, NFR-003
+end note
+
+note right of treeCsvController
+  FR-003, FR-004, NFR-001
+end note
+
+note right of resipController
+  FR-005, NFR-001
+end note
+
+note right of csvController
+  FR-006, NFR-001
+end note
+
+note right of excelController
+  FR-007, NFR-001
+end note
+
+note right of hashController
+  FR-008, FR-009, NFR-002, NFR-004
+end note
+
+note top of workers
+  C-003: Implemented via background workers
+end note
+
+note bottom of fileSystem
+  C-001: Uses Electron app.getPath("userData")
+end note
+
+@enduml

@@ -1,0 +1,92 @@
+@startuml
+title squatm3gator - Layered Architecture (Component View)
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+' =====================
+' Presentation / Client Layer
+' =====================
+package "Client Layer" {
+  [Web Browser UI] as Browser
+  [API Client Application] as ApiClient
+  [Socket.IO / WebSocket Client] as WsClient
+}
+
+' =====================
+' Application / API Layer
+' =====================
+package "Application / API Layer (squatm3gator API)" {
+  [Web Entry Point (GET / -> index.html)] as EntryPage
+  [Session Manager] as SessionMgr
+  [HTTP API / Router] as HttpApi
+  [Request Parser & Validator] as ReqParser
+  [Attack Option Builder] as OptionBuilder
+  [Job Publisher] as JobPublisher
+  [Homoglyph-Complete Resource (GET)] as HcResource
+  [Error Handler (plain-text 400/404/500)] as ErrorHandler
+  [Socket.IO / WebSocket Gateway] as WsGateway
+  [Reporting Message Parser (WORKER_ID#JOB_UUID#{MESSAGE/RESULT})] as ReportParser
+  [Background Consumer Thread] as ConsumerThread
+}
+
+' =====================
+' Integration / Processing Layer
+' =====================
+package "Processing & Integration Layer" {
+  [squatm3 CLI Wrapper] as Squatm3Wrapper
+  [GoDaddy Integration Adapter] as GodaddyAdapter
+}
+
+' =====================
+' Data / Infrastructure Layer
+' =====================
+package "Data & Infrastructure Layer" {
+  database "Redis (Job & Reporting Channel, configured URI)" as Redis
+  [Configuration Store (Redis URI, GoDaddy key/secret/base URL/endpoints)] as Config
+}
+
+' =====================
+' External Systems
+' =====================
+package "External Systems" {
+  [squatm3 CLI Engine (subprocess)] as Squatm3Cli
+  [GoDaddy Domain Availability API (sso-key auth)] as GodaddyApi
+}
+
+' =====================
+' Dependencies
+' =====================
+Browser --> EntryPage : HTTP GET /
+ApiClient --> HttpApi : HTTP requests (attack, godaddy, output)
+WsClient --> WsGateway : subscribe session updates
+
+EntryPage --> SessionMgr : create session
+SessionMgr --> HttpApi
+HttpApi --> ReqParser
+HttpApi --> ErrorHandler
+HttpApi --> HcResource
+HttpApi --> OptionBuilder
+HttpApi --> JobPublisher
+HttpApi --> SessionMgr
+
+ReqParser --> OptionBuilder
+OptionBuilder --> Squatm3Wrapper : command options
+JobPublisher --> Redis : publish job (jobId = sessionKey)
+Config --> JobPublisher
+Config --> GodaddyAdapter
+Config --> ConsumerThread
+
+ConsumerThread --> Redis : subscribe job channel
+ConsumerThread --> Squatm3Wrapper : invoke generation
+ConsumerThread --> ReportParser
+ConsumerThread --> Redis : publish reporting messages
+ConsumerThread --> WsGateway : route results by session key
+
+Squatm3Wrapper --> Squatm3Cli : subprocess execution
+GodaddyAdapter --> GodaddyApi : HTTPS, Authorization: sso-key key:secret
+
+ReportParser --> WsGateway : matched WORKER_ID#JOB_UUID
+WsGateway --> WsClient : asynchronous progress/result
+
+@enduml

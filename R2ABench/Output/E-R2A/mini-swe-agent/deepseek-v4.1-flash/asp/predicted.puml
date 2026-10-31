@@ -1,0 +1,126 @@
+@startuml
+title Zhiyan Tongjie Academic Achievement Sharing Platform - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ==================== External Actors ====================
+actor "Visitor / Registered User" as Visitor
+actor "Certified Scholar" as Scholar
+actor "Institution Administrator" as InstAdmin
+actor "Expert Reviewer" as Expert
+actor "System Administrator" as SysAdmin
+
+' ==================== External Systems ====================
+package "External Systems" {
+  [Public Academic Databases\n(APIs / Crawlers)] as ExtDB
+  [Academic Terminology &\nModel Resources] as ExtModel
+}
+
+' ==================== Presentation Layer ====================
+package "Presentation Layer (Browser)" {
+  [Vue 3.3 Web SPA\n(Chrome / Edge / Firefox;\nWindows / Linux / macOS)] as WebUI
+}
+
+' ==================== Application Layer ====================
+package "Application Layer (Django 4.2 LTS)" {
+  [Django API Gateway &\nWeb Controllers] as Gateway
+  [Account & Authentication\nService (FR-001/002)] as Auth
+  [Scholar Certification &\nPortal Service (FR-003/004/005)] as ScholarSvc
+  [Literature Discovery &\nSearch Service (FR-006-009)] as SearchSvc
+  [Personalization &\nRecommendation Service (FR-010/011)] as RecSvc
+  [Classification & Claim\nService (FR-012/013)] as ClaimSvc
+  [Ownership Dispute\nWorkflow (FR-014)] as DisputeSvc
+  [Institution Management\nService (FR-015/016)] as InstSvc
+  [Interaction & Collaboration\nService (FR-017-021)] as InteractSvc
+  [Admin & Moderation\nConsole (FR-003/014/015)] as AdminSvc
+}
+
+' ==================== Support Layer ====================
+package "Support Layer (Shared Services)" {
+  [Semantic Processing &\nNLP Service] as Semantic
+  [Cross-Language Translation\n(CN/EN/JP/DE)] as Translate
+  [Profiling &\nPersonalization Service] as Profiling
+  [Authorization &\nAccess Control Service] as Authz
+  [Analysis &\nInsight Service (FR-025)] as Analysis
+  [Misconduct Detection\nService (FR-028)] as Misconduct
+}
+
+' ==================== Infrastructure Layer ====================
+package "Infrastructure Layer" {
+  [Data Acquisition\n(Crawler / API Connector)] as Acquire
+  [Normalization &\nDaily Incremental Sync\n(FR-022/023/024)] as Sync
+  [Backup & Restore\nService (NFR-006)] as Backup
+  database "MySQL 8.0 Cluster\n(Structured Records)" as MySQL
+  database "Unstructured Content\nStore (Literature / Files)" as ObjStore
+  database "Search Index" as SearchIdx
+  database "Backup Storage\n(Full daily + Hourly incremental,\n30-day retention)" as BackupStore
+}
+
+' ==================== Actor Connections ====================
+Visitor --> WebUI
+Scholar --> WebUI
+InstAdmin --> WebUI
+Expert --> WebUI
+SysAdmin --> WebUI
+
+' ==================== Presentation -> Application ====================
+WebUI --> Gateway : HTTPS (encrypted)
+
+' ==================== Application internal ====================
+Gateway --> Auth
+Gateway --> ScholarSvc
+Gateway --> SearchSvc
+Gateway --> RecSvc
+Gateway --> ClaimSvc
+Gateway --> DisputeSvc
+Gateway --> InstSvc
+Gateway --> InteractSvc
+Gateway --> AdminSvc
+
+' ==================== Application -> Support ====================
+SearchSvc --> Semantic
+SearchSvc --> Translate
+RecSvc --> Profiling
+AdminSvc --> Misconduct
+ClaimSvc --> Analysis
+Auth --> Authz
+Gateway --> Authz
+SearchSvc --> Authz
+InteractSvc --> Authz
+ClaimSvc --> Authz
+InstSvc --> Authz
+DisputeSvc --> Authz
+
+' ==================== Support -> Infrastructure ====================
+Semantic --> SearchIdx
+Translate --> ExtModel
+Profiling --> MySQL
+Analysis --> MySQL
+Misconduct --> MySQL
+Analysis --> ObjStore
+Authz --> MySQL
+
+' ==================== Infrastructure / Persistence ====================
+Acquire --> ExtDB
+Acquire --> Sync
+Sync --> MySQL
+Sync --> ObjStore
+Sync --> SearchIdx
+MySQL --> Backup
+ObjStore --> Backup
+Backup --> BackupStore
+
+' ==================== Application -> Persistence ====================
+Auth --> MySQL
+ScholarSvc --> MySQL
+ScholarSvc --> ObjStore
+ClaimSvc --> MySQL
+DisputeSvc --> MySQL
+InstSvc --> MySQL
+InteractSvc --> MySQL
+InteractSvc --> ObjStore
+SearchSvc --> SearchIdx
+AdminSvc --> MySQL
+
+@enduml

@@ -1,0 +1,119 @@
+{
+  "candidate": {
+    "sample_id": "s000006_df2f83a2",
+    "repository_name": "aikkala/user-in-the-box",
+    "image_url": "https://github.com/aikkala/user-in-the-box/blob/main/figs/architecture.svg",
+    "source_ref": "5a4bb88b7ad8462173923808ab30c58224ef40d0",
+    "total_score": 96,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 5439,
+    "document_count": 12,
+    "document_types": [
+      "config",
+      "readme",
+      "schema_model",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 20,
+      "user_scenario": 2,
+      "api_io": 10,
+      "deployment": 12,
+      "constraints": 15,
+      "non_functional": 1
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 96
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05432110635706617,
+      "text": "# User-in-the-box - This repository contains source code for modeling and simulating HCI interaction tasks in MuJoCo. The user is modeled with a muscle-actuated biomechanical model with perception capabilities (e.g. egocentric vision), and is trained with reinforcement learning to solve the interaction task. - The source code provides a flexible (modular) approach to implementing new biomechanical models, perception models, and interaction tasks. - The produced models/simulations (which will be henceforth referred to as *simulators*) are designed to run as standalone packages that can be easily shared with others. These simulators inherit and implement the OpenAI Gym interface, and hence..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "uitb/test/evaluator.py",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05307189480177002,
+      "text": "action_log_file', default='action_log', help='output file for action log if logging is enabled (default: ./action_log)') args = parser.parse_args() # Define directories checkpoint_dir = os.path.join(args.run_folder, 'checkpoints') evaluate_dir = os.path.join(args.run_folder, 'evaluate') # Make sure output dir exists os.makedirs(evaluate_dir, exist_ok=True) # Override run parameters run_params = dict() run_params[\"action_sample_freq\"] = 100 run_params[\"evaluate\"] = True # Use deterministic actions? deterministic = False # Initialise simulator simulator = Simulator.get(args.run_folder, run_parameters=run_params) print(f\"run parameters are: {simulator.run_parameters}\") # Load latest model if..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05573770491803279,
+      "text": "# User-in-the-box - This repository contains source code for modeling and simulating HCI interaction tasks in MuJoCo. The user is modeled with a muscle-actuated biomechanical model with perception capabilities (e.g. egocentric vision), and is trained with reinforcement learning to solve the interaction task. - The source code provides a flexible (modular) approach to implementing new biomechanical models, perception models, and interaction tasks. - The produced models/simulations (which will be henceforth referred to as *simulators*) are designed to run as standalone packages that can be easily shared with others. These simulators inherit and implement the OpenAI Gym interface, and hence..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053035315938541744,
+      "text": "uitb/perception/[modality], where [modality] refers to a specific modality like \"vision\" or \"proprioception\". Note that this extra [modality] layer might be removed in the future. The base class that must be inherited when creating new perception modules is **uitb.perception.base.BaseModule**. ### Building a simulator A simulator is built according to a _config file_ (in yaml format), which defines which models are selected and integrated together to create the simulator. For examples of such config files see uitb/configs. In a nutshell, the build process contains two phases. Firstly, the MuJoCo xml file that defines the biomechanical model is integrated into the MuJoCo xml file that defi..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "uitb/bm_models/base.py",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05412358133669609,
+      "text": "f, model, data, action): \"\"\" Set control values for the biomechanical model. Args: model: Mujoco model instance of the simulator. data: Mujoco data instance of the simulator. action: Action values between [-1, 1] \"\"\" data.ctrl[self._motor_actuators] = np.clip(self._motor_smooth_avg + action[:self._nm], 0, 1) data.ctrl[self._muscle_actuators] = np.clip(data.act[self._muscle_actuators] + action[self._nm:], 0, 1) # Update smoothed online estimate of motor actuation self._motor_smooth_avg = (1 - self._motor_alpha) * self._motor_smooth_avg \\ + self._motor_alpha * data.ctrl[self._motor_actuators] @classmethod def get_xml_file(cls): \"\"\" Overwrite this method if you want to call the mujoco xml fi..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "uitb/bm_models/base.py",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053867229952090125,
+      "text": "ls.copy_children(\"tendon\", bm_root, simulator_root) # Add actuators ETutils.copy_children(\"actuator\", bm_root, simulator_root) # Add equality constraints ETutils.copy_children(\"equality\", bm_root, simulator_root) ############ The methods below you should not overwrite ############ @final def update(self, model, data): \"\"\" Updates the biomechanical model and effort model. \"\"\" self._update(model, data) self._effort_model.update(model, data) @final def reset(self, model, data): \"\"\" Resets the biomechanical model and effort model. \"\"\" self._reset(model, data) self._effort_model.reset(model, data) self.update(model, data) @final def get_state(self, model, data): \"\"\" Returns the state of the bi..."
+    }
+  ]
+}

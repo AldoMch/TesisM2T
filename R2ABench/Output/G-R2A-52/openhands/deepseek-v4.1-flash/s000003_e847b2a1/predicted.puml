@@ -1,0 +1,109 @@
+@startuml
+title Prediction Cards - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Prediction Participant" as Participant
+actor "Service Operator" as SvcOperator
+actor "Integration / Test Operator" as TestOperator
+
+package "Client Tier" {
+  component "Prediction Cards Frontend\n(React SPA)" as Frontend {
+    component "Prediction API /\nProvider-Context" as PredContext
+    component "Prediction Creation UI\n(asset, target price, time range, media)" as CreationUI
+    component "Prediction Viewing UI\n(ongoing / processed)" as ViewingUI
+    component "Outcome NFT Ops UI\n(fund, rent, withdraw, claim)" as NftOpsUI
+  }
+}
+
+package "Wallet & SDK Integration" {
+  component "Aeternity Wallet Client" as Wallet
+  component "Aeternity SDK\n(contract interaction)" as SDK
+}
+
+package "Blockchain Tier (Aeternity)" {
+  component "AENS\n(contract-location name)" as AENS
+  component "PredictionCards Smart Contract\n(Sophia)" as Contract {
+    component "Prediction State" as PredState
+    component "Outcome NFT State\n(higher / lower_or_equal)" as NftState
+    component "Fund / Rent / Withdraw /\nReward-Claim Logic" as FundLogic
+    component "Outcome Determination\n& Reward Path" as OutcomeLogic
+  }
+}
+
+package "Backend Services" {
+  component "Oracle Service\n(Quarkus)" as OracleSvc {
+    component "Oracle Registration &\nValidity Maintenance" as OracleReg
+    component "Pending Query Checker\n(scheduled)" as QueryChecker
+    component "Price Comparison &\nResponse Submitter" as PriceCompare
+  }
+  component "Prediction-Processing Service\n(closed-prediction workflow, scheduled)" as ProcSvc
+}
+
+package "External Systems" {
+  component "External Price Provider" as PriceProvider
+  database "Prediction Media Storage\n(IPFS-compatible)" as MediaStorage
+  component "Aeternity Node / Compiler" as AeNode
+}
+
+package "Local Contract Integration-Test Environment" {
+  component "Aeternity Node" as TestNode
+  component "Compiler Service" as TestCompiler
+  component "Index / Debug Endpoint" as TestIndex
+  component "Test Proxy / CORS\n(GET, POST, OPTIONS;\nContent-Type, Cache-Control,\nContent-Range, Range)" as TestProxy
+}
+
+' User interactions
+Participant --> Frontend : uses
+SvcOperator --> OracleSvc : configures / runs
+SvcOperator --> ProcSvc : configures / runs
+TestOperator --> TestProxy : validates local tests
+
+' Frontend internals
+Frontend --> PredContext : provides capabilities
+PredContext --> CreationUI
+PredContext --> ViewingUI
+PredContext --> NftOpsUI
+
+' Frontend -> Wallet/SDK -> Contract
+CreationUI --> Wallet : submit prediction
+ViewingUI --> Wallet : read prediction state
+NftOpsUI --> Wallet : fund / rent / withdraw / claim
+Wallet --> SDK : wallet-mediated calls
+SDK --> AENS : resolve deployed contract
+AENS --> Contract : locate
+SDK --> Contract : create / read / fund / reward calls
+CreationUI ..> MediaStorage : load / store media
+ViewingUI ..> MediaStorage : load media
+NftOpsUI ..> MediaStorage : reference media
+
+' Contract internals
+Contract --> PredState
+Contract --> NftState
+Contract --> FundLogic
+Contract --> OutcomeLogic
+
+' Prediction-processing service
+ProcSvc --> Contract : discover closed predictions,\ninitiate oracle query, invoke result processing
+ProcSvc --> OracleSvc : outcome determination workflow
+
+' Oracle service
+OracleSvc --> OracleReg
+OracleSvc --> QueryChecker
+OracleSvc --> PriceCompare
+QueryChecker --> Contract : read pending oracle queries
+Contract --> QueryChecker : oracle queries
+PriceCompare --> PriceProvider : obtain price data
+PriceCompare --> Contract : submit oracle response\n(higher / lower_or_equal)
+OracleReg --> AeNode : register / extend oracle
+OracleSvc --> AeNode : node & compiler connectivity
+
+' Local test environment
+TestProxy --> TestNode : proxies
+TestProxy --> TestCompiler : proxies
+TestProxy --> TestIndex : proxies
+TestNode ..> Contract : local deployment / integration tests
+
+@enduml

@@ -1,0 +1,49 @@
+@startuml
+' Squatm3gator System Architecture
+
+package "squatm3gator System" {
+  [Web UI] as web_ui
+  [HTTP API] as http_api
+  [WebSocket Channel] as websocket
+  [Background Consumer] as consumer
+  [squatm3 Engine] as squatm3
+  [Redis] as redis
+  [GoDaddy API] as godaddy
+  
+  ' Internal component relationships
+  web_ui --> http_api : requests
+  http_api --> redis : publish jobs
+  http_api --> websocket : session updates
+  consumer --> redis : consume jobs\npublish results
+  consumer --> squatm3 : execute domain\ngeneration
+  consumer --> websocket : stream results
+  http_api --> consumer : start background\nprocessing
+  websocket --> web_ui : async updates
+  
+  ' External service integration
+  consumer ..> godaddy : optional domain\navailability check
+}
+
+note right of redis
+  Redis serves as the message broker
+  for job queue and result reporting
+end note
+
+note right of consumer
+  Background consumer thread started
+  by API process listens for jobs
+  and executes squatm3 engine
+end note
+
+note right of squatm3
+  Wrapped third-party CLI engine
+  for domain generation execution
+end note
+
+note top of godaddy
+  Optional integration for 
+  domain availability checking
+  using configured credentials
+end note
+
+@enduml

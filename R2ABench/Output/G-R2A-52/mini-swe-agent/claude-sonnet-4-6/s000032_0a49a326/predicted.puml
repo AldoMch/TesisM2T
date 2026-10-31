@@ -1,0 +1,91 @@
+@startuml
+title Activiti 7 Platform Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #f5f5f5
+  BorderColor #333333
+}
+
+actor "Authenticated User\n/ Developer" as User
+actor "Cluster Operator" as Operator
+
+rectangle "External Access Layer" {
+  component [NGINX Ingress Controller] as Ingress
+  component [Public IP] as PublicIP
+}
+
+rectangle "Identity & Security Layer" {
+  component [Keycloak\n(Identity Provider)] as Keycloak
+  component [Spring Security\n(User/Role/Group Context)] as SpringSecurity
+}
+
+rectangle "Activiti Cloud Runtime Layer" {
+  component [Example Runtime Bundle\n(ProcessRuntime API)] as RuntimeBundle
+  component [TaskRuntime API\n(ROLE_ACTIVITI_USER required)] as TaskRuntime
+  component [Audit Service] as AuditService
+  component [Query Service] as QueryService
+}
+
+rectangle "Application Layer" {
+  component [Spring Boot Application\n(Application Context)] as SpringBoot
+}
+
+rectangle "Deployment & Infrastructure Layer" {
+  component [Kubernetes / GKE Cluster] as K8s
+  component [Deployment Descriptors\n(replica count, input rate)] as DeployDesc
+}
+
+database "Process Definitions\n& Process Instances" as ProcessDB
+database "Audit Event Records" as AuditDB
+database "Process Execution State" as QueryDB
+
+User --> PublicIP : HTTP requests
+PublicIP --> Ingress : routes traffic
+Ingress --> RuntimeBundle : route to runtime bundle
+Ingress --> AuditService : route to audit service
+Ingress --> QueryService : route to query service
+
+User --> Keycloak : obtain auth token
+Keycloak --> User : issues token (DE-001)
+
+User --> RuntimeBundle : authenticated request\n(token required)
+User --> TaskRuntime : task interaction\n(ROLE_ACTIVITI_USER required)
+
+SpringSecurity --> TaskRuntime : provides user/role context
+SpringBoot --> SpringSecurity : application context
+
+RuntimeBundle --> ProcessDB : store/retrieve process definitions\nand instances (SimpleProcess)
+RuntimeBundle --> AuditService : emit audit events
+AuditService --> AuditDB : store audit event records
+QueryService --> QueryDB : expose process execution info
+
+K8s --> RuntimeBundle : hosts
+K8s --> AuditService : hosts
+K8s --> QueryService : hosts
+K8s --> Ingress : hosts
+DeployDesc --> K8s : configure scalability\n(replica count, input rate)
+
+Operator --> K8s : configure ingress\nand deployment descriptors
+
+note right of Keycloak
+  FR-001: Valid token required
+  for protected endpoints.
+  NFR-001: Tokens expire/invalidate.
+end note
+
+note right of TaskRuntime
+  C-002: ACTIVITI_USER /
+  ROLE_ACTIVITI_USER required.
+end note
+
+note right of Ingress
+  C-003: NGINX Ingress with
+  public IP for external access.
+end note
+
+note bottom of DeployDesc
+  NFR-002: Configurable input rate
+  and replica count parameters.
+end note
+@enduml

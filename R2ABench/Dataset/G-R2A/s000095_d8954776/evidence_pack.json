@@ -1,0 +1,116 @@
+{
+  "candidate": {
+    "sample_id": "s000095_d8954776",
+    "repository_name": "mendhak/gpslogger",
+    "image_url": "https://github.com/mendhak/gpslogger/blob/master/assets/gpslogger_architecture.png",
+    "source_ref": "ab894229de5ef1fec726b8a9588e98089b9564c6",
+    "total_score": 93,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 4727,
+    "document_count": 9,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 10,
+      "user_scenario": 5,
+      "api_io": 14,
+      "deployment": 13,
+      "constraints": 12
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 12,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 93
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05139209096334454,
+      "text": "h OpenStreetMap and log in. Click on 'oauth settings' Click on 'Register your application' Fill in the form with these details After registering the application, you will receive a 'Consumer Key' and a 'Consumer Secret'. Place the keys in your like this: GPSLOGGER_OSM_CONSUMERKEY=abcdefgh GPSLOGGER_OSM_CONSUMERSECRET=1234123456 ### Dropbox Setup (Optional) Sign up for an account with Dropbox.com Go to the Dropbox Developers page and click on 'Create an App' Use these settings, but choose a unique name After creating the app, you will receive an app key and secret (the ones in the screenshot are fake) Place the keys in your like this: GPSLOGGER_DROPBOX_APPKEY=abcdefgh GPSLOGGER_DROPBOX_APP..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05109623015873015,
+      "text": "you will need to add them. Run /tools/android Which brings up the Android SDK manager. In here, choose * Tools > Android SDK build tools 19.0.3 * Extras > Android Support Repository * Extras > Android Support Library * Extras > Google Play services * Extras > Google Repository ### Clone the GPSLogger repository git clone git://github.com/mendhak/gpslogger.git ### Create local.properties IntelliJ/Android Studio may not detect your environment variable, so create a file called , pointing at your Android SDK directory. cd gpslogger echo \"sdk.dir=~/Programs/Android\" > local.properties ### Import the project Open up IntelliJ and choose to import a project. Select the topmost file u..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.054051522248243555,
+      "text": "res the Google Play Services Framework, so ensure that the emulator you are using is Android 4.2.2 (API level 17) or greater if you want to use this feature. You can also debug directly against your phone - all phones Android 2.2 and above should have this framework installed. Overview ====== GPSLogger is composed of a few main components; ### Event Bus The Event Bus is where all the cross communication happens. Various components raise their events on the Event Bus, and other parts of the application listen for those events. The most important one is when a location is obtained, it is placed on the event bus and consumed by many fragments. ### GPS Logging Service GPSLoggingService is whe..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05304659498207886,
+      "text": "h OpenStreetMap and log in. Click on 'oauth settings' Click on 'Register your application' Fill in the form with these details After registering the application, you will receive a 'Consumer Key' and a 'Consumer Secret'. Place the keys in your like this: GPSLOGGER_OSM_CONSUMERKEY=abcdefgh GPSLOGGER_OSM_CONSUMERSECRET=1234123456 ### Dropbox Setup (Optional) Sign up for an account with Dropbox.com Go to the Dropbox Developers page and click on 'Create an App' Use these settings, but choose a unique name After creating the app, you will receive an app key and secret (the ones in the screenshot are fake) Place the keys in your like this: GPSLOGGER_DROPBOX_APPKEY=abcdefgh GPSLOGGER_DROPBOX_APP..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "gpslogger/src/main/java/com/mendhak/gpslogger/common/OpenGTSClient.java",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05481999755928894,
+      "text": "tes(); DatagramPacket packet = new DatagramPacket(buffer, buffer.length, InetAddress.getByName(server), port); tracer.debug(\"Sending UDP \" + message ); socket.send(packet); socket.close(); } } private String getURL() { StringBuilder url = new StringBuilder(); url.append(server); if (port != null) { url.append(\":\"); url.append(port); } if (path != null) { url.append(path); } return url.toString(); } /** * Encode a location as GPRMC string data. * * For details check org.opengts.util.Nmea0183#_parse_GPRMC(String) * (OpenGTS source) * * @param loc location * @return GPRMC data */ public static String GPRMCEncode(SerializableLocation loc) { DecimalFormatSymbols dfs = new DecimalFormatSymbols(..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05430582109587927,
+      "text": "you will need to add them. Run /tools/android Which brings up the Android SDK manager. In here, choose * Tools > Android SDK build tools 19.0.3 * Extras > Android Support Repository * Extras > Android Support Library * Extras > Google Play services * Extras > Google Repository ### Clone the GPSLogger repository git clone git://github.com/mendhak/gpslogger.git ### Create local.properties IntelliJ/Android Studio may not detect your environment variable, so create a file called , pointing at your Android SDK directory. cd gpslogger echo \"sdk.dir=~/Programs/Android\" > local.properties ### Import the project Open up IntelliJ and choose to import a project. Select the topmost file u..."
+    }
+  ]
+}

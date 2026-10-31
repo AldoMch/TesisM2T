@@ -1,0 +1,89 @@
+@startuml
+title lowes/auditor - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> #E8F4FD
+  BorderColor<<layer>> #2980B9
+}
+
+skinparam component {
+  BackgroundColor #FDFEFE
+  BorderColor #2C3E50
+}
+
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+}
+
+skinparam cloud {
+  BackgroundColor #FDEDEC
+  BorderColor #E74C3C
+}
+
+actor "Application Developer\n(Integrating Application)" as AppDev
+
+rectangle "JVM Application Layer" <<layer>> {
+  component [Integrating Application] as App
+}
+
+rectangle "Auditor Client Library (Kotlin / JVM 11)" <<layer>> {
+  component [Auditing API\n(accept oldObject, newObject,\nAuditorEventConfig)] as AuditAPI
+  component [Audit Engine\n(Object Diff / Change Detection)] as AuditEngine
+  component [AuditEvent Builder\n(CREATED / UPDATED / DELETED)] as EventBuilder
+  component [Element Filter\n(AuditEventElementFilter)] as ElementFilter
+  component [Event Publisher Abstraction\n(EventPublisher interface)] as EventPublisherAbstraction
+  component [Log Provider Abstraction\n(LogProvider interface)] as LogProviderAbstraction
+}
+
+rectangle "Infrastructure / Plugin Layer" <<layer>> {
+  component [Kafka Event Publisher\n(Default EventPublisher impl)] as KafkaPublisher
+  component [Logger Implementation\n(LogProvider impl)] as LoggerImpl
+  component [Custom Element Filter\n(AuditEventElementFilter impl)] as CustomFilter
+}
+
+rectangle "External Systems" <<layer>> {
+  queue "Kafka Topic\n(Audit Event Stream)" as KafkaTopic
+  component [Downstream Consumer\n(deserializes AuditEvent JSON)] as DownstreamConsumer
+}
+
+AppDev --> App : invokes auditing
+
+App --> AuditAPI : call audit(\n  oldObject,\n  newObject,\n  AuditorEventConfig\n)
+
+AuditAPI --> AuditEngine : compare object states
+AuditEngine --> EventBuilder : detected changes\n(fields, values)
+EventBuilder --> ElementFilter : filter elements\n(enabled, types, includes)
+ElementFilter --> EventPublisherAbstraction : filtered AuditEvent
+AuditAPI --> LogProviderAbstraction : log operations
+
+EventPublisherAbstraction --> KafkaPublisher : publish(AuditEvent JSON)
+LogProviderAbstraction --> LoggerImpl : log entries
+ElementFilter ..> CustomFilter : pluggable filter impl
+
+KafkaPublisher --> KafkaTopic : serialize & send\nAuditEvent (JSON)
+KafkaTopic --> DownstreamConsumer : consume & deserialize\nAuditEvent
+
+note right of AuditEngine
+  Detects: CREATED, UPDATED, DELETED elements
+  Supports: scalar, nullable, map,
+  list, nested-object, UUID fields
+end note
+
+note right of EventBuilder
+  AuditEvent payload:
+  - applicationName
+  - eventSource / eventSubType
+  - metadata
+  - elements (name, updatedValue,
+    previousValue, metadata.fqdn)
+end note
+
+note bottom of KafkaPublisher
+  Default EventPublisher implementation.
+  Sends serialized JSON to configured
+  Kafka topic.
+end note
+
+@enduml

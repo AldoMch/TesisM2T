@@ -1,0 +1,101 @@
+@startuml
+title gran-book Backend Platform - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+' ===================== Client Layer =====================
+package "Client Layer" as Clients {
+  [Native Mobile Applications] as MobileApp
+  [Administrative Web Application] as AdminWeb
+}
+
+' ===================== Edge / Access Layer =====================
+package "Edge / Access Layer (GCP)" as Edge {
+  [Cloud Load Balancer] as LB
+  [Gateway / BFF Layer] as Gateway
+}
+
+' ===================== Backend Service Layer =====================
+package "Backend Service Layer (Container-based on GKE)" as Backend {
+  [Authentication API] as AuthAPI
+  [User Management API] as UserAPI
+  [Book Management API] as BookAPI
+  [EC Site API] as EcAPI
+  [Support / Information API] as SupportAPI
+  [Notification Processing] as NotifySvc
+}
+
+' ===================== Data Layer =====================
+package "Data Layer" as Data {
+  database "MySQL\n(user, book, EC site data)" as MySQL
+  database "NoSQL Storage\n(message management data)" as NoSQL
+  database "Object Storage\n(thumbnail / object data)" as ObjectStore
+}
+
+' ===================== External Systems =====================
+package "External Systems" as External {
+  [Firebase Authentication] as FirebaseAuth
+  [Book-Search API] as BookSearch
+  [Stripe Payment Service] as Stripe
+  [Push Notification Provider] as PushProvider
+  [Email Notification Provider] as EmailProvider
+}
+
+' ===================== Infrastructure / Operations =====================
+package "GCP Infrastructure & Operations" as Infra {
+  [GKE Cluster] as GKE
+  [GCE VM (operations)] as GCEVM
+  [Let's Encrypt TLS (DNS-01)] as LetsEncrypt
+}
+
+' ===================== Relationships =====================
+MobileApp --> LB
+AdminWeb --> LB
+LB --> Gateway
+
+Gateway --> AuthAPI
+Gateway --> UserAPI
+Gateway --> BookAPI
+Gateway --> EcAPI
+Gateway --> SupportAPI
+
+AuthAPI --> FirebaseAuth
+
+UserAPI --> MySQL
+BookAPI --> MySQL
+EcAPI --> MySQL
+
+BookAPI --> BookSearch
+EcAPI --> Stripe
+
+NotifySvc --> PushProvider
+NotifySvc --> EmailProvider
+NotifySvc --> NoSQL
+
+UserAPI --> ObjectStore
+BookAPI --> ObjectStore
+
+Gateway ..> GKE : deployed on
+Backend ..> GKE : deployed on
+GCEVM ..> LetsEncrypt : certificate provisioning
+GCEVM ..> GKE : credentialed cluster access
+
+' ===================== Notes =====================
+note bottom of Gateway
+  Node.js-style directory reference (BFF)
+  Protocol Buffers request/response conventions
+end note
+
+note bottom of Backend
+  Golang implementation for internal APIs
+  Auth data managed via Firebase Authentication
+end note
+
+note bottom of External
+  Book-search provider name unresolved (C-007)
+end note
+
+@enduml

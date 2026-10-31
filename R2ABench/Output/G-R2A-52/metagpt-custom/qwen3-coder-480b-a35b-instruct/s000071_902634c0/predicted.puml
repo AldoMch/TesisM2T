@@ -1,0 +1,50 @@
+@startuml
+' Layered Component/Deployment Diagram for ClearML Agent Runtime
+
+' Define Nodes for External Systems
+node "Kubernetes Cluster" as k8s_cluster
+node "ClearML Server/Backend" as clearml_backend
+node "Docker Daemon" as docker_daemon
+
+' Execution Layer
+package "Execution Layer" {
+    component "KubernetesGlue" as kube_glue
+    component "ServicePodManager" as svc_pod_mgr
+    component "ExperimentRunner" as exp_runner
+    component "LoggingSubsystem" as logging_subsystem
+}
+
+' Telemetry Layer
+package "Telemetry Layer" {
+    component "WorkerReporter" as worker_reporter
+    component "ConfigurationManager" as config_mgr
+}
+
+' Service Layer
+package "Service Layer" {
+    component "BackendServiceClient" as backend_client
+    component "EventsServiceInterface" as events_svc
+    component "ModelsServiceInterface" as models_svc
+}
+
+' Integration Layer
+package "Integration Layer" {
+    component "QueueManager" as queue_mgr
+}
+
+' Dependencies between components
+kube_glue <--> k8s_cluster : creates & monitors jobs
+kube_glue --> queue_mgr : retrieves jobs
+kube_glue --> backend_client : prepares jobs via templates
+svc_pod_mgr --> docker_daemon : manages containers via socket
+exp_runner --> svc_pod_mgr : executes in pod env
+exp_runner --> backend_client : interacts with backend
+exp_runner --> logging_subsystem : logs stdout/stderr
+worker_reporter --> clearml_backend : sends telemetry/status
+worker_reporter --> config_mgr : reads report intervals
+config_mgr --> clearml_backend : fetches worker config
+backend_client --> clearml_backend : CRUD operations
+events_svc --> backend_client : uses for requests
+models_svc --> backend_client : uses for model ops
+
+@enduml

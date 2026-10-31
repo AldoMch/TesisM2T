@@ -1,0 +1,129 @@
+@startuml MyTorch_Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam componentBackgroundColor #DDEEFF
+skinparam nodeBackgroundColor #FFF8E1
+skinparam databaseBackgroundColor #E8F5E9
+skinparam cloudBackgroundColor #FCE4EC
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam arrowColor #333366
+skinparam componentBorderColor #336699
+skinparam packageBorderColor #336699
+skinparam nodeBorderColor #996633
+skinparam databaseBorderColor #2E7D32
+
+allowmixing
+
+' ============================================================
+' EXTERNAL SYSTEMS
+' ============================================================
+rectangle "External Systems" {
+    component "NNE Framework\n(Base Codebase)" as NNEExternal
+    component "Public Datasets\n(CIFAR / ImageNet / COCO\nFashion-MNIST / IMDB\nPenn Treebank / SVHN / EMNIST)" as PublicDatasets
+    component "GPU Hardware &\nCUDA Runtime" as GPUHardware
+}
+
+' ============================================================
+' PRESENTATION LAYER
+' ============================================================
+package "Presentation Layer" #E8EAF6 {
+    component "MainInterface\n(Entry Point / Navigation)" as MainInterface
+    component "ConfigurationUI\n(Parameters / Model Structure\n/ Explanations)" as ConfigurationUI
+    component "TrainingUI\n(Real-Time Loss & Accuracy\n/ Progress Bars / Animations\n/ Resource KPIs)" as TrainingUI
+    component "InferenceUI\n(Inference Requests\n/ Results / Feedback)" as InferenceUI
+    component "HelpUI\n(Step Guidance / Prompts\n/ Examples / Suggestions\n/ Help Documents)" as HelpUI
+
+    MainInterface --> ConfigurationUI
+    MainInterface --> TrainingUI
+    MainInterface --> InferenceUI
+    MainInterface --> HelpUI
+}
+
+' ============================================================
+' APPLICATION / SERVICE LAYER
+' ============================================================
+package "Application / Service Layer" #E3F2FD {
+    component "BackendService\n(Model Init / Training Tasks\n/ Inference Tasks)" as BackendService
+    component "ModelManager\n(Model CRUD / Selection\n/ Version Control\n/ Model Lifecycle)" as ModelManager
+    component "TrainingEngine\n(Training Execution\n/ Evaluation / Model Saving)" as TrainingEngine
+    component "Inferencer\n(Model Loader / DataLoader Init\n/ forward() / Result Return)" as Inferencer
+    component "FaultMonitor\n(Exception Observation\n/ GPU & Memory Metrics\n/ Fault-Handling Strategies)" as FaultMonitor
+    component "SecurityManager\n(Access Control\n/ Data Confidentiality\n/ Integrity Protection\n/ Privacy Compliance)" as SecurityManager
+
+    BackendService --> TrainingEngine
+    BackendService --> Inferencer
+    BackendService --> ModelManager
+    TrainingEngine --> FaultMonitor : "reports state\n/ exceptions"
+    Inferencer --> FaultMonitor : "reports inference\nexceptions / memory overflow"
+    FaultMonitor --> BackendService : "escalate fault alerts\n/ troubleshooting suggestions"
+    SecurityManager --> BackendService
+    SecurityManager --> ModelManager
+}
+
+' ============================================================
+' FRAMEWORK LAYER
+' ============================================================
+package "Framework Layer" #E8F5E9 {
+    component "NNEFrameworkCore\n(Tensor Ops / Autograd\n/ Model Definition APIs)" as NNEFrameworkCore
+    component "GPUAccelerationModule\n(GPU Init / Data Transfer\n/ Matrix Ops / Async Execution\n/ GPU Error Handling)" as GPUAccelerationModule
+    component "GPUResourceDetector\n(Auto-Detect GPU Devices\n/ Configure Resources\n/ Allocate CUDA Contexts)" as GPUResourceDetector
+    component "WeightInitializer\n(He / LeCun / Xavier\n/ Activation Mapping)" as WeightInitializer
+    component "ClassicModelLibrary\n(ResNet / VGG / Transformer\n/ Structure Definitions\n/ Forward Pass)" as ClassicModelLibrary
+    component "DataLoader\n(Preset & Custom Datasets\n/ Preprocessing / Augmentation\n/ Splitting / Download Links)" as DataLoader
+
+    GPUAccelerationModule --> NNEFrameworkCore
+    GPUResourceDetector --> GPUAccelerationModule : "detected resources\n/ configured contexts"
+    ClassicModelLibrary --> NNEFrameworkCore
+}
+
+' ============================================================
+' PERSISTENCE LAYER
+' ============================================================
+package "Persistence Layer" #FFF3E0 {
+    component "DatabaseManager\n(Read / Write / Backup\n/ Recovery / Fault Records)" as DatabaseManager
+}
+
+node "SQLite Database\n(Models / Datasets\nTraining Logs / Inference Logs\nHistory / Error Records)" as SQLiteDatabase
+
+DatabaseManager --> SQLiteDatabase
+
+' ============================================================
+' PRESENTATION -> APPLICATION DEPENDENCIES
+' ============================================================
+ConfigurationUI --> BackendService : "model config\n(structure / params / init method)"
+TrainingUI --> BackendService : "start / stop training\n/ real-time status"
+InferenceUI --> BackendService : "inference request\n/ results / exceptions"
+FaultMonitor --> TrainingUI : "resource KPIs\n/ live feedback\n/ loading state"
+
+' ============================================================
+' APPLICATION -> FRAMEWORK DEPENDENCIES
+' ============================================================
+BackendService --> NNEFrameworkCore : "model init / training\n/ forward-pass APIs"
+BackendService --> WeightInitializer : "apply weight init\nduring model creation"
+BackendService --> ClassicModelLibrary : "select / instantiate\nclassic model"
+TrainingEngine --> GPUAccelerationModule : "delegate matrix ops\nto GPU"
+TrainingEngine --> WeightInitializer : "apply weight\ninitialization"
+TrainingEngine --> DataLoader : "request training\ndata batches"
+TrainingEngine --> ClassicModelLibrary : "instantiate / configure\nmodel for training"
+Inferencer --> DataLoader : "init inference\ndata loader / append results"
+Inferencer --> NNEFrameworkCore : "call forward()\non model instance"
+GPUResourceDetector --> GPUHardware : "auto-detect GPU devices\n/ CUDA availability"
+
+' ============================================================
+' APPLICATION -> PERSISTENCE DEPENDENCIES
+' ============================================================
+BackendService --> DatabaseManager : "persist configs / tasks\n/ logs / history"
+ModelManager --> DatabaseManager : "persist / retrieve\nmodel records"
+FaultMonitor --> DatabaseManager : "write error records\n/ metrics / troubleshooting"
+TrainingEngine --> DatabaseManager : "save evaluated model\n/ training logs after completion"
+
+' ============================================================
+' FRAMEWORK -> EXTERNAL DEPENDENCIES
+' ============================================================
+NNEFrameworkCore --> NNEExternal : "extends base codebase\n(C-001 / AD-002)"
+DataLoader --> PublicDatasets : "download links\n/ dataset loading"
+GPUAccelerationModule --> GPUHardware : "GPU resource init\n/ CUDA runtime calls"
+
+@enduml

@@ -1,0 +1,645 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "Access Layer::Auth Session"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Client Access Layer::Authorization Key Handler\\n(FR-002, DR-001)",
+        "Teamgram Server (Go Runtime)::Client Access Layer::Service Message Processor\\nrpc_drop_answer | destroy_session\\n(FR-006, FR-007, DR-005)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Access Layer::Session"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::Session ID Manager\\n(FR-005, DR-003)",
+        "Teamgram Server (Go Runtime)::Client Access Layer::Encrypted Session Manager\\n(FR-003, DR-003)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Access Layer::Status"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Client Access Layer::Server Salt / Future Salt Handler\\n(FR-002, FR-008, DR-002)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Access Layer::Gateway"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Client Access Layer",
+        "Teamgram Server (Go Runtime)::Client Access Layer::MTProto Gateway\\n(FR-001, NFR-002)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Global::BFF"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer",
+        "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::RPC Dispatcher"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Global::Kafka"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Message Queue Producer/Consumer\\n(Kafka Adapter)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Global::Push",
+        "Global::Sync"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Push & Sync Service"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Services::DFS"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Object Store Client\\n(MinIO Adapter)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Services::Msg"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Business / Service Layer::Messaging Service"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Services::Services"
+      ],
+      "predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Business / Service Layer",
+        "Teamgram Server (Go Runtime)::Business / Service Layer::Account & Auth Service",
+        "Teamgram Server (Go Runtime)::Business / Service Layer::Channel & Group Service",
+        "Teamgram Server (Go Runtime)::Business / Service Layer::User & Contact Service"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Storages::MinIO"
+      ],
+      "predicted_nodes": [
+        "Infrastructure Services::MinIO\\n(Object Storage)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Storages::MySQL"
+      ],
+      "predicted_nodes": [
+        "Infrastructure Services::MySQL\\n(Persistent Storage)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Storages::Redis"
+      ],
+      "predicted_nodes": [
+        "Infrastructure Services::Redis\\n(Cache / Session Store)",
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Cache Manager\\n(Redis Adapter)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Deployment Infrastructure\\n(NFR-003, C-003)::Docker-Based Startup",
+      "reference_nodes": [
+        "Global::BFF"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Deployment Infrastructure\\n(NFR-003, C-003)::Manual Build / Install",
+      "reference_nodes": [
+        "Global::BFF"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Services::External Verification\\nCode Service\\n(FR-009, C-004)",
+      "reference_nodes": [
+        "Access Layer::Status"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Deployment Infrastructure\\n(NFR-003, C-003)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::External Services",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Infrastructure Services",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Teamgram Server (Go Runtime)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Telegram-Compatible Clients",
+      "reference_nodes": [
+        "Clients::Android",
+        "Clients::PC",
+        "Clients::Web",
+        "Clients::iOS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Services::Kafka\\n(Message Broker)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Services::MinIO\\n(Object Storage)",
+      "reference_nodes": [
+        "Storages::MinIO"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Services::MySQL\\n(Persistent Storage)",
+      "reference_nodes": [
+        "Storages::MySQL"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Services::Redis\\n(Cache / Session Store)",
+      "reference_nodes": [
+        "Storages::Redis"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Infrastructure Services::etcd\\n(Service Discovery)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer",
+      "reference_nodes": [
+        "Global::BFF"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::RPC Dispatcher",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::Registration & Phone\\nVerification Handler\\n(FR-004, DR-004)",
+      "reference_nodes": [
+        "Access Layer::Auth Session",
+        "Access Layer::Session"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::Session ID Manager\\n(FR-005, DR-003)",
+      "reference_nodes": [
+        "Access Layer::Session"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::Verification Code Service\\n(FR-009)",
+      "reference_nodes": [
+        "Access Layer::Status"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Business / Service Layer",
+      "reference_nodes": [
+        "Services::Services"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Business / Service Layer::Account & Auth Service",
+      "reference_nodes": [
+        "Services::Services"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Business / Service Layer::Channel & Group Service",
+      "reference_nodes": [
+        "Services::Services"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Business / Service Layer::Messaging Service",
+      "reference_nodes": [
+        "Services::Msg"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Business / Service Layer::User & Contact Service",
+      "reference_nodes": [
+        "Services::Services"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Client Access Layer",
+      "reference_nodes": [
+        "Access Layer::Auth Session",
+        "Access Layer::Gateway",
+        "Access Layer::Session",
+        "Access Layer::Status"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Client Access Layer::Authorization Key Handler\\n(FR-002, DR-001)",
+      "reference_nodes": [
+        "Access Layer::Auth Session"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Client Access Layer::Encrypted Session Manager\\n(FR-003, DR-003)",
+      "reference_nodes": [
+        "Access Layer::Auth Session",
+        "Access Layer::Session"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Client Access Layer::MTProto Gateway\\n(FR-001, NFR-002)",
+      "reference_nodes": [
+        "Access Layer::Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Client Access Layer::Server Salt / Future Salt Handler\\n(FR-002, FR-008, DR-002)",
+      "reference_nodes": [
+        "Access Layer::Auth Session",
+        "Access Layer::Status"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Client Access Layer::Service Message Processor\\nrpc_drop_answer | destroy_session\\n(FR-006, FR-007, DR-005)",
+      "reference_nodes": [
+        "Services::Msg"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Teamgram Server (Go Runtime)::Optional Media Processing",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Teamgram Server (Go Runtime)::Optional Media Processing::FFmpeg/FFProbe Wrapper\\n(NFR-004, C-005)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Teamgram Server (Go Runtime)::Storage-Facing & Async Components",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Cache Manager\\n(Redis Adapter)",
+      "reference_nodes": [
+        "Storages::Redis"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Data Access Layer\\n(MySQL Adapter)",
+      "reference_nodes": [
+        "Storages::MySQL"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Message Queue Producer/Consumer\\n(Kafka Adapter)",
+      "reference_nodes": [
+        "Global::Kafka"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Object Store Client\\n(MinIO Adapter)",
+      "reference_nodes": [
+        "Storages::MinIO"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Push & Sync Service",
+      "reference_nodes": [
+        "Global::Push",
+        "Global::Sync"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Service Registry\\n(etcd Client)",
+      "reference_nodes": [
+        "Storages::Redis"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Telegram-Compatible Clients::Mobile / Desktop Clients",
+      "reference_nodes": [
+        "Clients::Android",
+        "Clients::PC",
+        "Clients::Web",
+        "Clients::iOS"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Client Access Layer::Authorization Key Handler\\n(FR-002, DR-001)",
+        "Teamgram Server (Go Runtime)::Client Access Layer::Encrypted Session Manager\\n(FR-003, DR-003)",
+        "Teamgram Server (Go Runtime)::Client Access Layer::Server Salt / Future Salt Handler\\n(FR-002, FR-008, DR-002)",
+        "Teamgram Server (Go Runtime)::Client Access Layer::Service Message Processor\\nrpc_drop_answer | destroy_session\\n(FR-006, FR-007, DR-005)"
+      ],
+      "gt_node": "Access Layer::Auth Session"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Client Access Layer",
+        "Teamgram Server (Go Runtime)::Client Access Layer::MTProto Gateway\\n(FR-001, NFR-002)"
+      ],
+      "gt_node": "Access Layer::Gateway"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::Session ID Manager\\n(FR-005, DR-003)",
+        "Teamgram Server (Go Runtime)::Client Access Layer::Encrypted Session Manager\\n(FR-003, DR-003)"
+      ],
+      "gt_node": "Access Layer::Session"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Client Access Layer::Server Salt / Future Salt Handler\\n(FR-002, FR-008, DR-002)",
+        "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::Verification Code Service\\n(FR-009)"
+      ],
+      "gt_node": "Access Layer::Status"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Telegram-Compatible Clients",
+        "Telegram-Compatible Clients::Mobile / Desktop Clients"
+      ],
+      "gt_node": "Clients::Android"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Telegram-Compatible Clients",
+        "Telegram-Compatible Clients::Mobile / Desktop Clients"
+      ],
+      "gt_node": "Clients::PC"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Telegram-Compatible Clients",
+        "Telegram-Compatible Clients::Mobile / Desktop Clients"
+      ],
+      "gt_node": "Clients::Web"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Telegram-Compatible Clients",
+        "Telegram-Compatible Clients::Mobile / Desktop Clients"
+      ],
+      "gt_node": "Clients::iOS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer",
+        "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::RPC Dispatcher"
+      ],
+      "gt_node": "Global::BFF"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Message Queue Producer/Consumer\\n(Kafka Adapter)"
+      ],
+      "gt_node": "Global::Kafka"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Push & Sync Service"
+      ],
+      "gt_node": "Global::Push"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Push & Sync Service"
+      ],
+      "gt_node": "Global::Sync"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Object Store Client\\n(MinIO Adapter)"
+      ],
+      "gt_node": "Services::DFS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Business / Service Layer::Messaging Service",
+        "Teamgram Server (Go Runtime)::Client Access Layer::Service Message Processor\\nrpc_drop_answer | destroy_session\\n(FR-006, FR-007, DR-005)"
+      ],
+      "gt_node": "Services::Msg"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Teamgram Server (Go Runtime)::Business / Service Layer",
+        "Teamgram Server (Go Runtime)::Business / Service Layer::Account & Auth Service",
+        "Teamgram Server (Go Runtime)::Business / Service Layer::Channel & Group Service",
+        "Teamgram Server (Go Runtime)::Business / Service Layer::User & Contact Service"
+      ],
+      "gt_node": "Services::Services"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Services::MinIO\\n(Object Storage)",
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Object Store Client\\n(MinIO Adapter)"
+      ],
+      "gt_node": "Storages::MinIO"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Services::MySQL\\n(Persistent Storage)",
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Data Access Layer\\n(MySQL Adapter)"
+      ],
+      "gt_node": "Storages::MySQL"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Services::Redis\\n(Cache / Session Store)",
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Cache Manager\\n(Redis Adapter)",
+        "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Service Registry\\n(etcd Client)"
+      ],
+      "gt_node": "Storages::Redis"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5038,
+      "completion_tokens": 1508,
+      "total_tokens": 6546,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 4864
+      }
+    }
+  },
+  "_ownership_repair": {
+    "decisions": {
+      "layer_flags": {
+        "g0": true,
+        "g1": true,
+        "g10": true,
+        "g11": true,
+        "g12": true,
+        "g2": true,
+        "g3": true,
+        "g4": true,
+        "g5": true,
+        "g6": true,
+        "g7": true,
+        "g8": true,
+        "g9": true
+      },
+      "owners": {
+        "p26": "g1",
+        "p28": "g2"
+      }
+    },
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1816,
+      "completion_tokens": 91,
+      "total_tokens": 1907,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Clients::Android",
+    "Clients::PC",
+    "Clients::Web",
+    "Clients::iOS"
+  ],
+  "unmatched_predicted_nodes": [
+    "Deployment Infrastructure\\n(NFR-003, C-003)::Docker-Based Startup",
+    "Deployment Infrastructure\\n(NFR-003, C-003)::Manual Build / Install",
+    "External Services::External Verification\\nCode Service\\n(FR-009, C-004)",
+    "Global::Deployment Infrastructure\\n(NFR-003, C-003)",
+    "Global::External Services",
+    "Global::Infrastructure Services",
+    "Global::Teamgram Server (Go Runtime)",
+    "Global::Telegram-Compatible Clients",
+    "Infrastructure Services::Kafka\\n(Message Broker)",
+    "Infrastructure Services::etcd\\n(Service Discovery)",
+    "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::Registration & Phone\\nVerification Handler\\n(FR-004, DR-004)",
+    "Teamgram Server (Go Runtime)::BFF / Access-Facing Service Layer::Verification Code Service\\n(FR-009)",
+    "Teamgram Server (Go Runtime)::Optional Media Processing",
+    "Teamgram Server (Go Runtime)::Optional Media Processing::FFmpeg/FFProbe Wrapper\\n(NFR-004, C-005)",
+    "Teamgram Server (Go Runtime)::Storage-Facing & Async Components",
+    "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Data Access Layer\\n(MySQL Adapter)",
+    "Teamgram Server (Go Runtime)::Storage-Facing & Async Components::Service Registry\\n(etcd Client)",
+    "Telegram-Compatible Clients::Mobile / Desktop Clients"
+  ],
+  "_provenance": {
+    "fingerprint": "51e3af6c2709e6a4c0b6042ed0a9d3fefbe4679d3482f992fc6118e165158ee8",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "ownership_repair_source_sha256": "a32817e46640d6967b6eb79b7cf223cd214d59c2f1b1ad2eee8b14255d77558b"
+  }
+}

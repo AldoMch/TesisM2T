@@ -1,0 +1,120 @@
+{
+  "candidate": {
+    "sample_id": "s000075_7722edce",
+    "repository_name": "de1ux/statlord",
+    "image_url": "https://github.com/de1ux/statlord/blob/master/docs/architecture.png",
+    "source_ref": "2677633e86fa623224308bf35c4a3153c95c0030",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 18890,
+    "document_count": 25,
+    "document_types": [
+      "code_cli",
+      "deployment_config",
+      "readme",
+      "requirements_like",
+      "schema_model"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 44,
+      "user_scenario": 6,
+      "api_io": 52,
+      "deployment": 24,
+      "constraints": 10,
+      "non_functional": 4
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "Dockerfile",
+      "doc_type": "deployment_config",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05573770491803279,
+      "text": "FROM python:3.7 # TODO - install a fixed version of npm RUN apt-get update && \\ apt-get install -y curl nodejs && \\ curl -L | sh COPY client /client WORKDIR client RUN npm install && \\ npm run build # TODO - merge index.html beforehand RUN cp index.html dist/ && \\ mkdir -p /server && \\ cp -R dist /server/static COPY server /server WORKDIR /server RUN pip install -r requirements.txt # TODO - use real wsgi server CMD [\"./manage.py\", \"runserver\"]"
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053009714300036884,
+      "text": "# statlord > Display realtime data on spare OLEDs, e-paper, LCDs, and browsers ## Quickstart TODO - docker image is building, but not 100% standalone/ready ## Developing Requirements * postgres * python >3.5 * nodejs, npm Install dependencies Run the stack Visit the editor ## Usage (browser) Post some data to the API Open the editor and follow the wizard. ## Usage (other displays) Register displays in the API with a unique name and its resolution ## Architecture ### Editor Use to create layouts of different displays. Position text, gauges, and other interesting data across muliple displays. ### Viewer A set of headless browsers that are rendering what each display \"sees\" in the layout. Th..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "client/src/Store.tsx",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053867229952090125,
+      "text": "import {createStore, Store} from 'redux'; import {Models} from './Models'; export const CONTROL_ADDED = 'CONTROL_ADDED', ELEMENT_ADDED = 'ELEMENT_ADDED', CONTROL_UPDATED = 'CONTROL_UPDATED', SET_LAYOUTS = 'SET_LAYOUT', SET_GAUGES = 'SET_GAUGES', SET_DISPLAYS = 'SET_DISPLAYS', REQUEST_CANVAS_RENDER = 'REQUEST_CANVAS_RENDER', UPDATE_SELECTED_OBJECT = 'UPDATE_SELECTED_OBJECT', REQUEST_CANVAS_DELETE_OBJECT = 'REQUEST_CANVAS_DELETE_OBJECT'; export interface ControlAddedMessage { control: Models.Gauge } export interface ControlUpdatedMessage { control: Models.Gauge } export interface ElementAddedMessage { element: string when: number } export interface SetLayoutsMessage { layouts: Array } expor..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "client/src/Models.ts",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053265659072110685,
+      "text": "export namespace Models { export interface Gauge { key: string; value: string; } export interface Display { key: string; available: boolean; resolution_x: number; resolution_y: number; display_data: string; rotation: number; } export interface Layout { key: string; data: any; display_positions: string; } }"
+    },
+    {
+      "evidence_id": "E005",
+      "path": "server/statlord/serializers.py",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05534108937070333,
+      "text": "from rest_framework import serializers from . import models class GaugeSerializer(serializers.HyperlinkedModelSerializer): class Meta: model = models.Gauge fields = ('key', 'value',) class DisplaySerializer(serializers.HyperlinkedModelSerializer): class Meta: model = models.Display fields = ('key', 'available', 'resolution_x', 'resolution_y', 'current_layout', 'display_data', 'rotation') class LayoutSerializer(serializers.HyperlinkedModelSerializer): class Meta: model = models.Layout fields = ('key', 'data', 'display_positions')"
+    },
+    {
+      "evidence_id": "E006",
+      "path": "server/statlord/models.py",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05523532522474882,
+      "text": "from django.db import models class Gauge(models.Model): key = models.CharField(max_length=200, primary_key=True) value = models.CharField(max_length=600) class Layout(models.Model): key = models.CharField(max_length=100, primary_key=True) display_positions = models.TextField(default='') data = models.BinaryField() class Display(models.Model): key = models.CharField(max_length=100, primary_key=True) available = models.BooleanField(default=False) resolution_x = models.IntegerField(default=0) resolution_y = models.IntegerField(default=0) current_layout = models.ForeignKey(Layout, on_delete=models.SET_NULL, null=True) display_data = models.TextField(default='') rotation = models.IntegerField(..."
+    }
+  ]
+}

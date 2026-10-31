@@ -1,0 +1,187 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam defaultFontName Arial
+title AI-Driven Text Adventure Game and Community Platform - System Architecture
+
+package "Client Layer" {
+  [Web Browser / Client App] as Client
+  [Vue.js / Nuxt.js Frontend] as Frontend
+  Client --> Frontend : HTTP/HTTPS, WebSocket
+}
+
+package "API Gateway / Load Balancer" {
+  [API Gateway] as Gateway
+  [Load Balancer] as LB
+  Frontend --> Gateway : Routes API Requests
+  Gateway --> LB : Distributes Traffic
+}
+
+package "Application Service Layer" {
+  package "User Service" {
+    [User Authentication Service] as AuthService
+    [User Profile Service] as ProfileService
+    [User Management Service] as UserMgmtService
+  }
+
+  package "Game Service" {
+    [Game Session Service] as GameSessionService
+    [Game State Service] as GameStateService
+    [Save Management Service] as SaveService
+    [Game Logic Orchestrator] as GameOrchestrator
+  }
+
+  package "Community Service" {
+    [Post Service] as PostService
+    [Comment & Reply Service] as CommentService
+    [Search & Recommendation Service] as SearchService
+    [Favorites Service] as FavoritesService
+  }
+
+  package "Administration Service" {
+    [Admin Review Service] as ReviewService
+    [Admin Governance Service] as GovernanceService
+    [Report & Feedback Service] as ReportService
+  }
+
+  package "Notification Service" {
+    [Notification Engine] as NotificationEngine
+    [Notification Delivery Service] as NotificationDelivery
+  }
+
+  package "AI Integration Service" {
+    [LLM Orchestration Service] as LLMService
+    [AIGC Content Service] as AIGCService
+  }
+
+  Gateway --> AuthService
+  Gateway --> ProfileService
+  Gateway --> GameSessionService
+  Gateway --> PostService
+  Gateway --> ReviewService
+  Gateway --> NotificationEngine
+  Gateway --> LLMService
+
+  GameSessionService --> GameOrchestrator
+  GameOrchestrator --> GameStateService
+  GameOrchestrator --> SaveService
+  GameOrchestrator --> LLMService
+  GameOrchestrator --> AIGCService
+
+  PostService --> ReviewService
+  PostService --> FavoritesService
+  PostService --> SearchService
+  CommentService --> PostService
+  CommentService --> NotificationEngine
+  ReviewService --> NotificationEngine
+  FavoritesService --> NotificationEngine
+
+  GovernanceService --> UserMgmtService
+  ReportService --> GovernanceService
+  UserMgmtService --> AuthService
+  UserMgmtService --> ProfileService
+
+  NotificationEngine --> NotificationDelivery
+  NotificationDelivery --> Client : Push / Poll
+}
+
+package "External Service Layer" {
+  [Large Language Model API] as LLM_API
+  [AIGC Media Service] as AIGC_API
+  [Email Service] as EmailService
+  [File Storage Service] as StorageService
+
+  LLMService --> LLM_API : API Calls
+  AIGCService --> AIGC_API : API Calls
+  AuthService --> EmailService : Sends Verification
+  ProfileService --> StorageService : Avatar Uploads
+  PostService --> StorageService : Screenshot Uploads
+  AIGCService --> StorageService : Generated Media
+}
+
+package "Data Access Layer" {
+  [GORM ORM] as GORM
+  [Data Access Objects] as DAOs
+  DAOs --> GORM
+}
+
+package "Data Storage Layer" {
+  database "MySQL Database" as MySQL {
+    folder "User Schema" {
+      [users]
+      [profiles]
+      [administrators]
+    }
+    folder "Game Schema" {
+      [game_saves]
+      [game_states]
+      [background_info]
+      [achievements]
+      [currency_items]
+    }
+    folder "Community Schema" {
+      [posts]
+      [post_reviews]
+      [comments]
+      [replies]
+      [favorites]
+    }
+    folder "Notification Schema" {
+      [notifications]
+      [notification_settings]
+    }
+    folder "Admin Schema" {
+      [reports]
+      [feedback]
+      [account_bans]
+    }
+    folder "System Schema" {
+      [audit_logs]
+      [system_events]
+    }
+  }
+
+  GORM --> MySQL
+}
+
+package "Infrastructure & Operations" {
+  [Docker Container Runtime] as Docker
+  [Kubernetes Orchestration] as K8s
+  [Monitoring & Logging] as Monitoring
+  [Security & Vulnerability Mgmt] as Security
+
+  component "All Services" as Services
+  Services --> Docker
+  Docker --> K8s
+  Monitoring --> Services
+  Security --> Services
+  Security --> MySQL
+}
+
+note right of Client
+  **User Classes:**
+  - Guest
+  - Registered User / Player
+  - Community Administrator
+  - Game Content Consumer
+  - Community Interaction User
+end note
+
+note left of MySQL
+  **Key Data Objects:**
+  - User Accounts & Profiles
+  - Game Saves & States
+  - Posts, Comments, Replies
+  - Favorites & Notifications
+  - Admin Records & Logs
+end note
+
+note bottom of LLM_API
+  **Core Dependency:**
+  Dynamic plot generation,
+  random events, decision effects,
+  and content consistency.
+end note
+
+@enduml

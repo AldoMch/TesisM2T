@@ -1,0 +1,99 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #F5F5F5
+skinparam shadowing false
+skinparam arrowColor #333333
+skinparam componentBorderColor #666666
+skinparam componentBackgroundColor #FFFFFF
+skinparam packageBackgroundColor #E8E8E8
+skinparam packageBorderColor #AAAAAA
+
+title lowes/auditor - System Architecture
+
+' === External Entities ===
+rectangle "JVM Application" as Application {
+  rectangle "Application Code" as AppCode #lightblue
+}
+
+rectangle "Infrastructure Integrators" as Integrators {
+  rectangle "Publisher/Loger/Filter\nImplementations" as ImplProviders #lightgreen
+}
+
+rectangle "Downstream Consumers" as Consumers {
+  rectangle "Event Processing\nServices" as EventProcessors #lightyellow
+}
+
+' === System Boundary ===
+package "auditor Client Library" as Auditor {
+  rectangle "Auditing API" as AuditingAPI #pink
+  rectangle "Audit Event Generator" as EventGenerator #pink
+  rectangle "Object Comparator" as Comparator #pink
+  
+  rectangle "EventPublisher\nAbstraction" as EventPublisher #lightgray
+  rectangle "LogProvider\nAbstraction" as LogProvider #lightgray
+  rectangle "AuditEventElementFilter\nAbstraction" as ElementFilter #lightgray
+  
+  rectangle "Default Implementation" as DefaultImpl {
+    rectangle "Kafka Publisher" as KafkaPublisher #lightcyan
+  }
+}
+
+' === Data/Configuration Flows ===
+database "Configuration" as Config {
+  rectangle "AuditorEventConfig" as EventConfig #wheat
+  rectangle "applicationName\neventSource\neventSubType\nmetadata" as ConfigFields #wheat
+  rectangle "filters.element\nenabled\ntypes\nincludes" as FilterConfig #wheat
+}
+
+database "Input Objects" as InputObjects {
+  rectangle "oldObject" as OldObject #wheat
+  rectangle "newObject" as NewObject #wheat
+}
+
+database "Output Events" as OutputEvents {
+  rectangle "AuditEvent" as AuditEvent #wheat
+  rectangle "JSON Payload" as JSONPayload #wheat
+  rectangle "UPDATED\nCREATED\nDELETED" as EventTypes #wheat
+  rectangle "name\nupdatedValue\npreviousValue\nmetadata.fqdn" as ElementFields #wheat
+}
+
+' === Relationships ===
+
+' Application interactions
+AppCode --> AuditingAPI : "call audit(\noldObject, newObject,\nAuditorEventConfig)"
+AuditingAPI --> Comparator : "compare objects"
+Comparator --> EventGenerator : "detected changes"
+EventGenerator --> EventPublisher : "publish AuditEvent"
+EventPublisher --> KafkaPublisher : "default implementation"
+KafkaPublisher --> Consumers : "serialized events\nvia Kafka topic"
+
+' Configuration flow
+Config --> AuditingAPI : "AuditorEventConfig"
+Config --> ElementFilter : "filter configuration"
+
+' Input/Output flows
+InputObjects --> AuditingAPI : "domain objects"
+EventGenerator --> OutputEvents : "generates"
+OutputEvents --> Consumers : "consumed as\nAuditEvent objects"
+
+' Infrastructure integration
+ImplProviders --> EventPublisher : "provide implementation"
+ImplProviders --> LogProvider : "provide implementation"
+ImplProviders --> ElementFilter : "provide implementation"
+
+' Internal dependencies
+EventGenerator --> LogProvider : "log operations"
+ElementFilter --> EventGenerator : "filter elements"
+EventConfig --> EventGenerator : "apply configuration"
+
+' Abstraction relationships
+EventPublisher -[hidden]down- DefaultImpl
+EventPublisher -[hidden]right- KafkaPublisher : "<<realizes>>"
+
+' === Annotations ===
+note top of Auditor : "Kotlin library for JVM 11\nIntegration-oriented design"
+note right of EventPublisher : "Pluggable abstraction\nDefault: Kafka implementation"
+note left of ElementFilter : "Supports inclusion filtering\nbased on includes list"
+note bottom of OutputEvents : "JSON deserializable\nby downstream consumers"
+
+@enduml

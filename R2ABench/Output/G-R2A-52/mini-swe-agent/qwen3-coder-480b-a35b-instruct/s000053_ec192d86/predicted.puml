@@ -1,0 +1,77 @@
+@startuml
+' Configuration Anomaly Detection (CAD) Architecture Diagram
+
+skinparam componentStyle rectangle
+
+' Layers
+package "User Interface Layer" {
+  [CLI Tool\ncadctl] as cli
+  [Template Update\nUtility] as template_util
+}
+
+package "Business Logic Layer" {
+  [Integration Library] as integration_lib
+  [CHGM Alert Handler] as chgm_handler
+  [Anomaly Detector] as anomaly_detector
+  [Disposition Engine] as disposition_engine
+}
+
+package "Execution Layer" {
+  [Tekton Pipeline\nExecution] as tekton_exec
+  [Skip-Webhook\nExecution Path] as skip_webhook
+}
+
+package "External Systems" {
+  [PagerDuty] as pagerduty
+  [AWS] as aws
+  [OCM] as ocm
+  [Alert Webhook\nSource] as alert_source
+  [Tekton Controller] as tekton_ctrl
+}
+
+' Data Stores
+database "Deployment Templates" as templates
+database "Cluster Data" as cluster_data
+
+' Relationships
+cli --> integration_lib : uses
+cli --> chgm_handler : triggers
+cli --> anomaly_detector : triggers
+cli --> disposition_engine : triggers
+
+template_util --> templates : updates
+
+chgm_handler --> cluster_data : reads/writes
+anomaly_detector --> cluster_data : reads
+disposition_engine --> cluster_data : writes
+
+integration_lib --> pagerduty : integrates
+integration_lib --> aws : integrates
+integration_lib --> ocm : integrates
+
+alert_source --> tekton_exec : triggers
+tekton_exec --> tekton_ctrl : executes on
+skip_webhook --> tekton_ctrl : executes on
+
+tekton_ctrl --> cli : runs
+tekton_ctrl --> integration_lib : uses
+
+templates --> template_util : source for
+
+note right of cli
+  Containerized CLI with
+  /bin/cadctl entrypoint
+end note
+
+note right of tekton_exec
+  EventListener -> Trigger ->
+  PipelineRun flow
+end note
+
+note right of skip_webhook
+  Direct PipelineRun
+  creation bypassing
+  EventListener
+end note
+
+@enduml

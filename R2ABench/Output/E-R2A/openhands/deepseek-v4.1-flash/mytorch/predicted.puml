@@ -1,0 +1,113 @@
+@startuml
+title MyTorch System Architecture
+
+skinparam componentStyle uml2
+
+' ==================== Users ====================
+actor "Deep Learning Beginner" as Beginner
+actor "Developer / Team Member" as Developer
+actor "Project Participant / Stakeholder" as Stakeholder
+
+' ==================== Front End ====================
+package "Visual Front End" as FrontEnd {
+  component "Main Interface" as UI_Main
+  component "Configuration Interface" as UI_Config
+  component "Training Interface" as UI_Train
+  component "Inference Interface" as UI_Infer
+  component "Guidance & Help" as UI_Help
+}
+
+' ==================== Back End ====================
+package "System Back End" as BackEnd {
+  component "Model Initialization Service\n(FR-001, FR-019)" as BE_ModelInit
+  component "Training Service\n(FR-004, FR-005, FR-006)" as BE_Train
+  component "Inference Service\n(FR-007, FR-008, FR-009)" as BE_Infer
+  component "Model Management Service\n(FR-019)" as BE_ModelMgmt
+  component "Data Loading Service\n(FR-002, FR-003)" as BE_DataLoad
+  component "Monitoring & Fault Handling\n(NFR-011..NFR-015)" as BE_Monitor
+}
+
+' ==================== MyTorch / NNE Framework ====================
+package "MyTorch / NNE Deep Learning Framework" as Framework {
+  component "NNE Core / Model Forward\n(FR-017, DR-008)" as FW_Core
+
+  package "Framework Extension" as Ext {
+    component "GPU Acceleration\n(FR-010..FR-015)" as FW_GPU
+    component "Weight Initialization\nHe / Lecun / Xavier\n(FR-016, DR-007)" as FW_Init
+    component "Classic Models\nResNet / VGG / Transformer\n(FR-017, DR-008)" as FW_Models
+    component "Preset Datasets\nCIFAR / ImageNet / COCO / MNIST...\n(FR-018, DR-003)" as FW_Datasets
+  }
+
+  package "GPU Subsystem" as GPU {
+    component "GPU API & Resource Detection\n(FR-012, FR-013)" as GPU_API
+    component "GPU Memory Manager\n& Matrix Compute Kernels\n(FR-010, FR-011)" as GPU_Kernel
+    component "GPU Error Handling\n(FR-015)" as GPU_Err
+  }
+}
+
+' ==================== Database ====================
+package "SQLite Local Database" as DB {
+  database "System Data Store" as DB_Store {
+    component "Models & Configurations\n(FR-020, DR-001)" as DB_Models
+    component "Training / Preset Datasets\n(DR-003, DR-004)" as DB_Datasets
+    component "Training & Inference Logs\n(DR-009, DR-005)" as DB_Logs
+    component "Error & Fault Records\n(DR-011)" as DB_Errors
+  }
+  component "Backup & Recovery Manager\n(FR-021, NFR-014)" as DB_Backup
+}
+
+' ==================== User Interactions ====================
+Beginner --> UI_Main
+Developer --> UI_Main
+Stakeholder --> UI_Main
+
+UI_Main --> UI_Config
+UI_Main --> UI_Train
+UI_Main --> UI_Infer
+UI_Main --> UI_Help
+
+' ==================== Front End -> Back End ====================
+UI_Config --> BE_ModelInit
+UI_Train --> BE_Train
+UI_Train --> UI_Help
+UI_Infer --> BE_Infer
+UI_Main --> BE_ModelMgmt
+
+' ==================== Back End Internal ====================
+BE_ModelInit --> BE_ModelMgmt
+BE_Train --> BE_DataLoad
+BE_Train --> BE_Monitor
+BE_Infer --> BE_Monitor
+BE_Monitor --> UI_Train : real-time feedback (FR-022)
+BE_Monitor --> UI_Infer : real-time feedback (FR-022)
+
+' ==================== Back End -> Framework ====================
+BE_ModelInit --> FW_Core
+BE_DataLoad --> FW_Core
+BE_Train --> FW_Core
+BE_Infer --> FW_Core
+BE_ModelMgmt --> FW_Core
+
+' ==================== Framework Internal ====================
+FW_Core --> FW_Init
+FW_Core --> FW_Models
+FW_Core --> FW_Datasets
+FW_Core --> FW_GPU
+
+' ==================== GPU Subsystem ====================
+FW_GPU --> GPU_API
+FW_GPU --> GPU_Kernel
+FW_GPU --> GPU_Err
+GPU_API --> GPU_Kernel
+GPU_Kernel --> GPU_Err
+
+' ==================== Back End -> Database ====================
+BE_ModelMgmt --> DB_Store
+BE_Train --> DB_Store
+BE_Infer --> DB_Store
+BE_Monitor --> DB_Errors
+FW_Datasets --> DB_Datasets
+DB_Store --> DB_Backup
+DB_Backup --> DB_Store : restore (FR-021)
+
+@enduml

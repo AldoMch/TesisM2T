@@ -1,0 +1,142 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title OCI Jenkins Terraform Deployment Architecture
+
+' === LAYERS ===
+component "User Interface Layer" as UI <<Layer>> {
+  component "Configuration Files" as ConfigFiles <<Component>>
+  component "Terraform CLI" as TerraformCLI <<Component>>
+}
+
+component "Deployment Orchestration Layer" as Orchestration <<Layer>> {
+  component "Terraform Configuration" as TerraformConfig <<Component>>
+  component "Variable Management" as VarManagement <<Component>>
+  component "Deployment Workflow Engine" as WorkflowEngine <<Component>>
+}
+
+component "Infrastructure Provisioning Layer" as Provisioning <<Layer>> {
+  component "Master Instance Module" as MasterModule <<Component>>
+  component "Slave Instance Module" as SlaveModule <<Component>>
+  component "Network Configuration" as NetworkConfig <<Component>>
+}
+
+component "Cloud Infrastructure Layer" as CloudInfra <<Layer>> {
+  component "Jenkins Master Instance" as JenkinsMaster <<Component>>
+  component "Jenkins Slave Instances" as JenkinsSlaves <<Component>>
+  component "OCI Compute Service" as OCICompute <<Component>>
+  component "OCI Networking" as OCINetworking <<Component>>
+}
+
+' === EXTERNAL SYSTEMS ===
+component "Oracle Cloud Infrastructure (OCI)" as OCI <<External>> {
+  component "Tenancy" as Tenancy <<Component>>
+  component "Compartment" as Compartment <<Component>>
+  component "VCN" as VCN <<Component>>
+  component "Subnets" as Subnets <<Component>>
+}
+
+component "Bastion Host" as Bastion <<External>>
+component "Load Balancer" as LoadBalancer <<External>>
+component "NAT Gateway" as NATGateway <<External>>
+
+' === DATA STORES ===
+component "Terraform State" as TerraformState <<Datastore>>
+component "Variable Files" as VariableFiles <<Datastore>>
+component "SSH Key Store" as SSHKeys <<Datastore>>
+
+' === CONNECTIONS ===
+' User Interface Layer connections
+ConfigFiles --> VarManagement : "Provides configuration"
+TerraformCLI --> WorkflowEngine : "Executes commands"
+
+' Deployment Orchestration Layer connections
+VarManagement --> TerraformConfig : "Injects variables"
+WorkflowEngine --> TerraformConfig : "Orchestrates execution"
+TerraformConfig --> MasterModule : "Configures master"
+TerraformConfig --> SlaveModule : "Configures slaves"
+TerraformConfig --> NetworkConfig : "Configures network"
+
+' Infrastructure Provisioning Layer connections
+MasterModule --> JenkinsMaster : "Provisions"
+SlaveModule --> JenkinsSlaves : "Provisions"
+NetworkConfig --> OCINetworking : "Configures"
+
+' Cloud Infrastructure Layer connections
+JenkinsMaster --> JenkinsSlaves : "JNLP communication"
+JenkinsMaster --> LoadBalancer : "Public access (optional)"
+JenkinsSlaves --> NATGateway : "Outbound connectivity"
+Bastion --> JenkinsSlaves : "SSH access (private)"
+
+' OCI connections
+OCICompute --> Tenancy : "Runs in"
+OCICompute --> Compartment : "Scoped to"
+OCINetworking --> VCN : "Part of"
+OCINetworking --> Subnets : "Manages"
+
+' External dependencies
+MasterModule --> OCICompute : "Uses API"
+SlaveModule --> OCICompute : "Uses API"
+NetworkConfig --> OCINetworking : "Uses API"
+
+' Data store connections
+TerraformConfig --> VariableFiles : "Reads from"
+VarManagement --> VariableFiles : "Manages"
+WorkflowEngine --> SSHKeys : "Uses keys"
+MasterModule --> SSHKeys : "Uses keys"
+SlaveModule --> SSHKeys : "Uses keys"
+TerraformConfig --> TerraformState : "Manages state"
+
+' === NOTES ===
+note top of ConfigFiles
+  terraform.tfvars
+  JSON configuration files
+end note
+
+note top of VariableFiles
+  OCI credentials
+  SSH keys
+  Jenkins configuration
+  Network parameters
+end note
+
+note top of SSHKeys
+  Public/private key pairs
+  Instance authorization
+end note
+
+note right of JenkinsMaster
+  Public subnet placement
+  HTTP/JNLP ports
+  Cloud-Init configuration
+end note
+
+note right of JenkinsSlaves
+  Private subnet placement
+  NAT-enabled connectivity
+  Bastion-mediated access
+end note
+
+note right of Bastion
+  Private network access
+  Controlled SSH gateway
+end note
+
+note right of LoadBalancer
+  Optional public exposure
+  Private network scenario
+end note
+
+@enduml

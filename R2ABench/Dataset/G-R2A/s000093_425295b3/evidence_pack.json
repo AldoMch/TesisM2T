@@ -1,0 +1,118 @@
+{
+  "candidate": {
+    "sample_id": "s000093_425295b3",
+    "repository_name": "gpsnmeajp/VirtualMotionTracker",
+    "image_url": "https://github.com/gpsnmeajp/VirtualMotionTracker/blob/master/doc/Architecture.png",
+    "source_ref": "f0210012a9772dc0cf324cccac6596e3658d573d",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 42846,
+    "document_count": 11,
+    "document_types": [
+      "code_api_route",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 9,
+      "user_scenario": 43,
+      "api_io": 28,
+      "deployment": 1,
+      "constraints": 10,
+      "non_functional": 1
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "openvr/headers/openvr_api.json",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05351097465138805,
+      "text": "thActiveActionSets\",\"consttype\": \"const char *\", \"constval\": \"/active_action_sets\"} ,{ \"constname\": \"k_pchPathComponentUpdates\",\"consttype\": \"const char *\", \"constval\": \"/total_component_updates\"} ,{ \"constname\": \"k_pchPathUserFootLeft\",\"consttype\": \"const char *\", \"constval\": \"/user/foot/left\"} ,{ \"constname\": \"k_pchPathUserFootRight\",\"consttype\": \"const char *\", \"constval\": \"/user/foot/right\"} ,{ \"constname\": \"k_pchPathUserShoulderLeft\",\"consttype\": \"const char *\", \"constval\": \"/user/shoulder/left\"} ,{ \"constname\": \"k_pchPathUserShoulderRight\",\"consttype\": \"const char *\", \"constval\": \"/user/shoulder/right\"} ,{ \"constname\": \"k_pchPathUserElbowLeft\",\"consttype\": \"const char *\", \"constval\"..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "openvr/headers/openvr_api.cs",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05293550401879723,
+      "text": "erRight = \"/user/shoulder/right\"; public const string k_pchPathUserElbowLeft = \"/user/elbow/left\"; public const string k_pchPathUserElbowRight = \"/user/elbow/right\"; public const string k_pchPathUserKneeLeft = \"/user/knee/left\"; public const string k_pchPathUserKneeRight = \"/user/knee/right\"; public const string k_pchPathUserWaist = \"/user/waist\"; public const string k_pchPathUserChest = \"/user/chest\"; public const string k_pchPathUserCamera = \"/user/camera\"; public const string k_pchPathUserKeyboard = \"/user/keyboard\"; public const string k_pchPathClientAppKey = \"/client_info/app_key\"; public const ulong k_ulInvalidPathHandle = 0; public const string IVRPaths_Version = \"IVRPaths_001\"; pu..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "openvr/headers/openvr_api.cs",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.054784175039661556,
+      "text": "tionType.VRApplication_Scene, string pchStartupInfo= \"\") { try { VRToken = InitInternal2(ref peError, eApplicationType, pchStartupInfo); } catch (EntryPointNotFoundException) { VRToken = InitInternal(ref peError, eApplicationType); } OpenVRInternal_ModuleContext.Clear(); if (peError != EVRInitError.None) return null; bool bInterfaceValid = IsInterfaceVersionValid(IVRSystem_Version); if (!bInterfaceValid) { ShutdownInternal(); peError = EVRInitError.Init_InterfaceNotFound; return null; } return OpenVR.System; } /** unloads vrclient.dll. Any interface pointers from the interface are * invalid after this point */ public static void Shutdown() { ShutdownInternal(); } } }"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "vmt_driver/vmt/resources/input/legacy_binding_mycontroller.json",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05350409596563432,
+      "text": "{ \"bindings\" : { \"/actions/legacy\" : { \"sources\" : [ { \"inputs\" : { \"single\" : { \"output\" : \"/actions/legacy/in/right_axis1_press\" } }, \"mode\" : \"button\", \"parameters\" : { \"sub_mode\" : \"complex\" }, \"path\" : \"/user/hand/right/input/a\" }, { \"inputs\" : { \"single\" : { \"output\" : \"/actions/legacy/in/right_a_press\" } }, \"mode\" : \"button\", \"parameters\" : { \"sub_mode\" : \"complex\" }, \"path\" : \"/user/hand/right/input/c\" }, { \"inputs\" : { \"single\" : { \"output\" : \"/actions/legacy/in/right_grip_press\" } }, \"mode\" : \"button\", \"parameters\" : { \"sub_mode\" : \"complex\" }, \"path\" : \"/user/hand/right/input/b\" } ] } }, \"controller_type\" : \"mycontroller\", \"description\" : \"\", \"name\" : \"Default binding for Sampl..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "openvr/headers/openvr_api.json",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05202878124768193,
+      "text": "\"m_flCompositorUpdateEndMs\", \"fieldtype\": \"float\"}, { \"fieldname\": \"m_flCompositorRenderStartMs\", \"fieldtype\": \"float\"}, { \"fieldname\": \"m_HmdPose\", \"fieldtype\": \"vr::TrackedDevicePose_t\"}, { \"fieldname\": \"m_nNumVSyncsReadyForUse\", \"fieldtype\": \"uint32_t\"}, { \"fieldname\": \"m_nNumVSyncsToFirstView\", \"fieldtype\": \"uint32_t\"}]} ,{\"struct\": \"vr::Compositor_BenchmarkResults\",\"fields\": [ { \"fieldname\": \"m_flMegaPixelsPerSecond\", \"fieldtype\": \"float\"}, { \"fieldname\": \"m_flHmdRecommendedMegaPixelsPerSecond\", \"fieldtype\": \"float\"}]} ,{\"struct\": \"vr::DriverDirectMode_FrameTiming\",\"fields\": [ { \"fieldname\": \"m_nSize\", \"fieldtype\": \"uint32_t\"}, { \"fieldname\": \"m_nNumFramePresents\", \"fieldtype\": \"uint..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "openvr/headers/openvr_api.json",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05101700473788142,
+      "text": "ice\", \"fieldtype\": \"struct VkPhysicalDevice_T *\"}, { \"fieldname\": \"m_pQueue\", \"fieldtype\": \"struct VkQueue_T *\"}, { \"fieldname\": \"m_uQueueFamilyIndex\", \"fieldtype\": \"uint32_t\"}]} ,{\"struct\": \"vr::VRNativeDevice_t\",\"fields\": [ { \"fieldname\": \"handle\", \"fieldtype\": \"void *\"}, { \"fieldname\": \"eType\", \"fieldtype\": \"enum vr::EDeviceType\"}]} ,{\"struct\": \"vr::RenderModel_Vertex_t\",\"fields\": [ { \"fieldname\": \"vPosition\", \"fieldtype\": \"struct vr::HmdVector3_t\"}, { \"fieldname\": \"vNormal\", \"fieldtype\": \"struct vr::HmdVector3_t\"}, { \"fieldname\": \"rfTextureCoord\", \"fieldtype\": \"float [2]\"}]} ,{\"struct\": \"vr::RenderModel_TextureMap_t\",\"fields\": [ { \"fieldname\": \"unWidth\", \"fieldtype\": \"uint16_t\"}, { \"f..."
+    }
+  ]
+}

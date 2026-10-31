@@ -1,0 +1,364 @@
+{
+  "requirements": [
+    {
+      "id": "ModelSharePlatform-R001",
+      "description": "The platform shall support account registration, login, email-based password recovery, and persistent account data, and allow logged-in users to update personal information and log out."
+    },
+    {
+      "id": "ModelSharePlatform-R002",
+      "description": "The platform shall allow logged-in users to publish questions and answers, modify and delete their own questions and answers, persist the content, and ask whether to save when users leave before submitting new or modified content."
+    },
+    {
+      "id": "ModelSharePlatform-R003-A",
+      "description": "The platform shall allow logged-in users to publish blog articles and modify or delete their own articles, and shall persist the article content."
+    },
+    {
+      "id": "ModelSharePlatform-R003-B",
+      "description": "The platform shall allow logged-in users to publish non-empty blog comments within the permitted length and edit their own comments; comment authors, blog authors, and administrators shall be allowed to delete associated comments, and the platform shall persist changes and refresh the comment area."
+    },
+    {
+      "id": "ModelSharePlatform-R004-A",
+      "description": "The platform shall allow logged-in users to upload models with basic information, usage instructions, required files, sale settings, and price, place valid uploads into a review stage, and allow users to modify or delete their own uploaded models; it shall persist model metadata, files, and review state."
+    },
+    {
+      "id": "ModelSharePlatform-R004-B",
+      "description": "The platform shall allow logged-in users to purchase models through a purchase and payment flow, record successful purchases in their purchased-model list, and download purchased model files."
+    },
+    {
+      "id": "ModelSharePlatform-R004-C",
+      "description": "The platform shall allow logged-in users to run models from their own or purchased-model lists online using a platform dataset or an uploaded dataset, and shall display the execution results."
+    },
+    {
+      "id": "ModelSharePlatform-R004-D",
+      "description": "The platform shall recommend models to logged-in users based on their browsing history and registration information."
+    },
+    {
+      "id": "ModelSharePlatform-R005",
+      "description": "The platform shall support dataset upload, download of free datasets, and authorized modification and deletion of users' own datasets, persisting dataset names, paths, file contents, and ownership and checking that target datasets exist."
+    },
+    {
+      "id": "ModelSharePlatform-R006",
+      "description": "The platform shall provide follow and unfollow relationship management, including abbreviated profile and follow-status display, follow-list maintenance, and persisted follower/followed-user relationships."
+    },
+    {
+      "id": "ModelSharePlatform-R007-A",
+      "description": "The platform shall allow authenticated administrators to cancel user accounts after confirmation and update the account list."
+    },
+    {
+      "id": "ModelSharePlatform-R007-B",
+      "description": "The platform shall allow authenticated administrators to delete illegal questions, answers, datasets, models, blog articles, and blog comments after confirmation, and update the affected data."
+    },
+    {
+      "id": "ModelSharePlatform-R008",
+      "description": "The platform shall apply security mechanisms that protect core functions and data from malicious operations and common injection attacks."
+    },
+    {
+      "id": "ModelSharePlatform-R009-A",
+      "description": "The platform shall use a consistent minimalist interface, make frequently used operations easy to access, and provide navigation grouping or quick search when needed to locate functions."
+    },
+    {
+      "id": "ModelSharePlatform-R009-B",
+      "description": "The platform shall allow users to switch the interface between Chinese and English."
+    },
+    {
+      "id": "ModelSharePlatform-R010",
+      "description": "The platform shall keep server-side and front-end data consistent within three seconds."
+    },
+    {
+      "id": "ModelSharePlatform-R011",
+      "description": "The platform shall be restored to operation within 1 hour after an overload-induced crash."
+    },
+    {
+      "id": "ModelSharePlatform-R012-A",
+      "description": "The platform shall provide modular components and extensible interfaces that support later additions to business capabilities."
+    },
+    {
+      "id": "ModelSharePlatform-R012-B",
+      "description": "The platform shall provide automatic fault identification or partial fault handling without manual intervention."
+    },
+    {
+      "id": "ModelSharePlatform-R013",
+      "description": "The platform shall support modern web browsers; Internet Explorer is outside the supported browser set."
+    }
+  ],
+  "components": [
+    {
+      "id": "CMP_FRONTEND",
+      "name": "Single Page Web Application",
+      "layer": "presentation",
+      "responsibility": "Proveer una interfaz de usuario minimalista, accesible y multilingüe (Chino/Inglés) compatible con navegadores modernos, con soporte de sincronización y advertencias de navegación.",
+      "tracesTo": [
+        "ModelSharePlatform-R002",
+        "ModelSharePlatform-R009-A",
+        "ModelSharePlatform-R009-B",
+        "ModelSharePlatform-R010",
+        "ModelSharePlatform-R013"
+      ]
+    },
+    {
+      "id": "CMP_API_GATEWAY",
+      "name": "API Gateway & Security Layer",
+      "layer": "security",
+      "responsibility": "Enrutar peticiones, gestionar autenticación perimetral, prevenir inyecciones y mitigar ataques maliciosos.",
+      "tracesTo": [
+        "ModelSharePlatform-R008",
+        "ModelSharePlatform-R012-A"
+      ]
+    },
+    {
+      "id": "CMP_USER_SERVICE",
+      "name": "User & Social Management Service",
+      "layer": "business",
+      "responsibility": "Gestionar el registro, autenticación, recuperación de contraseñas, perfiles de usuario, relaciones de seguimiento y baja administrativa de cuentas.",
+      "tracesTo": [
+        "ModelSharePlatform-R001",
+        "ModelSharePlatform-R006",
+        "ModelSharePlatform-R007-A"
+      ]
+    },
+    {
+      "id": "CMP_COMMUNITY_SERVICE",
+      "name": "Community & Q&A Service",
+      "layer": "business",
+      "responsibility": "Administrar la publicación, edición, eliminación y persistencia de preguntas y respuestas, así como su moderación.",
+      "tracesTo": [
+        "ModelSharePlatform-R002",
+        "ModelSharePlatform-R007-B"
+      ]
+    },
+    {
+      "id": "CMP_BLOG_SERVICE",
+      "name": "Blog & Comments Service",
+      "layer": "business",
+      "responsibility": "Administrar artículos de blog, control de comentarios (publicación, edición, borrado autorizado) y soporte para actualización de área de comentarios.",
+      "tracesTo": [
+        "ModelSharePlatform-R003-A",
+        "ModelSharePlatform-R003-B",
+        "ModelSharePlatform-R007-B"
+      ]
+    },
+    {
+      "id": "CMP_MODEL_CATALOG_SERVICE",
+      "name": "Model Catalog & Review Service",
+      "layer": "business",
+      "responsibility": "Gestionar la subida, metadatos, flujos de revisión, modificación, eliminación y venta de modelos de aprendizaje automático.",
+      "tracesTo": [
+        "ModelSharePlatform-R004-A",
+        "ModelSharePlatform-R007-B",
+        "ModelSharePlatform-R012-A"
+      ]
+    },
+    {
+      "id": "CMP_ORDER_PAYMENT_SERVICE",
+      "name": "Order & Payment Service",
+      "layer": "business",
+      "responsibility": "Gestionar el flujo de compras, cobros, registro de adquisiciones y autorización para descarga de modelos comprados.",
+      "tracesTo": [
+        "ModelSharePlatform-R004-B"
+      ]
+    },
+    {
+      "id": "CMP_INFERENCE_SERVICE",
+      "name": "Online Model Execution Service",
+      "layer": "business",
+      "responsibility": "Orquestar la ejecución en línea de modelos utilizando datasets internos o subidos por el usuario y retornar los resultados.",
+      "tracesTo": [
+        "ModelSharePlatform-R004-C"
+      ]
+    },
+    {
+      "id": "CMP_RECOMMENDER_SERVICE",
+      "name": "Recommendation Engine",
+      "layer": "business",
+      "responsibility": "Generar recomendaciones personalizadas de modelos basadas en perfiles e historial de navegación.",
+      "tracesTo": [
+        "ModelSharePlatform-R004-D"
+      ]
+    },
+    {
+      "id": "CMP_DATASET_SERVICE",
+      "name": "Dataset Management Service",
+      "layer": "business",
+      "responsibility": "Gestionar la carga, almacenamiento, descarga de datasets gratuitos, validación de existencia y ciclo de vida de datasets.",
+      "tracesTo": [
+        "ModelSharePlatform-R005",
+        "ModelSharePlatform-R007-B"
+      ]
+    },
+    {
+      "id": "CMP_REALTIME_SYNC_SERVICE",
+      "name": "Real-time Synchronization Service",
+      "layer": "integration",
+      "responsibility": "Garantizar la consistencia de datos entre el servidor y la interfaz dentro del umbral de tres segundos mediante mecanismos en tiempo real.",
+      "tracesTo": [
+        "ModelSharePlatform-R010"
+      ]
+    },
+    {
+      "id": "CMP_FAULT_MONITOR_SERVICE",
+      "name": "Fault Monitor & Auto-Recovery System",
+      "layer": "cross-cutting",
+      "responsibility": "Identificar fallos de forma automática, ejecutar mecanismos de recuperación autónomos y garantizar la restauración operativa tras caídas.",
+      "tracesTo": [
+        "ModelSharePlatform-R011",
+        "ModelSharePlatform-R012-B"
+      ]
+    },
+    {
+      "id": "CMP_RELATIONAL_DATA_STORE",
+      "name": "Relational Data Store",
+      "layer": "persistence",
+      "responsibility": "Persistir datos transaccionales, perfiles de usuario, metadatos, artículos, comentarios, relaciones sociales y compras.",
+      "tracesTo": [
+        "ModelSharePlatform-R001",
+        "ModelSharePlatform-R002",
+        "ModelSharePlatform-R003-A",
+        "ModelSharePlatform-R003-B",
+        "ModelSharePlatform-R004-A",
+        "ModelSharePlatform-R004-B",
+        "ModelSharePlatform-R005",
+        "ModelSharePlatform-R006",
+        "ModelSharePlatform-R007-A",
+        "ModelSharePlatform-R007-B"
+      ]
+    },
+    {
+      "id": "CMP_OBJECT_STORAGE",
+      "name": "Distributed Object Storage",
+      "layer": "persistence",
+      "responsibility": "Almacenar y entregar archivos binarios correspondientes a datasets y modelos ejecutables.",
+      "tracesTo": [
+        "ModelSharePlatform-R004-A",
+        "ModelSharePlatform-R004-B",
+        "ModelSharePlatform-R005"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "source": "CMP_FRONTEND",
+      "target": "CMP_API_GATEWAY",
+      "type": "REST/HTTPS"
+    },
+    {
+      "source": "CMP_FRONTEND",
+      "target": "CMP_REALTIME_SYNC_SERVICE",
+      "type": "WebSocket"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_USER_SERVICE",
+      "type": "gRPC"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_COMMUNITY_SERVICE",
+      "type": "gRPC"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_BLOG_SERVICE",
+      "type": "gRPC"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_MODEL_CATALOG_SERVICE",
+      "type": "gRPC"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_ORDER_PAYMENT_SERVICE",
+      "type": "gRPC"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_INFERENCE_SERVICE",
+      "type": "gRPC"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_RECOMMENDER_SERVICE",
+      "type": "gRPC"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_DATASET_SERVICE",
+      "type": "gRPC"
+    },
+    {
+      "source": "CMP_INFERENCE_SERVICE",
+      "target": "CMP_MODEL_CATALOG_SERVICE",
+      "type": "synchronous-call"
+    },
+    {
+      "source": "CMP_INFERENCE_SERVICE",
+      "target": "CMP_DATASET_SERVICE",
+      "type": "synchronous-call"
+    },
+    {
+      "source": "CMP_INFERENCE_SERVICE",
+      "target": "CMP_OBJECT_STORAGE",
+      "type": "storage-access"
+    },
+    {
+      "source": "CMP_MODEL_CATALOG_SERVICE",
+      "target": "CMP_OBJECT_STORAGE",
+      "type": "storage-access"
+    },
+    {
+      "source": "CMP_DATASET_SERVICE",
+      "target": "CMP_OBJECT_STORAGE",
+      "type": "storage-access"
+    },
+    {
+      "source": "CMP_USER_SERVICE",
+      "target": "CMP_RELATIONAL_DATA_STORE",
+      "type": "repository"
+    },
+    {
+      "source": "CMP_COMMUNITY_SERVICE",
+      "target": "CMP_RELATIONAL_DATA_STORE",
+      "type": "repository"
+    },
+    {
+      "source": "CMP_BLOG_SERVICE",
+      "target": "CMP_RELATIONAL_DATA_STORE",
+      "type": "repository"
+    },
+    {
+      "source": "CMP_MODEL_CATALOG_SERVICE",
+      "target": "CMP_RELATIONAL_DATA_STORE",
+      "type": "repository"
+    },
+    {
+      "source": "CMP_ORDER_PAYMENT_SERVICE",
+      "target": "CMP_RELATIONAL_DATA_STORE",
+      "type": "repository"
+    },
+    {
+      "source": "CMP_DATASET_SERVICE",
+      "target": "CMP_RELATIONAL_DATA_STORE",
+      "type": "repository"
+    },
+    {
+      "source": "CMP_COMMUNITY_SERVICE",
+      "target": "CMP_REALTIME_SYNC_SERVICE",
+      "type": "event-publish"
+    },
+    {
+      "source": "CMP_BLOG_SERVICE",
+      "target": "CMP_REALTIME_SYNC_SERVICE",
+      "type": "event-publish"
+    },
+    {
+      "source": "CMP_FAULT_MONITOR_SERVICE",
+      "target": "CMP_API_GATEWAY",
+      "type": "health-check"
+    },
+    {
+      "source": "CMP_FAULT_MONITOR_SERVICE",
+      "target": "CMP_INFERENCE_SERVICE",
+      "type": "health-check"
+    }
+  ]
+}

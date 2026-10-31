@@ -1,0 +1,83 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+title GPSLogger System Architecture
+
+package "Android Runtime Environment" {
+  component "GPSLogger Application" as App {
+    component "Main Activity / Fragments" as UI
+    component "Event Bus" as EventBus
+    component "GPS Logging Service" as GpsService
+    component "Location Listeners" as LocationListeners
+    component "Loggers" as Loggers
+    component "Uploaders / Upload Jobs" as Uploaders
+    component "Settings / Session" as Settings
+  }
+
+  component "Android SDK" as AndroidSDK
+  component "Google Play Services" as PlayServices
+}
+
+package "Log Outputs" {
+  artifact "GPX File" as GPX
+  artifact "KML File" as KML
+  artifact "Text File" as TextFile
+}
+
+package "External Services" {
+  component "OpenStreetMap" as OSM
+  component "Dropbox" as Dropbox
+  component "OpenGTS Server\n(UDP endpoint)" as OpenGTS
+}
+
+package "Build / Development Environment" {
+  component "Gradle Build" as Gradle
+  artifact "~/.gradle/gradle.properties\n(GPSLOGGER_OSM_*, GPSLOGGER_DROPBOX_*)" as GradleProps
+  artifact "local.properties\n(sdk.dir)" as LocalProps
+  component "Android SDK Build Tools 19.0.3" as BuildTools
+  component "Android Support Repository/Library\nGoogle Play services & Repository" as SupportLibs
+}
+
+LocationListeners --> GpsService : location updates
+GpsService --> EventBus : publishes location events (FR-001)
+EventBus --> UI : location events for display
+
+GpsService --> Loggers : valid locations
+Settings --> GpsService : logging configuration
+Settings --> Loggers : enabled output formats
+Settings --> Uploaders : integration configuration
+
+Loggers --> GPX : writes
+Loggers --> KML : writes
+Loggers --> TextFile : writes
+
+GpsService --> Uploaders : location data
+Uploaders --> OpenGTS : UDP datagram with GPRMC (FR-005, FR-006)
+Uploaders ..> OSM : optional upload/API\n(credentials required)
+Uploaders ..> Dropbox : optional upload/API\n(credentials required)
+
+Gradle --> GradleProps : reads named properties
+Gradle --> LocalProps : reads sdk.dir
+Gradle --> App : injects generated config\n(build time)
+GradleProps --> App : OSM / Dropbox credentials (FR-002, FR-003, NFR-003)
+
+BuildTools --> Gradle
+SupportLibs --> Gradle
+PlayServices --> App : dependency / feature support
+AndroidSDK --> App : runtime dependency
+
+note right of Uploaders
+  OpenGTS config: server, port,
+  communication method, device ID,
+  optional path (FR-004, DR-004)
+  Payload: GPRMC string (FR-006, DR-003)
+end note
+
+note bottom of GradleProps
+  Credentials are build-time injected
+  into application configuration
+end note
+
+@enduml

@@ -1,0 +1,123 @@
+@startuml GKE_PubSub_WebSocket_Adapter_Refined
+
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam componentBackgroundColor #DDEEFF
+skinparam nodeBackgroundColor #EFF8EE
+skinparam databaseBackgroundColor #FFF8E1
+skinparam cloudBackgroundColor #FFF0F0
+skinparam defaultFontName Arial
+skinparam arrowColor #444444
+skinparam componentBorderColor #5577AA
+skinparam packageBorderColor #7799CC
+skinparam nodeBorderColor #55AA66
+
+legend top right
+  --> solid  : structural / data dependency
+  ..> dashed : external actor connection (out-of-scope)
+end legend
+
+' ============================================================
+' LAYER 1 — GCP Infrastructure Layer
+' ============================================================
+cloud "GCP Infrastructure Layer\n(Google Cloud Platform Project)" as GCPLayer {
+
+    node "Google Cloud Pub/Sub" as PubSubNode {
+        component "Pub/Sub Topic\n[configured topic]" as PubSubTopic
+        component "Pub/Sub Subscription\n(per adapter instance)" as PubSubSubscription
+    }
+
+    node "IAM & Billing" as GCPProject {
+        component "Subscription Creation\nPermission\n[FR-010 / CON-003]" as IAMSubPerm
+        component "Topic Read-Access\nPermission\n[CON-002 / FR-010]" as IAMTopicPerm
+    }
+
+    ' GCPProject hosts PubSubTopic (containment expressed as dependency)
+    GCPProject         --> PubSubTopic       : hosts\nPub/Sub topic
+
+}
+
+' ============================================================
+' LAYER 2 — Kubernetes Orchestration Layer
+' ============================================================
+package "Kubernetes Orchestration Layer" as K8sLayer {
+
+    component "ConfigMap\n[topic key → SYMBOL]" as KubeConfigMap
+
+    component "Deployment\n[adapter pods]" as KubeDeployment
+
+    component "LoadBalancer Service\n[TCP :80 → :8080]" as KubeLBService
+
+    component "HorizontalPodAutoscaler\n[min:1, max:2, CPU:80%]" as KubeHPA
+
+    component "WebSocket Endpoint\n[ws://<LB-IP>:80]" as WSEndpoint
+
+}
+
+' ============================================================
+' LAYER 3 — Container Runtime Layer
+' ============================================================
+package "Container Runtime Layer\n(Adapter Pod)" as ContainerLayer {
+
+    component "SYMBOL\nEnv Variable\n[SI-004 / FR-004 / DR-002]" as SYMBOLEnv
+
+    component "exec.sh\n[Entrypoint Script]" as ExecSh
+
+    component "pulltop\n[Node.js Process]" as Pulltop
+
+    database "Message Cache\n[last 10 messages]" as MessageCache
+
+    component "websocketd\n[WebSocket Bridge :8080]" as Websocketd
+
+}
+
+' ============================================================
+' LAYER 4 — External Actors (out-of-scope)
+' ============================================================
+package "External Actors\n(out of deployment scope)" as ExternalLayer {
+
+    actor "Web Clients\n[browsers / WS consumers]\n(no SDK or credentials needed)" as WebClients
+
+}
+
+' ============================================================
+' Dependencies — Kubernetes Orchestration
+' ============================================================
+KubeDeployment       --> KubeConfigMap      : reads topic key\n(FR-004 / SI-003)
+KubeHPA              --> KubeDeployment     : monitors CPU\nadjusts replicas [1-2]
+KubeLBService        --> KubeDeployment     : selects pods\nroutes :80 → :8080
+KubeLBService        --> WSEndpoint         : exposes external\nWebSocket endpoint
+
+' ============================================================
+' Dependencies — ConfigMap → SYMBOL → Container chain (FR-004 / SI-004)
+' ============================================================
+KubeConfigMap        --> SYMBOLEnv          : injects topic key\nas SYMBOL env var\n(FR-004 / SI-004)
+KubeDeployment       --> SYMBOLEnv          : sets SYMBOL\nenv var on pod
+SYMBOLEnv            --> ExecSh             : passed to entrypoint\nexec.sh receives SYMBOL
+
+' ============================================================
+' Dependencies — Container Runtime Pipeline
+' ============================================================
+ExecSh               --> Pulltop            : invokes pulltop\nwith SYMBOL param
+Pulltop              --> MessageCache       : caches last 10\nmessages (in-process)
+Websocketd           --> Pulltop            : captures stdout\nmultiplexes to clients
+
+' ============================================================
+' Dependencies — Port-forward chain: LB → websocketd
+' ============================================================
+KubeLBService        --> Websocketd         : forwards :80 → pod\n:8080 (CI-002 / FR-005)
+
+' ============================================================
+' Dependencies — GCP Services ↔ Container
+' ============================================================
+Pulltop              --> PubSubSubscription : creates & consumes\nsubscription (1 per instance)
+PubSubSubscription   --> PubSubTopic        : subscribes to\nconfigured topic
+Pulltop              --> IAMSubPerm         : requires subscription\ncreation permission\n(FR-010 / CON-003)
+Pulltop              --> IAMTopicPerm       : requires topic\nread-access\n(CON-002 / FR-010)
+
+' ============================================================
+' External actor connectivity
+' ============================================================
+WebClients           ..> WSEndpoint         : connects over WS\n(CI-001 / FR-001)\n[external, out-of-scope]
+
+@enduml

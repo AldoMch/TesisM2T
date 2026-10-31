@@ -1,0 +1,138 @@
+@startuml
+skinparam shadowing false
+skinparam linetype ortho
+skinparam defaultTextAlignment center
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+}
+skinparam cloud {
+  BackgroundColor #F8F8FF
+}
+
+title OCI Jenkins Terraform Deployment — Architecture View
+
+' Actors and tooling
+actor "Deployment Operator" as Operator
+rectangle "Terraform CLI\n(init • plan • apply)" as Terraform
+rectangle "Variable Files\n(terraform.tfvars, JSON)" as Vars
+
+Operator --> Vars : prepare values
+Operator --> Terraform : run commands
+Vars --> Terraform : load variables
+
+' OCI environment
+cloud "Oracle Cloud Infrastructure (OCI)" as OCI {
+  frame "Tenancy / Region" as Tenancy {
+    package "Compartment" as Comp {
+      package "VCN" as VCN {
+        node "Public Subnet" as Pub {
+          component "Jenkins Master\n[Compute Instance]" as Master
+          component "Bastion Host\n[Compute Instance]" as Bastion
+          component "Load Balancer\n(optional)" as LB
+          component "Internet Gateway" as IGW
+        }
+        node "Private Subnet" as Priv {
+          component "Jenkins Agents (xN)\n[Compute Instances]" as Agents
+        }
+        component "NAT Gateway" as NAT
+      }
+    }
+  }
+}
+
+' Provisioning relationships
+Terraform --> OCI : OCI Provider API
+
+' Network attachments (conceptual)
+Master -[#gray,dashed]-> Pub : VNIC
+Agents -[#gray,dashed]-> Priv : VNIC
+Bastion -[#gray,dashed]-> Pub : VNIC
+LB -[#gray,dashed]-> Pub : VNIC
+Priv -[#gray,dashed]-> NAT : outbound
+Pub -[#gray,dashed]-> IGW : internet egress
+
+' Service flows
+LB --> Master : HTTP on http_port
+Master <--> Agents : JNLP on jnlp_port
+Operator -[#blue,dotted]-> Bastion : SSH via bastion_user/key
+Bastion -[#blue,dotted]-> Agents : SSH
+Operator -[#blue,dotted]-> Master : SSH (when public)
+Agents -[#blue,dotted]-> NAT : outbound to Master
+
+' Notes with configuration variables
+note right of Terraform
+OCI access:
+- tenancy_ocid
+- compartment_ocid
+- user_ocid
+- region
+- fingerprint
+- private_key_path
+SSH access:
+- ssh_authorized_keys
+- ssh_private_key
+end note
+
+note right of Master
+Master config:
+- master_ad
+- master_subnet_id
+- master_display_name
+- master_image_id
+- master_shape
+- master_user_data (base64)
+- jenkins_version
+- jenkins_password
+- http_port
+- jnlp_port
+- plugins
+end note
+
+note left of Agents
+Agent config:
+- slave_count
+- slave_ads
+- slave_subnet_ids
+- slave_display_name
+- slave_image_id
+- slave_shape
+- slave_user_data (base64)
+end note
+
+note bottom of Bastion
+Private access inputs:
+- bastion_host (canonical)
+- bastion_user
+- bastion_private_key
+end note
+
+note bottom of VCN
+Existing-infrastructure mode:
+- Uses pre-existing route tables,
+  DHCP options, security lists,
+  and subnets provided via variables
+end note
+
+note as NCloudInit
+Cloud-Init data for master/agents
+must be base64-encoded.
+end note
+NCloudInit .. Master
+NCloudInit .. Agents
+
+note top of Comp : label_prefix supports cluster coexistence
+
+legend left
+= Interfaces =
+solid -> : Provisioning/API
+dotted -> : SSH access path
+solid <-> : Jenkins remoting (JNLP)
+-- gray dashed -- : Network attachment/prereq
+
+Optional components marked "(optional)"
+endlegend
+
+@enduml

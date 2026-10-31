@@ -1,0 +1,143 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define CONSTRAINT_COLOR #FFF4E6
+
+skinparam packageBackgroundColor LAYER_COLOR
+skinparam componentBackgroundColor COMPONENT_COLOR
+skinparam nodeBackgroundColor LAYER_COLOR
+skinparam databaseBackgroundColor COMPONENT_COLOR
+skinparam cloudBackgroundColor EXTERNAL_COLOR
+skinparam rectangleBackgroundColor CONSTRAINT_COLOR
+
+' ========== EXTERNAL ACTORS ==========
+actor "Developer" as developer
+actor "CI Maintainer" as ci_maintainer
+actor "Functional Tester" as functional_tester
+actor "Operator" as operator
+
+' ========== EXTERNAL SYSTEMS & TOOLS ==========
+cloud "GitHub Actions" as github_actions {
+    component "ubuntu-latest runner" as ubuntu_latest
+    component "ubuntu-18.04 runner" as ubuntu_1804
+}
+
+rectangle "External Tools" as external_tools {
+    component "Git" as git
+    component "SIL" as sil
+    component "ECI" as eci
+    component "cFS_IO_LIB" as cfs_io_lib
+    component "cFS_LIB" as cfs_lib
+    component "CCDD" as ccdd
+    component "Perfutils-java" as perfutils_java
+    component "gen_sch_tbl" as gen_sch_tbl
+}
+
+' ========== BUILD & DEPLOYMENT LAYER ==========
+package "Build & Deployment" as build_layer {
+    component "Make Assets" as make_assets {
+        component "Makefile.sample" as makefile_sample
+        component "sample_defs" as sample_defs
+    }
+    
+    component "Build Preparation" as build_prep
+    component "Compilation" as compilation {
+        component "debug variant" as debug_variant
+        component "release variant" as release_variant
+    }
+    component "Installation" as installation
+}
+
+' ========== RUNTIME LAYER ==========
+package "Runtime" as runtime_layer {
+    component "core-cpu1" as core_cpu1
+    component "Functional Test Execution" as func_test
+    component "Telemetry Production" as telemetry_prod
+}
+
+' ========== HOST INTERFACE LAYER ==========
+package "Host Interface" as host_layer {
+    component "cmdUtil" as cmdUtil
+}
+
+' ========== CI/WORKFLOW LAYER ==========
+package "CI/Workflow" as ci_layer {
+    component "Format Checker" as format_checker
+    component "Changelog Generator" as changelog_gen
+    component "Reusable Workflows" as reusable_workflows
+}
+
+' ========== CONSTRAINTS ==========
+rectangle "System Constraints" as constraints {
+    component "C-001: Submodules" as c001
+    component "C-002: SIL/ECI" as c002
+    component "C-003: cFS Libraries" as c003
+    component "C-004: CCDD" as c004
+    component "C-005: Deprecated Workflows" as c005
+}
+
+' ========== DEPENDENCIES ==========
+' Build & Deployment dependencies
+build_prep --> make_assets : "depends on"
+compilation --> build_prep : "requires"
+installation --> compilation : "requires"
+debug_variant --> compilation : "variant of"
+release_variant --> compilation : "variant of"
+
+' Runtime dependencies
+func_test --> core_cpu1 : "executes on"
+telemetry_prod --> core_cpu1 : "produces from"
+
+' Host Interface dependencies
+cmdUtil --> func_test : "sends commands to"
+cmdUtil --> telemetry_prod : "observes"
+
+' CI/Workflow dependencies
+format_checker --> ubuntu_1804 : "runs on"
+changelog_gen --> ubuntu_latest : "runs on"
+reusable_workflows --> ubuntu_1804 : "runs on"
+
+' Workflow triggers
+developer --> format_checker : "push/pull_request"
+ci_maintainer --> reusable_workflows : "workflow_call"
+functional_tester --> func_test : "initiates"
+
+' Telemetry flow
+operator --> telemetry_prod : "configures IP"
+operator --> telemetry_prod : "observes"
+
+' External tool dependencies
+build_layer --> git : "sources from"
+build_layer --> c001 : "constrained by"
+runtime_layer --> c002 : "constrained by"
+runtime_layer --> c003 : "constrained by"
+host_layer --> c004 : "constrained by"
+ci_layer --> c005 : "constrained by"
+
+' Tool references
+sil --> c002 : "implements"
+eci --> c002 : "implements"
+cfs_io_lib --> c003 : "implements"
+cfs_lib --> c003 : "implements"
+ccdd --> c004 : "implements"
+perfutils_java --> changelog_gen : "used by"
+gen_sch_tbl --> build_layer : "used by"
+
+' CI automation
+ci_layer --> build_layer : "automates builds"
+ci_layer --> func_test : "runs tests"
+
+' Changelog artifact flow
+changelog_gen --> github_actions : "uploads artifacts"
+
+' Timeout constraint
+func_test --> constraints : "15-min timeout (NFR-003)"
+
+' No-op command flow (walkthrough)
+developer --> cmdUtil : "sends no-op"
+cmdUtil --> core_cpu1 : "forwards"
+core_cpu1 --> telemetry_prod : "produces response"
+telemetry_prod --> operator : "observable"
+
+@enduml

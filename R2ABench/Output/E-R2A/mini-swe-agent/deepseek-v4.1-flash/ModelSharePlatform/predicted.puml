@@ -1,0 +1,135 @@
+@startuml ModelSharePlatform_Architecture
+title Deep Learning Model Sharing Platform - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+' ===================== Client / Presentation Layer =====================
+package "Client Layer (Browser)" {
+  [General User Web UI\n(Vue + TypeScript)]
+  [Administrator Console\n(Vue + TypeScript)]
+  [Multilingual / i18n Module\n(Chinese / English)]
+}
+
+' ===================== Edge / API Layer =====================
+package "API Layer (Spring Boot)" {
+  [REST API Gateway /\nController Layer]
+  [Authentication &\nSession Manager]
+  [Authorization /\nRole Guard]
+}
+
+' ===================== Business Service Layer =====================
+package "Business Service Layer (Spring Boot)" {
+  [Account Service]
+  [Q&A Community Service]
+  [Blog Service]
+  [Model Management Service]
+  [Dataset Management Service]
+  [Follow Service]
+  [Administrator Governance Service]
+  [Recommendation Service]
+  [Online Invocation Service]
+  [Purchase / Payment Service]
+  [Notification / Email Service]
+}
+
+' ===================== Data Access Layer =====================
+package "Data Access Layer" {
+  [Repository / DAO Layer\n(SQL / ORM)]
+  [File Storage Adapter\n(Model & Dataset Files)]
+}
+
+' ===================== Data Layer (Persistent Stores) =====================
+database "MySQL\nRelational Database" as MySQL {
+  [User Account Data]
+  [Question & Answer Data]
+  [Blog & Comment Data]
+  [Model Metadata Data]
+  [Dataset Metadata Data]
+  [Follow Relationship Data]
+  [Browsing History /\nRecommendation Data]
+}
+
+package "File / Object Storage" {
+  [Model Files]
+  [Dataset Files]
+}
+
+' ===================== External Systems =====================
+package "External Systems" {
+  [Email Service\n(Verification / Recovery)]
+  [Payment Channel\n(Model Purchase)]
+  [Model Inference /\nRuntime Environment]
+}
+
+' ===================== Cross-Cutting Concerns =====================
+package "Cross-Cutting / Infrastructure" {
+  [Logging &\nMonitoring]
+  [Backup & Recovery]
+  [Configuration &\nMaintenance Windows]
+}
+
+' ===================== Client -> API =====================
+[General User Web UI\n(Vue + TypeScript)] --> [REST API Gateway /\nController Layer] : HTTP/HTTPS
+[Administrator Console\n(Vue + TypeScript)] --> [REST API Gateway /\nController Layer] : HTTP/HTTPS
+[Multilingual / i18n Module\n(Chinese / English)] ..> [General User Web UI\n(Vue + TypeScript)]
+
+' ===================== API -> Business =====================
+[REST API Gateway /\nController Layer] --> [Authentication &\nSession Manager]
+[REST API Gateway /\nController Layer] --> [Authorization /\nRole Guard]
+[Authentication &\nSession Manager] --> [Account Service]
+[Authorization /\nRole Guard] --> [Administrator Governance Service]
+
+[REST API Gateway /\nController Layer] --> [Account Service]
+[REST API Gateway /\nController Layer] --> [Q&A Community Service]
+[REST API Gateway /\nController Layer] --> [Blog Service]
+[REST API Gateway /\nController Layer] --> [Model Management Service]
+[REST API Gateway /\nController Layer] --> [Dataset Management Service]
+[REST API Gateway /\nController Layer] --> [Follow Service]
+[REST API Gateway /\nController Layer] --> [Recommendation Service]
+[REST API Gateway /\nController Layer] --> [Online Invocation Service]
+[REST API Gateway /\nController Layer] --> [Purchase / Payment Service]
+
+' ===================== Service Inter-Dependencies =====================
+[Account Service] --> [Notification / Email Service]
+[Model Management Service] --> [Recommendation Service]
+[Model Management Service] --> [Online Invocation Service]
+[Model Management Service] --> [Purchase / Payment Service]
+[Administrator Governance Service] --> [Q&A Community Service]
+[Administrator Governance Service] --> [Blog Service]
+[Administrator Governance Service] --> [Model Management Service]
+[Administrator Governance Service] --> [Dataset Management Service]
+[Recommendation Service] --> [Follow Service]
+
+' ===================== Business -> Data Access =====================
+[Account Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+[Q&A Community Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+[Blog Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+[Model Management Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+[Dataset Management Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+[Follow Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+[Recommendation Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+[Administrator Governance Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+[Purchase / Payment Service] --> [Repository / DAO Layer\n(SQL / ORM)]
+
+[Model Management Service] --> [File Storage Adapter\n(Model & Dataset Files)]
+[Dataset Management Service] --> [File Storage Adapter\n(Model & Dataset Files)]
+[Online Invocation Service] --> [File Storage Adapter\n(Model & Dataset Files)]
+
+' ===================== Data Access -> Stores =====================
+[Repository / DAO Layer\n(SQL / ORM)] --> MySQL
+[File Storage Adapter\n(Model & Dataset Files)] --> [Model Files]
+[File Storage Adapter\n(Model & Dataset Files)] --> [Dataset Files]
+
+' ===================== External Integrations =====================
+[Notification / Email Service] --> [Email Service\n(Verification / Recovery)]
+[Purchase / Payment Service] --> [Payment Channel\n(Model Purchase)]
+[Online Invocation Service] --> [Model Inference /\nRuntime Environment]
+
+' ===================== Infrastructure Dependencies =====================
+[Business Service Layer (Spring Boot)] ..> [Logging &\nMonitoring]
+MySQL ..> [Backup & Recovery]
+[Configuration &\nMaintenance Windows] ..> [Business Service Layer (Spring Boot)]
+
+@enduml

@@ -1,0 +1,123 @@
+@startuml
+title EIVAS System Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<boundary>> #F9F9F9
+  BorderColor<<boundary>> #999999
+}
+left to right direction
+
+actor "Epidemiological Form Filler" as Filler
+actor "Epidemiological Analyst" as Analyst
+
+node "User Device (Browser)" as Browser {
+  component "EIVAS Web UI" as WebUI <<boundary>> {
+    component "Reporting Form UI\n(FR-001, FR-004)" as UIReport
+    component "Case List UI\n(FR-005..FR-008)" as UICaseList
+    component "Map Viewer & Path UI\n(FR-003, FR-009, FR-014)" as UIMap
+    component "Association Graph UI\n(FR-010, FR-011)" as UIGraph
+    component "Dashboard & Charts UI\n(FR-012..FR-018)" as UIDash
+  }
+}
+
+node "Edge" as Edge {
+  component "Web Server / CDN\n(Static assets delivery)" as CDN
+  component "API Gateway\n- HTTPS/TLS enforced (NFR-004)\n- IP Cooldown / Rate Limiting (NFR-005)" as APIGW
+}
+
+node "Primary App Server" as AppPrimary {
+  component "EIVAS Application" as App {
+    component "Reporting Service\n(FR-001, FR-004)" as Reporting
+    component "Case Management Service\n(FR-005..FR-008)" as CaseMgmt
+    component "Itinerary & Association Service\n(FR-009..FR-011)" as Assoc
+    component "Overall Analysis Service\n(FR-012..FR-018)" as Analysis
+    component "Data Quality Checker\n(DR-008)" as DQ
+  }
+}
+
+node "Backup App Server (Standby)" as AppBackup {
+  component "EIVAS Application (Standby)\n(Failover target, NFR-003)" as AppStandby
+}
+
+database "Back-end Database\n(Cases, Itineraries, Associations,\nAnalytical Data)" as DB
+cloud "Algorithm Module\n- Risk calculation\n- Clustering\n(FR-012, FR-013)" as Algo
+cloud "Map/Geocoding Service\n(AD-003; FR-003, FR-009, FR-014)" as MapSvc
+cloud "Climate/Env Data Source (TBD)\n(Temperature/Humidity for FR-015)" as Climate
+cloud "Identity Provider (TBD)\n(AD-004)" as IdP
+
+' Users to Web UI
+Filler --> UIReport : Enter/submit investigation info\n(FR-001)
+Filler --> UIMap : Address confirmation\n(FR-003)
+Analyst --> UICaseList : Query/manage cases\n(FR-005..FR-008)
+Analyst --> UIMap : View itineraries / heat maps\n(FR-009, FR-014)
+Analyst --> UIGraph : Associations / relationships\n(FR-010, FR-011)
+Analyst --> UIDash : Overall analysis & charts\n(FR-012..FR-018)
+
+' Static assets path
+CDN -down- WebUI : Deliver UI static assets
+
+' API calls (encrypted)
+UIReport --> APIGW : HTTPS API calls\n(PII queries encrypted, NFR-004)
+UICaseList --> APIGW : HTTPS API calls
+UIMap --> APIGW : HTTPS API calls
+UIGraph --> APIGW : HTTPS API calls
+UIDash --> APIGW : HTTPS API calls
+
+' Gateway to application
+APIGW --> App : Route API requests
+
+' Failover path
+APIGW ..> AppStandby : Failover within 20 minutes\n(NFR-003)
+
+' Front-end direct map integration
+UIMap --> MapSvc : Map tiles / visualization\n(AD-003, FR-003, FR-009, FR-014)
+
+' Optional identity (TBD)
+WebUI .. IdP : Authentication (unspecified)\n(AD-004)
+
+' Application internal responsibilities
+Reporting --> DB : Store / update case investigation data\n(FR-001, FR-004; DR-001..DR-004)
+CaseMgmt --> DB : Read list & details\n(FR-005..FR-008; DR-005)
+Assoc --> DB : Query itineraries & associations\n(FR-009..FR-011; DR-003, DR-006)
+Analysis --> DB : Retrieve investigation data\n(FR-012..FR-018; DR-007, DR-008)
+DQ --> DB : Check data completeness/quality\n(DR-008)
+
+' Application to external services
+Assoc --> MapSvc : Geocoding / candidate addresses\n(FR-003)
+Analysis --> Algo : Risk calc, clustering\n(FR-012, FR-013)
+Analysis --> MapSvc : Base maps / overlays\n(FR-012, FR-014)
+Analysis --> Climate : Temp/Humidity series (TBD)\n(FR-015)
+
+' Non-functional annotations
+note right of APIGW
+- Enforce HTTPS/TLS for all API calls
+- Encrypt personal information queries (NFR-004)
+- IP cooldown / rate limiting (NFR-005)
+end note
+
+note bottom of AppPrimary
+Performance (NFR-002):
+- Support >=100 concurrent submissions
+- Page response < 1s under load
+end note
+
+note right of AppBackup
+High Availability (NFR-003):
+- Standby instance
+- Switch within 20 minutes on failure
+end note
+
+note right of DB
+Data Objects (Section 6):
+- Basic case information (DR-001)
+- Disease-related information (DR-002)
+- Itinerary trajectory (DR-003)
+- Imported-case information (DR-004)
+- Case management record (DR-005)
+- Associated case entry (DR-006)
+- Analytical chart data (DR-007)
+- Data quality state (DR-008)
+end note
+
+@enduml

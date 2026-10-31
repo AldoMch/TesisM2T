@@ -1,0 +1,208 @@
+@startuml
+title LabHire - Research Internship Information Integration Platform Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+' =========================================================
+' Client / Presentation Layer
+' =========================================================
+package "Client / Presentation Layer" as ClientLayer {
+
+  component "Student Client\n(Web / Mobile / WeChat)" as StudentClient
+  component "Mentor Client\n(Web / Mobile)" as MentorClient
+  component "Enterprise-Certified\nStudent Client" as EntClient
+  component "Administration Console\n(review & governance)" as AdminConsole
+
+  package "User Interface Modules" as UI {
+    component "Project Home /\nRecommendation Page" as UIHome
+    component "Project Detail Page" as UIDetail
+    component "Project Publication &\nManagement Page" as UIManage
+    component "Search Page\n(project / mentor)" as UISearch
+    component "Personal Information\n& Resume Page" as UIProfile
+    component "Community Page\n(posts / comments)" as UICommunity
+  }
+}
+
+' =========================================================
+' Application / Service Layer
+' =========================================================
+package "Application / Service Layer" as ServiceLayer {
+
+  package "Identity & Access" as Identity {
+    component "Registration &\nLogin Service" as AuthSvc
+    component "University Email\nVerification Service" as UniEmailSvc
+    component "Enterprise Certification\nService" as EntCertSvc
+    component "Permission Control\nService" as PermSvc
+    component "Administrator\nLogin Service" as AdminLoginSvc
+  }
+
+  package "Research Internship Domain" as Internship {
+    component "Project Recommendation\nService" as RecommendSvc
+    component "Project Publication &\nManagement Service" as ProjectSvc
+    component "Project Search\nService" as SearchSvc
+    component "Project Application\nService" as ApplySvc
+    component "Favorites Service\n(projects / mentors / posts)" as FavSvc
+    component "Mutual Evaluation\nService" as EvalSvc
+  }
+
+  package "Personal Information" as ProfileDomain {
+    component "Personal Information\nService" as ProfileSvc
+    component "Resume File\nService" as ResumeSvc
+    component "Mentor Search\nService" as MentorSearchSvc
+    component "Two-Way Selection\nViewing Service" as TwoWaySvc
+  }
+
+  package "Community" as CommunityDomain {
+    component "Post Service\n(ordinary / referral)" as PostSvc
+    component "Comment Service" as CommentSvc
+    component "Popularity Ranking\nService" as PopularSvc
+  }
+
+  package "Interaction & Notification" as Interaction {
+    component "Chat Service\n(encrypted)" as ChatSvc
+    component "Notification Service\n(in-site / email push)" as NotifySvc
+  }
+
+  package "Governance & Risk Control" as Governance {
+    component "Review Service\n(field validation / manual)" as ReviewSvc
+    component "Post & Comment\nModeration Service" as ModerationSvc
+    component "Risk-Control &\nAbuse Prevention Service" as RiskSvc
+    component "Audit & Logging\nService" as AuditSvc
+  }
+}
+
+' =========================================================
+' Algorithm / Interface Layer
+' =========================================================
+package "Algorithm & External Interface Layer" as InterfaceLayer {
+  component "Recommendation Algorithm\n(collaborative filtering,\ntag matching, cold-start)" as RecAlgo
+  component "Email Verification-Code\nInterface" as EmailCodeIface
+  component "Email Push\nInterface" as EmailPushIface
+  component "Popularity Computation\n(likes, comments, views,\ntime-decay)" as PopAlgo
+}
+
+' =========================================================
+' Data Layer
+' =========================================================
+package "Data Layer (Back-End Database)" as DataLayer {
+  database "Project Data Store\n(DR-001)" as DBProject
+  database "User Account Data Store\n(DR-002)" as DBUser
+  database "Student / Mentor Profile Store\n(DR-003, DR-004)" as DBProfile
+  database "Resume File Store\n(PDF, <=10MB, DR-005)" as FileStore
+  database "Certification & Review Store\n(DR-006, DR-014)" as DBCert
+  database "Application & Favorites Store\n(DR-007, DR-008)" as DBApp
+  database "Chat & Notification Store\n(encrypted, DR-009)" as DBChat
+  database "Post / Comment / Popularity Store\n(DR-010, DR-011, DR-012)" as DBContent
+  database "Mutual Evaluation Store\n(DR-013)" as DBEval
+  database "Risk-Control Logs\n& Audit Records\n(NFR-006)" as DBLog
+}
+
+' =========================================================
+' Cross-Cutting Concerns
+' =========================================================
+package "Cross-Cutting Quality Concerns" as Quality {
+  component "Security\n(encryption, access control,\nrate limiting)" as Security
+  component "Performance\n(<1s feedback)" as Perf
+  component "Compatibility\n& Portability\n(browsers, mobile/desktop)" as Compat
+  component "Robustness\n& Error Handling" as Robust
+}
+
+' ------------------------- Client connections -------------------------
+StudentClient --> UIHome
+StudentClient --> UIDetail
+StudentClient --> UISearch
+StudentClient --> UIProfile
+StudentClient --> UICommunity
+MentorClient --> UIManage
+MentorClient --> UIDetail
+MentorClient --> UIProfile
+MentorClient --> UISearch
+EntClient --> UICommunity
+AdminConsole --> UIProfile
+
+UIHome --> RecommendSvc
+UIDetail --> ProjectSvc
+UIManage --> ProjectSvc
+UISearch --> SearchSvc
+UISearch --> MentorSearchSvc
+UIProfile --> ProfileSvc
+UIProfile --> ResumeSvc
+UICommunity --> PostSvc
+UICommunity --> CommentSvc
+AdminConsole --> AdminLoginSvc
+AdminConsole --> ReviewSvc
+AdminConsole --> ModerationSvc
+
+' ------------------------- Service connections -------------------------
+AuthSvc --> UniEmailSvc
+AuthSvc --> PermSvc
+EntCertSvc --> EmailCodeIface
+UniEmailSvc --> EmailCodeIface
+AuthSvc --> DBUser
+EntCertSvc --> DBCert
+
+RecommendSvc --> RecAlgo
+RecommendSvc --> DBProject
+ProjectSvc --> DBProject
+ProjectSvc --> DBApp
+SearchSvc --> DBProject
+SearchSvc --> MentorSearchSvc
+ApplySvc --> DBApp
+ProjectSvc --> ApplySvc
+FavSvc --> DBApp
+FavSvc --> NotifySvc
+EvalSvc --> DBEval
+
+ProfileSvc --> DBProfile
+ResumeSvc --> FileStore
+ResumeSvc --> PermSvc
+TwoWaySvc --> DBProfile
+TwoWaySvc --> PermSvc
+TwoWaySvc --> FileStore
+
+PostSvc --> DBContent
+PostSvc --> PermSvc
+CommentSvc --> DBContent
+PopularSvc --> PopAlgo
+PopularSvc --> DBContent
+
+ChatSvc --> DBChat
+ChatSvc --> NotifySvc
+NotifySvc --> DBChat
+NotifySvc --> EmailPushIface
+
+ReviewSvc --> DBCert
+ReviewSvc --> NotifySvc
+ReviewSvc --> DBProfile
+ModerationSvc --> DBContent
+RiskSvc --> DBLog
+RiskSvc --> PermSvc
+AuditSvc --> DBLog
+
+PermSvc --> DBUser
+AdminLoginSvc --> DBUser
+AdminLoginSvc --> PermSvc
+
+' ------------------------- Cross-cutting -------------------------
+Security ..> ServiceLayer
+Perf ..> ServiceLayer
+Compat ..> ClientLayer
+Robust ..> ServiceLayer
+AuditSvc ..> RiskSvc
+
+note right of DataLayer
+  Database product, API protocol, deployment topology,
+  email/SMS providers, and encryption algorithm are
+  not specified by the SRS (AD-005, NFR-004).
+end note
+
+note bottom of Quality
+  Security: login/registration and chat must be encrypted;
+  IP/user-based rate limiting, graphical/SMS verification codes,
+  abnormal behavior detection (NFR-004, NFR-005).
+end note
+
+@enduml

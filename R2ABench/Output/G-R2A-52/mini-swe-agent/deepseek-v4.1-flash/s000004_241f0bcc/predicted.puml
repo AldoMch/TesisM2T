@@ -1,0 +1,150 @@
+@startuml
+title EMBC ESS - Layered Architecture (ClientApp / Backend API / Data)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ===================== EXTERNAL ACTORS =====================
+actor "Role-based User\n(volunteer / local authority /\nprovincial admin)" as User
+actor "Developer" as Dev
+actor "Database Operator\n/ Administrator" as DBOperator
+
+' ===================== PRESENTATION LAYER (BROWSER) =====================
+package "Presentation Layer - Browser (Angular ClientApp)" as Client {
+
+  component "Angular ClientApp\n(SPA shell / bootstrapping)" as App
+
+  package "Routing & Navigation" as Routing {
+    component "Role-based Routing Guard\n(landing + route-role check)" as RouteGuard
+    component "Login Guard\n(redirect unauthenticated)" as LoginGuard
+    component "Redirect Guard\n(external URL)" as RedirectGuard
+    component "Landing / Role Pages" as Landing
+    component "Session-Expired Page" as SessionExpired
+    component "Module Import Diagnostic\n(double-load alert)" as ModuleDiag
+  }
+
+  package "HTTP Interception" as Interceptors {
+    component "Unauthorized-Response Interceptor\n(401 -> logout + session expired)" as AuthInterceptor
+    component "Watchdog Interceptor\n(reset timer on HTTP activity)" as Watchdog
+  }
+
+  package "UI Components" as UIComponents {
+    component "Notifier Component\n(notification display)" as Notifier
+  }
+
+  package "Front-end Service Wrappers" as Services {
+    component "Evacuee Service\n(read)" as SvcEvacuee
+    component "Incident-Task Service\n(create/read/update)" as SvcIncident
+    component "Organization Service\n(create/read/update)" as SvcOrg
+    component "Referral Service\n(create/read/update/delete)" as SvcReferral
+    component "Registration Service\n(create/read/update + PDF collection)" as SvcReg
+    component "Notification Queue Service" as SvcNotify
+    component "Cookie Service\n(get/set)" as SvcCookie
+    component "Controlled-List Loader\n(initialization load)" as CtrlListLoader
+  }
+
+  package "Client State Management (NgRx)" as NgRx {
+    component "NgRx Store\n(single immutable state / actions / reducers)" as Store
+    database "Client Cached Data\n(controlled-list + selected models)" as ClientCache
+  }
+
+  component "Local Dev Proxy Config\n(proxy + role-paired tokens)" as DevProxy
+
+  App --> RouteGuard
+  App --> LoginGuard
+  App --> RedirectGuard
+  App --> Landing
+  App --> ModuleDiag
+  RouteGuard --> Landing
+  LoginGuard --> Landing
+  App --> AuthInterceptor
+  App --> Watchdog
+  AuthInterceptor --> SessionExpired
+  CtrlListLoader --> Store
+  Store --> ClientCache
+  Notifier --> SvcNotify
+  SvcNotify --> Notifier
+  App --> SvcEvacuee
+  App --> SvcIncident
+  App --> SvcOrg
+  App --> SvcReferral
+  App --> SvcReg
+  App --> SvcCookie
+  App --> CtrlListLoader
+  SvcEvacuee --> Store
+  SvcIncident --> Store
+  SvcOrg --> Store
+  SvcReferral --> Store
+  SvcReg --> Store
+}
+
+' ===================== API / SERVER LAYER =====================
+package "API / Server Layer (.NET Core WebAPI)" as Server {
+
+  component "WebAPI Host\n(.NET Core)" as WebApiHost
+
+  package "API Surface" as ApiSurface {
+    component "Controllers\n(HTTP endpoints)" as Controllers
+    component "Authentication Context\n(SiteMinder-aware)" as AuthCtx
+    component "Development Back Door\n(dev-only bypass)" as DevBackDoor
+  }
+
+  package "Domain Layer" as Domain {
+    component "Domain Services" as DomainServices
+    component "C# Domain Classes" as DomainClasses
+  }
+
+  WebApiHost --> Controllers
+  Controllers --> AuthCtx
+  Controllers --> DomainServices
+  DevBackDoor --> AuthCtx
+  DomainServices --> DomainClasses
+}
+
+' ===================== DATA ACCESS LAYER =====================
+package "Data Access Layer" as DataAccess {
+  component "Entity Framework / DbContext" as EF
+}
+
+' ===================== DATA LAYER =====================
+package "Data Layer" as DataLayer {
+  database "MS SQL Database\n(persistent entities)" as MSSQL
+  component "Repository SQL Scripts\n(target-filter + transaction)" as SqlScripts
+}
+
+' ===================== EXTERNAL SYSTEMS =====================
+cloud "SiteMinder\n(external authentication)" as SiteMinder
+cloud "External URL\n(redirect target)" as ExternalURL
+
+' ===================== RELATIONSHIPS =====================
+User --> Client
+Dev --> DevProxy
+DBOperator --> SqlScripts
+
+Client --> Server : HTTP / JSON API
+AuthInterceptor ..> AuthCtx
+RouteGuard ..> AuthCtx
+DevProxy ..> DevBackDoor
+RedirectGuard ..> ExternalURL
+
+Server --> EF : domain services / data access
+EF --> MSSQL
+SqlScripts --> MSSQL : execute (after backup)
+
+AuthCtx --> SiteMinder
+WebApiHost --> SiteMinder
+
+note right of CtrlListLoader
+  Controlled-list data is loaded at
+  initialization into NgRx store
+  (not a parameterized HTTP endpoint).
+end note
+
+note bottom of SqlScripts
+  Target database backup required
+  before executing scripts.
+  e.g. Volunteer.Active = 0 for matching Id.
+end note
+
+@enduml

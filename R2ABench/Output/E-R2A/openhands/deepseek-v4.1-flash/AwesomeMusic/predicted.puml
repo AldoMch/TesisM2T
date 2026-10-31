@@ -1,0 +1,172 @@
+@startuml
+title AwesomeMusic - System Architecture
+
+' =====================================================================
+' AwesomeMusic: AI music creation and sharing platform
+' Derived from SRS: 3 modules (Web frontend, Web backend, algorithm
+' service) plus scheduling, messaging (RabbitMQ), etcd, Hadoop, Nginx.
+' =====================================================================
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ---------------------------------------------------------------------
+' Actors / external users
+' ---------------------------------------------------------------------
+actor "General User / Music Enthusiast" as User
+actor "Music Production Beginner" as Beginner
+actor "Composer" as Composer
+actor "Music Appreciator" as Appreciator
+
+' ---------------------------------------------------------------------
+' Presentation layer
+' ---------------------------------------------------------------------
+package "Client Tier" {
+  component "Web Browser\n(HTML / CSS / JavaScript / Bootstrap)" as Browser
+}
+
+' ---------------------------------------------------------------------
+' Entry / gateway
+' ---------------------------------------------------------------------
+node "Nginx Reverse Proxy / Gateway\n(HTTPS - TCP/IP boundary isolation)" as Nginx
+
+' ---------------------------------------------------------------------
+' Web Backend (Golang / Gin)
+' ---------------------------------------------------------------------
+package "Web Backend (Golang / Gin)" {
+
+  component "Account & Authentication Module\n(register / login)" as AccountSvc
+  component "User Relationship Module\n(follow / unfollow)" as RelationSvc
+  component "Score Management Module\n(upload / download / search / favorites)" as ScoreSvc
+  component "Model Management Module\n(model favorite / model list)" as ModelSvc
+  component "Recommendation Module\n(personalized list / similarity)" as RecSvc
+  component "Hot Chart Module\n(score hot chart / user hot chart)" as HotChartSvc
+  component "Generation Coordination Module\n(Web-side score generation request)" as GenCoordSvc
+  component "Data Access Layer\n(persistence / queries)" as DataAccess
+  component "Service Coordination" as CoordSvc
+}
+
+' ---------------------------------------------------------------------
+' Scheduling module
+' ---------------------------------------------------------------------
+package "Scheduling Module" {
+  component "Task Scheduler\n(daily 02:00 training / classification /\nrecommendation triggers)" as Scheduler
+  component "Task Queue Client\n(serialize task metadata / push / poll status)" as QueueClient
+}
+
+' ---------------------------------------------------------------------
+' Algorithm service
+' ---------------------------------------------------------------------
+package "Algorithm Service" {
+
+  component "Online Music Generation Service" as OnlineGen {
+    component "Midi -> ABC Conversion" as MidiToAbc
+    component "Track Seed Extraction\n(5 seeds)" as SeedExtract
+    component "GPT-2 Score Generation Model" as Gpt2Model
+    component "ABC -> Midi Conversion" as AbcToMidi
+  }
+
+  component "Offline Model Iterative Upgrade Service" as OfflineTrain {
+    component "Training Preprocessor\n(midi playlist -> abc, main track)" as Preprocess
+    component "Model Fine-tuning\n(user-specific GPT-2)" as FineTune
+    component "Model Parameter Store\n(user generation models)" as ModelStore
+  }
+
+  component "Score Classification Service\n(LSTM representations + labels)" as ClassifySvc
+  component "Song Recommendation Service\n(cosine similarity, random fallback)" as AlgoRecSvc
+}
+
+' ---------------------------------------------------------------------
+' Messaging / infrastructure
+' ---------------------------------------------------------------------
+queue "RabbitMQ Task Queue\n(MQ reliable delivery)" as MQ
+
+cloud "etcd\n(service registry / coordination)" as Etcd
+
+database "Hadoop Data Store\n(multi-replica important data)" as Hadoop
+
+database "Relational Data Store\n(user / score / favorites / follows /\nmodel / labels / hot charts / tasks)" as RDB
+
+' ---------------------------------------------------------------------
+' Relationships - users
+' ---------------------------------------------------------------------
+User --> Browser
+Beginner --> Browser
+Composer --> Browser
+Appreciator --> Browser
+
+' ---------------------------------------------------------------------
+' Relationships - client to gateway
+' ---------------------------------------------------------------------
+Browser --> Nginx : HTTPS
+
+' ---------------------------------------------------------------------
+' Relationships - gateway to backend
+' ---------------------------------------------------------------------
+Nginx --> AccountSvc
+Nginx --> RelationSvc
+Nginx --> ScoreSvc
+Nginx --> ModelSvc
+Nginx --> RecSvc
+Nginx --> HotChartSvc
+Nginx --> GenCoordSvc
+
+' ---------------------------------------------------------------------
+' Relationships - backend internal
+' ---------------------------------------------------------------------
+AccountSvc --> DataAccess
+RelationSvc --> DataAccess
+ScoreSvc --> DataAccess
+ModelSvc --> DataAccess
+RecSvc --> DataAccess
+HotChartSvc --> DataAccess
+GenCoordSvc --> CoordSvc
+
+DataAccess --> RDB
+CoordSvc --> QueueClient
+CoordSvc --> Etcd
+
+' ---------------------------------------------------------------------
+' Relationships - scheduler
+' ---------------------------------------------------------------------
+Scheduler --> QueueClient
+QueueClient --> MQ : push task metadata
+QueueClient --> CoordSvc : poll task status
+
+' ---------------------------------------------------------------------
+' Relationships - algorithm service
+' ---------------------------------------------------------------------
+MQ --> OnlineGen : generation tasks
+MQ --> OfflineTrain : training tasks
+MQ --> ClassifySvc : classification tasks
+MQ --> AlgoRecSvc : recommendation tasks
+
+MidiToAbc --> SeedExtract
+SeedExtract --> Gpt2Model
+Gpt2Model --> AbcToMidi
+
+Preprocess --> FineTune
+FineTune --> ModelStore
+ModelStore --> Hadoop
+
+OnlineGen --> ModelStore : read user model parameters
+ClassifySvc --> Gpt2Model
+AlgoRecSvc --> ClassifySvc : reuse representations
+
+OnlineGen --> DataAccess : generated score / exception notification
+OfflineTrain --> DataAccess : updated model parameters
+ClassifySvc --> RDB : score labels
+ClassifySvc --> DataAccess : exception notification
+AlgoRecSvc --> RDB : recommendation output
+
+' ---------------------------------------------------------------------
+' Relationships - shared infrastructure / data
+' ---------------------------------------------------------------------
+Gpt2Model --> Hadoop
+ClassifySvc --> Hadoop
+AlgoRecSvc --> Hadoop
+
+Etcd --> CoordSvc
+
+@enduml

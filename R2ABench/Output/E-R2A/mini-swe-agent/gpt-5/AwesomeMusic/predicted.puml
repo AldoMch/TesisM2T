@@ -1,0 +1,45 @@
+@startuml
+title AwesomeMusic - Layered Architecture
+
+actor User
+
+package Presentation_Layer {
+  [Web Frontend (SPA)\nHTML/CSS/JS/Bootstrap] as Frontend
+}
+
+package Gateway_Layer {
+  [Nginx Reverse Proxy] as Nginx
+}
+
+package Application_Layer_Golang_Gin {
+  [Web Backend API] as Backend
+  [Scheduler and Task Orchestrator] as Scheduler
+}
+
+package Algorithm_Layer {
+  [AI Music Generation Service\n(midi-abc conversion, seed extraction, GPT-2 inference)] as AIService
+  [Recommendation and Classification Service] as RecoService
+}
+
+package Data_and_Infrastructure_Layer {
+  [Relational Database] as DB
+  [Hadoop HDFS] as HDFS
+  [RabbitMQ] as MQ
+  [etcd] as ETCD
+}
+
+User --> Frontend : use
+Frontend --> Nginx : HTTPS requests API and assets
+Nginx --> Backend : proxy API HTTP
+Backend --> DB : CRUD data
+Backend --> HDFS : store scores and midi
+Backend --> MQ : enqueue generation tasks
+Scheduler --> MQ : publish scheduled jobs daily 02:00
+MQ --> AIService : deliver generation tasks
+MQ --> RecoService : deliver daily jobs
+AIService --> HDFS : read write models and music files
+AIService --> DB : task status and model metadata
+RecoService --> DB : recommendations labels hot charts
+Backend --> ETCD : config and service registry
+
+@enduml

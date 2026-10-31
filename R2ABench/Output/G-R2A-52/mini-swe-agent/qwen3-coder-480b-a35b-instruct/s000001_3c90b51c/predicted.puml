@@ -1,0 +1,71 @@
+@startuml
+!theme plain
+title JSeats System Architecture
+
+package "JSeats Core" {
+  [Allocation Engine] as engine
+  [Method Registry] as registry
+  [Tally Filter Pipeline] as filter
+  [Result Decorator Pipeline] as decorator
+  [Configuration Manager] as config
+  [Data Model] as model
+}
+
+package "API Layer" {
+  [Java API] as javaApi
+  [Command Line Interface] as cli
+}
+
+package "External Systems" {
+  [File System] as fs
+  [User Environment] as user
+}
+
+database "Data Stores" {
+  [Tally Data] as tallyStore
+  [Configuration Files] as configStore
+  [Result Output] as resultStore
+}
+
+javaApi --> engine : uses
+cli --> engine : uses
+engine --> registry : selects method from
+engine --> filter : applies
+engine --> decorator : applies
+engine --> config : retrieves settings
+filter --> model : processes
+decorator --> model : enhances
+config --> configStore : loads from
+engine --> model : operates on
+model --> tallyStore : reads/writes
+cli --> fs : reads/writes files
+cli <--> user : interacts with
+fs --> configStore : provides configs
+fs --> tallyStore : provides tallies
+fs --> resultStore : writes results
+
+note right of engine
+  Core seat allocation logic
+end note
+
+note right of registry
+  Registers all supported methods
+end note
+
+note right of filter
+  Optional preprocessing pipeline
+end note
+
+note right of decorator
+  Optional postprocessing pipeline
+end note
+
+note right of config
+  Manages method and system properties
+end note
+
+note right of model
+  Contains tally, candidate, and result structures
+end note
+
+@enduml

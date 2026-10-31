@@ -1,0 +1,86 @@
+@startuml
+title Song Mood Storage, Retrieval and Search - Layered Deployment Architecture
+
+skinparam componentStyle rectangle
+skinparam monochrome false
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+' ==================== ACTORS ====================
+actor "End User" as EndUser
+actor "Data Inspector / Operator" as Inspector
+
+' ==================== PRESENTATION LAYER ====================
+package "Client / Presentation Layer" <<Layer>> {
+  component "Web Browser\n(standard browser access)" as Browser <<External>>
+}
+
+' ==================== DOCKERIZED APPLICATION NETWORK ====================
+package "Dockerized Application Environment (Docker Network)" <<Layer>> {
+
+  package "Frontend Tier" <<Container>> {
+    component "Frontend Container\n[React SPA]\n- Song mood lookup UI\n- Browser-accessible web app" as FE
+  }
+
+  package "Backend Tier" <<Container>> {
+    component "Backend Container\n[FastAPI Application]\n- Song lookup workflow\n- Known-song mood retrieval\n- Missing-song search routing\n- Song-mood persistence" as BE
+  }
+
+  package "Data Tier" <<Container>> {
+    component "Elasticsearch Container\n[Authoritative Data Store]\n- Song records\n- Mood associations\n- Artist metadata" as ES
+  }
+
+  package "Auxiliary UI Tier" <<Container>> {
+    component "Kibana Container\n[Data Inspection UI]" as KB
+  }
+}
+
+' ==================== EXTERNAL SYSTEMS ====================
+package "External Systems" <<Layer>> {
+  component "Genius API\n[External Song Search Service]" as GENIUS <<External>>
+}
+
+' ==================== RELATIONSHIPS ====================
+EndUser --> Browser : uses
+Browser --> FE : HTTP / browser access\n(UI-001, COM-001)
+
+FE --> BE : Song lookup requests\n(API-001, FR-001)
+
+BE --> ES : Query stored song-mood data\n(API-002, FR-002, FR-005, NFR-002)
+BE --> ES : Persist song record + mood value\n(API-002, FR-004, DR-001, DR-003, NFR-004)
+BE --> GENIUS : Search missing songs\n(API-003, COM-003, FR-003, C-005, C-007)
+
+Inspector --> KB : Inspect stored data
+KB --> ES : Connect for data inspection\n(API-004, FR-006, C-004)
+
+' ==================== NOTES ====================
+note right of BE
+  Known song: retrieve mood from
+  Elasticsearch (FR-002, FR-005).
+  Missing song: invoke Genius API search
+  (FR-003); dataset scope is English songs
+  (DR-004, C-008), no runtime language
+  rejection required.
+end note
+
+note bottom of ES
+  Elasticsearch is the authoritative store
+  for persisted song-mood associations
+  (NFR-004, C-003). Kibana depends on
+  Elasticsearch availability.
+end note
+
+note bottom of GENIUS
+  External dependency only - not modeled
+  as an internal container service (C-007).
+end note
+
+note top of FE
+  Four named container services:
+  frontend, backend, Elasticsearch,
+  Kibana (C-006, NFR-001).
+  No runtime classifier or model
+  inference component is assumed (C-009).
+end note
+
+@enduml

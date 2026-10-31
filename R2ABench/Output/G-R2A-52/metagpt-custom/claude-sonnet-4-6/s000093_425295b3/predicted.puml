@@ -1,0 +1,105 @@
+@startuml VirtualMotionTracker_Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #3A5FCD
+  FontColor #1A1A2E
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #2255AA
+  FontColor #0D1B4B
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontColor #1B5E20
+}
+skinparam cloud {
+  BackgroundColor #EDE7F6
+  BorderColor #4527A0
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+skinparam arrow {
+  Color #333366
+  FontColor #333366
+  FontSize 11
+}
+
+' ─────────────────────────────────────────
+' EXTERNAL INPUT LAYER
+' ─────────────────────────────────────────
+package "External Input Layer" as EIL {
+  component [UserApplication\n(External Control App)] as UserApp
+}
+
+' ─────────────────────────────────────────
+' MANAGEMENT LAYER
+' ─────────────────────────────────────────
+package "Management Layer" as ML {
+  component [VmtManager\n(Motion Tracking Coordinator)] as VmtManager
+}
+
+' ─────────────────────────────────────────
+' DRIVER LAYER
+' ─────────────────────────────────────────
+package "Driver Layer" as DL {
+  component [VmtDriver\n(OpenVR-Compatible Driver Artifact)] as VmtDriver
+
+  interface "OpenVR Driver\nInterface" as OVRIface
+}
+
+' ─────────────────────────────────────────
+' CONFIGURATION / BINDING LAYER
+' ─────────────────────────────────────────
+package "Configuration / Binding Layer" as CBL {
+  component [MyControllerBindingDocument\n(Legacy JSON Binding: mycontroller)\nsend_count | handshake_count | msg_len] as BindingDoc
+}
+
+note bottom of BindingDoc
+  Maps:
+  /user/hand/right/input/a
+  /user/hand/right/input/b
+  /user/hand/right/input/c
+  -> Legacy actions
+  (button mode, sub_mode: complex)
+  Available for OpenVR consumption (FR-006, DR-004)
+end note
+
+' ─────────────────────────────────────────
+' RUNTIME INTEGRATION LAYER (External)
+' ─────────────────────────────────────────
+package "Runtime Integration Layer" as RIL {
+  cloud "SteamVR / OpenVR Runtime\n(OpenVRRuntime)" as OVRRuntime
+}
+
+' ═════════════════════════════════════════
+' INTERNAL STRUCTURE
+' ═════════════════════════════════════════
+VmtDriver -up- OVRIface
+
+' ═════════════════════════════════════════
+' DEPENDENCY ARROWS
+' ═════════════════════════════════════════
+
+' External input → Management (via OSC architectural interface)
+UserApp -down-> VmtManager : OSC external control input\n(C-003, §2 Assumptions)
+
+' Management ↔ Driver shared-memory (direct, bidirectional JSON IPC)
+' FR-002, FR-003, DR-003, FR-004
+VmtManager -down-> VmtDriver : write JSON via shared memory\n(Manager→Driver channel:\nsend_count | handshake_count | msg_len)
+VmtDriver -up-> VmtManager : write JSON via shared memory\n(Driver→Manager channel:\nsend_count | handshake_count | msg_len)
+
+' Driver → Runtime
+OVRIface -right-> OVRRuntime : loaded & hosted by\nSteamVR/OpenVR Runtime
+
+' Binding artifact available for OpenVR runtime consumption (FR-006, DR-004)
+BindingDoc -right-> OVRRuntime : available for\nOpenVR consumption\n(FR-006, DR-004)
+
+@enduml

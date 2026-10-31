@@ -1,0 +1,54 @@
+@startuml
+' Deployment Layer
+node "Deployment Environment" {
+    node "Docker Container" {
+        component "RestApiService"
+    }
+    node "Browser Environment" {
+        component "AdminApplication"
+    }
+}
+
+' Client Layer
+package "Client Layer" {
+    component "UserSettingsModule"
+    component "ContactSettingsModule"
+    component "TariffManagementModule"
+    component "CategoryManagementModule"
+    component "LazyLoadManager"
+}
+
+' API Layer
+package "API Layer" {
+    component "RestApiService"
+}
+
+' Data Layer
+package "Data Layer" {
+    database "MySQL Database"
+}
+
+' Development Environment
+node "Development Environment" {
+    node "Linux Quick-Run Mode" as LinuxDev
+    node "Windows Quick-Run Mode" as WindowsDev
+}
+
+' External Systems
+cloud "External Systems" {
+    [Reverse Proxy\n(e.g., Nginx)]
+}
+
+' Dependencies
+AdminApplication --> RestApiService : Same-origin /api/ requests
+UserSettingsModule --> LazyLoadManager : Lazy-loaded via
+ContactSettingsModule --> LazyLoadManager : Lazy-loaded via
+TariffManagementModule --> LazyLoadManager : Lazy-loaded via
+CategoryManagementModule --> LazyLoadManager : Lazy-loaded via
+RestApiService --> "MySQL Database" : Persistent storage
+AdminApplication --> RestApiService : API base path derived from browser origin
+[Reverse Proxy\n(e.g., Nginx)] --> RestApiService : Routes /api/ traffic
+LinuxDev --> RestApiService : Dev runtime path
+WindowsDev --> RestApiService : Dev runtime path
+
+@enduml

@@ -1,0 +1,89 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontName Monospace
+hide stereotype
+
+title User-in-the-box Simulator Framework – Architecture (Component View)
+
+package "Build & Composition" {
+  artifact "YAML Simulator Configuration" as yaml
+  component "Simulator Builder" as builder
+  component "MuJoCo XML Integration Layer" as xmlint
+  artifact "Combined MuJoCo XML" as combinedxml
+}
+
+package "Modules" {
+  component "Biomechanical Model" as biomodel
+  component "Interaction Task" as task
+  package "Perception Modules (by modality)" as perception {
+    component "Vision (Egocentric)" as vision
+    component "Proprioception" as proprio
+  }
+}
+
+package "Runtime & Packaging" {
+  component "Simulator Wrapper (Gym-compatible)" as simwrapper
+  component "Standalone Simulator Package" as pkg
+}
+
+package "Workflows" {
+  component "Reinforcement-Learning Training" as rl
+  component "Evaluation Runner" as eval
+}
+
+package "Artifacts" {
+  folder "Run Folder" as run
+  folder "checkpoints/" as checkpoints
+  folder "evaluate/" as evaluatedir
+  artifact "Action Log" as actionlog
+}
+
+' Build flow
+yaml --> builder : configuration
+builder --> xmlint : request integration
+builder --> biomodel
+builder --> task
+builder --> vision
+builder --> proprio
+xmlint --> combinedxml
+combinedxml --> simwrapper : load
+biomodel --> simwrapper
+task --> simwrapper
+vision --> simwrapper
+proprio --> simwrapper
+simwrapper --> pkg : package
+
+' Training workflow
+rl --> simwrapper : uses Gym API
+rl --> run : produces artifacts
+rl --> checkpoints : writes model checkpoints
+
+' Run-folder structure (containment, conceptual)
+run ..> checkpoints : contains
+run ..> evaluatedir : contains
+evaluatedir ..> actionlog : contains
+
+' Evaluation workflow
+eval --> run : load simulator + params
+eval --> checkpoints : load specified/latest checkpoint
+eval --> simwrapper : initialize runtime
+
+' Evaluation outputs
+eval --> evaluatedir : ensure directory, write outputs (when enabled)
+eval --> actionlog : write actions (when logging enabled)
+
+' Notes and constraints
+note right of biomodel
+  Action input range: [-1, 1]
+  Applied motor/muscle control: [0, 1]
+end note
+
+note bottom of simwrapper
+  Implements the OpenAI Gym API contract
+end note
+
+note top of perception
+  Modality-organized extensions; modules adhere to base-class contracts
+end note
+
+@enduml

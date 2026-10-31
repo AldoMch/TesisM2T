@@ -1,0 +1,91 @@
+@startuml
+
+title Earth Defender - Distributed Multiplayer Game Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #F0F8FF
+  BorderColor #336699
+}
+
+' External actors and systems
+actor "Player (Browser)" as Player
+
+' DNS / Load Balancer
+rectangle "Network Infrastructure" {
+  component "DNS / Load Balancer" as DNS
+}
+
+' Client Layer
+rectangle "Browser Client Layer" {
+  component "Three.js Game Client" as ThreeJS
+  component "WebSocket Client" as WSClient
+  component "Asset Loader" as AssetLoader
+  component "Heartbeat Manager\n(ping/pong, 60s interval)" as Heartbeat
+  component "Reconnect Manager" as Reconnect
+  component "Message Handler\n(JSON [action, data?])" as MsgHandler
+  component "Room Manager\n(room ID, player ID, ship index)" as RoomMgr
+}
+
+' Web Server Layer
+rectangle "Web Server Layer" {
+  component "Static Asset Server\n(HTML, CSS, JS, Images)" as WebServer
+}
+
+' Game Server Layer (Erlang/OTP)
+rectangle "Game Server Layer (Erlang/OTP)" {
+  component "Master Game Server" as MasterServer
+  component "WebSocket Handler" as WSHandler
+  component "Room Session Manager" as RoomSession
+  component "Server List Provider" as ServerList
+}
+
+' Replica / Fault Tolerance Layer
+rectangle "Fault Tolerance Layer (Erlang/OTP)" {
+  component "Replica / Slave Node" as Replica
+}
+
+' Relationships
+Player --> DNS : resolves address
+DNS --> WebServer : routes static asset requests
+DNS --> MasterServer : routes game server connections
+
+Player --> AssetLoader : loads game assets
+AssetLoader --> WebServer : HTTP GET (HTML, CSS, JS, Images)
+
+Player --> ThreeJS : plays game
+
+ThreeJS --> WSClient : sends/receives game events
+WSClient --> Heartbeat : manages ping/pong
+WSClient --> Reconnect : handles reconnection on close
+WSClient --> MsgHandler : parses inbound JSON [action, data?]
+MsgHandler --> RoomMgr : updates room state\n(room_players_number, game_reconnect)
+MsgHandler --> ServerList : handles servers_list\n/ servers_list_redirect
+MsgHandler --> Reconnect : triggers reconnect context on game_reconnect
+
+WSClient --> MasterServer : WebSocket over HTTP\n(JSON [event, data])
+
+MasterServer --> WSHandler : handles WebSocket sessions
+WSHandler --> RoomSession : manages multiplayer rooms
+WSHandler --> ServerList : provides server list data
+MasterServer --> Replica : replication / fault tolerance (Erlang OTP)
+
+note right of Reconnect
+  On connection close, initiates reconnect.
+  On reopen with room+player context,
+  sends [room_id, player_id, ship_index]
+end note
+
+note right of MsgHandler
+  Inbound actions:
+  game_reconnect, room_players_number,
+  servers_list, servers_list_redirect,
+  server_error, pong
+end note
+
+note right of RoomSession
+  Supports multiplayer room workflows:
+  create room, join room
+end note
+
+@enduml

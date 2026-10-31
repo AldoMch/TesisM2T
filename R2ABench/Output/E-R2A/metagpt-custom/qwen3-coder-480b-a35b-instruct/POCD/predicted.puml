@@ -1,0 +1,98 @@
+@startuml
+' Deployment Node for the overall system
+node "POCD System" {
+    ' -----------------------------
+    ' User Interface Layer
+    ' -----------------------------
+    package "User Interface Layer" {
+        component "AccountManagement"
+        component "FileManagement"
+        component "DetectionConfiguration"
+        component "HelpAndExamples"
+        component "ReportDisplay"
+        component "HistoryViewer"
+    }
+
+    ' -----------------------------
+    ' Business Logic Layer
+    ' -----------------------------
+    package "Business Logic Layer" {
+        component "ClassDiagramParser"
+        component "DatabaseParser"
+        component "EntityMatcher"
+        component "InconsistencyDetector"
+        component "RepairEngine"
+        component "ReportGenerator"
+        component "HistoryManager"
+    }
+
+    ' -----------------------------
+    ' Data Access Layer
+    ' -----------------------------
+    package "Data Access Layer" {
+        component "UserDataStore"
+        component "FileDataStore"
+        component "ConfigurationDataStore"
+        component "DetectionDataStore"
+    }
+}
+
+' -----------------------------
+' External Systems
+' -----------------------------
+cloud "External Systems" {
+    node "StarUML"
+    node "MySQLDatabase"
+    node "JDBCConnector"
+    node "ThirdPartyApplications"
+    artifact "HelpDocuments"
+    artifact "ExampleCaseFiles"
+}
+
+' -----------------------------
+' Dependencies and Interfaces
+' -----------------------------
+
+' UI Layer Dependencies
+"AccountManagement" --> "FileManagement"
+"AccountManagement" --> "DetectionConfiguration"
+"FileManagement" --> "ReportDisplay"
+"HistoryViewer" --> "HistoryManager"
+"HelpAndExamples" --> "HelpDocuments"
+"HelpAndExamples" --> "ExampleCaseFiles"
+
+' Business Logic Dependencies
+"ClassDiagramParser" --> "EntityMatcher"
+"DatabaseParser" --> "EntityMatcher"
+"EntityMatcher" --> "InconsistencyDetector"
+"InconsistencyDetector" --> "RepairEngine"
+"FileManagement" --> "ClassDiagramParser"
+"FileManagement" --> "DatabaseParser"
+"DetectionConfiguration" --> "InconsistencyDetector"
+"RepairEngine" --> "FileManagement"
+"ReportGenerator" --> "ReportDisplay"
+"HistoryManager" --> "HistoryViewer"
+
+' Data Access Connections
+"AccountManagement" --> "UserDataStore"
+"FileManagement" --> "FileDataStore"
+"FileManagement" --> "UserDataStore"
+"DetectionConfiguration" --> "ConfigurationDataStore"
+"EntityMatcher" --> "DetectionDataStore"
+"InconsistencyDetector" --> "DetectionDataStore"
+"InconsistencyDetector" --> "ConfigurationDataStore"
+"RepairEngine" --> "DetectionDataStore"
+"RepairEngine" --> "FileManagement"
+"HistoryManager" --> "DetectionDataStore"
+"ReportGenerator" --> "DetectionDataStore"
+"ClassDiagramParser" --> "ConfigurationDataStore"
+
+' External System Connections
+"ClassDiagramParser" --> "StarUML"
+"DatabaseParser" --> "MySQLDatabase"
+"DatabaseParser" --> "JDBCConnector"
+"RepairEngine" --> "MySQLDatabase"
+"RepairEngine" --> "StarUML"
+"ReportGenerator" --> "ThirdPartyApplications"
+
+@enduml

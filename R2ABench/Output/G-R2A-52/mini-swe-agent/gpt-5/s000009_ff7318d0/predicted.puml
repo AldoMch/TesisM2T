@@ -1,0 +1,90 @@
+@startuml
+skinparam componentStyle rectangle
+
+actor "User" as User
+
+package "Presentation Layer" {
+  component "Web Frontend\n(HTML/CSS/Bootstrap/jQuery)\nAmazon S3 Hosting" as Frontend
+}
+
+package "Security & Identity" {
+  component "Amazon Cognito" as Cognito
+  component "AWS IAM" as IAM
+}
+
+package "API Layer" {
+  component "Amazon API Gateway" as APIGW
+}
+
+package "Backend Services (AWS Lambda)" {
+  component "Match Info Service" as MatchSvc
+  component "Prediction Service" as PredSvc
+  component "Screening Recommendation Service" as ScreenSvc
+  component "Chatbot Service" as ChatSvc
+  component "Reminder Service" as RemindSvc
+  component "Search Service" as SearchSvc
+  component "Live Score Service" as LiveSvc
+}
+
+package "Prediction" {
+  component "Amazon SageMaker" as SageMaker
+}
+
+package "Notification" {
+  component "Amazon SQS\n(Reminder Queue)" as SQS
+  component "Amazon SNS\n(SMS Notifications)" as SNS
+}
+
+package "Data Layer" {
+  database "Amazon DynamoDB" as Dynamo
+  component "Elasticsearch" as ES
+}
+
+package "Streaming Layer" {
+  node "Amazon EC2" as EC2 {
+    component "Kafka Cluster\n(Apache Avro)" as Kafka
+  }
+}
+
+' User interactions '
+User --> Frontend : Browse UI
+Frontend --> APIGW : HTTPS (JSON)
+Frontend --> Cognito : Authenticate
+
+' API gateway routes to backend lambdas '
+APIGW --> MatchSvc
+APIGW --> PredSvc
+APIGW --> ScreenSvc
+APIGW --> ChatSvc
+APIGW --> RemindSvc
+APIGW --> SearchSvc
+APIGW --> LiveSvc
+
+' Security integration '
+Cognito --> APIGW : Token validation
+IAM ..> MatchSvc : Execution role
+IAM ..> PredSvc
+IAM ..> ScreenSvc
+IAM ..> ChatSvc
+IAM ..> RemindSvc
+IAM ..> SearchSvc
+IAM ..> LiveSvc
+
+' Core data flows '
+MatchSvc --> Dynamo : Store/Retrieve fixtures, results, stats
+Dynamo --> ES : Index sync for search
+SearchSvc --> ES : Query
+
+' Prediction workflow '
+PredSvc --> SageMaker : Invoke prediction
+SageMaker --> PredSvc : Prediction results
+
+' Reminder workflow '
+RemindSvc --> SQS : Queue reminder request
+SQS --> SNS : Trigger notification
+
+' Live score streaming '
+LiveSvc --> Kafka : Consume live score updates
+Kafka --> LiveSvc : Streamed scores (Avro)
+
+@enduml

@@ -1,0 +1,120 @@
+@startuml
+title Help With COVID Session and Task Workflow - System Architecture
+
+left to right direction
+skinparam componentStyle rectangle
+
+actor "Authenticated App User" as AppUser
+actor "End User" as EndUser
+actor "Deployment/Config Operator" as Operator
+
+cloud "External User Channel\n(Text/Call)" as Channel
+
+node "Environment" as Env {
+  artifact "Env Vars:\n- FIREBASE_AUTH_DOMAIN\n- FIREBASE_DATABASE_URL\n- FIREBASE_PROJECT_ID\n- FIREBASE_PUBLIC_API_KEY" as EnvVars <<env>>
+}
+
+package "Frontend (Next.js)" as Frontend {
+  component "Frontend App" as FE_App
+  component "Frontend Form" as FE_Form
+  component "Session Handler" as FE_SessionHandler
+  package "Next.js API Routes" as FE_APIs {
+    component "/api/login [POST]" as API_Login
+    component "/api/logout [POST]" as API_Logout
+  }
+  component "Runtime Config" as FE_Config <<config>>
+}
+
+package "Middleware" as MW {
+  component "Session Middleware\n(server-side session support)" as MW_Session
+  component "Task Middleware\n- Address -> Neighborhood\n- Service-area decision" as MW_Task
+}
+
+package "Backend (Firebase Functions)" as Backend {
+  component "Task Handler\n(OnFleet Task Creation)" as BE_TaskHandler
+}
+
+cloud "Firebase Auth (Client SDK)" as FirebaseAuth
+cloud "Firebase Admin Token Verification" as FirebaseAdmin
+cloud "OnFleet API" as OnFleet
+
+' Operators provide environment configuration
+Operator --> EnvVars : Provide env values\n(CON-001)
+EnvVars --> FE_Config : Map to runtime config\n(FR-008, NFR-003)
+
+' Runtime config consumed by frontend
+FE_Config --> FE_App
+FE_Config --> FE_SessionHandler
+
+' User interactions
+AppUser --> FE_App : Use application\n(UI-003)
+EndUser --> FE_Form : Submit help-task request\n(UI-001)
+
+' Session handler flows
+FE_App --> FE_SessionHandler : Trigger session establishment/logout\n(UI-003)
+
+FE_SessionHandler --> FirebaseAuth : user.getIdToken()\n(FR-001, DR-001, DR-002)
+
+FE_SessionHandler --> API_Login : POST /api/login\nBody: { token }\n(FR-001, SI-001, CI-001, NFR-001, NFR-002)
+note on link
+- JSON body contains "token"
+- Content-Type: application/json
+- Same-origin credentials
+end note
+
+FE_SessionHandler --> API_Logout : POST /api/logout\n(FR-002, SI-002, CI-002, NFR-002)
+note on link
+- No request body required
+- Same-origin credentials
+end note
+
+' API routes execute with session middleware
+MW_Session <.. API_Login : Executes with session support\n(SI-004, FR-006)
+MW_Session <.. API_Logout : Executes with session support\n(SI-004)
+
+' Login API internal responsibilities
+API_Login --> FirebaseAdmin : Verify ID token\n(FR-005, SI-003)
+API_Login --> MW_Session : Store decoded token + token\n(FR-006)
+note right of API_Login
+- Validate request body; 400 if missing (FR-003)
+- Extract token from req.body (FR-004)
+- Verify Firebase ID token (FR-005)
+- Write decoded token and token to session (FR-006)
+- Return 200 with success JSON incl. decoded token (FR-007)
+end note
+
+' Logout API behavior (implicit session clear)
+note right of API_Logout
+- Tear down session on logout (SI-002)
+end note
+
+' Task workflow
+FE_Form --> MW_Task : Task request\n(CI-003, FR-010)
+Channel --> MW_Task : Task request from external channel\n(UI-002, FR-010)
+
+note right of MW_Task
+- Process address -> neighborhood (FR-011)
+- Determine operated service area (FR-011)
+- Forward eligible requests to backend (CI-004)
+end note
+
+MW_Task --> BE_TaskHandler : Eligible task request\n(CI-004, FR-012)
+BE_TaskHandler --> OnFleet : Create task\n(SI-005, FR-012)
+
+' Non-functional and run modes
+note bottom of Frontend
+Run modes (FR-009, CON-006):
+- Both servers
+- Frontend only
+- Backend only
+end note
+
+note bottom of FE_Config
+Firebase runtime config (FR-008):
+- FIREBASE_AUTH_DOMAIN
+- FIREBASE_DATABASE_URL
+- FIREBASE_PROJECT_ID
+- FIREBASE_PUBLIC_API_KEY
+end note
+
+@enduml

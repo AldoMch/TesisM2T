@@ -1,0 +1,116 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BorderColor #555555
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+}
+skinparam database {
+  BackgroundColor #FFF3CD
+  BorderColor #CC9900
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+
+' -----------------------------------------
+' External Systems
+' -----------------------------------------
+
+node "Integrating JVM Application" as IntegratingApp {
+  component "Application Code" as AppCode
+  component "Custom EventPublisher\n(impl, optional)" as CustomPublisher
+  component "Custom AuditEventElementFilter\n(impl, optional)" as CustomFilter
+}
+
+node "LogProvider Implementation\n(externally supplied)" as ExternalLogProviderImpl {
+  component "LogProvider Impl\n(e.g. SLF4J adapter)" as LogProviderImpl
+}
+
+cloud "Kafka Cluster" as KafkaCluster {
+  database "Audit Events Topic" as KafkaTopic
+}
+
+' -----------------------------------------
+' lowes/auditor Library (Kotlin/JVM)
+' -----------------------------------------
+
+package "lowes/auditor  [Kotlin/JVM Client Library]" {
+
+  ' -- API Layer
+  rectangle "API Layer" {
+    component "AuditorAPI" as AuditorAPI
+  }
+
+  ' -- Core Processing Layer
+  rectangle "Core Processing Layer" {
+    component "DiffProcessor\n(compares object states,\ndetects CREATED / UPDATED / DELETED)" as DiffProcessor
+    component "AuditEventAssembler\n(builds AuditEvent from\ndiff results + config)" as EventAssembler
+    component "FilterEvaluator\n(applies AuditEventElementFilter\nper element)" as FilterEvaluator
+  }
+
+  ' -- Data / Model Layer
+  rectangle "Data / Model Layer" {
+    component "AuditEvent\n[changeType: CREATED|UPDATED|DELETED\nelements: List<ChangedElement>\n  each element: {name, oldVal, newVal,\n  metadata.fqdn}]" as AuditEvent
+    component "AuditorEventConfig\n[appName, eventSource,\neventSubType, metadata,\nfilters: List<InclusionFilter>]" as AuditorEventConfig
+    component "InclusionFilter\n[type, includes: List<String>]" as InclusionFilter
+  }
+
+  ' -- Abstraction / Interface Layer
+  rectangle "Abstraction / Interface Layer" {
+    component "EventPublisher\n<<interface>>" as EventPublisher
+    component "LogProvider\n<<interface>>" as LogProvider
+    component "AuditEventElementFilter\n<<interface>>" as ElementFilter
+  }
+
+  ' -- Infrastructure / Integration Layer
+  rectangle "Infrastructure / Integration Layer" {
+    component "KafkaEventPublisher\n(default impl)" as KafkaPublisher
+  }
+
+}
+
+' -----------------------------------------
+' Internal Dependencies
+' -----------------------------------------
+
+AuditorAPI --> DiffProcessor       : delegates object\ncomparison
+AuditorAPI --> AuditorEventConfig  : receives config\nfrom caller
+AuditorAPI --> LogProvider         : internal logging
+
+DiffProcessor --> EventAssembler   : passes diff results\n(changeType + elements)
+
+EventAssembler --> AuditorEventConfig : reads appName,\neventSource,\neventSubType,\nmetadata, filters
+EventAssembler --> FilterEvaluator : invokes element\nfiltering
+EventAssembler --> AuditEvent      : instantiates &\npopulates
+EventAssembler --> EventPublisher  : publishes\ncompleted AuditEvent
+
+FilterEvaluator --> ElementFilter  : evaluates element\ninclusion
+
+AuditorEventConfig --> InclusionFilter : contains\nfilter definitions
+
+KafkaPublisher ..|> EventPublisher : implements
+
+' -----------------------------------------
+' External Connections
+' -----------------------------------------
+
+AppCode --> AuditorAPI             : invokes audit\n(oldObject, newObject,\nAuditorEventConfig)
+
+CustomPublisher ..|> EventPublisher : implements (optional)
+CustomFilter ..|> ElementFilter    : implements (optional)
+LogProviderImpl ..|> LogProvider   : implements
+
+KafkaPublisher --> KafkaTopic      : serializes AuditEvent\nto JSON, publishes
+
+@enduml

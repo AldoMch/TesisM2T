@@ -1,0 +1,79 @@
+@startuml
+title kubescape/host-scanner Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #666666
+skinparam componentBackgroundColor #DDEEFF
+skinparam databaseBackgroundColor #FFFFCC
+skinparam nodeBackgroundColor #E0F0E0
+skinparam cloudBackgroundColor #FFE8CC
+
+' External clients and systems
+actor "HTTP Client\n(Kubescape / Operator)" as httpClient
+actor "E2E Test Engineer" as testEngineer
+
+cloud "Kubernetes Cluster" {
+
+  node "Kubernetes Node (Linux Host)" as k8sNode {
+
+    node "host-scanner DaemonSet Pod\n(Privileged)" as dsPod {
+
+      package "HTTP API Layer" as httpLayer {
+        [HTTP Server\n(Endpoint Router)] as httpServer
+        [Unknown Endpoint Handler\n(404 responses)] as unknownHandler
+      }
+
+      package "Core Logic Layer" as coreLayer {
+        [CNI Directory Resolver] as cniResolver
+        [Control-Plane Data Sanitizer\n(Encryption Secret Removal)] as sanitizer
+      }
+
+      package "Test Support Layer" as testLayer {
+        [E2E Test Suite\n(Go build-tag provider selection)] as e2eTests
+      }
+
+    }
+
+    package "Host Filesystem" as hostFS {
+      database "/etc/cni/\n(default CNI config dir)" as etcCni
+      database "/var/lib/cni/\n(explicit CNI config dir)" as varLibCni
+      database "/run & /var/lib\n(runtime config paths)" as runtimePaths
+      database "Control-Plane Config\n(JSON, e.g. kube-apiserver args)" as cpConfig
+    }
+
+    package "Container Runtimes" as runtimes {
+      [kubelet] as kubelet
+      [containerd] as containerd
+      [CRI-O] as crio
+    }
+
+  }
+
+}
+
+' Relationships - external
+httpClient --> httpServer : HTTP GET requests
+testEngineer --> e2eTests : run provider-specific tests\n(//go:build <provider>)
+
+' HTTP layer
+httpServer --> unknownHandler : unknown path\n(e.g. /doesnotexist → 404)
+httpServer --> cniResolver : GET /cni-info
+httpServer --> sanitizer : GET /control-plane-info
+httpServer --> httpClient : HTTP response (JSON / status code)
+
+' CNI Resolver reads host filesystem and runtime config
+cniResolver --> runtimePaths : read runtime type & process args
+cniResolver --> etcCni : default resolution\n(kubelet/containerd)
+cniResolver --> varLibCni : explicit arg resolution
+kubelet --> runtimePaths : provides process arguments
+containerd --> runtimePaths : provides configuration
+crio --> runtimePaths : provides configuration
+
+' Sanitizer reads control-plane JSON
+sanitizer --> cpConfig : read raw control-plane JSON
+sanitizer --> httpClient : sanitized JSON\n(secrets removed)
+
+' E2E tests interact with running service
+e2eTests --> httpServer : HTTP requests (test scenarios)
+
+@enduml

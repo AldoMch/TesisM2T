@@ -1,0 +1,109 @@
+@startuml
+title gran-book Backend Platform - System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+' ============================================================
+' Clients / Frontend Consumers
+' ============================================================
+package "Frontend Clients" as CLIENTS {
+  component "Native Mobile Applications" as MOBILE
+  component "Administrative Web Application" as ADMINWEB
+}
+
+' ============================================================
+' GCP Infrastructure
+' ============================================================
+package "GCP Infrastructure" as GCP {
+
+  component "Load Balancer / Network Entry" as LB
+
+  package "Container-Based Backend (GKE)" as GKE {
+    component "Gateway / BFF Layer" as BFF
+
+    package "Internal Backend APIs (Golang)" as APIS {
+      component "Authentication API" as AUTHAPI
+      component "User Management API" as USERAPI
+      component "Book Management API" as BOOKAPI
+      component "EC Site API" as ECAPI
+      component "Support / Information API" as SUPPORTAPI
+      component "Administration Service" as ADMINSVC
+      component "Notification Service" as NOTIFSVC
+    }
+  }
+
+  package "Virtual Machine Based Operations (GCE)" as GCE {
+    component "VM Operation / Cluster Access" as VMOPS
+    component "TLS Certificate Provisioning\n(Let's Encrypt, DNS-01)" as TLSCERT
+  }
+}
+
+' ============================================================
+' Data Stores
+' ============================================================
+package "Data Stores" as DATA {
+  component "Firebase Authentication\n(Auth Data)" as FIREBASEAUTH
+  component "MySQL\n(User / Book / EC Site Data)" as MYSQL
+  component "NoSQL Storage\n(Message Management Data)" as NOSQL
+  component "Object Storage\n(Thumbnail / Object Data)" as OBJSTORE
+}
+
+' ============================================================
+' External Services
+' ============================================================
+package "External Services" as EXT {
+  component "Firebase Authentication Service" as EXT_FIREBASE
+  component "Book-Search API\n(Provider Unresolved)" as EXT_BOOKSEARCH
+  component "Stripe\n(Payment Processing)" as EXT_STRIPE
+  component "Push Notification Provider" as EXT_PUSH
+  component "Email Notification Provider" as EXT_EMAIL
+}
+
+' ============================================================
+' Relationships - Client access
+' ============================================================
+MOBILE --> LB : HTTPS
+ADMINWEB --> LB : HTTPS
+LB --> BFF : Load-balanced access
+
+' ============================================================
+' Relationships - Gateway to internal APIs
+' ============================================================
+BFF --> AUTHAPI
+BFF --> USERAPI
+BFF --> BOOKAPI
+BFF --> ECAPI
+BFF --> SUPPORTAPI
+BFF --> ADMINSVC
+BFF --> NOTIFSVC
+
+' ============================================================
+' Relationships - APIs to data stores
+' ============================================================
+AUTHAPI --> FIREBASEAUTH
+USERAPI --> MYSQL
+BOOKAPI --> MYSQL
+ECAPI --> MYSQL
+SUPPORTAPI --> NOSQL
+NOTIFSVC --> NOSQL
+BOOKAPI --> OBJSTORE
+
+' ============================================================
+' Relationships - External integrations
+' ============================================================
+AUTHAPI --> EXT_FIREBASE : authenticate
+BOOKAPI --> EXT_BOOKSEARCH : book lookup
+ECAPI --> EXT_STRIPE : payment processing
+NOTIFSVC --> EXT_PUSH : push delivery
+NOTIFSVC --> EXT_EMAIL : email delivery
+
+' ============================================================
+' Relationships - Operations
+' ============================================================
+VMOPS --> GKE : cluster access
+TLSCERT --> LB : TLS certificates
+
+@enduml

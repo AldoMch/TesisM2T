@@ -1,0 +1,112 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Helvetica
+title ROS-Based Self-Driving Car Capstone - System Architecture
+
+actor "Evaluator" as Evaluator
+actor "Developer / Operator" as DevOp
+
+rectangle "Udacity Capstone Simulator" as Simulator
+rectangle "Recorded Training Bag" as TrainingBag
+rectangle "Docker Engine" as Docker
+
+rectangle "Docker Environment" {
+  rectangle "ROS Environment" as ROSEnv {
+    package "Launch Entry Points" {
+      component "launch/styx.launch\n(Simulator Mode)" as StyxLaunch
+      component "launch/site.launch\n(Site Mode)" as SiteLaunch
+    }
+
+    package "Perception Subsystem" {
+      component "Traffic Light Detector / Classifier" as TLDetector
+      component "Traffic Waypoint Generator" as TrafficWPGen
+    }
+
+    package "Planning Subsystem" {
+      component "Waypoint Loader" as WaypointLoader
+      component "Waypoint Updater" as WaypointUpdater
+    }
+
+    package "Control Subsystem" {
+      component "Waypoint Follower" as WaypointFollower
+      component "Drive-By-Wire (DBW) Node" as DBW
+    }
+
+    package "ROS Topic Interfaces" {
+      component "/current_pose" as CurrentPose <<topic>>
+      component "/base_waypoints" as BaseWaypoints <<topic>>
+      component "/traffic_waypoint" as TrafficWaypoint <<topic>>
+      component "/final_waypoints" as FinalWaypoints <<topic>>
+      component "/twist_cmd" as TwistCmd <<topic>>
+      component "/vehicle_cmd" as VehicleCmd <<topic>>
+    }
+  }
+}
+
+' Actor interactions
+Evaluator --> StyxLaunch : run simulator mode
+Evaluator --> SiteLaunch : run site mode
+DevOp --> Docker : build / run
+Docker --> ROSEnv : hosts container runtime
+
+' Launch dependencies
+StyxLaunch ..> WaypointLoader : starts
+StyxLaunch ..> WaypointUpdater : starts
+StyxLaunch ..> WaypointFollower : starts
+StyxLaunch ..> DBW : starts
+SiteLaunch ..> TLDetector : starts
+SiteLaunch ..> TrafficWPGen : starts
+SiteLaunch ..> WaypointLoader : starts
+SiteLaunch ..> WaypointUpdater : starts
+SiteLaunch ..> WaypointFollower : starts
+SiteLaunch ..> DBW : starts
+
+' External data sources
+Simulator --> CurrentPose : provides pose
+TrainingBag --> SiteLaunch : site-mode playback
+TrainingBag --> TLDetector : real images
+TrainingBag --> CurrentPose : playback data
+
+' Topic data flow
+CurrentPose --> WaypointUpdater
+CurrentPose --> WaypointFollower
+WaypointLoader --> BaseWaypoints : loads waypoints
+BaseWaypoints --> WaypointUpdater : base waypoints
+TLDetector --> TrafficWPGen : traffic light state
+TrafficWPGen --> TrafficWaypoint : stop-related waypoint
+TrafficWaypoint --> WaypointUpdater : traffic waypoint
+WaypointUpdater --> FinalWaypoints : final waypoints
+FinalWaypoints --> WaypointFollower : final waypoints
+WaypointFollower --> TwistCmd : throttle / steering / brake
+TwistCmd --> DBW : twist command
+DBW --> VehicleCmd : vehicle command
+VehicleCmd --> Simulator : simulator actuation
+
+' Notes
+note right of BaseWaypoints
+  Target top speed is carried in
+  twist.twist.linear.x and used as
+  speed upper bound (FR-005, DR-001).
+end note
+
+note right of TLDetector
+  Detects and classifies traffic lights
+  on real images during site-mode
+  bag playback (FR-009, DR-003).
+end note
+
+note bottom of Docker
+  Docker installation is a prerequisite
+  for the documented container workflow
+  (C-003, NFR-002).
+end note
+
+legend right
+  Solid arrow = data/control flow
+  Dashed arrow = launch/dependency
+endlegend
+
+@enduml

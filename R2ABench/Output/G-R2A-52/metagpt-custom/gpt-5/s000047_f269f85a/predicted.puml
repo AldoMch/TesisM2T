@@ -1,0 +1,73 @@
+@startuml
+
+package "Controller/Workflow Layer" {
+  component "TreeCsvExportWorkflow" as TreeCsvEW
+  component "ResipExportWorkflow" as ResipEWf
+  component "CsvExportWorkflow" as CsvEWf
+  component "ExcelExportWorkflow" as ExcelEWf
+  component "HashComputationWorkflow" as HashWF
+}
+
+package "Worker/Processing Layer" {
+  component "TreeCsvExportWorker" as TreeCsvWorker
+  component "ResipExportWorker" as ResipWorker
+  component "CsvExportWorker" as CsvWorker
+  component "ExcelExportWorker" as ExcelWorker
+  component "HashBatchProcessor" as HashBatch
+}
+
+package "Services Layer" {
+  component "SettingsSanitizer" as SettingsSanitizer
+}
+
+package "Localization Layer" {
+  component "TranslationModule" as TranslationModule
+}
+
+package "Infrastructure Layer" {
+  component "WorkerInvocationUtility" as WorkerInvoke
+  component "HashDebugWriters" as HashDebugWriters
+}
+
+package "Async Delivery Layer" {
+  component "AsyncResultDelivery" as AsyncDelivery
+}
+
+package "External Systems" {
+  node "Electron Runtime" as ElectronRuntime
+  node "Filesystem" as Filesystem
+}
+
+' Workflow dependencies
+TreeCsvEW -> TranslationModule
+TreeCsvEW -> AsyncDelivery
+TreeCsvEW -> WorkerInvoke
+
+ResipEWf -> AsyncDelivery
+ResipEWf -> WorkerInvoke
+
+CsvEWf -> TranslationModule
+CsvEWf -> AsyncDelivery
+CsvEWf -> WorkerInvoke
+
+ExcelEWf -> TranslationModule
+ExcelEWf -> AsyncDelivery
+ExcelEWf -> WorkerInvoke
+
+HashWF -> HashBatch
+HashWF -> HashDebugWriters
+HashWF -> AsyncDelivery
+HashWF -> WorkerInvoke
+
+' Background invocation paths
+WorkerInvoke -> TreeCsvWorker
+WorkerInvoke -> ResipWorker
+WorkerInvoke -> CsvWorker
+WorkerInvoke -> ExcelWorker
+
+' External interactions
+HashBatch -> Filesystem
+HashDebugWriters -> ElectronRuntime
+HashDebugWriters -> Filesystem
+
+@enduml

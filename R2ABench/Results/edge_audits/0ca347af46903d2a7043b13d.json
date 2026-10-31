@@ -1,0 +1,720 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "e7ab77a4fad597f94b4c0684d4329a6fc9d3f07dff9f1ac62644aa90b79fc3b0",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "408ecced0b964445f3580b3f0a9a3bb46196b4fa34df2542f34e6a33e01cd7ba",
+  "predicted_edges_sha256": "7ca2f6c05e664d0cbf540cdcc208bde7822d242081afa40b1a701d7835f8ce02",
+  "precision": 0.027777777777777776,
+  "recall": 0.06666666666666667,
+  "f1": 0.0392156862745098,
+  "reference_edges": [
+    [
+      "Global::SDK",
+      "Global::plugin"
+    ],
+    [
+      "Global::SDK",
+      "Global::runner"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::containerd"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::docker"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::dockerfile"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::kubernetes"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::tarball"
+    ],
+    [
+      "Global::plugin",
+      "Global::SDK"
+    ],
+    [
+      "Global::plugin",
+      "Scan Targets::cluster"
+    ],
+    [
+      "Global::plugin",
+      "Scan Targets::container"
+    ],
+    [
+      "Global::plugin",
+      "Scan Targets::iac"
+    ],
+    [
+      "Global::plugin",
+      "Scan Targets::image"
+    ],
+    [
+      "Global::runner",
+      "Global::SDK"
+    ],
+    [
+      "Global::runner",
+      "Global::plugin"
+    ],
+    [
+      "SDK::interact system",
+      "SDK::plugin system"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)",
+      "External Systems & Runtime::Containerd"
+    ],
+    [
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)",
+      "External Systems & Runtime::Target Images\\n& Containers"
+    ],
+    [
+      "External Systems & Runtime::Image Registries\\n(DockerHub, Docker Registry, Harbor)",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Presentation & Interface Layer::CLI Interface\\n(scan-image / scan-container / scan-iac)",
+      "Presentation & Interface Layer::CLI-001..003"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::Container Scanner Service"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::Image Scanner Service"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-004",
+      "Presentation & Interface Layer::Parallel-Container\\nStartup Scripts"
+    ],
+    [
+      "Presentation & Interface Layer::Parallel-Container\\nStartup Scripts",
+      "Scanning & Execution Service Layer::Image Scanner Service"
+    ],
+    [
+      "Presentation & Interface Layer::Python Example Package\\n/tool/entrypoint.sh -> python scan.py",
+      "External Systems & Runtime::Base Image\\nveinmind/python3.6:1.3.1-stretch"
+    ],
+    [
+      "Presentation & Interface Layer::Python Example Package\\n/tool/entrypoint.sh -> python scan.py",
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)"
+    ],
+    [
+      "Presentation & Interface Layer::Quick-Start Workflow\\n./run.sh scan-host image",
+      "Presentation & Interface Layer::CLI-004"
+    ],
+    [
+      "Report Data Layer::IaC Alert Data::IaC File-Location Detail\\n(StartLine, EndLine,\\nFilePath, Original)",
+      "Report Data Layer::IaC Alert Data::IaC Alert Detail"
+    ],
+    [
+      "Report Data Layer::IaC Alert Data::IaC Rule Metadata\\n(Id, Name, Description,\\nReference, Severity, Solution, Type)",
+      "Report Data Layer::IaC Alert Data::IaC Alert Detail"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportData\\n(ScanImageCount, MaliciousFileCount,\\nScanSpendTime, ScanStartTime,\\nScanFileCount, ScanImageResult)",
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)",
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)",
+      "Report Data Layer::Malicious-File Report Data::MaliciousFileInfo\\n(Engine, ImageID, LayerID,\\nRelativePath, FileName, FileSize,\\nFileMd5, FileSha256, FileCreated)"
+    ],
+    [
+      "Scanning & Execution Service Layer::API-003 report event",
+      "Report Data Layer::Report Event Mechanism"
+    ],
+    [
+      "Scanning & Execution Service Layer::Container Scanner Service",
+      "External Systems & Runtime::Containerd"
+    ],
+    [
+      "Scanning & Execution Service Layer::Container Scanner Service",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Container Scanner Service",
+      "SDK / Integration Layer::API-001 scan command\\nintegration model"
+    ],
+    [
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component",
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Report Data Layer::IaC Alert Data::IaC Alert Detail"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Report Data Layer::IaC Alert Data::IaC File-Location Detail\\n(StartLine, EndLine,\\nFilePath, Original)"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Report Data Layer::IaC Alert Data::IaC Rule Metadata\\n(Id, Name, Description,\\nReference, Severity, Solution, Type)"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "SDK / Integration Layer::API-001 scan command\\nintegration model"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Scanning & Execution Service Layer::API-003 report event"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "External Systems & Runtime::Target Images\\n& Containers"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::MaliciousFileInfo\\n(Engine, ImageID, LayerID,\\nRelativePath, FileName, FileSize,\\nFileMd5, FileSha256, FileCreated)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportData\\n(ScanImageCount, MaliciousFileCount,\\nScanSpendTime, ScanStartTime,\\nScanFileCount, ScanImageResult)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "SDK / Integration Layer::API-001 scan command\\nintegration model"
+    ],
+    [
+      "Scanning & Execution Service Layer::Runner Execution Service\\n(parallel container mode)",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "Global::plugin",
+      "Scan Targets::cluster"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "Presentation & Interface Layer::Python Example Package\\n/tool/entrypoint.sh -> python scan.py",
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "Global::SDK",
+      "Global::plugin"
+    ],
+    [
+      "Global::SDK",
+      "Global::runner"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::containerd"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::docker"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::dockerfile"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::kubernetes"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::tarball"
+    ],
+    [
+      "Global::plugin",
+      "Global::SDK"
+    ],
+    [
+      "Global::plugin",
+      "Scan Targets::container"
+    ],
+    [
+      "Global::plugin",
+      "Scan Targets::iac"
+    ],
+    [
+      "Global::plugin",
+      "Scan Targets::image"
+    ],
+    [
+      "Global::runner",
+      "Global::SDK"
+    ],
+    [
+      "Global::runner",
+      "Global::plugin"
+    ],
+    [
+      "SDK::interact system",
+      "SDK::plugin system"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)",
+      "External Systems & Runtime::Containerd"
+    ],
+    [
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)",
+      "External Systems & Runtime::Target Images\\n& Containers"
+    ],
+    [
+      "External Systems & Runtime::Image Registries\\n(DockerHub, Docker Registry, Harbor)",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Presentation & Interface Layer::CLI Interface\\n(scan-image / scan-container / scan-iac)",
+      "Presentation & Interface Layer::CLI-001..003"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::Container Scanner Service"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::Image Scanner Service"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-004",
+      "Presentation & Interface Layer::Parallel-Container\\nStartup Scripts"
+    ],
+    [
+      "Presentation & Interface Layer::Parallel-Container\\nStartup Scripts",
+      "Scanning & Execution Service Layer::Image Scanner Service"
+    ],
+    [
+      "Presentation & Interface Layer::Python Example Package\\n/tool/entrypoint.sh -> python scan.py",
+      "External Systems & Runtime::Base Image\\nveinmind/python3.6:1.3.1-stretch"
+    ],
+    [
+      "Presentation & Interface Layer::Quick-Start Workflow\\n./run.sh scan-host image",
+      "Presentation & Interface Layer::CLI-004"
+    ],
+    [
+      "Report Data Layer::IaC Alert Data::IaC File-Location Detail\\n(StartLine, EndLine,\\nFilePath, Original)",
+      "Report Data Layer::IaC Alert Data::IaC Alert Detail"
+    ],
+    [
+      "Report Data Layer::IaC Alert Data::IaC Rule Metadata\\n(Id, Name, Description,\\nReference, Severity, Solution, Type)",
+      "Report Data Layer::IaC Alert Data::IaC Alert Detail"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportData\\n(ScanImageCount, MaliciousFileCount,\\nScanSpendTime, ScanStartTime,\\nScanFileCount, ScanImageResult)",
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)",
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)",
+      "Report Data Layer::Malicious-File Report Data::MaliciousFileInfo\\n(Engine, ImageID, LayerID,\\nRelativePath, FileName, FileSize,\\nFileMd5, FileSha256, FileCreated)"
+    ],
+    [
+      "Scanning & Execution Service Layer::API-003 report event",
+      "Report Data Layer::Report Event Mechanism"
+    ],
+    [
+      "Scanning & Execution Service Layer::Container Scanner Service",
+      "External Systems & Runtime::Containerd"
+    ],
+    [
+      "Scanning & Execution Service Layer::Container Scanner Service",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Container Scanner Service",
+      "SDK / Integration Layer::API-001 scan command\\nintegration model"
+    ],
+    [
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component",
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Report Data Layer::IaC Alert Data::IaC Alert Detail"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Report Data Layer::IaC Alert Data::IaC File-Location Detail\\n(StartLine, EndLine,\\nFilePath, Original)"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Report Data Layer::IaC Alert Data::IaC Rule Metadata\\n(Id, Name, Description,\\nReference, Severity, Solution, Type)"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "SDK / Integration Layer::API-001 scan command\\nintegration model"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Scanning & Execution Service Layer::API-003 report event"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "External Systems & Runtime::Target Images\\n& Containers"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::MaliciousFileInfo\\n(Engine, ImageID, LayerID,\\nRelativePath, FileName, FileSize,\\nFileMd5, FileSha256, FileCreated)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportData\\n(ScanImageCount, MaliciousFileCount,\\nScanSpendTime, ScanStartTime,\\nScanFileCount, ScanImageResult)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "SDK / Integration Layer::API-001 scan command\\nintegration model"
+    ],
+    [
+      "Scanning & Execution Service Layer::Runner Execution Service\\n(parallel container mode)",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ]
+  ],
+  "internal_reference_edges": [],
+  "internal_predicted_edges": [
+    [
+      "Presentation & Interface Layer::Parallel-Container\\nStartup Scripts",
+      "Scanning & Execution Service Layer::Runner Execution Service\\n(parallel container mode)"
+    ],
+    [
+      "SDK / Integration Layer::API-001 scan command\\nintegration model",
+      "SDK / Integration Layer::libveinmind"
+    ],
+    [
+      "SDK / Integration Layer::API-001 scan command\\nintegration model",
+      "SDK / Integration Layer::veinmind-sdk"
+    ],
+    [
+      "SDK / Integration Layer::veinmind-sdk",
+      "SDK / Integration Layer::libveinmind"
+    ],
+    [
+      "Scanning & Execution Service Layer::Container Scanner Service",
+      "External Systems & Runtime::Target Images\\n& Containers"
+    ],
+    [
+      "Scanning & Execution Service Layer::Runner Execution Service\\n(parallel container mode)",
+      "External Systems & Runtime::Runner Image\\n(veinmind-runner)"
+    ]
+  ],
+  "reference_witnesses": [
+    {
+      "edge_index": 8,
+      "counterpart_index": 10,
+      "source_group": 0,
+      "target_group": 6
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 10,
+      "counterpart_index": 8,
+      "source_group": 0,
+      "target_group": 6
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "Global::Infrastructure and Input Backends": [
+      2,
+      3
+    ],
+    "Global::SDK": [
+      4,
+      5
+    ],
+    "Global::Scan Targets": [
+      6,
+      7,
+      8,
+      9
+    ],
+    "Global::plugin": [
+      0
+    ],
+    "Global::runner": [
+      1
+    ],
+    "Infrastructure and Input Backends::containerd": [
+      2
+    ],
+    "Infrastructure and Input Backends::docker": [
+      3
+    ],
+    "Infrastructure and Input Backends::dockerfile": [],
+    "Infrastructure and Input Backends::kubernetes": [],
+    "Infrastructure and Input Backends::tarball": [],
+    "SDK::interact system": [
+      4
+    ],
+    "SDK::plugin system": [
+      5
+    ],
+    "Scan Targets::cluster": [
+      6
+    ],
+    "Scan Targets::container": [
+      8
+    ],
+    "Scan Targets::iac": [
+      7
+    ],
+    "Scan Targets::image": [
+      9
+    ]
+  },
+  "predicted_endpoint_anchors": {
+    "External Systems & Runtime::Base Image\\nveinmind/python3.6:1.3.1-stretch": [],
+    "External Systems & Runtime::Containerd": [
+      2
+    ],
+    "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)": [
+      3
+    ],
+    "External Systems & Runtime::Image Registries\\n(DockerHub, Docker Registry, Harbor)": [],
+    "External Systems & Runtime::Runner Image\\n(veinmind-runner)": [
+      1
+    ],
+    "External Systems & Runtime::Target Images\\n& Containers": [
+      8
+    ],
+    "Global::External Systems & Runtime": [
+      1,
+      2,
+      3,
+      8
+    ],
+    "Global::Presentation & Interface Layer": [
+      0,
+      1
+    ],
+    "Global::Report Data Layer": [
+      5,
+      7
+    ],
+    "Global::SDK / Integration Layer": [
+      4
+    ],
+    "Global::Scanning & Execution Service Layer": [
+      1,
+      6,
+      8,
+      9
+    ],
+    "Presentation & Interface Layer::CLI Interface\\n(scan-image / scan-container / scan-iac)": [],
+    "Presentation & Interface Layer::CLI-001..003": [],
+    "Presentation & Interface Layer::CLI-004": [],
+    "Presentation & Interface Layer::Parallel-Container\\nStartup Scripts": [
+      1
+    ],
+    "Presentation & Interface Layer::Python Example Package\\n/tool/entrypoint.sh -> python scan.py": [
+      0
+    ],
+    "Presentation & Interface Layer::Quick-Start Workflow\\n./run.sh scan-host image": [
+      1
+    ],
+    "Report Data Layer::IaC Alert Data": [
+      7
+    ],
+    "Report Data Layer::IaC Alert Data::IaC Alert Detail": [
+      7
+    ],
+    "Report Data Layer::IaC Alert Data::IaC File-Location Detail\\n(StartLine, EndLine,\\nFilePath, Original)": [],
+    "Report Data Layer::IaC Alert Data::IaC Rule Metadata\\n(Id, Name, Description,\\nReference, Severity, Solution, Type)": [],
+    "Report Data Layer::Malicious-File Report Data": [],
+    "Report Data Layer::Malicious-File Report Data::MaliciousFileInfo\\n(Engine, ImageID, LayerID,\\nRelativePath, FileName, FileSize,\\nFileMd5, FileSha256, FileCreated)": [],
+    "Report Data Layer::Malicious-File Report Data::ReportData\\n(ScanImageCount, MaliciousFileCount,\\nScanSpendTime, ScanStartTime,\\nScanFileCount, ScanImageResult)": [],
+    "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)": [],
+    "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)": [],
+    "Report Data Layer::Report Event Mechanism": [
+      5
+    ],
+    "SDK / Integration Layer::API-001 scan command\\nintegration model": [
+      4
+    ],
+    "SDK / Integration Layer::libveinmind": [
+      4
+    ],
+    "SDK / Integration Layer::veinmind-sdk": [
+      4
+    ],
+    "Scanning & Execution Service Layer::API-003 report event": [],
+    "Scanning & Execution Service Layer::Container Scanner Service": [
+      8
+    ],
+    "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component": [],
+    "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)": [
+      6
+    ],
+    "Scanning & Execution Service Layer::Image Scanner Service": [
+      9
+    ],
+    "Scanning & Execution Service Layer::Runner Execution Service\\n(parallel container mode)": [
+      1
+    ]
+  },
+  "reference_unanchored_edges": [
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::dockerfile"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::kubernetes"
+    ],
+    [
+      "Global::SDK",
+      "Infrastructure and Input Backends::tarball"
+    ]
+  ],
+  "predicted_unanchored_edges": [
+    [
+      "External Systems & Runtime::Image Registries\\n(DockerHub, Docker Registry, Harbor)",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Presentation & Interface Layer::CLI Interface\\n(scan-image / scan-container / scan-iac)",
+      "Presentation & Interface Layer::CLI-001..003"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::Container Scanner Service"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-001..003",
+      "Scanning & Execution Service Layer::Image Scanner Service"
+    ],
+    [
+      "Presentation & Interface Layer::CLI-004",
+      "Presentation & Interface Layer::Parallel-Container\\nStartup Scripts"
+    ],
+    [
+      "Presentation & Interface Layer::Python Example Package\\n/tool/entrypoint.sh -> python scan.py",
+      "External Systems & Runtime::Base Image\\nveinmind/python3.6:1.3.1-stretch"
+    ],
+    [
+      "Presentation & Interface Layer::Quick-Start Workflow\\n./run.sh scan-host image",
+      "Presentation & Interface Layer::CLI-004"
+    ],
+    [
+      "Report Data Layer::IaC Alert Data::IaC File-Location Detail\\n(StartLine, EndLine,\\nFilePath, Original)",
+      "Report Data Layer::IaC Alert Data::IaC Alert Detail"
+    ],
+    [
+      "Report Data Layer::IaC Alert Data::IaC Rule Metadata\\n(Id, Name, Description,\\nReference, Severity, Solution, Type)",
+      "Report Data Layer::IaC Alert Data::IaC Alert Detail"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportData\\n(ScanImageCount, MaliciousFileCount,\\nScanSpendTime, ScanStartTime,\\nScanFileCount, ScanImageResult)",
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)",
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)"
+    ],
+    [
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)",
+      "Report Data Layer::Malicious-File Report Data::MaliciousFileInfo\\n(Engine, ImageID, LayerID,\\nRelativePath, FileName, FileSize,\\nFileMd5, FileSha256, FileCreated)"
+    ],
+    [
+      "Scanning & Execution Service Layer::API-003 report event",
+      "Report Data Layer::Report Event Mechanism"
+    ],
+    [
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component",
+      "External Systems & Runtime::Docker Engine\\n(Daemon / CLI)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component",
+      "Scanning & Execution Service Layer::Docker Authorization\\nRouting Component"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Report Data Layer::IaC Alert Data::IaC File-Location Detail\\n(StartLine, EndLine,\\nFilePath, Original)"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Report Data Layer::IaC Alert Data::IaC Rule Metadata\\n(Id, Name, Description,\\nReference, Severity, Solution, Type)"
+    ],
+    [
+      "Scanning & Execution Service Layer::IaC Scanner Service\\n(load policies, run scanner,\\nmerge groups, build alerts,\\npublish report event)",
+      "Scanning & Execution Service Layer::API-003 report event"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::MaliciousFileInfo\\n(Engine, ImageID, LayerID,\\nRelativePath, FileName, FileSize,\\nFileMd5, FileSha256, FileCreated)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportData\\n(ScanImageCount, MaliciousFileCount,\\nScanSpendTime, ScanStartTime,\\nScanFileCount, ScanImageResult)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportImage\\n(ImageName, ImageID,\\nMaliciousFileCount, ScanFileCount,\\nImageCreatedAt, Layers)"
+    ],
+    [
+      "Scanning & Execution Service Layer::Image Scanner Service",
+      "Report Data Layer::Malicious-File Report Data::ReportLayer\\n(ImageID, LayerID,\\nMaliciousFileInfos)"
+    ]
+  ]
+}

@@ -1,0 +1,308 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Communication Layer::Hyper-V Virtual Switch"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Control Layer::Launch Scripts",
+        "Host Control Layer::hAFL2 Controller",
+        "Host Control Layer::pytest Integration"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::hAFL2"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Guest Execution Layer::Child Partition VM",
+        "Guest Execution Layer::Child Partition VM::Child Partition Harness"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Guest Execution Layer::Child Partition VM::harness-driver"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Guest Execution Layer::Root Partition VM"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Guest Execution Layer::Root Partition VM::Crash-Monitoring Workflow"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Communication Layer::Hypercall/IOCTL Translation",
+        "Communication Layer::VMBus/netvsc Channel"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Control Layer::Linux Host System"
+      ],
+      "gt_nodes": [
+        "Global::KVM (L0)"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Communication Layer::Hyper-V Virtual Switch",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Communication Layer::Hypercall/IOCTL Translation",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Communication Layer::VMBus/netvsc Channel",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Execution Layer::Child Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Execution Layer::Child Partition VM::Child Partition Harness",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Guest Execution Layer::Child Partition VM::Windows Offset Config",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Execution Layer::Child Partition VM::harness-driver",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Guest Execution Layer::Child Partition VM::loader.exe",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Execution Layer::Child Partition VM::packet_sender.exe",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Guest Execution Layer::Linux Guest VM",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Execution Layer::Linux Guest VM::Embedded Forkserver",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Execution Layer::Linux Guest VM::initrd",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Execution Layer::Root Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest Execution Layer::Root Partition VM::Crash-Monitoring Workflow",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Control Layer::Launch Scripts",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host Control Layer::Linux Host System",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Control Layer::hAFL2 Controller",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host Control Layer::initrd Builder",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Control Layer::pytest Integration",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::KVM (L0)"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Guest Execution Layer::Child Partition VM",
+        "Guest Execution Layer::Child Partition VM::Child Partition Harness",
+        "Guest Execution Layer::Linux Guest VM::initrd"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Guest Execution Layer::Child Partition VM::harness-driver"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Guest Execution Layer::Root Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Guest Execution Layer::Root Partition VM::Crash-Monitoring Workflow"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Communication Layer::Hyper-V Virtual Switch",
+        "Communication Layer::VMBus/netvsc Channel"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Guest Execution Layer::Linux Guest VM::Embedded Forkserver",
+        "Host Control Layer::Launch Scripts",
+        "Host Control Layer::hAFL2 Controller",
+        "Host Control Layer::pytest Integration"
+      ],
+      "gt_node": "KVM (L0)::hAFL2"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4839,
+      "completion_tokens": 727,
+      "total_tokens": 5566,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Guest Execution Layer::Child Partition VM::Windows Offset Config",
+    "Guest Execution Layer::Child Partition VM::loader.exe",
+    "Guest Execution Layer::Child Partition VM::packet_sender.exe",
+    "Guest Execution Layer::Linux Guest VM",
+    "Guest Execution Layer::Linux Guest VM::Embedded Forkserver",
+    "Guest Execution Layer::Linux Guest VM::initrd",
+    "Host Control Layer::initrd Builder"
+  ],
+  "_provenance": {
+    "fingerprint": "c63ad459c1e0668663b4befb79d74fa9a07e23c57bfc114c40a1c264d269d961",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

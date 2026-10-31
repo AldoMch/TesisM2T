@@ -1,0 +1,111 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam rectangleBorderColor #555555
+skinparam rectangleBackgroundColor #ECECEC
+skinparam nodeBorderColor #555555
+skinparam nodeBackgroundColor #D6E4F0
+skinparam databaseBorderColor #555555
+skinparam databaseBackgroundColor #FFF3CD
+skinparam cloudBorderColor #555555
+skinparam cloudBackgroundColor #E8F5E9
+skinparam arrowColor #333333
+skinparam arrowThickness 1.5
+skinparam legendBorderColor #AAAAAA
+skinparam legendBackgroundColor #FFFFFF
+
+title Core Flight System (cFS) Bundle\nSystem Architecture Diagram
+
+rectangle "Developer / Build User" as DEV #D0E8FF
+rectangle "Functional Tester" as TESTER #D0E8FF
+rectangle "Telemetry / Ground-Test Operator" as OPERATOR #D0E8FF
+rectangle "CI Maintainer / Workflow Operator" as CI_MAINTAINER #D0E8FF
+
+rectangle "cFS Repository Bundle" as REPO_BUNDLE {
+
+    rectangle "Source & Build Assets" as BUILD_ASSETS {
+        rectangle "Makefile.sample" as MAKEFILE_SAMPLE
+        rectangle "sample_defs" as SAMPLE_DEFS
+        rectangle "Git Submodules\n(cFE, OSAL, PSP,\nFramework Apps, Tools)" as SUBMODULES
+    }
+
+    rectangle "Build System" as BUILD_SYSTEM {
+        rectangle "make prep" as MAKE_PREP
+        rectangle "make install" as MAKE_INSTALL
+        rectangle "Build Variants\n(debug / release)" as BUILD_VARIANTS
+    }
+
+    rectangle "cFS Runtime Target" as CFS_RUNTIME {
+        rectangle "core-cpu1\n(Runnable Target Executable)" as CORE_CPU1
+        rectangle "Telemetry Output\n(Command Counter,\nTelemetry Data)" as TELEMETRY_DATA
+        rectangle "Command Receiver\n(Accepts Commands\nfrom cmdUtil)" as CMD_RECEIVER
+    }
+
+    rectangle "Host Utilities" as HOST_UTILS {
+        rectangle "cmdUtil\n(--pktid, --cmdcode,\n--endian, --uint32, ...)" as CMDUTIL
+    }
+
+    rectangle "Related Interfaces & Libraries\n(SIL, ECI, cFS_IO_LIB, cFS_LIB,\nCCDD, Perfutils-java, gen_sch_tbl)" as EXT_LIBS #E8F5E9
+}
+
+rectangle "GitHub Actions CI Platform" as CI_PLATFORM {
+
+    rectangle "Reusable Workflow Layer" as REUSABLE_WF {
+        rectangle "Format Check Workflow\n(push / pull_request / workflow_call)\nRunner: ubuntu-18.04" as FORMAT_WF
+        rectangle "Static Analysis Workflow\n(workflow_call)" as STATIC_WF
+        rectangle "CodeQL Workflow\n(workflow_call)" as CODEQL_WF
+        rectangle "Reuse / License Check Workflow\n(workflow_call)" as REUSE_WF
+    }
+
+    rectangle "cFS Bundle Workflows" as BUNDLE_WF {
+        rectangle "Build & Test Workflow\nRunner: ubuntu-18.04\nVariants: debug / release\nTimeout: 15 min (functional-test job)" as BUILD_TEST_WF
+        rectangle "Changelog Generation Workflow\nRunner: ubuntu-latest\n(Manual Trigger)" as CHANGELOG_WF
+        rectangle "Duplicate Check Workflow\nRunner: ubuntu-latest" as DUP_CHECK_WF
+    }
+
+    database "Changelog Artifact\n(Closed Issues, Breaking Changes,\nEnhancements, Bugs, Deprecated,\nRemoved, Security Fixes)" as CHANGELOG_ARTIFACT #FFF3CD
+}
+
+rectangle "Network Interface\n(Configured IP Address\nincl. 127.0.0.1)" as NET_IF #E8F5E9
+
+DEV --> BUILD_ASSETS : provides / configures
+DEV --> BUILD_SYSTEM : invokes make prep\n& make install
+
+TESTER --> CORE_CPU1 : starts functional\ntest execution
+TESTER --> CMDUTIL : invokes cmdUtil\nwith command flags
+
+OPERATOR --> NET_IF : enters IP address\nfor telemetry enablement
+OPERATOR --> TELEMETRY_DATA : observes telemetry\n(cmd counters, data)
+
+CI_MAINTAINER --> CHANGELOG_WF : manual trigger
+CI_MAINTAINER --> BUNDLE_WF : manages / maintains
+CI_MAINTAINER --> REUSABLE_WF : composes / reuses
+
+BUILD_ASSETS --> BUILD_SYSTEM : Makefile.sample copied\nto Makefile;\nsample_defs copied
+SUBMODULES --> BUILD_SYSTEM : checked out with\ngit submodules
+BUILD_SYSTEM --> CFS_RUNTIME : produces installed\nbuild artifacts
+
+CMDUTIL --> CMD_RECEIVER : sends commands\n(pktid, cmdcode,\nendian, payload)
+CMD_RECEIVER --> TELEMETRY_DATA : increments cmd counters;\ngenerates telemetry
+
+NET_IF --> TELEMETRY_DATA : telemetry connection\nto configured IP
+
+BUNDLE_WF ..> REUSABLE_WF : invokes via\nworkflow_call
+BUILD_TEST_WF --> CORE_CPU1 : starts target for\nfunctional tests
+BUILD_TEST_WF --> CMDUTIL : invokes cmdUtil\nduring functional tests
+CHANGELOG_WF --> CHANGELOG_ARTIFACT : uploads\nchangelog artifact
+FORMAT_WF --> REPO_BUNDLE : checks repository\nformat / style
+
+legend right
+  |= Color |= Description |
+  |<#D0E8FF>| User / Operator classes |
+  |<#ECECEC>| Internal system components |
+  |<#E8F5E9>| External interfaces & libraries |
+  |<#FFF3CD>| Data artifacts / stores |
+  Dashed arrows: indirect / reuse invocation
+  Solid arrows: direct invocation / data flow
+endlegend
+
+@enduml

@@ -1,0 +1,121 @@
+{
+  "candidate": {
+    "sample_id": "s000061_2eb4d99c",
+    "repository_name": "aws-solutions/iot-device-simulator",
+    "image_url": "https://github.com/aws-solutions/iot-device-simulator/blob/main/architecture.png",
+    "source_ref": "6ee7b0261b9ba2a045f533e54be603d3af939e9b",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 186826,
+    "document_count": 38,
+    "document_types": [
+      "code_api_route",
+      "config",
+      "readme",
+      "release_notes",
+      "schema_model",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 31,
+      "user_scenario": 4,
+      "api_io": 185,
+      "deployment": 18,
+      "constraints": 37,
+      "non_functional": 5
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "source/resources/routes/route-b.json",
+      "doc_type": "code_api_route",
+      "section": "functional_requirements",
+      "retrievers": "code|dense|hyde",
+      "score": 0.03443064182194617,
+      "text": "\"start\": [-79.390522, 43.660754], \"end\": [-79.39048, 43.660819], \"km\": 0.004856335522447218 }, { \"stage\": 52, \"start\": [-79.39048, 43.660819], \"end\": [-79.390298, 43.660989], \"km\": 0.02053358504417032 }, { \"stage\": 53, \"start\": [-79.390298, 43.660989], \"end\": [-79.390208, 43.661084], \"km\": 0.010194340607363302 }, { \"stage\": 54, \"start\": [-79.390208, 43.661084], \"end\": [-79.39014, 43.661165], \"km\": 0.007740784721853481 }, { \"stage\": 55, \"start\": [-79.39014, 43.661165], \"end\": [-79.390086, 43.661239], \"km\": 0.006193093441112849 }, { \"stage\": 56, \"start\": [-79.390086, 43.661239], \"end\": [-79.390036, 43.661318], \"km\": 0.005789218112668582 }, { \"stage\": 57, \"start\": [-79.390036, 43.661318], \"e..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "source/custom-resource/test/index.test.ts",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code",
+      "score": 0.028266269249875808,
+      "text": "'latest', invokedFunctionArn: 'arn:of:custom-resource', memoryLimitInMB: 128, awsRequestId: 'mock-request-id', logGroupName: 'mock-log-group', logStreamName: 'mock-stream', identity: undefined, clientContext: undefined, callbackWaitsForEmptyEventLoop: false }; const axiosConfig = { headers: { 'Content-Length': 0, 'Content-Type': '' } }; process.env = { AWS_REGION: 'mock-region', SOLUTION_ID: 'mock-solution-id', SOLUTION_VERSION: 'mock-version', STACK_NAME: 'mock-stack' }; /** * Builds a CloudFormation response body. * @param response The custom resource response * @param reason The reason for failure * @returns The CloudFormation response body */ const buildResponseBody = (event: CustomRe..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "source/infrastructure/lib/api.ts",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05261497299207431,
+      "text": "readonly microservicesLambda: LambdaFunction; /** * Solution config properties. * Logging level, solution ID, version, source code bucket, and source code prefix */ readonly solutionConfig: { sendAnonymousUsage: string; solutionId: string; solutionVersion: string; sourceCodeBucket: IBucket; sourceCodePrefix: string; }; // Solution UUID readonly uuid: string; } /** * @class * IoT Device Simulator Framework API Construct. * It creates an API Gateway REST API and other resources. */ export class ApiConstruct extends Construct { // API endpoint public apiEndpoint: string; // API ID public apiId: string; //microservices lambda public microservicesLambdaFunction: LambdaFunction; constructor(sco..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "source/infrastructure/lib/api.ts",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05178796307828566,
+      "text": "'X-Api-Key' ], allowMethods: [ 'GET', 'POST', 'PUT', 'DELETE', 'OPTIONS' ], statusCode: 200 }, deploy: true, deployOptions: { accessLogDestination: new LogGroupLogDestination(apiLogGroup), accessLogFormat: AccessLogFormat.jsonWithStandardFields(), loggingLevel: MethodLoggingLevel.INFO, stageName: 'prod', tracingEnabled: true }, description: 'IoT Device Simulator Rest API', endpointTypes: [EndpointType.REGIONAL] }); this.apiEndpoint = ; this.apiId = api.restApiId; const requestValidator = new RequestValidator(this, 'ApiRequestValidator', { restApi: api, validateRequestParameters: true, validateRequestBody: true }); addCfnSuppressRules(api.node.findChild('Deployment') as Deployment, [{ id:..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "source/simulator/lib/device/generators/vehicle/dynamics/dynamics-model.js",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05505695315319853,
+      "text": "e = snapshot.routeInfo?.routeName || ; let params = { Bucket: process.env.ROUTE_BUCKET, Key: routeName }; try { let data = await s3.getObject(params).promise(); return { routeName: routeName, odometer: snapshot.odometer || 0, routeStage: snapshot.routeInfo?.routeStage || 0, burndown: !!snapshot.routeInfo?.burndown, burndownCalc: snapshot.routeInfo?.burndownCalc || moment().toISOString(), routeEnded: !!snapshot.routeEnded, route: JSON.parse(data.Body.toString('utf-8')), randomTriggers: snapshot.routeInfo?.randomTriggers }; } catch (err) { throw err; } } /** * Start the phsyics loop * Calculates simulated vehicle data every 0.5ms */ startPhysicsLoop() { let _this = this; this.pollerInterval..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "source/simulator/lib/device/generators/vehicle/dynamics/dynamics-model.js",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05408802865408459,
+      "text": "// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved. // SPDX-License-Identifier: Apache-2.0 /** * @author Solution Builders */ 'use strict'; const AccelerationCalc = require('./acceleration-calc.js'); const SpeedCalc = require('./speed-calc.js'); const GearCalc = require('./gear-calc.js'); const GearIntCalc = require('./gear-int-calc.js'); const TorqueCalc = require('./torque-calc.js'); const EngineSpeedCalc = require('./engine-speed-calc.js'); const FuelConsumedCalc = require('./fuel-consumed-calc.js'); const OdometerCalc = require('./odometer-calc.js'); const FuelLevelCalc = require('./fuel-level-calc.js'); const OilTempCalc = require('./oil-temp-calc.js'); const RouteC..."
+    }
+  ]
+}

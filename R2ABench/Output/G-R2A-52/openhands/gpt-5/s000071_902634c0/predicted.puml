@@ -1,0 +1,116 @@
+@startuml
+' ClearML Agent Kubernetes Integration - Architecture Overview
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+cloud "ClearML Server" as ClearML {
+  package "Backend Services" {
+    component "API Gateway" as ApiGw
+    component "Execution Queue" as ExecQueue <<Queue>>
+    component "Events Service v2.5" as Events
+    component "Models Service v2.4" as Models
+  }
+}
+
+node "Kubernetes Cluster" as K8s {
+  node "Service Pod Mode" as ServicePod {
+    artifact "clearml-agent Docker Image" as AgentImage
+    node "Pod: clearml-agent" as AgentPod {
+      component "ClearML Agent" as Agent
+      component "Backend Client" as Client
+      component "Worker Telemetry" as Telemetry
+      component "Docker Socket (/var/run/docker.sock)" as DockerSock <<Socket>>
+      folder "Sibling Containers" as Siblings
+    }
+  }
+
+  node "Kubernetes Glue Mode" as GlueMode {
+    component "K8s Glue Adapter" as Glue
+    artifact "K8s Job YAML Template" as JobTemplate
+    component "Kubernetes Job(s)" as Jobs
+  }
+}
+
+' Connections: Agent to Docker sock and siblings
+Agent -[#gray]-> DockerSock : manage sibling\ncontainers
+DockerSock -[#gray]-> Siblings : mapped socket\naccess
+
+' Agent backend interactions
+Client --> ApiGw : create/get/get_by_id/\nget_all/get_all_ex
+ApiGw --> Events
+ApiGw --> Models
+' Also ExecQueue is part of server; Glue pulls jobs
+Glue --> ApiGw : poll execution queue\n(list/pull)
+ApiGw --> ExecQueue
+
+' Jobs creation
+Glue --> Jobs : create Job from YAML\ntemplate
+Glue ..> JobTemplate : read template
+
+' Telemetry
+Telemetry --> ApiGw : status report\n(periodic)
+Telemetry --> ApiGw : connectivity ping\n(periodic)
+
+' Internal relations
+Agent --> Client
+Agent --> Telemetry
+
+' Defaults and configuration notes
+note right of Telemetry
+- Status report period: 2s (default)
+- Connectivity ping: 30s (default)
+- report_global_mem_used:
+  off => process/subprocess scope
+  on  => machine-wide scope
+end note
+
+note right of Agent
+Default logging:
+log_stdout = true
+(collect stdout/stderr)
+end note
+
+note bottom of AgentPod
+Constraints:
+- Uses clearml-agent Docker image
+- Requires mapped Docker socket
+  for sibling-container management
+(end user may replace with podman)
+end note
+
+' Data contracts notes near services
+note right of Events
+Events Histogram (v2.5):
+request: { task, samples, key }
+key ∈ { iter | iso_time | timestamp }
+response: iterable scalars histogram
+end note
+
+note right of Models
+Models (v2.4):
+- DeleteRequest { model, force }
+- Model {
+    id?, name?, user?, company?,
+    created?, task?
+  } (nullable unless required elsewhere)
+end note
+
+' Queue and inputs
+note top of Glue
+Inputs:
+- ClearML execution-queue jobs
+- K8s YAML template
+end note
+
+legend right
+FR-001: Glue prepares K8s Job from template
+FR-002: In-pod env install/start/monitor experiment
+FR-003: Long-lasting service pod w/ sibling containers
+FR-004/5: Telemetry report & ping periods
+FR-006: Default stdout/stderr logging
+FR-007: Backend client actions via API
+NFR-001..003: Defaults, mem scope, versioned services
+end legend
+
+@enduml

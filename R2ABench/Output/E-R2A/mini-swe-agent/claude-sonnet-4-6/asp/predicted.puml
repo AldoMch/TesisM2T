@@ -1,0 +1,86 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+title Zhiyan Tongjie Academic Achievement Sharing Platform
+
+package "Presentation Layer" {
+  [Web Browser Client] as Browser
+}
+
+package "Application Layer" {
+  package "Business Functions" {
+    [Account and Identity Service] as AccountSvc
+    [Literature Search Service] as SearchSvc
+    [Achievement Management Service] as AchievementSvc
+    [Institution Management Service] as InstitutionSvc
+    [Social and Communication Service] as SocialSvc
+    [Academic Analysis Service] as AnalysisSvc
+  }
+  package "Common Services" {
+    [Semantic Processing Service] as SemanticSvc
+    [User Profile and Recommendation Service] as ProfileSvc
+    [Authorization and Access Control Service] as AuthzSvc
+    [Misconduct Detection Service] as MisconductSvc
+  }
+}
+
+package "Infrastructure Layer" {
+  [Data Acquisition Service] as AcquisitionSvc
+  [Data Normalization and Sync Service] as NormSvc
+  [Encrypted Messaging Transport] as MsgTransport
+  package "Persistence" {
+    database "Relational DB" as RelDB
+    database "Search Index" as SearchIdx
+    database "File and Object Store" as FileStore
+    database "Backup Store" as BackupStore
+  }
+}
+
+package "External Systems" {
+  [Public Academic Databases and APIs] as ExtAcademic
+  [Identity Verification Service] as ExtIdentity
+}
+
+Browser --> AccountSvc
+Browser --> SearchSvc
+Browser --> AchievementSvc
+Browser --> InstitutionSvc
+Browser --> SocialSvc
+Browser --> AnalysisSvc
+
+AccountSvc --> AuthzSvc
+AccountSvc --> SemanticSvc
+AccountSvc --> ExtIdentity
+SearchSvc --> SemanticSvc
+SearchSvc --> ProfileSvc
+SearchSvc --> SearchIdx
+AchievementSvc --> AuthzSvc
+AchievementSvc --> MisconductSvc
+InstitutionSvc --> AuthzSvc
+SocialSvc --> AuthzSvc
+SocialSvc --> MsgTransport
+AnalysisSvc --> AuthzSvc
+AnalysisSvc --> ProfileSvc
+
+AccountSvc --> RelDB
+AchievementSvc --> RelDB
+AchievementSvc --> FileStore
+InstitutionSvc --> RelDB
+SocialSvc --> RelDB
+SocialSvc --> FileStore
+AnalysisSvc --> RelDB
+ProfileSvc --> RelDB
+AuthzSvc --> RelDB
+MisconductSvc --> RelDB
+
+AcquisitionSvc --> ExtAcademic
+AcquisitionSvc --> NormSvc
+NormSvc --> RelDB
+NormSvc --> SearchIdx
+
+RelDB --> BackupStore
+FileStore --> BackupStore
+
+@enduml

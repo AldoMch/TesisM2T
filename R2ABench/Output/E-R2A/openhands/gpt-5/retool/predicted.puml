@@ -1,0 +1,56 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+
+title ReTool System Architecture
+
+' Deployment nodes
+node "Client (Web Browser)\nVue.js SPA" as client
+
+node "Local Computer\n(Frontend/Backend Services)" as local {
+  [API Gateway] as gateway <<gateway>>
+  package "Microservices" {
+    [User Management Service] as userSvc
+    [Project Management Service] as projSvc
+    [Requirements Management Service] as reqSvc
+  }
+}
+
+node "Algorithm Server\n(High-Performance)" as algoNode {
+  [Algorithm Service\n(NLP • PyTorch • Word2vec)] as algoSvc
+}
+
+database "MongoDB" as db
+
+' Connections
+client --> gateway : Web UI requests
+gateway --> userSvc
+gateway --> projSvc
+gateway --> reqSvc
+
+reqSvc --> algoSvc : Analysis jobs\n(itemization, structuring,\ncommon, conflict, association)
+
+userSvc --> db : CRUD
+projSvc --> db : CRUD
+reqSvc --> db : CRUD
+
+' Notes for key constraints and assumptions
+note right of gateway
+- Enforces access control
+- Routes to microservices
+- Must operate on local computer (C-006)
+end note
+
+note right of algoSvc
+Runs on separate server due to performance (C-007, AD-003)
+end note
+
+note bottom of db
+MongoDB for create, read, update, delete (AD-004, C-014)
+end note
+
+note top of client
+Front-end/back-end separation (C-002)
+end note
+
+@enduml

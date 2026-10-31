@@ -1,0 +1,245 @@
+# Human SRS Review Sheet
+
+## Metadata
+
+- Sample directory: `s000028_3e80e738`
+- Generated SRS: `final_srs.md`
+- Evidence pack: `evidence_pack.json`
+- Review model: `claude-opus-4-8`
+- Generated at: `2026-06-05T15:41:17.348200Z`
+- Raw model response: `model_srs_review_raw.md`
+- Parse status: `parsed`
+
+## Overall Model Opinion
+
+- Recommendation: `revise`
+- Confidence: `0.72`
+- Rationale: The SRS is well-grounded in evidence with strong traceability, but several requirements overstate confidence relative to truncated evidence (e.g., token validity units, callback URL value, role scope) and FR-009 mislabels a 'false' response parameter as an available header. A few targeted revisions are needed.
+
+## Overall Human Decision
+
+- [ ] Accept
+- [ ] Reject
+- [ ] Partial accept
+
+Reason:
+> 
+
+## Positive Observations
+
+- Strong, mostly accurate traceability: each FR/NFR cites specific evidence IDs that match the cited template artifacts.
+- Correctly captures explicit, verifiable network facts (PrivateDnsEnabled=true, SQS service name, VPC CIDR ingress) from E003.
+- Appropriately uses 'Inspection' verification for declarative CloudFormation templates and marks NFR-004 as 'Inferred' rather than overstating it.
+- Cognito specifics (AllowUnauthenticatedIdentities, custom:Role/email write attributes, ClientId/ProviderName binding) are faithfully drawn from E001.
+
+## Candidate Issues
+
+### R001: contradiction
+
+- Severity: `major`
+- Suggested action: `needs_human_check`
+- SRS location: FR-009 / Communication interfaces / Data exchange formats
+- Evidence IDs: E004
+
+**Claim or gap**
+
+The SRS states the API 'shall include' / 'shall return' the `x-pagopa-pn-cx-role` header, but the evidence shows `method.response.header.x-pagopa-pn-cx-role: false`, which in API Gateway means the header is declared but not required/mapped (the boolean indicates whether the header is required, and absent integration mapping means it is not actually returned by default).
+
+**Model opinion**
+
+The evidence (E004) only shows a method response parameter declaration with value `false`. This declares the header as part of the method response contract but does not guarantee the header is populated/returned at runtime. The SRS language 'API responses shall include' overstates this. FR-009's own output wording ('available in method response definition') is more accurate than the Communication-interfaces wording, creating internal inconsistency.
+
+**Recommended human check**
+
+Inspect account-B-api-gateway.yaml to confirm whether an integration response actually maps/sets the `x-pagopa-pn-cx-role` header, and what the `false` boolean denotes (required vs. optional).
+
+**Model proposed SRS change**
+
+Revise Communication interfaces bullet to: 'The `WhoAmI` method response definition shall declare the `x-pagopa-pn-cx-role` response header (declared as optional, value `false`). Source: E004.' Align Data exchange formats wording accordingly.
+
+Optional human revised fix:
+> 
+
+**Human decision**
+
+- [ ] Accept
+- [ ] Reject
+- [x] Partial accept (`PARTIAL_ACCEPT`: mixed claims; some are valid and some are invalid)
+
+Optional human note:
+> issue成立，证据显示不是必然返回headers，建议采纳修改意见。
+
+### R002: unsupported_claim
+
+- Severity: `minor`
+- Suggested action: `probably_ignore`
+- SRS location: FR-008 / Data Requirements (Deployment outputs)
+- Evidence IDs: E004
+
+**Claim or gap**
+
+The SRS asserts a `CallbackURL` output is published as 'the API Gateway endpoint', but the evidence truncates the actual `Value:` expression, so the precise content/format of the URL is unknown.
+
+**Model opinion**
+
+E004 shows `Outputs: CallbackURL: Description: "API Gateway endpoint" Value: !Sub "` but the value is cut off. The existence of the output is supported; the exact URL structure is not. FR-008 stays safe by only claiming an output exists, which is fine, but reviewers should confirm no over-specification creeps in.
+
+**Recommended human check**
+
+Confirm the full `!Sub` expression for CallbackURL to verify it is indeed the gateway invoke URL.
+
+**Model proposed SRS change**
+
+No change required if FR-008 remains limited to 'publishes a CallbackURL output described as the API Gateway endpoint.' Avoid specifying URL format unless verified.
+
+Optional human revised fix:
+> 
+
+**Human decision**
+
+- [ ] Accept
+- [x] Reject
+- [ ] Partial accept (`PARTIAL_ACCEPT`: mixed claims; some are valid and some are invalid)
+
+Optional human note:
+> 证据支持`CallbackURL` output 作为 “the API Gateway endpoint” 发布，且SRS没有规定URL的精确内容和格式，属于过度推断，issue不成立。
+
+### R003: non_verifiable
+
+- Severity: `minor`
+- Suggested action: `needs_human_check`
+- SRS location: NFR-004 / FR-005
+- Evidence IDs: E001
+
+**Claim or gap**
+
+NFR-004 ('Unauthorized access ... shall be limited in scope as described by the template') is not independently verifiable because the actual IAM policy statements are truncated in E001.
+
+**Model opinion**
+
+E001 shows the role is created with an AssumeRolePolicyDocument but the actual permission statements ('Very limited access') are truncated. The 'limited scope' is asserted by the template comment, not by an observable policy in evidence. NFR-004 is correctly marked 'Inferred', which is good, but its acceptance basis ('match the evidenced configuration intent') is not a verifiable test.
+
+**Recommended human check**
+
+Review the full IAM role policy in account-A-cognito.yaml to identify concrete permitted actions/resources that constitute 'limited access'.
+
+**Model proposed SRS change**
+
+Revise NFR-004 to: 'The unauthorized-access IAM role shall be assumable only by identities from the created identity pool (web-identity federation). Specific allowed actions to be enumerated after policy verification.' Update acceptance basis to cite the AssumeRolePolicyDocument condition.
+
+Optional human revised fix:
+> 
+
+**Human decision**
+
+- [x] Accept
+- [ ] Reject
+- [ ] Partial accept (`PARTIAL_ACCEPT`: mixed claims; some are valid and some are invalid)
+
+Optional human note:
+> issue成立，证据没有显示可验证的permission scope，建议采纳修改建议。
+
+### R004: scope
+
+- Severity: `minor`
+- Suggested action: `needs_human_check`
+- SRS location: C-005 / FR list / Section 1 scope
+- Evidence IDs: E005
+
+**Claim or gap**
+
+The installation README (E005) references many additional services and steps (data-vault stacks, SPID hub, DNS delegation, service-linked roles, multiple profiles) that are mentioned only abstractly; the SRS scope may understate the breadth of installation orchestration this repo performs.
+
+**Model opinion**
+
+E005 reveals substantial deployment orchestration (multiple AWS profiles, service-linked role creation for ECS, public DNS/certificate setup, data-vault CFN stacks). The SRS reduces this to C-005 and one data row. This is conservatively acceptable but may understate repository scope. Worth a human decision on whether to add requirements or explicitly bound scope.
+
+**Recommended human check**
+
+Review installation/README.md fully to decide whether additional installation requirements (DNS, certificates, service-linked roles, multi-profile orchestration) belong in scope.
+
+**Model proposed SRS change**
+
+Add to Section 1 Product scope a bounding note: 'Installation orchestration beyond the evidenced Cognito/API/VPC artifacts (e.g., DNS/certificate setup, data-vault stacks, service-linked roles) is referenced but not fully specified in this SRS.' Optionally add FR for service-linked role creation if confirmed in scope.
+
+Optional human revised fix:
+> 当前证据不足以支撑写成完整FR，应当只补充 scope limitation，说明referenced but not fully specified。
+
+**Human decision**
+
+- [x] Accept
+- [ ] Reject
+- [ ] Partial accept (`PARTIAL_ACCEPT`: mixed claims; some are valid and some are invalid)
+
+Optional human note:
+> issue成立，确实E005 支持“还有额外安装编排被提及”。
+
+### R005: architecture_detail
+
+- Severity: `minor`
+- Suggested action: `needs_human_check`
+- SRS location: Section 2 / overall architecture
+- Evidence IDs: E001, E004
+
+**Claim or gap**
+
+The ground-truth architecture diagram (architecture-cognito.png) describing the Cognito REST-API auth flow is not referenced, and the cross-account split (account-A-cognito vs account-B-api-gateway) is not captured in the SRS.
+
+**Model opinion**
+
+Evidence file names indicate a two-account architecture (account-A for Cognito, account-B for API Gateway), which is an important architectural detail absent from the SRS. The diagram could confirm the authentication/role-verification flow. This should be checked against the ground-truth image.
+
+**Recommended human check**
+
+Open architecture-cognito.png and confirm the cross-account topology (Account A Cognito provider, Account B API Gateway) and the role-header verification flow; add to Product perspective.
+
+**Model proposed SRS change**
+
+Add to Section 2 Product perspective: 'The solution spans two AWS accounts: Account A hosts Cognito user/identity pools (account-A-cognito.yaml) and Account B hosts the API Gateway (account-B-api-gateway.yaml), per the rest-api-cognito architecture. Source: E001, E004.'
+
+Optional human revised fix:
+> 
+
+**Human decision**
+
+- [ ] Accept
+- [ ] Reject
+- [x] Partial accept (`PARTIAL_ACCEPT`: mixed claims; some are valid and some are invalid)
+
+Optional human note:
+> 部分成立。SRS 未捕获 cross-account split（`account-A-cognito` vs `account-B-api-gateway`），但没有证据表明diagram描述了Cognito REST-API auth flow。建议采纳修改意见。
+
+### R006: traceability
+
+- Severity: `minor`
+- Suggested action: `probably_ignore`
+- SRS location: Traceability Matrix FR-002 / NFR-003 confidence ratings
+- Evidence IDs: E002
+
+**Claim or gap**
+
+FR-002/NFR-003 are rated 'High'/'Explicit' confidence, but the AllowedValues enumeration is only fully shown for AccessTokenValidityUnits; the IdToken/RefreshToken unit parameters are truncated in evidence (E002).
+
+**Model opinion**
+
+E002 explicitly shows AllowedValues [days, hours, minutes, seconds] for AccessTokenValidityUnits and describes IdTokenValidityUnits similarly, but the AllowedValues block for Id/Refresh units is truncated. The requirement generalizes the enumeration to all three parameters. Likely correct but evidence is partial for two of three parameters.
+
+**Recommended human check**
+
+Confirm AllowedValues are identically defined for IdTokenValidityUnits and RefreshTokenValidityUnits in account-A-cognito.yaml.
+
+**Model proposed SRS change**
+
+If unconfirmed, narrow FR-002 to 'at least AccessTokenValidityUnits' or add a note that Id/Refresh enumeration is assumed identical pending verification.
+
+Optional human revised fix:
+> 建议将要求拆成“AccessTokenValidityUnits 已显式证实；IdToken/RefreshToken units 的 AllowedValues 需完整模板确认”，或把整体置信度降为 Medium。
+
+**Human decision**
+
+- [ ] Accept
+- [x] Reject
+- [ ] Partial accept (`PARTIAL_ACCEPT`: mixed claims; some are valid and some are invalid)
+
+Optional human note:
+> issue成立，Access token 的枚举被完整证实；Id/Refresh token 的同等枚举在当前 chunk 中被截断。

@@ -1,0 +1,167 @@
+@startuml
+' QAPM Android Component - System Architecture
+' Derived from checked SRS subset: background scheduling, upload processing,
+' and Apache HttpClient instrumentation.
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam roundcorner 6
+skinparam linetype ortho
+
+title QAPM Android Component - Architecture (checked SRS scope)
+
+' ---------------------------------------------------------------------------
+' External actors and environment
+' ---------------------------------------------------------------------------
+actor "Android Application\nIntegrator" as AppIntegrator
+actor "Network Instrumentation\nIntegrator" as NetIntegrator
+actor "QAPM Maintainer /\nTest Engineer" as Maintainer
+
+package "Android Runtime Environment" as AndroidEnv <<Environment>> {
+  [Handler / HandlerThread / Looper] as AndroidScheduling <<API>>
+  [Android Context] as AndroidContext <<API>>
+  [Network Connectivity State] as NetworkState <<API>>
+}
+
+package "Apache HttpClient Environment" as ApacheEnv <<Environment>> {
+  [ResponseHandler / HttpResponse] as ApacheHandler <<API>>
+  [HttpEntity] as ApacheEntity <<API>>
+}
+
+cloud "Remote Reporting Endpoint" as RemoteEndpoint <<Out of Scope>>
+
+' ---------------------------------------------------------------------------
+' QAPM SDK boundary
+' ---------------------------------------------------------------------------
+package "QAPM SDK (checked component scope)" as QAPMSDK {
+
+  ' --- Subsystem 1: background work scheduling ---
+  package "Background Work Scheduling" as Scheduling <<Subsystem>> {
+    [QAPM Handler Thread Component] as HandlerThreadComponent
+    [Default Background Handler] as DefaultBgHandler
+    [Main-Thread Handler] as MainHandler
+    [Work Handler Manager] as WorkHandlerManager
+    [Background Work Handler] as WorkHandler
+  }
+
+  ' --- Subsystem 2: upload processing ---
+  package "Upload Processing" as Upload <<Subsystem>> {
+    [Upload Processing Controller] as UploadController
+    [Network Connectivity Gate] as NetworkGate
+    [Forced-Send Storage Pop] as ForcedSendPop
+    [Upload Directory Scanner] as DirScanner
+    [Upload File Reader\n(bParam)] as FileReader
+    [Context-Derived Parameter Builder\n(cParam)] as ContextParamBuilder
+    [Upload Sender Gateway] as SenderGateway
+    [Upload Callback Handler\n(success cleanup / failure log)] as CallbackHandler
+    [Upload File Storage] as UploadStorage <<Data Store>>
+    [Pending Stored Data] as StoredData <<Data Store>>
+  }
+
+  ' --- Subsystem 3: HTTP instrumentation ---
+  package "Apache HttpClient Instrumentation" as HTTPInstrumentation <<Subsystem>> {
+    [Transaction-Aware Response Handler\n(ResponseHandler wrapper)] as TxResponseHandler
+    [Transaction State] as TransactionState <<Data>>
+    [Content-Buffering Response Entity\n(HttpEntity wrapper)] as BufferingEntity
+    [Counting InputStream] as CountingInputStream <<Data>>
+  }
+
+  ' --- Shared configuration boundary ---
+  package "QAPM Configuration Management" as ConfigMgmt <<Subsystem>> {
+    [Configured Data Sender] as ConfiguredSender
+    [QAPM Configuration Manager] as ConfigManager
+  }
+}
+
+' ---------------------------------------------------------------------------
+' Relationships: integration / usage
+' ---------------------------------------------------------------------------
+AppIntegrator --> HandlerThreadComponent : uses
+AppIntegrator --> UploadController : requests upload
+AppIntegrator --> WorkHandlerManager : integrates SDK
+NetIntegrator --> TxResponseHandler : wraps ResponseHandler
+NetIntegrator --> BufferingEntity : constructs entity
+Maintainer --> HandlerThreadComponent : maintains / verifies
+Maintainer --> UploadController : maintains / verifies
+
+' --- Scheduling wiring ---
+HandlerThreadComponent --> DefaultBgHandler : provides
+HandlerThreadComponent --> MainHandler : provides
+HandlerThreadComponent --> AndroidScheduling : uses
+DefaultBgHandler --> AndroidScheduling : bound to background looper
+MainHandler --> AndroidScheduling : bound to main looper
+WorkHandlerManager --> WorkHandler : creates
+WorkHandler --> AndroidScheduling : bound to HandlerThread looper
+WorkHandlerManager --> HandlerThreadComponent : uses
+AppIntegrator --> WorkHandlerManager : posts runnable / upload work
+UploadController --> WorkHandlerManager : schedules on
+WorkHandler --> UploadController : dispatches asynchronously
+
+' --- Upload processing flow ---
+UploadController --> NetworkGate : checks first
+NetworkGate --> NetworkState : queries connectivity
+NetworkGate --> ForcedSendPop : proceeds when connected
+ForcedSendPop --> StoredData : pops pending data\nbefore scanning (forced send)
+ForcedSendPop --> DirScanner : continue
+DirScanner --> UploadStorage : obtains upload directory
+UploadStorage --> DirScanner : matching upload filenames
+DirScanner --> FileReader : per upload file
+FileReader --> UploadStorage : reads file content
+FileReader --> ContextParamBuilder : bParam
+ContextParamBuilder --> AndroidContext : derives cParam
+FileReader --> SenderGateway : bParam
+ContextParamBuilder --> SenderGateway : cParam
+SenderGateway --> ConfigManager : obtains configured sender
+ConfigManager --> ConfiguredSender : sender
+SenderGateway --> ConfiguredSender : submits bParam + cParam pair
+ConfiguredSender --> CallbackHandler : success / failure callback
+CallbackHandler --> UploadStorage : deletes file on success
+CallbackHandler --> CallbackHandler : logs failure on send failure
+UploadController --> AndroidContext : uses Context
+
+' --- HTTP instrumentation wiring ---
+TxResponseHandler --> ApacheHandler : wraps and delegates
+TxResponseHandler --> TransactionState : inspects / instruments
+TxResponseHandler --> ApacheHandler : handles HttpResponse
+BufferingEntity --> ApacheEntity : wraps non-null entity
+BufferingEntity --> CountingInputStream : getContent() reuses/caches
+CountingInputStream --> ApacheEntity : reads underlying content
+ApacheEntity --> BufferingEntity : writeTo(OutputStream) delegates
+BufferingEntity --> BufferingEntity : null entity raises\nIllegalArgumentException
+
+' --- Out of scope boundary ---
+ConfiguredSender ..> RemoteEndpoint : remote payload schema\n(not specified)
+ConfigManager ..> RemoteEndpoint : full collection/reporting\npipeline (out of scope)
+
+' ---------------------------------------------------------------------------
+' Notes capturing key constraints and requirements
+' ---------------------------------------------------------------------------
+note right of Scheduling
+  FR-001 / FR-002 / FR-010
+  Default background HandlerThread + main-thread
+  handler; work posted asynchronously, never inline.
+  DR-001 / DR-002 / NFR-001
+end note
+
+note bottom of Upload
+  FR-003..FR-007, DR-003..DR-008, NFR-002, NFR-005
+  Network gate -> optional forced-send storage pop ->
+  directory scan -> read bParam -> derive cParam ->
+  sender submit -> cleanup on success / log on failure.
+end note
+
+note bottom of HTTPInstrumentation
+  FR-008 / FR-009, DR-009..DR-011, NFR-003
+  Transaction-aware ResponseHandler delegation and
+  content-buffering HttpEntity with counting stream.
+end note
+
+note top of QAPMSDK
+  Constraints: C-001 Android platform APIs,
+  C-002 Apache HttpClient abstractions,
+  C-003 network + upload directory availability,
+  C-004 full APM pipeline outside this SRS.
+end note
+
+@enduml

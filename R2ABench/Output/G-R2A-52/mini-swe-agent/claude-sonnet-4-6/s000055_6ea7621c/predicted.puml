@@ -1,0 +1,88 @@
+@startuml
+title Nobel Prize Laureates Autocomplete Web Application - Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam rectangle {
+  BackgroundColor #EEF2FF
+  BorderColor #6366F1
+}
+
+' External Systems
+node "Heroku Deployment Platform" as heroku #LightYellow {
+  node "Node.js Server Runtime" as nodejs {
+
+    package "Frontend Layer" as frontend {
+      component [HTML/CSS/JS Client\n(Browser)] as browser
+    }
+
+    package "Routing Layer" as routing {
+      component [HTTP Router] as router
+    }
+
+    package "Handler Layer" as handlers {
+      component [Home Page Handler] as homeHandler
+      component [Static File Handler] as staticHandler
+      component [Not-Found Handler] as notFoundHandler
+    }
+
+    package "Search/Autocomplete Layer" as search {
+      component [Search-Hint / Autocomplete Module] as autocomplete
+      component [Value Extraction Module] as valueExtractor
+    }
+
+    package "Data Access Layer" as data {
+      database [Local Laureate JSON Data] as laureateData
+    }
+
+    package "Static Assets" as assets {
+      folder [Public Asset Directory\n(HTML, CSS, JS, JPG, ICO)] as publicDir
+    }
+
+  }
+}
+
+' External Client
+actor "End User" as user
+
+' Connections
+user --> browser : "types search input"
+browser --> router : "HTTP Request (GET /,\n/search, /static)"
+
+router --> homeHandler : "GET /"
+router --> autocomplete : "URL contains 'search'"
+router --> staticHandler : "other static requests"
+router --> notFoundHandler : "unmatched / error"
+
+homeHandler --> publicDir : "reads home page HTML"
+staticHandler --> publicDir : "reads static files"
+notFoundHandler --> browser : "HTTP 404 HTML response"
+
+autocomplete --> valueExtractor : "extract laureate names"
+valueExtractor --> laureateData : "reads JSON data"
+autocomplete --> browser : "returns array of\nmatching laureate names\n(max 10)"
+
+homeHandler --> browser : "HTTP 200 HTML response"
+staticHandler --> browser : "HTTP 200 static asset\n(with Content-Type header)"
+
+note right of router
+  Routing Rules:
+  - "/" → Home Handler
+  - URL contains "search" → Autocomplete
+  - Other URLs → Static Handler
+  - Error/missing → Not-Found Handler
+end note
+
+note right of autocomplete
+  Algorithm:
+  - Prefix match on search string
+  - Results limited to max 10
+end note
+
+note right of laureateData
+  Local JSON file:
+  - Nobel Prize laureate records
+  - Fields: firstname, etc.
+end note
+
+@enduml

@@ -1,0 +1,60 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #6A3DCC
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #4C9A2A
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #6A3DCC
+    BorderThickness 1
+}
+
+rectangle "runner" as Runner
+
+rectangle "plugin" as PluginImageScan
+rectangle "plugin" as PluginOtherScan
+
+package "Scan Targets" as ScanTargets {
+    rectangle "image" as ImageTarget
+    rectangle "container" as ContainerTarget
+    rectangle "cluster" as ClusterTarget
+    rectangle "iac" as IacTarget
+}
+
+package "SDK" as Sdk {
+    rectangle "interact system" as InteractSystem
+    rectangle "plugin system" as PluginSystem
+}
+
+package "Infrastructure and Input Backends" as Backends {
+    rectangle "docker" as Docker
+    rectangle "containerd" as Containerd
+    rectangle "kubernetes" as Kubernetes
+    rectangle "dockerfile" as Dockerfile
+    rectangle "tarball" as Tarball
+}
+
+Runner --> PluginImageScan : launch scan plugin
+Runner --> PluginOtherScan : launch scan plugin
+PluginImageScan --> ImageTarget : scan
+PluginOtherScan --> ContainerTarget : scan
+PluginOtherScan --> ClusterTarget : scan
+PluginOtherScan --> IacTarget : scan
+Runner <--> Sdk : runner integration
+PluginImageScan <--> Sdk : SDK API
+PluginOtherScan <--> Sdk : SDK API
+Sdk --> Docker : interact
+Sdk --> Containerd : interact
+Sdk --> Kubernetes : interact
+Sdk --> Dockerfile : parse
+Sdk --> Tarball : inspect
+InteractSystem --> PluginSystem : tool integration
+@enduml

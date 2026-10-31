@@ -1,0 +1,105 @@
+@startuml
+
+node "Front-end (Angular ClientApp)" {
+  component "ClientApp Shell"
+  component "Angular Router"
+  component "Auth/Role Route Guards"
+  component "Redirect Guard"
+  component "HTTP Interceptor"
+  component "Watchdog Timer"
+  component "Controlled-list Loader"
+  component "Notification Queue"
+  component "Notifier Component"
+  component "Module Import Diagnostic"
+  component "Cookie Service"
+
+  package "Service Wrappers" {
+    component "Evacuee Service Wrapper"
+    component "Incident-Task Service Wrapper"
+    component "Organization Service Wrapper"
+    component "Referral Service Wrapper"
+    component "Registration Service Wrapper"
+    component "PDF Collection Capability"
+  }
+}
+
+node "Client State (NgRx)" {
+  component "NgRx Store"
+}
+
+node "HTTP API/Server (.NET Core WebAPI & Controllers)" {
+  component "WebAPI Controllers"
+  component "Development Back Door"
+}
+
+node "Domain Services (C# domain classes/services)" {
+  component "Domain Services"
+}
+
+node "Data Access (Entity Framework/DbContext)" {
+  component "Entity Framework DbContext"
+}
+
+node "Database (MS SQL)" {
+  database "MS SQL Database"
+  component "Persistent Database Entities"
+  component "Volunteer Deactivation SQL Script"
+}
+
+package "Security Context (SiteMinder-aware authentication)" {
+  component "SiteMinder Integration"
+  cloud "SiteMinder"
+}
+
+package "Development Utilities" {
+  component "Proxy/Token Config (Front-end Dev)"
+}
+
+interface "HTTPS/JSON API"
+
+' Front-end internal flows
+"ClientApp Shell" --> "Angular Router"
+"Angular Router" --> "Auth/Role Route Guards"
+"Angular Router" --> "Redirect Guard"
+"Auth/Role Route Guards" --> "Cookie Service"
+"HTTP Interceptor" --> "Watchdog Timer"
+"HTTP Interceptor" --> "Auth/Role Route Guards"
+"ClientApp Shell" --> "Controlled-list Loader"
+"Notification Queue" --> "Notifier Component"
+"Module Import Diagnostic" --> "ClientApp Shell"
+
+' Client state
+"Controlled-list Loader" --> "NgRx Store"
+
+' Service wrappers and HTTP path
+"Evacuee Service Wrapper" --> "HTTP Interceptor"
+"Incident-Task Service Wrapper" --> "HTTP Interceptor"
+"Organization Service Wrapper" --> "HTTP Interceptor"
+"Referral Service Wrapper" --> "HTTP Interceptor"
+"Registration Service Wrapper" --> "HTTP Interceptor"
+"Registration Service Wrapper" --> "PDF Collection Capability"
+
+"HTTP Interceptor" --> "HTTPS/JSON API"
+"HTTPS/JSON API" --> "WebAPI Controllers"
+"HTTPS/JSON API" --> "Development Back Door"
+
+' Backend flows
+"WebAPI Controllers" --> "Domain Services"
+"Development Back Door" --> "Domain Services"
+"Domain Services" --> "Entity Framework DbContext"
+"Entity Framework DbContext" --> "MS SQL Database"
+
+' Database maintenance
+"Volunteer Deactivation SQL Script" --> "MS SQL Database"
+
+' Security context usage
+"WebAPI Controllers" --> "SiteMinder Integration"
+"SiteMinder Integration" --> "SiteMinder"
+
+' Development utilities and back door exposure
+"Proxy/Token Config (Front-end Dev)" --> "ClientApp Shell"
+
+' Notification producers
+"ClientApp Shell" --> "Notification Queue"
+
+@enduml

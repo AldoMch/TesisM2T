@@ -1,0 +1,187 @@
+@startuml
+title EasyLaTex - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam component {
+  BackgroundColor #FDFDFD
+  BorderColor #4A6785
+}
+skinparam database {
+  BackgroundColor #F4F7FB
+  BorderColor #4A6785
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #2F4F6F
+}
+skinparam note {
+  BackgroundColor #FFFBE6
+  BorderColor #D6B656
+}
+
+' =========================================================
+' Actors
+' =========================================================
+actor "General / Registered User" as User
+actor "Project Collaborator\n/ Group Owner" as Collab
+
+' =========================================================
+' Client Tier
+' =========================================================
+package "Client Tier (WebSocket-capable Browser)" as ClientTier {
+  component "Web UI (Browser SPA)\nChrome / Firefox / Safari / Edge\nPC + Mobile" as WebUI
+  component "Auth UI\nRegister / Login / Password Recovery" as AuthUI
+  component "Project & Group UI\nCreate / Browse / Join / Members" as ProjUI
+  component "Upload & Editor UI\nDrag-and-Drop / File Selection\nLaTeX Editing" as EditorUI
+  component "Real-time Preview UI" as PreviewUI
+  component "Version Tree & Comment UI" as VerUI
+  component "Export UI\nPDF / LaTeX / PNG / JPEG" as ExportUI
+}
+
+' =========================================================
+' Web / API Tier
+' =========================================================
+package "Web / API Tier" as ApiTier {
+  component "Web Server\nNginx 1.18+ / Apache 2.4+" as WebServer
+  component "API Gateway\nHTTP/REST API" as APIGW
+  component "WebSocket Endpoint\nReal-time Channels" as WSEndpoint
+  component "Authentication & Session Manager\nEncrypted Credential Verification" as AuthMgr
+}
+
+' =========================================================
+' Application Services
+' =========================================================
+package "Application Service Tier" as ServiceTier {
+  component "User Management Service\nRegistration / Profile / Account" as UserSvc
+  component "Project & Group Service\nProjects / Groups / Sharing" as ProjSvc
+  component "File Upload & Storage Service\nFormat Validation" as FileSvc
+  component "Recognition Service\nOCR / Deep Learning Models\nHandwriting / Image / CSV / Excel / PDF" as RecSvc
+  component "LaTeX Generation Service\nFormula / Table / Multi-line / Large Table" as TexGen
+  component "LaTeX Rendering Service" as RenderSvc
+  component "Collaboration Service\nRole & Permission Control\nOwner / Collaborator" as CollabSvc
+  component "Version Control Service\nVersion Tree / Branch / Restore" as VerSvc
+  component "Comment Service\nVersion Comments" as CommentSvc
+  component "Export Service\nDocument Assembly" as ExportSvc
+}
+
+' =========================================================
+' Data Tier
+' =========================================================
+package "Data Tier" as DataTier {
+  database "Relational Database\nMySQL 8.0+ / PostgreSQL 12+\nUsers / Groups / Projects / Versions / Comments" as DB
+  component "File & Object Storage\nUploads, Parsed Content,\nRendered Previews, Export Artifacts" as Storage
+  component "Cache / Session Store" as Cache
+}
+
+' =========================================================
+' External Systems & Infrastructure
+' =========================================================
+package "External Systems & Infrastructure" as ExtTier {
+  component "LaTeX Engine\nTeX Live / MiKTeX" as TexEngine
+  component "Email Service\nPassword Recovery Delivery" as MailSvc
+  component "External LaTeX Editors\nOverleaf / TeXstudio" as Editors
+}
+
+' =========================================================
+' Client interactions
+' =========================================================
+User --> WebUI
+Collab --> WebUI
+WebUI --> AuthUI
+WebUI --> ProjUI
+WebUI --> EditorUI
+WebUI --> PreviewUI
+WebUI --> VerUI
+WebUI --> ExportUI
+
+' =========================================================
+' Client to web / API tier
+' =========================================================
+WebUI --> WebServer : HTTPS
+WebUI --> WSEndpoint : WSS (real-time preview,\ncollaboration updates)
+
+' =========================================================
+' Web / API tier to services
+' =========================================================
+WebServer --> APIGW
+WebServer --> WSEndpoint
+APIGW --> AuthMgr
+APIGW --> UserSvc
+APIGW --> ProjSvc
+APIGW --> FileSvc
+APIGW --> VerSvc
+APIGW --> CommentSvc
+APIGW --> ExportSvc
+APIGW --> CollabSvc
+
+WSEndpoint --> RenderSvc : live render requests
+WSEndpoint --> CollabSvc : shared session events
+
+' =========================================================
+' Service interactions
+' =========================================================
+UserSvc --> AuthMgr
+UserSvc --> MailSvc : recovery email
+CollabSvc --> ProjSvc : shared resources
+FileSvc --> RecSvc : recognized input task
+RecSvc --> TexGen : recognized structures
+TexGen --> RenderSvc : LaTeX source
+RenderSvc --> TexEngine : compile / render
+ExportSvc --> TexEngine : compile document
+ExportSvc --> Storage : write artifacts
+VerSvc --> Storage : version file paths
+VerSvc --> CommentSvc : version comments
+
+' =========================================================
+' Service to data tier
+' =========================================================
+AuthMgr --> Cache : sessions / tokens
+AuthMgr --> DB : encrypted credentials
+UserSvc --> DB
+ProjSvc --> DB
+CollabSvc --> DB
+VerSvc --> DB
+CommentSvc --> DB
+FileSvc --> Storage
+RecSvc --> Storage
+TexGen --> DB
+RenderSvc --> Cache : preview cache
+
+' =========================================================
+' External compatibility
+' =========================================================
+Editors <.. ExportSvc : LaTeX source compatibility
+
+' =========================================================
+' Notes: key cross-cutting requirements
+' =========================================================
+note right of APIGW
+  External & internal interfaces use HTTP/REST (C-011).
+  FR-005..FR-015 mapped to service endpoints.
+end note
+
+note bottom of RecSvc
+  NFR-001: conversion accuracy >= 88%
+  C-002: model accuracy target >= 90%
+end note
+
+note bottom of RenderSvc
+  NFR-002: render latency < 2 s
+  FR-013: real-time preview update
+end note
+
+note bottom of DB
+  NFR-008: encryption of user data at rest / in transit
+  NFR-010: SQL injection, XSS, CSRF defenses
+  DR-001..DR-003: user, group, project/version schema
+end note
+
+note right of WebServer
+  NFR-003: operations respond within 2 s
+  NFR-004: >= 100 concurrent user requests
+end note
+
+@enduml

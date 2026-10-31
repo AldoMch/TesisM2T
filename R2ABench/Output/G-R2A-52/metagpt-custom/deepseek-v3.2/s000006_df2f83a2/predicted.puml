@@ -1,0 +1,125 @@
+@startuml
+title "Biomechanical Simulator Architecture"
+
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define ABSTRACT_COLOR #F5F5F5
+
+skinparam package {
+    BackgroundColor LAYER_COLOR
+    BorderColor #333333
+}
+skinparam component {
+    BackgroundColor COMPONENT_COLOR
+    BorderColor #333333
+    BackgroundColor<<abstract>> ABSTRACT_COLOR
+}
+skinparam database {
+    BackgroundColor COMPONENT_COLOR
+    BorderColor #333333
+}
+skinparam node {
+    BackgroundColor LAYER_COLOR
+    BorderColor #333333
+}
+skinparam cloud {
+    BackgroundColor EXTERNAL_COLOR
+    BorderColor #CC3333
+}
+skinparam file {
+    BackgroundColor COMPONENT_COLOR
+    BorderColor #333333
+}
+
+' ========== EXTERNAL SYSTEMS ==========
+cloud "MuJoCo Simulation Engine" as mujoco
+cloud "OpenAI Gym-Compatible Runtime\nEnvironments" as gym
+cloud "Reinforcement-Learning\nTraining Libraries" as rl_libs
+
+' ========== ARCHITECTURE LAYERS ==========
+package "Configuration Layer" {
+    file "YAML Configuration Files" as yaml_config
+}
+
+node "Integration & Build Layer" {
+    component "SimulatorBuilder" as builder
+    component "MuJoCoXMLIntegrator" as integrator
+}
+
+node "Core Simulation Layer" {
+    component "<<abstract>>\nBase Module Contract" as base_contract
+    
+    component "BiomechanicalModel" as model
+    component "InteractionTask" as task
+    
+    package "Perception Modules" {
+        component "VisionModule" as vision
+        component "ProprioceptionModule" as proprioception
+    }
+}
+
+node "Runtime Interface Layer" {
+    component "GymInterfaceWrapper" as gym_wrapper
+    component "StandaloneSimulatorPackage" as standalone_pkg
+}
+
+node "Training & Evaluation Layer" {
+    component "TrainingWorkflow" as training
+    component "EvaluationRunner" as evaluation
+    component "ActionLogger" as action_logger
+    
+    database "Run Folder" as run_folder {
+        folder "checkpoints" as checkpoints_dir
+        folder "evaluate" as evaluate_dir
+    }
+}
+
+' ========== KEY DEPENDENCIES ==========
+builder --> integrator : "uses to merge\nXML definitions"
+builder --> model : "initializes"
+builder --> vision : "initializes"
+builder --> proprioception : "initializes"
+builder --> task : "initializes"
+
+gym_wrapper --> model : "wraps"
+gym_wrapper --> vision : "wraps"
+gym_wrapper --> proprioception : "wraps"
+gym_wrapper --> task : "wraps"
+
+standalone_pkg --> gym_wrapper : "packages"
+standalone_pkg --> run_folder : "includes\nconfig & artifacts"
+
+training --> builder : "builds simulator\nfrom config"
+training --> yaml_config : "reads\nconfiguration"
+training --> run_folder : "stores checkpoints\n& logs"
+
+evaluation --> run_folder : "loads simulator\nartifacts"
+evaluation --> action_logger : "triggers logging\nwhen enabled"
+action_logger --> run_folder : "writes action logs\nto evaluate/"
+
+' ========== EXTERNAL DEPENDENCIES ==========
+integrator --> mujoco : "generates\nMuJoCo XML"
+gym_wrapper --> gym : "exposes\nGym API"
+training --> rl_libs : "uses for\nRL training"
+
+' ========== XML GENERATION FLOWS ==========
+model --> integrator : "provides model\nXML definitions"
+task --> integrator : "provides task\nXML definitions"
+
+' ========== PERCEPTION INTERFACES ==========
+vision --> model : "accesses\nmodel state"
+vision --> task : "accesses\ntask context"
+proprioception --> model : "accesses\njoint states"
+proprioception --> task : "accesses\ntask context"
+
+' ========== INHERITANCE RELATIONSHIPS ==========
+model --|> base_contract : "implements"
+task --|> base_contract : "implements"
+vision --|> base_contract : "implements"
+proprioception --|> base_contract : "implements"
+
+' ========== CONFIGURATION FLOW ==========
+yaml_config --> builder : "provides\nconfiguration"
+
+@enduml

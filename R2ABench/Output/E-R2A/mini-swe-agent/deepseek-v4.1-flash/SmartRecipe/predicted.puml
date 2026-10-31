@@ -1,0 +1,156 @@
+@startuml
+title Smart Recipe System - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 25
+skinparam ranksep 35
+
+' =========================================================
+' Client / Presentation Layer
+' =========================================================
+package "Client Layer (Mobile App - Android / iOS)" as CLIENT {
+  component "Login & Identity View" as UI_LOGIN
+  component "Main / Text Search View" as UI_SEARCH
+  component "Photo Capture &\nLocal Preprocessing View" as UI_PHOTO
+  component "Recipe Display View" as UI_RECIPE
+  component "Health Center &\nNutrition Analysis View" as UI_HEALTH
+  component "Community Sharing View" as UI_COMMUNITY
+  component "Recommendation View" as UI_RECO
+  component "Administrator Console View" as UI_ADMIN
+}
+
+' =========================================================
+' Backend - Spring Boot Application
+' =========================================================
+package "Backend - Spring Boot Application" as BACKEND {
+
+  package "Control Layer (REST / Ajax Endpoints)" as CONTROL {
+    component "Authentication &\nSession Controller" as CTL_AUTH
+    component "Recognition &\nRecipe Controller" as CTL_RECIPE
+    component "Search Controller" as CTL_SEARCH
+    component "Health & Nutrition Controller" as CTL_HEALTH
+    component "Community & Review Controller" as CTL_COMMUNITY
+    component "Recommendation Controller" as CTL_RECO
+    component "Admin Management Controller" as CTL_ADMIN
+  }
+
+  package "Business Layer" as BUSINESS {
+    component "User & Identity Service" as BIZ_USER
+    component "Photo Recipe Recognition Service" as BIZ_RECOG
+    component "Text Search & Ranking Service" as BIZ_SEARCH
+    component "Nutrition & Health Analysis Service" as BIZ_HEALTH
+    component "Diet Plan & Daily Check-in Service" as BIZ_DIET
+    component "Community Sharing &\nReview Workflow Service" as BIZ_COMMUNITY
+    component "Recommendation Engine" as BIZ_RECO
+    component "Administrator Management Service" as BIZ_ADMIN
+    component "Merchant & Location Service" as BIZ_MERCHANT
+  }
+
+  package "Service Layer" as SERVICE {
+    component "Model Inference Client" as SVC_INFER
+    component "Cache Service" as SVC_CACHE
+    component "Image Storage Service" as SVC_IMAGE
+    component "Notification / Push Service" as SVC_PUSH
+  }
+
+  package "Data Access Layer" as DAO {
+    component "User / Account Repository" as DAO_USER
+    component "Recipe / Ingredient Repository" as DAO_RECIPE
+    component "Health & Nutrition Repository" as DAO_HEALTH
+    component "Community / Comment Repository" as DAO_COMMUNITY
+    component "History & Recommendation Repository" as DAO_HISTORY
+    component "Merchant Repository" as DAO_MERCHANT
+  }
+}
+
+' =========================================================
+' Model Inference Tier
+' =========================================================
+package "Model Inference Tier - Flask" as FLASK {
+  component "Image Preprocessing Service" as INF_PRE
+  component "Deep Learning Food\nRecognition Model" as INF_MODEL
+  component "Recipe / Nutrition\nInference API" as INF_API
+}
+
+' =========================================================
+' Data Stores
+' =========================================================
+database "MySQL\n(Structured Data)" as DB_MYSQL
+database "Redis\n(Cache)" as DB_REDIS
+database "Image / Object Storage" as DB_IMAGE
+
+' =========================================================
+' External Systems
+' =========================================================
+cloud "Map / Geolocation Service" as EXT_MAP
+cloud "Push Notification Service" as EXT_PUSH
+
+' ---------- Client to Control Layer ----------
+UI_LOGIN --> CTL_AUTH : Ajax / direct
+UI_SEARCH --> CTL_SEARCH : Ajax / direct
+UI_PHOTO --> CTL_RECIPE : image upload
+UI_RECIPE --> CTL_RECIPE
+UI_HEALTH --> CTL_HEALTH
+UI_COMMUNITY --> CTL_COMMUNITY
+UI_RECO --> CTL_RECO
+UI_ADMIN --> CTL_ADMIN
+
+' ---------- Control to Business ----------
+CTL_AUTH --> BIZ_USER
+CTL_RECIPE --> BIZ_RECOG
+CTL_RECIPE --> BIZ_SEARCH
+CTL_SEARCH --> BIZ_SEARCH
+CTL_HEALTH --> BIZ_HEALTH
+CTL_HEALTH --> BIZ_DIET
+CTL_COMMUNITY --> BIZ_COMMUNITY
+CTL_COMMUNITY --> BIZ_MERCHANT
+CTL_RECO --> BIZ_RECO
+CTL_ADMIN --> BIZ_ADMIN
+
+' ---------- Business to Service ----------
+BIZ_RECOG --> SVC_INFER
+BIZ_RECOG --> SVC_IMAGE
+BIZ_SEARCH --> SVC_CACHE
+BIZ_HEALTH --> SVC_CACHE
+BIZ_DIET --> SVC_CACHE
+BIZ_COMMUNITY --> SVC_IMAGE
+BIZ_COMMUNITY --> SVC_PUSH
+BIZ_RECO --> SVC_CACHE
+BIZ_MERCHANT --> EXT_MAP
+BIZ_ADMIN --> SVC_IMAGE
+
+' ---------- Business to Data Access ----------
+BIZ_USER --> DAO_USER
+BIZ_RECOG --> DAO_RECIPE
+BIZ_SEARCH --> DAO_RECIPE
+BIZ_HEALTH --> DAO_HEALTH
+BIZ_DIET --> DAO_HEALTH
+BIZ_COMMUNITY --> DAO_COMMUNITY
+BIZ_COMMUNITY --> DAO_RECIPE
+BIZ_RECO --> DAO_HISTORY
+BIZ_ADMIN --> DAO_USER
+BIZ_ADMIN --> DAO_RECIPE
+BIZ_MERCHANT --> DAO_MERCHANT
+
+' ---------- Service to Inference / External ----------
+SVC_INFER --> INF_API
+INF_API --> INF_PRE
+INF_PRE --> INF_MODEL
+SVC_PUSH --> EXT_PUSH
+
+' ---------- Data Access to Stores ----------
+DAO_USER --> DB_MYSQL
+DAO_RECIPE --> DB_MYSQL
+DAO_HEALTH --> DB_MYSQL
+DAO_COMMUNITY --> DB_MYSQL
+DAO_HISTORY --> DB_MYSQL
+DAO_MERCHANT --> DB_MYSQL
+
+' ---------- Caching / Object storage ----------
+SVC_CACHE --> DB_REDIS
+SVC_IMAGE --> DB_IMAGE
+
+@enduml

@@ -1,0 +1,102 @@
+@startuml
+
+package "Application / Examples Layer" as AppLayer {
+  package "Classification" {
+    component "Classification Examples" as ClassExamples
+  }
+  package "Detection" {
+    component "SSD" as SSD
+    component "RetinaFace" as RetinaFace
+    component "Yolact" as Yolact
+    component "YoloV3" as YoloV3
+    component "YoloV4-tiny" as YoloV4Tiny
+    component "YoloV5s" as YoloV5s
+    component "NanoDet" as NanoDet
+    component "EfficientDet" as EfficientDet
+  }
+  package "Segmentation" {
+    component "U-Net" as UNet
+  }
+  package "Pose Estimation / Landmark Detection" {
+    component "OpenPose" as OpenPose
+    component "HRNet" as HRNet
+  }
+  package "OCR" {
+    component "CRNN" as CRNN
+  }
+}
+
+package "API Layer" as ApiLayer {
+  component "C API\n(Tengine-compatible)" as CAPI
+  component "C++ API\nDocumentation Entry Point" as CppDoc
+  component "Python API\nDocumentation Entry Point" as PyDoc
+}
+
+package "Core Architecture Layer" as CoreLayer {
+  component "Scheduler" as Scheduler
+  component "Operator Module" as OperatorModule
+  component "Device Module" as DeviceModule
+  component "Serializer" as Serializer
+}
+
+package "Tooling / Conversion Layer" as ToolingLayer {
+  component "Linux Pre-compiled\nModel Conversion Tool" as LinuxConverter
+  component "Browser WebAssembly\nOnline Converter" as WasmConverter
+  database "Converted Model Artifacts" as ConvertedArtifacts
+}
+
+package "Build / Platform Layer" as BuildLayer {
+  component "CMake Build System" as CMakeBuild
+}
+
+node "Local Execution Environment" as LocalExecution {
+  database "Local Model / Image Assets" as LocalAssets
+}
+
+node "Linux OS" as LinuxOS
+node "Web Browser with WebAssembly Support" as WebBrowser
+node "CMake Cross-platform Build Environment" as BuildEnvironment
+
+database "Binary tmfile Input" as TmfileInput
+database "Serialized Model Parameters" as SerializedModelParams
+
+AppLayer --> CAPI : uses Tengine-compatible C API
+AppLayer --> LocalAssets : requires local model/image assets
+
+CAPI --> Scheduler : invokes runtime
+
+Scheduler --> OperatorModule : schedules/executes NNIR and computation graphs
+Scheduler --> DeviceModule : manages hardware resources
+Scheduler --> Serializer : drives model serializer
+
+TmfileInput --> Serializer : provides binary tmfile
+Serializer --> SerializedModelParams : produces serialized model parameters
+
+LinuxConverter --> LinuxOS : runs on
+WasmConverter --> WebBrowser : executes locally via WebAssembly
+LinuxConverter --> ConvertedArtifacts : produces
+WasmConverter --> ConvertedArtifacts : produces
+
+CMakeBuild --> BuildEnvironment : cross-platform build
+
+note right of CAPI
+  Tengine-compatible C API constraint
+end note
+
+note right of CppDoc
+  Documentation entry point for C++ API
+end note
+
+note right of PyDoc
+  Documentation entry point for Python API
+end note
+
+note right of OperatorModule
+  Registers/initializes NN Operators; backend provided by Device Module
+end note
+
+note right of WasmConverter
+  No private data uploaded; conversion runs locally in the browser
+end note
+
+@enduml

@@ -1,0 +1,83 @@
+@startuml
+!define RECTANGLE class
+
+title OCI Jenkins Terraform Deployment Architecture
+
+skinparam componentStyle rectangle
+
+' Actors
+actor "Deployment Operator" as operator
+actor "Infrastructure Administrator" as admin
+actor "DevOps Engineer" as devops
+actor "Tester" as tester
+
+' External Systems
+rectangle "Oracle Cloud Infrastructure (OCI)" as oci {
+    rectangle "Tenancy" as tenancy
+    rectangle "Compartment" as compartment
+    rectangle "Virtual Cloud Network (VCN)" as vcn
+    rectangle "Subnets" as subnets
+    rectangle "Availability Domains (ADs)" as ads
+    rectangle "Route Tables" as route_tables
+    rectangle "Security Lists" as security_lists
+    rectangle "DHCP Options" as dhcp_options
+    rectangle "NAT Gateway" as nat_gateway
+    rectangle "Bastion Host" as bastion_host
+    rectangle "Load Balancer" as load_balancer
+}
+
+' Main System Components
+rectangle "Terraform Workflow" as terraform_workflow {
+    rectangle "Variable Files\n(terraform.tfvars)" as var_files
+    rectangle "Terraform Configuration\n(.tf files)" as tf_config
+    rectangle "Terraform CLI" as tf_cli
+}
+
+rectangle "Jenkins Cluster" as jenkins_cluster {
+    rectangle "Jenkins Master" as jenkins_master
+    rectangle "Jenkins Slaves/Agents" as jenkins_slaves
+}
+
+' Relationships
+operator --> var_files : Updates
+operator --> tf_cli : Executes
+admin --> oci : Prepares
+devops --> var_files : Configures
+tester --> terraform_workflow : Verifies
+
+tf_cli --> tf_config : Uses
+tf_cli --> var_files : Consumes
+tf_config --> oci : Provisions resources in
+tf_config --> jenkins_master : Deploys
+tf_config --> jenkins_slaves : Deploys
+
+jenkins_master --> jenkins_slaves : Communicates via JNLP
+jenkins_master --> subnets : Attached to (public)
+jenkins_slaves --> subnets : Attached to (private)
+
+subnets --> vcn : Part of
+vcn --> compartment : Contained in
+compartment --> tenancy : Belongs to
+ads --> tenancy : Distributed across
+
+nat_gateway --> subnets : Provides NAT for private
+bastion_host --> oci : Mediates SSH access
+load_balancer --> jenkins_master : Public access (if needed)
+
+note right of oci
+  Existing Infrastructure
+  Prepared Network Objects
+end note
+
+note right of terraform_workflow
+  Terraform-based IaC Deployment
+  No GUI - CLI and file-based
+end note
+
+note right of jenkins_cluster
+  Master in public/private subnet
+  Slaves in private subnets
+  SSH key-based access
+end note
+
+@enduml

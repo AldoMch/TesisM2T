@@ -1,0 +1,77 @@
+@startuml
+title Udacity Self-Driving Car Engineer Capstone - System Architecture
+
+skinparam componentStyle rectangle
+
+actor "Developer / Operator" as Dev
+actor "Evaluator" as Eval
+
+node "Docker Environment" as Docker {
+  node "ROS Environment (Container)" as ROS {
+
+    package "Launch Entry Points" {
+      component "launch/styx.launch\n(simulator mode)" as StyxLaunch
+      component "launch/site.launch\n(site mode)" as SiteLaunch
+    }
+
+    package "Perception Subsystem" {
+      component "Traffic Light Detector\nand Classifier" as TLD
+    }
+
+    package "Planning Subsystem" {
+      component "Waypoint Loader" as WaypointLoader
+      component "Waypoint Updater" as WaypointUpdater
+    }
+
+    package "Control Subsystem" {
+      component "Waypoint Follower" as WaypointFollower
+      component "Drive-by-Wire (DBW) Node" as DBW
+    }
+
+    package "ROS Topic Bus" {
+      interface "current_pose" as T_pose
+      interface "base_waypoints" as T_base
+      interface "traffic_waypoint" as T_traffic
+      interface "final_waypoints" as T_final
+      interface "twist_cmd" as T_twist
+      interface "vehicle_cmd" as T_vehicle
+    }
+  }
+}
+
+cloud "Udacity Capstone Project Simulator" as Sim
+database "Recorded Training Bag\n(downloaded and unzipped)" as Bag
+artifact "Waypoint Data\n(twist.twist.linear.x = target top speed)" as Waypoints
+
+Dev --> Docker : build and run container
+Dev --> ROS : launch ROS
+Eval --> StyxLaunch : runs for simulator testing
+Eval --> SiteLaunch : runs for site-mode testing
+
+StyxLaunch --> Sim : interoperate (simulator workflow)
+SiteLaunch --> Bag : playback-based interaction
+
+Sim --> TLD : real/simulated camera images
+Bag --> TLD : real-life images
+
+Waypoints --> WaypointLoader : loads waypoint data
+WaypointLoader --> WaypointUpdater : base_waypoints
+TLD --> WaypointUpdater : traffic_waypoint\n(stop-related output for red/yellow)
+WaypointUpdater --> WaypointFollower : final_waypoints
+WaypointFollower --> DBW : twist_cmd
+DBW --> Sim : vehicle_cmd\n(throttle, steering, brake)
+Sim --> WaypointUpdater : current_pose
+
+WaypointLoader -up- T_base
+WaypointUpdater -up- T_traffic
+WaypointUpdater -up- T_final
+WaypointFollower -up- T_twist
+DBW -up- T_vehicle
+Sim -up- T_pose
+
+note bottom of WaypointUpdater
+  Respects target top speed: vehicle speed
+  shall not exceed waypoint twist.twist.linear.x
+end note
+
+@enduml

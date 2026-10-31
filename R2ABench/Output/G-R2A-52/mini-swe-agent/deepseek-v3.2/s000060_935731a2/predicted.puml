@@ -1,0 +1,129 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6CC
+!define DATA_COLOR #E6FFE6
+
+title Auditor Client Library - Layered Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Data>> DATA_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+' === Layers ===
+package "Application Layer" <<Layer>> {
+  component "Client Application" <<Component>> {
+    [Auditing API Client]
+  }
+}
+
+package "Auditor Library Layer" <<Layer>> {
+  component "Auditor Core" <<Component>> {
+    [Audit Service]
+    [Object Comparator]
+    [Event Generator]
+  }
+  
+  component "Configuration Handler" <<Component>> {
+    [Config Parser]
+    [Filter Manager]
+  }
+}
+
+package "Integration Layer" <<Layer>> {
+  component "Event Publisher Abstraction" <<Component>> {
+    [EventPublisher Interface]
+  }
+  
+  component "Logging Abstraction" <<Component>> {
+    [LogProvider Interface]
+  }
+  
+  component "Filter Abstraction" <<Component>> {
+    [AuditEventElementFilter Interface]
+  }
+}
+
+package "Infrastructure Layer" <<Layer>> {
+  component "Kafka Publisher" <<Component>> {
+    [Kafka Producer]
+  }
+  
+  component "Log Implementation" <<Component>> {
+    [Logger Implementation]
+  }
+  
+  component "Filter Implementation" <<Component>> {
+    [InclusionFilter]
+  }
+}
+
+package "External Systems" <<Layer>> {
+  component "Kafka Cluster" <<External>> {
+    [Audit Events Topic]
+  }
+  
+  component "Downstream Consumers" <<External>> {
+    [Event Processing Services]
+    [Analytics Systems]
+    [Data Warehouses]
+  }
+}
+
+' === Data Stores ===
+database "Configuration Store" <<Data>> {
+  [AuditorEventConfig]
+  [Filter Rules]
+}
+
+database "Event Data" <<Data>> {
+  [AuditEvent Objects]
+  [JSON Payloads]
+}
+
+' === Dependencies and Flows ===
+"Client Application" --> "Auditor Core" : oldObject, newObject, config
+"Auditor Core" --> "Configuration Handler" : get configuration
+"Configuration Handler" --> "Configuration Store" : read config
+
+"Auditor Core" --> "Event Publisher Abstraction" : publish(event)
+"Event Publisher Abstraction" --> "Kafka Publisher" : send to Kafka
+"Kafka Publisher" --> "Kafka Cluster" : serialized JSON events
+
+"Auditor Core" --> "Logging Abstraction" : log messages
+"Logging Abstraction" --> "Log Implementation" : log operations
+
+"Auditor Core" --> "Filter Abstraction" : filter elements
+"Filter Abstraction" --> "Filter Implementation" : apply filters
+
+"Kafka Cluster" --> "Downstream Consumers" : consume events
+"Downstream Consumers" --> "Event Data" : store/process events
+
+' === Notes ===
+note top of "Auditor Core"
+  - Compares object states
+  - Generates AuditEvent
+  - Detects CREATED/UPDATED/DELETED
+  - Supports UUID, scalar, map, list, nested objects
+end note
+
+note right of "Event Publisher Abstraction"
+  - Abstract interface
+  - Default: Kafka implementation
+  - Pluggable implementations
+end note
+
+note right of "Configuration Handler"
+  - applicationName
+  - eventSource
+  - eventSubType
+  - metadata
+  - element filters
+end note
+
+@enduml

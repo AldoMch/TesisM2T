@@ -1,0 +1,92 @@
+@startuml
+' Deployment diagram showing layered architecture of Airflow-Spark system
+
+' Infrastructure Layer
+node "Docker Compose Environment" {
+    package "Orchestration Layer" {
+        component "Airflow Webserver" as airflow_web
+        component "Airflow Scheduler" as airflow_sched
+    }
+
+    package "Execution Layer" {
+        component "Spark Master" as master
+        component "Spark Worker 1" as worker1
+        component "Spark Worker 2" as worker2
+        component "Spark Worker 3" as worker3
+    }
+
+    package "Development Layer" {
+        component "Jupyter/PySpark" as jupyter
+    }
+
+    package "Persistence Layer" {
+        database "Postgres" as postgres
+    }
+
+    package "Shared Storage" {
+        folder "Shared Volumes" as shared_volumes {
+            folder "/shared/dags" as dags_volume
+            folder "/shared/spark_apps" as spark_apps_volume
+            folder "/shared/notebooks" as notebooks_volume
+            folder "/shared/data" as data_volume
+        }
+    }
+}
+
+' Internal Component Relationships
+airflow_web --> postgres : metadata persistence
+airflow_sched --> postgres : metadata persistence
+airflow_web --> master : job submission\n(spark://master:7077)
+airflow_sched --> master : job submission\n(spark://master:7077)
+
+worker1 --> master : registration & work assignment
+worker2 --> master : registration & work assignment
+worker3 --> master : registration & work assignment
+
+worker1 <--> worker2 : cluster communication
+worker2 <--> worker3 : cluster communication
+worker1 <--> worker3 : cluster communication
+
+' Shared Volume Access
+airflow_web --> dags_volume : read DAGs
+airflow_sched --> dags_volume : read DAGs
+jupyter --> notebooks_volume : read/write notebooks
+jupyter --> data_volume : read/write data
+master --> spark_apps_volume : read Spark apps
+worker1 --> spark_apps_volume : read Spark apps
+worker2 --> spark_apps_volume : read Spark apps
+worker3 --> spark_apps_volume : read Spark apps
+
+' Port Mappings (as labels)
+note right of airflow_web
+  Ports:
+  8080 (Web UI)
+end note
+
+note right of master
+  Ports:
+  8081 (Master UI)
+  7077 (Cluster Comm)
+end note
+
+note right of worker1
+  Port:
+  8082 (Worker UI)
+end note
+
+note right of worker2
+  Port:
+  8083 (Worker UI)
+end note
+
+note right of worker3
+  Port:
+  8084 (Worker UI)
+end note
+
+note left of jupyter
+  Port:
+  8888 (Notebook UI)
+end note
+
+@enduml

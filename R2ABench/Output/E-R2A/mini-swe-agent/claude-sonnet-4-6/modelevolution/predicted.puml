@@ -1,0 +1,90 @@
+@startuml
+title Model Evolution Version Management Visualization Tool - System Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+
+left to right direction
+
+actor Learner
+actor "Model Contributor" as Contributor
+actor Administrator
+
+node "Client Layer" {
+  component "Web Browser (Chrome, Firefox, 360)" as Browser
+}
+
+node "Front-End Layer" {
+  component "Account Management UI" as AccountUI
+  component "Model Search and View UI" as ModelViewUI
+  component "Model Contribution UI" as ModelEditUI
+  component "Evolution Relationship UI" as EvoUI
+  component "User Management UI" as UserMgmtUI
+  component "Navigation and Layout" as NavUI
+}
+
+node "Back-End Layer" {
+  component "Account Service" as AccountSvc
+  component "Model Service" as ModelSvc
+  component "Evolution Service" as EvoSvc
+  component "User Management Service" as UserMgmtSvc
+  component "Security and Encryption Module" as SecurityMod
+  component "Performance and Concurrency Manager" as PerfMod
+}
+
+node "Algorithm Support Layer" {
+  component "Python Libraries" as PythonLib
+  component "Model Analysis Engine" as AnalysisEngine
+  component "ONNX Processor" as OnnxProc
+  component "PyTorch Code Handler" as PyTorchHandler
+}
+
+node "Data Layer" {
+  database "MySQL" as MySQL
+  database "Neo4j" as Neo4j
+}
+
+Learner --> Browser
+Contributor --> Browser
+Administrator --> Browser
+
+Browser --> AccountUI
+Browser --> ModelViewUI
+Browser --> ModelEditUI
+Browser --> EvoUI
+Browser --> UserMgmtUI
+Browser --> NavUI
+
+AccountUI --> AccountSvc
+ModelViewUI --> ModelSvc
+ModelViewUI --> EvoSvc
+ModelEditUI --> ModelSvc
+EvoUI --> EvoSvc
+UserMgmtUI --> UserMgmtSvc
+
+AccountSvc --> SecurityMod
+ModelSvc --> SecurityMod
+EvoSvc --> SecurityMod
+UserMgmtSvc --> SecurityMod
+
+AccountSvc --> PerfMod
+ModelSvc --> PerfMod
+EvoSvc --> PerfMod
+
+ModelSvc --> AnalysisEngine
+ModelSvc --> OnnxProc
+ModelSvc --> PyTorchHandler
+EvoSvc --> AnalysisEngine
+
+AnalysisEngine --> PythonLib
+OnnxProc --> PythonLib
+PyTorchHandler --> PythonLib
+
+AccountSvc --> MySQL
+ModelSvc --> MySQL
+UserMgmtSvc --> MySQL
+EvoSvc --> MySQL
+EvoSvc --> Neo4j
+ModelSvc --> Neo4j
+
+@enduml

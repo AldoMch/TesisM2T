@@ -1,0 +1,179 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2E86AB
+  FontColor #1A1A2E
+}
+skinparam component {
+  BackgroundColor #EAF7EA
+  BorderColor #27AE60
+  FontColor #1A1A2E
+}
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #E67E22
+  FontColor #1A1A2E
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #8E44AD
+  FontColor #1A1A2E
+}
+skinparam cloud {
+  BackgroundColor #FDECEA
+  BorderColor #C0392B
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #34495E
+  FontColor #34495E
+}
+skinparam defaultFontName Arial
+
+title HypnoLog Server — System Architecture
+
+actor "Logging Producer\n(any language/HTTP)" as Producer
+actor "Visualization User\n(Browser)" as BrowserUser
+actor "Server Operator" as Operator
+
+node "Host Machine" {
+
+  node "Node.js Runtime" {
+
+    node "HypnoLog Server Process" {
+
+      component "bin/www\nStartup Script" as Startup {
+        component "Port Resolver\n(default: 7000 / CLI arg)" as PortResolver
+        component "Browser URL Announcer\n(print + open /client.html)" as URLAnnouncer
+      }
+
+      node "HTTP Server\n(Node http.Server)" as HTTPServer {
+
+        node "Express Application" as ExpressApp {
+
+          component "JSON Body Parser\n(limit: 50mb)" as BodyParser
+
+          component "Static File Server\n(public web directory)" as StaticServer
+
+          rectangle "Logging Router\n(mounted at /logger)" as LoggingRouter {
+            component "POST /logger/in\nLog Ingestion Handler" as IngestHandler
+            component "GET /logger/status\nStatus Endpoint" as StatusEndpoint
+          }
+
+          component "GET /client.html\nBrowser UI Delivery" as ClientHTML
+        }
+
+        node "Socket.IO Server\n(attached to HTTP Server)" as SocketIOServer {
+          component "Connected Client Registry\n(add on connect / remove on disconnect)" as ClientRegistry
+          component "Notification Emitter\n(event: notification)" as NotificationEmitter
+        }
+      }
+    }
+  }
+
+  node "Browser Environment" {
+
+    node "Browser Web UI\n(loaded from /client.html)" as BrowserUI {
+
+      component "Socket.IO Client\n(same-origin connection)" as SocketIOClient
+
+      component "Schema Validator\n(Ajv / HypnoLog Data Object schema)" as SchemaValidator
+
+      component "Message Handler" as MessageHandler {
+        component "Valid Object Passthrough" as ValidPassthrough
+        component "Invalid Message Wrapper\n(HypnoLog-error object)" as ErrorWrapper
+      }
+
+      component "Received-Data List\n(client-side store)" as ReceivedDataList
+
+      component "UI State Manager\n(last-update time / tag filter)" as UIStateManager
+
+      component "Window Dispatcher\n(broadcast to all registered windows)" as WindowDispatcher
+
+      node "Default Window" as DefaultWindow {
+        component "Visualizer Dispatcher\n(ordered canDisplay evaluation)" as VisualizerDispatcher
+
+        node "Visualizer Registry\n(loaded from config)" as VisualizerRegistry {
+          component "Visualizer N\ncanDisplay(obj) / display(obj, cb)" as VisualizerN
+          component "Visualizer 2\ncanDisplay(obj) / display(obj, cb)" as Visualizer2
+          component "Visualizer 1\ncanDisplay(obj) / display(obj, cb)" as Visualizer1
+        }
+
+        component "DOM Element Renderer\n(append to window)" as DOMRenderer
+      }
+
+      component "Tag Display Handler\n(CSS classes / filter text)" as TagHandler
+      component "Variable Name Display\n(name prefix element)" as NameHandler
+    }
+  }
+}
+
+cloud "Visualizer Configuration\n(user config / default config)" as VisualizerConfig
+
+Producer --> HTTPServer : "HTTP POST /logger/in\nContent-Type: application/json"
+Producer --> HTTPServer : "HTTP GET /logger/status"
+BrowserUser --> HTTPServer : "HTTP GET /client.html\n(browser page load)"
+Operator --> Startup : "npm start / node ./bin/www\n/ CLI alias [--port]"
+
+Startup --> PortResolver
+Startup --> URLAnnouncer
+Startup --> HTTPServer : "creates & binds HTTP server"
+
+HTTPServer --> ExpressApp : "HTTP request routing"
+HTTPServer --> SocketIOServer : "Socket.IO attached to same HTTP server"
+
+ExpressApp --> BodyParser : "all incoming requests"
+ExpressApp --> StaticServer : "browser asset requests"
+ExpressApp --> LoggingRouter : "requests to /logger/*"
+ExpressApp --> ClientHTML : "request to /client.html"
+
+LoggingRouter --> IngestHandler : "POST /logger/in"
+LoggingRouter --> StatusEndpoint : "GET /logger/status"
+
+BodyParser --> IngestHandler : "parsed JSON body (up to 50mb)"
+IngestHandler --> NotificationEmitter : "forward parsed log object"
+IngestHandler --> IngestHandler : "HTTP 200 response to producer"
+StatusEndpoint --> StatusEndpoint : "HTTP 200 response"
+
+NotificationEmitter --> ClientRegistry : "emit notification to all registered clients"
+SocketIOServer --> ClientRegistry : "register on connect\nderegister on disconnect"
+
+ClientRegistry --> SocketIOClient : "Socket.IO notification event"
+SocketIOClient --> SchemaValidator : "received notification message"
+
+SchemaValidator --> ValidPassthrough : "validation passes"
+SchemaValidator --> ErrorWrapper : "validation fails"
+ErrorWrapper --> ErrorWrapper : "wraps: error msg +\nvalidator details +\noriginal message\n→ type: HypnoLog-error"
+
+ValidPassthrough --> ReceivedDataList : "append valid object"
+ErrorWrapper --> ReceivedDataList : "append HypnoLog-error object"
+
+ReceivedDataList --> UIStateManager : "update last-update time"
+ReceivedDataList --> WindowDispatcher : "dispatch object"
+
+WindowDispatcher --> DefaultWindow : "pass object to each registered window"
+
+DefaultWindow --> VisualizerDispatcher : "dispatch to visualizer"
+VisualizerDispatcher --> VisualizerRegistry : "evaluate canDisplay(obj) in order\nselect first match\ncall display(obj, cb)"
+
+VisualizerRegistry --> Visualizer1
+VisualizerRegistry --> Visualizer2
+VisualizerRegistry --> VisualizerN
+VisualizerConfig --> VisualizerRegistry : "load visualizers from config\n(fault-tolerant: skip failed)"
+
+Visualizer1 --> DOMRenderer : "DOM element via callback"
+Visualizer2 --> DOMRenderer : "DOM element via callback"
+VisualizerN --> DOMRenderer : "DOM element via callback"
+
+DOMRenderer --> DefaultWindow : "append DOM element to window"
+DefaultWindow --> TagHandler : "object contains tags"
+DefaultWindow --> NameHandler : "object contains name"
+
+TagHandler --> DefaultWindow : "tag CSS classes / filter text"
+NameHandler --> DefaultWindow : "variable name prefix element"
+
+DefaultWindow --> BrowserUser : "rendered log line visible in browser"
+@enduml

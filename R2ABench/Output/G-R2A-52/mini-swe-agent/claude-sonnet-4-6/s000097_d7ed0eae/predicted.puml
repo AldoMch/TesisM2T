@@ -1,0 +1,71 @@
+@startuml
+title BeeGreen Sustainability Recommendation System - Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+skinparam database {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam rectangle {
+  BackgroundColor #FFF9C4
+  BorderColor #F57F17
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #AD1457
+}
+skinparam arrow {
+  Color #555555
+}
+
+rectangle "Client Layer" as ClientLayer {
+  component "React/TypeScript Website" as Website
+  component "Chrome Browser Extension" as ChromeExt
+}
+
+rectangle "Backend API Layer" as BackendLayer {
+  component "LoopBack REST Server\n(Node.js)" as LoopBackServer {
+    component "UserController\n(POST /users, GET /users,\nPATCH /users, GET /users/{id})" as UserController
+    component "PingController\n(GET /ping)" as PingController
+    component "UserRepository" as UserRepo
+  }
+}
+
+rectangle "Data Layer" as DataLayer {
+  database "Persistent Data Store\n(User & InventoryItem Records)" as DataStore
+}
+
+rectangle "Data Processing Layer" as DataProcessingLayer {
+  component "Sustainability Scoring\n& Recommendation Engine" as ScoringEngine
+}
+
+Website --> LoopBackServer : HTTP REST / JSON
+ChromeExt --> LoopBackServer : HTTP REST / JSON
+
+UserController --> UserRepo : data access
+UserRepo --> DataStore : CRUD operations
+
+PingController ..> LoopBackServer : diagnostic ping
+
+ScoringEngine --> DataStore : reads/writes\nInventoryItem & scoring data
+
+note right of DataStore
+  Entities:
+  - User (id, ip, creationDate,\n    purchaseIds, username, region)
+  - InventoryItem (id, stats, totalScore,\n    category, details, comments,\n    name, associatedStores)
+end note
+
+note bottom of LoopBackServer
+  Constraints:
+  - Node.js + LoopBack framework
+  - application/json media type
+  - String-typed generated IDs
+end note
+
+@enduml

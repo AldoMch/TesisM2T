@@ -1,0 +1,102 @@
+@startuml BunnyCode_Architecture
+title Bunny Code - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 14
+skinparam ranksep 18
+skinparam defaultFontName Helvetica
+skinparam ArrowColor #4A4A4A
+
+actor "Visitor / Authenticated User\n(Project owner, collaborator,\nbattle participant)" as USER
+actor "Maintainer / Operator" as OPS
+
+package "Client Tier" {
+  component "Vue Browser Frontend\n--\nUI-001 Login / entry\nUI-002 Workspace editor\nUI-003 Battle view\nUI-004 Playback view" as FE
+}
+
+node "Nginx Reverse Proxy\n(C-011)" as NGINX
+
+node "Backend Runtime - Node.js / Express + Socket.IO (C-001)" as BACKEND {
+  component "Auth & JWT Service\n--\nAPI-001 Register / Login /\nUser detail\nAPI-002 Bearer token validation\nAPI-003 Invalid token rejection\nDEF-002 id, name, email" as AUTH
+  component "Project & Version Service\n--\nAPI-004 Create / query / update\nAPI-005 Versions + initial files\nDEF-003 project & version ids" as PROJ
+  component "Code Execution Service\n--\nAPI-006 Compile / execute\nDEF-009 status, output, errors" as EXEC
+  component "Playback Service\n--\nAPI-007 Records by project,\nversion, time range\nDEF-010 playback query" as PLAY
+  component "File Upload & Distribution\n--\nAPI-008 Upload + URL\nDEF-011 URL + metadata" as FILE
+  component "Workspace Socket Handler\n--\nAPI-009 Authorization / edit state /\nediting occupation / leave /\ndisconnect cleanup\nDEF-004 readOnly, authorization" as WS
+  component "Battle Socket Handler\n--\nAPI-010 Invite / accept / ready /\ncode sync / judge / outcome /\nleave\nDEF-006, DEF-007, DEF-008" as BATTLE
+}
+
+database "MySQL (C-003)\n--\nUser accounts, projects,\nversions, files, problems,\nbattle records" as MYSQL
+database "InfluxDB (C-004)\n--\nTime-series coding-process\nrecords for replay" as INFLUX
+database "Redis (C-005, C-006)\n--\nWorkspace socket/version\nmapping, temporary battle\ninvitations, battle state" as REDIS
+
+node "Docker Sandbox (C-009)\nIsolated compile / execution\n(NFR-005)" as SANDBOX
+
+cloud "S3-compatible Object Storage\n(C-010)\nCode files, battle result files,\nuser files, archives" as S3
+cloud "CDN / URL Distribution\n(C-010, NFR-007)" as CDN
+
+node "Automated Deployment (NFR-008)\nDeployment scripts + environment\nconfig (C-007, C-008, C-011)" as DEPLOY
+
+' ---- users and entry ----
+USER --> FE : browse / register / login / edit / battle
+OPS --> DEPLOY : operates and configures
+
+' ---- delivery path ----
+FE --> NGINX : REST HTTP requests (COM-001)
+FE --> NGINX : Socket.IO events (COM-002)
+NGINX --> AUTH
+NGINX --> PROJ
+NGINX --> EXEC
+NGINX --> PLAY
+NGINX --> FILE
+NGINX --> WS
+NGINX --> BATTLE
+
+' ---- authentication context ----
+WS ..> AUTH : requires authenticated user context (NFR-003)
+BATTLE ..> AUTH : requires authenticated user context (NFR-003)
+
+' ---- persistence ----
+AUTH --> MYSQL : DR-001 user account data
+PROJ --> MYSQL : DR-004, DR-005 project /\nversion / file data
+BATTLE --> MYSQL : DR-013 battle records\nand outcomes
+PLAY --> INFLUX : DR-009 records by\nproject, version, time range
+PLAY --> MYSQL : project / version metadata
+
+' ---- cache ----
+WS --> REDIS : DR-008 socket/version mapping\nwhen non-read-only and Redis ready (FR-009, NFR-002)
+BATTLE --> REDIS : DR-010 invitation create/expire,\nDR-011 cache data, DR-012 state,\nisolated + watched accept (FR-013, NFR-001)
+
+' ---- execution ----
+BATTLE --> EXEC : compile-and-judge flow
+EXEC --> SANDBOX : invoke isolated execution (COM-005)
+
+' ---- storage and distribution ----
+FILE --> S3 : upload code / battle /\nuser files and archives (COM-006)
+S3 --> CDN : origin content
+FILE --> CDN : distributable asset and\narchive URLs (FR-018)
+
+' ---- deployment ----
+DEPLOY ..> NGINX
+DEPLOY ..> BACKEND
+DEPLOY ..> REDIS
+DEPLOY ..> MYSQL
+DEPLOY ..> INFLUX
+DEPLOY ..> SANDBOX
+DEPLOY ..> S3
+
+legend right
+  Layers
+  ----
+  Client Tier : Vue browser application (C-002)
+  Edge       : Nginx reverse proxy (C-011)
+  Backend    : Node.js/Express + Socket.IO (C-001)
+  Data       : MySQL, InfluxDB, Redis
+  Execution  : Docker sandbox (C-009)
+  Storage    : S3-compatible object storage + CDN
+  Delivery   : Automated deployment (NFR-008)
+endlegend
+
+@enduml

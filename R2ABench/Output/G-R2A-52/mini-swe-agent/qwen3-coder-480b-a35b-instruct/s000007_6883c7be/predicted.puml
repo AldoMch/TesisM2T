@@ -1,0 +1,66 @@
+@startuml
+title System Architecture - HTTP Proxy with Test Utilities
+
+skinparam componentStyle rectangle
+
+package "System Context" {
+  [Client] as client
+  [HTTP Proxy] as proxy
+  [Upstream Server] as upstream
+  [Test Server] as testServer
+  [Test Client] as testClient
+}
+
+package "Proxy Component" {
+  [Forwarding Handler] as forwarder
+  [Channel Manager] as channelMgr
+}
+
+package "Test Components" {
+  package "Test Server" {
+    [Grizzly/Jersey Server] as jersey
+    [File Download Endpoint] as downloadEP
+    [File Upload Handler] as uploadHdlr
+  }
+  
+  package "Test Client" {
+    [Async HTTP Client] as asyncClient
+    [Workload Generator] as workloadGen
+    [Response Counter] as respCounter
+  }
+}
+
+package "Data Stores" {
+  [Local Filesystem] as fs
+}
+
+client --> proxy : HTTP Requests
+proxy --> upstream : Forwarded Requests
+testClient --> testServer : HTTP Requests
+testServer --> fs : File Operations
+proxy --> fs : File Access (for downloads)
+
+forwarder --> channelMgr : Channel State
+workloadGen --> asyncClient : Async Requests
+asyncClient --> respCounter : Response Codes
+
+note right of proxy
+  Forwards requests only after
+  upstream channel is active
+end note
+
+note right of testServer
+  Uses Grizzly/Jersey stack
+end note
+
+note right of testClient
+  Generates 50K async requests
+  Counts HTTP 200 responses
+end note
+
+note right of downloadEP
+  Returns binary file if exists
+  Sets Content-Disposition header
+end note
+
+@enduml

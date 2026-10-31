@@ -1,0 +1,45 @@
+@startuml
+title "Song Mood Storage, Retrieval, and Search - System Architecture"
+
+skinparam componentStyle uml2
+skinparam shadowing false
+
+actor "End User" as EndUser
+actor "Operator / Data Inspector" as Operator
+
+rectangle "Dockerized Multi-Tier Application" {
+  component "React Frontend\n[Container: frontend]\nBrowser-accessible UI" as Frontend
+  component "FastAPI Backend\n[Container: backend]\nSong lookup & storage workflows" as Backend
+  database "Elasticsearch\n[Container: elasticsearch]\nAuthoritative song & mood store" as Elasticsearch
+  component "Kibana\n[Container: kibana]\nAuxiliary data inspection UI" as Kibana
+}
+
+rectangle "External Systems" {
+  component "Genius API\nExternal song search service" as Genius
+}
+
+EndUser --> Frontend : HTTP browser access\n(UI-001, FR-001, COM-001)
+Frontend --> Backend : Song lookup request\n(API-001, COM-002)
+Backend --> Elasticsearch : Query / write song-mood data\n(API-002, FR-002, FR-004, FR-005, NFR-004)
+Backend --> Genius : Search for missing songs\n(API-003, FR-003, COM-003, C-005)
+Operator --> Kibana : Open data inspection UI\n(FR-006, UI-002)
+Kibana --> Elasticsearch : Inspect stored data\n(API-004)
+
+note right of Backend
+  Known song:
+  - retrieve stored mood from Elasticsearch.
+  Missing song:
+  - search via Genius API.
+  No runtime classifier or model server
+  is assumed (C-009).
+end note
+
+note bottom of Elasticsearch
+  Data handled:
+  - Song record: song name, SLink, lyrics, language (DR-001)
+  - Artist metadata: artist name, genres, song count (DR-002)
+  - Mood association: song identity + mood value (DR-003)
+  Dataset scope: English songs (DR-004, C-008).
+end note
+
+@enduml

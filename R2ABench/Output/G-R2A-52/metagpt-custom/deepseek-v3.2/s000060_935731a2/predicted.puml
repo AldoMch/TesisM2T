@@ -1,0 +1,53 @@
+@startuml
+
+package "Application Interface" {
+    component "Auditing API" as AuditingAPI
+}
+
+package "Core Components" {
+    component "AuditEvent Generator" as AuditEventGenerator
+    component "Configuration Handler" as ConfigurationHandler
+}
+
+package "Integration Abstractions" {
+    interface "EventPublisher Interface" as EventPublisherInterface
+    interface "LogProvider Interface" as LogProviderInterface
+    interface "AuditEventElementFilter Interface" as ElementFilterInterface
+}
+
+package "Infrastructure Implementations" {
+    component "Kafka Event Publisher" as KafkaPublisher
+    component "Logging Implementation" as LoggingImpl
+    component "Element Filter Implementation" as FilterImpl
+}
+
+cloud "External Systems" {
+    database "Kafka" as Kafka
+    component "Downstream Event Consumers" as Consumers
+}
+
+' Data objects
+component "AuditorEventConfig" as EventConfig
+
+' Key Dependencies
+[Integrating Application] --> AuditingAPI : calls
+AuditingAPI --> EventConfig : receives
+AuditingAPI --> AuditEventGenerator : initiates
+EventConfig --> ConfigurationHandler : configures
+ConfigurationHandler --> AuditEventGenerator : provides config to
+
+' Integration Abstraction usage
+AuditEventGenerator --> EventPublisherInterface : publishes via
+AuditEventGenerator --> LogProviderInterface : logs via
+AuditEventGenerator --> ElementFilterInterface : filters via
+
+' Infrastructure implementations
+KafkaPublisher ..> EventPublisherInterface : implements
+LoggingImpl ..> LogProviderInterface : implements
+FilterImpl ..> ElementFilterInterface : implements
+
+' Infrastructure to External Systems
+KafkaPublisher --> Kafka : publishes to
+Kafka --> Consumers : delivers to
+
+@enduml

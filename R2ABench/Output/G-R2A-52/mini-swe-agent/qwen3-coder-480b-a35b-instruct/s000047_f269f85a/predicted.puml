@@ -1,0 +1,73 @@
+@startuml
+!theme plain
+title Archifiltre-Docs System Architecture (Settings, Export, Hash Subsystem)
+
+' Layers
+package "Electron Application Layer" {
+  component "User Settings Module" as SettingsModule
+  component "Translation Module" as TranslationModule
+}
+
+package "Controller Layer" {
+  component "Export Controller" as ExportController
+  component "Hash Controller" as HashController
+}
+
+package "Background Processing Layer" {
+  component "Tree CSV Export Worker" as TreeCSVWorker
+  component "RESIP Export Worker" as RESIPWorker
+  component "CSV Export Worker" as CSVWorker
+  component "Excel Export Worker" as ExcelWorker
+  component "Hash Computation Worker" as HashWorker
+}
+
+package "Data Storage" {
+  database "Application User Data Directory" as UserDataDir
+  file "Persisted Settings" as PersistedSettings
+}
+
+' Interfaces
+interface "Settings API" as SettingsAPI
+interface "Export API" as ExportAPI
+interface "Hash API" as HashAPI
+
+' Connections
+SettingsModule --> SettingsAPI
+SettingsAPI --> ExportController
+SettingsAPI --> HashController
+
+TranslationModule --> ExportController
+TranslationModule --> TreeCSVWorker
+TranslationModule --> RESIPWorker
+TranslationModule --> CSVWorker
+TranslationModule --> ExcelWorker
+
+ExportController --> ExportAPI
+ExportAPI --> TreeCSVWorker
+ExportAPI --> RESIPWorker
+ExportAPI --> CSVWorker
+ExportAPI --> ExcelWorker
+
+HashController --> HashAPI
+HashAPI --> HashWorker
+
+TreeCSVWorker --> UserDataDir : writes CSV
+RESIPWorker --> UserDataDir : writes RESIP
+CSVWorker --> UserDataDir : writes CSV
+ExcelWorker --> UserDataDir : writes Excel
+HashWorker --> UserDataDir : writes debug files
+
+SettingsModule --> PersistedSettings : reads/writes
+
+note right of TranslationModule
+  Provides current language 
+  value to export workers
+end note
+
+note right of HashWorker
+  Processes paths in batches
+  Writes hash-result-debug
+  Writes hash-error-debug
+end note
+
+@enduml

@@ -1,0 +1,138 @@
+@startuml
+package "CLI Layer" {
+  component "Command-line launcher" as CLI
+}
+
+package "API/Application Layer" {
+  component "Caller-facing allocation entry point" as EntryPoint
+  component "Configured processor" as Processor
+}
+
+package "Allocation Method Layer" {
+  interface "Allocation-method contract" as AllocationContract
+  component "Allocation method implementations" as AllocationMethods
+  component "Simple majority" as SimpleMajority
+  component "Ranked-by-votes" as RankedByVotes
+  component "Highest-averages method family" as HighestAverages
+  component "D’Hondt highest averages" as DHondt
+  component "Sainte-Lague/Webster with user-provided first divisor" as SainteLagueWebster
+  component "Imperiali highest averages" as ImperialiHA
+  component "Danish highest averages" as Danish
+  component "Equal proportions / Huntington-Hill" as EqualProportions
+  component "Largest remainder method family" as LargestRemainder
+  component "Largest remainder - Hare" as Hare
+  component "Largest remainder - Droop" as Droop
+  component "Largest remainder - Imperiali" as ImperialiLR
+  component "Variant-specific divisor sequences" as DivisorSequences
+  component "Absolute-majority processing" as AbsoluteMajority
+  component "Qualified-majority processing" as QualifiedMajority
+}
+
+package "Extension/Processing Layer" {
+  interface "Tally filtering API" as TallyFilterAPI
+  interface "Result decoration API" as ResultDecorationAPI
+  component "Extension registry/catalog" as ExtensionCatalog
+}
+
+package "Domain/Data Layer" {
+  component "Tally" as Tally
+  component "Candidate" as Candidate
+  component "Result" as Result
+  component "Properties / Processor configuration" as Config
+  component "Derived tally data (potentialVotes, candidate count)" as DerivedTallyData
+  component "Tie-breaking rules" as TieBreakingRules
+}
+
+package "Error Handling Layer" {
+  component "SeatAllocationException" as SeatAllocationException
+}
+
+package "Data Exchange/IO Layer" {
+  component "XML tally/config/result I/O" as XMLIO
+  component "File system" as FileSystem
+}
+
+node "Command-line shell environment" as Shell
+node "Java runtime environment" as JRE
+
+CLI --> EntryPoint : invokes allocation functions
+CLI --> XMLIO : XML tally/config/result options
+CLI --> Config : processor properties and method selection
+CLI --> ExtensionCatalog : lists available methods, filters, decorators
+CLI --> Tally : candidate vote totals / tally input
+CLI --> FileSystem : file input/output
+
+EntryPoint --> Processor : delegates configured workflow
+EntryPoint --> AllocationContract : uses selected method
+EntryPoint --> Tally : submits tally data
+EntryPoint --> Result : returns allocation result
+EntryPoint --> SeatAllocationException : reports allocation failure
+EntryPoint --> Config : caller-supplied configuration parameters
+
+Processor --> TallyFilterAPI : executes filtering
+Processor --> AllocationContract : executes selected method
+Processor --> ResultDecorationAPI : executes decoration
+Processor --> Config : uses configuration
+Processor --> Tally : processes tally data
+Processor --> TieBreakingRules : applies tie-breaking rules
+
+AllocationContract --> Tally : receives protected tally view
+AllocationContract --> Config : receives configuration parameters
+AllocationContract --> TieBreakingRules : applies tie-breaking rules
+AllocationContract --> DerivedTallyData : receives potential votes and candidate count
+
+AllocationMethods ..|> AllocationContract : satisfies contract
+AllocationMethods o-- SimpleMajority : includes simple-majority variant
+AllocationMethods o-- RankedByVotes : includes ranked-by-votes method
+AllocationMethods o-- HighestAverages : includes highest-averages family
+AllocationMethods o-- EqualProportions : includes equal-proportions / Huntington-Hill
+AllocationMethods o-- LargestRemainder : includes largest-remainder family
+AllocationMethods o-- AbsoluteMajority : includes absolute-majority variant
+AllocationMethods o-- QualifiedMajority : includes qualified-majority variant
+
+HighestAverages o-- DHondt : includes D’Hondt
+HighestAverages o-- SainteLagueWebster : includes Sainte-Lague/Webster with user first divisor
+HighestAverages o-- ImperialiHA : includes Imperiali
+HighestAverages o-- Danish : includes Danish
+HighestAverages --> DivisorSequences : uses variant divisor sequences
+DHondt --> DivisorSequences : uses D’Hondt divisor sequence
+SainteLagueWebster --> DivisorSequences : uses user-provided first divisor
+ImperialiHA --> DivisorSequences : uses Imperiali divisor sequence
+Danish --> DivisorSequences : uses Danish divisor sequence
+
+LargestRemainder o-- Hare : includes Hare
+LargestRemainder o-- Droop : includes Droop
+LargestRemainder o-- ImperialiLR : includes Imperiali
+
+AbsoluteMajority --> QualifiedMajority : delegates with minimumVotes
+AbsoluteMajority --> DerivedTallyData : computes majority threshold from potentialVotes
+AbsoluteMajority --> Tally : uses potentialVotes for majority threshold
+
+QualifiedMajority ..|> AllocationContract : satisfies contract
+
+TallyFilterAPI --> Tally : transforms tally data
+ResultDecorationAPI --> Result : transforms result
+
+Tally --> Candidate : contains
+Tally --> DerivedTallyData : derives potentialVotes and candidate count
+
+Config --> AllocationContract : selected method
+Config --> Tally : tally data
+Config --> TallyFilterAPI : tally filters
+Config --> TieBreakingRules : tie-breaking rules
+Config --> ResultDecorationAPI : result decorators
+
+ExtensionCatalog --> AllocationMethods : catalogs method variants
+ExtensionCatalog --> TallyFilterAPI : catalogs tally filters
+ExtensionCatalog --> ResultDecorationAPI : catalogs result decorators
+
+XMLIO --> Tally : loads XML tally
+XMLIO --> Config : XML configuration I/O
+XMLIO --> Result : XML result output
+XMLIO --> FileSystem : reads/writes XML
+
+Shell --> CLI : invokes
+JRE --> CLI : executes
+JRE --> EntryPoint : executes library
+
+@enduml

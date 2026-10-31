@@ -1,0 +1,79 @@
+@startuml
+title FAC10/week4-jajascript — Nobel Laureates Autocomplete Web App
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+node "Web Browser\n(Search UI)" as Browser
+
+node "Heroku Dyno\n(Node.js Runtime)" as Dyno {
+  package "Application (CommonJS)" as App {
+    [HTTP Router] as Router
+
+    package "Request Handlers" as Handlers {
+      [Home Page Handler] as Home
+      [Static File Server\n+ Content-Type Mapper] as StaticSrv
+      [Not-Found Handler (404)] as NotFound
+    }
+
+    package "Search / Autocomplete" as SearchPkg {
+      [Autocomplete Engine] as Auto
+      [Data Access] as DataAccess
+    }
+  }
+
+  folder "public/\n(HTML, CSS, JS, JPG, ICO)" as Public
+  database "Laureate Data\n(local JSON)" as DataJSON
+}
+
+' Client requests to server
+Browser --> Router : HTTP GET /\nHTTP GET /...search...\nHTTP GET /assets...
+
+' Routing responsibilities
+Router --> Home : route "/" (FR-003)
+Router --> Auto : URL contains "search" (FR-004, C-004)
+Router --> StaticSrv : other requests (FR-005)
+
+' Home & static file handling
+Home --> Public : read index.html
+StaticSrv --> Public : read asset by path (C-002, C-003)
+Home --> NotFound : on file read failure (FR-007)
+StaticSrv --> NotFound : on file read failure (FR-007)
+
+' Search/autocomplete flow
+Auto --> DataAccess : request laureate names (FR-008)
+DataAccess --> DataJSON : read local JSON (A-002, DR-002)
+Auto --> Router : array of names (prefix-match, <=10) (FR-002, FR-009)
+
+' Responses back to client
+Router --> Browser : HTML | CSS | JS | JPG | ICO | JSON (FR-006, NFR-002)
+
+note right of Router
+Plain substring routing logic (C-004):
+- if url == "/" -> Home
+- else if "search" in url -> Autocomplete
+- else -> Static file server
+end note
+
+note right of StaticSrv
+Content-Type mapping (FR-006, NFR-002):
+- html → text/html
+- css  → text/css
+- js   → application/javascript
+- jpg  → image/jpg
+- ico  → image/x-icon
+end note
+
+note bottom of Dyno
+Startup via Node.js start script; deploy target: Heroku
+(A-004, NFR-004; C-001)
+end note
+
+rectangle "Automated Tests" as Tests
+Tests ..> Auto : FR-002, FR-009
+Tests ..> DataAccess : FR-008
+Tests ..> Router : FR-004, FR-005
+Tests ..> StaticSrv : FR-006, FR-007
+Tests ..> Home : FR-003
+
+@enduml

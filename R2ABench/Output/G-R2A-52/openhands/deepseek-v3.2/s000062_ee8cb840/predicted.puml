@@ -1,0 +1,165 @@
+@startuml
+' Udacity Self-Driving Car Engineer Capstone System Architecture
+' Generated from Software Requirements Specification
+
+skinparam componentStyle rectangle
+skinparam nodesep 20
+skinparam ranksep enquiry
+skinparam backgroundColor White
+skinparam defaultFontSize 14
+title Udacity Self-Driving Car Capstone System Architecture
+
+' ==============================================
+' External Systems and Environment
+' ==============================================
+
+package "External Systems & Environment" {
+  [Docker Container] as docker
+  [ROS Environment] as ros
+  [Udacity Capstone Simulator] as simulator
+  [Recorded Training Bag] as bag
+}
+
+' ==============================================
+' Launch Entry Points
+' ==============================================
+
+package "Launch Entry Points" {
+  component "styx.launch\n(Simulator Mode)" as styx_launch
+  component "site.launch\n(Site Mode)" as site_launch
+  
+  note right of styx_launch: FR-001, FR-002\nLaunches simulator mode
+  note left of site_launch: FR-001, FR-003\nLaunches site mode with bag playback
+}
+
+' ==============================================
+' Core Subsystems
+' ==============================================
+
+package "Core Subsystems" {
+  component "Perception Subsystem" as perception {
+    component "Traffic Light\nDetection" as tl_detection
+    component "Traffic Light\nClassification" as tl_classification
+    tl_detection -[hidden]d-> tl_classification
+  }
+  
+  component "Planning Subsystem" as planning {
+    component "Waypoint\nLoading" as wp_loading
+    component "Waypoint\nUpdating" as wp_updating
+    wp_loading -[hidden]d-> wp_updating
+  }
+  
+  component "Control Subsystem" as control {
+    component "Waypoint\nFollowing" as wp_following
+    component "Drive-by-Wire\nControl" as dbw_control
+    wp_following -[hidden]d-> dbw_control
+  }
+}
+
+' ==============================================
+' ROS Topics (Data Exchange)
+' ==============================================
+
+database "ROS Topics" as topics {
+  folder "Input Topics" {
+    file "current_pose" as current_pose
+    file "base_waypoints" as base_waypoints
+    file "traffic_waypoint" as traffic_waypoint
+  }
+  
+  folder "Output Topics" {
+    file "final_waypoints" as final_waypoints
+    file "twist_command" as twist_command
+    file "vehicle_command" as vehicle_command
+  }
+}
+
+' ==============================================
+' User Roles
+' ==============================================
+
+actor "Evaluator" as evaluator
+actor "Developer/\nOperator" as developer
+
+' ==============================================
+' Relationships and Data Flow
+' ==============================================
+
+' External system connections
+docker -- ros : "hosts"
+ros -- styx_launch : "provides\nruntime"
+ros -- site_launch : "provides\nruntime"
+simulator -- styx_launch : "interacts with\n(FR-007)"
+bag -- site_launch : "playback input\n(FR-008)"
+
+' Launch to subsystem connections
+styx_launch --> perception : "activates"
+styx_launch --> planning : "activates"
+styx_launch --> control : "activates"
+site_launch --> perception : "activates"
+site_launch --> planning : "activates"
+site_launch --> control : "activates"
+
+' Perception subsystem data flow
+perception -[hidden]u-> tl_detection
+tl_detection --> tl_classification : "image data"
+tl_classification --> topics.traffic_waypoint : "stop-related\nwaypoint output\n(FR-009)"
+
+' Planning subsystem data flow
+planning -[hidden]u-> wp_loading
+wp_loading --> wp_updating : "waypoint data"
+wp_updating --> topics.final_waypoints : "final waypoints"
+topics.base_waypoints --> wp_loading : "input\n(DR-001)"
+topics.traffic_waypoint --> wp_updating : "modification\ninput"
+
+' Control subsystem data flow
+control -[hidden]u-> wp_following
+wp_following --> dbw_control : "control signals"
+topics.final_waypoints --> wp_following : "guidance input"
+wp_following --> topics.twist_command : "speed control\nrespects twist.twist.linear.x\n(FR-005)"
+dbw_control --> topics.vehicle_command : "throttle, brake,\nsteering commands"
+
+' User interactions
+evaluator --> styx_launch : "runs for\nevaluation\n(FR-001)"
+evaluator --> site_launch : "runs for\nevaluation\n(FR-001)"
+developer --> docker : "builds & runs\n(NFR-002)"
+developer --> simulator : "downloads & runs\n(C-005)"
+developer --> bag : "downloads & unzips\n(C-006)"
+
+' Data flow from simulator/bag
+simulator --> topics.current_pose : "vehicle pose"
+bag --> topics.current_pose : "vehicle pose\nfrom playback"
+bag --> tl_detection : "real images for\ntraffic light detection\n(FR-009)"
+
+' Waypoint following requirement
+topics.final_waypoints --> wp_following : "follow waypoints\n(FR-004)"
+
+' ==============================================
+' Legend and Notes
+' ==============================================
+
+legend right
+  == Legend ==
+  | Component | System module |
+  | Actor     | User role     |
+  | Database  | ROS Topics    |
+  | Arrow     | Data flow/    |
+  |           | interaction   |
+  | Note      | Requirement   |
+  |           | reference     |
+end legend
+
+note bottom of topics
+  **ROS Topics Data Exchange**
+  - Inputs: current_pose, base_waypoints, traffic_waypoint
+  - Outputs: final_waypoints, twist_command, vehicle_command
+  - Waypoint target speed in twist.twist.linear.x (DR-001)
+end note
+
+note top of docker
+  **Environment Prerequisites**
+  - Docker installation required (C-003)
+  - ROS launched from within container (C-004)
+end note
+
+@enduml

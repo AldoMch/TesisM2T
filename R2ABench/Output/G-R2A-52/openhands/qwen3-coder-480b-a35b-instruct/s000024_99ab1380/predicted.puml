@@ -1,0 +1,70 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+actor "Deployment Operator" as operator
+actor "Infrastructure Administrator" as infra_admin
+actor "DevOps Engineer" as devops
+actor "Tester" as tester
+
+package "External Systems" {
+  rectangle "OCI Tenancy" as oci_tenancy
+  rectangle "OCI Compartment" as compartment
+  rectangle "VCN with Subnets" as vcn
+  rectangle "NAT Gateway" as nat
+  rectangle "Bastion Host" as bastion
+  rectangle "Load Balancer" as lb
+}
+
+package "Configuration Layer" {
+  rectangle "terraform.tfvars" as tf_vars
+  rectangle "SSH Keys" as ssh_keys
+  rectangle "Cloud-Init Scripts" as cloud_init
+}
+
+package "Terraform Workflow" {
+  rectangle "Terraform Init" as tf_init
+  rectangle "Terraform Plan" as tf_plan
+  rectangle "Terraform Apply" as tf_apply
+}
+
+package "Jenkins Deployment" {
+  rectangle "Jenkins Master" as master #LightBlue
+  rectangle "Jenkins Slaves/Agents" as slaves #LightBlue
+  
+  master -down-> slaves : JNLP Communication
+}
+
+operator --> tf_vars : Provides Variables
+operator --> ssh_keys : Provides Keys
+infra_admin --> vcn : Prepares Network
+devops --> cloud_init : Provides Scripts
+tester --> tf_plan : Reviews Plan
+
+tf_vars --> tf_init : Input
+ssh_keys --> tf_init : Input
+cloud_init --> tf_init : Input
+
+tf_init --> tf_plan : Passes Configuration
+tf_plan --> tf_apply : Confirmed Plan
+tf_apply --> master : Provisions
+tf_apply --> slaves : Provisions
+
+vcn --> master : Network Attachment
+vcn --> slaves : Network Attachment
+nat --> slaves : Outbound Connectivity
+bastion --> slaves : SSH Access
+lb --> master : Public Access
+
+note right of master
+  May be in public subnet
+end note
+
+note right of slaves
+  May be in private subnets
+end note
+
+note top of tf_apply
+  Creates OCI Resources
+end note
+
+@enduml

@@ -1,0 +1,121 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A252F
+}
+skinparam database {
+  BackgroundColor #FDEBD0
+  BorderColor #E67E22
+  FontColor #1A252F
+}
+skinparam node {
+  BackgroundColor #EAF4EA
+  BorderColor #27AE60
+  FontColor #1A252F
+}
+skinparam cloud {
+  BackgroundColor #F9EBEA
+  BorderColor #C0392B
+  FontColor #1A252F
+}
+skinparam component {
+  BackgroundColor #F4ECF7
+  BorderColor #8E44AD
+  FontColor #1A252F
+}
+skinparam arrow {
+  Color #2C3E50
+  FontColor #2C3E50
+}
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title statlord — System Architecture
+
+actor "Browser Editor User" as BrowserUser
+actor "API Client" as APIClient
+actor "Display Device / Viewer" as DisplayDevice
+
+node "Client Layer\n(Browser)" {
+  rectangle "TypeScript/React\nSingle-Page Application\n(Browser Editor)" as SPA {
+    component "Layout Editor\n(Canvas, Multi-Display)" as LayoutEditor
+    component "Redux Store\n(controls, elements,\nlayouts, gauges, displays)" as ReduxStore
+    component "Viewer Interface\n(B&W Pixel Renderer)" as ViewerUI
+  }
+}
+
+node "Container / Server Layer\n(Python 3.7, Django)" {
+  rectangle "Django Server\n(manage.py runserver)" as DjangoServer {
+    component "API Layer" as API {
+      component "Gauge API\n(key, value)" as GaugeAPI
+      component "Display API\n(key, available,\nresolution_x, resolution_y,\ncurrent_layout, display_data,\nrotation)" as DisplayAPI
+      component "Layout API\n(key, data,\ndisplay_positions)" as LayoutAPI
+      component "Viewer Route\n(render path)" as ViewerRoute
+    }
+    rectangle "Static Asset Server\n(Built Client Assets)" as StaticServer
+  }
+}
+
+node "Build Environment\n(Node.js, npm)" {
+  rectangle "Client Build Pipeline\n(npm install, npm run build)" as BuildPipeline
+  rectangle "Built Static Assets\n(JS/CSS/HTML)" as BuiltAssets
+}
+
+database "PostgreSQL\n(Persistent Storage)" as PostgreSQL {
+  rectangle "Gauge Entity\n(key, value)" as GaugeDB
+  rectangle "Display Entity\n(key, available,\nresolution_x, resolution_y,\ncurrent_layout → Layout,\ndisplay_data, rotation)" as DisplayDB
+  rectangle "Layout Entity\n(key, data [binary],\ndisplay_positions [text])" as LayoutDB
+}
+
+cloud "Physical / Virtual Displays\n(OLEDs, e-paper, LCDs)" as PhysicalDisplays
+
+BrowserUser --> SPA : Opens browser editor
+APIClient --> API : POST / GET data\n(Gauge, Display, Layout)
+DisplayDevice --> ViewerRoute : Fetches rendered view
+
+SPA --> StaticServer : Served as static assets
+LayoutEditor --> ReduxStore : manages state\n(controls, elements,\nlayouts, gauges, displays)
+ReduxStore --> LayoutEditor : state updates
+SPA --> API : REST API calls\n(create, update, delete,\nrender requests)
+ViewerUI --> ViewerRoute : requests rendered output
+
+BuildPipeline --> BuiltAssets : npm run build\n(TypeScript compile)
+BuiltAssets --> StaticServer : deployed to static content
+
+DjangoServer --> PostgreSQL : ORM / query
+GaugeAPI --> GaugeDB : persist / retrieve
+DisplayAPI --> DisplayDB : persist / retrieve
+LayoutAPI --> LayoutDB : persist / retrieve
+ViewerRoute --> DisplayDB : read display_data\n& current_layout
+ViewerRoute --> LayoutDB : read layout data
+DisplayDB --> LayoutDB : current_layout reference\n(null on Layout delete)
+
+ViewerRoute --> DisplayDevice : B&W pixel view\nat display resolution
+DisplayDevice --> PhysicalDisplays : render output
+
+note bottom of DjangoServer
+  C-006: Development-grade only.
+  Django dev server (not production-ready).
+end note
+
+note bottom of PostgreSQL
+  DR-009: If referenced Layout deleted,
+  Display.current_layout → null
+  DR-005: Gauge.value ≤ 600 chars
+  DR-006: Layout.data = binary
+  DR-007: Layout.display_positions = text
+end note
+
+note right of SPA
+  NFR-003: Redux manages
+  controls, elements,
+  layouts, gauges, displays
+  DR-003: Client Display state omits
+  current_layout
+end note
+
+@enduml

@@ -1,0 +1,97 @@
+@startuml
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 20
+skinparam ranksep 20
+
+title Escape Application - System Architecture
+
+actor "Anonymous Visitor" as Anonymous
+actor "Registered User" as Registered
+actor "Operator/Developer" as Operator
+
+package "Web Client (Browser)" {
+  component "Sign-up View\n\"Escape Signup\"" as Signup
+  component "Sign-in View\n\"Escape Signin\"" as Signin
+  component "Shared Credential\nHandlers & State" as CredHandlers
+  component "Credential Submission\n(JSON POST)" as CredSubmit
+  component "Sequential Content Retrieval\n(title-based)" as ContentRetrieval
+  component "Error Display" as ErrorDisplay
+  component "Scene Rendering\n(A-Frame/aframe-react)" as SceneRendering
+  component "React-Router" as ReactRouter
+  component "jQuery" as JQuery
+  component "A-Frame" as AFrame
+  component "aframe-react" as AframeReact
+}
+
+package "A-Frame Scene Components" {
+  component Lobby
+  component SF
+  component Louvre
+  component Berlin
+  component Milan
+  component Rome
+  component Hack
+  component Camera
+  component Sky
+  component Plane
+  component TextPlane
+}
+
+package "Web Server (Node.js/Express)" {
+  component "HTTP Routing" as HTTPRouting
+  component "Authentication Routes" as AuthRoutes
+  component "Content Service\n(paragraph/title)" as ContentService
+  component "User Controller" as UserController
+  component "User Model" as UserModel
+  component "Password Verification\n(bcrypt-nodejs)" as Bcrypt
+}
+
+database "MariaDB\n(users, likes, photos, comments)" as MariaDB
+component "Redis Cache" as Redis
+cloud "AWS S3-style Image Storage" as S3
+
+Anonymous --> Signup : uses
+Registered --> Signin : uses
+Operator --> HTTPRouting : maintains
+Operator --> MariaDB : maintains
+Operator --> Redis : maintains
+Operator --> S3 : maintains
+
+Signup --> CredHandlers : email/password change events
+Signin --> CredHandlers : email/password change events
+Signup --> Signin : navigate via React-Router
+Signin --> Signup : navigate via React-Router
+CredHandlers --> CredSubmit : shared state
+CredSubmit --> AuthRoutes : HTTP POST JSON credentials
+ContentRetrieval --> HTTPRouting : async title query
+ContentRetrieval --> ErrorDisplay : on failure (log + visible error)
+SceneRendering --> AFrame
+SceneRendering --> AframeReact
+SceneRendering --> Lobby
+SceneRendering --> SF
+SceneRendering --> Louvre
+SceneRendering --> Berlin
+SceneRendering --> Milan
+SceneRendering --> Rome
+SceneRendering --> Hack
+SceneRendering --> Camera
+SceneRendering --> Sky
+SceneRendering --> Plane
+SceneRendering --> TextPlane
+Signup ..> JQuery
+Signin ..> JQuery
+
+HTTPRouting --> AuthRoutes : route auth
+HTTPRouting --> ContentService : route content
+AuthRoutes --> UserController : create/retrieve
+UserController --> UserModel : persistence operations
+UserModel --> MariaDB : read/write
+AuthRoutes --> Bcrypt : compare password
+Bcrypt --> UserModel : stored password hash
+HTTPRouting --> Redis : cache access
+HTTPRouting --> S3 : image operations
+ContentService --> MariaDB : content lookup
+
+@enduml

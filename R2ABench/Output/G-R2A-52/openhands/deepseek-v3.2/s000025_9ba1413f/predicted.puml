@@ -1,0 +1,131 @@
+@startuml
+' System Architecture Diagram for Help With COVID Session and Task Workflow
+' Generated from Software Requirements Specification
+
+title System Architecture: Help With COVID Session and Task Workflow
+
+skinparam componentStyle rectangle
+skinparam nodeFontSize 12
+skinparam arrowFontSize 10
+skinparam noteFontSize 10
+
+' ==== External Actors and Systems ====
+rectangle "External Actors and Systems" {
+  actor "Authenticated User" as auth_user
+  actor "End User" as end_user
+  actor "Configuration Operator" as config_op
+  database "Firebase Authentication" as firebase_auth
+  database "OnFleet Task System" as onfleet
+  cloud "Environment Variables" as env_vars
+}
+
+' ==== Frontend Layer ====
+rectangle "Frontend Layer (Next.js)" as frontend {
+  component "Next.js Application" as next_app
+  component "Session Handler" as session_handler
+  component "Frontend Form" as frontend_form
+}
+
+' ==== Middleware Layer ====
+rectangle "Middleware Layer" as middleware {
+  component "Task Request Processor" as task_processor
+  component "Address Handler" as address_handler
+  component "Service-Area Check" as service_check
+  component "Session Middleware" as session_middleware
+}
+
+' ==== Backend Layer ====
+rectangle "Backend Layer (Firebase Functions)" as backend {
+  component "Login API\nPOST /api/login" as login_api
+  component "Logout API\nPOST /api/logout" as logout_api
+  component "Firebase Functions\nCustom APIs" as firebase_funcs
+  component "OnFleet Handler" as onfleet_handler
+}
+
+' ==== Data Stores ====
+rectangle "Data Stores" {
+  database "Server-Side Session" as session_store
+  database "Runtime Configuration" as runtime_config
+}
+
+' ==== Connections and Data Flows ====
+
+' Authentication Flow
+auth_user --> session_handler : "user.getIdToken()"
+session_handler --> login_api : "POST /api/login\n{token: <Firebase ID token>}"
+session_handler --> logout_api : "POST /api/logout"
+login_api --> firebase_auth : "Verify Firebase ID token"
+firebase_auth --> login_api : "Decoded token data"
+login_api --> session_middleware : "Store auth data"
+session_middleware --> session_store : "Write session"
+session_store --> session_middleware : "Read session"
+
+' Task Request Flow (Frontend Entry)
+end_user --> frontend_form : "Submit help request"
+frontend_form --> task_processor : "Task request data"
+end_user --> task_processor : "External channel entry\n(text/call)"
+
+' Task Processing Flow
+task_processor --> address_handler : "Address information"
+address_handler --> task_processor : "Neighborhood/routing data"
+task_processor --> service_check : "Service-area determination"
+service_check --> task_processor : "Eligibility decision"
+task_processor --> onfleet_handler : "Eligible task request"
+
+' Backend Task Creation
+onfleet_handler --> onfleet : "Create task"
+onfleet --> onfleet_handler : "Task creation result"
+
+' Configuration Flow
+config_op --> env_vars : "Set Firebase config"
+env_vars --> runtime_config : "Load at startup"
+runtime_config --> next_app : "Provide config"
+runtime_config --> firebase_funcs : "Provide config"
+runtime_config --> login_api : "Provide config"
+
+' Internal API Access
+next_app --> firebase_funcs : "API requests"
+next_app --> login_api : "Login requests"
+next_app --> logout_api : "Logout requests"
+
+' Session Management
+session_middleware --> login_api : "Wrap API handler"
+session_middleware --> logout_api : "Wrap API handler"
+
+' ==== Notes and Annotations ====
+note top of auth_user
+  Provides Firebase ID token
+  via getIdToken() method
+end note
+
+note right of env_vars
+  FIREBASE_AUTH_DOMAIN
+  FIREBASE_DATABASE_URL
+  FIREBASE_PROJECT_ID
+  FIREBASE_PUBLIC_API_KEY
+end note
+
+note left of session_store
+  Stores:
+  - Decoded token data
+  - Original token value
+  Server-side session object
+end note
+
+note bottom of onfleet
+  External task handling system
+  Creates tasks for eligible requests
+end note
+
+' ==== Legend ====
+legend right
+  == Data Flow Colors ==
+  |<#LightBlue>| Authentication Flow
+  |<#LightGreen>| Task Request Flow
+  |<#LightYellow>| Configuration Flow
+  |<#LightGray>| Internal API Flow
+  == Layer Boundaries ==
+  | Rectangle | Logical layer grouping
+end legend
+
+@enduml

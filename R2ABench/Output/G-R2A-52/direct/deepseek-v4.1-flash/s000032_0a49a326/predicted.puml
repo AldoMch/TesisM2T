@@ -1,0 +1,104 @@
+@startuml
+title Activiti 7 Guide-Documented Platform Examples - System Architecture
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam monochrome true
+
+actor "Authenticated User" as AuthUser
+actor "Task API User" as TaskUser
+actor "Human Participant" as Human
+actor "Cluster Operator" as Operator
+actor "Developer / Integrator" as Dev
+
+package "Identity and Security" {
+  component "Keycloak\n(SSO / Token Issuer)" as Keycloak
+  component "Spring Boot Application Context" as SpringBoot
+  component "Spring Security\n(user, group, role, logged-in context)" as SpringSecurity
+}
+
+package "Activiti Cloud Runtime" {
+  component "Gateway / API Gateway" as Gateway <<background>>
+  component "Example Runtime Bundle" as RuntimeBundle
+  component "ProcessRuntime API" as ProcessRuntime
+  component "TaskRuntime API" as TaskRuntime
+  component "Audit Service" as AuditService
+  component "Query Service" as QueryService
+  component "Notification Service" as NotificationService <<background>>
+  component "Cloud Connectors" as CloudConnectors <<background>>
+}
+
+package "Kubernetes / GKE Deployment" {
+  component "Kubernetes / GKE Cluster" as K8s
+  component "NGINX Ingress Controller" as Ingress
+  component "Public IP" as PublicIP
+  component "Deployment Descriptors" as DeploymentDescriptors
+  component "Kubernetes Registry / ConfigMaps" as Registry <<background>>
+}
+
+AuthUser --> Keycloak : obtain authentication token
+AuthUser --> Gateway : protected user endpoint request\nwith valid token
+Gateway --> RuntimeBundle : route authenticated requests
+Gateway --> ProcessRuntime : route process requests
+Gateway --> TaskRuntime : route task requests
+Gateway --> AuditService : route audit requests
+Gateway --> QueryService : route query requests
+
+Keycloak --> SpringSecurity : token / identity integration
+SpringBoot --> SpringSecurity : security context
+SpringSecurity --> RuntimeBundle : authenticated context
+SpringSecurity --> ProcessRuntime : authenticated context
+SpringSecurity --> TaskRuntime : logged-in user +\nACTIVITI_USER / ROLE_ACTIVITI_USER
+
+AuthUser --> ProcessRuntime : view process definitions\nstart SimpleProcess instance
+ProcessRuntime --> RuntimeBundle : process definition lookup\nstart SimpleProcess
+RuntimeBundle --> AuditService : audit events for\njust-started process instance
+RuntimeBundle --> QueryService : process execution information
+TaskUser --> TaskRuntime : task operations
+TaskRuntime --> Human : human task participation
+ProcessRuntime <--> TaskRuntime : combined documented full example
+
+Operator --> Ingress : configure ingress
+Operator --> PublicIP : configure public IP exposure
+Ingress --> PublicIP : external access point
+Ingress --> Gateway : route external requests
+Ingress --> RuntimeBundle : route to selected internal services
+K8s --> Gateway : hosts
+K8s --> RuntimeBundle : hosts
+K8s --> ProcessRuntime : hosts
+K8s --> TaskRuntime : hosts
+K8s --> AuditService : hosts
+K8s --> QueryService : hosts
+DeploymentDescriptors --> K8s : input rate + replica count parameters
+Registry --> K8s : registry / config maps
+
+Dev --> ProcessRuntime : follows example
+Dev --> TaskRuntime : follows example
+Dev --> RuntimeBundle : module reference
+
+note right of Gateway
+  Architecture background components:
+  Gateway, Query Service, Notification Service,
+  Cloud Connectors, Kubernetes registry/config maps.
+  They remain background unless a functional requirement
+  assigns explicit behavior.
+end note
+
+note bottom of RuntimeBundle
+  Example Runtime Bundle hosts deployed
+  process definitions, including SimpleProcess.
+end note
+
+note bottom of DeploymentDescriptors
+  Scalability experiments: data input rate and
+  cloud component replica counts are configurable.
+end note
+
+note bottom of SpringBoot
+  Compatibility context:
+  Activiti 7.0.0-EA-201802 aligned with
+  Spring Boot 2.0.0.RELEASE and Spring Cloud Finchley.M8.
+  Point-in-time context only.
+end note
+
+@enduml

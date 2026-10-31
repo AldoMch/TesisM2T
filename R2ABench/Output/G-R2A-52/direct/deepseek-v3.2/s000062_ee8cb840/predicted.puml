@@ -1,0 +1,88 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  ArrowColor #333333
+  FontColor #333333
+}
+
+title "Self-Driving Car System Architecture"
+
+package "External Systems" {
+  [Udacity Simulator] as SIM
+  [Recorded Training Bag] as BAG
+  [Docker Environment] as DOCKER
+  [ROS Master] as ROS
+}
+
+package "Launch Entry Points" {
+  [styx.launch\nSimulator Mode] as STYX
+  [site.launch\nSite Mode] as SITE
+}
+
+package "Perception Subsystem" {
+  [Traffic Light Detector] as DETECTOR
+  [Traffic Light Classifier] as CLASSIFIER
+  [Traffic Waypoint Generator] as TRAFFIC_WP
+}
+
+package "Planning Subsystem" {
+  [Waypoint Loader] as LOADER
+  [Waypoint Updater] as UPDATER
+  [Final Waypoint Generator] as FINAL_WP
+}
+
+package "Control Subsystem" {
+  [Waypoint Follower] as FOLLOWER
+  [Drive-by-Wire Controller] as DBW
+}
+
+package "Vehicle Interface" {
+  [Vehicle Command\nPublisher] as VEHICLE
+}
+
+' External connections
+DOCKER --> ROS : "hosts"
+ROS --> STYX : "launches"
+ROS --> SITE : "launches"
+SIM --> ROS : "connects to"
+BAG --> ROS : "playback to"
+
+' Topic communications
+STYX --> DETECTOR : "camera/image"
+SITE --> DETECTOR : "camera/image"
+DETECTOR --> CLASSIFIER : "detected lights"
+CLASSIFIER --> TRAFFIC_WP : "light state\n(red/yellow/green)"
+TRAFFIC_WP --> UPDATER : "traffic waypoint"
+
+LOADER --> UPDATER : "base waypoints"
+UPDATER --> FINAL_WP : "updated waypoints"
+FINAL_WP --> FOLLOWER : "final waypoints"
+
+FOLLOWER --> DBW : "twist command"
+DBW --> VEHICLE : "throttle/brake/steering"
+VEHICLE --> SIM : "vehicle control"
+VEHICLE --> BAG : "command output"
+
+' Data flow annotations
+note right of TRAFFIC_WP
+  Produces stop-related
+  waypoints for red/yellow
+  lights
+end note
+
+note right of LOADER
+  Loads waypoints with
+  twist.twist.linear.x
+  target speed
+end note
+
+note right of DBW
+  Respects waypoint
+  target speed limits
+end note
+
+@enduml

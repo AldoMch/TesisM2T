@@ -1,0 +1,47 @@
+@startuml
+
+package "Off-Chain Generated Bindings" {
+  component "Controller Go Binding" as CGo
+  component "Generic Go Contract Binding" as GGo
+}
+
+package "Account/Gas Boundary" {
+  component "Owner Address / EOA" as EOA
+  component "Gas Tank (ETH)" as GasTank
+}
+
+cloud "External Oracle/Rate Provider" as ExtOracle
+
+cloud "Ethereum Network" as EthNet {
+  package "On-Chain Smart Contracts" {
+    component "Consumer Contract Wallet" as Wallet
+    component "Controller Contract" as Controller
+    component "Token Whitelist Contract" as Whitelist
+    component "Oracle/Rate Provider Contract" as OracleSC
+    component "TKN Holder Contract" as TKNHolder
+  }
+  component "Ethereum Name Service (ENS)" as ENS
+}
+
+CGo --> EthNet
+GGo --> EthNet
+EOA --> EthNet
+GasTank --> EOA
+
+Wallet --> ENS
+Wallet --> Controller
+Wallet --> Whitelist
+
+TKNHolder --> Whitelist
+
+ExtOracle --> OracleSC
+
+CGo --> Controller
+GGo --> Wallet
+GGo --> Controller
+GGo --> Whitelist
+GGo --> OracleSC
+
+EOA --> Wallet
+
+@enduml

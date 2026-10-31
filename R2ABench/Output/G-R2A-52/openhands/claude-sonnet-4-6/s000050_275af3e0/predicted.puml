@@ -1,0 +1,101 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+
+title hAFL2 Hypervisor Fuzzing System Architecture
+
+node "Host System (Linux)" {
+    package "hAFL2 / kAFL-Fuzzer" {
+        component "test.py\n(Standalone Test Runner)" as TestRunner
+        component "kAFL-Fuzzer Core\n(pytest / Random / Deterministic / Havoc)" as KAFLCore
+        component "Mutation Engine\n(Bitflip / Deterministic / Havoc)" as MutEngine
+        component "Launch Scripts\n(bash)" as LaunchScripts
+    }
+
+    package "Linux Userspace Fuzzing Workflow" {
+        component "initrd Builder" as InitrdBuilder
+        component "Target Binary" as TargetBin
+        component "Shared Libraries\n(host copy)" as SharedLibs
+        component "initrd Image" as Initrd
+        component "Embedded Forkserver\n(kAFL hypercall → AFL I/O)" as Forkserver
+    }
+}
+
+node "Windows Build Environment" {
+    package "Build Toolchain" {
+        component "compile.sh\n(bash)" as CompileScript
+        component "Visual Studio\nCompiler" as VSCompiler
+    }
+
+    package "Windows Helper Binaries" {
+        component "loader.exe\n(Snapshot + Load/Execute)" as LoaderExe
+        component "packet_sender.exe\n(IOCTL Trigger)" as PacketSender
+    }
+
+    package "Windows Drivers" {
+        component "Harness Driver" as HarnessDriver
+        component "Crash Monitor Driver" as CrashMonDriver
+    }
+}
+
+node "Child Partition VM (Windows)" {
+    component "Harness\n(Fuzzing Payload Sender)" as ChildHarness
+    component "loader.exe Instance" as LoaderInst
+    component "packet_sender.exe Instance" as PacketInst
+    component "DSE Disabled" as DSE
+}
+
+node "Root Partition VM (Windows)" {
+    component "VMSwitch\n(vmswitch.sys)" as VMSwitch
+    component "Hyper-V Network Stack\n(netvsc / VMBus)" as HyperVNet
+    component "Crash Monitor\n(Root Partition)" as CrashMon
+}
+
+database "initrd Archive" as InitrdArchive {
+    component "Packaged Binary + Libs" as PackagedBin
+}
+
+collections "Mutation Payload\n(byte array)" as Payload
+collections "Effector Map\n(boolean[])" as EffectorMap
+collections "Crash-Monitoring Result" as CrashResult
+collections "Fuzzing Payload" as FuzzPayload
+
+TestRunner --> KAFLCore : invokes
+KAFLCore --> MutEngine : drives mutation
+MutEngine ..> Payload : operates on
+MutEngine ..> EffectorMap : optional input
+
+LaunchScripts --> InitrdBuilder : triggers
+InitrdBuilder --> TargetBin : packages
+InitrdBuilder --> SharedLibs : copies from host
+InitrdBuilder --> Initrd : produces
+Initrd --> InitrdArchive : stored as
+
+InitrdArchive --> Forkserver : launches within guest
+Forkserver --> KAFLCore : kAFL hypercall I/O mapping
+
+CompileScript --> LoaderExe : compiles
+CompileScript --> PacketSender : compiles
+VSCompiler --> HarnessDriver : compiles
+VSCompiler --> CrashMonDriver : compiles
+
+LoaderExe --> LoaderInst : deployed to child partition
+PacketSender --> PacketInst : deployed to child partition
+HarnessDriver --> ChildHarness : deployed
+CrashMonDriver --> CrashMon : deployed to root partition
+
+LoaderInst --> PacketInst : loads and executes
+PacketInst --> ChildHarness : triggers IOCTL
+
+ChildHarness --> FuzzPayload : generates
+FuzzPayload --> HyperVNet : transmitted via VMBus/netvsc
+HyperVNet --> VMSwitch : routed to vmswitch.sys
+VMSwitch --> CrashMon : crash event
+
+CrashMon --> CrashResult : produces
+CrashResult --> KAFLCore : crash feedback to hAFL2
+
+DSE --> ChildHarness : prerequisite (DSE disabled)
+
+@enduml

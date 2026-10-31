@@ -1,0 +1,547 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "fa95a2f97d1ded721ffeec18e50818685f2d4c7537357761048e79aee3f3aa8e",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "c8146e81a11b4599de1a2dd58b21cc27adf843ce4defe1b2a394bfe8ea24be4b",
+  "predicted_edges_sha256": "8c7e2ccba81c5f58638889a025fcbf5370d7b635a54ebbdbe26c27cc80f9717c",
+  "precision": 0.08695652173913043,
+  "recall": 0.4444444444444444,
+  "f1": 0.14545454545454548,
+  "reference_edges": [
+    [
+      "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB",
+      "Global::VPC peering\\nconnection"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::AWS EventBridge",
+      "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::SNS Topic\\nalerts",
+      "AWS Cloud\\nConnector Account::Chat notification"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::SNS Topic\\nalerts",
+      "AWS Cloud\\nConnector Account::Email notification"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::SNS Topic\\nalerts",
+      "AWS Cloud\\nConnector Account::Slack notification"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+      "AWS Cloud\\nConnector Account::AWS EventBridge"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+      "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics",
+      "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+    ],
+    [
+      "Global::VPC peering\\nconnection",
+      "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)",
+      "AWS Cloud (current account & region)::AWS SNS\\n(notification topic + target policy)"
+    ],
+    [
+      "AWS Cloud (current account & region)::AWS SNS\\n(notification topic + target policy)",
+      "AWS Cloud (current account & region)::Manual SNS Subscription\\nAdministration"
+    ],
+    [
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+      "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)"
+    ],
+    [
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+      "External Actors & Systems::CMS BigMAC"
+    ],
+    [
+      "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)",
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)"
+    ],
+    [
+      "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)",
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)"
+    ],
+    [
+      "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)",
+      "Data Access / Integration Layer::Event Routing Adapter"
+    ],
+    [
+      "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)",
+      "External Actors & Systems::Appian Data Source"
+    ],
+    [
+      "Application / Service Layer::Stage Listing Service\\n(list currently running stages)",
+      "Data Layer::Running Stage List Output\\n(runningStages=<csv>)"
+    ],
+    [
+      "Data Access / Integration Layer::AWS CLI Adapter\\n(stage queries)",
+      "AWS Cloud (current account & region)::AWS CLI Credentials"
+    ],
+    [
+      "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)",
+      "Data Layer::Connector Definitions Store\\n(connectors + cluster/service config)"
+    ],
+    [
+      "Data Access / Integration Layer::Event Routing Adapter",
+      "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)"
+    ],
+    [
+      "Data Access / Integration Layer::Event Routing Adapter",
+      "Data Layer::Topic & Event Pattern Config\\n(event filter criteria, SNS topic)"
+    ],
+    [
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)",
+      "External Actors & Systems::GitHub Actions API\\n(workflow runs - deploy.yml)"
+    ],
+    [
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)",
+      "External Actors & Systems::GitHub Pull Requests API\\n(closed PRs, base branch)"
+    ],
+    [
+      "External Actors & Systems::Appian Data Source",
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)"
+    ],
+    [
+      "External Actors & Systems::Developer / Operator",
+      "Presentation / Interaction Layer::Onboarding Procedure"
+    ],
+    [
+      "External Actors & Systems::Developer / Operator",
+      "Presentation / Interaction Layer::Terminal / Script Interface\\n(nvm use, run listRunningStages)"
+    ],
+    [
+      "External Actors & Systems::Repository Maintainer",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "External Actors & Systems::Repository Maintainer",
+      "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)"
+    ],
+    [
+      "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)",
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "AWS Cloud\\nConnector Account::AWS EventBridge",
+      "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::SNS Topic\\nalerts",
+      "AWS Cloud\\nConnector Account::Chat notification"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::SNS Topic\\nalerts",
+      "AWS Cloud\\nConnector Account::Email notification"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::SNS Topic\\nalerts",
+      "AWS Cloud\\nConnector Account::Slack notification"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)",
+      "AWS Cloud (current account & region)::AWS SNS\\n(notification topic + target policy)"
+    ],
+    [
+      "AWS Cloud (current account & region)::AWS SNS\\n(notification topic + target policy)",
+      "AWS Cloud (current account & region)::Manual SNS Subscription\\nAdministration"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB",
+      "Global::VPC peering\\nconnection"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+      "AWS Cloud\\nConnector Account::AWS EventBridge"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+      "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics",
+      "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+    ],
+    [
+      "Global::VPC peering\\nconnection",
+      "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+      "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)"
+    ],
+    [
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+      "External Actors & Systems::CMS BigMAC"
+    ],
+    [
+      "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)",
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)"
+    ],
+    [
+      "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)",
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)"
+    ],
+    [
+      "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)",
+      "Data Access / Integration Layer::Event Routing Adapter"
+    ],
+    [
+      "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)",
+      "External Actors & Systems::Appian Data Source"
+    ],
+    [
+      "Application / Service Layer::Stage Listing Service\\n(list currently running stages)",
+      "Data Layer::Running Stage List Output\\n(runningStages=<csv>)"
+    ],
+    [
+      "Data Access / Integration Layer::AWS CLI Adapter\\n(stage queries)",
+      "AWS Cloud (current account & region)::AWS CLI Credentials"
+    ],
+    [
+      "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)",
+      "Data Layer::Connector Definitions Store\\n(connectors + cluster/service config)"
+    ],
+    [
+      "Data Access / Integration Layer::Event Routing Adapter",
+      "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)"
+    ],
+    [
+      "Data Access / Integration Layer::Event Routing Adapter",
+      "Data Layer::Topic & Event Pattern Config\\n(event filter criteria, SNS topic)"
+    ],
+    [
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)",
+      "External Actors & Systems::GitHub Actions API\\n(workflow runs - deploy.yml)"
+    ],
+    [
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)",
+      "External Actors & Systems::GitHub Pull Requests API\\n(closed PRs, base branch)"
+    ],
+    [
+      "External Actors & Systems::Appian Data Source",
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)"
+    ],
+    [
+      "External Actors & Systems::Developer / Operator",
+      "Presentation / Interaction Layer::Onboarding Procedure"
+    ],
+    [
+      "External Actors & Systems::Developer / Operator",
+      "Presentation / Interaction Layer::Terminal / Script Interface\\n(nvm use, run listRunningStages)"
+    ],
+    [
+      "External Actors & Systems::Repository Maintainer",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "External Actors & Systems::Repository Maintainer",
+      "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)"
+    ],
+    [
+      "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)",
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)"
+    ]
+  ],
+  "internal_reference_edges": [],
+  "internal_predicted_edges": [
+    [
+      "Application / Service Layer::Stage Listing Service\\n(list currently running stages)",
+      "Data Access / Integration Layer::AWS CLI Adapter\\n(stage queries)"
+    ],
+    [
+      "Presentation / Interaction Layer::Onboarding Procedure",
+      "Presentation / Interaction Layer::Terminal / Script Interface\\n(nvm use, run listRunningStages)"
+    ],
+    [
+      "Presentation / Interaction Layer::Terminal / Script Interface\\n(nvm use, run listRunningStages)",
+      "Application / Service Layer::Stage Listing Service\\n(list currently running stages)"
+    ]
+  ],
+  "reference_witnesses": [
+    {
+      "edge_index": 1,
+      "counterpart_index": 0,
+      "source_group": 0,
+      "target_group": 1
+    },
+    {
+      "edge_index": 2,
+      "counterpart_index": 1,
+      "source_group": 1,
+      "target_group": 3
+    },
+    {
+      "edge_index": 3,
+      "counterpart_index": 1,
+      "source_group": 1,
+      "target_group": 3
+    },
+    {
+      "edge_index": 4,
+      "counterpart_index": 1,
+      "source_group": 1,
+      "target_group": 3
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 0,
+      "counterpart_index": 1,
+      "source_group": 0,
+      "target_group": 1
+    },
+    {
+      "edge_index": 1,
+      "counterpart_index": 2,
+      "source_group": 1,
+      "target_group": 3
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "AWS Cloud\\nAppian Source::VPC": [
+      4
+    ],
+    "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB": [
+      4
+    ],
+    "AWS Cloud\\nConnector Account::AWS EventBridge": [
+      0
+    ],
+    "AWS Cloud\\nConnector Account::Chat notification": [
+      3
+    ],
+    "AWS Cloud\\nConnector Account::Email notification": [
+      3
+    ],
+    "AWS Cloud\\nConnector Account::SNS Topic\\nalerts": [
+      1
+    ],
+    "AWS Cloud\\nConnector Account::Slack notification": [
+      3
+    ],
+    "AWS Cloud\\nConnector Account::VPC": [
+      2
+    ],
+    "AWS Cloud\\nConnector Account::VPC::CMS BigMAC": [],
+    "AWS Cloud\\nConnector Account::VPC::connector": [
+      2
+    ],
+    "AWS Cloud\\nConnector Account::VPC::connector::Private subnet": [
+      2
+    ],
+    "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster": [
+      2
+    ],
+    "AWS Cloud\\nConnector Account::VPC::topics": [
+      2
+    ],
+    "AWS Cloud\\nConnector Account::VPC::topics::Private subnet": [
+      2
+    ],
+    "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics": [
+      2
+    ],
+    "Global::AWS Cloud\\nAppian Source": [
+      4
+    ],
+    "Global::AWS Cloud\\nConnector Account": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "Global::VPC peering\\nconnection": [
+      0
+    ]
+  },
+  "predicted_endpoint_anchors": {
+    "AWS Cloud (current account & region)::AWS CLI Credentials": [],
+    "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)": [
+      0
+    ],
+    "AWS Cloud (current account & region)::AWS SNS\\n(notification topic + target policy)": [
+      1
+    ],
+    "AWS Cloud (current account & region)::Manual SNS Subscription\\nAdministration": [
+      3
+    ],
+    "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)": [],
+    "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)": [],
+    "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)": [],
+    "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)": [],
+    "Application / Service Layer::Stage Listing Service\\n(list currently running stages)": [
+      4
+    ],
+    "Data Access / Integration Layer::AWS CLI Adapter\\n(stage queries)": [
+      4
+    ],
+    "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)": [
+      2
+    ],
+    "Data Access / Integration Layer::Event Routing Adapter": [],
+    "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)": [],
+    "Data Layer::Connector Definitions Store\\n(connectors + cluster/service config)": [],
+    "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)": [],
+    "Data Layer::Running Stage List Output\\n(runningStages=<csv>)": [],
+    "Data Layer::Topic & Event Pattern Config\\n(event filter criteria, SNS topic)": [],
+    "External Actors & Systems::Appian Data Source": [],
+    "External Actors & Systems::CMS BigMAC": [],
+    "External Actors & Systems::Developer / Operator": [],
+    "External Actors & Systems::GitHub Actions API\\n(workflow runs - deploy.yml)": [],
+    "External Actors & Systems::GitHub Pull Requests API\\n(closed PRs, base branch)": [],
+    "External Actors & Systems::Repository Maintainer": [],
+    "Global::AWS Cloud (current account & region)": [
+      0,
+      1,
+      3
+    ],
+    "Global::Application / Service Layer": [
+      4
+    ],
+    "Global::Data Access / Integration Layer": [
+      2,
+      4
+    ],
+    "Global::Data Layer": [],
+    "Global::External Actors & Systems": [],
+    "Global::Presentation / Interaction Layer": [
+      4
+    ],
+    "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)": [],
+    "Presentation / Interaction Layer::Onboarding Procedure": [
+      4
+    ],
+    "Presentation / Interaction Layer::Terminal / Script Interface\\n(nvm use, run listRunningStages)": [
+      4
+    ]
+  },
+  "reference_unanchored_edges": [
+    [
+      "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster",
+      "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+    ],
+    [
+      "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics",
+      "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+    ]
+  ],
+  "predicted_unanchored_edges": [
+    [
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+      "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)"
+    ],
+    [
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)",
+      "External Actors & Systems::CMS BigMAC"
+    ],
+    [
+      "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)",
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)"
+    ],
+    [
+      "Application / Service Layer::Deployment Metrics Collector\\n(deploy.yml runs)",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)",
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)"
+    ],
+    [
+      "Application / Service Layer::PR Merge-Time Metrics Collector\\n(averageTimeToMerge)",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)",
+      "Data Access / Integration Layer::Event Routing Adapter"
+    ],
+    [
+      "Application / Service Layer::Service Event Alerting Service\\n(match + route to SNS)",
+      "External Actors & Systems::Appian Data Source"
+    ],
+    [
+      "Application / Service Layer::Stage Listing Service\\n(list currently running stages)",
+      "Data Layer::Running Stage List Output\\n(runningStages=<csv>)"
+    ],
+    [
+      "Data Access / Integration Layer::AWS CLI Adapter\\n(stage queries)",
+      "AWS Cloud (current account & region)::AWS CLI Credentials"
+    ],
+    [
+      "Data Access / Integration Layer::Connector Management Library Adapter\\n(put / delete / restart)",
+      "Data Layer::Connector Definitions Store\\n(connectors + cluster/service config)"
+    ],
+    [
+      "Data Access / Integration Layer::Event Routing Adapter",
+      "AWS Cloud (current account & region)::AWS EventBridge\\n(event routing rules)"
+    ],
+    [
+      "Data Access / Integration Layer::Event Routing Adapter",
+      "Data Layer::Topic & Event Pattern Config\\n(event filter criteria, SNS topic)"
+    ],
+    [
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)",
+      "External Actors & Systems::GitHub Actions API\\n(workflow runs - deploy.yml)"
+    ],
+    [
+      "Data Access / Integration Layer::GitHub API Client\\n(paginated, per_page=100)",
+      "External Actors & Systems::GitHub Pull Requests API\\n(closed PRs, base branch)"
+    ],
+    [
+      "External Actors & Systems::Appian Data Source",
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)"
+    ],
+    [
+      "External Actors & Systems::Developer / Operator",
+      "Presentation / Interaction Layer::Onboarding Procedure"
+    ],
+    [
+      "External Actors & Systems::Developer / Operator",
+      "Presentation / Interaction Layer::Terminal / Script Interface\\n(nvm use, run listRunningStages)"
+    ],
+    [
+      "External Actors & Systems::Repository Maintainer",
+      "Data Layer::Metrics Results\\n(failedRuns, passedRuns, averageTimeToMerge)"
+    ],
+    [
+      "External Actors & Systems::Repository Maintainer",
+      "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)"
+    ],
+    [
+      "Presentation / Interaction Layer::Connector Config Handler\\n(invocation entrypoint)",
+      "Application / Service Layer::Connector Configuration Service\\n(apply definitions, restart)"
+    ]
+  ]
+}

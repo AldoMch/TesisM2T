@@ -1,0 +1,91 @@
+@startuml
+
+package "Client Layer" {
+  component "Home Recipes Flutter/Dart Client" as ClientApp
+  component "Dart Generated Client Code" as DartStubs
+}
+
+package "API Gateway Layer" {
+  component "gRPC-Gateway Middleware" as Gateway
+
+  package "HTTP API" {
+    interface "HTTP API" as IHTTP
+    interface "addRecipe (API-005)" as API005
+    interface "ListAllRecipes (API-006)" as API006
+    interface "ListAllIngredientsAtHome (API-007)" as API007
+    interface "GetAllIngredientsForRecipe (API-008)" as API008
+  }
+}
+
+package "Service Layer" {
+  component "Go gRPC Server" as GoServer
+  interface "gRPC API" as IGRPC
+}
+
+package "Contract Layer" {
+  component "Protocol Buffers Definitions (.proto)" as ProtoDefs
+}
+
+package "Build / Code Generation Layer" {
+  component "Protocol Buffers Compiler & Plugins" as Protoc
+  component "gRPC-Gateway Generation Deps & Annotations" as GatewayDeps
+}
+
+package "Deployment Layer" {
+  node "Docker Image / Runtime" as Docker
+  node "Kubernetes Manifests / Config" as K8sManifests
+  node "AKS Deployment Config" as AKSConfig
+}
+
+package "External Systems" {
+  node "Flutter/Dart Client Runtimes (Android, iOS, Web, macOS)" as ClientRuntimes
+  node "Dart Toolchain (with Protobuf support)" as DartToolchain
+  node "Go Runtime & gRPC Tooling" as GoRuntime
+  node "Standard HTTP Clients (curl, etc.)" as HttpClients
+  cloud "Local Kubernetes Cluster" as LocalK8s
+  cloud "Azure Kubernetes Service (AKS)" as AKS
+  component "gRPC-Gateway Runtime Dependencies" as GatewayRuntime
+}
+
+' Layer interactions
+ClientApp --> DartStubs : uses
+DartStubs --> IGRPC : gRPC calls
+HttpClients --> IHTTP : HTTP requests
+
+IGRPC <-- GoServer : provides
+IHTTP <-- Gateway : provides
+API005 <-- Gateway : provides
+API006 <-- Gateway : provides
+API007 <-- Gateway : provides
+API008 <-- Gateway : provides
+Gateway --> IGRPC : translates HTTP->gRPC
+
+' Contract dependencies
+DartStubs --> ProtoDefs : generated from
+GoServer --> ProtoDefs : generated from
+Gateway --> ProtoDefs : generated from
+
+' Build / code generation dependencies
+Protoc --> DartStubs : generates
+Protoc --> GoServer : generates
+GatewayDeps --> Gateway : generates
+Protoc --> ProtoDefs : reads definitions
+GatewayDeps --> ProtoDefs : reads annotations
+DartToolchain --> Protoc : invokes with Dart plugin
+
+' Deployment
+Docker --> GoServer : packages image for
+Docker --> Gateway : packages image for
+K8sManifests --> LocalK8s : targets
+AKSConfig --> AKS : targets
+LocalK8s --> GoServer : runs
+LocalK8s --> Gateway : runs
+AKS --> GoServer : runs
+AKS --> Gateway : runs
+
+' External runtimes/tooling
+ClientApp --> ClientRuntimes : runs on
+GoServer --> GoRuntime : runs on
+Gateway --> GatewayRuntime : depends on
+
+@enduml

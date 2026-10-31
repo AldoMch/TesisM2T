@@ -1,0 +1,129 @@
+@startuml
+left to right direction
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "User-in-the-box Framework" {
+  component "Simulator Builder" as Builder
+  component "MuJoCo XML Integration Layer" as XMLIntegration
+  component "Simulator Runtime" as Runtime
+  component "Gym Adapter" as GymAdapter
+  interface "OpenAI Gym Interface" as IGym
+  component "Packaging Service" as Packaging
+  component "RL Training Workflow" as Trainer
+  component "Evaluation Runner" as Evaluator
+  component "Action Logger" as ActionLogger
+}
+
+package "Module Registry / Extensions" {
+  package "Biomechanical Model Modules" as BioMods {
+    component "Biomechanical Models" as BioModels
+  }
+  package "Perception Modules" as PercepMods {
+    component "Vision Modality"
+    component "Proprioception Modality"
+  }
+  package "Interaction Task Modules" as TaskMods {
+    component "Interaction Tasks" as Tasks
+  }
+}
+
+package "Artifacts & Data" {
+  artifact "YAML Simulator Configuration" as YAMLConfig
+  artifact "Biomechanical MuJoCo XML" as BioXML
+  artifact "Task MuJoCo XML" as TaskXML
+  artifact "Combined MuJoCo XML" as CombinedXML
+  component "Standalone Gym-compatible Simulator Package" as SimulatorPkg
+  node "Run Folder" as RunFolder {
+    folder "checkpoints/" as Checkpoints
+    folder "evaluate/" as EvaluateDir
+    artifact "action_log (optional)" as ActionLog
+  }
+}
+
+component "MuJoCo Engine" as MuJoCo <<External>>
+component "Gym Client (e.g., RL library, scripts)" as GymClient <<External>>
+component "Simulator Builder User" as BuilderUser <<User>>
+component "Training User" as TrainingUser <<User>>
+component "Evaluator User" as EvaluatorUser <<User>>
+component "Module Developer" as ModuleDev <<User>>
+
+' Interfaces
+GymAdapter -down- IGym
+SimulatorPkg -down- IGym
+
+' Users to entry points
+BuilderUser --> YAMLConfig : author/maintain
+BuilderUser --> Builder : invoke build
+TrainingUser --> Trainer : run training
+EvaluatorUser --> Evaluator : run evaluation
+ModuleDev --> BioMods : add/extend modules
+ModuleDev --> PercepMods : add/extend modules
+ModuleDev --> TaskMods : add/extend modules
+
+' Build pipeline
+YAMLConfig --> Builder : configuration
+Builder --> BioModels : select model
+Builder --> Tasks : select task
+Builder --> PercepMods : select modalities
+BioModels --> BioXML : provide MuJoCo XML
+Tasks --> TaskXML : provide MuJoCo XML
+BioXML --> XMLIntegration
+TaskXML --> XMLIntegration
+XMLIntegration --> CombinedXML : generate integrated MJCF
+CombinedXML --> Builder
+Builder --> Runtime : initialize components
+PercepMods --> Runtime : wrap modalities
+GymAdapter --> Runtime : attach
+Runtime --> MuJoCo : load with Combined XML
+CombinedXML --> MuJoCo
+
+' Packaging
+Builder --> Packaging : provide built runtime + assets
+CombinedXML --> Packaging
+Packaging --> SimulatorPkg : produce standalone package
+
+' Gym interoperability
+IGym <.. GymClient : use
+
+' Training workflow
+Trainer --> IGym : interact (step/reset)
+Trainer --> Runtime : configure training hooks
+Trainer --> Checkpoints : write model checkpoints
+Trainer --> RunFolder : write training artifacts
+
+' Evaluation workflow
+Evaluator --> RunFolder : read config + artifacts
+Evaluator --> Checkpoints : load latest/specified checkpoint
+Evaluator --> EvaluateDir : ensure/create
+Evaluator --> IGym : evaluate episodes
+Evaluator --> ActionLogger : enable when configured
+ActionLogger --> ActionLog : write actions (if enabled)
+ActionLogger --> EvaluateDir : place logs/recordings
+
+' Package-based usage
+Evaluator --> SimulatorPkg : load/use standalone simulator
+GymClient --> SimulatorPkg : run via Gym API
+
+' Notes and constraints
+note right of BioModels
+- Accept action inputs in [-1, 1]
+- Apply actuator controls in [0, 1]
+- Supports muscle/motor actuation
+end note
+
+note top of PercepMods
+Perception modalities organized by modality
+(e.g., vision, proprioception) with base-class contract
+end note
+
+note bottom of SimulatorPkg
+Self-contained, Gym-compatible package
+(standalone deployment)
+end note
+
+note bottom of RunFolder
+Contains artifacts for loading simulator, checkpoints,
+and evaluation outputs under 'evaluate/'
+end note
+@enduml

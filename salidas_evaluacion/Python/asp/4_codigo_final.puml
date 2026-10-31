@@ -1,0 +1,29 @@
+@startuml
+component "Achievement & Claim Lifecycle Service" as compachievementservice
+component "Hotspot & Influence Analytics Engine" as companalyticsservice
+component "API Gateway & Security Controller" as compapigateway
+component "Automated Backup & Retention System" as compbackupmanagementsystem
+component "Data Collection & ETL Pipeline" as compdataingestionpipeline
+component "Secure Hybrid Persistence Layer" as comphybridstorageengine
+component "Institution Hierarchy Management Service" as compinstitutionservice
+component "Academic Collaboration & Messaging Service" as compinteractionservice
+component "Academic Misconduct Detection Service" as compmisconductdetectionservice
+component "Multilingual Semantic Search Engine" as compnlpsearchengine
+component "Recommendation & Discovery Engine" as comprecommendationservice
+component "Conversational Search & Translation Gateway" as compsearchconversationalservice
+component "User and Scholar Profile Service" as compusermanagement
+compachievementservice --> comphybridstorageengine : Stores and reads achievement classifications, claims, and status records with AES-256 encryption.
+compachievementservice --> compmisconductdetectionservice : Triggers plagiarism checks and blacklist validations on claimed or submitted drafts.
+companalyticsservice --> comphybridstorageengine : Stores computed metrics and reads aggregated academic records.
+compapigateway --> compinteractionservice : Transfers comment submissions, questions, and mutual-verification private messaging sessions.
+compapigateway --> compsearchconversationalservice : Directs conversational search queries and filter parameters.
+compapigateway --> compusermanagement : Routes user authentication, profile requests, and scholar verification actions.
+compdataingestionpipeline --> companalyticsservice : Feeds synchronized and cleaned academic data for hotspot computation and influence scoring.
+compdataingestionpipeline --> comphybridstorageengine : Persists structured and unstructured academic data into storage.
+comphybridstorageengine --> compbackupmanagementsystem : Supplies database dumps and transaction logs for hourly incremental and daily full backups.
+compinteractionservice --> compachievementservice : Verifies literature and achievement bindings for commentary, annotations, and Q&A.
+compnlpsearchengine --> comphybridstorageengine : Queries index and unstructured literature corpora for search and filtering.
+compsearchconversationalservice --> compnlpsearchengine : Dispatches parsed search terms and conversational contexts for semantic retrieval.
+compsearchconversationalservice --> comprecommendationservice : Passes user query patterns to inform cross-disciplinary recommendation diversity rules.
+compusermanagement --> compinstitutionservice : Queries and associates scholar profiles with institutional nodes in the hierarchy.
+@enduml

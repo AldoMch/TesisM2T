@@ -1,0 +1,240 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+skinparam package {
+  BackgroundColor #EAF7EA
+  BorderColor #27AE60
+}
+skinparam node {
+  BackgroundColor #FFF3E0
+  BorderColor #E67E22
+}
+skinparam database {
+  BackgroundColor #F3E5F5
+  BorderColor #8E44AD
+}
+skinparam arrow {
+  Color #555555
+}
+skinparam defaultTextAlignment center
+
+title torc_py Task-Based Parallelism Library — System Architecture
+
+actor "Python Application\nDeveloper" as AppDev
+actor "HPC / MPI\nApplication Developer" as HPCDev
+actor "Data Preprocessing\nUser" as DataUser
+actor "Tester" as Tester
+
+package "Application Layer" {
+  [Application Code\n(import torc)] as AppCode
+  [Image Preprocessing\nExample] as ImgPrep
+  [Numerical Optimization\nExample (CMA/Pi4U)] as NumOpt
+  [Master-Worker\nExample] as MWExample
+  [SPMD Switching\nExample] as SPMDExample
+  [Task Stealing\nExample] as StealExample
+}
+
+package "torc Python API (torc module)" {
+  component "Lifecycle API" as LifecycleAPI {
+    [torc.start(f)] as Start
+    [torc.init()] as Init
+    [torc.launch(f)] as Launch
+    [torc.shutdown()] as Shutdown
+  }
+
+  component "Task Submission & Control API" as TaskAPI {
+    [torc.submit(f, *args,\nqid=-1, callback=None)] as Submit
+    [torc.wait(tasks=None)] as Wait
+    [torc.map(f, *seq,\nchunksize=1)] as Map
+    [torc.as_completed(tasks=None)] as AsCompleted
+    [torc.spmd(f, *args)] as SPMD
+  }
+
+  component "Stealing Control API" as StealAPI {
+    [torc.enable_stealing()] as EnableStealing
+    [torc.disable_stealing()] as DisableStealing
+  }
+
+  component "Query & Timing API" as QueryAPI {
+    [torc.worker_id()\ntorc.num_workers()] as WorkerQuery
+    [torc.node_id()\ntorc.num_nodes()] as NodeQuery
+    [torc.gettime()] as GetTime
+  }
+}
+
+package "Task Descriptor (Future)" {
+  component "Task Descriptor" as TaskDesc {
+    [task.input()] as TaskInput
+    [task.result()] as TaskResult
+  }
+  note right of TaskDesc
+    Stores submitted args (DE-001)
+    and return values (DE-002).
+    Passed to callbacks (DE-004).
+  end note
+}
+
+package "Runtime Core" {
+  component "Task Scheduler" as Scheduler {
+    [Cyclic Distribution\n(qid=-1)] as CyclicDist
+    [Directed Submission\n(qid=target)] as DirectedSub
+    [Callback Executor\n(on spawning rank)] as CallbackExec
+    [Parallel Map\nOrchestrator] as MapOrch
+  }
+
+  component "Worker Thread Pool\n(per MPI Process)" as WorkerPool {
+    [Worker Thread 1] as WT1
+    [Worker Thread 2] as WT2
+    [Worker Thread N] as WTN
+    [Worker Queue 1] as WQ1
+    [Worker Queue 2] as WQ2
+    [Worker Queue N] as WQN
+  }
+
+  component "Task Stealing Engine" as StealEngine {
+    [Idle Worker\nDetector] as IdleDetect
+    [Steal Request\nIssuer] as StealReq
+    [Queue Monitor] as QueueMon
+  }
+
+  component "Lifecycle Manager" as LifecycleMgr {
+    [Runtime Initializer] as RuntimeInit
+    [Primary Task\nLauncher (Rank 0)] as PrimaryLaunch
+    [Shutdown Handler] as ShutdownHandler
+    [Server Thread\n(yield control)] as ServerThread
+  }
+}
+
+package "Environment Configuration" {
+  [TORC_WORKERS\n(default: 1)] as EnvWorkers
+  [TORC_STEALING\n(default: False)] as EnvStealing
+  [TORC_SERVER_YIELDTIME] as EnvServerYield
+  [TORC_WORKER_YIELDTIME] as EnvWorkerYield
+}
+
+package "MPI Communication Layer\n(mpi4py)" {
+  component "Internal MPI\nCommunicator" as InternalMPI {
+    [Inter-Process\nTask Dispatch] as MPIDispatch
+    [Steal Request\nMessaging] as MPISteal
+    [SPMD Broadcast\n& Barrier] as MPISpmd
+    [Result Return\n(to spawning rank)] as MPIResult
+  }
+}
+
+package "Optional Dependencies" {
+  [numpy] as Numpy
+  [cma] as CMA
+  [h5py] as H5py
+  [pillow] as Pillow
+  [termcolor] as Termcolor
+}
+
+package "External Data" {
+  database "Image Files\n(labeled subfolders)" as ImgFiles
+  database "HDF5 Output File" as HDF5File
+}
+
+AppDev --> AppCode
+HPCDev --> AppCode
+HPCDev --> SPMDExample
+DataUser --> ImgPrep
+Tester --> AppCode
+Tester --> ImgPrep
+
+AppCode --> LifecycleAPI
+AppCode --> TaskAPI
+AppCode --> StealAPI
+AppCode --> QueryAPI
+
+ImgPrep --> TaskAPI
+NumOpt --> TaskAPI
+MWExample --> TaskAPI
+SPMDExample --> TaskAPI
+StealExample --> TaskAPI
+
+Start --> LifecycleMgr
+Init --> LifecycleMgr
+Launch --> LifecycleMgr
+Shutdown --> LifecycleMgr
+
+Submit --> Scheduler
+Wait --> Scheduler
+Map --> Scheduler
+AsCompleted --> Scheduler
+SPMD --> InternalMPI
+
+EnableStealing --> StealEngine
+DisableStealing --> StealEngine
+
+Submit ..> TaskDesc : creates
+Map ..> TaskDesc : creates
+TaskDesc --> TaskInput
+TaskDesc --> TaskResult
+CallbackExec --> TaskDesc : receives
+
+Scheduler --> CyclicDist
+Scheduler --> DirectedSub
+Scheduler --> CallbackExec
+Scheduler --> MapOrch
+
+CyclicDist --> WorkerPool
+DirectedSub --> WorkerPool
+MapOrch --> WorkerPool
+
+WQ1 --> WT1
+WQ2 --> WT2
+WQN --> WTN
+
+WorkerPool --> StealEngine
+StealEngine --> IdleDetect
+StealEngine --> StealReq
+StealEngine --> QueueMon
+QueueMon --> WQ1
+QueueMon --> WQ2
+QueueMon --> WQN
+
+LifecycleMgr --> RuntimeInit
+LifecycleMgr --> PrimaryLaunch
+LifecycleMgr --> ShutdownHandler
+LifecycleMgr --> ServerThread
+
+WorkerPool --> InternalMPI
+StealReq --> MPISteal
+MPISteal --> InternalMPI
+Scheduler --> MPIDispatch
+MPIResult --> CallbackExec
+
+EnvWorkers --> LifecycleMgr
+EnvStealing --> StealEngine
+EnvServerYield --> ServerThread
+EnvWorkerYield --> WorkerPool
+
+AppCode --> Termcolor
+NumOpt --> CMA
+NumOpt --> Numpy
+ImgPrep --> Numpy
+ImgPrep --> Pillow
+ImgPrep --> H5py
+
+ImgPrep --> ImgFiles : reads
+ImgPrep --> HDF5File : writes
+
+node "MPI Process / Node 0\n(Rank 0 — Primary)" as Rank0 {
+  [Primary Application\nTask] as PAT
+}
+
+node "MPI Process / Node 1..N\n(Rank 1..N — Workers)" as RankN {
+  [Worker Execution\n(awaiting tasks)] as WorkerExec
+}
+
+PrimaryLaunch --> PAT
+InternalMPI --> RankN
+WorkerExec --> MPIResult
+
+@enduml

@@ -1,0 +1,109 @@
+@startuml
+title HypnoLog Server - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+package "External Logging Producers" {
+  [HTTP/JSON Logging Client\n(any language or environment)] as Producer
+}
+
+node "Browser Client" as BrowserNode {
+  [Web UI\n/client.html] as WebUI
+  [Socket.IO Client] as SioClient
+  [Ajv Validator\nHypnoLog Data Object schema] as Ajv
+  [Received Data Store\nclient-side list] as ReceivedStore
+  [UI State\nlast update / tags / name] as UIState
+  [Window Dispatcher] as WindowDispatcher
+  [Default Window] as DefaultWindow
+  [Visualizer Dispatcher\nfirst matching canDisplay] as VisDispatcher
+  [Visualizer Config Loader] as ConfigLoader
+  [Visualizer 1..n\ncanDisplay(obj), display(obj, cb)] as Visualizers
+}
+
+node "Node.js / Express Server" as ServerNode {
+  component "HTTP Server\n(port 7000 default, CLI overridable)" as HttpServer
+  component "Express Application" as ExpressApp
+  component "JSON Body Parser\nlimit 50mb" as BodyParser
+  component "Logging Router\nmounted at /logger" as LoggingRouter
+  component "/logger/in\nPOST JSON" as LoggerIn
+  component "/logger/status\nGET status" as LoggerStatus
+  component "Static Web Assets\n/public" as StaticAssets
+  component "Socket.IO Server" as SocketIOServer
+  component "Connected Display Clients\nRegistry" as ClientRegistry
+}
+
+package "HypnoLog Data Model" {
+  [HypnoLog Data Object\n{ data*, type*, tags?, name? }] as DataObject
+  [HypnoLog-error Object\nerror message + details + original] as ErrorObject
+}
+
+Producer --> LoggerIn : HTTP POST\nContent-Type: application/json
+Producer --> LoggerStatus : HTTP GET /logger/status
+
+HttpServer --> ExpressApp : hosts
+ExpressApp --> BodyParser : uses
+ExpressApp --> LoggingRouter : routes
+ExpressApp --> StaticAssets : serves
+LoggingRouter --> LoggerIn
+LoggingRouter --> LoggerStatus
+HttpServer --> SocketIOServer : attaches to same HTTP server
+
+LoggerIn --> BodyParser : parses JSON body
+LoggerIn --> SocketIOServer : forwards parsed log object
+
+SocketIOServer --> ClientRegistry : registers/removes connected clients
+SocketIOServer --> SioClient : notification event\n(received log object)
+SioClient --> SocketIOServer : Socket.IO connection\n(same origin)
+
+StaticAssets --> WebUI : serves /client.html + JS bundles
+WebUI --> SioClient : creates connection to same origin
+WebUI --> Ajv : loads validator
+WebUI --> ConfigLoader : requests visualizer configuration
+ConfigLoader --> Visualizers : loads configured visualizers\n(ignores load failures)
+WebUI --> Visualizers : loads modules
+
+SioClient --> Ajv : validates received message
+Ajv --> DataObject : schema checks data + type
+Ajv --> ReceivedStore : stores valid object
+Ajv --> ErrorObject : invalid message wrapper
+ErrorObject --> ReceivedStore : stores displayable error
+
+ReceivedStore --> UIState : updates last-update
+ReceivedStore --> WindowDispatcher : dispatches object
+UIState --> WindowDispatcher : tag/name display metadata
+WindowDispatcher --> DefaultWindow : display call
+
+DefaultWindow --> VisDispatcher : submit object for visualization
+VisDispatcher --> Visualizers : evaluate canDisplay(obj)
+VisDispatcher --> Visualizers : call display(obj, callback) on first match
+Visualizers --> DefaultWindow : DOM element appended
+Visualizers --> DataObject : reads data/type/tags/name
+
+note left of HttpServer
+  Startup:
+  node ./bin/www
+  npm start
+  CLI aliases
+  Default port 7000; CLI arg overrides.
+end note
+
+note right of ServerNode
+  Scope exclusions:
+  persistence, retention, deletion,
+  authentication, authorization,
+  privacy controls.
+end note
+
+note right of LoggerIn
+  Server forwards parsed body without
+  route-level schema rejection (DR-006).
+end note
+
+note bottom of BrowserNode
+  Invalid messages are not silently discarded;
+  they become HypnoLog-error objects (NFR-004).
+end note
+
+@enduml

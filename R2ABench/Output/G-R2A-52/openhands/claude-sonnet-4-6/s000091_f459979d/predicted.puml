@@ -1,0 +1,77 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #444444
+skinparam arrowColor #444444
+skinparam backgroundColor #FEFEFE
+
+title System Architecture: LwM2M Device Management with Blockchain Integration
+
+actor "Authenticated API Client" as ApiClient
+actor "Backend Integration Service" as BackendSvc
+actor "LwM2M Service Component" as LwM2MSvc
+
+package "Spring Backend" {
+    component "User HTTP Controller" as UserCtrl {
+        portout "GET /users" as GetUsers
+        portout "POST /add" as PostAdd
+    }
+    component "JWT Utility\n(JwtUtility.isValidToken)" as JwtUtil
+    component "User Service" as UserService
+}
+
+package "Blockchain Integration Layer" {
+    component "Blockchain Client Service" as BlockchainSvc
+    component "32-byte ASCII\nEncoder/Decoder" as Encoder
+    component "Smart Contract Wrapper\n(Client/Bootstrap Contract)" as ContractWrapper
+    component "Web3j HTTP Transport" as Web3j
+}
+
+package "LwM2M / Leshan Layer" {
+    component "LwM2M Node Deserializer\n(JSON -> Typed Nodes)" as NodeDeserializer
+    component "Bootstrap Config Service" as BootstrapCfg
+    component "Leshan / LwM2M\nModel Types" as LeshanModel
+}
+
+database "User Data Store" as UserDB
+cloud "Ethereum-Compatible Node\n(HTTP endpoint)" as EthNode
+
+ApiClient --> UserCtrl : HTTP request\n(Authorization header)
+BackendSvc --> BlockchainSvc : retrieve / submit\nclient bootstrap data
+LwM2MSvc --> NodeDeserializer : LwM2M node JSON
+LwM2MSvc --> BootstrapCfg : request bootstrap config\nby endpoint
+
+UserCtrl --> JwtUtil : validate token\n(result: 0/1/2/other)
+UserCtrl --> UserService : add / retrieve users\n(on result=0)
+UserService --> UserDB : CRUD
+
+BlockchainSvc --> Encoder : encode string fields\nto fixed 32-byte ASCII
+BlockchainSvc --> ContractWrapper : getAllClients()\naddClient(fields)\ngetClientByEndpoint(endpoint)
+Encoder --> ContractWrapper : encoded byte32 values
+ContractWrapper --> Web3j : contract call / transaction
+Web3j --> EthNode : HTTP transport
+
+BlockchainSvc --> NodeDeserializer : (bootstrap info\nto LwM2M nodes)
+BootstrapCfg --> BlockchainSvc : retrieve client\nby endpoint
+BootstrapCfg --> Encoder : decode 32-byte fields\nto ASCII strings
+
+NodeDeserializer --> LeshanModel : map primitives\n(BOOLEAN / STRING /\nINTEGER / FLOAT)
+
+note right of JwtUtil
+  result=0: authorized
+  result=1: 401 Unauthorized
+  result=2: 403 Forbidden
+  other:    400 Bad Request
+end note
+
+note right of Encoder
+  Submission: String -> byte32 ASCII
+  Retrieval:  byte32 -> ASCII String
+end note
+
+note bottom of ContractWrapper
+  Fields: endpoint, bootstrap server URL,
+  bootstrap identity, bootstrap key,
+  server URL, server identity, server key
+end note
+
+@enduml

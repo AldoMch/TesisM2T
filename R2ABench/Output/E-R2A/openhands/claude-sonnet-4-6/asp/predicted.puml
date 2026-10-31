@@ -1,0 +1,239 @@
+@startuml
+!theme plain
+skinparam rectangle {
+  BackgroundColor #F8F9FA
+  BorderColor #6C757D
+  FontSize 13
+}
+skinparam package {
+  BackgroundColor #EEF2FF
+  BorderColor #6366F1
+  FontSize 14
+  FontStyle bold
+}
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #FB8C00
+}
+skinparam cloud {
+  BackgroundColor #E8F5E9
+  BorderColor #43A047
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1E88E5
+}
+
+title Zhiyan Tongjie Academic Achievement Sharing Platform — System Architecture
+
+'==========================
+' ACTORS
+'==========================
+actor "Visitor" as Visitor
+actor "Registered User" as RegUser
+actor "Certified Scholar" as Scholar
+actor "Institution Administrator" as InstAdmin
+actor "Expert Reviewer" as ExpertRev
+actor "System Administrator" as SysAdmin
+
+'==========================
+' APPLICATION LAYER
+'==========================
+package "Application Layer" {
+
+  package "Account & Scholar Portal" {
+    rectangle "Registration &\nAuthentication" as Auth
+    rectangle "Scholar\nCertification" as Certify
+    rectangle "Profile\nManagement" as Profile
+    rectangle "Scholar Portal\nViewer" as Portal
+  }
+
+  package "Literature Discovery" {
+    rectangle "Multidimensional\nRetrieval" as MultiRetr
+    rectangle "Semantic &\nMultilingual Search" as SemSearch
+    rectangle "Multi-turn\nConversational Search" as MultiTurn
+    rectangle "Filter & Ranking" as FilterRank
+    rectangle "Personalized\nPresentation" as Personalized
+    rectangle "Cross-disciplinary\nRecommendation" as CrossDisc
+  }
+
+  package "Achievement & Institution Management" {
+    rectangle "Academic\nClassification" as Classification
+    rectangle "Achievement\nClaiming" as Claiming
+    rectangle "Ownership\nDispute Resolution" as Dispute
+    rectangle "Institution\nApplications" as InstApp
+    rectangle "Institution Hierarchy\nManagement" as InstHierarchy
+  }
+
+  package "Academic Interaction & Collaboration" {
+    rectangle "Moderated\nComments" as Comments
+    rectangle "Academic Q&A" as QnA
+    rectangle "Verified Private\nMessaging" as Messaging
+    rectangle "Scholar Following" as Following
+    rectangle "Annotations &\nReport Sharing" as Annotations
+  }
+
+  package "Administration" {
+    rectangle "Certification &\nInstitution Review" as AdminReview
+    rectangle "Content\nModeration" as ContentMod
+    rectangle "Final Dispute\nHandling" as AdminDispute
+    rectangle "Access &\nDisclosure Control" as AccessControl
+    rectangle "Collection &\nSync Monitoring" as SyncMonitor
+  }
+
+}
+
+'==========================
+' SUPPORT LAYER
+'==========================
+package "Support Layer" {
+
+  rectangle "Semantic Processing\nService\n(error correction, cross-language\nterm mapping, query context)" as SemanticSvc
+
+  rectangle "User Profiling\nService\n(preferences, behavior,\ndiversity rules)" as ProfilingSvc
+
+  rectangle "Authorization &\nSecurity Service\n(RBAC, institution scope,\ndisclosure state, AES-256)" as AuthzSvc
+
+  rectangle "Academic Analysis\nService\n(hotspot reports, influence\nprofiles, analysis periods)" as AnalysisSvc
+
+  rectangle "Misconduct Detection\nService\n(plagiarism check,\nblacklist filtering)" as MisconductSvc
+
+}
+
+'==========================
+' INFRASTRUCTURE LAYER
+'==========================
+package "Infrastructure Layer" {
+
+  package "Data Acquisition" {
+    rectangle "Crawler &\nAPI Collector\n(scheduled, incremental)" as Crawler
+    rectangle "Data Normalization\n& Deduplication" as Normalize
+    rectangle "Daily Incremental\nSynchronization" as Sync
+  }
+
+  package "Persistence" {
+    database "MySQL 8.0 Cluster\n(structured records:\naccounts, achievements,\nclaims, disputes,\ninstitutions, interactions,\nvisibility, backup metadata)" as MySQL
+    database "Unstructured Storage\n(literature content,\nannotations, reports,\ncertification evidence)" as BlobStore
+  }
+
+  package "Backup & Recovery" {
+    rectangle "Daily Full Backup\n& Hourly Incremental\n(30-day retention)" as Backup
+  }
+
+}
+
+'==========================
+' EXTERNAL SYSTEMS
+'==========================
+cloud "External Academic\nDatabases\n(APIs & Crawlers)" as ExtDB
+
+'==========================
+' USER → APPLICATION CONNECTIONS
+'==========================
+Visitor --> Auth
+Visitor --> MultiRetr
+
+RegUser --> Auth
+RegUser --> MultiRetr
+RegUser --> SemSearch
+RegUser --> MultiTurn
+RegUser --> FilterRank
+RegUser --> Personalized
+RegUser --> CrossDisc
+RegUser --> Comments
+RegUser --> QnA
+RegUser --> Following
+RegUser --> Certify
+
+Scholar --> Profile
+Scholar --> Portal
+Scholar --> Claiming
+Scholar --> Dispute
+Scholar --> InstApp
+Scholar --> Annotations
+Scholar --> Messaging
+
+InstAdmin --> InstApp
+InstAdmin --> InstHierarchy
+InstAdmin --> AccessControl
+
+ExpertRev --> Dispute
+
+SysAdmin --> AdminReview
+SysAdmin --> ContentMod
+SysAdmin --> AdminDispute
+SysAdmin --> Classification
+SysAdmin --> InstHierarchy
+SysAdmin --> SyncMonitor
+
+'==========================
+' APPLICATION → SUPPORT CONNECTIONS
+'==========================
+MultiRetr --> SemanticSvc
+SemSearch --> SemanticSvc
+MultiTurn --> SemanticSvc
+FilterRank --> SemanticSvc
+CrossDisc --> ProfilingSvc
+Personalized --> ProfilingSvc
+
+Auth --> AuthzSvc
+Certify --> AuthzSvc
+Claiming --> AuthzSvc
+InstApp --> AuthzSvc
+Messaging --> AuthzSvc
+AccessControl --> AuthzSvc
+Annotations --> AuthzSvc
+
+AnalysisSvc --> AuthzSvc
+SyncMonitor --> AnalysisSvc
+
+Claiming --> MisconductSvc
+AdminDispute --> MisconductSvc
+
+'==========================
+' APPLICATION → PERSISTENCE
+'==========================
+Auth --> MySQL
+Certify --> MySQL
+Profile --> MySQL
+Portal --> MySQL
+MultiRetr --> MySQL
+Claiming --> MySQL
+Dispute --> MySQL
+InstApp --> MySQL
+InstHierarchy --> MySQL
+Comments --> MySQL
+QnA --> MySQL
+Following --> MySQL
+Messaging --> MySQL
+Annotations --> MySQL
+AccessControl --> MySQL
+Classification --> MySQL
+
+Profile --> BlobStore
+Portal --> BlobStore
+Claiming --> BlobStore
+Annotations --> BlobStore
+
+'==========================
+' INFRASTRUCTURE INTERNAL
+'==========================
+ExtDB --> Crawler
+Crawler --> Normalize
+Normalize --> Sync
+Sync --> MySQL
+Sync --> BlobStore
+
+MySQL --> Backup
+BlobStore --> Backup
+
+AnalysisSvc --> MySQL
+
+'==========================
+' SUPPORT → PERSISTENCE
+'==========================
+ProfilingSvc --> MySQL
+AuthzSvc --> MySQL
+MisconductSvc --> MySQL
+
+@enduml

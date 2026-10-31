@@ -1,0 +1,210 @@
+{
+  "requirements": [
+    {
+      "id": "retool-R001",
+      "description": "The system shall provide end-user account lifecycle support for registration, login, logout, password change, and viewing personal profile information, with persisted user account data."
+    },
+    {
+      "id": "retool-R002",
+      "description": "The system shall support administrative user management for listing, adding, and deleting users, resetting passwords, and changing system roles and permissions."
+    },
+    {
+      "id": "retool-R003",
+      "description": "The system shall manage projects and project membership, including project creation, deletion, modification, viewing, project lists, project-member relationships, and project-specific roles and permissions that may vary by project."
+    },
+    {
+      "id": "retool-R004",
+      "description": "The system shall support project baseline nodes as versioned snapshots that can be created and viewed, and baseline creation shall archive current requirement items and freeze the items contained in that baseline."
+    },
+    {
+      "id": "retool-R005",
+      "description": "The system shall manage requirement items as a tree-structured lifecycle, including creation, single-item editing, deletion with root-item protection, content modification, position movement, and viewing the requirement tree and item details."
+    },
+    {
+      "id": "retool-R006",
+      "description": "The system shall support importing requirement items from Word documents by uploading the document to the server, performing itemization/analysis, and reporting failure when upload or itemization does not succeed."
+    },
+    {
+      "id": "retool-R007",
+      "description": "The system shall provide requirement structuring, common-requirement identification, conflict detection, and association analysis, persist structured results, and store or display the other analysis results as specified."
+    },
+    {
+      "id": "retool-R008",
+      "description": "The system shall support forward tracing for requirements by storing and displaying trace code, trace test cases, and trace personnel information."
+    },
+    {
+      "id": "retool-R009",
+      "description": "The system shall use a front-end/back-end separated web architecture with a microservice-based server side, networked service communication, a gateway plus local user/project/requirements services, a separately deployed algorithm service for performance reasons, and MongoDB as the CRUD database."
+    },
+    {
+      "id": "retool-R010",
+      "description": "The system shall enforce security boundaries for login/web access, privacy protection, illegal-input and malicious-behavior detection, injection prevention for requirement inputs, secure network/file/open-interface handling, and permission checks for developers and sensitive commands."
+    }
+  ],
+  "components": [
+    {
+      "id": "comp-frontend-app",
+      "name": "Frontend Web Application",
+      "type": "UserInterface",
+      "description": "Client-side web application handling user interaction, tree visualization, baseline viewing, document upload interfaces, and forward trace displays.",
+      "tracesTo": [
+        "retool-R001",
+        "retool-R002",
+        "retool-R003",
+        "retool-R004",
+        "retool-R005",
+        "retool-R006",
+        "retool-R007",
+        "retool-R008",
+        "retool-R009",
+        "retool-R010"
+      ]
+    },
+    {
+      "id": "comp-api-gateway",
+      "name": "API Gateway & Security Boundary",
+      "type": "Gateway",
+      "description": "Entry point for all external traffic; manages routing, authentication token verification, input sanitization, injection filtering, rate limiting, and interface security enforcement.",
+      "tracesTo": [
+        "retool-R009",
+        "retool-R010"
+      ]
+    },
+    {
+      "id": "comp-user-service",
+      "name": "User Management Microservice",
+      "type": "Microservice",
+      "description": "Handles authentication, account lifecycle operations, profile persistence, administrative user management, and system-wide roles and permissions.",
+      "tracesTo": [
+        "retool-R001",
+        "retool-R002",
+        "retool-R009",
+        "retool-R010"
+      ]
+    },
+    {
+      "id": "comp-project-service",
+      "name": "Project Management Microservice",
+      "type": "Microservice",
+      "description": "Manages projects, member relationships, project-specific permissions, and orchestrates versioned project baseline snapshots.",
+      "tracesTo": [
+        "retool-R003",
+        "retool-R004",
+        "retool-R009",
+        "retool-R010"
+      ]
+    },
+    {
+      "id": "comp-requirement-service",
+      "name": "Requirement Lifecycle Microservice",
+      "type": "Microservice",
+      "description": "Manages tree-structured requirements, root item protection, node ordering, forward tracing associations, and baseline freezing enforcement.",
+      "tracesTo": [
+        "retool-R004",
+        "retool-R005",
+        "retool-R006",
+        "retool-R008",
+        "retool-R009",
+        "retool-R010"
+      ]
+    },
+    {
+      "id": "comp-algorithm-service",
+      "name": "Algorithm & Analysis Service",
+      "type": "Microservice",
+      "description": "Separately deployed compute-intensive service responsible for Word document parsing/itemization, requirement structuring, conflict detection, and association analysis.",
+      "tracesTo": [
+        "retool-R006",
+        "retool-R007",
+        "retool-R009"
+      ]
+    },
+    {
+      "id": "comp-mongodb-cluster",
+      "name": "MongoDB Database",
+      "type": "Database",
+      "description": "Document-oriented persistent store for user accounts, projects, baselines, requirement tree nodes, trace matrices, and structured analysis data.",
+      "tracesTo": [
+        "retool-R001",
+        "retool-R003",
+        "retool-R004",
+        "retool-R005",
+        "retool-R007",
+        "retool-R008",
+        "retool-R009"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn-fe-to-gw",
+      "source": "comp-frontend-app",
+      "target": "comp-api-gateway",
+      "protocol": "HTTPS/WSS",
+      "description": "Transfers secure client requests, authentication payloads, and file uploads to the gateway."
+    },
+    {
+      "id": "conn-gw-to-user",
+      "source": "comp-api-gateway",
+      "target": "comp-user-service",
+      "protocol": "gRPC/HTTP",
+      "description": "Routes user lifecycle, authentication, and administrative requests."
+    },
+    {
+      "id": "conn-gw-to-project",
+      "source": "comp-api-gateway",
+      "target": "comp-project-service",
+      "protocol": "gRPC/HTTP",
+      "description": "Routes project setup, member assignment, and baseline trigger requests."
+    },
+    {
+      "id": "conn-gw-to-req",
+      "source": "comp-api-gateway",
+      "target": "comp-requirement-service",
+      "protocol": "gRPC/HTTP",
+      "description": "Routes requirement tree operations, document uploads, and trace linkage requests."
+    },
+    {
+      "id": "conn-project-to-req",
+      "source": "comp-project-service",
+      "target": "comp-requirement-service",
+      "protocol": "gRPC/HTTP",
+      "description": "Triggers requirement tree snapshot capture and freezing when baselines are created."
+    },
+    {
+      "id": "conn-req-to-algo",
+      "source": "comp-requirement-service",
+      "target": "comp-algorithm-service",
+      "protocol": "gRPC/REST",
+      "description": "Dispatches uploaded Word files and requirement sets for parsing, structuring, and conflict analysis."
+    },
+    {
+      "id": "conn-user-to-db",
+      "source": "comp-user-service",
+      "target": "comp-mongodb-cluster",
+      "protocol": "MongoDB Wire Protocol",
+      "description": "Persists and queries user profiles, credentials, and global roles."
+    },
+    {
+      "id": "conn-project-to-db",
+      "source": "comp-project-service",
+      "target": "comp-mongodb-cluster",
+      "protocol": "MongoDB Wire Protocol",
+      "description": "Persists and queries project details, memberships, and baseline metadata."
+    },
+    {
+      "id": "conn-req-to-db",
+      "source": "comp-requirement-service",
+      "target": "comp-mongodb-cluster",
+      "protocol": "MongoDB Wire Protocol",
+      "description": "Persists and queries requirement tree nodes, forward trace links, and frozen baseline snapshots."
+    },
+    {
+      "id": "conn-algo-to-db",
+      "source": "comp-algorithm-service",
+      "target": "comp-mongodb-cluster",
+      "protocol": "MongoDB Wire Protocol",
+      "description": "Persists structured requirement artifacts and analytical evaluation results."
+    }
+  ]
+}

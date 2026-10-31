@@ -1,0 +1,205 @@
+@startuml
+title "Zhiyan Tongjie (智研通界) Academic Achievement Sharing Platform - System Architecture"
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+' ===================== External Actors =====================
+package "External Actors" as ACTORS {
+  actor "Visitor" as Visitor
+  actor "Registered User" as RegUser
+  actor "Certified Scholar" as Scholar
+  actor "Institution\nAdministrator" as InstAdmin
+  actor "Expert Reviewer" as Expert
+  actor "System\nAdministrator" as SysAdmin
+}
+
+' ===================== External Systems =====================
+package "External Academic Systems" as EXTERNAL {
+  component "Academic Database APIs" as ExtAPI
+  component "Academic Web Sources\n(Crawlers)" as ExtCrawl
+  component "Terminology / Model\nResources" as ExtModels
+}
+
+' ===================== Presentation Layer =====================
+package "Presentation Layer (Browser)" as PRESENT {
+  component "Vue 3.3 Web Frontend\n[Chrome / Edge / Firefox]" as WebUI
+  note right of WebUI
+    Account & personal portal
+    Literature discovery
+    Achievement management
+    Institution management
+    Academic communication
+    Administration
+  end note
+}
+
+' ===================== Application Layer =====================
+package "Application Layer (Python / Django 4.2 LTS)" as APP {
+
+  component "API Gateway / Request Router\n(Encrypted HTTPS)" as Gateway
+
+  package "Identity & Access Domain" as APP_ID {
+    component "Account Service\n(FR-001, FR-002)" as AccountSvc
+    component "Scholar Certification Service\n(FR-003, FR-004, FR-005)" as CertSvc
+  }
+
+  package "Discovery & Recommendation Domain" as APP_SEARCH {
+    component "Multidimensional Search Service\n(FR-006, FR-009)" as SearchSvc
+    component "Conversational Search Service\n(FR-007, FR-008)" as ConvSvc
+    component "Personalization & Recommendation\nService (FR-010, FR-011)" as RecSvc
+  }
+
+  package "Achievement & Institution Domain" as APP_ASSET {
+    component "Classification Service\n(FR-012)" as ClassSvc
+    component "Achievement Claiming Service\n(FR-013)" as ClaimSvc
+    component "Ownership Dispute Service\n(FR-014)" as DisputeSvc
+    component "Institution Management Service\n(FR-015, FR-016)" as InstSvc
+  }
+
+  package "Interaction & Collaboration Domain" as APP_SOCIAL {
+    component "Comments & Moderation Service\n(FR-017)" as CommentSvc
+    component "Q&A Service\n(FR-018)" as QASvc
+    component "Verified Private Messaging Service\n(FR-019)" as MsgSvc
+    component "Following Service\n(FR-020)" as FollowSvc
+    component "Annotations & Report Sharing\nService (FR-021)" as AnnotSvc
+  }
+
+  package "Data Acquisition & Analysis Domain" as APP_DATA {
+    component "Collection Orchestration Service\n(FR-022, FR-024)" as CollectSvc
+    component "Normalization & Deduplication\nService (FR-023)" as NormalizeSvc
+    component "Academic Analysis Service\n(FR-025)" as AnalysisSvc
+  }
+
+  package "Integrity & Protection Domain" as APP_PROTECT {
+    component "Access Authorization Service\n(FR-026, FR-027)" as AccessSvc
+    component "Misconduct Detection Service\n(FR-028)" as MisconductSvc
+  }
+}
+
+' ===================== Support Layer =====================
+package "Support Layer (Shared Academic Services)" as SUPPORT {
+  component "Semantic Processing Service\n(error correction / term mapping)" as SemanticSvc
+  component "Profiling Service" as ProfileSvc
+  component "Security Service\n(auth / encryption / policy)" as SecuritySvc
+  component "Analysis Engine" as AnalysisEngine
+  component "Multilingual Text Service\n(zh / en / ja / de)" as I18nSvc
+}
+
+' ===================== Infrastructure Layer =====================
+package "Infrastructure Layer" as INFRA {
+  component "Scheduled Jobs & Task Queue\n(daily sync / hourly analysis)" as Scheduler
+  component "Crawler & API Connector" as Connector
+  component "Compute Services" as Compute
+
+  database "MySQL 8.0 Cluster\n(Structured Records)" as MySQL
+  component "Unstructured Academic\nContent Store" as Unstructured
+  component "Backup & Recovery\n(daily full / hourly incremental)" as Backup
+}
+
+' ===================== Relationships: Actors -> Presentation =====================
+Visitor --> WebUI
+RegUser --> WebUI
+Scholar --> WebUI
+InstAdmin --> WebUI
+Expert --> WebUI
+SysAdmin --> WebUI
+
+' ===================== Presentation -> Application =====================
+WebUI --> Gateway : HTTPS (encrypted)
+
+' ===================== Application internal routing =====================
+Gateway --> AccountSvc
+Gateway --> CertSvc
+Gateway --> SearchSvc
+Gateway --> ConvSvc
+Gateway --> RecSvc
+Gateway --> ClassSvc
+Gateway --> ClaimSvc
+Gateway --> DisputeSvc
+Gateway --> InstSvc
+Gateway --> CommentSvc
+Gateway --> QASvc
+Gateway --> MsgSvc
+Gateway --> FollowSvc
+Gateway --> AnnotSvc
+Gateway --> CollectSvc
+Gateway --> AnalysisSvc
+Gateway --> AccessSvc
+Gateway --> MisconductSvc
+
+' ===================== Application -> Support Layer =====================
+SearchSvc --> SemanticSvc
+ConvSvc --> SemanticSvc
+RecSvc --> ProfileSvc
+RecSvc --> SemanticSvc
+SearchSvc --> I18nSvc
+ConvSvc --> I18nSvc
+AccountSvc --> SecuritySvc
+MsgSvc --> SecuritySvc
+AccessSvc --> SecuritySvc
+AnalysisSvc --> AnalysisEngine
+MisconductSvc --> AnalysisEngine
+CertSvc --> ProfileSvc
+ClaimSvc --> ProfileSvc
+
+' ===================== Application -> Infrastructure =====================
+CollectSvc --> Scheduler
+CollectSvc --> Connector
+AnalysisSvc --> Scheduler
+Scheduler --> Compute
+
+' ===================== Support -> Infrastructure (persistence) =====================
+SemanticSvc --> MySQL
+ProfileSvc --> MySQL
+SecuritySvc --> MySQL
+AnalysisEngine --> MySQL
+I18nSvc --> MySQL
+
+' ===================== Application -> Infrastructure (persistence) =====================
+AccountSvc --> MySQL
+CertSvc --> MySQL
+SearchSvc --> MySQL
+ConvSvc --> MySQL
+RecSvc --> MySQL
+ClassSvc --> MySQL
+ClaimSvc --> MySQL
+DisputeSvc --> MySQL
+InstSvc --> MySQL
+CommentSvc --> MySQL
+QASvc --> MySQL
+MsgSvc --> MySQL
+FollowSvc --> MySQL
+AnnotSvc --> MySQL
+AccessSvc --> MySQL
+MisconductSvc --> MySQL
+
+MySQL --> Unstructured : associated content
+MySQL --> Backup : full / incremental
+Unstructured --> Backup
+Backup --> MySQL : restore
+
+' ===================== External integrations =====================
+Connector --> ExtAPI : source metadata
+Connector --> ExtCrawl : crawled records
+SemanticSvc --> ExtModels
+AnalysisEngine --> ExtModels
+
+' ===================== Cross-cutting notes =====================
+note top of SUPPORT
+  Shared services used by the application layer
+  for consistent semantic, profiling,
+  authorization and analysis behavior (C-004).
+end note
+
+note bottom of INFRA
+  NFR-003/004: salted hashing, AES-256 at rest,
+  encrypted transport.
+  NFR-006: 30-day backup retention.
+  NFR-007: hundreds of millions of entries,
+  expandable storage.
+end note
+
+@enduml

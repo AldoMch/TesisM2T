@@ -1,0 +1,51 @@
+@startuml
+!define AWSPrefix(x) aws-x
+!define AWSType(x) rectangle x <<AWSType>>
+
+package "AWS Cloud" {
+  node "Web Console" as webconsole
+  node "API Gateway" as apigateway
+  node "Lambda" as lambda
+  node "S3" as s3
+  node "DynamoDB" as dynamodb
+  node "IoT Core" as iotcore
+  node "CloudFormation" as cloudformation
+  
+  webconsole --> apigateway : Manage simulations
+  apigateway --> lambda : Invoke APIs
+  lambda --> s3 : Load routes
+  lambda --> dynamodb : Store state
+  lambda --> iotcore : Publish messages
+  cloudformation --> lambda : Custom resource processing
+}
+
+note right of webconsole
+  Web-based management interface
+end note
+
+note right of apigateway
+  Regional REST API
+  Methods: GET, POST, PUT, DELETE, OPTIONS
+  CORS enabled
+end note
+
+note right of lambda
+  Simulation logic
+  API processing
+  Custom resource handler
+end note
+
+note right of s3
+  Route data storage
+  Bucket: ROUTE_BUCKET
+end note
+
+note right of iotcore
+  Device message destination
+end note
+
+note right of cloudformation
+  Deployment-time initialization
+end note
+
+@enduml

@@ -1,0 +1,254 @@
+{
+  "requirements": [
+    {
+      "id": "prompthub-R001",
+      "description": "The system shall manage user account registration, login, logout, password change, and password recovery as one account-credential lifecycle with validation and state transitions."
+    },
+    {
+      "id": "prompthub-R002",
+      "description": "The system shall support administrator login and logout and allow authenticated administrators to view user and artwork lists."
+    },
+    {
+      "id": "prompthub-R003",
+      "description": "The system shall support user profile pages, uploaded-work views, browsing history, and follow relationships, together with avatar and username maintenance."
+    },
+    {
+      "id": "prompthub-R004",
+      "description": "The system shall manage user artwork submission, editing, deletion, review-progress tracking, and the administrator approval/rejection workflow for uploaded artworks."
+    },
+    {
+      "id": "prompthub-R005",
+      "description": "The system shall provide artwork browsing, keyword/tag search, sorting/filtering, and detail retrieval for visitors and users."
+    },
+    {
+      "id": "prompthub-R006",
+      "description": "The system shall provide popular recommendation, personalized recommendation, and a user-controlled switch to disable personalized recommendation."
+    },
+    {
+      "id": "prompthub-R007",
+      "description": "The system shall manage favorites and favorite categories, including adding, viewing, querying, canceling favorites, creating public or private categories, deleting, renaming, changing visibility, and viewing another user's visible favorites."
+    },
+    {
+      "id": "prompthub-R008",
+      "description": "The system shall support user comments and replies, administrator viewing and deletion of comments and replies, and event-driven notification creation when comments, replies, or review-progress changes occur."
+    },
+    {
+      "id": "prompthub-R009",
+      "description": "The system shall support reading unread notifications, marking notifications as read, and deleting notifications in the notification interface."
+    },
+    {
+      "id": "prompthub-R010",
+      "description": "The system shall enforce secure web requests, authenticated operations, server-side anti-abuse protections, vulnerability checks for dependencies, and encryption/revalidation of sensitive user data."
+    }
+  ],
+  "components": [
+    {
+      "id": "security-edge-gateway",
+      "name": "Security & API Gateway",
+      "description": "Manages request routing, TLS termination, anti-abuse filtering, rate limiting, and centralized authentication/authorization enforcement.",
+      "tracesTo": [
+        "prompthub-R010"
+      ]
+    },
+    {
+      "id": "auth-identity-service",
+      "name": "Authentication & Identity Service",
+      "description": "Handles credential lifecycle, user/admin authentication sessions, password recovery, state transitions, and sensitive data encryption.",
+      "tracesTo": [
+        "prompthub-R001",
+        "prompthub-R002",
+        "prompthub-R010"
+      ]
+    },
+    {
+      "id": "user-profile-service",
+      "name": "User Profile & Social Graph Service",
+      "description": "Manages user profiles, avatars, user identity metadata, browsing histories, and follow relationships.",
+      "tracesTo": [
+        "prompthub-R002",
+        "prompthub-R003"
+      ]
+    },
+    {
+      "id": "artwork-lifecycle-service",
+      "name": "Artwork Lifecycle & Moderation Service",
+      "description": "Handles artwork creation, editing, deletion, state machine transitions, and administrator review/approval workflows.",
+      "tracesTo": [
+        "prompthub-R002",
+        "prompthub-R004"
+      ]
+    },
+    {
+      "id": "artwork-catalog-search-service",
+      "name": "Artwork Catalog & Search Service",
+      "description": "Provides indexing, keyword and tag searching, multi-criteria filtering, sorting, and artwork details retrieval.",
+      "tracesTo": [
+        "prompthub-R005"
+      ]
+    },
+    {
+      "id": "recommendation-service",
+      "name": "Recommendation Engine Service",
+      "description": "Generates popular and personalized artwork recommendations and honors user preferences to toggle personalized recommendations.",
+      "tracesTo": [
+        "prompthub-R006"
+      ]
+    },
+    {
+      "id": "favorites-service",
+      "name": "Favorites & Collections Service",
+      "description": "Manages user favorites and custom categories, including visibility control (public/private) and query endpoints.",
+      "tracesTo": [
+        "prompthub-R007"
+      ]
+    },
+    {
+      "id": "comment-discussion-service",
+      "name": "Comments & Discussion Service",
+      "description": "Processes comments, threaded replies, moderation deletions, and emits domain events for interactions.",
+      "tracesTo": [
+        "prompthub-R008"
+      ]
+    },
+    {
+      "id": "notification-service",
+      "name": "Notification Management Service",
+      "description": "Consumes domain events to generate notifications, tracks read/unread states, and handles notification deletion.",
+      "tracesTo": [
+        "prompthub-R008",
+        "prompthub-R009"
+      ]
+    },
+    {
+      "id": "admin-portal-service",
+      "name": "Administrator Portal Service",
+      "description": "Provides administrator views for users, artworks, moderation queues, and comment management.",
+      "tracesTo": [
+        "prompthub-R002",
+        "prompthub-R004",
+        "prompthub-R008"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn-gateway-auth",
+      "source": "security-edge-gateway",
+      "target": "auth-identity-service",
+      "type": "HTTPS/gRPC",
+      "description": "Validates credentials, session tokens, and enforces auth policies."
+    },
+    {
+      "id": "conn-gateway-profile",
+      "source": "security-edge-gateway",
+      "target": "user-profile-service",
+      "type": "HTTPS/REST",
+      "description": "Routes profile, follow, and history requests."
+    },
+    {
+      "id": "conn-gateway-artwork",
+      "source": "security-edge-gateway",
+      "target": "artwork-lifecycle-service",
+      "type": "HTTPS/REST",
+      "description": "Routes artwork submissions, modifications, and moderation requests."
+    },
+    {
+      "id": "conn-gateway-search",
+      "source": "security-edge-gateway",
+      "target": "artwork-catalog-search-service",
+      "type": "HTTPS/REST",
+      "description": "Routes search, filter, and detail view requests."
+    },
+    {
+      "id": "conn-gateway-recommendation",
+      "source": "security-edge-gateway",
+      "target": "recommendation-service",
+      "type": "HTTPS/REST",
+      "description": "Routes recommendation retrieval requests."
+    },
+    {
+      "id": "conn-gateway-favorites",
+      "source": "security-edge-gateway",
+      "target": "favorites-service",
+      "type": "HTTPS/REST",
+      "description": "Routes favorites and folder management requests."
+    },
+    {
+      "id": "conn-gateway-comments",
+      "source": "security-edge-gateway",
+      "target": "comment-discussion-service",
+      "type": "HTTPS/REST",
+      "description": "Routes comment and reply interactions."
+    },
+    {
+      "id": "conn-gateway-notifications",
+      "source": "security-edge-gateway",
+      "target": "notification-service",
+      "type": "HTTPS/REST",
+      "description": "Routes notification management and status updates."
+    },
+    {
+      "id": "conn-gateway-admin",
+      "source": "security-edge-gateway",
+      "target": "admin-portal-service",
+      "type": "HTTPS/REST",
+      "description": "Routes administrative queries and review operations."
+    },
+    {
+      "id": "conn-artwork-to-search",
+      "source": "artwork-lifecycle-service",
+      "target": "artwork-catalog-search-service",
+      "type": "Event/PubSub",
+      "description": "Synchronizes approved/updated/deleted artwork metadata to search indices."
+    },
+    {
+      "id": "conn-artwork-to-notification",
+      "source": "artwork-lifecycle-service",
+      "target": "notification-service",
+      "type": "Event/PubSub",
+      "description": "Emits review progress change events for notification generation."
+    },
+    {
+      "id": "conn-comments-to-notification",
+      "source": "comment-discussion-service",
+      "target": "notification-service",
+      "type": "Event/PubSub",
+      "description": "Emits comment and reply creation events for notification delivery."
+    },
+    {
+      "id": "conn-recommendation-to-profile",
+      "source": "recommendation-service",
+      "target": "user-profile-service",
+      "type": "gRPC",
+      "description": "Retrieves user history and personalization preferences."
+    },
+    {
+      "id": "conn-recommendation-to-search",
+      "source": "recommendation-service",
+      "target": "artwork-catalog-search-service",
+      "type": "gRPC",
+      "description": "Fetches candidate artworks and metadata for ranking algorithms."
+    },
+    {
+      "id": "conn-admin-to-artwork",
+      "source": "admin-portal-service",
+      "target": "artwork-lifecycle-service",
+      "type": "gRPC",
+      "description": "Retrieves artwork lists and sends approval/rejection moderation decisions."
+    },
+    {
+      "id": "conn-admin-to-profile",
+      "source": "admin-portal-service",
+      "target": "user-profile-service",
+      "type": "gRPC",
+      "description": "Retrieves user list data for administrator overview."
+    },
+    {
+      "id": "conn-admin-to-comments",
+      "source": "admin-portal-service",
+      "target": "comment-discussion-service",
+      "type": "gRPC",
+      "description": "Inspects and deletes inappropriate comments and replies."
+    }
+  ]
+}

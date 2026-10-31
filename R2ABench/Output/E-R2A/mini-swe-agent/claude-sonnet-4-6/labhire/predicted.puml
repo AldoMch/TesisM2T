@@ -1,0 +1,99 @@
+@startuml
+title LabHire - Research Internship Platform Architecture
+
+skinparam componentStyle rectangle
+
+actor StudentUser as SU
+actor MentorUser as MU
+actor EnterpriseCertStudent as ES
+actor Administrator as AD
+
+package Presentation {
+  [Web Browser Client] as WebClient
+  [Mobile Client] as MobileClient
+}
+
+package GatewayLayer {
+  [API Gateway] as GW
+  [Auth and Encryption Module] as AUTH
+  [Rate Limiter and Risk Control] as RC
+}
+
+package AppServicesLayer {
+  [User Identity Service] as UIS
+  [Project Service] as PS
+  [Application and Evaluation Service] as AES
+  [Community Service] as CS
+  [Notification Service] as NS
+  [Admin Review Service] as ARS
+  [Resume and Profile Service] as RPS
+  [Recommendation Engine] as RE
+  [Audit and Logging Service] as ALS
+}
+
+package DataLayer {
+  database MainDatabase as DB
+  database FileStorage as FS
+  database AuditLogStore as LS
+  database CacheStore as CACHE
+}
+
+package ExternalServices {
+  [Campus Email Service] as CEMAIL
+  [Enterprise Email Service] as EEMAIL
+  [Verification Code Provider] as VCP
+  [Push Notification Service] as PUSH
+}
+
+SU --> WebClient
+SU --> MobileClient
+MU --> WebClient
+MU --> MobileClient
+ES --> WebClient
+ES --> MobileClient
+AD --> WebClient
+
+WebClient --> GW
+MobileClient --> GW
+
+GW --> AUTH
+GW --> RC
+GW --> UIS
+GW --> PS
+GW --> AES
+GW --> CS
+GW --> NS
+GW --> ARS
+GW --> RPS
+
+AUTH --> UIS
+RC --> ALS
+
+UIS --> DB
+UIS --> CEMAIL
+UIS --> EEMAIL
+UIS --> VCP
+
+PS --> DB
+PS --> RE
+RE --> DB
+RE --> CACHE
+
+AES --> DB
+AES --> NS
+
+CS --> DB
+CS --> ARS
+
+NS --> DB
+NS --> CEMAIL
+NS --> PUSH
+
+ARS --> DB
+
+RPS --> DB
+RPS --> FS
+
+ALS --> LS
+
+@enduml

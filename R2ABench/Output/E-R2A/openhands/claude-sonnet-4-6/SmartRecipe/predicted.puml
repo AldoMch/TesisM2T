@@ -1,0 +1,157 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+    BackgroundColor<<mobile>> #DDEEFF
+    BackgroundColor<<backend>> #DDFFDD
+    BackgroundColor<<inference>> #FFEECC
+    BackgroundColor<<storage>> #FFE0E0
+    BackgroundColor<<cache>> #F0E0FF
+}
+
+title Smart Recipe System Architecture
+
+package "Mobile Client" <<mobile>> {
+    component [Login Interface] as Login
+    component [User Main Interface] as MainUI
+    component [Photo Recognition Interface] as PhotoUI
+    component [Recipe Display Interface] as RecipeUI
+    component [Health Center / Nutrition Interface] as HealthUI
+    component [Community Sharing Interface] as CommunityUI
+    component [Recommendation Interface] as RecommendUI
+    component [Administrator Interface] as AdminUI
+    component [Local Image Preprocessor] as ImgPreprocess
+}
+
+package "Backend Service Layer" <<backend>> {
+    package "Control Layer" {
+        component [User Controller] as UserCtrl
+        component [Recipe Controller] as RecipeCtrl
+        component [Health Controller] as HealthCtrl
+        component [Community Controller] as CommunityCtrl
+        component [Recommendation Controller] as RecommendCtrl
+        component [Admin Controller] as AdminCtrl
+    }
+
+    package "Business Layer" {
+        component [User Auth Service] as AuthSvc
+        component [Photo Recognition Service] as RecognitionSvc
+        component [Text Search Service] as SearchSvc
+        component [Nutrition Analysis Service] as NutritionSvc
+        component [Diet Plan Service] as DietPlanSvc
+        component [Check-in Service] as CheckInSvc
+        component [Community Service] as CommunitySvc
+        component [Recommendation Engine] as RecommendSvc
+        component [Admin Review Service] as AdminSvc
+        component [Merchant Service] as MerchantSvc
+    }
+
+    package "Service Layer" {
+        component [Image Upload Handler] as ImageHandler
+        component [Token Manager] as TokenMgr
+        component [Cache Manager] as CacheMgr
+        component [Notification Service] as NotifSvc
+    }
+
+    package "Data Access Layer" {
+        component [User Repository] as UserRepo
+        component [Recipe Repository] as RecipeRepo
+        component [Health Repository] as HealthRepo
+        component [Community Repository] as CommunityRepo
+        component [Recommendation Repository] as RecommendRepo
+        component [Merchant Repository] as MerchantRepo
+        component [History Repository] as HistoryRepo
+    }
+}
+
+package "Flask Inference Service" <<inference>> {
+    component [Image Validity Checker] as ValidityChecker
+    component [Food Recognition Model] as RecognitionModel
+    component [Feature Extractor] as FeatureExtractor
+}
+
+database "MySQL" <<storage>> {
+    component [User & Login Tables] as UserDB
+    component [Recipe & Ingredient Tables] as RecipeDB
+    component [Health & Chronic Disease Tables] as HealthDB
+    component [Community & Comment Tables] as CommunityDB
+    component [Recommendation Tables] as RecommendDB
+    component [Merchant Tables] as MerchantDB
+    component [User History Tables] as HistoryDB
+}
+
+database "Redis Cache" <<cache>> {
+    component [Session / Token Cache] as TokenCache
+    component [Recipe Cache] as RecipeCache
+    component [Recommendation Cache] as RecommendCache
+}
+
+' Mobile to Backend (Ajax / Direct)
+MainUI --> UserCtrl : Ajax / Direct
+MainUI --> RecipeCtrl : Ajax / Direct
+MainUI --> RecommendCtrl : Ajax / Direct
+MainUI --> CommunityCtrl : Ajax / Direct
+PhotoUI --> RecipeCtrl : Ajax / Direct
+HealthUI --> HealthCtrl : Ajax / Direct
+CommunityUI --> CommunityCtrl : Ajax / Direct
+RecommendUI --> RecommendCtrl : Ajax / Direct
+AdminUI --> AdminCtrl : Ajax / Direct
+Login --> UserCtrl : Ajax / Direct
+ImgPreprocess --> PhotoUI
+
+' Control to Business
+UserCtrl --> AuthSvc
+RecipeCtrl --> RecognitionSvc
+RecipeCtrl --> SearchSvc
+HealthCtrl --> NutritionSvc
+HealthCtrl --> DietPlanSvc
+HealthCtrl --> CheckInSvc
+CommunityCtrl --> CommunitySvc
+CommunityCtrl --> MerchantSvc
+RecommendCtrl --> RecommendSvc
+AdminCtrl --> AdminSvc
+AdminCtrl --> RecognitionSvc
+
+' Business to Service Layer
+RecognitionSvc --> ImageHandler
+AuthSvc --> TokenMgr
+CommunitySvc --> ImageHandler
+NutritionSvc --> CacheMgr
+RecommendSvc --> CacheMgr
+
+' Business to Flask Inference
+RecognitionSvc --> ValidityChecker : preprocessed image vector
+ValidityChecker --> RecognitionModel
+RecognitionModel --> FeatureExtractor
+
+' Business to Data Access
+AuthSvc --> UserRepo
+RecognitionSvc --> RecipeRepo
+SearchSvc --> RecipeRepo
+NutritionSvc --> HealthRepo
+NutritionSvc --> RecipeRepo
+DietPlanSvc --> HealthRepo
+CheckInSvc --> HistoryRepo
+CommunitySvc --> CommunityRepo
+CommunitySvc --> RecipeRepo
+RecommendSvc --> RecommendRepo
+RecommendSvc --> HistoryRepo
+AdminSvc --> RecipeRepo
+AdminSvc --> UserRepo
+MerchantSvc --> MerchantRepo
+TokenMgr --> UserRepo
+
+' Data Access to MySQL
+UserRepo --> UserDB
+RecipeRepo --> RecipeDB
+HealthRepo --> HealthDB
+CommunityRepo --> CommunityDB
+RecommendRepo --> RecommendDB
+MerchantRepo --> MerchantDB
+HistoryRepo --> HistoryDB
+
+' Cache Manager to Redis
+CacheMgr --> RecipeCache
+CacheMgr --> RecommendCache
+TokenMgr --> TokenCache
+
+@enduml

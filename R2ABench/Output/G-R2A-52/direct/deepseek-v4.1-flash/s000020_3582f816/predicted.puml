@@ -1,0 +1,87 @@
+@startuml
+title MyEMS REST API and Admin Routing — System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam nodesep 40
+skinparam ranksep 50
+skinparam defaultFontSize 11
+
+actor "Administrator" as AdminUser
+actor "MyEMS Components" as MyEMSComp
+actor "Third-Party Applications" as ThirdParty
+
+node "Browser Environment" as BrowserEnv {
+  package "MyEMS Admin Application (SPA)" {
+    component "Routing Configuration" as RouterCfg
+    component "User Settings Route\n/user\n[MENU.USERSETTING.USER]" as UserRoute
+    component "Contact Settings Route\n/contact\n[MENU.SETTINGS.CONTACT]" as ContactRoute
+    component "Tariff & Category\nSettings Routes" as ExtraRoutes
+    component "Lazy-Loading\nModule Loader" as LazyLoader
+    component "User Settings Modules\n(user services / controllers / UI libs)" as UserModules
+    component "Contact Settings Modules" as ContactModules
+    component "API Base Path Resolver\n{protocol}//{host}:{port}/api/" as BasePath
+  }
+}
+
+component "Reverse Proxy\n(e.g. Nginx)\n/api/ forwarding" as Proxy
+
+node "API Runtime Environment" as RuntimeEnv {
+  node "Docker-based Installation" as Docker {
+    component "MyEMS REST API Service\n(RESTful interfaces)" as API
+  }
+  node "Development Quick-Run\n(Linux / Windows)" as DevRun
+
+  package "Python Runtime Dependencies" {
+    component "REST Framework,\nCORS, WSGI" as Deps1
+    component "Spreadsheet &\nImage Libraries" as Deps2
+    component "MySQL Connector" as Deps3
+  }
+
+  database "MySQL Database" as MySQL
+}
+
+AdminUser --> RouterCfg : navigates settings workflows
+
+RouterCfg --> UserRoute
+RouterCfg --> ContactRoute
+RouterCfg --> ExtraRoutes
+
+UserRoute --> LazyLoader
+ContactRoute --> LazyLoader
+ExtraRoutes --> LazyLoader
+
+LazyLoader --> UserModules : loads before view use
+LazyLoader --> ContactModules : loads before view use
+
+UserModules --> BasePath
+ContactModules --> BasePath
+
+BasePath --> Proxy : same-origin HTTP/HTTPS\n/api/ requests
+Proxy --> API : forwards /api/
+BasePath ..> API : equivalent same-origin\nrouting arrangement
+
+MyEMSComp --> API : RESTful integration
+ThirdParty --> API : RESTful integration
+
+DevRun ..> API : starts service in dev mode
+API --> Deps1
+API --> Deps2
+API --> Deps3
+Deps3 --> MySQL : persistent storage\nfor MySQL-backed features
+
+note right of Proxy
+  CON-003: A reverse proxy is one valid
+  mechanism only; other equivalent
+  same-origin routing arrangements
+  are permitted.
+end note
+
+note bottom of LazyLoader
+  NFR-002 / CON-004: Route-specific
+  modules are declared per route and
+  loaded on demand.
+end note
+
+@enduml

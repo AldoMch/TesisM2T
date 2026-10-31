@@ -1,0 +1,131 @@
+@startuml
+title PN Infra Cognito, API Gateway, and VPC Endpoint Infrastructure - Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam nodesep 40
+skinparam ranksep 50
+
+actor "Infrastructure Operator" as Operator
+actor "API Client" as ApiClient
+actor "Security / Operations Reviewer" as Reviewer
+
+package "Installation & Deployment Inputs" {
+  component "Installation Scripts\n(AWS CLI profiles, env names,\nDNS/domain, API keys)" as InstallScripts
+  artifact "Cognito CloudFormation Stack\n(YAML, format 2010-09-09)" as CognitoCFN
+  artifact "API Gateway CloudFormation Stack\n(YAML, format 2010-09-09)" as ApiGWCFN
+  artifact "VPC Endpoint CloudFormation Template\n(YAML, format 2010-09-09)" as VpcEndpointCFN
+  component "Installation Inputs\n(environment, profile, DNS/domain,\nAPI keys, account/certificate ids)" as InstallInputs
+}
+
+Operator --> InstallScripts : run
+InstallScripts --> InstallInputs : consume
+InstallScripts --> CognitoCFN : deploy
+InstallScripts --> ApiGWCFN : deploy
+InstallScripts --> VpcEndpointCFN : deploy
+Reviewer --> CognitoCFN : inspect
+Reviewer --> ApiGWCFN : inspect
+Reviewer --> VpcEndpointCFN : inspect
+
+package "AWS Account: Cognito Account" {
+  component "Cognito User Pool" as UserPool
+  component "Cognito User Pool Client\n(readable/writable: custom:Role, email;\ntoken validity units: days|hours|minutes|seconds)" as UserPoolClient
+  component "Cognito Identity Pool\n(AllowUnauthenticatedIdentities)" as IdentityPool
+  component "Identity Provider Link\n(UserPoolId, ClientId, ProviderName)" as IdentityProviderLink
+  component "Identity Pool Role Attachment\n(authenticated / unauthenticated)" as RoleAttachment
+  component "IAM Role: Authenticated" as AuthRole
+  component "IAM Role: Unauthenticated\n(sts:AssumeRoleWithWebIdentity;\nfederated principal cognito-identity.amazonaws.com;\naudience = identity pool;\nauth method = unauthenticated)" as UnauthRole
+  component "User Attributes:\ncustom:Role, email" as UserAttrs
+}
+
+UserPool --> UserPoolClient : provides client
+UserPoolClient --> IdentityProviderLink : ClientId
+UserPool --> IdentityProviderLink : UserPoolId
+IdentityPool --> IdentityProviderLink : configured with
+IdentityPool --> RoleAttachment : attaches
+RoleAttachment --> AuthRole : authenticated
+RoleAttachment --> UnauthRole : unauthenticated
+UserPoolClient --> UserAttrs : readable/writable
+
+package "AWS Account: API Gateway Account" {
+  component "API Gateway" as ApiGateway
+  component "Cognito User Pool Authorizer\n(Cognito user pools;\nuser-pool ARN input)" as CognitoAuthorizer
+  component "WhoAmI Method\n(HTTP 200;\nresponse header x-pagopa-pn-cx-role optional)" as WhoAmI
+  component "ECS Proxy Method\n(forwards role claim to\nx-pagopa-pn-cx-role)" as EcsProxy
+  component "API Gateway VPC Link" as VpcLink
+  component "Deployment / Stage\n(stage name input;\ndepends on WhoAmI and ECS)" as Deployment
+  component "Stack Output: CallbackURL\n(API Gateway endpoint)" as CallbackURL
+}
+
+ApiGateway --> CognitoAuthorizer : authorizer
+ApiGateway --> WhoAmI : method
+ApiGateway --> EcsProxy : method
+WhoAmI --> CognitoAuthorizer : requires Cognito auth
+EcsProxy --> CognitoAuthorizer : requires Cognito auth
+EcsProxy --> VpcLink : integration URI
+Deployment --> WhoAmI : depends on
+Deployment --> EcsProxy : depends on
+Deployment --> CallbackURL : publishes
+ApiGateway --> Deployment : deploy stage
+
+UserPool --> CognitoAuthorizer : UserPool ARN\n(cross-account input)
+
+component "Network Load Balancer\n(NLB ARN input)" as NLB
+component "Downstream ECS Service" as EcsService
+EcsProxy --> VpcLink : VPC link integration
+VpcLink --> NLB : private integration
+NLB --> EcsService : routes
+
+package "AWS VPC / Network" {
+  component "VPC\n(VpcId input)" as Vpc
+  component "Subnets\n(Subnets input)" as Subnets
+  component "Security Group: SQS Endpoint\n(ingress TCP 0-65535 from VpcCidr)" as EndpointSG
+  component "Interface VPC Endpoint for SQS\n(Private DNS enabled;\nregional SQS service name)" as SqsEndpoint
+  database "Amazon SQS" as SQS
+}
+
+Vpc --> Subnets : contains
+Vpc --> EndpointSG : contains
+SqsEndpoint --> Subnets : deployed in
+SqsEndpoint --> EndpointSG : associated
+SqsEndpoint --> SQS : private AWS network
+EndpointSG --> Vpc : ingress restricted to\nVpcCidr
+
+ApiClient --> ApiGateway : calls endpoint
+ApiClient --> CallbackURL : consumes
+
+note right of CognitoAuthorizer
+  FR-009: authorizer uses
+  supplied Cognito user-pool ARN.
+end note
+
+note right of WhoAmI
+  FR-010 / CI-001:
+  x-pagopa-pn-cx-role mapped
+  from Cognito authorizer
+  custom:Role claim.
+end note
+
+note right of EcsProxy
+  FR-011 / CI-002:
+  role claim forwarded as
+  x-pagopa-pn-cx-role request header.
+end note
+
+note bottom of SqsEndpoint
+  NFR-001: private DNS = true
+  NFR-002 / FR-014:
+  endpoint SG allows inbound TCP
+  only from configured VpcCidr.
+end note
+
+note bottom of Deployment
+  CON-004 / FR-008:
+  deployment depends on
+  WhoAmI and ECS methods.
+end note
+
+@enduml

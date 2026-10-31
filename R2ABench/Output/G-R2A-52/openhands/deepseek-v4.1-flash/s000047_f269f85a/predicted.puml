@@ -1,0 +1,74 @@
+@startuml
+title Archifiltre-Docs - System Architecture (SRS Scope)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "End User" as User
+actor "Operator / Integrator" as Operator
+
+package "Electron Desktop Application" {
+
+  component "Settings Controller\n(sanitization)" as SettingsController
+  component "Export Controller" as ExportController
+  component "Hash Controller" as HashController
+
+  component "Translation Module\n(current language)" as Translation
+
+  package "Background Workers / Batch Processing" {
+    component "Tree CSV Export Worker" as TreeWorker
+    component "RESIP Export Worker" as ResipWorker
+    component "CSV Export Worker" as CsvWorker
+    component "Excel Export Worker" as ExcelWorker
+    component "Batch Hash Computation" as BatchHash
+  }
+
+  package "Persistence / Data" {
+    database "Persisted User Settings" as SettingsStore
+    component "Observable / Stream Results" as Observable
+  }
+
+  package "Electron Runtime Services" {
+    component "app.getPath(userData)" as UserDataPath
+    component "Buffered File Writers\nhash-result-debug / hash-error-debug" as DebugWriters
+  }
+}
+
+User --> SettingsController : persisted settings
+Operator --> ExportController : export requests
+Operator --> HashController : paths, basePath
+
+SettingsController --> SettingsStore : read / normalize
+SettingsController ..> SettingsController : defaults\nisTrackingEnabled=true\nisMonitoringEnabled=true\nlanguage="en"
+
+ExportController --> Translation : current language
+ExportController --> TreeWorker : files-and-folders map + language
+ExportController --> ResipWorker : files/folders, metadata,\naliases, comments, tags
+ExportController --> CsvWorker : aliases, comments, files/folders,\nmetadata, tags, hashes + language
+ExportController --> ExcelWorker : CsvExporterData + language
+
+HashController --> BatchHash : paths + basePath
+HashController --> DebugWriters : create debug writers
+DebugWriters --> UserDataPath : store debug files
+
+TreeWorker ..> Observable : progress + final CSV string
+ResipWorker ..> Observable : progress (counts, empty CSV)\n+ final RESIP CSV
+CsvWorker ..> Observable : CSV export result
+ExcelWorker ..> Observable : Excel export result
+BatchHash ..> Observable : hash processing stream\n+ merged hash maps
+Observable --> Operator : asynchronous progress / results
+
+note right of ResipWorker
+  Controller filters worker
+  result messages and maps
+  the output "result" payload.
+end note
+
+note bottom of Translation
+  Export workers receive the
+  translation module's current
+  language value (C-002, FR-004,
+  FR-006, FR-007).
+end note
+
+@enduml

@@ -1,0 +1,118 @@
+{
+  "candidate": {
+    "sample_id": "s000072_b56aad92",
+    "repository_name": "ParaStation/psmpi",
+    "image_url": "https://github.com/ParaStation/psmpi/blob/master/mpich2/modules/ucx/docs/doxygen/Architecture.png",
+    "source_ref": "48893b32e1f1753cbc49d90282368c0c6727b018",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 33582,
+    "document_count": 40,
+    "document_types": [
+      "docs",
+      "readme",
+      "requirements_like"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 250,
+      "user_scenario": 18,
+      "api_io": 227,
+      "deployment": 27,
+      "constraints": 111,
+      "non_functional": 61
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "mpich2/modules/hwloc/tests/hwloc/embedded/README.txt",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05250215703192407,
+      "text": "This test is meant to be run manually; it is not part of \"make check\". Someday I may figure out how to make this part of \"make check\", but today is not that day. :-) You can run these tests in one of two ways: 1. PREFERRED METHOD: From this directory, invoke \"./run-embedded-tests.sh \". This will run a battery of tests against that tarball to verify that embedding is working properly from that tarball. 2. MANUAL METHOD: Expand a distribution hwloc tarball in this directory and rename the top-level directory from hwloc- / to hwloc-tree/. Then run ./autogen.sh, ./configure, and make. And whatever other tests you'd like to run. Things to test (most of which are done in the run-embedded-tests...."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "mpich2/src/pm/hydra/tools/topo/hwloc/hwloc/tests/hwloc/embedded/README.txt",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05129346459991621,
+      "text": "This test is meant to be run manually; it is not part of \"make check\". Someday I may figure out how to make this part of \"make check\", but today is not that day. :-) You can run these tests in one of two ways: 1. PREFERRED METHOD: From this directory, invoke \"./run-embedded-tests.sh \". This will run a battery of tests against that tarball to verify that embedding is working properly from that tarball. 2. MANUAL METHOD: Expand a distribution hwloc tarball in this directory and rename the top-level directory from hwloc- / to hwloc-tree/. Then run ./autogen.sh, ./configure, and make. And whatever other tests you'd like to run. Things to test (most of which are done in the run-embedded-tests...."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "mpich2/modules/libfabric/README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|dense|hyde",
+      "score": 0.0396728478818031,
+      "text": "(Infiniband, iWarp, etc). It uses the Linux Verbs API for network transport and provides a translation of OFI calls to appropriate verbs API calls. It uses librdmacm for communication management and libibverbs for other control and data transfer operations. See the man page for more details. #### Dependencies - The verbs provider requires libibverbs (v1.1.8 or newer) and librdmacm (v1.0.16 or newer). If you are compiling Libfabric from source and want to enable verbs support, you will also need the matching header files for the above two libraries. If the libraries and header files are not in default paths, specify them in CFLAGS, LDFLAGS and LD_LIBRARY_PATH environment variables. ### bgq..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "mpich2/doc/notes/coll/collective.txt",
+      "doc_type": "docs",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense",
+      "score": 0.03872230710466004,
+      "text": "or send/reserve_sends can be inserted in blocks. int Lock_write(VC); int Lock_read(VC); int Unlock_write(VC); int Unlock_read(VC); There need to be progress functions for polling and blocking implementations. int Make_progress(VC); int Make_progress_blocking(); int Init(); int Finalize(); int Connect(VC, rank, comm or BNR_Group, &request); -------- End of undiscussed section The xfer functions mentioned above are really a scatter interface. They allow for one to many communication. We should add a gather interface to allow for many to one. But these two interfaces should be separate because many to many is too hard to implement and not necessary for any of our collective algorithms. xfer_..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "mpich2/doc/notes/agent/send-sm.txt",
+      "doc_type": "docs",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05243786356425172,
+      "text": "ers for Data], [label=\"Awaiting Buffers\\nfor Data Pkts\"] Event [Buffers Available] Invoke_Action([Check Flow for Data], [label=\"bufs ok\"]) Action [Check Flow for Data], [label=\"Check Flow Control\\nfor Data Pkts\"] if flow restricted Change_State([Awaiting Flow for Data], [label=\"flow\\nrestricted\"]) else Invoke_Action([Post Send Data], [label=\"flow ok\"]) State [Awaiting Flow for Data], [label=\"Awaiting Flow Control\\nfor Data Pkts\"] Event [Flow Enabled] Invoke_Action([Post Send Data], [label=\"flow ok\"]) // TODO: Add buffer packing into flow Action [Post Send Data], [label=\"Post Send\\nfor Data Pkts\"] if direct access flag is set point network send descriptor at the user data (which is pinned)..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "mpich2/doc/notes/agent/send-sm.txt",
+      "doc_type": "docs",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05224715340486917,
+      "text": "the packet buffer else if type is rndv-rts message put the envelope and LIBA(OD) into the packet buffer OD.type = rndv-data else if type is rndv-cts put the two LIBAs in the packet buffer else if type is rndv-data put the LIBA in the packet buffer else if type is flow control // TODO // pack data from DD into packet buffer (as much as will fit) if we have // any data to send if type is short, eager, or rndv-data and a DD exists if direct access flag is set point network send descriptor at the user data (which is pinned) else pack data into the packet buffer (from the data descriptor) post the send to the network device if there are no data packets to send (i.e., short) Invoke_Action([Sign..."
+    }
+  ]
+}

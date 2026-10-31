@@ -1,0 +1,97 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "Native App" as NativeApp
+rectangle "Web Admin App" as WebApp
+
+package "Backend" as Backend {
+    rectangle "L7 Load Balancer" as LoadBalancer
+
+    package "BFF / API Gateway" as BffGateway {
+        rectangle "Native App Gateway" as NativeGateway
+        rectangle "Admin Console Gateway" as AdminGateway
+    }
+
+    package "Microservices" as Microservices {
+        rectangle "Store Service" as StoreService
+        rectangle "Book Service" as BookService
+        rectangle "Auth API" as AuthService
+        rectangle "Admin Service" as AdminService
+        rectangle "User Service" as UserService
+        rectangle "Support Service" as SupportService
+        rectangle "Notification Service" as NotificationService
+    }
+
+    package "Database" as Databases {
+        database "RDB\n(MySQL)" as Mysql
+        database "NoSQL\n(Firestore)" as Firestore
+    }
+
+    package "File Storage" as FileStorage {
+        cloud "NAS\n(Cloud Storage)" as CloudStorage
+    }
+
+    package "External APIs" as ExternalApis {
+        cloud "Firebase\nAuthentication" as FirebaseAuth
+        cloud "Google Books API" as BooksApi
+        cloud "Stripe" as Stripe
+        cloud "Push Notification\n(FCM)" as Fcm
+        cloud "Email Sending\n(SendGrid)" as SendGrid
+    }
+}
+
+NativeApp <--> LoadBalancer : HTTP(s)
+WebApp <--> LoadBalancer : HTTP(s)
+LoadBalancer --> NativeGateway : route native API
+LoadBalancer --> AdminGateway : route admin API
+
+NativeGateway --> AuthService : gRPC
+NativeGateway --> UserService : gRPC
+NativeGateway --> BookService : gRPC
+NativeGateway --> StoreService : gRPC
+NativeGateway --> SupportService : gRPC
+AdminGateway --> AdminService : gRPC
+AdminGateway --> UserService : gRPC
+AdminGateway --> BookService : gRPC
+AdminGateway --> SupportService : gRPC
+
+BookService --> StoreService : service call
+AuthService --> FirebaseAuth : authentication
+StoreService --> Mysql : store/order data
+BookService --> Mysql : book data
+UserService --> Mysql : user data
+SupportService --> Firestore : message data
+BookService --> CloudStorage : thumbnails
+
+BookService --> BooksApi : book search
+StoreService --> Stripe : payment
+UserService --> NotificationService : notification request
+SupportService --> NotificationService : support notice
+NotificationService --> Fcm : push notification
+NotificationService --> SendGrid : email
+@enduml

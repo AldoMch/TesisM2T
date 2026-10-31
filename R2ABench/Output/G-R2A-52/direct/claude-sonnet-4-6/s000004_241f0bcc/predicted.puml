@@ -1,0 +1,190 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+skinparam arrow {
+  Color #333333
+}
+skinparam package {
+  BackgroundColor #FFFDE7
+  BorderColor #F57F17
+}
+
+title EMBC ESS System Architecture
+
+node "Web Browser" as browser {
+  package "Angular ClientApp" as clientapp {
+
+    package "Routing & Guards" as routing {
+      component "Role-Based Router" as rolerouter <<FR-001, FR-002>>
+      component "Auth / Role Guard" as authguard <<FR-002>>
+      component "Redirect Guard" as redirectguard <<FR-008>>
+      component "Module Import Diagnostic" as modulediag <<FR-009>>
+    }
+
+    package "HTTP Layer" as httplayer {
+      component "HTTP Interceptor" as httpinterceptor <<FR-003, FR-004>>
+      note right of httpinterceptor
+        - Resets watchdog timer on each request (FR-004)
+        - On 401 while logged-in: logout + session-expired (FR-003)
+      end note
+    }
+
+    package "Session & Auth" as session {
+      component "Login Handler" as loginhandler <<FR-002>>
+      component "Session-Expired Page" as sessionexpired <<FR-003>>
+      component "SiteMinder Context" as siteminder <<CON-003>>
+    }
+
+    package "NgRx State Store" as ngrxstore {
+      component "Actions / Reducers" as actionsreducers <<NFR-003>>
+      component "Controlled-List State" as controlledliststate <<FR-005, DR-002>>
+      component "Shared Client State" as sharedstate <<DR-001>>
+    }
+
+    package "Front-End Service Wrappers" as services {
+      component "Evacuee Service\n[READ]" as evacueeservice <<FR-006>>
+      component "Incident-Task Service\n[CREATE, READ, UPDATE]" as incidenttaskservice <<FR-006>>
+      component "Organization Service\n[CREATE, READ, UPDATE]" as orgservice <<FR-006>>
+      component "Referral Service\n[CREATE, READ, UPDATE, DELETE]" as referralservice <<FR-006>>
+      component "Registration Service\n[CREATE, READ, UPDATE]\n+ PDF Collection" as registrationservice <<FR-006, FR-010>>
+      component "Notification Queue Service" as notificationservice <<FR-007, DR-004>>
+      component "Controlled-List Loader\n(Initialization)" as controlledlistloader <<FR-005, CON-006>>
+      component "Cookie Service\n[GET, SET]" as cookieservice
+    }
+
+    package "UI Components" as uicomponents {
+      component "Landing Page" as landingpage <<FR-001>>
+      component "Role-Appropriate Pages" as rolepages <<FR-001>>
+      component "Notifier Component" as notifier <<FR-007>>
+      component "Login Page" as loginpage <<FR-002>>
+    }
+
+    package "Local Dev Configuration" as devconfig #LightCyan {
+      component "Proxy Configuration" as proxyconfig <<CON-002>>
+      component "Role-Paired SM_TOKEN\n(volunteer / local authority / provincial admin)" as smtoken <<DR-008, CON-002>>
+    }
+  }
+}
+
+node ".NET Core WebAPI Server" as apiserver {
+  package "Controllers" as controllers {
+    component "Evacuee Controller" as evacueecontroller
+    component "Incident-Task Controller" as incidenttaskcontroller
+    component "Organization Controller" as orgcontroller
+    component "Referral Controller" as referralcontroller
+    component "Registration Controller" as registrationcontroller
+  }
+
+  package "Domain Layer" as domainlayer {
+    component "C# Domain Classes" as domainclasses
+    component "Domain Services" as domainservices
+  }
+
+  package "Development Back Door\n(Dev Environment Only)" as devbackdoor #LightCoral {
+    component "Dev Bypass Mechanism\n(Backend-Only)" as devbypass <<NFR-001, CON-003>>
+  }
+
+  package "Data Access Layer" as dal {
+    component "Entity Framework / DbContext" as efdbcontext
+    component "Persistent Database Entities" as dbentities
+  }
+}
+
+database "MS SQL Database" as mssql {
+  component "Volunteer Table\n(Volunteer.Active)" as volunteertable <<DR-006>>
+  component "Persistent Data Entities" as persistentdata
+  component "SQL Maintenance Scripts\n(Transactional, Filtered)" as sqlscripts <<FR-011, DR-007>>
+}
+
+actor "Role-Based Front-End User" as roleuser
+actor "Developer" as developer
+actor "Database Operator / Administrator" as dbadmin
+
+' User interactions
+roleuser --> landingpage : accesses
+roleuser --> loginpage : redirected if unauthenticated
+roleuser --> rolepages : routed by role
+roleuser --> notifier : sees notifications
+
+developer --> devconfig : configures locally
+developer --> modulediag : receives diagnostic alert
+developer --> sqlscripts : (optional) executes scripts
+
+dbadmin --> sqlscripts : executes
+
+' Routing internals
+landingpage --> rolerouter : triggers routing
+rolerouter --> authguard : checks login + role
+rolerouter --> redirectguard : external URL routing
+authguard --> loginpage : redirect if unauthenticated
+authguard --> rolepages : allow if authorized
+
+' NgRx
+controlledlistloader --> controlledliststate : loads at initialization
+controlledliststate --> actionsreducers : managed via
+sharedstate --> actionsreducers : managed via
+services --> sharedstate : read/write selected state
+
+' Notification flow
+notificationservice --> notifier : observable queue
+
+' HTTP Interceptor hooks
+evacueeservice --> httpinterceptor : HTTP calls
+incidenttaskservice --> httpinterceptor : HTTP calls
+orgservice --> httpinterceptor : HTTP calls
+referralservice --> httpinterceptor : HTTP calls
+registrationservice --> httpinterceptor : HTTP calls
+controlledlistloader --> httpinterceptor : HTTP calls
+
+httpinterceptor --> sessionexpired : on 401 + logged-in state
+httpinterceptor --> loginhandler : triggers logout
+
+' SiteMinder
+siteminder --> loginhandler : auth context
+
+' Front-end to API HTTP
+httpinterceptor --> controllers : HTTP requests (browser -> API)
+
+' Dev proxy
+proxyconfig --> controllers : proxied local dev requests
+smtoken --> siteminder : role-paired token injection
+
+' Controllers to domain
+controllers --> domainservices : invoke
+domainservices --> domainclasses : use
+domainservices --> efdbcontext : data access
+
+' EF to DB
+efdbcontext --> dbentities : ORM mapping
+dbentities --> persistentdata : persists to
+
+' Dev bypass
+devbypass --> domainservices : bypasses SiteMinder auth (dev only)
+
+' SQL scripts
+sqlscripts --> volunteertable : SET Volunteer.Active=0 WHERE Id=:target
+sqlscripts --> mssql : run within transaction
+
+' DB
+persistentdata --> mssql
+volunteertable --> mssql
+
+@enduml

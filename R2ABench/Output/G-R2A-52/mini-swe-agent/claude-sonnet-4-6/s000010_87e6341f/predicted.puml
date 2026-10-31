@@ -1,0 +1,74 @@
+@startuml
+title Home Recipes - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BorderColor #444444
+  BackgroundColor #F5F5F5
+}
+skinparam database {
+  BackgroundColor #FFFFCC
+}
+skinparam cloud {
+  BackgroundColor #E8F4FD
+}
+skinparam node {
+  BackgroundColor #EAF7EA
+}
+
+' ── External Users / Actors ──────────────────────────────────
+actor "End User" as EndUser
+actor "API Consumer / Tester" as APIConsumer
+
+' ── Client Layer ─────────────────────────────────────────────
+package "Client Layer" {
+  component [Flutter/Dart Client\n(Android · iOS · Web · macOS)] as FlutterClient
+  component [Dart Generated gRPC Client\n(from .proto)] as DartGenClient
+}
+
+' ── Protocol Buffers Contract ─────────────────────────────────
+package "Shared Contract" {
+  component [Protocol Buffers Definitions\n(.proto files)] as ProtoContract
+}
+
+' ── Backend Layer ─────────────────────────────────────────────
+package "Backend Layer" {
+  component [gRPC-Gateway Middleware\n(HTTP → gRPC mapping)] as GRPCGateway
+  component [Go gRPC Server\n(Recipe & Ingredient Services)] as GRPCServer
+  component [Go Generated gRPC Server Code\n(from .proto)] as GoGenServer
+}
+
+' ── Data Layer ───────────────────────────────────────────────
+package "Data Layer" {
+  database "Recipe Data Store" as RecipeDB
+  database "Ingredient Data Store" as IngredientDB
+}
+
+' ── Deployment Infrastructure ─────────────────────────────────
+package "Deployment Infrastructure" {
+  node "Docker Container\n(Server Image)" as DockerContainer
+  node "Local Kubernetes Cluster" as LocalK8s
+  cloud "Azure Kubernetes Service (AKS)" as AKS
+}
+
+' ── Relationships ─────────────────────────────────────────────
+EndUser --> FlutterClient : uses
+APIConsumer --> GRPCGateway : HTTP (curl / REST)
+
+FlutterClient --> DartGenClient : uses
+DartGenClient --> GRPCServer : gRPC (Protocol Buffers)
+
+ProtoContract --> DartGenClient : generates
+ProtoContract --> GoGenServer : generates
+ProtoContract --> GRPCGateway : generates gateway stubs
+
+GRPCGateway --> GRPCServer : gRPC (forwarded calls)
+
+GRPCServer --> GoGenServer : implements
+GRPCServer --> RecipeDB : reads/writes Recipe data
+GRPCServer --> IngredientDB : reads/writes Ingredient data
+
+GRPCServer ..> DockerContainer : packaged into
+DockerContainer ..> LocalK8s : deployed to
+DockerContainer ..> AKS : deployed to
+@enduml

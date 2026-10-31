@@ -1,0 +1,47 @@
+@startuml
+
+package "Presentation Layer" {
+    component "Web Management Console" as console
+}
+
+package "API Gateway Layer" {
+    component "API Gateway" as apigateway
+    cloud "CloudWatch Logs" as cloudwatchlogs
+}
+
+package "Application Layer" {
+    component "API Service Lambdas" as apilambdas
+    component "Custom-Resource Handler" as crhandler
+    component "Route Loader" as routeloader
+    component "Device Simulator" as devicesim
+    component "Step Functions" as stepfunctions
+}
+
+package "Data Layer" {
+    database "DynamoDB Tables" as dynamodb
+    cloud "S3 Bucket (Route Data)" as routes3
+    cloud "S3 Bucket (Configuration)" as configs3
+}
+
+cloud "AWS IoT" as iot
+cloud "AWS CloudFormation" as cloudformation
+cloud "X-Ray" as xray
+
+' Key Dependencies
+console --> apigateway : "HTTP requests"
+apigateway --> apilambdas : "invokes"
+apigateway --> cloudwatchlogs : "access logs"
+apigateway --> xray : "tracing data"
+apilambdas --> dynamodb : "CRUD operations"
+cloudformation --> crhandler : "invokes"
+crhandler --> cloudformation : "responds"
+crhandler --> configs3 : "reads solution config"
+routeloader --> routes3 : "retrieves route data"
+routeloader --> apilambdas : "error propagation"
+devicesim --> routeloader : "obtains route state"
+devicesim --> iot : "publishes messages"
+devicesim --> stepfunctions : "orchestrates simulation"
+stepfunctions --> devicesim : "invokes"
+messagepub --> iot : "publishes to topics"
+
+@enduml

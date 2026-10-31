@@ -1,0 +1,118 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+left to right direction
+
+title QAPM Android Component: Scheduling, Upload, and HTTP Instrumentation
+
+package "Host Application" as Host {
+  [App Code] as App
+}
+
+package "Android Platform" as Android {
+  [HandlerThread + Looper] as HandlerThread <<Android>>
+  [Main Looper (MainThread Handler)] as MainLooper <<Android>>
+  [Context] as Context <<Android>>
+  [Connectivity Manager] as ConnMgr <<Android>>
+  [File System (Upload Directory)] as FS <<Android>>
+}
+
+package "Apache HttpClient" as Apache {
+  [ResponseHandler] as ApacheRH
+  [HttpEntity] as ApacheEntity
+}
+
+package "QAPM SDK" as QAPM {
+  package "Scheduling" as Sched {
+    [Handler Manager] as HandlerManager <<Manager>>
+    [Background Handler] as WorkHandler <<Handler>>
+  }
+
+  package "Upload Pipeline" as UploadPkg {
+    [Upload Processor] as UploadProc
+    [Connectivity Gate] as NetGate
+    [Storage Pop (forced send)] as StoragePop <<Storage>>
+    [File Scanner] as FileScan <<File>>
+    [File Reader (bParam)] as FileRead <<File>>
+    [Param Deriver (cParam from Context)] as ParamDerive
+    [Sender Adapter] as SenderAdapter <<Sender>>
+    [Callback Handler (success delete / failure log)] as CallbackHandler
+  }
+
+  package "HTTP Instrumentation" as HttpInstr {
+    [ResponseHandler Wrapper] as RHWrapper <<Wrapper>>
+    [Transaction State] as TxState <<State>>
+    [Buffering Entity Wrapper] as EntityWrapper <<Wrapper>>
+    [Counting InputStream] as CountingIS <<IO>>
+  }
+
+  [QAPM Config (Provides Sender)] as Config <<Config>>
+  [Logger] as Logger
+}
+
+[Configured Sender] as Sender <<External>>
+[Network] as Network <<External>>
+
+' Scheduling and default handlers
+App --> HandlerManager : initialize/access handlers\nFR-001, FR-010
+HandlerManager --> HandlerThread : create/start background thread\nFR-001
+HandlerManager --> WorkHandler : create from background looper\nFR-001
+HandlerManager --> MainLooper : main-thread handler available\nFR-010
+
+' Asynchronous scheduling
+App --> UploadProc : request upload processing\nFR-002, FR-003
+UploadProc --> WorkHandler : post work to background handler\nFR-002
+
+' Network gate
+UploadProc --> NetGate : check connectivity\nFR-003
+NetGate --> ConnMgr : query network state
+UploadProc -[#gray,dashed]-> FileScan : skip when disconnected\nNFR-002
+UploadProc -[#darkgreen]-> FileScan : proceed when connected\nFR-005
+
+' Forced send storage pop
+UploadProc --> StoragePop : pop pending data (forced)\nFR-004
+StoragePop --> FS : access local storage
+
+' File discovery and reading
+FileScan --> FS : enumerate upload files\nDR-004
+FileScan --> FileRead : for each file
+FileRead --> FS : read file content\nDR-005
+FileRead --> UploadProc : bParam
+
+' Parameter derivation and sending
+UploadProc --> ParamDerive : derive cParam\nDR-006
+ParamDerive --> Context : use Android Context
+ParamDerive --> UploadProc : cParam
+UploadProc --> Config : get configured sender\nAD-003
+Config --> Sender : provide sender
+UploadProc --> SenderAdapter
+SenderAdapter --> Sender : submit bParam + cParam\nFR-006
+Sender --> Network : send payload
+
+' Callback handling
+Sender --> CallbackHandler : success/failure callback\nFR-007
+CallbackHandler --> FS : delete file on success
+CallbackHandler --> Logger : log failures
+
+' HTTP instrumentation wrappers
+App --> RHWrapper : wrap ResponseHandler\nFR-008
+RHWrapper --> TxState : inspect/instrument transaction
+RHWrapper --> ApacheRH : delegate handleResponse
+App --> EntityWrapper : wrap HttpEntity\nFR-009
+EntityWrapper --> ApacheEntity : delegate writeTo(OutputStream)
+EntityWrapper --> CountingIS : cache/reuse counting stream for getContent()
+CountingIS --> ApacheEntity : underlying content source
+
+' Notes
+note right of HandlerManager
+Maintains:
+- default background handler thread
+- main-thread handler
+end note
+
+note right of EntityWrapper
+If wrapped entity is null,
+throw IllegalArgumentException (NFR-003)
+end note
+
+@enduml

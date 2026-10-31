@@ -1,0 +1,85 @@
+@startuml
+title kubescape/host-scanner - System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam defaultTextAlignment left
+
+' External entities
+rectangle "HTTP Client" as Client
+rectangle "Operator" as Operator
+rectangle "E2E Test Suite (Go)\nProvider-specific selection via\n//go:build <provider>" as Tests
+
+cloud "Kubernetes Cluster" as K8s {
+  node "Worker Node" as Node {
+    node "Host Filesystem\n(/etc, /run, /var/lib)" as FS
+    component "kubelet" as Kubelet
+    component "Container Runtime\n(containerd / CRI-O)" as Runtime
+
+    node "Pod: host-scanner (DaemonSet)\n[privileged]" as Pod {
+      component "host-scanner Service" as Service
+      component "HTTP API" as HTTP
+      component "Host Info Collector" as Collector
+      component "CNI Resolver" as CNI
+      component "JSON Sanitizer" as Sanitizer
+    }
+  }
+}
+
+file "Control-plane JSON Input" as JsonIn
+file "Sanitized JSON Output" as JsonOut
+
+' Deployments and operational context
+Operator --> K8s : Deploy privileged DaemonSet\n(C-004)
+Client --> HTTP : HTTP requests (GET)\nUnknown path -> 404\n(FR-001, NFR-003)
+
+' Internal interactions
+Collector --> FS : Read host info\n(DR-003)
+Collector --> CNI : Request resolved CNI dir\n(DR-004)
+CNI --> Kubelet : Read runtime type/defaults/config\n(FR-002)
+CNI --> Runtime : Inspect runtime configuration\n(FR-002)
+CNI --> FS : Read config files and CLI args\nResolve to /etc/cni/ | /var/lib/cni/ | subpaths\n(FR-002, DR-003, DR-004)
+
+Sanitizer --> JsonIn : Accept JSON with\nprovider config secrets\n(FR-003, DR-005)
+Sanitizer --> JsonOut : Output sanitized JSON\n(secrets removed)\n(FR-003, NFR-001, DR-006)
+
+' Test interactions and verification
+Tests --> HTTP : E2E HTTP checks\n404 for /doesnotexist\n(FR-001, NFR-003)
+Tests --> CNI : Verify directory resolution across\nprovider/runtime scenarios\n(FR-002, DR-003, DR-004)
+Tests --> Sanitizer : Verify secret removal and\nstructure preservation\n(FR-003, NFR-001, DR-006)
+note right of Tests
+  Provider-specific expected data selection
+  via Go build tags:
+  //go:build <provider>
+  (NFR-002, C-001, DR-007)
+end note
+
+' Containment and associations
+Pod -[hidden]down- Service
+Service -[hidden]down- HTTP
+Service -[hidden]down- Collector
+Service -[hidden]down- CNI
+Service -[hidden]down- Sanitizer
+
+' Notes for clarity
+note right of HTTP
+  HTTP API uses standard request/response semantics
+  and returns 404 for unknown paths like /doesnotexist.
+  (FR-001, NFR-003, DR-001, DR-002)
+end note
+
+note bottom of CNI
+  Resolves CNI configuration directory:
+  - Defaults: /etc/cni/ (kubelet/containerd)
+  - Explicit CLI arg: /var/lib/cni/
+  - Config-derived: specific CNI subpaths
+  (FR-002)
+end note
+
+note right of Sanitizer
+  Removes encryption provider configuration secrets
+  from control-plane JSON before output.
+  (FR-003, NFR-001)
+end note
+
+@enduml

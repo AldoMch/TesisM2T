@@ -1,0 +1,139 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+skinparam classArrowColor #333333
+skinparam noteBackgroundColor #FFFFCC
+skinparam noteBorderColor #333333
+
+title Deep Learning Model Sharing Platform - System Architecture
+
+package "Client Layer" {
+  [Web Browser (Vue/TypeScript UI)] as Browser
+  note right of Browser
+    Supports all modern browsers.
+    No IE support.
+    Multilingual (Chinese/English).
+  end note
+}
+
+package "Application Layer" {
+  [API Gateway / Load Balancer] as Gateway
+  note right of Gateway
+    Routes requests.
+    Security enforcement.
+  end note
+
+  package "Core Services (Spring Boot)" {
+    [User Service] as UserService
+    note right of UserService
+      Registration, Login, Profile,
+      Password Recovery, Logout.
+      Follow/Unfollow.
+    end note
+
+    [Community Service] as CommunityService
+    note right of CommunityService
+      Q&A (Questions/Answers).
+      Blog Articles & Comments.
+    end note
+
+    [Model Service] as ModelService
+    note right of ModelService
+      Upload, Metadata, Download,
+      Purchase, Payment Integration.
+    end note
+
+    [Dataset Service] as DatasetService
+    note right of DatasetService
+      Upload, Download, Management.
+    end note
+
+    [Inference Service] as InferenceService
+    note right of InferenceService
+      Online Model Invocation.
+      Runs models on uploaded/platform datasets.
+    end note
+
+    [Recommendation Service] as RecService
+    note right of RecService
+      Model Recommendations.
+      Uses browsing history & user profile.
+    end note
+
+    [Admin Service] as AdminService
+    note right of AdminService
+      User Account Cancellation.
+      Illegal Content Deletion.
+    end note
+  }
+}
+
+package "Data Layer" {
+  database "MySQL Database" as DB {
+    folder "User Data" as UD
+    folder "Community Data (Q&A, Blogs)" as CD
+    folder "Model & Dataset Metadata" as MD
+    folder "Purchase & Follow Relations" as PFR
+    folder "Recommendation Data" as RD
+  }
+
+  [File/Object Storage] as Storage
+  note right of Storage
+    Stores model files,
+    dataset files, user uploads.
+  end note
+}
+
+package "External Systems" {
+  [Email Service] as Email
+  [Payment Gateway] as Payment
+  [Model Runtime Engine] as MRE
+  note right of MRE
+    Executes deep learning models
+    for online inference.
+  end note
+}
+
+' Connections
+Browser --> Gateway : HTTPS / API Calls
+Gateway --> UserService
+Gateway --> CommunityService
+Gateway --> ModelService
+Gateway --> DatasetService
+Gateway --> InferenceService
+Gateway --> RecService
+Gateway --> AdminService
+
+UserService --> DB : CRUD (User, Follow)
+CommunityService --> DB : CRUD (Q&A, Blogs)
+ModelService --> DB : CRUD (Model Metadata)
+ModelService --> Storage : Store/Retrieve Model Files
+DatasetService --> DB : CRUD (Dataset Metadata)
+DatasetService --> Storage : Store/Retrieve Dataset Files
+InferenceService --> DB : Read Model/Dataset Refs
+InferenceService --> Storage : Fetch Input Data
+InferenceService --> MRE : Submit Inference Job
+RecService --> DB : Read User History/Profile
+AdminService --> DB : Delete/Update Operations
+
+UserService --> Email : Send Password Reset
+ModelService --> Payment : Initiate Purchase
+
+' Internal Service Dependencies (if needed)
+ModelService --> RecService : Provide Model Data
+UserService --> RecService : Provide User Data
+
+note bottom of Gateway
+  **Non-Functional Context:**
+  - Security (Auth, Injection Protection)
+  - High Throughput (1000 req/sec target)
+  - Data Consistency (<3s sync)
+  - High Availability (Maintenance windows defined)
+  - Scalable & Maintainable Architecture
+end note
+
+@enduml

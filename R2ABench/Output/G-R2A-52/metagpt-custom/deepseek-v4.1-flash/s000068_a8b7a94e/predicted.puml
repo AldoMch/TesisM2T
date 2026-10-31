@@ -1,0 +1,115 @@
+@startuml
+skinparam componentStyle rectangle
+
+package "Build and Configuration Layer" as BuildConfigLayer {
+  component "Build User / Build Workflow" as BuildUser
+  component "Makefile.sample" as MakefileSample
+  component "sample_defs" as SampleDefs
+  component "make" as MakeTool
+  component "debug build variant" as DebugVariant
+  component "release build variant" as ReleaseVariant
+}
+
+package "cFS Runtime Layer" as RuntimeLayer {
+  component "cFS bundle" as CFSBundle
+  component "cFE" as CFE
+  component "OSAL" as OSAL
+  component "PSP" as PSP
+  component "Framework Applications" as FrameworkApps
+  component "Tools" as Tools
+  component "core-cpu1" as CoreCpu1
+}
+
+package "Host/Ground Interface Layer" as HostInterfaceLayer {
+  component "cmdUtil" as CmdUtil
+  component "Telemetry Operator" as TelemetryOperator
+  component "Telemetry Interface" as TelemetryIface
+}
+
+package "CI/Automation Layer" as CILayer {
+  component "Changelog Workflow" as ChangelogWorkflow
+  component "Format Check Workflow" as FormatCheckWorkflow
+  component "Duplicate-Check Job" as DuplicateCheckJob
+  component "Reusable Workflows" as ReusableWorkflows
+  component "Static Analysis Workflow" as StaticAnalysisWorkflow
+  component "CodeQL Workflow" as CodeQLWorkflow
+  component "CI Build/Test Workflows" as CIBuildTestWorkflows
+  component "Functional Test CI Job" as FunctionalTestJob
+  component "GitHub Actions Runners" as GHARunners
+  component "CI Timeout" as TimeoutCeiling
+  component "Active Workflows" as ActiveWorkflows
+  component "Deprecated Workflows" as DeprecatedWorkflows
+  component "Changelog Categories" as ChangelogCategories
+}
+
+package "Documentation/Verification Layer" as DocLayer {
+  component "README Walkthrough" as ReadmeWalkthrough
+}
+
+package "External/Related Interfaces" as ExternalRelated {
+  component "SIL" as SIL
+  component "ECI" as ECI
+  component "cFS_IO_LIB" as CFSIOLIB
+  component "cFS_LIB" as CFSLIB
+  component "CCDD" as CCDD
+  component "Perfutils-java" as PerfutilsJava
+  component "gen_sch_tbl" as GenSchTbl
+}
+
+cloud "GitHub Actions" as GitHubActions
+node "Host Environment" as HostEnvironment
+node "System executing cFS" as CFSSystem
+database "Git submodules" as GitSubmodules
+database "Changelog Artifact" as ChangelogArtifact
+
+BuildUser --> MakefileSample : uses
+BuildUser --> SampleDefs : uses
+BuildUser --> MakeTool : make prep / make install
+BuildUser --> GitSubmodules : source checkout
+MakeTool --> DebugVariant : builds
+MakeTool --> ReleaseVariant : builds
+MakeTool --> CFSBundle : builds
+GitSubmodules --> CFSBundle : source checkout
+CFSBundle --> CFE : contains
+CFSBundle --> OSAL : contains
+CFSBundle --> PSP : contains
+CFSBundle --> FrameworkApps : contains
+CFSBundle --> Tools : contains
+CoreCpu1 --> CFSBundle : runnable target
+HostEnvironment --> MakeTool : runs
+HostEnvironment --> CmdUtil : runs
+CFSSystem --> CoreCpu1 : executes
+CmdUtil --> CoreCpu1 : sends commands
+TelemetryOperator --> TelemetryIface : enables telemetry
+TelemetryIface --> CFSSystem : provides telemetry endpoint
+CFSSystem --> TelemetryIface : telemetry
+ReadmeWalkthrough --> CmdUtil : no-op commands
+ReadmeWalkthrough --> TelemetryIface : command counter observation
+ChangelogWorkflow --> GitHubActions : executes
+ChangelogWorkflow --> GHARunners : ubuntu-latest
+ChangelogWorkflow --> ChangelogArtifact : uploads
+ChangelogArtifact --> ChangelogCategories : organized by
+FormatCheckWorkflow --> GitHubActions : push / pull_request / workflow_call
+FormatCheckWorkflow --> GHARunners : ubuntu-18.04
+DuplicateCheckJob --> GHARunners : ubuntu-latest
+ReusableWorkflows --> GitHubActions : workflow_call
+ReusableWorkflows --> FormatCheckWorkflow : reuse
+ReusableWorkflows --> StaticAnalysisWorkflow : reuse
+ReusableWorkflows --> CodeQLWorkflow : reuse
+CIBuildTestWorkflows --> DebugVariant : supports
+CIBuildTestWorkflows --> ReleaseVariant : supports
+CIBuildTestWorkflows --> GitHubActions : constrained to
+CIBuildTestWorkflows --> ActiveWorkflows : revalidate against
+CIBuildTestWorkflows --> DeprecatedWorkflows : derived from
+FunctionalTestJob --> CoreCpu1 : requires
+FunctionalTestJob --> CmdUtil : uses cmdUtil
+FunctionalTestJob --> TimeoutCeiling : bounded by
+FunctionalTestJob --> GitHubActions : executes
+CFSBundle --> SIL : related
+CFSBundle --> ECI : related
+CFSBundle --> CFSIOLIB : related
+CFSBundle --> CFSLIB : related
+CFSBundle --> CCDD : related
+CFSBundle --> PerfutilsJava : related
+CFSBundle --> GenSchTbl : related
+@enduml

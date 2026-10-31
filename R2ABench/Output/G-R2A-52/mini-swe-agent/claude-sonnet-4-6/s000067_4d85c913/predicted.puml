@@ -1,0 +1,129 @@
+@startuml
+
+title TraceLeft - Linux Tracing Framework Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+}
+skinparam database {
+  BackgroundColor #FFFACD
+  BorderColor #B8860B
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam rectangle {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+node "Linux Kernel Space" {
+  component "Main eBPF Program" as MaineBPF {
+    component "kprobe Hook" as KprobeHook
+    component "kretprobe Hook" as KretprobeHook
+  }
+
+  component "Handler Maps" as HandlerMaps {
+    component "handle_NAME_progs\n(Program Map)" as ProgMap
+    component "handle_NAME_progs_ret\n(Return Program Map)" as RetProgMap
+  }
+
+  component "Handler eBPF Programs" as HandlerPrograms {
+    component "kprobe/handle_NAME\nSyscall Handler" as SyscallHandler
+    component "kprobe/handle_NAME\nFile Handler" as FileHandler
+    component "kprobe/handle_NAME\nNetwork Handler" as NetworkHandler
+    component "kretprobe/handle_NAME\nReturn Handler" as ReturnHandler
+  }
+
+  database "Perf-Based Event Channel" as PerfChannel
+}
+
+node "Userspace" {
+  rectangle "TraceLeft CLI Layer" as CLILayer {
+    component "CLI Entry Point\n(Executable)" as CLIEntry
+    component "Trace Command\n(trace)" as TraceCmd
+    component "Event Registration\n(ProgramID, Pids, ELFPath)" as EventReg
+  }
+
+  rectangle "TraceLeft Library Layer" as LibLayer {
+    component "Probe Loader" as ProbeLoader {
+      component "Default Handler Loader" as DefaultLoader
+      component "Process-Specific\nHandler Loader" as ProcessLoader
+    }
+    component "Userspace Tracer\n(Event Dispatcher)" as UserspaceTracer
+    component "Event Dispatcher\n(Common Header Based)" as EventDispatcher
+  }
+
+  rectangle "Code Generation Layer" as CodeGenLayer {
+    component "Handler Code Generator" as HandlerGen
+    component "Event Configuration Reader\n(Proto/JSON)" as ConfigReader
+  }
+
+  database "Event Configuration\nMetadata Store\n(Proto/JSON)" as ConfigStore
+}
+
+node "External Dependencies" {
+  component "gobpf Library" as GoBPF
+  component "Linux eBPF Subsystem" as LinuxEBPF
+  component "Target Traced Process\n(ELF Binary)" as TargetProcess
+}
+
+' CLI flow
+CLIEntry --> TraceCmd : dispatches
+TraceCmd --> EventReg : parses inputs into
+EventReg --> ProbeLoader : initiates tracing
+
+' Probe loading flow
+ProbeLoader --> HandlerMaps : populates handler maps\nusing naming scheme
+DefaultLoader --> HandlerPrograms : loads default handlers
+ProcessLoader --> HandlerPrograms : loads process-specific handlers
+ProbeLoader --> GoBPF : uses
+GoBPF --> LinuxEBPF : integrates with
+
+' Kernel event flow
+KprobeHook --> HandlerMaps : looks up handler\nby process context
+KretprobeHook --> HandlerMaps : looks up return handler\nby process context
+HandlerMaps --> HandlerPrograms : selects handler program
+SyscallHandler --> PerfChannel : emits event\n(with common header)
+FileHandler --> PerfChannel : emits event\n(with common header)
+NetworkHandler --> PerfChannel : emits event\n(with common header)
+ReturnHandler --> PerfChannel : emits event\n(with common header)
+
+' Event delivery to userspace
+PerfChannel --> UserspaceTracer : delivers events
+UserspaceTracer --> EventDispatcher : dispatches by common header
+MaineBPF --> TargetProcess : attaches probes via\nkprobe/kretprobe
+
+' Code generation flow
+ConfigReader --> ConfigStore : reads event metadata
+ConfigReader --> HandlerGen : provides metadata
+HandlerGen --> HandlerPrograms : generates eBPF handler source
+
+' Linux kernel integration
+ProbeLoader --> MaineBPF : loads eBPF programs
+LinuxEBPF --> KprobeHook : provides hook
+LinuxEBPF --> KretprobeHook : provides hook
+
+note bottom of PerfChannel
+  Events begin with common
+  leading section for dispatch
+  (NFR-002, DR-001)
+end note
+
+note bottom of HandlerMaps
+  Naming: handle_NAME_progs
+  handle_NAME_progs_ret
+  (FR-009, C-004)
+end note
+
+note right of ConfigStore
+  Event Argument Metadata:
+  position, type, name,
+  suffix, hash_func (DR-003)
+end note
+
+@enduml

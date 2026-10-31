@@ -1,0 +1,114 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #555555
+}
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+}
+skinparam database {
+  BackgroundColor #FFF5CC
+  BorderColor #CC9900
+}
+skinparam cloud {
+  BackgroundColor #E8F5E9
+  BorderColor #4CAF50
+}
+skinparam node {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam interface {
+  BackgroundColor #FFE0B2
+  BorderColor #E65100
+}
+skinparam arrow {
+  Color #333333
+}
+
+title ROS-Based Self-Driving Car System Architecture
+
+node "Docker Container" {
+
+  rectangle "ROS Environment" {
+
+    rectangle "Launch Entry Points" {
+      component "styx.launch\n(Simulator Mode)" as Styx
+      component "site.launch\n(Site Mode)" as Site
+    }
+
+    rectangle "Perception Subsystem" {
+      component "Traffic Light\nDetection &\nClassification Node" as TLDetector
+    }
+
+    rectangle "Planning Subsystem" {
+      component "Waypoint\nLoader" as WPLoader
+      component "Waypoint\nUpdater" as WPUpdater
+    }
+
+    rectangle "Control Subsystem" {
+      component "Waypoint\nFollower" as WPFollower
+      component "Drive-By-Wire\n(DBW) Node" as DBW
+    }
+
+    interface "/current_pose" as CurrentPose
+    interface "/base_waypoints" as BaseWaypoints
+    interface "/traffic_waypoint" as TrafficWaypoint
+    interface "/final_waypoints" as FinalWaypoints
+    interface "/twist_cmd" as TwistCmd
+    interface "/vehicle/dbw_enabled\n/vehicle/throttle_cmd\n/vehicle/steering_cmd\n/vehicle/brake_cmd" as VehicleCmd
+
+    Styx --> WPLoader : launches
+    Styx --> TLDetector : launches
+    Styx --> WPUpdater : launches
+    Styx --> WPFollower : launches
+    Styx --> DBW : launches
+
+    Site --> WPLoader : launches
+    Site --> TLDetector : launches
+    Site --> WPUpdater : launches
+    Site --> WPFollower : launches
+    Site --> DBW : launches
+
+    WPLoader --> BaseWaypoints : publishes
+    BaseWaypoints --> WPUpdater : subscribes
+    BaseWaypoints --> TLDetector : subscribes
+
+    TLDetector --> TrafficWaypoint : publishes\n(stop waypoint on\nred/yellow light)
+    TrafficWaypoint --> WPUpdater : subscribes
+
+    WPUpdater --> CurrentPose : subscribes
+    WPUpdater --> FinalWaypoints : publishes\n(with target speed\ntwist.twist.linear.x)
+
+    FinalWaypoints --> WPFollower : subscribes
+    WPFollower --> TwistCmd : publishes
+
+    TwistCmd --> DBW : subscribes
+    CurrentPose --> TLDetector : subscribes
+    CurrentPose --> WPUpdater : subscribes
+
+    DBW --> VehicleCmd : publishes\n(throttle / steering / brake)
+  }
+}
+
+cloud "Udacity Capstone\nProject Simulator" as Simulator {
+}
+
+database "Recorded\nTraining Bag\n(site mode)" as TrainingBag {
+}
+
+actor "Evaluator /\nDeveloper-Operator" as User
+
+User --> Styx : runs (simulator mode)
+User --> Site : runs (site mode)
+
+Simulator <--> CurrentPose : pose feedback\n(simulator mode)
+Simulator <-- VehicleCmd : vehicle commands\n(simulator mode)
+
+TrainingBag --> TLDetector : real-image traffic\nlight data (site mode)
+TrainingBag --> CurrentPose : pose data\n(bag playback)
+
+@enduml

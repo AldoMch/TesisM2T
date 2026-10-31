@@ -1,0 +1,41 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+    BackgroundColor<<client>> LightSkyBlue
+    BackgroundColor<<backend>> LightGreen
+    BackgroundColor<<data>> LightYellow
+    BackgroundColor<<processing>> LightSalmon
+}
+
+title BeeGreen System Architecture
+
+package "Client Tier" {
+    rectangle "Website\n(React / TypeScript)" <<client>> as Website
+    rectangle "Browser Extension\n(Chrome)" <<client>> as Extension
+}
+
+package "Backend API Tier\n(Node.js / LoopBack)" {
+    rectangle "UserController\nPOST /users\nGET /users\nPATCH /users\nGET /users/{id}" <<backend>> as UserController
+    rectangle "PingController\nGET /ping" <<backend>> as PingController
+    rectangle "UserRepository" <<backend>> as UserRepository
+}
+
+package "Data / Storage Tier" {
+    rectangle "Persistent Storage\n(User records,\nInventoryItem records)" <<data>> as Storage
+}
+
+package "Data Processing Tier" {
+    rectangle "Scoring & Recommendation\nWorkflows" <<processing>> as Scoring
+}
+
+Website --> UserController : HTTP REST (JSON)
+Website --> PingController : HTTP REST (JSON)
+Extension --> UserController : HTTP REST (JSON)
+Extension --> PingController : HTTP REST (JSON)
+
+UserController --> UserRepository : create / find / update
+UserRepository --> Storage : read / write
+
+Scoring --> Storage : read product & user data
+
+@enduml

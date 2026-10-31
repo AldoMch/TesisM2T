@@ -1,0 +1,43 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #D2E5B3
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "cFS Bundle" as CfsBundle
+
+package "Static and Quality Checks" as StaticChecks {
+    rectangle "CodeQL Analysis" as CodeQlAnalysis
+    rectangle "Static Analysis" as StaticAnalysis
+    rectangle "Format Check" as FormatCheck
+}
+
+package "Reuse Workflows" as ReuseWorkflows {
+    rectangle "cFS Reuse" as CfsReuse
+    rectangle "Submodule Reuse" as SubmoduleReuse
+}
+
+CfsBundle --> StaticAnalysis : workflow input
+CfsBundle --> CodeQlAnalysis : source bundle
+CfsBundle --> FormatCheck : source bundle
+
+CodeQlAnalysis --> CfsReuse : analysis results
+StaticAnalysis --> CfsReuse : static check results
+StaticAnalysis --> SubmoduleReuse : static check results
+FormatCheck --> SubmoduleReuse : format result
+FormatCheck --> CfsBundle : feedback
+CodeQlAnalysis --> SubmoduleReuse : dependency metadata
+@enduml

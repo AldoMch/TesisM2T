@@ -1,0 +1,141 @@
+@startuml
+
+package "Python API Layer" {
+  component "torc Public API" as TorcAPI
+}
+
+package "Application / Primary Task Layer" {
+  component "Primary Application Task (rank 0)" as PrimaryApp
+}
+
+package "Task Runtime / Scheduling Layer" {
+  component "Lifecycle Manager" as Lifecycle
+  component "Submission / Queue Manager" as Submission
+  component "Wait / Completion Manager" as Wait
+  component "Callback Manager" as Callback
+  component "Parallel Map Coordinator" as Map
+  component "Task Stealing Manager" as Stealing
+  component "Runtime Query Service" as Query
+  component "Timing Service / gettime()" as Timing
+  component "Server Runtime / Server Thread" as ServerRuntime
+  component "Cyclic Assignment Policy" as CyclicAssignment
+  component "Directed Submission Validator" as DirectedValidation
+}
+
+package "Worker Execution Layer" {
+  component "Worker Threads / Execution Engine" as Workers
+}
+
+package "MPI Communication / Distribution Layer" {
+  component "SPMD Bridge" as SPMD
+  component "Internal MPI Transport" as MPITransport
+}
+
+package "Data / State Layer" {
+  component "Task Descriptor / Future" as TaskDescriptor
+  component "Worker Queue Store" as QueueStore
+}
+
+package "Configuration Layer" {
+  component "Configuration Manager" as Config
+}
+
+package "Example / Demonstration Layer" {
+  component "Image Preprocessing Workflow" as ImageWorkflow
+  component "Example Suite" as Examples
+}
+
+package "External Systems / Platforms" {
+  node "Python runtime" as PythonRuntime
+  node "MPI runtime" as MPIRuntime
+  component "mpi4py" as Mpi4py
+  node "mpirun" as Mpirun
+  component "termcolor" as Termcolor
+  component "numpy" as Numpy
+  component "cma" as Cma
+  component "h5py" as H5py
+  component "pillow" as Pillow
+  database "HDF5" as HDF5
+  database "Input image files organized in labeled subfolders" as Images
+  node "Shared-memory platform" as SharedMem
+  node "Distributed-memory platform" as DistMem
+  node "Cluster nodes" as ClusterNodes
+}
+
+TorcAPI --> Lifecycle : start/init/launch/shutdown
+TorcAPI --> Submission : submit
+TorcAPI --> Wait : wait/as_completed
+TorcAPI --> Map : map
+TorcAPI --> SPMD : spmd
+TorcAPI --> Stealing : enable/disable
+TorcAPI --> Query : worker/node queries
+TorcAPI --> Timing : gettime()
+TorcAPI --> TaskDescriptor : task.input()/task.result()
+TorcAPI --> PrimaryApp : start(f)
+
+Lifecycle --> ServerRuntime : start/stop server runtime/thread
+Lifecycle --> MPITransport : rank/launch coordination
+Lifecycle --> Workers : worker execution control
+Lifecycle --> PrimaryApp : launch rank-0 primary task
+
+Submission --> QueueStore : create/queue descriptors
+Submission --> TaskDescriptor : create descriptor
+Submission --> CyclicAssignment : resolve default qid=-1
+Submission --> DirectedValidation : validate directed qid
+DirectedValidation --> QueueStore : place in target worker queue
+DirectedValidation --> Submission : reject invalid qid
+CyclicAssignment --> Workers : cyclic assignment across available workers
+
+Config --> Stealing : TORC_STEALING
+Config --> Workers : TORC_WORKERS / TORC_WORKER_YIELDTIME
+Config --> ServerRuntime : TORC_SERVER_YIELDTIME
+
+QueueStore --> Workers : provide tasks
+QueueStore --> TaskDescriptor : hold task references
+Workers --> TaskDescriptor : compute/return result
+Workers --> Stealing : steal request when idle/empty local queue
+Stealing --> Workers : deliver stolen tasks
+Stealing --> QueueStore : retrieve stolen tasks
+Stealing --> MPITransport : steal requests/results
+
+Wait --> TaskDescriptor : await/read result
+Wait --> Workers : release thread during waits
+Wait --> Callback : parent completion notification
+Callback --> TaskDescriptor : pass completed descriptor
+Callback --> Workers : run callback task
+Callback --> MPITransport : results returned to spawning rank
+
+Map --> Submission : submit chunks
+Map --> Wait : collect ordered results
+
+Query --> MPITransport : rank/process queries
+Query --> Workers : worker_id()/num_workers()/worker state
+Query --> ServerRuntime : runtime/server state queries
+
+SPMD --> MPITransport : coordinate SPMD execution across ranks
+MPITransport --> Mpi4py : MPI communication
+Mpi4py --> MPIRuntime : MPI bindings
+Mpi4py --> PythonRuntime : Python package
+Mpirun --> MPIRuntime : launches MPI processes
+
+PrimaryApp --> Mpi4py : application MPI routines
+PrimaryApp --> PythonRuntime : rank-0 application execution
+
+ImageWorkflow --> Map : map-style image parallelism
+ImageWorkflow --> Images : read labeled images
+ImageWorkflow --> Pillow : load images
+ImageWorkflow --> Numpy : build tensors
+ImageWorkflow --> H5py : write HDF5
+H5py --> HDF5 : access HDF5
+
+Examples --> TorcAPI : documented API usage
+Examples --> Cma : numerical optimization example
+Examples --> Numpy : array examples
+Examples --> Termcolor : formatted output
+
+Workers --> PythonRuntime : execute Python functions
+Workers --> SharedMem : shared-memory threads
+MPIRuntime --> DistMem : distributed-memory processes
+MPIRuntime --> ClusterNodes : cluster execution
+
+@enduml

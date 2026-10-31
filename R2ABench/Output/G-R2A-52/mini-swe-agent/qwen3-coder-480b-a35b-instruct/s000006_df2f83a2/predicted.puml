@@ -1,0 +1,61 @@
+@startuml
+' User-in-the-box Simulator Framework Architecture
+
+skinparam componentStyle rectangle
+
+package "User-in-the-box Framework" {
+  [YAML Configuration] as config
+  [Simulator Builder] as builder
+  [MuJoCo XML Integration] as xml_integration
+  [Biomechanical Models] as biomech
+  [Perception Modules] as perception
+  [Interaction Tasks] as tasks
+  [Reinforcement Learning Training] as training
+  [Gym-Compatible Simulator Package] as gym_sim
+  [Evaluation Runner] as evaluator
+}
+
+package "External Systems" {
+  [MuJoCo Engine] as mujoco
+  [File System] as fs
+}
+
+package "Data Stores" {
+  [Run Folders] as run_folders
+  [Checkpoint Data] as checkpoints
+  [Evaluation Output] as eval_output
+}
+
+config --> builder : Reads configuration
+builder --> xml_integration : Integrates XML
+xml_integration --> biomech : Uses biomechanical models
+xml_integration --> tasks : Uses task environments
+builder --> gym_sim : Produces simulator package
+gym_sim --> training : Used for RL training
+training --> checkpoints : Saves model checkpoints
+gym_sim --> evaluator : Used for evaluation
+evaluator --> run_folders : Loads run data
+evaluator --> eval_output : Writes evaluation results
+run_folders --> fs : Stored on file system
+checkpoints --> fs : Stored on file system
+eval_output --> fs : Stored on file system
+biomech --> mujoco : Executes simulations
+perception --> gym_sim : Provides sensory input
+tasks --> gym_sim : Defines task environment
+
+note right of builder
+  Assembles simulators from
+  configuration and components
+end note
+
+note right of gym_sim
+  Standalone package implementing
+  OpenAI Gym interface
+end note
+
+note right of evaluator
+  Evaluates trained runs from
+  stored run folders
+end note
+
+@enduml

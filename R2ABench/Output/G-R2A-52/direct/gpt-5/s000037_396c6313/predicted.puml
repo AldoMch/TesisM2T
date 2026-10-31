@@ -1,0 +1,151 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+title veinmind-tools System Architecture
+
+actor "Security Operator" as SO
+actor "Plugin Developer" as PD
+actor "Deployment Operator" as DO
+actor "Integrator" as INT
+
+package "Host Environment" as HOST {
+  component "CLI" as CLI {
+    [scan-image]
+    [scan-container]
+    [scan-iac]
+  }
+  artifact "run.sh\n(parallel-container startup)" as RUNSH
+}
+
+node "Container Runtime" as RUNTIMES {
+  node "Docker Engine" as DOCKER {
+    component "Docker Daemon" as DOCKERD
+    component "Authorization Routing Plugin" as AUTH <<plugin>>
+  }
+  node "Containerd" as CONTAINERD
+}
+
+cloud "Image Registries\n- DockerHub\n- Docker Registry\n- Harbor" as REGISTRIES
+
+package "veinmind-tools" as VTOOLS {
+  component "Image Scanner" as IMGSCAN
+  component "Container Scanner" as CSCAN
+  component "IaC Scanner" as IACSCAN
+  component "Authorization Routing Component" as AUTHCOMP
+  component "Report Event Bus" as REVENTBUS
+}
+
+component "veinmind-runner\n(Runner Image & execution support)" as RUNNER
+component "veinmind-sdk / libveinmind" as SDK
+component "Policy Libraries" as POLICIES
+component "Report Event Client" as REVENTCLIENT
+
+database "Malicious-File Report Data\n(DR-001..DR-004)" as MFREPORT
+database "IaC Alert Data\n(DR-005..DR-007)" as IACREPORT
+
+node "Python Example Package\n(containerized plugin)" as PYEX {
+  artifact "Base Image:\nveinmind/python3.6:1.3.1-stretch" as BASEIMG
+  artifact "requirements.txt" as REQS
+  artifact "/tool/entrypoint.sh" as ENTRY
+  component "python scan.py" as PYSCAN
+}
+
+' Users to entry points
+SO --> CLI : runs commands\n(scan-image / scan-container / scan-iac)
+SO --> RUNSH : quick-start\n./run.sh scan-host image
+
+' Quick-start runner execution model
+RUNSH --> RUNNER : starts parallel-container\nexecution
+RUNNER --> DOCKERD : schedules tool containers
+
+' CLI to scanners
+CLI --> IMGSCAN : invoke image scan
+CLI --> CSCAN : invoke container scan
+CLI --> IACSCAN : invoke IaC scan
+
+' Scanners to SDK
+IMGSCAN ..> SDK : uses
+CSCAN ..> SDK : uses
+IACSCAN ..> SDK : uses
+
+' Scanners to runtime
+IMGSCAN --> DOCKERD : enumerate images,\nfetch layers/files
+CSCAN --> DOCKERD : inspect containers
+
+' Registry compatibility
+DOCKERD --> REGISTRIES : pull/push images
+DOCKERD .. CONTAINERD : compatibility target
+
+' IaC scanner processing
+IACSCAN ..> POLICIES : load policy libraries
+IACSCAN --> REVENTBUS : publish alert details\n(DAT-IF-002)
+REVENTBUS --> REVENTCLIENT : structured events\n(API-003)
+
+' Reporting data
+IMGSCAN --> MFREPORT : write malicious-file results\n(DAT-IF-001)
+CSCAN --> MFREPORT : append per-container findings
+IACSCAN --> IACREPORT : write IaC alerts\n(DAT-IF-002)
+
+' Authorization routing
+DOCKERD --> AUTH : authorization requests\n(API-002)
+AUTH --> AUTHCOMP : route config & action mapping
+AUTHCOMP --> AUTH : resolved action\n(DAT-IF-003)
+note right of AUTH
+- Match METHOD + URI to configured routes (FR-004)
+- Return Docker plugin action or
+  NoneDockerPlugin when no match (FR-005)
+end note
+
+' Python example package behavior
+PD ..> PYEX : build/package example
+PYEX ..> SDK : integrate via SDK
+PYEX ..> REQS : install deps (CON-005)
+PYEX ..> BASEIMG : base image (NFR-003)
+ENTRY --> PYSCAN : forward args:\npython scan.py $* (FR-006)
+note right of ENTRY
+Entrypoint: /tool/entrypoint.sh (CON-006)
+end note
+
+' Roles and responsibilities
+PD ..> SDK : implement scanners,\nadd commands (NFR-004)
+DO ..> DOCKERD : prepare Docker (CON-001)
+DO ..> RUNNER : prepare runner image (CON-002)
+DO ..> RUNSH : provide startup script (CON-003)
+INT ..> AUTHCOMP : configure routes\nand action classes
+INT ..> REVENTCLIENT : consume report events
+
+' Data relationship constraints
+note bottom of MFREPORT
+Preserve relationships:
+- ReportData -> ReportImage -> ReportLayer
+- MaliciousFileInfo per image/layer
+(DR-008)
+end note
+
+note bottom of IACREPORT
+Preserve relationships:
+- Rule metadata + file location
+per detected risk (DR-009)
+end note
+
+' Labels for key CLIs
+[scan-image] -down-> IMGSCAN : FR-001
+[scan-container] -down-> CSCAN : FR-002
+[scan-iac] -down-> IACSCAN : FR-007
+
+' Quick-start linkage to image scanning flow
+RUNSH -[dashed]-> IMGSCAN : FR-003 via RUNNER
+
+' Compatibility coverage note
+note as NCOMP
+Compatibility (NFR-002):
+- Image registries: DockerHub, Docker Registry, Harbor
+- Runtimes: Docker, Containerd
+end note
+REGISTRIES .. NCOMP
+CONTAINERD .. NCOMP
+DOCKERD .. NCOMP
+
+@enduml

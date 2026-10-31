@@ -1,0 +1,61 @@
+@startuml
+title Prediction Cards System Architecture
+
+' User Frontend
+package "User Frontend" {
+    component "Frontend Application" as frontend
+    component "Wallet Connector" as wallet
+}
+
+' Blockchain Layer
+package "Blockchain Layer" {
+    component "PredictionCards smart contract" as contract
+    component "AENS Name Resolution" as aens
+    node "Aeternity Blockchain" {
+        database "Smart Contract State" as chainState
+    }
+}
+
+' Service Layer
+package "Service Layer" {
+    component "Oracle Service" as oracle
+    component "Prediction-Processing Service" as processor
+}
+
+' Storage Layer
+package "Storage Layer" {
+    database "Prediction Media Storage" as mediaStorage
+    node "IPFS / Media Storage" {
+        database "NFT Media Files" as ipfs
+    }
+}
+
+' Integration Layer
+package "Integration Layer" {
+    node "Local contract integration-test environment" as testEnv
+    node "Aeternity Node" as aeternityNode
+}
+
+' External Systems
+cloud "External Price Provider" {
+    component "Price Data API" as priceProvider
+}
+cloud "Compiler Service" as compiler
+
+' Dependencies
+frontend --> contract : Submits predictions,\nreads state,\nmanages funds/rewards
+frontend --> aens : Resolves contract address\nvia AENS name
+aens --> contract : Provides contract location\nfor resolution
+frontend --> mediaStorage : Loads NFT media\nfor display
+frontend --> wallet : Connects for\nwallet-mediated calls
+oracle --> contract : Reads queries,\nsubmits responses
+oracle --> priceProvider : Fetches price data\nfor outcomes
+oracle --> compiler : Uses for\ncontract compilation
+processor --> contract : Initiates oracle queries,\nprocesses results
+processor --> oracle : Relies on oracle for\noutcome determination
+mediaStorage --> ipfs : Stores and serves\nNFT media assets
+testEnv --> aeternityNode : Requires node for\ncontract testing
+contract --> chainState : Maintains state\non blockchain
+oracle --> oracle : Periodically checks\npending queries
+
+@enduml

@@ -1,0 +1,41 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #345D9D
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "User Application" as UserApplication
+
+package "Virtual Motion Tracker" as VirtualMotionTracker {
+    rectangle "VMT Driver\nC++" as VmtDriver
+    rectangle "VMT Manager\nC#" as VmtManager
+    rectangle "OpenVR Path Constants\n/user/body and /client_info" as OpenVrPaths
+    rectangle "Legacy Controller Binding\nmycontroller JSON" as LegacyBinding
+}
+
+rectangle "OpenVR\nSteamVR Runtime" as OpenVrRuntime
+
+UserApplication --> VmtDriver : OSC 39570\n/TrackerPoseRoomUnity
+VmtDriver <--> VmtManager : OSC\n/SetRoomMatrix\n39570 / 39571
+
+VmtDriver <--> OpenVrRuntime : OpenVR Driver\nIVRSystem
+VmtManager <--> OpenVrRuntime : OpenVR Overlay
+
+VmtDriver --> OpenVrPaths : expose tracked\nbody paths
+VmtManager --> LegacyBinding : load input\nbinding JSON
+LegacyBinding --> OpenVrRuntime : /actions/legacy\nright-hand inputs
+OpenVrPaths --> OpenVrRuntime : OpenVR path\nidentifiers
+@enduml

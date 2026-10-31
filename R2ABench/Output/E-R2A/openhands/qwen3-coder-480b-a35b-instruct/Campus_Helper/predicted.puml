@@ -1,0 +1,84 @@
+@startuml
+' Campus Helper Platform Architecture Diagram
+' Based on the Software Requirements Specification
+
+skinparam componentStyle rectangle
+
+' Presentation Layer (WeChat Mini Program)
+package "Presentation Layer" {
+  [WeChat Mini Program Client] as client
+}
+
+' Business Layer
+package "Business Layer" {
+  [Product Service] as productService
+  [Order Service] as orderService
+  [User Service] as userService
+  [Admin Service] as adminService
+  [Authentication Service] as authService
+  [Search Service] as searchService
+  [Favorite Service] as favoriteService
+}
+
+' Data Layer
+package "Data Layer" {
+  [Product Repository] as productRepo
+  [Order Repository] as orderRepo
+  [User Repository] as userRepo
+  [Admin Repository] as adminRepo
+  [Search Repository] as searchRepo
+  [Favorite Repository] as favoriteRepo
+}
+
+' Data Entity Layer (Database)
+package "Data Entity Layer" {
+  [Database] as database
+}
+
+' External Systems
+package "External Systems" {
+  [WeChat Platform] as wechat
+}
+
+' Connections
+client --> productService : uses
+client --> orderService : uses
+client --> userService : uses
+client --> adminService : uses
+client --> searchService : uses
+client --> favoriteService : uses
+client --> wechat : runs on
+
+productService --> productRepo : uses
+orderService --> orderRepo : uses
+userService --> userRepo : uses
+adminService --> adminRepo : uses
+searchService --> searchRepo : uses
+favoriteService --> favoriteRepo : uses
+
+productRepo --> database : reads/writes
+orderRepo --> database : reads/writes
+userRepo --> database : reads/writes
+adminRepo --> database : reads/writes
+searchRepo --> database : reads/writes
+favoriteRepo --> database : reads/writes
+
+authService --> userService : validates
+authService --> adminService : validates
+
+' Security Component
+package "Security" {
+  [Input Validation] as inputValidation
+  [SQL Injection Protection] as sqlProtection
+  [Access Control] as accessControl
+}
+
+inputValidation --> productService : validates input
+inputValidation --> orderService : validates input
+inputValidation --> userService : validates input
+inputValidation --> adminService : validates input
+
+sqlProtection --> database : protects
+accessControl --> authService : enforces
+
+@enduml

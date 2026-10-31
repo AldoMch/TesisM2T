@@ -1,0 +1,52 @@
+@startuml
+title statlord Architecture
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "Client Layer (Browser SPA)" {
+  component "Editor SPA (React/TypeScript)" as Editor
+  component "Redux Store\n(Controls, Elements, Layouts, Gauges, Displays)" as Redux
+  component "Viewer UI (Browser Route)" as ViewerUI
+  Editor --> Redux : state mgmt
+  ViewerUI --> Redux : read display state
+}
+
+package "Server Layer (Python/Django)" {
+  component "API Gateway / Django Views" as APIGateway
+  component "Gauge Service" as GaugeSvc
+  component "Display Registry Service" as DisplaySvc
+  component "Layout Management Service" as LayoutSvc
+  component "Viewer Rendering Service" as ViewerSvc
+  component "Static Asset Server" as StaticServer
+}
+
+package "Data Layer" {
+  database "PostgreSQL" as PG
+  component "Static Web Assets" as StaticAssets
+}
+
+package "External Systems" {
+  actor "Browser Users (Editors/Operators)" as BrowserUsers
+  actor "API Clients / Integrators" as APIClients
+  node "Display Devices (OLED / e-paper / LCD)" as DisplayDevices
+}
+
+BrowserUsers --> Editor : HTTP(S)
+Editor <- StaticServer : serve built assets
+StaticServer --> StaticAssets
+
+Editor --> APIGateway : REST/JSON (layouts, gauges, displays)
+ViewerUI --> APIGateway : HTTP (viewer path)
+APIClients --> APIGateway : POST/GET data
+DisplayDevices --> APIGateway : Viewer route (HTTP)
+
+APIGateway --> GaugeSvc
+APIGateway --> DisplaySvc
+APIGateway --> LayoutSvc
+APIGateway --> ViewerSvc
+
+GaugeSvc --> PG
+DisplaySvc --> PG
+LayoutSvc --> PG
+ViewerSvc --> PG
+@enduml

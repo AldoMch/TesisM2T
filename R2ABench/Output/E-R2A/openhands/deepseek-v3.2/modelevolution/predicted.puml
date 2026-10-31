@@ -1,0 +1,202 @@
+@startuml
+
+!define LIGHTBLUE #ADD8E6
+!define LIGHTGREEN #90EE90
+!define LIGHTYELLOW #FFFFE0
+!define LIGHTORANGE #FFE5B4
+!define LIGHTPURPLE #E6E6FA
+
+skinparam component {
+  BackgroundColor<<Frontend>> LIGHTBLUE
+  BackgroundColor<<Backend>> LIGHTGREEN
+  BackgroundColor<<Algorithm>> LIGHTYELLOW
+  BackgroundColor<<Database>> LIGHTPURPLE
+  BackgroundColor<<External>> LIGHTORANGE
+  BorderColor #000000
+  FontSize 13
+}
+
+skinparam node {
+  backgroundColor<<User>> White
+  borderColor #000000
+}
+
+skinparam rectangle {
+  backgroundColor White
+  borderColor #000000
+}
+
+skinparam arrow {
+  Color #000000
+  FontSize 12
+}
+
+title Model Evolution Version Management Visualization Tool System Architecture
+
+rectangle "User Environment" {
+  node "Learner" <<User>> as learner
+  node "Model Contributor" <<User>> as contributor
+  node "Administrator" <<User>> as admin
+  
+  cloud "Browser" as browser {
+    rectangle "Web Interface" as web_ui
+  }
+  
+  learner --> browser : "Access via"
+  contributor --> browser : "Access via"
+  admin --> browser : "Access via"
+}
+
+package "System Components" {
+  
+  component "Frontend Module" <<Frontend>> as frontend {
+    rectangle "Account Management UI" as account_ui
+    rectangle "Model Search UI" as search_ui
+    rectangle "Model Viewer UI" as viewer_ui
+    rectangle "Model Upload/Edit UI" as upload_ui
+    rectangle "Evolution Editor UI" as evolution_ui
+    rectangle "User Management UI" as user_ui
+  }
+  
+  component "Backend Module" <<Backend>> as backend {
+    rectangle "User Service" as user_service
+    rectangle "Model Service" as model_service
+    rectangle "Evolution Service" as evolution_service
+    rectangle "File Service" as file_service
+    rectangle "Auth Service" as auth_service
+  }
+  
+  component "Algorithm Support Module" <<Algorithm>> as algorithm {
+    rectangle "Model Parser" as model_parser
+    rectangle "Graph Generator" as graph_generator
+    rectangle "ONNX Processor" as onnx_processor
+    rectangle "PyTorch Analyzer" as pytorch_analyzer
+    rectangle "Evolution Analyzer" as evolution_analyzer
+  }
+  
+  database "Neo4j Database" <<Database>> as neo4j {
+    rectangle "Evolution Graph" as evolution_graph
+    rectangle "Model Relationships" as model_relations
+  }
+  
+  database "MySQL Database" <<Database>> as mysql {
+    rectangle "User Data" as user_data
+    rectangle "Model Metadata" as model_metadata
+    rectangle "Dataset Info" as dataset_info
+    rectangle "Performance Metrics" as performance_metrics
+  }
+  
+  rectangle "External Interfaces" <<External>> as external {
+    component "Python Libraries" as python_libs
+    component "Browser Console" as browser_console
+    cloud "Communication Protocols" as protocols {
+      rectangle "HTTP/HTTPS" as http
+      rectangle "TCP/IP" as tcp
+      rectangle "FTP" as ftp
+      rectangle "SMTP" as smtp
+      rectangle "UDP" as udp
+    }
+  }
+}
+
+' User Interface Connections
+web_ui --> frontend : "Renders UI Components"
+web_ui --> external : "Developer Tools"
+
+' Frontend to Backend Connections
+frontend --> backend : "REST API Calls"
+frontend --> backend : "WebSocket Events"
+
+' Backend Internal Connections
+user_service --> auth_service : "Authentication"
+model_service --> file_service : "File Operations"
+evolution_service --> model_service : "Model Data"
+
+' Backend to Algorithm Connections
+backend --> algorithm : "Processing Requests"
+model_service --> model_parser : "Parse Models"
+evolution_service --> graph_generator : "Generate Graphs"
+file_service --> onnx_processor : "Process ONNX"
+file_service --> pytorch_analyzer : "Analyze PyTorch"
+evolution_service --> evolution_analyzer : "Analyze Evolution"
+
+' Backend to Database Connections
+user_service --> mysql : "CRUD User Data"
+auth_service --> mysql : "Store Auth Tokens"
+model_service --> mysql : "Store Metadata"
+model_service --> neo4j : "Store Relationships"
+evolution_service --> mysql : "Store Dataset Info"
+evolution_service --> neo4j : "Store Evolution Graph"
+file_service --> mysql : "Store File References"
+
+' Algorithm to Database Connections
+model_parser --> mysql : "Store Parsed Data"
+graph_generator --> neo4j : "Store Graph Data"
+evolution_analyzer --> neo4j : "Update Relationships"
+
+' External Interface Connections
+backend --> python_libs : "Import/Use"
+backend --> protocols : "Communication"
+algorithm --> python_libs : "ML Libraries"
+browser_console --> web_ui : "Debug/Log"
+
+' Security Components
+cloud "Security Layer" as security {
+  rectangle "Two-Factor Auth" as 2fa
+  rectangle "OAuth 2.0" as oauth
+  rectangle "TLS Encryption" as tls
+  rectangle "Data Encryption" as data_enc
+  rectangle "Access Control" as access_control
+}
+
+security --> backend : "Protects"
+security --> mysql : "Encrypts Data"
+security --> neo4j : "Encrypts Data"
+
+' Data Flow Notes
+note top of backend
+  Handles:
+  - User Authentication
+  - Model Management
+  - Evolution Relationships
+  - File Operations
+  - API Endpoints
+end note
+
+note right of algorithm
+  Processes:
+  - ONNX Files
+  - PyTorch Code
+  - Model Analysis
+  - Graph Generation
+  - Evolution Analysis
+end note
+
+note left of mysql
+  Stores:
+  - User Accounts
+  - Model Metadata
+  - Dataset Info
+  - Performance Metrics
+  - File References
+end note
+
+note right of neo4j
+  Stores:
+  - Model Evolution Graphs
+  - Version Relationships
+  - Layer Reuse Patterns
+  - Topology Structures
+end note
+
+' Legend
+legend right
+  |<color:LIGHTBLUE>Frontend| User Interface Components
+  |<color:LIGHTGREEN>Backend| Business Logic & APIs
+  |<color:LIGHTYELLOW>Algorithm| ML Model Processing
+  |<color:LIGHTPURPLE>Database| Data Storage
+  |<color:LIGHTORANGE>External| Interfaces & Protocols
+  |<color:White>User| System Users
+end legend
+
+@enduml

@@ -1,0 +1,50 @@
+@startuml
+title VirtualMotionTracker - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+package "External Control Layer" {
+  component "User Application" as ExtApp <<External>>
+  interface "OSC" as OSC
+}
+
+package "Management Layer" {
+  component "VMT Manager" as Manager
+}
+
+package "IPC Layer" {
+  component "Shared Memory\n(JSON, bidirectional)" as SHM <<IPC>>
+}
+
+package "Driver Integration Layer" {
+  component "VMT Driver" as Driver <<OpenVR Driver>>
+}
+
+package "Runtime Layer" {
+  component "SteamVR / OpenVR Runtime" as OpenVR <<External>>
+}
+
+package "Artifacts" {
+  artifact "Legacy Controller Binding (JSON)\ncontroller_type: 'mycontroller'\n- /user/hand/right/input/a -> /actions/legacy/in/right_axis1_press\n- /user/hand/right/input/c -> /actions/legacy/in/right_a_press\n- /user/hand/right/input/b -> /actions/legacy/in/right_grip_press\nmode: button, parameters.sub_mode: complex" as Binding
+}
+
+ExtApp --> OSC : Control messages
+OSC --> Manager : External control input
+Manager <--> SHM : JSON messages
+Driver <--> SHM : JSON messages
+Driver --> OpenVR : OpenVR driver interface
+OpenVR ..> Binding : loads legacy binding
+
+note right of SHM
+  Bidirectional channels:
+  - manager -> driver
+  - driver -> manager
+  Control fields:
+  - send count
+  - handshake count
+  - message length
+end note
+
+@enduml

@@ -1,0 +1,261 @@
+@startuml LabHire_Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BackgroundColor #EEF2FF
+  BorderColor #6366F1
+  FontColor #1E1B4B
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #4F46E5
+  FontColor #1E1B4B
+}
+skinparam database {
+  BackgroundColor #FEF9C3
+  BorderColor #CA8A04
+  FontColor #713F12
+}
+skinparam cloud {
+  BackgroundColor #F0F9FF
+  BorderColor #0284C7
+  FontColor #0C4A6E
+}
+skinparam arrow {
+  Color #4F46E5
+  FontColor #374151
+  FontSize 10
+}
+
+' ─────────────────────────────────────────────
+'  EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "External Systems" {
+  [Campus Email Provider] as CampusEmail
+  [Enterprise Email Provider] as EnterpriseEmail
+  [Email Push Service] as EmailPush
+}
+
+' ─────────────────────────────────────────────
+'  PRESENTATION LAYER
+' ─────────────────────────────────────────────
+package "Presentation Layer" {
+
+  package "Web Client\n(Chrome / Firefox / Edge\nWindows 7+ | macOS 10.9+)" {
+    [Student Web UI] as StudentWeb
+    [Enterprise-Certified Student Web UI] as EntStudentWeb
+    [Mentor Web UI] as MentorWeb
+  }
+
+  package "Mobile Client\n(Android 7.0+ | iOS 8.0+ | WeChat 6.5.6+)" {
+    [Student Mobile UI] as StudentMobile
+    [Enterprise-Certified Student Mobile UI] as EntStudentMobile
+    [Mentor Mobile UI] as MentorMobile
+  }
+
+  package "Admin Console\n(Role: Administrator)" {
+    [Admin Console] as AdminConsole
+  }
+}
+
+' ─────────────────────────────────────────────
+'  APPLICATION / BUSINESS LOGIC LAYER
+' ─────────────────────────────────────────────
+package "Application / Business Logic Layer" {
+
+  package "User & Identity" {
+    [UserProfileManager] as UPM
+    [CertificationWorkflow] as CertWF
+    [FieldValidator] as FieldVal
+    [PermissionGateway] as PermGW
+  }
+
+  package "Project & Application" {
+    [ProjectManager] as ProjMgr
+    [ApplicationProcessor] as AppProc
+    [MutualEvaluationService] as MutEval
+    [SearchService] as SearchSvc
+    [FavoritesManager] as FavMgr
+  }
+
+  package "Community" {
+    [CommunityManager] as CommMgr
+    [PopularityCalculator] as PopCalc
+  }
+
+  package "Messaging" {
+    [InSiteInbox] as Inbox
+  }
+}
+
+' ─────────────────────────────────────────────
+'  SERVICE / INTEGRATION LAYER
+' ─────────────────────────────────────────────
+package "Service / Integration Layer" {
+
+  [AuthService] as AuthSvc
+  [RecommendationEngine] as RecEng
+  [NotificationDispatcher] as NotifDisp
+  [ChatService] as ChatSvc
+  [RiskControlModule] as RiskCtrl
+  [FileStorageService] as FileStor
+
+  [EmailVerificationInterface] as EmailIface
+}
+
+' ─────────────────────────────────────────────
+'  DATA LAYER
+' ─────────────────────────────────────────────
+package "Data Layer" {
+  database "DatabaseRepository\n(Users | Projects | Applications\nPosts | Comments | Favorites\nEvaluations | Reviews | Chat Logs\nAdmin Accounts | Risk Logs)" as DB
+}
+
+' ═════════════════════════════════════════════
+'  ARROWS — Presentation → Application/Service
+' ═════════════════════════════════════════════
+
+' Standard Student Web
+StudentWeb --> AuthSvc : login / session
+StudentWeb --> UPM
+StudentWeb --> ProjMgr
+StudentWeb --> AppProc
+StudentWeb --> SearchSvc
+StudentWeb --> FavMgr
+StudentWeb --> CommMgr
+StudentWeb --> ChatSvc
+StudentWeb --> RecEng
+StudentWeb --> Inbox : read in-site messages
+
+' Enterprise-Certified Student Web (FR-012 / FR-017)
+EntStudentWeb --> AuthSvc : login / session
+EntStudentWeb --> UPM
+EntStudentWeb --> ProjMgr
+EntStudentWeb --> AppProc
+EntStudentWeb --> SearchSvc
+EntStudentWeb --> FavMgr
+EntStudentWeb --> CommMgr : publish referral posts
+EntStudentWeb --> ChatSvc
+EntStudentWeb --> RecEng
+EntStudentWeb --> Inbox : read in-site messages
+
+' Mentor Web
+MentorWeb --> AuthSvc : login / session
+MentorWeb --> UPM
+MentorWeb --> ProjMgr
+MentorWeb --> AppProc
+MentorWeb --> ChatSvc
+MentorWeb --> MutEval
+MentorWeb --> SearchSvc : search applicant students
+MentorWeb --> RecEng
+MentorWeb --> FileStor : download authorized resumes
+MentorWeb --> Inbox : read in-site messages
+
+' Standard Student Mobile
+StudentMobile --> AuthSvc : login / session
+StudentMobile --> UPM
+StudentMobile --> ProjMgr
+StudentMobile --> AppProc
+StudentMobile --> CommMgr
+StudentMobile --> SearchSvc
+StudentMobile --> FavMgr
+StudentMobile --> ChatSvc
+StudentMobile --> Inbox : read in-site messages
+
+' Enterprise-Certified Student Mobile
+EntStudentMobile --> AuthSvc : login / session
+EntStudentMobile --> UPM
+EntStudentMobile --> ProjMgr
+EntStudentMobile --> AppProc
+EntStudentMobile --> CommMgr : publish referral posts
+EntStudentMobile --> SearchSvc
+EntStudentMobile --> FavMgr
+EntStudentMobile --> ChatSvc
+EntStudentMobile --> Inbox : read in-site messages
+
+' Mentor Mobile
+MentorMobile --> AuthSvc : login / session
+MentorMobile --> ProjMgr
+MentorMobile --> AppProc
+MentorMobile --> ChatSvc
+MentorMobile --> SearchSvc : search applicant students
+MentorMobile --> Inbox : read in-site messages
+
+' Admin Console
+AdminConsole --> AuthSvc : administrator login / session
+AdminConsole --> CertWF : manual review actions
+AdminConsole --> CommMgr : view / delete posts & comments
+
+' ═════════════════════════════════════════════
+'  ARROWS — Application Layer internals
+' ═════════════════════════════════════════════
+UPM --> FileStor : delegate resume upload/storage
+UPM --> PermGW : enforce profile visibility rules
+
+AppProc --> PermGW : check resume-access permission
+AppProc --> NotifDisp : trigger application notifications
+
+ProjMgr --> MutEval : project ended-state event
+
+CertWF --> FieldVal : submit fields for automatic validation
+FieldVal --> CertWF : validation result (pass / fail)
+CertWF --> NotifDisp : review state & feedback notifications
+CertWF --> PermGW : update certification state & unlock permissions
+
+CommMgr --> PermGW : validate referral-post publishing right
+CommMgr --> PopCalc : request updated popularity scores
+CommMgr --> NotifDisp : comment-reply & favourite-update notifications
+CommMgr --> DB : write posts, comments, interactions
+DB --> CommMgr : read posts & comments for admin review
+
+FavMgr --> NotifDisp : trigger content-change notifications
+
+SearchSvc --> ProjMgr : query project data
+SearchSvc --> UPM : query mentor/student profiles
+
+PopCalc --> DB : read raw indicators (likes, comments, views, time)
+PopCalc --> DB : write popularity scores
+
+Inbox --> DB : read in-site message records
+
+' ═════════════════════════════════════════════
+'  ARROWS — Application → Service/Integration
+' ═════════════════════════════════════════════
+UPM --> AuthSvc : session / identity verification
+
+RecEng --> UPM : read interest/skill tags & behaviour
+RecEng --> ProjMgr : query project tags & metadata
+
+ChatSvc --> PermGW : verify mentor-applicant chat access
+
+' ═════════════════════════════════════════════
+'  ARROWS — Service/Integration internals
+' ═════════════════════════════════════════════
+RiskCtrl --> AuthSvc : intercept abnormal logins / apply CAPTCHA
+RiskCtrl --> DB : write risk-control & audit logs
+
+FileStor --> PermGW : check download permissions
+
+NotifDisp --> EmailIface : route email push & verification codes
+EmailIface --> EmailPush : outbound notification emails
+EmailIface --> CampusEmail : campus-domain verification codes
+EmailIface --> EnterpriseEmail : enterprise-domain verification codes
+
+AuthSvc --> EmailIface : send graphical / email CAPTCHA codes
+
+' ═════════════════════════════════════════════
+'  ARROWS — Service/Integration → Data Layer
+' ═════════════════════════════════════════════
+AuthSvc --> DB : user accounts, sessions, verification codes
+UPM --> DB : user profiles, resume metadata
+ProjMgr --> DB : projects, status, recruitment counts
+AppProc --> DB : application records
+MutEval --> DB : evaluations & scores
+ChatSvc --> DB : encrypted chat records
+NotifDisp --> DB : write in-site message records
+RecEng --> DB : behavioural history & tag data
+FileStor --> DB : file metadata & access control records
+CertWF --> DB : review records, state, failure reasons
+
+@enduml

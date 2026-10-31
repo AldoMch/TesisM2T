@@ -1,0 +1,140 @@
+@startuml
+!define RECTANGLE class
+
+skinparam rectangle {
+  BackgroundColor<<external>> LightYellow
+  BackgroundColor<<internal>> LightBlue
+  BackgroundColor<<middleware>> LightGreen
+  BackgroundColor<<k8s>> LightCoral
+  BackgroundColor<<runtime>> LavenderBlush
+  BorderColor Black
+  FontSize 12
+}
+
+skinparam arrow {
+  Color Black
+  FontSize 11
+}
+
+skinparam package {
+  BackgroundColor WhiteSmoke
+  BorderColor DarkGray
+  FontSize 13
+  FontStyle Bold
+}
+
+title Turing System Architecture
+
+package "API Clients / External Users" {
+  actor "API Client\n(Routers & Ensemblers)" as APIClient <<external>>
+  actor "Platform Operator\n(K8s Deployments)" as PlatformOps <<external>>
+  actor "Ensembler User\n(PyFuncEnsembler)" as EnsemblerUser <<external>>
+}
+
+package "Turing API Service" {
+
+  package "HTTP Middleware Layer" <<middleware>> {
+    rectangle "Authorization\nMiddleware\n(when auth config enabled)" as AuthMiddleware <<middleware>>
+    rectangle "OpenAPI Request\nValidation Middleware\n(when validation config enabled)\nOpenAPI 3.0.3" as ValidationMiddleware <<middleware>>
+  }
+
+  package "HTTP API Handlers (OpenAPI 3.0.3)" {
+    rectangle "Router API Handler\nGET /projects/{project_id}/routers" as RouterHandler <<internal>>
+    rectangle "Ensembler API Handler\nGET/POST/PUT/DELETE\n/projects/{project_id}/ensemblers/{ensembler_id}" as EnsemblerHandler <<internal>>
+  }
+
+  package "Service Layer" {
+    rectangle "Router Service\n(project-scoped resource mgmt)" as RouterService <<internal>>
+    rectangle "Ensembler Service\n(create/retrieve/update/delete)\nReturns JSON: Ensembler, EnsemblerId" as EnsemblerService <<internal>>
+  }
+
+  package "Cluster Management" {
+    rectangle "Router Deployment Manager\n(create/update/delete\nrouter deployments)" as DeploymentManager <<internal>>
+    rectangle "Jaeger Tracing Client\n(request tracing,\nsampling-based)" as JaegerClient <<internal>>
+  }
+
+}
+
+package "PyFuncEnsembler Runtime" <<runtime>> {
+  rectangle "PyFuncEnsembler\nWebservice\n(user-defined ensembler\nruntime, port 8080 default)" as PyFuncService <<runtime>>
+  rectangle "Docker Image Builder\n(local image build\nfrom MLflow artifacts)" as DockerBuilder <<runtime>>
+}
+
+package "Kubernetes Cluster" <<k8s>> {
+  rectangle "Turing Router\nDeployment\n(containerPort: 8080 default,\noverridden via ports.containerPort)" as RouterDeployment <<k8s>>
+  rectangle "Kubernetes API\n(create/update/delete\ndeployment resources)" as K8sAPI <<k8s>>
+}
+
+package "External Systems" {
+  rectangle "MLflow Model Registry\n(model artifact source\nfor PyFuncEnsembler builds)" as MLflow <<external>>
+  rectangle "Jaeger Tracing Backend\n(distributed tracing)" as Jaeger <<external>>
+}
+
+' API Client flows
+APIClient --> AuthMiddleware : "HTTP requests\n(JSON payloads)"
+AuthMiddleware --> ValidationMiddleware : "authorized requests"
+ValidationMiddleware --> RouterHandler : "validated requests\n(routers)"
+ValidationMiddleware --> EnsemblerHandler : "validated requests\n(ensemblers)"
+
+' Platform Operator flows
+PlatformOps --> AuthMiddleware : "HTTP requests\n(router deployment ops)"
+
+' Ensembler User flows
+EnsemblerUser --> PyFuncService : "HTTP requests\n(ensembler webservice)"
+
+' Handler to Service layer
+RouterHandler --> RouterService : "list routers by project_id"
+EnsemblerHandler --> EnsemblerService : "CRUD ops\n(project_id, ensembler_id)"
+
+' Service to Cluster Management
+RouterService --> DeploymentManager : "deployment lifecycle ops"
+EnsemblerService --> EnsemblerService : "returns Ensembler JSON (200/201)\nor EnsemblerId JSON (200 delete)\nor errors (400/404/500)"
+
+' Deployment Manager to K8s
+DeploymentManager --> K8sAPI : "create/update/delete\nrouter deployments"
+K8sAPI --> RouterDeployment : "manages lifecycle"
+
+' PyFuncEnsembler build flow
+DockerBuilder --> MLflow : "download model\nartifacts"
+DockerBuilder --> PyFuncService : "builds Docker image\nfor ensembler webservice"
+
+' Turing Router uses PyFuncEnsembler
+RouterDeployment --> PyFuncService : "routes requests to\nensembler webservice"
+
+' Jaeger tracing
+JaegerClient --> Jaeger : "send traces\n(sampling-based)"
+RouterHandler --> JaegerClient : "trace requests"
+EnsemblerHandler --> JaegerClient : "trace requests"
+
+note right of AuthMiddleware
+  Mounted only when
+  authorization configuration
+  is enabled (NFR-001)
+end note
+
+note right of ValidationMiddleware
+  Mounted only when
+  OpenAPI validation
+  configuration is enabled
+  (NFR-001, C-001)
+end note
+
+note right of RouterDeployment
+  Default port: 8080
+  Override via ports.containerPort
+  (NFR-003, C-004)
+end note
+
+note right of DockerBuilder
+  Requires MLflow artifacts
+  before local image build
+  (C-003)
+end note
+
+note bottom of JaegerClient
+  Tracing enabled/disabled by
+  tracer state or sampling config
+  (NFR-002)
+end note
+
+@enduml

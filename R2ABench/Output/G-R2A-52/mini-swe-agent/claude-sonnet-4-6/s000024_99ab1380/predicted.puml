@@ -1,0 +1,83 @@
+@startuml
+title OCI Jenkins Terraform Deployment - Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor white
+skinparam defaultFontSize 12
+
+actor "Deployment Operator" as operator
+
+package "Deployment Workflow Layer" {
+    component "Terraform CLI" as terraform_cli
+    component "terraform.tfvars\n(Variable Files)" as tfvars
+    component "JSON Input Files" as json_input
+    component "Terraform Modules" as tf_modules {
+        component "Root Module\n(OCI + SSH + Cluster Config)" as root_module
+        component "Jenkins Master Module" as master_module
+        component "Jenkins Slave/Agent Module" as slave_module
+    }
+}
+
+package "OCI Infrastructure Layer" {
+    package "OCI Tenancy / Compartment" {
+        package "Virtual Cloud Network (VCN)" {
+            package "Public Subnet" {
+                component "Jenkins Master Instance\n(Compute VM)" as jenkins_master
+                component "Load Balancer\n(optional public entry)" as load_balancer
+            }
+            package "Private Subnet(s)" {
+                component "Jenkins Slave/Agent\nInstances (Compute VMs)" as jenkins_slaves
+                component "NAT Gateway\n(Outbound Connectivity)" as nat_gateway
+            }
+            component "Bastion Host\n(Controlled SSH Access)" as bastion_host
+        }
+        database "OCI Identity / Credentials\n(tenancy_ocid, user_ocid,\ncompartment_ocid, fingerprint)" as oci_identity
+        component "OCI Networking Objects\n(Route Tables, DHCP, Security Lists,\nSubnets, VNICs)" as oci_network_objects
+    }
+}
+
+package "Configuration & Security Layer" {
+    component "SSH Key Material\n(ssh_authorized_keys,\nssh_private_key)" as ssh_keys
+    component "Cloud-Init Data\n(base64-encoded)" as cloud_init
+    component "Jenkins Cluster Config\n(label_prefix, version,\npassword, http_port, jnlp_port,\nplugins)" as jenkins_config
+}
+
+' Operator interactions
+operator --> terraform_cli : runs terraform init/plan/apply
+operator --> tfvars : edits variable files
+operator --> json_input : provides example inputs
+
+' Workflow layer connections
+tfvars --> terraform_cli : provides variables
+json_input --> terraform_cli : provides test inputs
+terraform_cli --> tf_modules : executes modules
+root_module --> master_module : passes master config
+root_module --> slave_module : passes slave/agent config
+
+' Configuration inputs
+ssh_keys --> root_module
+cloud_init --> master_module
+cloud_init --> slave_module
+jenkins_config --> root_module
+oci_identity --> root_module
+
+' Module to OCI provisioning
+master_module --> jenkins_master : provisions
+slave_module --> jenkins_slaves : provisions (slave_count)
+
+' OCI infrastructure dependencies
+jenkins_master --> oci_network_objects : attached via VNIC
+jenkins_slaves --> oci_network_objects : attached via VNIC (private subnets)
+jenkins_slaves --> nat_gateway : outbound connectivity (NAT)
+oci_network_objects --> oci_identity : scoped to tenancy/compartment
+
+' Jenkins communication
+jenkins_master --> jenkins_slaves : Jenkins Master-to-Slave\n(HTTP port / JNLP port)
+
+' Access paths
+bastion_host --> jenkins_master : SSH bastion-mediated access
+bastion_host --> jenkins_slaves : SSH bastion-mediated access
+load_balancer --> jenkins_master : public HTTP/HTTPS entry
+operator ..> bastion_host : SSH (bastion_host,\nbastion_user,\nbastion_private_key)
+
+@enduml

@@ -1,0 +1,63 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+title psmpi communication and build architecture (s000072_b56aad92)
+
+actor "Developer/Tester" as Dev
+
+package "Build & Verification (Manual)" {
+  component "run-embedded-tests.sh" as TestRunner
+  component "Autogen/Configure/Make" as BuildTools
+  component "Embedded hwloc Verification" as HwlocVerify
+
+  Dev -> TestRunner : execute tests
+  TestRunner --> BuildTools : invoke build steps
+  TestRunner --> HwlocVerify : verify embedded hwloc
+}
+
+package "Communication Subsystem" {
+  component "Initialization/Finalization" as InitFinal
+  component "Progress Engine" as Progress
+  component "Connection Manager" as ConnMgr
+  component "One-to-Many Transfer" as Scatter
+  component "Send State Machine" as SendSM
+
+  component "Packet Buffer" as PacketBuf <<Data>>
+  component "Network Send Descriptor" as NetSendDesc <<Descriptor>>
+  component "Flow Control State" as FlowState <<State>>
+  component "Pinned User Data" as PinnedData <<Memory>>
+}
+
+package "Transport Layer (CH4 Netmod)" {
+  component "Transport Abstraction" as Transport
+  component "OFI/Libfabric Module (embedded)" as OFIMod
+  component "Verbs Provider (optional)" as VerbsProv
+  component "UCX Integration (optional)" as UCX
+}
+
+package "External Systems & Libraries" {
+  component "libibverbs >= 1.1.8" as Libibverbs
+  component "librdmacm >= 1.0.16" as Librdmacm
+  node "Network Device" as NetDev
+}
+
+InitFinal --> Transport
+Progress --> Transport : advance progress
+ConnMgr --> Transport : connection establish
+Scatter --> Transport : one-to-many transfer
+SendSM --> FlowState : check/update
+SendSM --> PinnedData : direct-access send
+SendSM --> PacketBuf : pack payload/control
+SendSM --> NetSendDesc : prepare descriptor
+SendSM --> Transport : post send
+Transport --> OFIMod
+Transport ..> UCX : optional alternative
+OFIMod --> VerbsProv : when enabled
+VerbsProv --> Libibverbs
+VerbsProv --> Librdmacm
+Libibverbs --> NetDev : data path
+Librdmacm --> NetDev : communication mgmt
+
+@enduml

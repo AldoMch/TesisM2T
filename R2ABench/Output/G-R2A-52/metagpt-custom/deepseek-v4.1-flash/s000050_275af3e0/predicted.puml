@@ -1,0 +1,139 @@
+@startuml
+package "Test and Control Layer" as TestControlLayer {
+  component "kAFL-Fuzzer/test.py" as TestPy
+  component "kAFL-Fuzzer pytest Tests" as PytestTests
+  component "kAFL-Fuzzer Test Routines\n(Random/Deterministic/Havoc)" as TestRoutines
+  component "hAFL2 Fuzzing Controller/Workflow" as HAFL2Controller
+  component "Deterministic Mutation Routines" as MutationRoutines
+}
+
+package "Linux Userspace Fuzzing Layer" as LinuxUserspaceLayer {
+  component "Linux Userspace Launch Scripts" as LaunchScripts
+  component "initrd Packaging Workflow" as InitrdPackaging
+  component "Shared-Library Copier" as SharedLibCopier
+  component "Embedded Forkserver" as EmbeddedForkserver
+}
+
+package "Windows Hyper-V Fuzzing Layer" as WindowsHyperVLayer {
+  component "loader.exe" as LoaderExe
+  component "packet_sender.exe" as PacketSenderExe
+  component "Child Partition Harness" as ChildHarness
+  component "Crash-Monitoring Workflow/Driver" as CrashMonitor
+  component "vmswitch.sys (Root Partition Target)" as VMSwitchTarget
+}
+
+package "Communication and Guest I/O Layer" as CommGuestIOLayer {
+  interface "kAFL Hypercall Interface" as KAFLHypercall
+  interface "Packet-Sending IOCTL" as PacketIoctl
+  interface "Child-to-Root Payload Path" as ChildRootPayloadPath
+  interface "Crash Result Return Path" as CrashResultPath
+  interface "AFL-Style Guest I/O" as AFLGuestIO
+}
+
+package "Data and Artifact Layer" as DataArtifactLayer {
+  database "initrd Artifact" as InitrdArtifact
+  database "Required Shared Libraries" as SharedLibsArtifact
+  database "Selected Linux Userspace Target Binary" as TargetBinary
+  database "Fuzzing Snapshot" as FuzzingSnapshot
+  database "Windows Fuzzing Payload" as WindowsFuzzingPayload
+  database "Mutation Payloads" as MutationPayloads
+  database "Effector Maps" as EffectorMaps
+  database "Windows Build-Specific Offset" as WinOffsetData
+  database "Crash-Monitoring Results" as CrashResults
+}
+
+package "Build, Configuration, and Operations Layer" as BuildConfigOpsLayer {
+  component "windows/compile.sh (Windows Compile Script)" as WindowsCompile
+  component "Visual Studio Driver Build" as VSDriverBuild
+  component "Windows Build-Specific Offset Configuration" as OffsetConfig
+  component "Child/Root Partition VM Setup Procedure" as VMSetupProcedure
+  component "Elevated Command Prompt" as ElevatedCmd
+  component "Child Partition VM Restart" as ChildVMRestart
+  component "License Compliance (BSD 3-Clause / AGPL-3.0-or-later)" as LicenseCompliance
+}
+
+package "External Systems and Platforms" as ExternalSystems {
+  cloud "Python 3" as Python3
+  cloud "pytest" as Pytest
+  cloud "bash" as Bash
+  node "Linux" as Linux
+  node "Windows" as Windows
+  cloud "Visual Studio" as VisualStudio
+  cloud "kAFL" as KAFL
+  cloud "Hyper-V Virtualization Stack" as HyperVStack
+  node "Child Partition VM" as ChildVM
+  node "Root Partition VM" as RootVM
+  cloud "VMBus" as VMBus
+  cloud "netvsc" as Netvsc
+  database "Host System Shared Libraries" as HostSharedLibs
+  cloud "Windows Target Builds Requiring Offsets" as WinTargetBuilds
+}
+
+TestPy --> TestRoutines : runs random/deterministic/havoc suites
+PytestTests --> MutationRoutines : verifies payload restoration and Hamming-distance
+TestRoutines --> MutationRoutines : exercises
+
+LaunchScripts --> InitrdPackaging : packages selected target
+InitrdPackaging --> SharedLibCopier : requests shared libraries
+SharedLibCopier --> HostSharedLibs : reads host libraries
+InitrdPackaging --> InitrdArtifact : produces initrd
+InitrdPackaging --> TargetBinary : packages selected target
+TargetBinary --> InitrdArtifact : included in
+SharedLibCopier --> SharedLibsArtifact : copies libraries into
+SharedLibsArtifact --> InitrdArtifact : included in
+
+EmbeddedForkserver --> KAFLHypercall : translates hypercalls
+KAFLHypercall --> AFLGuestIO : maps to AFL-style guest I/O
+
+LoaderExe --> FuzzingSnapshot : creates fuzzing snapshot
+LoaderExe --> PacketSenderExe : loads and executes from snapshot
+PacketSenderExe --> PacketIoctl : triggers packet-sending IOCTL
+ChildHarness --> WindowsFuzzingPayload : creates
+WindowsFuzzingPayload --> ChildRootPayloadPath : sent over
+ChildRootPayloadPath --> VMSwitchTarget : delivers to VMSwitch path
+ChildRootPayloadPath --> VMBus : uses VMBus channel
+ChildRootPayloadPath --> Netvsc : uses netvsc channel
+CrashMonitor --> CrashResultPath : returns crash status
+CrashResultPath --> HAFL2Controller : reports monitoring output
+CrashMonitor --> CrashResults : writes results
+
+MutationRoutines --> MutationPayloads : operates on payload bytes
+MutationRoutines --> EffectorMaps : optionally consumes effector maps
+
+WindowsCompile --> Bash : invokes compile workflow
+WindowsCompile --> Windows : builds Windows binaries
+WindowsCompile --> LoaderExe : builds loader.exe
+WindowsCompile --> PacketSenderExe : builds packet_sender.exe
+VSDriverBuild --> VisualStudio : uses Visual Studio
+VSDriverBuild --> ChildHarness : compiles harness driver
+VSDriverBuild --> CrashMonitor : compiles monitoring driver
+OffsetConfig --> WinOffsetData : updates build-specific offset
+OffsetConfig --> WindowsCompile : applies offset before compilation
+VMSetupProcedure --> ChildVM : configures powered-off child VM
+VMSetupProcedure --> RootVM : configures root partition
+VMSetupProcedure --> HyperVStack : sets up VMs
+VMSetupProcedure --> ElevatedCmd : uses elevated command prompt
+ElevatedCmd --> ChildVM : disables DSE
+VMSetupProcedure --> ChildVMRestart : restarts child partition VM afterward
+ChildVMRestart --> ChildVM : applies DSE-disabled state
+LicenseCompliance --> WindowsCompile : governs
+LicenseCompliance --> VSDriverBuild : governs
+
+Python3 --> TestPy
+Pytest --> PytestTests
+Linux --> LaunchScripts
+Linux --> InitrdPackaging
+Linux --> EmbeddedForkserver
+KAFL --> EmbeddedForkserver
+KAFL --> HAFL2Controller
+HyperVStack --> RootVM
+HyperVStack --> ChildVM
+RootVM --> VMSwitchTarget : hosts
+ChildVM --> ChildHarness : hosts
+Windows --> LoaderExe
+Windows --> PacketSenderExe
+Windows --> CrashMonitor
+WinTargetBuilds --> OffsetConfig : requires build-specific offset
+WindowsCompile --> WinTargetBuilds : builds target binaries
+
+@enduml

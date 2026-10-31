@@ -1,0 +1,140 @@
+@startuml QAPM_Android_SDK_Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #5B6EAE
+skinparam packageFontColor #2D2D2D
+skinparam packageFontStyle bold
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentBorderColor #5B6EAE
+skinparam componentFontColor #1A1A1A
+skinparam nodeBackgroundColor #FFF8E7
+skinparam nodeBorderColor #C49A00
+skinparam nodeFontColor #2D2D2D
+skinparam nodeFontStyle bold
+skinparam databaseBackgroundColor #E8F5E9
+skinparam databaseBorderColor #2E7D32
+skinparam cloudBackgroundColor #FCE4EC
+skinparam cloudBorderColor #AD1457
+skinparam ArrowColor #444444
+
+' ──────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ──────────────────────────────────────────────
+
+cloud "Android Platform Runtime" as AndroidPlatform {
+  component [Handler / HandlerThread / Looper] as HandlerAPIs
+  component [Context / ConnectivityManager] as ContextAPI
+}
+
+node "Host Android Application" as HostApp
+
+' ──────────────────────────────────────────────
+' APACHE HTTP CLIENT LIBRARY
+' ──────────────────────────────────────────────
+
+cloud "Apache HttpClient Library" as ApacheHttp {
+  component [ResponseHandler / HttpResponse] as ApacheResponseHandler
+  component [HttpEntity] as ApacheHttpEntity
+}
+
+' ──────────────────────────────────────────────
+' LOCAL STORAGE LAYER
+' ──────────────────────────────────────────────
+
+package "Local Storage Layer" as LocalStorageLayer {
+  database "Upload Directory\n& Upload Files" as UploadStorage
+  database "Pending Data Store\n(Forced-Send Queue)" as PendingDataStore
+}
+
+' ──────────────────────────────────────────────
+' CONFIGURATION LAYER
+' ──────────────────────────────────────────────
+
+package "Configuration Layer" as ConfigLayer {
+  component [QAPMConfigurationManager] as ConfigManager
+}
+
+' ──────────────────────────────────────────────
+' SCHEDULING & DISPATCH LAYER
+' ──────────────────────────────────────────────
+
+package "Scheduling & Dispatch Layer" as SchedulingLayer {
+  component [QAPMHandlerThreadManager\n(Background Handler)] as HandlerThreadMgr
+  component [MainThreadHandler\n(Main Looper)] as MainThreadHandler
+}
+
+' ──────────────────────────────────────────────
+' UPLOAD PROCESSING LAYER
+' ──────────────────────────────────────────────
+
+package "Upload Processing Layer" as UploadLayer {
+  component [UploadProcessor] as UploadProcessor
+  component [NetworkConnectivityChecker] as NetChecker
+  component [ForcedSendStoragePopper] as ForcedSendPopper
+  component [FailureLogger] as FailureLogger
+}
+
+' ──────────────────────────────────────────────
+' HTTP INSTRUMENTATION LAYER
+' ──────────────────────────────────────────────
+
+package "HTTP Instrumentation Layer" as HttpLayer {
+  component "InstrumentedResponseHandler" as InstrResponseHandler
+  component "TransactionState" as TransactionState
+  component "InstrumentedHttpEntity" as InstrHttpEntity
+  component "CountingInputStream" as CountingInputStream
+}
+
+' ──────────────────────────────────────────────
+' DEPENDENCIES — Android Platform
+' ──────────────────────────────────────────────
+
+HandlerAPIs <.. HandlerThreadMgr    : uses HandlerThread /\nLooper (background)
+HandlerAPIs <.. MainThreadHandler   : binds to\nmain Looper
+ContextAPI  <.. NetChecker          : obtains ConnectivityManager\nto query network state
+ContextAPI  <.. UploadProcessor     : resolves upload directory\n& derives cParam
+
+' ──────────────────────────────────────────────
+' DEPENDENCIES — Scheduling Layer internal
+' ──────────────────────────────────────────────
+
+HandlerThreadMgr --> UploadProcessor    : posts upload\nprocessing work\n(background handler)
+MainThreadHandler --> UploadProcessor   : relays main-thread\ncallbacks
+
+' ──────────────────────────────────────────────
+' DEPENDENCIES — Upload Processing internal
+' ──────────────────────────────────────────────
+
+UploadProcessor --> NetChecker          : gates on\nconnectivity check
+UploadProcessor --> ForcedSendPopper    : pops forced-send\nstorage (when flagged)
+UploadProcessor --> ConfigManager       : retrieves configured sender
+UploadProcessor --> UploadStorage       : enumerates upload files;\nreads bParam file content;\nderives bParam / cParam pair;\ndeletes file on success;\nretains file on failure
+UploadProcessor --> FailureLogger       : logs send failure\n(failure branch)
+
+' ──────────────────────────────────────────────
+' DEPENDENCIES — Storage connections
+' ──────────────────────────────────────────────
+
+ForcedSendPopper --> PendingDataStore   : pops pending\ndata entries
+
+' ──────────────────────────────────────────────
+' DEPENDENCIES — HTTP Instrumentation Layer internal
+' ──────────────────────────────────────────────
+
+ApacheResponseHandler <.. InstrResponseHandler  : wraps & delegates\nHttpResponse handling
+InstrResponseHandler  --> TransactionState       : maintains &\ninstruments transaction state
+
+ApacheHttpEntity      <.. InstrHttpEntity        : wraps & delegates\nHttpEntity operations
+InstrHttpEntity       --> CountingInputStream    : maintains / reuses\ncached counting stream
+
+' ──────────────────────────────────────────────
+' DEPENDENCIES — Host App → SDK entry points
+' ──────────────────────────────────────────────
+
+HostApp ..> HandlerThreadMgr        : triggers scheduling /\nupload requests
+HostApp ..> InstrResponseHandler    : uses instrumented\nresponse handler
+HostApp ..> InstrHttpEntity         : uses instrumented\nhttp entity
+
+@enduml

@@ -1,0 +1,104 @@
+@startuml
+title VirtualMotionTracker - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ------------------------------------------------------------------
+' External actors and systems
+' ------------------------------------------------------------------
+actor "External Control\nApplication Integrator" as ExternalApp
+actor "Runtime Integrator /\nOperator" as Operator
+actor "Test / Configuration\nEngineer" as Engineer
+
+package "SteamVR / OpenVR Runtime" as OpenVR {
+  [OpenVR Driver Interface] as OpenVRDriverIface
+}
+
+' ------------------------------------------------------------------
+' VirtualMotionTracker - core product
+' ------------------------------------------------------------------
+package "VirtualMotionTracker" as VMT {
+
+  component "User Application" as UserApp {
+    component "External Control Input Source (OSC)" as OscSource
+  }
+
+  component "VMT Manager" as Manager {
+    component "External Control Input Handler\n(OSC Receiver)" as InputHandler
+    component "Motion Tracking State\nProcessing" as StateProcessor
+    component "Shared-Memory\nCommunication\n(manager-to-driver)" as ShmWriter
+    component "Shared-Memory\nCommunication\n(driver-to-manager)" as ShmReader
+  }
+
+  component "Shared Memory Region" as SharedMemory {
+    component "manager-to-driver\nchannel (JSON)" as ChanM2D
+    component "driver-to-manager\nchannel (JSON)" as ChanD2M
+    component "Control Metadata\nsendCount /\nhandshakeCount /\nmessageLength" as ShmMeta
+  }
+
+  component "VMT Driver" as Driver {
+    component "OpenVR Driver\nIntegration Point" as DriverIface
+    component "Shared-Memory\nCommunication\n(manager-to-driver)" as DriverShmReader
+    component "Shared-Memory\nCommunication\n(driver-to-manager)" as DriverShmWriter
+    component "Virtual Motion\nTracking Provider" as TrackingProvider
+  }
+
+  component "Legacy Controller Binding\n(mycontroller)" as LegacyBinding {
+    component "mycontroller_binding.json\nbutton mode + sub_mode=complex" as BindingFile
+  }
+}
+
+' ------------------------------------------------------------------
+' Relationships
+' ------------------------------------------------------------------
+ExternalApp --> OscSource : provides control input
+Operator --> Driver : installs / runs
+Engineer --> LegacyBinding : validates
+
+OscSource --> InputHandler : external control input (identified as OSC)
+InputHandler --> StateProcessor : control input data
+StateProcessor --> ShmWriter : tracking state updates
+
+ShmWriter --> ChanM2D : JSON message
+ChanD2M --> ShmReader : JSON message
+
+DriverShmReader --> ChanM2D : reads JSON message
+DriverShmWriter --> ChanD2M : writes JSON message
+
+ShmMeta -up- ChanM2D
+ShmMeta -up- ChanD2M
+
+DriverShmReader --> TrackingProvider : manager commands
+TrackingProvider --> DriverShmWriter : tracking data
+
+TrackingProvider --> DriverIface : exposes virtual motion tracking
+DriverIface --> OpenVRDriverIface : OpenVR driver interface
+
+BindingFile --> OpenVRDriverIface : JSON binding consumed by runtime
+LegacyBinding ..> Driver : legacy binding artifact
+
+note right of ChanM2D
+  JSON strings exchanged through
+  shared memory (FR-002, NFR-002)
+end note
+
+note bottom of ShmMeta
+  Synchronization/control fields:
+  send count, handshake count,
+  message length (FR-004, DR-003)
+end note
+
+note bottom of BindingFile
+  controller_type = mycontroller
+  /user/hand/right/input/a ->
+    /actions/legacy/in/right_axis1_press
+  /user/hand/right/input/c ->
+    /actions/legacy/in/right_a_press
+  /user/hand/right/input/b ->
+    /actions/legacy/in/right_grip_press
+  (FR-006, DR-004, DR-005)
+end note
+
+@enduml

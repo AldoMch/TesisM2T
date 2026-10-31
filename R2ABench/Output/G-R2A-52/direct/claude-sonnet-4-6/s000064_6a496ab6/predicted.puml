@@ -1,0 +1,132 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+skinparam component {
+  BackgroundColor #EBF5FB
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+  FontColor #1A1A1A
+}
+skinparam cloud {
+  BackgroundColor #FDEDEC
+  BorderColor #E74C3C
+  FontColor #1A1A1A
+}
+skinparam rectangle {
+  BackgroundColor #F0F3F4
+  BorderColor #717D7E
+  FontColor #1A1A1A
+}
+skinparam arrow {
+  Color #2C3E50
+  FontColor #2C3E50
+}
+skinparam defaultFontSize 12
+skinparam defaultFontName Arial
+
+title Gran-Book Backend Platform — System Architecture
+
+rectangle "Frontend Clients" as CLIENTS {
+  node "Native Mobile\nApplications" as MOBILE
+  node "Administrative\nWeb Application" as ADMIN_WEB
+}
+
+rectangle "GCP Cloud Infrastructure" as GCP {
+
+  rectangle "Network / Access Layer" as NET_LAYER {
+    component "Cloud Load Balancer" as LB
+  }
+
+  rectangle "Gateway / BFF Layer" as BFF_LAYER {
+    component "API Gateway / BFF\n(Node.js-style)" as GATEWAY
+    note right of GATEWAY
+      Handles native-app
+      and admin access routing
+    end note
+  }
+
+  rectangle "Backend Microservices (Containerised on GKE)" as SERVICES {
+    component "Authentication API\n(FR-001)" as AUTH_API
+    component "User Management API\n(FR-002, Golang)" as USER_API
+    component "Book Management API\n(FR-003, Golang)" as BOOK_API
+    component "EC Site API\n(FR-004, Golang)" as EC_API
+    component "Support API\n(FR-007, Golang)" as SUPPORT_API
+    component "Message Management\nService" as MSG_SVC
+    component "Notification\nService" as NOTIF_SVC
+  }
+
+  rectangle "Data Stores" as DATASTORES {
+    database "MySQL\n(User Data)\n[DR-002]" as MYSQL_USER
+    database "MySQL\n(Book Data)\n[DR-003]" as MYSQL_BOOK
+    database "MySQL\n(EC Site Data)\n[DR-004]" as MYSQL_EC
+    database "NoSQL Storage\n(Message Data)\n[DR-005]" as NOSQL_MSG
+    database "Object Storage\n(Thumbnails)\n[DR-006]" as OBJ_STORE
+  }
+
+  rectangle "VM / Ops Layer (GCE)" as OPS_LAYER {
+    node "GCE Virtual Machine\n(TLS Cert Mgmt,\nLet's Encrypt DNS-01)" as GCE_VM
+    node "GKE Cluster\n(Container Orchestration)" as GKE
+  }
+
+}
+
+rectangle "External Services" as EXTERNAL {
+  cloud "Firebase Authentication\n[DR-001, FR-001]" as FIREBASE
+  cloud "Book-Search API\n[FR-005, C-007]" as BOOKSEARCH
+  cloud "Stripe\n(Payment Processing)\n[FR-006]" as STRIPE
+  cloud "Push Notification\nProvider\n[NFR-004]" as PUSH_NOTIF
+  cloud "Email Notification\nProvider\n[NFR-004]" as EMAIL_NOTIF
+}
+
+' --- Client to Load Balancer ---
+MOBILE --> LB : HTTPS requests
+ADMIN_WEB --> LB : HTTPS requests
+
+' --- Load Balancer to Gateway ---
+LB --> GATEWAY : Routed traffic
+
+' --- Gateway to Backend Services ---
+GATEWAY --> AUTH_API : Auth requests
+GATEWAY --> USER_API : User management requests
+GATEWAY --> BOOK_API : Book management requests
+GATEWAY --> EC_API : EC site requests
+GATEWAY --> SUPPORT_API : Support requests
+GATEWAY --> MSG_SVC : Message requests
+
+' --- Auth API to Firebase ---
+AUTH_API --> FIREBASE : Authenticate users
+
+' --- Book API to Book Search ---
+BOOK_API --> BOOKSEARCH : Book lookup requests\n(FR-005)
+
+' --- EC API to Stripe ---
+EC_API --> STRIPE : Payment processing\n(FR-006)
+
+' --- Notification Service ---
+NOTIF_SVC --> PUSH_NOTIF : Push notifications
+NOTIF_SVC --> EMAIL_NOTIF : Email notifications
+USER_API --> NOTIF_SVC : Trigger notifications
+EC_API --> NOTIF_SVC : Trigger notifications
+
+' --- Services to Data Stores ---
+USER_API --> MYSQL_USER : Read / Write
+BOOK_API --> MYSQL_BOOK : Read / Write
+BOOK_API --> OBJ_STORE : Store thumbnails
+EC_API --> MYSQL_EC : Read / Write
+MSG_SVC --> NOSQL_MSG : Read / Write
+
+' --- Ops layer ---
+GCE_VM --> GKE : Cluster credential\nretrieval & cert mgmt
+GKE --> SERVICES : Deploys & orchestrates
+
+@enduml

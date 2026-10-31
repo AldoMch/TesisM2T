@@ -1,0 +1,333 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Gateway Account::Amazon API Gateway\\n(REST API)"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::API Gateway"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Gateway Account::Cognito Authorizer\\n(type: COGNITO_USER_POOLS)"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::Cognito-authorizer::hello-function"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Gateway Account::Method: GET /whoami\\n(WhoAmI)"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::Returns hello plus user name when authorized"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Gateway Account::Method: ANY /ecs\\n(ECS Proxy)"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::auth-function"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ],
+      "gt_nodes": [
+        "Cognito Account::Cognito Hosted UI"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Cognito Account::Identity Pool\\n(AllowUnauthenticated = true)"
+      ],
+      "gt_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::API Gateway Stack",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Amazon API Gateway\\n(REST API)",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Amazon SQS (Regional Service)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Cognito Authorizer\\n(type: COGNITO_USER_POOLS)",
+      "reference_nodes": [
+        "API Gateway Account::Cognito-authorizer::hello-function"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Deployment & Stage\\n(Output: CallbackURL)",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Integration: VPC Link\\n-> NLB (input ARN)",
+      "reference_nodes": [
+        "API Gateway Account::auth-function"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Method: ANY /ecs\\n(ECS Proxy)",
+      "reference_nodes": [
+        "API Gateway Account::auth-function"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Method: GET /whoami\\n(WhoAmI)",
+      "reference_nodes": [
+        "API Gateway Account::Returns hello plus user name when authorized"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Gateway Account::Network Load Balancer\\n(provided input)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Networking (VPC)::Interface VPC Endpoint\\nService: com.amazonaws.<region>.sqs\\nPrivate DNS: true",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::Networking (VPC)::Security Group\\nIngress: TCP 0-65535\\nSource: VpcCidr",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Gateway Account::Networking (VPC)::Subnets\\n(configured list)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Gateway Account::Networking (VPC)::VPC\\n(VpcId, VpcCidr)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Cognito Stack",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Cognito User Pool",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::IAM Role (Authenticated)",
+      "reference_nodes": [
+        "Global::User"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::IAM Role (Unauthenticated)\\nAssumeRoleWithWebIdentity\\nPrincipal: cognito-identity.amazonaws.com\\nConditions: amr=unauthenticated, aud=IdentityPoolId",
+      "reference_nodes": [
+        "Global::User",
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Identity Pool Role Attachment",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Identity Pool\\n(AllowUnauthenticated = true)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::User Pool Client\\n(read/write attributes: custom:Role, email)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::API Client",
+      "reference_nodes": [
+        "Global::User"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::API Gateway Account",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Cognito Account",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Infrastructure Operator",
+      "reference_nodes": [
+        "Global::User"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Installation & Orchestration::CloudFormation Templates\\n(YAML, 2010-09-09)",
+      "reference_nodes": []
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::Amazon API Gateway\\n(REST API)"
+      ],
+      "gt_node": "API Gateway Account::API Gateway"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "API Gateway Account::Calls hello/GET with id_token in headers"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::Cognito Authorizer\\n(type: COGNITO_USER_POOLS)"
+      ],
+      "gt_node": "API Gateway Account::Cognito-authorizer::hello-function"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::Method: GET /whoami\\n(WhoAmI)"
+      ],
+      "gt_node": "API Gateway Account::Returns hello plus user name when authorized"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::Method: ANY /ecs\\n(ECS Proxy)"
+      ],
+      "gt_node": "API Gateway Account::auth-function"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Cognito Account::Cognito Hosted UI"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Cognito Account::Cognito User Pool",
+        "Cognito Account::Identity Pool\\n(AllowUnauthenticated = true)"
+      ],
+      "gt_node": "Cognito Account::Cognito User Pool"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::API Client",
+        "Global::Infrastructure Operator"
+      ],
+      "gt_node": "Global::User"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 6263,
+      "completion_tokens": 768,
+      "total_tokens": 7031,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 5888
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "API Gateway Account::Calls hello/GET with id_token in headers",
+    "Global::User"
+  ],
+  "unmatched_predicted_nodes": [
+    "API Gateway Account::API Gateway Stack",
+    "API Gateway Account::Amazon SQS (Regional Service)",
+    "API Gateway Account::Deployment & Stage\\n(Output: CallbackURL)",
+    "API Gateway Account::Integration: VPC Link\\n-> NLB (input ARN)",
+    "API Gateway Account::Network Load Balancer\\n(provided input)",
+    "API Gateway Account::Networking (VPC)::Interface VPC Endpoint\\nService: com.amazonaws.<region>.sqs\\nPrivate DNS: true",
+    "API Gateway Account::Networking (VPC)::Security Group\\nIngress: TCP 0-65535\\nSource: VpcCidr",
+    "API Gateway Account::Networking (VPC)::Subnets\\n(configured list)",
+    "API Gateway Account::Networking (VPC)::VPC\\n(VpcId, VpcCidr)",
+    "Cognito Account::Cognito Stack",
+    "Cognito Account::IAM Role (Authenticated)",
+    "Cognito Account::IAM Role (Unauthenticated)\\nAssumeRoleWithWebIdentity\\nPrincipal: cognito-identity.amazonaws.com\\nConditions: amr=unauthenticated, aud=IdentityPoolId",
+    "Cognito Account::Identity Pool Role Attachment",
+    "Cognito Account::User Pool Client\\n(read/write attributes: custom:Role, email)",
+    "Global::API Client",
+    "Global::API Gateway Account",
+    "Global::Cognito Account",
+    "Global::Infrastructure Operator",
+    "Installation & Orchestration::CloudFormation Templates\\n(YAML, 2010-09-09)"
+  ],
+  "_provenance": {
+    "fingerprint": "d2fa06cb137df5dfd606ec4b9e4f2b3534d2dc20d915b46d4fc81ededb3cc3bd",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

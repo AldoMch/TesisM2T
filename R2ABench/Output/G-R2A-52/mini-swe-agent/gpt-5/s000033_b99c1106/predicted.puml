@@ -1,0 +1,58 @@
+@startuml
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam defaultTextAlignment left
+
+actor "User/Developer" as User
+
+node "Docker Host" as Host {
+  node "Docker Compose Network" as Net {
+    node "airflow-webserver\n(docker-airflow-spark:latest)\nPort: 8282" as Airflow
+    database "Postgres 9.6\nPort: 5432" as PG
+    node "spark master\n(bitnami/spark:latest)\nHostname: spark\nPorts: 8181(UI)->8080, 7077(cluster)" as Master
+    node "spark-worker-1\n(bitnami/spark:latest)" as W1
+    node "spark-worker-2\n(bitnami/spark:latest)" as W2
+    node "spark-worker-3\n(bitnami/spark:latest)" as W3
+    node "jupyter-spark\n(jupyter/pyspark-notebook)\nPorts: 8888(UI), 4040-4080(app UI)" as Jupyter
+
+    folder "DAGs (mounted)" as DAGs
+    folder "Spark Applications (mounted)" as Apps
+    folder "Notebooks (mounted)" as Notebooks
+    folder "Input Data (mounted)" as Data
+  }
+}
+
+'Airflow metadata' Airflow --> PG
+Airflow --> Master : SparkSubmitOperator\nConnection: spark_default\nTarget: spark://spark:7077
+W1 --> Master : Register/Execute
+W2 --> Master : Register/Execute
+W3 --> Master : Register/Execute
+Jupyter --> Master : PySpark session / job submit
+
+DAGs -[hidden]down- Airflow
+DAGs --> Airflow : DAG files
+Apps --> Airflow : Spark app files
+Apps --> Master : Application code
+Notebooks --> Jupyter : Notebooks
+Data --> Airflow : Input data
+Data --> Jupyter : Input data
+Data --> W1 : Job data
+Data --> W2 : Job data
+Data --> W3 : Job data
+
+User --> Airflow : Airflow Web UI (8282)
+User --> Jupyter : Jupyter UI (8888)
+User --> Master : Spark Master UI (8181)
+
+note right of Master
+Spark 2.4.5 (Hadoop 2.6)
+Spark UI served at 8080 (host 8181)
+Cluster submission at 7077
+end note
+
+note bottom of Net
+Docker Compose v3.7 topology:\n- Services: postgres, airflow-webserver, spark, spark-worker-[1..3], jupyter-spark\n- Shared network name resolution by service name\nSecurity disabled for local dev (RPC auth/encryption/SSL off)
+end note
+
+@enduml

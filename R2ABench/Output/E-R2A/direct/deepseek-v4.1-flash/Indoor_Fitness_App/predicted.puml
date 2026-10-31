@@ -1,0 +1,189 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam monochrome true
+skinparam roundcorner 10
+skinparam nodesep 30
+skinparam ranksep 30
+
+title Indoor Fitness App - System Architecture (derived from SRS)
+
+actor "Amateur Exercise Enthusiast\n/ Professional Exerciser" as User
+actor "Administrator User" as Admin
+
+package "Mobile Client Layer\n(Android 8.0+ / iOS 11.0+)" as Client {
+  component "App Main UI\n(today plan preview)" as MainUI
+  component "Exercise Interface\n(user movement, standard movement,\nposture eval, stick diagram, timer)" as ExerciseUI
+  component "Professional Report UI\n(charts + text)" as ReportUI
+  component "Exercise History UI\n(calendar + monthly overview)" as HistoryUI
+  component "Personal Interface\n(profile, preferences, records)" as PersonalUI
+  component "Casting Operation UI\n(search/connect/start cast)" as CastingUI
+
+  component "Camera Capture Module" as Camera
+  component "Pose Evaluation Module\n(skeleton extraction & similarity scoring)" as PoseEval
+  component "Exercise State Monitor\n(start/end/completion)" as StateMonitor
+  component "Plan Preview / Custom Plan Module" as PlanClient
+  component "History & Personal Manager" as PersonalMgr
+  component "Casting Client / Source Recorder" as CastClient
+
+  interface "Camera Capture Interface" as ICamera
+  interface "Posture Evaluation Processing Interface" as IPose
+  interface "Inter-module Data Exchange Interface" as IModule
+}
+
+package "Casting / LAN Edge" as Casting {
+  node "Android Casting Source Device" as CastSource <<Android>>
+  node "Android Casting Target Device" as CastTarget <<Android>>
+  component "LAN Device Discovery & Connection" as LanDiscovery
+  interface "Casting Video Stream\n<= 100 ms" as ICastVideo
+  interface "Android Server-to-Client Command\n<= 50 ms" as ICastCmd
+}
+
+package "Server Layer" as Server {
+  component "Server-side Processing Interface" as ServerAPI
+  component "Intelligent Recommendation Service\n(plan, adjust, next set, rest)" as Recommend
+  component "Report & Poster Generation Service" as ReportGen
+  component "Identity & Permission Service" as Auth
+  component "User Data Leakage Protection" as LeakProtect
+  component "SQL Injection Protection /\nData Access Layer" as SQLAccess
+  interface "Server-side Processing Interface" as IServer
+  interface "SQL Data Access Interface" as ISQL
+}
+
+package "Data Layer" as DataLayer {
+  database "Data Storage\n(product / schema unspecified)" as DB
+  component "Standard Videos & Movements" as StandardData
+  component "User Body & Training Profile" as UserProfile
+  component "Exercise Video & Skeleton Data" as ExerciseData
+  component "Training Plans & Completion" as PlanData
+  component "Training Materials & Reports" as ReportData
+  component "Exercise History & Preferences" as HistoryData
+  component "Casting Session Data" as CastData
+}
+
+' Actor relationships
+User --> MainUI
+User --> ExerciseUI
+User --> ReportUI
+User --> HistoryUI
+User --> PersonalUI
+User --> CastingUI
+Admin --> Auth : administration / permission scope
+
+' Client internal
+MainUI --> PlanClient : today's preview / full plan
+ExerciseUI --> Camera : start capture
+Camera --> ICamera
+ICamera --> PoseEval : video frames\n(>= 30 fps)
+PoseEval --> IPose : skeleton info +\nposture similarity score
+IPose --> ExerciseUI : real-time posture evaluation\n+ stick diagram
+ExerciseUI --> StateMonitor : exercise state data
+StateMonitor --> PoseEval : start/end detection
+ExerciseUI --> CastClient : exercise UI stream
+CastingUI --> LanDiscovery : search / connect
+HistoryUI --> PersonalMgr
+PersonalUI --> PersonalMgr
+PlanClient --> IModule
+PoseEval --> IModule
+PersonalMgr --> IModule
+CastClient --> IModule
+
+' Client to Server
+PlanClient --> IServer : request/recommend plan
+PersonalMgr --> IServer : profile, preferences, history
+ReportUI --> IServer : request report/poster
+ExerciseUI --> IServer : training result / evaluation data
+
+' Server internal
+IServer --> ServerAPI
+ServerAPI --> Recommend
+ServerAPI --> ReportGen
+ServerAPI --> Auth
+Recommend --> SQLAccess
+ReportGen --> SQLAccess
+Auth --> SQLAccess
+LeakProtect ..> SQLAccess : leakage controls\n(clipboard, screenshot, memory)
+SQLAccess --> ISQL
+ISQL --> DB : parameterized/precompiled\nSQL access
+SQLAccess --> DB
+
+' Server to data
+Recommend --> UserProfile : goals, condition, restrictions
+Recommend --> PlanData : plan / next set / rest
+ReportGen --> ReportData : materials / reports
+ReportGen --> ExerciseData : monitoring/evaluation results
+Auth --> UserProfile : identity / preferences
+PersonalMgr ..> HistoryData : via server
+PoseEval ..> ExerciseData : via server
+PlanClient ..> PlanData : via server
+
+' Casting relationships
+LanDiscovery --> CastTarget : same LAN discovery
+CastClient --> CastSource : record exercise interface
+CastSource --> ICastVideo
+ICastVideo --> CastTarget : real-time video stream\n(<= 100 ms)
+CastSource --> ICastCmd
+ICastCmd --> CastTarget : command / response\n(<= 50 ms)
+CastSource --> CastData : session data
+CastTarget --> CastData : session data
+
+' Data stores
+StandardData --> DB
+UserProfile --> DB
+ExerciseData --> DB
+PlanData --> DB
+ReportData --> DB
+HistoryData --> DB
+CastData --> DB
+
+' Notes
+note right of PoseEval
+  NFR-002: normal pose recognition > 95%
+  NFR-003: visible-part accuracy > 90%;
+  occluded part accuracy 50%
+  NFR-004: model runtime >= 20 fps
+  NFR-005/006: posture evaluation > 95%
+end note
+
+note right of Recommend
+  NFR-008: recommended plan
+  generated within 1 second
+end note
+
+note right of ReportGen
+  NFR-009: report generation
+  <= 3 seconds
+end note
+
+note bottom of CastTarget
+  NFR-010: casting video latency <= 100 ms
+  NFR-011: command response latency <= 50 ms
+  C-002: source and target must be in same LAN
+end note
+
+note bottom of DB
+  NFR-012: user data leakage protection
+  NFR-013: SQL injection prevention
+  DR-009: static/dynamic data model, data dictionary,
+  E-R field details not specified in Markdown
+end note
+
+note top of Camera
+  AD-001 / C-001: camera video recording
+  at least 30 fps required for evaluation
+end note
+
+note bottom of Client
+  Mobile HW: octa-core 2.45 GHz, 4 GB RAM + 32 GB ROM+
+  OS: Android 8.0+ / iOS 11.0+
+  Casting target: Android only
+end note
+
+note bottom of Server
+  Server HW: CPU Pentium 900M (rec. Pentium 4 1.2G),
+  >= 256 MB RAM
+  PC HW: CPU Pentium 133M+, >= 64 MB RAM, Windows OS
+end note
+
+@enduml

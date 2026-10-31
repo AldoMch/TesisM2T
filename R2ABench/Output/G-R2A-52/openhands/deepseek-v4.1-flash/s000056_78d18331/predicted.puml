@@ -1,0 +1,101 @@
+@startuml
+title host-scanner - System Architecture
+
+left to right direction
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ============================================================
+' Actors / Users
+' ============================================================
+actor "HTTP Client" as HTTPClient
+actor "Operator" as Operator
+actor "Test Engineer" as TestEngineer
+actor "Integrator" as Integrator
+
+' ============================================================
+' External Systems / Environment
+' ============================================================
+package "Kubernetes Node Environment" {
+  node "Kubernetes Node Host\n(host filesystem: /etc, /run, /var/lib)" as NodeHost
+  component "Container Runtime\n(kubelet / containerd / CRI-O)" as Runtime
+}
+
+' ============================================================
+' host-scanner System Boundary
+' ============================================================
+package "host-scanner (Privileged DaemonSet)" as HostScanner {
+
+  component "HTTP API Service\n<<delivers HTTP request/response>>" as HTTPAPI
+
+  component "Endpoint Handler\n[FR-001, NFR-003]\nreturns 404 for unknown paths\n(e.g. /doesnotexist)" as EndpointHandler
+
+  component "CNI Configuration\nDirectory Resolver\n[FR-002, DR-003, DR-004]" as CNIResolver
+
+  component "Control-Plane JSON\nSanitizer\n[FR-003, NFR-001, DR-005, DR-006]\nremoves encryption provider\nconfiguration secrets" as Sanitizer
+
+  component "Provider-Specific\nE2E Test Suite\n[NFR-002, C-001]\nGo build tags: //go:build <provider>" as E2ETests
+
+  database "Resolved CNI\nConfiguration Directory" as CNIDir
+  database "Sanitized\nControl-Plane JSON" as SanitizedJSON
+}
+
+' ============================================================
+' Data / Configuration Inputs
+' ============================================================
+file "Configuration-File Content\n[DR-003]" as ConfigFile
+file "Command-Line Arguments\n(CNI directory args)\n[DR-003]" as CmdArgs
+file "Default Runtime\nConfiguration\n[FR-002]" as DefaultConfig
+file "Control-Plane JSON Data\n(with secrets)\n[DR-005]" as RawJSON
+
+' ============================================================
+' Relationships - Users
+' ============================================================
+HTTPClient --> HTTPAPI : HTTP GET request
+Operator --> HostScanner : deploys / runs
+TestEngineer --> E2ETests : executes (provider tag)
+Integrator --> Runtime : supplies runtime inputs
+
+' ============================================================
+' Relationships - HTTP behavior
+' ============================================================
+HTTPAPI --> EndpointHandler : routes request
+EndpointHandler --> HTTPClient : HTTP response\n(status code, e.g. 404)
+
+' ============================================================
+' Relationships - CNI resolution
+' ============================================================
+Runtime --> CNIResolver : runtime type
+DefaultConfig --> CNIResolver : default configuration
+ConfigFile --> CNIResolver : configuration content
+CmdArgs --> CNIResolver : CNI directory arguments
+CNIResolver --> CNIDir : produces path\n(/etc/cni/, /var/lib/cni/,\nconfig-derived subpaths)
+NodeHost --> Runtime : host information
+
+' ============================================================
+' Relationships - JSON sanitization
+' ============================================================
+RawJSON --> Sanitizer : JSON input
+Sanitizer --> SanitizedJSON : sanitized JSON output\n(secrets removed)
+SanitizedJSON --> HTTPAPI : exposed via API
+NodeHost --> HTTPAPI : host information source
+
+' ============================================================
+' Relationships - Testing
+' ============================================================
+E2ETests --> HTTPAPI : verifies endpoints
+E2ETests --> CNIResolver : verifies resolution scenarios
+E2ETests --> Sanitizer : verifies secret removal
+
+note bottom of HTTPAPI
+  Communication interface: HTTP
+  Data exchange: HTTP request/response
+  [NFR-003]
+end note
+
+note bottom of Sanitizer
+  NFR-001 Security: secrets must not
+  appear in processed JSON output.
+end note
+
+@enduml

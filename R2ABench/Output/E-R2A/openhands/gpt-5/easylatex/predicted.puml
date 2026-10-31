@@ -1,0 +1,83 @@
+@startuml
+' EasyLaTex System Architecture
+left to right direction
+skinparam componentStyle rectangle
+skinparam ArrowThickness 1.2
+
+package "Client" {
+  component "Browser UI\n(Front-end SPA)" as UI
+}
+
+package "Edge" {
+  component "Web Server / Reverse Proxy" as Proxy
+}
+
+package "Backend API" {
+  component "API Gateway\n(HTTP/REST)" as APIGW
+  component "Realtime Gateway\n(WebSocket)" as WSGW
+}
+
+package "User & Access" {
+  component "Auth Service" as Auth
+  component "User Service" as UserSvc
+}
+
+package "Collaboration & Projects" {
+  component "Project Service" as ProjectSvc
+  component "Group Service" as GroupSvc
+  component "Version Control Service" as VersionSvc
+  component "Comment Service" as CommentSvc
+  component "Collaboration Service" as CollabSvc
+}
+
+package "File & Processing Pipeline" {
+  component "File Upload Service" as UploadSvc
+  component "File Parser\n(CSV/Excel/PDF)" as Parser
+  component "Recognition Service\n(OCR + DL Models)" as OCRSvc
+  component "LaTeX Generator" as LatexGen
+  component "Rendering Service\n(LaTeX Engine)" as RenderSvc
+  component "Export Service" as ExportSvc
+}
+
+package "Data Stores" {
+  database "Relational DB\n(MySQL/PostgreSQL)" as DB
+  folder "File / Object Storage" as FS
+}
+
+UI --> Proxy : HTTPS
+Proxy --> APIGW : REST API
+UI --> WSGW : WebSocket
+
+APIGW --> Auth : register/login/verify
+APIGW --> UserSvc : user profile
+APIGW --> ProjectSvc : projects
+APIGW --> GroupSvc : groups
+APIGW --> VersionSvc : versions
+APIGW --> CommentSvc : comments
+APIGW --> UploadSvc : uploads
+APIGW --> Parser : parse files
+APIGW --> ExportSvc : export/download
+
+WSGW --> CollabSvc : realtime updates
+RenderSvc --> WSGW : preview updates
+
+Auth --> DB
+UserSvc --> DB
+ProjectSvc --> DB
+GroupSvc --> DB
+VersionSvc --> DB
+CommentSvc --> DB
+CollabSvc --> DB
+
+UploadSvc --> FS
+VersionSvc --> FS
+ExportSvc --> FS
+Parser --> FS : read inputs
+RenderSvc --> FS : render artifacts
+LatexGen --> DB : store LaTeX
+
+Parser --> OCRSvc : images/tables
+OCRSvc --> LatexGen : recognized structure
+LatexGen --> RenderSvc : LaTeX code
+
+@enduml

@@ -1,0 +1,137 @@
+@startuml
+!define RECTANGLE rectangle
+!define COMPONENT component
+!define DATABASE database
+!define QUEUE queue
+!define AGENT agent
+!define CLOUD cloud
+
+skinparam component {
+  BackgroundColor<<Web>> #FFE5CC
+  BackgroundColor<<API>> #CCE5FF
+  BackgroundColor<<Queue>> #E5CCFF
+  BackgroundColor<<Worker>> #CCFFE5
+  BackgroundColor<<External>> #FFFFCC
+  BackgroundColor<<Storage>> #FFCCCC
+}
+
+skinparam rectangle {
+  BackgroundColor<<User>> #F5F5F5
+}
+
+title Squatm3gator API System Architecture
+
+' === User Layer ===
+rectangle "Web User / Security Analyst" <<User>> as User {
+  rectangle "Browser Client" as Browser
+}
+
+' === Presentation Layer ===
+rectangle "Web Interface" <<Web>> as WebInterface {
+  component "Web UI (index.html)" as WebUI
+  component "WebSocket Client" as WSClient
+}
+
+' === Application Layer ===  
+rectangle "API Server" <<API>> as APIServer {
+  component "HTTP API" as HTTPAPI
+  component "Session Manager" as SessionManager
+  component "Request Parser" as RequestParser
+  component "Job Creator" as JobCreator
+  component "Error Handler" as ErrorHandler
+  component "WebSocket Server" as WSServer
+  
+  ' Internal connections
+  HTTPAPI --> SessionManager : "creates/validates"
+  HTTPAPI --> RequestParser : "parses attack options"
+  RequestParser --> JobCreator : "constructs job"
+  HTTPAPI --> ErrorHandler : "handles errors"
+  WSServer --> SessionManager : "validates session"
+}
+
+' === Messaging Layer ===
+rectangle "Message Queue" <<Queue>> as MessageQueue {
+  database "Redis" as Redis {
+    queue "Job Channel" as JobChannel
+    queue "Reporting Channel" as ReportingChannel
+  }
+}
+
+' === Processing Layer ===
+rectangle "Background Processing" <<Worker>> as BackgroundProcessing {
+  component "Consumer Thread" as ConsumerThread
+  component "Job Processor" as JobProcessor
+  component "Result Reporter" as ResultReporter
+  
+  ' Internal connections
+  ConsumerThread --> JobProcessor : "processes job"
+  JobProcessor --> ResultReporter : "sends results"
+}
+
+' === External Services ===
+rectangle "External Services" <<External>> as ExternalServices {
+  component "Squatm3 Engine" as Squatm3Engine
+  cloud "GoDaddy API" as GoDaddyAPI
+}
+
+' === Data Flow ===
+
+' User to Web Interface
+User --> WebUI : "1. HTTP GET /"
+User --> WSClient : "5. WebSocket connection"
+
+' Web Interface to API
+WebUI --> HTTPAPI : "2. HTTP requests"
+WSClient --> WSServer : "6. WebSocket messages"
+
+' API to Message Queue
+JobCreator --> JobChannel : "3. Publishes job\n(session key as job ID)"
+WSServer --> ReportingChannel : "7. Reads reports"
+
+' Message Queue to Background Processing
+JobChannel --> ConsumerThread : "4. Consumes job"
+ResultReporter --> ReportingChannel : "8. Publishes results\n(WORKER_ID#JOB_UUID#{MESSAGE/RESULT})"
+
+' Background Processing to External Services
+JobProcessor --> Squatm3Engine : "9. Executes subprocess\nwith attack options"
+JobProcessor --> GoDaddyAPI : "10. Optional availability check\n(Authorization: sso-key)"
+
+' Result flow back to user
+ReportingChannel --> WSServer : "11. Session-specific results"
+WSServer --> WSClient : "12. Async updates"
+WSClient --> User : "13. Progress/results display"
+
+' === Configuration ===
+component "Configuration" as Config {
+  rectangle "Redis URI" as RedisConfig
+  rectangle "GoDaddy Credentials" as GoDaddyConfig
+  rectangle "Attack Codes Map" as AttackConfig
+}
+
+Config --> APIServer : "provides settings"
+Config --> BackgroundProcessing : "provides settings"
+
+' === Key Architectural Notes ===
+note right of MessageQueue
+  **Redis Communication:**
+  - Job publication and reporting
+  - Format: WORKER_ID#JOB_UUID#{MESSAGE/RESULT}
+  - Session key = Job ID for correlation
+end note
+
+note right of BackgroundProcessing
+  **Consumer Thread:**
+  - Started by API process
+  - Listens to Redis job channel
+  - Invokes Squatm3 subprocess
+  - Optional GoDaddy integration
+end note
+
+note right of ExternalServices
+  **External Dependencies:**
+  - Squatm3 CLI engine (required)
+  - GoDaddy API (optional)
+  - Attack codes: Hf, Hc, -add, F, R
+end note
+
+@enduml

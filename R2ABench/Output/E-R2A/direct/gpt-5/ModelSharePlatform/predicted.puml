@@ -1,0 +1,143 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+title Deep Learning Model Sharing Platform - System Architecture
+
+actor "General User" as User
+actor "Administrator" as Admin
+
+node "Browser (Modern)" as Browser {
+  component "SPA Web App\n(Vue + TypeScript)\n- Account UI\n- Q&A UI\n- Blog UI\n- Models & Datasets UI\n- Purchase & Payment UI\n- Follow UI\n- Admin Console UI\n- i18n: zh-CN / en-US" as SPA
+}
+
+cloud "Internet" as Internet
+
+rectangle "API Backend (Spring Boot)" as Backend {
+  component "API Gateway & Routing" as APIGW
+  component "Auth Service\n- Registration/Login\n- Password Recovery\n- Profile/Logout" as Auth
+  component "Q&A Service\n- Questions/Answers CRUD" as QA
+  component "Blog Service\n- Articles CRUD" as Blog
+  component "Comment Service\n- Blog Comments CRUD" as Comment
+  component "Model Service\n- Upload/Modify/Delete\n- Metadata & Review State\n- Download" as ModelSvc
+  component "Dataset Service\n- Upload/Modify/Delete\n- Free Download" as DatasetSvc
+  component "Follow Service\n- Follow/Unfollow\n- Lists" as FollowSvc
+  component "Recommendation Service\n- Uses Browsing History & Reg Info" as Reco
+  component "Purchase/Order Service\n- Purchases\n- Entitlements" as Purchase
+  component "Admin Moderation Service\n- Account Cancellation\n- Delete Illegal Content" as AdminSvc
+  component "Model Invocation Orchestrator\n- Submit Run\n- Track Status\n- Deliver Results" as InvokeOrch
+  component "Notification Service\n- Email Verification/Reset" as Notify
+}
+
+database "MySQL\n- Users/Profiles & Roles\n- Questions/Answers\n- Blogs/Comments\n- Models/Datasets Metadata\n- Purchases & Entitlements\n- Follows\n- Recommendations Data\n- Admin Audit" as MySQL
+
+folder "Object Storage\n(Model & Dataset Files,\nInvocation Results)" as ObjStore
+
+queue "Job Queue\n(Model Run Tasks)" as JobQ
+
+node "Model Runner Worker(s)\n(GPU/CPU Containers)" as Runner
+
+cloud "SMTP Server\n(Email Provider)" as SMTP
+
+cloud "Payment Provider (TBD)" as Payment
+
+component "i18n Resource Bundles" as I18N
+
+' Users to SPA
+User --> SPA : Uses via Browser (HTTPS)
+Admin --> SPA : Uses Admin Console
+
+' SPA to Backend
+SPA --> APIGW : HTTPS REST/JSON
+APIGW --> Auth
+APIGW --> QA
+APIGW --> Blog
+APIGW --> Comment
+APIGW --> ModelSvc
+APIGW --> DatasetSvc
+APIGW --> FollowSvc
+APIGW --> Reco
+APIGW --> Purchase
+APIGW --> AdminSvc
+APIGW --> InvokeOrch
+
+' Services to Database
+Auth --> MySQL
+QA --> MySQL
+Blog --> MySQL
+Comment --> MySQL
+ModelSvc --> MySQL
+DatasetSvc --> MySQL
+FollowSvc --> MySQL
+Reco --> MySQL
+Purchase --> MySQL
+AdminSvc --> MySQL
+InvokeOrch --> MySQL
+
+' Storage interactions
+ModelSvc --> ObjStore : Upload/Download Model Files
+DatasetSvc --> ObjStore : Upload/Download Datasets
+AdminSvc --> ObjStore : Remove Files on Deletion
+InvokeOrch --> ObjStore : Store/Fetch Run Inputs & Results
+
+' Model invocation flow
+InvokeOrch --> JobQ : Enqueue Run Task
+Runner --> JobQ : Dequeue Task
+Runner --> ObjStore : Read Model & Data\nWrite Results
+Runner --> MySQL : Update Run Status/Metadata
+
+' External integrations
+Notify --> SMTP : Send Emails
+Purchase --> Payment : Purchase/Pay
+
+' i18n
+SPA --> I18N : Load localized strings
+
+' Internet edge
+SPA -[hidden]--> Internet
+Internet -[hidden]-> APIGW
+
+' Notes on constraints and assumptions
+note top of SPA
+- Runs in modern browsers
+- Internet Explorer not supported
+end note
+
+note right of Backend
+Tech Stack:
+- Spring Boot (Java)
+- REST/JSON over HTTPS
+- Modular services
+Security:
+- AuthN/AuthZ
+- Injection prevention
+- Admin role restrictions
+end note
+
+note bottom of MySQL
+Data entities:
+- DR-001 ... DR-010
+end note
+
+note bottom of InvokeOrch
+Supports FR-022:
+Online model invocation with
+platform or uploaded datasets
+end note
+
+note bottom of Purchase
+Supports FR-024:
+Model purchase and entitlements.
+Payment channel TBD (C-001/AD-005)
+end note
+
+legend
+|= Component |= Responsibilities |
+| SPA Web App | UI for account, Q&A, blogs, models, datasets, purchases, follows, admin; multilingual |
+| Backend Services | Business logic per domain module; security, validation, governance |
+| MySQL | Persistent data storage |
+| Object Storage | Binary files for models/datasets/invocation results |
+| Job Queue & Runner | Asynchronous model execution |
+| SMTP/Payment | External providers |
+endlegend
+
+@enduml

@@ -1,0 +1,123 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Tengine Lite" as Tengine {
+    package "Convert Tool" as ConvertTool {
+        rectangle "TensorFlow" as TensorFlow
+        rectangle "TF Lite" as TfLite
+        rectangle "PyTorch / ONNX" as PytorchOnnx
+        rectangle "MXNet" as Mxnet
+        rectangle "Caffe" as Caffe
+        rectangle "Darknet" as Darknet
+        rectangle "MegEngine" as MegEngine
+        rectangle "OneFlow" as OneFlow
+        rectangle "PaddlePaddle" as PaddlePaddle
+        rectangle "Others" as OtherModels
+    }
+
+    package "Serializer" as SerializerLayer {
+        rectangle "TensorFlow Serializer" as TensorFlowSerializer
+        rectangle "TF Lite Serializer" as TfLiteSerializer
+        rectangle "ONNX Serializer" as OnnxSerializer
+        rectangle "MXNet Serializer" as MxnetSerializer
+        rectangle "Caffe Serializer" as CaffeSerializer
+        rectangle "Darknet Serializer" as DarknetSerializer
+        rectangle "ncnn Serializer" as NcnnSerializer
+        rectangle "MegEngine Serializer" as MegEngineSerializer
+        rectangle "OneFlow Serializer" as OneFlowSerializer
+        rectangle "PaddlePaddle Serializer" as PaddlePaddleSerializer
+        rectangle "MLIR Serializer" as MlirSerializer
+        rectangle "Others Serializer" as OtherSerializer
+        rectangle "tmfile Serializer" as TmfileSerializer
+    }
+
+    package "Engine" as EngineLayer {
+        rectangle "Graph Partition" as GraphPartition
+        rectangle "Device Allocator" as DeviceAllocator
+        rectangle "Exec Scheduler" as ExecScheduler
+        rectangle "Low Bit Quantize" as LowBitQuantize
+        rectangle "CPU Backend" as CpuBackend
+        rectangle "GPU Backend" as GpuBackend
+        rectangle "NPU Backend" as NpuBackend
+    }
+
+    package "Runtime Optimize" as RuntimeOptimize {
+        rectangle "Winograd" as Winograd
+        rectangle "SGEMM" as Sgemm
+        rectangle "Mix Bit Calculation" as MixBitCalculation
+        rectangle "CUDA / Vulkan / OpenCL" as GpuRuntime
+        rectangle "TIM-VX / OpenDLA Plugin" as TimvxOpenDla
+        rectangle "SIMD" as Simd
+        rectangle "Assembly" as Assembly
+        rectangle "Auto Kernel Plugin" as AutoKernelPlugin
+        rectangle "TensorRT / ACL Plugin" as TensorRtAcl
+        rectangle "Amlogic / RK / NXP / JLQ\nNPU and NVDLA" as NpuRuntime
+        rectangle "ARM / X86 / RISCV / MIPS" as CpuTargets
+        rectangle "NVIDIA / Mali / Adreno" as GpuTargets
+    }
+}
+
+TensorFlow --> TensorFlowSerializer
+TfLite --> TfLiteSerializer
+PytorchOnnx --> OnnxSerializer
+Mxnet --> MxnetSerializer
+Caffe --> CaffeSerializer
+Darknet --> DarknetSerializer
+MegEngine --> MegEngineSerializer
+OneFlow --> OneFlowSerializer
+PaddlePaddle --> PaddlePaddleSerializer
+OtherModels --> OtherSerializer
+
+TensorFlowSerializer --> TmfileSerializer
+TfLiteSerializer --> TmfileSerializer
+OnnxSerializer --> TmfileSerializer
+MxnetSerializer --> TmfileSerializer
+CaffeSerializer --> TmfileSerializer
+DarknetSerializer --> TmfileSerializer
+NcnnSerializer --> TmfileSerializer
+MegEngineSerializer --> TmfileSerializer
+OneFlowSerializer --> TmfileSerializer
+PaddlePaddleSerializer --> TmfileSerializer
+MlirSerializer --> TmfileSerializer
+OtherSerializer --> TmfileSerializer
+
+TmfileSerializer --> GraphPartition : decoded model graph
+GraphPartition --> DeviceAllocator
+DeviceAllocator --> ExecScheduler
+ExecScheduler --> LowBitQuantize
+
+ExecScheduler --> CpuBackend
+ExecScheduler --> GpuBackend
+ExecScheduler --> NpuBackend
+
+CpuBackend --> Winograd
+CpuBackend --> Sgemm
+CpuBackend --> MixBitCalculation
+CpuBackend --> Simd
+CpuBackend --> Assembly
+CpuBackend --> AutoKernelPlugin
+CpuBackend --> CpuTargets
+
+GpuBackend --> GpuRuntime
+GpuBackend --> TensorRtAcl
+GpuBackend --> GpuTargets
+
+NpuBackend --> TimvxOpenDla
+NpuBackend --> NpuRuntime
+@enduml

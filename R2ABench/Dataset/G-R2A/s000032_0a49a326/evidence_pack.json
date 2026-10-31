@@ -1,0 +1,119 @@
+{
+  "candidate": {
+    "sample_id": "s000032_0a49a326",
+    "repository_name": "Activiti/activiti-7-developers-guide",
+    "image_url": "https://github.com/Activiti/activiti-7-developers-guide/blob/master/.gitbook/assets/activiti-cloud-architecture.png",
+    "source_ref": "a500e1f1b3a6786ef017d510fdba4728e045c712",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 16186,
+    "document_count": 31,
+    "document_types": [
+      "deployment_config",
+      "readme",
+      "release_notes",
+      "tutorial_guide"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 144,
+      "user_scenario": 30,
+      "api_io": 40,
+      "deployment": 410,
+      "constraints": 31,
+      "non_functional": 19
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "getting-started/getting-started-activiti-cloud/README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05385224654377879,
+      "text": "As shown in the previous screenshot, if you go to the _**keycloak**_ directory and select the “_**getKeycloakToken testuser**_” you will get the token which will be used to authenticate further requests. Notice that this token is time sensitive and it will be automatically invalidated so you might need to get it again if you start getting unauthorized errors. Once you get the token for a user, you can interact with all the user endpoints. For example, you can create a request to see which Process Definitions are deployed inside our Example Runtime Bundle: Now you can also start a new Process Instance from our SimpleProcess: You can check that the audit service contains the events associat..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "getting-started/getting-started-activiti-core.md",
+      "doc_type": "tutorial_guide",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.052862823728143646,
+      "text": "ning outside of the context of the ProcessRuntime \\(Cloud Connectors\\), to decouple the responsibility of such external interactions outside of the ProcessRuntime scope. Check the maven module activiti-api-spring-integration-example for a more advanced example using Spring Integrations to kickstart processes based on a File poller. ## Full Example You can find an example using both, the ProcessRuntime and TaskRuntime APIs to automate the following process: The code from this section can be found inside the “activiti-api-basic-full-example” maven module. As the ProcessRuntime only example this is also categorizing some input content, but in this case, the process relies on a Human Actor to..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "getting-started/getting-started-activiti-core.md",
+      "doc_type": "tutorial_guide",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.052423038496923695,
+      "text": "n order to deal with Security, Roles and Groups we are relying on Spring Security modules. Because we are inside a Spring Boot application, we can use the UserDetailsService to configure the available users and their respective groups and roles. We are currently doing this inside a @Configuration class: Something important to notice here, is that in order to interact with the TaskRuntime API as a user, you need to have the role: ACTIVITI\\_USER \\(Granted Authority: ROLE\\_ACTIVITI\\_USER\\) . While interacting with REST endpoints the Authorization mechanism will set up the currently logged in user, but for the sake of the example we are using an utility class \\( \\) that allows us to set in th..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "getting-started/getting-started-activiti-cloud/google-cloud-gke.md",
+      "doc_type": "tutorial_guide",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05168527989423512,
+      "text": "r. Download the file below: {% file src=\"../../.gitbook/assets/helm-service-account-role.yaml\" caption=\"helm-service-account-role.yaml\" %} Run the following commands in your terminal: In order to be able to expose our services to be accessed from outside the cluster, we need to set up an Ingress Controller, which will automatically create routes to the internal services that we want to expose. To install the NGINX Ingress controller, run the following command: Now that NGINX Ingress Controller is being deployed, we need to wait for it to expose itself using a Public IP. We need this Public IP to interact with our services from outside the cluster. You can find this IP by running the follo..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "releases/7-ea201712.md",
+      "doc_type": "release_notes",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05552617662612374,
+      "text": "# 7.0.0 Early Access 201712 In the 7-201712-EA release we added improvements to the way cloud connectors manage transactions, which improves their performance. We've added an example based around marketing campaigns for social media content in which you can see how well the connectors perform. The rate of data input and the number of replicas for cloud components in this example can be controlled in the deployment descriptor so that it's easy to play with these variables to test scalability. This example is part of our talk for Alfresco DevCon 2018. We've also added process model and organisation services, which are preparations for future work that will support logical grouping and editi..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "releases/7-ea201802.md",
+      "doc_type": "release_notes",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05463389656938045,
+      "text": "# 7.0.0 Early Access 201802 This release was focused on refining our services endpoints and how we deal with dependencies across all our repositories. You can take a look at the issues that were closed during this period here As usual, refactoring POM files and how we deal with dependencies is painful, but after our third iteration, projects are maturing in the right direction. Now most of our projects are aligned following the same practices as Spring Boot and Spring Cloud projects and our activiti-scripts repository is being populated with the tools that will make our life easier. As part of this release we aligned our artifacts with Spring Boot 2.0.0.RELEASE and Spring Cloud Finchley.M..."
+    }
+  ]
+}

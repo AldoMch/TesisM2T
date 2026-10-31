@@ -1,0 +1,132 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title QAPM Android SDK - Architecture Overview
+
+package "Android Host Application" <<External>> {
+  component "Android Application" as HostApp
+  component "Android Context" as AndroidContext
+  component "Network Connectivity" as NetworkConnectivity
+}
+
+package "External Systems" <<External>> {
+  component "Apache HttpClient" as ApacheHttpClient
+  component "Remote Reporting Server" as RemoteServer
+}
+
+package "QAPM SDK" <<Layer>> {
+  
+  package "Background Scheduling Layer" <<Layer>> {
+    component "Work Handler Manager" as WorkHandlerManager
+    component "Background Handler Thread" as BackgroundHandlerThread
+    component "Main Thread Handler" as MainThreadHandler
+  }
+  
+  package "Upload Processing Layer" <<Layer>> {
+    component "Upload Scheduler" as UploadScheduler
+    component "Network Gate" as NetworkGate
+    component "Upload File Processor" as UploadFileProcessor
+    component "Parameter Deriver" as ParameterDeriver
+  }
+  
+  package "Data Sending Layer" <<Layer>> {
+    component "Data Sender" as DataSender
+    component "Sender Callback Handler" as SenderCallbackHandler
+  }
+  
+  package "HTTP Instrumentation Layer" <<Layer>> {
+    component "Response Handler Wrapper" as ResponseHandlerWrapper
+    component "Transaction State Manager" as TransactionStateManager
+    component "Content Buffering Entity" as ContentBufferingEntity
+  }
+  
+  package "Configuration Management" <<Layer>> {
+    component "QAPM Configuration Manager" as ConfigManager
+  }
+}
+
+package "Data Storage" <<Datastore>> {
+  component "Upload Directory" as UploadDirectory
+  component "Local Storage" as LocalStorage
+}
+
+' External Dependencies
+HostApp --> AndroidContext : uses
+HostApp --> NetworkConnectivity : queries
+HostApp --> ApacheHttpClient : uses
+
+' Background Scheduling
+WorkHandlerManager --> BackgroundHandlerThread : creates/manages
+WorkHandlerManager --> MainThreadHandler : provides
+UploadScheduler --> WorkHandlerManager : posts work to
+
+' Upload Processing Flow
+UploadScheduler --> NetworkGate : checks connectivity
+NetworkGate --> NetworkConnectivity : queries
+UploadScheduler --> UploadFileProcessor : processes files
+UploadFileProcessor --> UploadDirectory : enumerates/reads files
+UploadFileProcessor --> ParameterDeriver : derives parameters
+ParameterDeriver --> AndroidContext : uses for cParam
+UploadFileProcessor --> DataSender : submits bParam/cParam
+
+' Data Sending
+DataSender --> ConfigManager : gets sender configuration
+DataSender --> RemoteServer : sends data to
+DataSender --> SenderCallbackHandler : notifies
+SenderCallbackHandler --> UploadDirectory : deletes files on success
+
+' HTTP Instrumentation
+ResponseHandlerWrapper --> ApacheHttpClient : wraps
+ResponseHandlerWrapper --> TransactionStateManager : instruments
+ResponseHandlerWrapper --> ContentBufferingEntity : provides
+ContentBufferingEntity --> ApacheHttpClient : wraps HttpEntity
+
+' Configuration
+ConfigManager --> DataSender : configures
+
+' Storage Dependencies
+UploadScheduler --> LocalStorage : pops data for forced send
+
+note right of WorkHandlerManager
+  FR-001, FR-002: Background work
+  scheduling with HandlerThread
+end note
+
+note right of NetworkGate
+  FR-003: Network-gated upload
+  processing
+end note
+
+note right of UploadFileProcessor
+  FR-005, FR-006: File enumeration,
+  bParam reading, cParam derivation
+end note
+
+note right of SenderCallbackHandler
+  FR-007: File deletion on success,
+  failure logging
+end note
+
+note right of ResponseHandlerWrapper
+  FR-008: Transaction-aware
+  response handling
+end note
+
+note right of ContentBufferingEntity
+  FR-009: HTTP entity wrapping
+  with counting input stream
+end note
+
+@enduml

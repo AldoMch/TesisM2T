@@ -1,0 +1,78 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define COMPONENT component
+!define INTERFACE interface
+
+title Earth Defender System Architecture
+
+' Define styles
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+' Browser Client Component
+package "Browser Client" {
+  [Three.js Game Client] as client #LightBlue
+  [WebSocket Connection] as ws #LightGreen
+}
+
+' Web Server Component
+package "Web Server" {
+  [Static Asset Server] as webserver #LightYellow
+}
+
+' Game Server Components
+package "Game Server (Master)" {
+  [Erlang/OTP Game Server] as gameserver #LightPink
+  [Room Manager] as roommgr
+  [Connection Handler] as connhandler
+  [Message Processor] as msgproc
+  [Heartbeat Monitor] as heartbeat
+}
+
+' Replica Server Components
+package "Game Server (Replica)" {
+  [Erlang/OTP Replica Server] as replicaserver #LightPink
+}
+
+' Relationships
+webserver --> client : Serves static assets
+client --> ws : Establishes connection
+ws --> gameserver : WebSocket communication
+gameserver --> replicaserver : Replication synchronization
+
+' Internal game server components
+roommgr --> connhandler
+connhandler --> msgproc
+msgproc --> heartbeat
+heartbeat --> connhandler
+
+' Notes
+note right of client
+  - Downloads static assets
+  - Initiates WebSocket connection
+  - Sends [event, data] messages
+  - Receives [action, data] messages
+end note
+
+note right of gameserver
+  - Manages multiplayer rooms
+  - Processes game messages
+  - Handles connection liveness
+  - Supports fault tolerance
+end note
+
+note right of replicaserver
+  - Fault-tolerant backup
+  - Synchronizes with master
+end note
+
+' Message formats
+note top of ws
+  Message Formats:
+  Outbound: [event, data]
+  Inbound: [action, data?]
+end note
+
+@enduml

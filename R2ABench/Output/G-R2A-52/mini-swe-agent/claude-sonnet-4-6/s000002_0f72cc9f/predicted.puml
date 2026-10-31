@@ -1,0 +1,60 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+
+title Escape Application - Architecture Diagram
+
+actor "Anonymous Visitor" as visitor
+actor "Registered User" as user
+
+package "Browser Client" {
+    component [React App\\n(React + React-Router)] as ReactApp
+    component [Auth Views\\n(Sign-up / Sign-in)] as AuthViews
+    component [Shared Credential Handlers] as CredHandlers
+    component [Content Retrieval\\n(jQuery / fetch)] as ContentRetrieval
+    component [Scene Renderer\\n(A-Frame + aframe-react)] as SceneRenderer
+    component [Scene Components\\n(Lobby, SF, Louvre, Berlin,\\nMilan, Rome, Hack,\\nCamera, Sky, Plane, TextPlane)] as SceneComponents
+}
+
+package "Web Server" {
+    component [Node.js / Express Server] as ExpressServer
+    component [Auth Routes\\n(Register / Login)] as AuthRoutes
+    component [User Controller] as UserController
+    component [Content Routes] as ContentRoutes
+}
+
+package "Persistence Layer" {
+    database [MariaDB\\n(users, likes, photos, comments)] as MariaDB
+    component [User Model] as UserModel
+    component [bcrypt-nodejs\\n(Password Verification)] as Bcrypt
+}
+
+package "External Services" {
+    database [Redis Cache] as RedisCache
+    storage [AWS S3\\n(Image Storage)] as S3
+}
+
+visitor --> AuthViews : access sign-up / sign-in
+user --> ReactApp : interact with application
+user --> SceneRenderer : view 3D scenes
+
+ReactApp --> AuthViews : route
+ReactApp --> SceneRenderer : route
+AuthViews --> CredHandlers : shared input handlers
+AuthViews --> ExpressServer : JSON POST credentials
+SceneRenderer --> SceneComponents : render A-Frame scenes
+ContentRetrieval --> ExpressServer : fetch paragraph/content
+
+ReactApp --> ContentRetrieval : trigger
+
+ExpressServer --> AuthRoutes : delegate auth requests
+ExpressServer --> ContentRoutes : delegate content requests
+AuthRoutes --> UserController : register / authenticate
+UserController --> UserModel : create / query users
+UserController --> Bcrypt : verify password
+UserModel --> MariaDB : persist / retrieve user data
+ContentRoutes --> RedisCache : cache content lookups
+ContentRoutes --> S3 : retrieve images/photos
+
+@enduml

@@ -1,0 +1,43 @@
+@startuml
+title Earth Defender System Architecture
+
+skinparam componentStyle rectangle
+
+package "Browser Client" {
+  [Three.js Game Client] as client
+  [WebSocket Client] as wsClient
+}
+
+package "Web Server" {
+  [Static Asset Server] as webServer
+}
+
+package "Game Server (Erlang/OTP)" {
+  [Master Node] as master
+  [Replica Node] as replica
+}
+
+client --> webServer : Downloads static assets (HTTP)
+client --> wsClient
+wsClient --> master : WebSocket connection
+master <--> replica : Fault tolerance sync
+
+note right of master
+  Handles multiplayer rooms,
+  game logic, and message routing
+end note
+
+note right of replica
+  Backup for fault tolerance
+end note
+
+note top of client
+  Initiates WebSocket connection
+  Sends/receives JSON messages
+end note
+
+note bottom of wsClient
+  Periodic ping/pong for liveness
+end note
+
+@enduml

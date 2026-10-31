@@ -1,0 +1,129 @@
+@startuml
+!define RECTANGLE class
+
+title System Architecture - AI-Driven Text Adventure Game and Community Platform
+
+skinparam componentStyle rectangle
+
+package "Frontend Layer" {
+  [Vue.js/Nuxt.js Web Application] as frontend
+}
+
+package "API Gateway & Load Balancer" {
+  [API Gateway] as gateway
+}
+
+package "Backend Services" {
+  [Iris Web Framework] as backend
+  
+  package "Core Services" {
+    [User Management Service] as user_service
+    [Game Service] as game_service
+    [Community Service] as community_service
+    [Administration Service] as admin_service
+    [Notification Service] as notification_service
+    [Favorites Service] as favorites_service
+  }
+  
+  backend --> user_service : handles
+  backend --> game_service : handles
+  backend --> community_service : handles
+  backend --> admin_service : handles
+  backend --> notification_service : handles
+  backend --> favorites_service : handles
+}
+
+package "Data Layer" {
+  [GORM ORM] as orm
+  [MySQL Database] as database
+  
+  orm --> database : manages
+}
+
+package "External Services" {
+  [Large Language Model Provider] as llm_provider
+}
+
+game_service --> llm_provider : invokes
+backend --> orm : uses
+user_service --> orm : uses
+community_service --> orm : uses
+admin_service --> orm : uses
+notification_service --> orm : uses
+favorites_service --> orm : uses
+
+frontend --> gateway : connects to
+gateway --> backend : routes to
+
+note right of frontend
+  Client-side application
+  built with Vue.js and Nuxt.js
+end note
+
+note right of backend
+  Server-side application
+  built with Iris framework
+end note
+
+note right of database
+  Relational database
+  managed by MySQL
+end note
+
+note right of llm_provider
+  External AI service
+  for dynamic content generation
+end note
+
+note top of user_service
+  Handles:
+  - Registration/Login
+  - Profile management
+  - Account operations
+end note
+
+note top of game_service
+  Handles:
+  - Game saves
+  - Background setup
+  - Choice progression
+  - Save sharing
+end note
+
+note top of community_service
+  Handles:
+  - Posts
+  - Comments/Replies
+  - Search
+  - Recommendations
+end note
+
+note top of admin_service
+  Handles:
+  - User governance
+  - Post review
+  - Reports handling
+end note
+
+note top of notification_service
+  Handles:
+  - Comment/reply notifications
+  - Review status updates
+end note
+
+note top of favorites_service
+  Handles:
+  - Post favoriting
+  - Favorites management
+end note
+
+package "Infrastructure" {
+  [Docker Containers] as docker
+  [Kubernetes Orchestration] as k8s
+  
+  k8s --> docker : orchestrates
+  docker --> backend : contains
+  docker --> database : contains
+}
+
+@enduml

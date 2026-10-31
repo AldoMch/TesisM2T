@@ -1,0 +1,119 @@
+{
+  "candidate": {
+    "sample_id": "s000060_935731a2",
+    "repository_name": "lowes/auditor",
+    "image_url": "https://github.com/lowes/auditor/blob/main/docs/auditor-v1-architecture.png",
+    "source_ref": "9e995377e5dd8669c96a13d79a196737a41cef2b",
+    "total_score": 96,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 11057,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 28,
+      "user_scenario": 166,
+      "api_io": 101,
+      "deployment": 83,
+      "constraints": 1,
+      "non_functional": 8
+    },
+    "time_status": "row_sha_with_view_date",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 11,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 96
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "client/src/testFunctional/kotlin/com.lowes.auditor/client/api/AuditorTest.kt",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.051051314780822976,
+      "text": "uditorEventConfig = AuditorEventConfig( applicationName = OVERRIDE_APPLICATION_NAME, eventSource = EventSourceConfig(EventSourceType.USER), eventSubType = \"subType\", metadata = mapOf(\"key\" to \"value\"), filters = Filters( element = ElementFilter( enabled = true, types = listOf(\"InclusionFilter\"), options = ElementFilterOptions( includes = listOf(COM_LOWES_AUDITOR_CLIENT_API_MODEL_ITEM_RAND_ID) ) ) ) ) ) Then(\"Assert the Audit Event is send \") { val consumedData = consumer .map { FunctionalTestModule.objectMapper.readValue(it.value(), AuditEvent::class.java) } StepVerifier .create(consumedData) .expectNextMatches { it.applicationName shouldBe OVERRIDE_APPLICATION_NAME it.type shouldBe Event..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "client/src/testFunctional/kotlin/com.lowes.auditor/client/api/AuditorTest.kt",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense",
+      "score": 0.04002107481559536,
+      "text": "alTestModule.objectMapper.readValue(it.value(), AuditEvent::class.java) } StepVerifier .create(consumedData) .expectNextMatches { it.type shouldBe EventType.UPDATED it.elements shouldBe listOf( Element( name = \"model\", updatedValue = \"2\", previousValue = \"1\", metadata = ElementMetadata(fqdn = COM_LOWES_AUDITOR_CLIENT_API_MODEL_ITEM_MODEL) ) ) true } .expectNoEvent(noEventDuration) .thenCancel() .verify() } } When(\"Updating an Integer and static metadata is set using AuditorEventConfig \") { auditor.audit( oldObject = getItem() .copy(model = 1), newObject = getItem() .copy(model = 2), auditorEventConfig = AuditorEventConfig( applicationName = OVERRIDE_APPLICATION_NAME, eventSource = EventSo..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "client/src/main/kotlin/com/lowes/auditor/client/api/Auditor.kt",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05299943617621089,
+      "text": "package com.lowes.auditor.client.api import com.lowes.auditor.client.entities.domain.AuditorEventConfig import com.lowes.auditor.client.entities.interfaces.infrastructure.event.EventPublisher import com.lowes.auditor.client.entities.interfaces.infrastructure.frameworks.LogProvider import com.lowes.auditor.client.entities.interfaces.usecase.AuditEventElementFilter import com.lowes.auditor.client.infrastructure.event.config.AuditEventModule import com.lowes.auditor.client.infrastructure.event.config.AuditEventProducerConfig import com.lowes.auditor.client.infrastructure.frameworks.config.FrameworkModule import com.lowes.auditor.client.library.config.AuditorModule import com.lowes.auditor.cl..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "client/src/testFunctional/kotlin/com.lowes.auditor/client/api/AuditorTest.kt",
+      "doc_type": "test",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.04897389243526502,
+      "text": "M_MODEL = \"com.lowes.auditor.client.api.model.Item.model\" private const val COM_LOWES_AUDITOR_CLIENT_API_MODEL_ITEM_METADATA_KEY_1 = \"com.lowes.auditor.client.api.model.Item.metadata.key1\" private const val COM_LOWES_AUDITOR_CLIENT_API_MODEL_ITEM_METADATA_KEY_2 = \"com.lowes.auditor.client.api.model.Item.metadata.key2\" private const val COM_LOWES_AUDITOR_CLIENT_API_MODEL_USER_EMAIL_ADDRESS = \"com.lowes.auditor.client.api.model.User.emailAddress\" private const val COM_LOWES_AUDITOR_CLIENT_API_MODEL_USER_FIRST_NAME = \"com.lowes.auditor.client.api.model.User.firstName\" private const val COM_LOWES_AUDITOR_CLIENT_API_MODEL_USER_LAST_NAME = \"com.lowes.auditor.client.api.model.User.lastName\" priv..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "client-example/src/main/kotlin/foo/model/Item.kt",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05365488133104966,
+      "text": "package foo.model import java.util.UUID data class Item( val itemNumber: UUID, val model: Int?, val description: String?, val metadata: Map ?, val categories: List ?, val data: ItemData?, val updatedBy: String? ) data class ItemData( val value: String )"
+    },
+    {
+      "evidence_id": "E006",
+      "path": "client-example-springboot/src/main/kotlin/foo/model/Item.kt",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05244083892862356,
+      "text": "package foo.model import java.util.UUID data class Item( val itemNumber: UUID, val model: Int, val description: String, val metadata: Map ?, val rand: Rand?, val rand2: Rand?, val listItem: MutableList = mutableListOf(), val metadataRand: Map ? = mapOf(), ) data class Rand( val id: String, val name: String )"
+    }
+  ]
+}

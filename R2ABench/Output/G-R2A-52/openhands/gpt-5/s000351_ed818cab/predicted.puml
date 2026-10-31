@@ -1,0 +1,93 @@
+@startuml
+title Kangrand (SECP256K1): Pollard's Kangaroo Solver Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+package "Local Execution" as LOCAL {
+  [Kangrand CLI] as cli
+  component "Input Parser" as parser
+  component "Kangaroo Engine" as eng
+  component "Distinguished-Point Selector" as dp
+  component "Collision Detector / Hash Table (in-memory)" as iht
+  component "Work File Manager (-w, -wi, -i, -ws)" as wfm
+  component "Wsplit Backup Manager" as wsplit
+  component "GPU Compute Backend (optional)" as gpu
+}
+
+cli --> parser : parse options/input
+eng --> dp
+dp --> iht : store DP hits
+eng --> wfm : persist/resume state
+wsplit --> wfm : schedule backups
+wsplit ..> iht : reset after backup
+eng ..> gpu : offload compute (optional)
+cli --> wfm : work-file info
+
+artifact "ASCII Input (.txt)\nhex values, compressed/uncompressed pubkeys" as f_input
+artifact "Work File (*.wrk)\n(state, optional kangaroo state)" as f_work
+folder "Split-Work Backups\n(prefixed files)" as f_split
+
+parser --> f_input : reads
+wfm --> f_work : save/resume
+wsplit --> f_split : writes
+
+package "Offline Merge Tool" as MERGE {
+  component "Work-File Reader" as mread
+  component "Merge Engine" as mmerge
+  component "Result Detector" as mres
+}
+artifact "Master Work/Hash" as f_master
+artifact "Result File" as f_result
+
+mread --> f_work
+mread --> f_split
+mmerge --> f_master
+mres --> f_result
+mmerge ..> mres : may discover solved key
+
+cloud "Distributed Execution" as NET {
+  node "Server" as srv {
+    component "Client Manager" as srv_cm
+    component "Backup Scheduler" as srv_sched
+    component "Artifact Writer" as srv_writer
+  }
+  node "Client #1" as c1 {
+    component "Network Client" as c1_net
+    component "Kangaroo Engine" as c1_eng
+  }
+  node "Client #N" as cN {
+    component "Network Client" as cN_net
+    component "Kangaroo Engine" as cN_eng
+  }
+}
+
+c1_eng --> c1_net : DP points/work data
+cN_eng --> cN_net : DP points/work data
+c1_net --> srv_cm : connect (no auth)
+cN_net --> srv_cm : connect (no auth)
+srv_cm --> srv_sched
+srv_sched --> srv_writer : periodic backups
+
+artifact "Server Config\n(startup parameters)" as f_cfg
+folder "Server Artifacts\n(work files, hash table, results)" as f_srv_art
+
+srv_cm --> f_cfg : reads
+srv_writer --> f_srv_art : writes
+
+mread --> f_srv_art
+
+note right of dp
+Only distinguished points retained to reduce memory.
+end note
+
+note right of f_work
+Portable across hardware/DP settings for same key/range.\nResume with -i without original input.
+end note
+
+note right of srv_cm
+No built-in authentication.\nOperator controls network exposure.
+end note
+
+@enduml

@@ -1,0 +1,386 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "5903cb65fd3838da14e92ed0373b6bf7c0991e0afd85755f41bb1ab134f697d9",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "b67e7380b59dacea1aefa09bd1f8f96240d78bdf6973fd3a5859f9cd8ba6ef08",
+  "predicted_edges_sha256": "2337d15b8e37b8407471b7e43eee7a939bc26214343f097ef0de5da383785f8d",
+  "precision": 0.0,
+  "recall": 0.0,
+  "f1": 0.0,
+  "reference_edges": [
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::DBW Node\\nDrive-by-wire"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Traffic Light\\nDetection Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::DBW Node\\nDrive-by-wire",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::Waypoint Follower\\nController",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::DBW Node\\nDrive-by-wire"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Traffic Light\\nDetection Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Loader\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Loader\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Traffic Light\\nDetection Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Loader\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::Waypoint Follower\\nController"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "Control Layer::DBWNode\\n(Drive-By-Wire)\\n- subscribes: /twist_cmd,\\n  vehicle state\\n- publishes: /vehicle_cmd\\n  (throttle, steering, brake)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Control Layer::WaypointFollower\\n- subscribes: /final_waypoints,\\n  /current_pose\\n- publishes: /twist_cmd\\n  (linear & angular velocity)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "External Systems::Recorded Training\\nBag Player",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "External Systems::Udacity Capstone\\nProject Simulator",
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Control Layer::DBWNode\\n(Drive-By-Wire)\\n- subscribes: /twist_cmd,\\n  vehicle state\\n- publishes: /vehicle_cmd\\n  (throttle, steering, brake)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Control Layer::WaypointFollower\\n- subscribes: /final_waypoints,\\n  /current_pose\\n- publishes: /twist_cmd\\n  (linear & angular velocity)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Perception Layer::TLDetectorClassifier\\n(tl_detector node)\\n- subscribes: /image_color,\\n  base_waypoints, current_pose\\n- detects & classifies\\n  traffic light state\\n- publishes: /traffic_waypoint\\n  (stop waypoint index)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Planning Layer::WaypointUpdater\\n- subscribes: /base_waypoints,\\n  /current_pose, /traffic_waypoint\\n- publishes: /final_waypoints\\n  (velocity-adjusted window)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter"
+    ],
+    [
+      "Perception Layer::TLDetectorClassifier\\n(tl_detector node)\\n- subscribes: /image_color,\\n  base_waypoints, current_pose\\n- detects & classifies\\n  traffic light state\\n- publishes: /traffic_waypoint\\n  (stop waypoint index)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Planning Layer::WaypointLoader\\n- loads waypoints from CSV\\n- publishes: /base_waypoints\\n  (incl. target speeds)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Planning Layer::WaypointUpdater\\n- subscribes: /base_waypoints,\\n  /current_pose, /traffic_waypoint\\n- publishes: /final_waypoints\\n  (velocity-adjusted window)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter",
+      "External Systems::Udacity Capstone\\nProject Simulator"
+    ],
+    [
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ]
+  ],
+  "covered_reference_edges": [],
+  "supported_predicted_edges": [],
+  "unmatched_reference_edges": [
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::DBW Node\\nDrive-by-wire"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Traffic Light\\nDetection Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::DBW Node\\nDrive-by-wire",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::Waypoint Follower\\nController",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::DBW Node\\nDrive-by-wire"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Traffic Light\\nDetection Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Loader\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Loader\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Traffic Light\\nDetection Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Loader\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::Waypoint Follower\\nController"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "Control Layer::DBWNode\\n(Drive-By-Wire)\\n- subscribes: /twist_cmd,\\n  vehicle state\\n- publishes: /vehicle_cmd\\n  (throttle, steering, brake)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Control Layer::WaypointFollower\\n- subscribes: /final_waypoints,\\n  /current_pose\\n- publishes: /twist_cmd\\n  (linear & angular velocity)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "External Systems::Recorded Training\\nBag Player",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "External Systems::Udacity Capstone\\nProject Simulator",
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Control Layer::DBWNode\\n(Drive-By-Wire)\\n- subscribes: /twist_cmd,\\n  vehicle state\\n- publishes: /vehicle_cmd\\n  (throttle, steering, brake)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Control Layer::WaypointFollower\\n- subscribes: /final_waypoints,\\n  /current_pose\\n- publishes: /twist_cmd\\n  (linear & angular velocity)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Perception Layer::TLDetectorClassifier\\n(tl_detector node)\\n- subscribes: /image_color,\\n  base_waypoints, current_pose\\n- detects & classifies\\n  traffic light state\\n- publishes: /traffic_waypoint\\n  (stop waypoint index)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Planning Layer::WaypointUpdater\\n- subscribes: /base_waypoints,\\n  /current_pose, /traffic_waypoint\\n- publishes: /final_waypoints\\n  (velocity-adjusted window)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter"
+    ],
+    [
+      "Perception Layer::TLDetectorClassifier\\n(tl_detector node)\\n- subscribes: /image_color,\\n  base_waypoints, current_pose\\n- detects & classifies\\n  traffic light state\\n- publishes: /traffic_waypoint\\n  (stop waypoint index)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Planning Layer::WaypointLoader\\n- loads waypoints from CSV\\n- publishes: /base_waypoints\\n  (incl. target speeds)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Planning Layer::WaypointUpdater\\n- subscribes: /base_waypoints,\\n  /current_pose, /traffic_waypoint\\n- publishes: /final_waypoints\\n  (velocity-adjusted window)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter",
+      "External Systems::Udacity Capstone\\nProject Simulator"
+    ],
+    [
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ]
+  ],
+  "internal_reference_edges": [],
+  "internal_predicted_edges": [],
+  "reference_witnesses": [],
+  "predicted_witnesses": [],
+  "reference_endpoint_anchors": {
+    "Global::Udacity Self-Driving Car Capstone\\nROS Architecture": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator": [
+      0
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Control": [
+      1,
+      2
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::DBW Node\\nDrive-by-wire": [
+      1
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Control::Waypoint Follower\\nController": [
+      2
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception": [
+      3
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node": [],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Traffic Light\\nDetection Node": [
+      3
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning": [
+      4,
+      5
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Loader\\nROS Node": [
+      4
+    ],
+    "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node": [
+      5
+    ]
+  },
+  "predicted_endpoint_anchors": {
+    "Control Layer::DBWNode\\n(Drive-By-Wire)\\n- subscribes: /twist_cmd,\\n  vehicle state\\n- publishes: /vehicle_cmd\\n  (throttle, steering, brake)": [
+      1
+    ],
+    "Control Layer::WaypointFollower\\n- subscribes: /final_waypoints,\\n  /current_pose\\n- publishes: /twist_cmd\\n  (linear & angular velocity)": [
+      2
+    ],
+    "External Systems::Recorded Training\\nBag Player": [],
+    "External Systems::Udacity Capstone\\nProject Simulator": [
+      0
+    ],
+    "Global::Control Layer": [
+      1,
+      2
+    ],
+    "Global::External Systems": [
+      0
+    ],
+    "Global::Infrastructure / Environment Layer\\n(Docker Container)": [],
+    "Global::Launch / Configuration Layer": [],
+    "Global::Perception Layer": [
+      3
+    ],
+    "Global::Planning Layer": [
+      4,
+      5
+    ],
+    "Global::Styx WebSocket Bridge": [],
+    "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)": [],
+    "Launch / Configuration Layer::SiteLaunchConfig\\n(site.launch —\\nSite / Bag Mode)": [],
+    "Launch / Configuration Layer::StyxLaunchConfig\\n(styx.launch —\\nSimulator Mode)": [],
+    "Perception Layer::TLDetectorClassifier\\n(tl_detector node)\\n- subscribes: /image_color,\\n  base_waypoints, current_pose\\n- detects & classifies\\n  traffic light state\\n- publishes: /traffic_waypoint\\n  (stop waypoint index)": [
+      3
+    ],
+    "Planning Layer::WaypointLoader\\n- loads waypoints from CSV\\n- publishes: /base_waypoints\\n  (incl. target speeds)": [
+      4
+    ],
+    "Planning Layer::WaypointUpdater\\n- subscribes: /base_waypoints,\\n  /current_pose, /traffic_waypoint\\n- publishes: /final_waypoints\\n  (velocity-adjusted window)": [
+      5
+    ],
+    "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter": []
+  },
+  "reference_unanchored_edges": [
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Car / Simulator",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Updater Node\\nROS Node"
+    ],
+    [
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Planning::Waypoint Loader\\nROS Node",
+      "Udacity Self-Driving Car Capstone\\nROS Architecture::Perception::Obstacle Detection\\nROS Node"
+    ]
+  ],
+  "predicted_unanchored_edges": [
+    [
+      "Control Layer::DBWNode\\n(Drive-By-Wire)\\n- subscribes: /twist_cmd,\\n  vehicle state\\n- publishes: /vehicle_cmd\\n  (throttle, steering, brake)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Control Layer::WaypointFollower\\n- subscribes: /final_waypoints,\\n  /current_pose\\n- publishes: /twist_cmd\\n  (linear & angular velocity)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "External Systems::Recorded Training\\nBag Player",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "External Systems::Udacity Capstone\\nProject Simulator",
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Control Layer::DBWNode\\n(Drive-By-Wire)\\n- subscribes: /twist_cmd,\\n  vehicle state\\n- publishes: /vehicle_cmd\\n  (throttle, steering, brake)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Control Layer::WaypointFollower\\n- subscribes: /final_waypoints,\\n  /current_pose\\n- publishes: /twist_cmd\\n  (linear & angular velocity)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Perception Layer::TLDetectorClassifier\\n(tl_detector node)\\n- subscribes: /image_color,\\n  base_waypoints, current_pose\\n- detects & classifies\\n  traffic light state\\n- publishes: /traffic_waypoint\\n  (stop waypoint index)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Planning Layer::WaypointUpdater\\n- subscribes: /base_waypoints,\\n  /current_pose, /traffic_waypoint\\n- publishes: /final_waypoints\\n  (velocity-adjusted window)"
+    ],
+    [
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)",
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter"
+    ],
+    [
+      "Perception Layer::TLDetectorClassifier\\n(tl_detector node)\\n- subscribes: /image_color,\\n  base_waypoints, current_pose\\n- detects & classifies\\n  traffic light state\\n- publishes: /traffic_waypoint\\n  (stop waypoint index)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Planning Layer::WaypointLoader\\n- loads waypoints from CSV\\n- publishes: /base_waypoints\\n  (incl. target speeds)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Planning Layer::WaypointUpdater\\n- subscribes: /base_waypoints,\\n  /current_pose, /traffic_waypoint\\n- publishes: /final_waypoints\\n  (velocity-adjusted window)",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ],
+    [
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter",
+      "External Systems::Udacity Capstone\\nProject Simulator"
+    ],
+    [
+      "Styx WebSocket Bridge::StyxBridge\\n(bridge.py / server.py)\\nWebSocket ↔ ROS adapter",
+      "Infrastructure / Environment Layer\\n(Docker Container)::ROSMaster\\n(Topic Broker &\\nComm Backbone)"
+    ]
+  ]
+}

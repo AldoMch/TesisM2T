@@ -1,0 +1,90 @@
+@startuml
+title Earth Defender - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+
+actor "Player\n(Host / Participant)" as Player
+
+package "Browser Client Environment (Three.js)" as Client {
+    component "3D Game Client\n(Scene / Gameplay Render)" as GameClient
+    component "Multiplayer Room UI\n(Create Room / Join Room)" as RoomUI
+    component "WebSocket Client\n(WS over HTTP)" as WSClient
+    component "Message Codec\nJSON array [event, data]\nparse [action, data?]" as Codec
+    component "Heartbeat Handler\nping every 60s (data=null),\nhandle pong" as Heartbeat
+    component "Reconnect Handler\nreconnect context\n[roomId, playerId, index]" as Reconnect
+    component "Inbound Action Dispatcher" as Dispatcher
+    component "Server List Manager" as ServerList
+    component "Room Player Count\nTracker" as RoomCount
+}
+
+package "Static Content Delivery" as WebTier {
+    component "Web Server\n(HTTP)\nHTML / CSS / JS / images" as WebServer
+}
+
+package "Erlang/OTP Game Server Tier" as ServerTier {
+    component "Master Game Server" as Master
+    component "Replica / Slave Server" as Replica
+
+    package "Master Server Responsibilities" as MasterResp {
+        component "WebSocket Session\nAcceptance Layer" as SessionLayer
+        component "Multiplayer Room Manager" as RoomMgr
+        component "Game Logic / Ship State" as GameLogic
+        component "Server List Provider" as ServerListProvider
+    }
+}
+
+cloud "DNS / Load Balancer" as DNS
+
+Player --> GameClient : interacts with
+GameClient --> RoomUI : multiplayer flow
+RoomUI --> WSClient : initiate session\n(create/join room)
+GameClient --> WebServer : HTTP GET static assets
+
+WSClient --> Codec : outbound serialize
+WSClient --> Heartbeat : timer-driven ping
+WSClient --> Reconnect : on close event
+WSClient ..> Dispatcher : inbound messages
+
+Dispatcher --> Reconnect : game_reconnect
+Dispatcher --> RoomCount : room_players_number
+Dispatcher --> ServerList : servers_list
+Dispatcher --> ServerList : servers_list_redirect
+Dispatcher --> GameClient : server_error -> reload page
+
+Codec --> WSClient
+
+Client ..> DNS : resolve server address
+DNS ..> WebServer : routes static asset requests
+DNS ..> Master : routes WebSocket connection
+
+WSClient --> SessionLayer : WebSocket over HTTP\n[event, data] JSON arrays
+SessionLayer --> RoomMgr
+SessionLayer --> GameLogic
+SessionLayer --> ServerListProvider
+
+RoomMgr --> GameLogic : room/ship management
+ServerListProvider --> SessionLayer : servers_list /\nservers_list_redirect
+GameLogic --> SessionLayer : game_reconnect
+RoomMgr --> SessionLayer : room_players_number
+
+Master <..> Replica : master/slave replication\n(fault tolerance)
+
+note right of WSClient
+  Transport: WebSocket over HTTP
+  Client-initiated only (no P2P)
+  Liveness: ping -> pong
+  Inbound actions: game_reconnect,
+  room_players_number, servers_list,
+  servers_list_redirect, server_error, pong
+end note
+
+note bottom of ServerTier
+  Constraint: Erlang/OTP server side,
+  Three.js browser client,
+  soft real-time, asynchronous/concurrent messaging
+end note
+
+@enduml

@@ -1,0 +1,195 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontSize 13
+}
+skinparam component {
+  BackgroundColor #FFFACD
+  BorderColor #B8860B
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontSize 12
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+  FontSize 12
+}
+skinparam cloud {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+skinparam arrow {
+  Color #444444
+  FontSize 11
+}
+
+title ReTool System Architecture
+
+actor "System User\n(Register / Login)" as SysUser
+actor "Project Manager" as PM
+actor "Project Leader" as PL
+actor "Ordinary Member" as OM
+actor "System Administrator" as SA
+
+node "Client Machine\n(Windows 10 x64, Chrome 81+, i7-6700HQ, ≥8 GB)" {
+  component "Vue.js\nWeb Frontend" as VueFE {
+    component "User Auth UI\n(Register/Login/Logout\nPassword/Profile)" as AuthUI
+    component "User Mgmt UI\n(User List / Add / Delete\nReset PW / Role)" as UserMgmtUI
+    component "Project List UI\n(Create/Delete/View\nProject Info)" as ProjListUI
+    component "Member Mgmt UI\n(Add/Delete/Modify\nProject Roles)" as MemberUI
+    component "Baseline Mgmt UI\n(Create/View Baselines)" as BaselineUI
+    component "Requirements Mgmt UI\n(Req Tree / Create / Import\nModify / Delete / Move\nTrace View)" as ReqUI
+    component "Requirement Analysis UI\n(Structuring / Common Req\nConflict / Association)" as AnalysisUI
+  }
+}
+
+node "Local Server\n(EC2 t2.xlarge recommended, Amazon Linux 2)" {
+
+  component "API Gateway" as Gateway {
+    component "Request Routing" as Routing
+    component "Access Control\n& Rate Limiting" as AccessCtrl
+    component "Security Filter\n(Input Validation\nInjection Prevention)" as SecFilter
+  }
+
+  component "User Management Service\n(Flask Microservice)" as UserSvc {
+    component "Registration & Login\nLogout" as AuthSvc
+    component "Password Mgmt\n(Modify / Reset)" as PwdSvc
+    component "User CRUD\n(Add / Delete / List)" as UserCRUD
+    component "Role & Permission\nManagement" as RoleSvc
+    component "Personal Info\nService" as ProfileSvc
+  }
+
+  component "Project Management Service\n(Flask Microservice)" as ProjSvc {
+    component "Project CRUD\n(Create/Delete\nModify/View/List)" as ProjCRUD
+    component "Member Management\n(Add/Delete/Modify\nView Members)" as MemberSvc
+    component "Project Role\nManagement" as ProjRoleSvc
+    component "Baseline Node\nService\n(Create/View/Archive)" as BaselineSvc
+  }
+
+  component "Requirements Management Service\n(Flask Microservice)" as ReqSvc {
+    component "Req Item CRUD\n(Create/Modify\nDelete/View/Move)" as ReqCRUD
+    component "Req Item Tree\nManagement" as ReqTree
+    component "Word Document\nImport Handler" as WordImport
+    component "Forward Tracing\nService\n(Code/TestCase/Person)" as TraceSvc
+    component "Req Analysis\nOrchestrator" as ReqAnalOrch
+  }
+
+  component "Log & Monitoring\nService" as LogSvc {
+    component "Persistent Log\nStorage" as LogStore
+    component "Security Event\nRecorder" as SecEventRec
+  }
+}
+
+node "Algorithm Server\n(High-Performance Server, Amazon Linux 2)" {
+  component "Algorithm Service\n(Flask Microservice)" as AlgoSvc {
+    component "Requirement Itemization\n(NLP + Heuristic Rules)" as ItemizeSvc
+    component "Requirement Structuring\n(NLP + Heuristic Rules)" as StructSvc
+    component "Common Req Identification\n(Word2vec Model)" as CommonReqSvc
+    component "Conflict Detection\n(NLP + Heuristic Rules)" as ConflictSvc
+    component "Association Analysis\n(NLP + Heuristic Rules)" as AssocSvc
+  }
+  component "ML Models\n(PyTorch / Word2vec)" as MLModels
+}
+
+database "MongoDB\n(Local Server)" as MongoDB {
+  component "Users Collection\n(Account/Role/Permission\nProfile/Privacy)" as UserDB
+  component "Projects Collection\n(Project Info/State\nMembers/Roles)" as ProjDB
+  component "Requirements Collection\n(Req Items/Tree/Hierarchy\nStructuring/Tracing)" as ReqDB
+  component "Baseline Collection\n(Nodes/Archived Reqs)" as BaselineDB
+  component "Analysis Results Collection\n(Common/Conflict\nAssociation)" as AnalysisDB
+  component "Log Collection\n(Persistent Logs)" as LogDB
+}
+
+cloud "External Network / Internet" as Internet
+
+' ---- User to Frontend ----
+SysUser --> VueFE
+PM --> VueFE
+PL --> VueFE
+OM --> VueFE
+SA --> VueFE
+
+' ---- Frontend to Gateway ----
+VueFE --> Gateway : "HTTPS Requests\n(Network)"
+
+' ---- Gateway to Services ----
+Gateway --> UserSvc : "Route /users"
+Gateway --> ProjSvc : "Route /projects"
+Gateway --> ReqSvc : "Route /requirements"
+Gateway --> LogSvc : "Route /logs"
+
+' ---- Requirements Service to Algorithm Service ----
+ReqSvc --> AlgoSvc : "Algorithm Requests\n(Network / Internet)"
+
+' ---- Algorithm Service to ML Models ----
+AlgoSvc --> MLModels : "Model Inference"
+
+' ---- Services to MongoDB ----
+UserSvc --> UserDB : "CRUD"
+ProjSvc --> ProjDB : "CRUD"
+ProjSvc --> BaselineDB : "CRUD"
+ReqSvc --> ReqDB : "CRUD"
+ReqSvc --> AnalysisDB : "CRUD"
+LogSvc --> LogDB : "Persist Logs"
+
+' ---- Frontend UI Groupings ----
+AuthUI ..> UserSvc
+UserMgmtUI ..> UserSvc
+ProjListUI ..> ProjSvc
+MemberUI ..> ProjSvc
+BaselineUI ..> ProjSvc
+ReqUI ..> ReqSvc
+AnalysisUI ..> ReqSvc
+
+' ---- Algorithm internal ----
+ItemizeSvc --> MLModels
+CommonReqSvc --> MLModels
+StructSvc --> MLModels
+ConflictSvc --> MLModels
+AssocSvc --> MLModels
+
+' ---- Internet dependency ----
+VueFE --> Internet : "Requires\nNetwork"
+Internet --> Gateway
+
+' ---- Notes ----
+note right of Gateway
+  Runs on Local Server.
+  Handles routing, rate limiting,
+  access control, security filtering
+  (NFR-010, NFR-012, NFR-013, C-005).
+end note
+
+note right of AlgoSvc
+  Runs on high-performance
+  Algorithm Server due to
+  machine performance requirements
+  (C-007, AD-003).
+  Uses NLP, PyTorch, Word2vec.
+end note
+
+note bottom of MongoDB
+  Single MongoDB instance on
+  local server (C-014, AD-004).
+  Periodic backup with
+  3-copy offsite disaster
+  recovery (NFR-009).
+end note
+
+note top of VueFE
+  Vue.js SPA (C-003).
+  Runs in Chrome 81+ on
+  Windows 10 x64 client.
+  Front-end/back-end separation (C-002).
+  Code minimization & obfuscation (NFR-014).
+end note
+
+@enduml

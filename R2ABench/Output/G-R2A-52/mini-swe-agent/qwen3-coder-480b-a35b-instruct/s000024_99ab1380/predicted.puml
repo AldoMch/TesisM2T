@@ -1,0 +1,53 @@
+@startuml
+!define RECTANGLE class
+
+title OCI Jenkins Terraform Deployment Architecture
+
+' Layers
+package "Operator Environment" {
+    rectangle "Deployment Operator" as operator
+    rectangle "Terraform CLI" as terraform_cli
+    rectangle "Variable Files\n(terraform.tfvars)" as var_files
+}
+
+package "OCI Jenkins Deployment System" {
+    rectangle "Terraform Configuration\n(Jenkins Modules)" as terraform_config
+    rectangle "Jenkins Master Instance" as jenkins_master
+    rectangle "Jenkins Slave/Agent Instances" as jenkins_slaves
+    rectangle "OCI Networking\n(VCN, Subnets, etc.)" as oci_networking
+    rectangle "Bastion Host" as bastion_host
+    rectangle "Load Balancer" as load_balancer
+    rectangle "NAT Gateway" as nat_gateway
+}
+
+package "External Systems" {
+    rectangle "Oracle Cloud Infrastructure" as oci
+    rectangle "SSH Keys" as ssh_keys
+}
+
+' Connections
+operator --> terraform_cli : uses
+operator --> var_files : configures
+terraform_cli --> terraform_config : executes
+var_files --> terraform_config : provides variables
+terraform_config --> jenkins_master : provisions
+terraform_config --> jenkins_slaves : provisions
+terraform_config --> oci_networking : configures
+terraform_config --> bastion_host : configures
+terraform_config --> load_balancer : configures
+terraform_config --> nat_gateway : configures
+jenkins_master --> jenkins_slaves : communicates (JNLP)
+jenkins_master --> load_balancer : exposed via
+bastion_host --> jenkins_slaves : SSH access
+nat_gateway --> jenkins_slaves : outbound connectivity
+oci_networking --> oci : deployed on
+ssh_keys --> jenkins_master : auth
+ssh_keys --> jenkins_slaves : auth
+oci --> jenkins_master : hosts
+oci --> jenkins_slaves : hosts
+oci --> oci_networking : provides
+oci --> bastion_host : hosts
+oci --> load_balancer : hosts
+oci --> nat_gateway : hosts
+
+@enduml

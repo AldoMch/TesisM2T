@@ -1,0 +1,68 @@
+@startuml
+
+package "CLI Layer" {
+  component "CLI Entry Point"
+  component "Trace Command"
+  component "Event Registration Parser"
+  artifact "Event Registration Structure\n(ProgramID, Pids, ELFPath)" as ERS
+}
+
+package "Userspace Library/Tracer Layer" {
+  component "TraceLeft Library"
+  component "Probe Loader/Installer"
+  component "Userspace Tracer"
+  component "Common Event Header"
+  component "Handler Naming Scheme"
+}
+
+node "Linux OS Environment" {
+  node "Linux kernel eBPF subsystem" as eBPFSub
+
+  package "Kernel eBPF Runtime Layer" {
+    component "Main eBPF Program"
+    component "Handler eBPF Programs"
+    database "Handler Maps and Return-Program Maps"
+    interface "Linux perf event channel"
+    interface "kprobe/kretprobe"
+  }
+}
+
+package "Code Generation Layer" {
+  component "Code Generator"
+}
+
+cloud "gobpf"
+cloud "Proto/JSON Event Configuration Source"
+
+' Key dependencies and flows
+"CLI Entry Point" -> "Trace Command"
+"Trace Command" -> "Event Registration Parser"
+"Event Registration Parser" -> ERS
+
+"Trace Command" -> "TraceLeft Library"
+"TraceLeft Library" -> ERS
+"TraceLeft Library" -> "Probe Loader/Installer"
+"TraceLeft Library" -> "Userspace Tracer"
+
+"TraceLeft Library" -> "gobpf"
+"gobpf" -> eBPFSub
+
+"Probe Loader/Installer" -> "kprobe/kretprobe"
+"Probe Loader/Installer" -> "Handler Naming Scheme"
+"Probe Loader/Installer" -> "Handler eBPF Programs"
+"Probe Loader/Installer" -> "Handler Maps and Return-Program Maps"
+
+"Main eBPF Program" -> "Handler Maps and Return-Program Maps"
+"Main eBPF Program" -> "kprobe/kretprobe"
+"Main eBPF Program" -> "Handler eBPF Programs" : via tail calls
+
+"Handler eBPF Programs" -> "Linux perf event channel"
+"Handler eBPF Programs" -> "Common Event Header"
+
+"Linux perf event channel" -> "Userspace Tracer"
+"Userspace Tracer" -> "Common Event Header"
+
+"Code Generator" -> "Proto/JSON Event Configuration Source"
+"Code Generator" -> "Handler eBPF Programs"
+
+@enduml

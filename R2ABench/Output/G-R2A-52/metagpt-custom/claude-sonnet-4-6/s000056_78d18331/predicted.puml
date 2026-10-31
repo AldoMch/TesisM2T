@@ -1,0 +1,124 @@
+@startuml host-scanner Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #222222
+}
+skinparam package {
+  BackgroundColor #F5F5F5
+  BorderColor #888888
+}
+skinparam node {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #C62828
+}
+
+' ── External Systems ──────────────────────────────────────────────────────────
+cloud "HTTP Clients\n(e.g. Kubescape)" as HTTPClients
+
+node "Kubernetes Node" as K8sNode {
+  database "Host Filesystem\n(/etc, /run, /var/lib)" as HostFS
+  component "kubelet" as Kubelet
+  component "containerd" as Containerd
+  component "CRI-O" as CRIO
+}
+
+' Fix S-001: Use package instead of node for build-time toolchain
+package "Go Build Toolchain\n(//go:build <provider>)" as GoBuild {
+  component "Build Tag Selector" as BuildTagSelector
+}
+
+' ── host-scanner DaemonSet ────────────────────────────────────────────────────
+node "host-scanner DaemonSet (Privileged Pod)" as DaemonSet {
+
+  ' ── API Layer ───────────────────────────────────────────────────────────────
+  package "API Layer" as APILayer {
+    component "HTTPServer" as HTTPServer
+    component "EndpointRouter" as EndpointRouter
+    ' Fix M-001: Add explicit not-found / fallback handler (FR-001)
+    component "NotFoundHandler\n(HTTP 404)" as NotFoundHandler
+  }
+
+  ' ── Input Interfaces ────────────────────────────────────────────────────────
+  package "Input Interfaces" as InputLayer {
+    ' Fix M-003: Explicit CLI args ingestion for CNI resolution (FR-002, DR-003)
+    component "CLIArgsParser" as CLIArgsParser
+    ' Fix M-002: Explicit JSON input interface for Sanitizer (FR-003, DR-005)
+    component "ControlPlaneJSONInput" as JSONInput
+  }
+
+  ' ── Business Logic Layer ────────────────────────────────────────────────────
+  package "Business Logic Layer" as BizLayer {
+    component "CNIDirectoryResolver" as CNIResolver
+    component "EncryptionSecretSanitizer" as Sanitizer
+  }
+
+  ' ── Test Layer ──────────────────────────────────────────────────────────────
+  ' Fix M-004: Separate provider-specific expected data fixtures from test runner
+  package "Test Layer" as TestLayer {
+    component "E2ETestSuite\n(HTTP-based)" as E2ETestSuite
+    component "LogicTestSuite\n(unit/integration)" as LogicTestSuite
+    ' Fix M-004: Provider-specific expected data/fixture artifacts (NFR-002, DR-007)
+    component "ProviderExpectedData\n(//go:build <provider>)" as ProviderExpectedData
+  }
+
+}
+
+' ── Internal API Layer Wiring ─────────────────────────────────────────────────
+' Fix D-001 & D-002: HTTPServer receives requests and dispatches to EndpointRouter
+HTTPClients    --> HTTPServer      : HTTP GET requests
+HTTPServer     --> EndpointRouter  : dispatches to
+EndpointRouter --> NotFoundHandler : unknown path\n→ HTTP 404
+
+' Fix H-003: Remove unsupported direct EndpointRouter→CNIResolver/Sanitizer calls
+' EndpointRouter routes to handlers; CNIResolver and Sanitizer are invoked
+' through their own input interfaces as defined by PRD
+EndpointRouter --> CNIResolver     : routes CNI\nresolution request
+EndpointRouter --> Sanitizer       : routes sanitize\nrequest
+
+' ── Input Interface Wiring ────────────────────────────────────────────────────
+' Fix M-003: CLI args feed into CNIResolver (FR-002, DR-003)
+CLIArgsParser  --> CNIResolver     : supplies CNI\ndirectory args
+
+' Fix M-002 & H-001: JSON input goes directly to Sanitizer, not via collector
+' (FR-003, DR-005)
+JSONInput      --> Sanitizer       : provides control-plane\nJSON data directly
+
+' ── External Data Sources ─────────────────────────────────────────────────────
+' Fix D-003: CNIResolver reads HostFS directly for config-file resolution
+' (FR-002, DR-003)
+CNIResolver --> HostFS       : reads CNI config files\n(/etc/cni/, /var/lib/cni/)
+CNIResolver --> Kubelet      : kubelet runtime\ncontext
+CNIResolver --> Containerd   : containerd\nruntime type
+CNIResolver --> CRIO         : CRI-O\nruntime type
+
+' Fix H-002: Remove HostInfoCollector as named architectural intermediary
+' Direct FS reads modelled per PRD functional decomposition
+Sanitizer   --> HostFS       : reads host paths\n(/etc, /run, /var/lib)
+
+' ── Test Layer Wiring ────────────────────────────────────────────────────────
+' Fix D-004: Separate e2e and unit/integration verification paths clearly
+E2ETestSuite    ..>  HTTPServer    : e2e HTTP calls\n(FR-001)
+LogicTestSuite  ..>  CNIResolver   : unit/integration\nscenario inputs (FR-002)
+LogicTestSuite  ..>  Sanitizer     : unit/integration\nJSON verification (FR-003)
+
+' Fix M-004: Build tag selector activates provider-specific data and test suites
+BuildTagSelector ..> ProviderExpectedData : selects provider\nfixtures via build tags
+BuildTagSelector ..> E2ETestSuite         : selects provider\ntest suite via build tags
+BuildTagSelector ..> LogicTestSuite       : selects provider\ntest suite via build tags
+
+ProviderExpectedData ..> LogicTestSuite   : supplies expected\ndata structures
+
+@enduml

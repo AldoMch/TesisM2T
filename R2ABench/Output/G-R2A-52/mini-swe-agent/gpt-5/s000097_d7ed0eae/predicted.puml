@@ -1,0 +1,47 @@
+@startuml
+title BeeGreen - Layered Component Architecture (Backend-focused)
+
+skinparam componentStyle rectangle
+
+package "Client Layer" {
+  [Website (React/TypeScript)] as Website
+  [Browser Extension (Chrome)] as Extension
+}
+
+package "API Layer (Node.js / LoopBack)" {
+  [Backend API Server (LoopBack)] as APIServer
+  component "UserController\n(Users API)" as UserController
+  component "PingController\n(Diagnostics)" as PingController
+}
+
+package "Repository / Service Layer" {
+  component "UserRepository" as UserRepository
+}
+
+package "Domain Models" {
+  component "User Model" as UserModel
+  component "InventoryItem Model" as InventoryModel
+  component "PingResponse Schema" as PingModel
+}
+
+package "Data Store Layer" {
+  database "Persistent Storage\n(Users, InventoryItems)" as DataStore
+}
+
+package "Supporting Data Processing" {
+  cloud "Sustainability Scoring &\nRecommendation Processing" as Scoring
+}
+
+Website --> APIServer : HTTP/REST\n(JSON)
+Extension --> APIServer : HTTP/REST\n(JSON)
+APIServer --> UserController : routes /users
+APIServer --> PingController : route /ping
+UserController --> UserRepository : CRUD operations
+UserRepository --> DataStore : read/write Users
+InventoryModel --> DataStore : store/read InventoryItems
+Scoring --> DataStore : produce/consume\nInventory & scoring data
+
+UserController ..> UserModel : uses
+PingController ..> PingModel : produces
+
+@enduml

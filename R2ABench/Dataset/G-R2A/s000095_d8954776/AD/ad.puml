@@ -1,0 +1,85 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam queue {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "GPSLogger Android Application" as GpsLogger {
+    queue "Event Bus" as EventBus
+
+    package "User Interface" as UserInterface {
+        rectangle "Main Activity" as MainActivity
+        rectangle "Simple View" as SimpleView
+        rectangle "Detailed View" as DetailedView
+        rectangle "Other Fragments" as OtherFragments
+    }
+
+    package "Location Capture" as LocationCapture {
+        rectangle "Location Listeners" as LocationListeners
+        rectangle "Google Play Services\nLocation Provider" as GooglePlayServices
+    }
+
+    package "Logging" as LoggingLayer {
+        rectangle "Loggers" as Loggers
+        rectangle "GPX Logger" as GpxLogger
+        rectangle "KML Logger" as KmlLogger
+        rectangle "NMEA / GPRMC Encoder" as NmeaEncoder
+        rectangle "CSV / URL Loggers" as OtherLoggers
+    }
+
+    package "Upload" as UploadLayer {
+        rectangle "Uploaders" as Uploaders
+        rectangle "Upload Jobs" as UploadJobs
+    }
+}
+
+cloud "OpenStreetMap" as OpenStreetMap
+cloud "Dropbox" as Dropbox
+cloud "OpenGTS Endpoint\nUDP server" as OpenGtsEndpoint
+
+MainActivity --> SimpleView : display state
+MainActivity --> DetailedView : display state
+MainActivity --> OtherFragments : display state
+
+GooglePlayServices --> LocationListeners : location updates
+LocationListeners --> EventBus : publish location event
+
+EventBus --> SimpleView : location update
+EventBus --> DetailedView : location update
+EventBus --> OtherFragments : location update
+EventBus --> Loggers : location update
+EventBus --> Uploaders : location update
+
+Loggers --> GpxLogger : GPX output
+Loggers --> KmlLogger : KML output
+Loggers --> NmeaEncoder : NMEA / GPRMC output
+Loggers --> OtherLoggers : CSV / URL output
+
+Uploaders --> UploadJobs : schedule upload
+UploadJobs --> OpenStreetMap : configured credentials
+UploadJobs --> Dropbox : configured credentials
+NmeaEncoder --> OpenGtsEndpoint : UDP GPRMC message
+@enduml

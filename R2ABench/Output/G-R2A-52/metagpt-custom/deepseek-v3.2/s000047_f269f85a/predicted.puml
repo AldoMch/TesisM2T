@@ -1,0 +1,79 @@
+@startuml
+
+' Define components based on PRD/SRS
+component "Settings Sanitizer" as SettingsSanitizer
+component "Export Controller" as ExportController
+component "Hash Computation Controller" as HashComputationController
+
+component "Tree CSV Export Worker" as TreeCSVWorker
+component "RESIP Export Worker" as RESIPWorker
+component "CSV Export Worker" as CSVWorker
+component "Excel Export Worker" as ExcelWorker
+component "Batch Hash Processor" as HashProcessor
+
+component "Hash Debug Writer" as DebugWriter
+database "User Settings" as UserSettings
+note right of UserSettings: Persisted settings\nin user data directory
+
+' External systems and interfaces
+cloud "Electron Desktop\nApplication Runtime" as ElectronRuntime {
+    component "Background Worker/\nChild-Process Utilities" as WorkerUtils
+    component "Batch Processing\nUtilities" as BatchUtils
+    component "Translation Module" as TranslationModule
+}
+
+' Observable/Stream Interface components
+component "Observable Interface\n(Export Results)" as ExportObservable
+component "Observable Interface\n(Hash Results)" as HashObservable
+component "Observable Interface\n(Progress Emissions)" as ProgressObservable
+
+' Data structures and storage
+component "CsvExporterData" as CsvExporterData
+database "Hash Debug Files" as HashDebugFiles
+note right of HashDebugFiles: hash-result-debug\nhash-error-debug
+
+' Core data flows and dependencies
+SettingsSanitizer --> UserSettings : reads persisted settings
+SettingsSanitizer --> ElectronRuntime : accesses app services
+
+ExportController --> TranslationModule : requires language value
+ExportController --> WorkerUtils : invokes async execution
+ExportController --> ExportObservable : emits results
+ExportController --> ProgressObservable : emits progress
+
+ExportController --> TreeCSVWorker : coordinates export\nwith language parameter
+ExportController --> RESIPWorker : coordinates export\nwith language parameter
+ExportController --> CSVWorker : coordinates export\nwith language parameter
+ExportController --> ExcelWorker : coordinates export\nwith language parameter
+
+ExportController --> CsvExporterData : provides structured data
+CsvExporterData --> ExcelWorker : required input format
+
+TreeCSVWorker --> ProgressObservable : emits progress during processing
+RESIPWorker --> ProgressObservable : emits progress during processing
+RESIPWorker --> ExportController : returns messages for filtering
+
+HashComputationController --> DebugWriter : writes debug outputs
+HashComputationController --> BatchUtils : uses batch processing
+HashComputationController --> HashObservable : emits results
+HashComputationController --> HashProcessor : manages batch computation\naggregates hash maps
+HashProcessor --> HashComputationController : returns aggregated results
+
+' Language parameter dependencies
+TreeCSVWorker --> TranslationModule : requires language context
+RESIPWorker --> TranslationModule : requires language context
+CSVWorker --> TranslationModule : requires language context
+ExcelWorker --> TranslationModule : requires language context
+
+' Hash computation data flows
+HashProcessor --> ElectronRuntime : accesses app services\n(paths + basePath)
+DebugWriter --> ElectronRuntime : accesses user data dir\n(app.getPath("userData"))
+DebugWriter --> HashDebugFiles : writes debug files
+
+' External runtime dependencies
+TreeCSVWorker --> ElectronRuntime : accesses app services
+RESIPWorker --> ElectronRuntime : accesses app services
+CSVWorker --> ElectronRuntime : accesses app services
+ExcelWorker --> ElectronRuntime : accesses app services
+
+@enduml

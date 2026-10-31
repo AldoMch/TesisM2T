@@ -1,0 +1,140 @@
+@startuml
+
+package "Presentation Layer" {
+  node "User Browser (Chrome/Edge/Firefox)" as browser {
+    component "Web UI (Vue 3.3)" as webui
+    interface "HTTPS" as https_if
+  }
+}
+
+package "Application Layer (Django 4.2)" {
+  node "Backend (Django 4.2)" as backend {
+    component "API Gateway / BFF" as api
+    component "Account & Auth Service" as acct
+    component "Scholar Certification Service" as cert
+    component "Profile Service" as profile
+    component "Search & Retrieval Service" as search
+    component "Conversation Context Service" as conv
+    component "Recommendation Orchestrator" as reco
+    component "Achievement Management Service" as ach
+    component "Institution Management Service" as inst
+    component "Claim & Dispute Workflow Service" as claim
+    component "Communication Service\n(Comments/Q&A/PM/Follow/Annotations)" as comm
+    component "Admin & Moderation Service" as admin
+  }
+}
+
+package "Support Services Layer" {
+  component "Authorization & Policy Engine" as authz
+  component "Semantic Processing Service" as nlp
+  component "Cross-language Mapping / Translation Service" as xlang
+  component "Profiling & Recommendation Service" as prof
+  component "Normalization & Deduplication Service" as norm
+  component "Indexing Service" as indexer
+  component "Analysis Service\n(Hotspots & Influence)" as analysis
+  component "Misconduct Detection Service\n(Plagiarism/Blacklist)" as misconduct
+  component "Message Broker / Event Bus" as broker
+}
+
+package "Infrastructure Layer" {
+  package "Acquisition & Scheduling" {
+    component "Scheduler" as scheduler
+    component "Crawler Engine" as crawler
+    component "External API Connectors" as connectors
+  }
+  package "Persistence & Storage" {
+    database "MySQL 8.0 Cluster" as mysql
+    database "Search Index Store" as searchidx
+    cloud "Object Storage\n(Unstructured Content)" as objstore
+    cloud "Backup Storage" as backupstore
+    component "Backup Service" as backupsvc
+  }
+  package "Security & Keys" {
+    component "Key Management / Encryption Config" as kms
+  }
+}
+
+package "External Systems" {
+  cloud "Public Academic Databases\n(APIs & Sites)" as extdb
+}
+
+webui --> https_if
+https_if --> api
+
+api --> acct
+api --> cert
+api --> profile
+api --> search
+api --> conv
+api --> reco
+api --> ach
+api --> inst
+api --> claim
+api --> comm
+api --> admin
+
+acct --> authz
+admin --> authz
+ach --> authz
+inst --> authz
+claim --> authz
+comm --> authz
+search --> authz
+reco --> authz
+
+search --> nlp
+search --> xlang
+search --> conv
+conv --> mysql
+
+search --> indexer
+indexer --> searchidx
+search --> searchidx
+
+reco --> prof
+prof --> mysql
+
+cert --> mysql
+profile --> mysql
+ach --> mysql
+inst --> mysql
+claim --> mysql
+comm --> mysql
+admin --> mysql
+
+ach --> objstore
+comm --> objstore
+
+scheduler --> crawler
+scheduler --> connectors
+connectors --> extdb
+crawler --> extdb
+
+connectors --> norm
+crawler --> norm
+norm --> mysql
+norm --> indexer
+norm --> objstore
+norm --> broker
+
+analysis --> mysql
+analysis --> objstore
+analysis --> authz
+
+misconduct --> mysql
+misconduct --> objstore
+admin --> misconduct
+
+comm --> broker
+claim --> broker
+admin --> broker
+
+backupsvc --> mysql
+backupsvc --> objstore
+backupsvc --> backupstore
+
+mysql --> kms
+objstore --> kms
+backupsvc --> kms
+
+@enduml

@@ -1,0 +1,117 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangleBackgroundColor #FEFEFE
+skinparam rectangleBorderColor #333333
+skinparam arrowColor #555555
+skinparam packageBackgroundColor #F5F5F5
+skinparam packageBorderColor #AAAAAA
+skinparam nodeBackgroundColor #EEF4FB
+skinparam nodeBorderColor #4A7FA5
+skinparam databaseBackgroundColor #FFF8E1
+skinparam databaseBorderColor #B8860B
+skinparam actorBackgroundColor #E8F5E9
+skinparam actorBorderColor #2E7D32
+skinparam cloudBackgroundColor #F3E5F5
+skinparam cloudBorderColor #7B1FA2
+
+title Core Flight System (cFS) Bundle — System Architecture
+
+actor "Developer /\nBuild User" as devUser
+actor "Functional\nTester" as tester
+actor "Telemetry /\nGround-Test\nOperator" as operator
+actor "CI Maintainer /\nWorkflow Operator" as ciMaintainer
+
+package "Build Environment" {
+    component "Makefile.sample\n/ sample_defs" as sampleAssets
+    component "make prep\n/ make install" as buildTool
+    component "Build Artifacts\n(debug | release)" as buildArtifacts
+}
+
+package "cFS Target (core-cpu1)" {
+    component "cFE\n(Core Flight Executive)" as cfe
+    component "OSAL\n(OS Abstraction Layer)" as osal
+    component "PSP\n(Platform Support Package)" as psp
+    component "Framework\nApplications" as fwApps
+    component "core-cpu1\nExecutable" as coreCpu1
+}
+
+package "Host-Side Tooling" {
+    component "cmdUtil" as cmdUtil
+    note right of cmdUtil
+        Flags: --pktid, --cmdcode,
+        --endian, --uint32, ...
+    end note
+}
+
+package "Related Interfaces & Libraries" {
+    component "cFS_IO_LIB" as ioLib
+    component "cFS_LIB" as cfsLib
+    component "SIL" as sil
+    component "ECI" as eci
+    component "CCDD" as ccdd
+    component "Perfutils-java" as perfUtils
+    component "gen_sch_tbl" as genSchTbl
+}
+
+cloud "GitHub Actions CI" {
+    package "Reusable Workflows (workflow_call)" {
+        component "Format Check\nWorkflow" as fmtCheck
+        component "Static Analysis\nWorkflow" as staticAnalysis
+        component "CodeQL\nWorkflow" as codeql
+        component "cFS / Submodule\nReuse Workflows" as reuseWorkflows
+    }
+    package "Primary CI Workflows" {
+        component "Build & Install\nCI Job\n(ubuntu-18.04)" as buildCI
+        component "Functional Test\nCI Job\n(ubuntu-18.04,\ntimeout: 15 min)" as ftCI
+        component "Changelog Generation\nWorkflow\n(ubuntu-latest)" as changelogCI
+        component "Duplicate Check\nJob\n(ubuntu-latest)" as dupCheck
+    }
+    database "Changelog Artifact\n(Closed Issues, Breaking Changes,\nEnhancements, Bugs,\nDeprecated, Removed,\nSecurity Fixes)" as changelogArtifact
+}
+
+devUser --> sampleAssets : copies Makefile.sample\n& sample_defs
+sampleAssets --> buildTool : provides\nbuild assets
+buildTool --> buildArtifacts : produces
+buildArtifacts --> coreCpu1 : deploys
+
+cfe --> osal : uses
+cfe --> psp : uses
+cfe --> fwApps : hosts
+osal --> coreCpu1
+psp --> coreCpu1
+cfe --> coreCpu1
+fwApps --> coreCpu1
+
+tester --> coreCpu1 : starts for\nfunctional testing
+tester --> cmdUtil : invokes
+
+cmdUtil --> coreCpu1 : sends commands\n(TCP/IP)
+
+operator --> coreCpu1 : enters IP address\n(incl. 127.0.0.1)\nfor telemetry
+coreCpu1 --> operator : telemetry data\n(command counters,\nobservable output)
+
+coreCpu1 ..> ioLib : references
+coreCpu1 ..> cfsLib : references
+coreCpu1 ..> sil : references
+coreCpu1 ..> eci : references
+ccdd ..> coreCpu1 : generates tables
+perfUtils ..> coreCpu1 : performance analysis
+genSchTbl ..> coreCpu1 : generates schedule tables
+
+ciMaintainer --> changelogCI : manually triggers
+ciMaintainer --> fmtCheck : monitors
+
+buildCI --> buildTool : invokes make prep\n& make install\n(debug / release)
+buildCI --> ftCI : triggers after build
+ftCI --> coreCpu1 : runs functional tests
+ftCI --> cmdUtil : uses for test commands
+changelogCI --> changelogArtifact : uploads
+
+fmtCheck <.. reuseWorkflows : workflow_call
+staticAnalysis <.. reuseWorkflows : workflow_call
+codeql <.. reuseWorkflows : workflow_call
+
+buildCI ..> reuseWorkflows : composes via\nworkflow_call
+fmtCheck --> buildCI : on push /\npull_request /\nworkflow_call
+
+@enduml

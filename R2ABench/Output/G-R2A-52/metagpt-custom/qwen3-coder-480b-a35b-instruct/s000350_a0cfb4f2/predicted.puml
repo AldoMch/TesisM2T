@@ -1,0 +1,59 @@
+@startuml
+' Squatm3gator Deployment/Component Diagram
+
+' Presentation Layer
+package "Presentation Layer" {
+    component "Web UI" as webUI
+    component "HTTP API Handler" as apiHandler
+    component "WebSocket Manager" as wsManager
+    component "Error Handler" as errorHandler
+    component "Query String Parser" as queryParser
+}
+
+' Service Layer
+package "Service Layer" {
+    component "Session Manager" as sessionManager
+    component "Attack Option Parser" as attackOptionParser
+    component "Job Publisher" as jobPublisher
+}
+
+' Background Processing Layer
+package "Background Processing Layer" {
+    component "Background Consumer" as bgConsumer
+}
+
+' Integration Layer
+package "Integration Layer" {
+    component "Redis Client" as redisClient
+    component "GoDaddy Integration" as godaddyInteg
+    component "squatm3 Engine Wrapper" as squatm3Wrapper
+}
+
+' External Systems
+cloud "External Systems" {
+    database "Redis" as redis
+    node "GoDaddy API" as godaddyAPI
+    node "squatm3 Engine" as squatm3Engine
+}
+
+' Connections
+webUI --> apiHandler : sends requests
+apiHandler --> queryParser : parses query strings
+apiHandler --> errorHandler : handles errors
+apiHandler --> sessionManager : manages sessions
+apiHandler --> attackOptionParser : translates attack codes
+apiHandler --> jobPublisher : publishes jobs
+attackOptionParser --> jobPublisher : provides parsed options
+sessionManager --> jobPublisher : associates session with job
+jobPublisher --> redisClient : stores job data
+bgConsumer --> redisClient : listens & reports
+bgConsumer --> squatm3Wrapper : invokes
+wsManager --> redisClient : receives updates
+wsManager --> sessionManager : manages client sessions
+sessionManager <--> redisClient : stores/retrieves sessions
+godaddyInteg --> godaddyAPI : checks availability (optional)
+squatm3Wrapper --> squatm3Engine : executes
+redisClient --> redis : communicates
+bgConsumer <--> sessionManager : correlate job results
+
+@enduml

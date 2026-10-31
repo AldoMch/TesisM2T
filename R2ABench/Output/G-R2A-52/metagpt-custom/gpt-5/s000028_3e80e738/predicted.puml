@@ -1,0 +1,122 @@
+@startuml
+
+package "Installation Interface Layer" {
+  component "Installation Scripts/Inputs" as Install
+  cloud "AWS CLI & Operator Environment" as AWSCLI
+}
+
+package "CloudFormation Provisioning Layer" {
+  component "CloudFormation Templates" as CFN
+}
+
+package "Cognito Account Layer" {
+  component "Cognito User Pool" as CognitoUserPool
+  component "Cognito User-Pool Client" as CognitoUserPoolClient
+  component "Cognito Identity Pool" as CognitoIdentityPool
+}
+
+package "Security Layer" {
+  component "Authenticated IAM Role" as AuthRole
+  component "Unauthenticated IAM Role" as UnauthRole
+  component "Identity-Pool Role Attachment" as RoleAttachment
+}
+
+package "API Gateway Account Layer" {
+  component "API Gateway (REST API)" as APIGW
+  component "API Gateway Cognito Authorizer" as APIGWAuth
+  component "WhoAmI Method" as WhoAmI
+  component "ECS Proxy Method" as ECSProxy
+  component "API Deployment/Stage" as APIDeploy
+  component "CallbackURL Output" as CallbackOut
+}
+
+package "Integration Layer" {
+  component "API Gateway VPC Link" as VpcLink
+  cloud "Network Load Balancer (ECS Backend)" as NLB
+}
+
+package "Network Access Layer" {
+  node "Existing VPC" as VPC {
+    component "Existing Subnets" as Subnets
+  }
+  component "SQS VPC Interface Endpoint" as SQSEndpoint
+  component "Endpoint Security Group" as EndpointSG
+  cloud "Amazon SQS" as SQS
+}
+
+package "External Systems (Surrounding/Out of Scope)" {
+  cloud "DNS Delegation & Certificate Services" as DNSCert
+  cloud "SPID Hub" as SPIDHub
+  cloud "Data-Vault Stacks" as DataVault
+  cloud "AWS IAM (Service)" as AWSIAM
+  cloud "Amazon API Gateway (Service)" as AWSAPIG
+  cloud "AWS Cognito (Service)" as AWSCognito
+  cloud "AWS VPC (Service)" as AWSVPC
+}
+
+/' Provisioning and installation flows '/
+Install --> AWSCLI : uses
+Install --> CFN : parameterizes
+CFN --> CognitoUserPool
+CFN --> CognitoUserPoolClient
+CFN --> CognitoIdentityPool
+CFN --> AuthRole
+CFN --> UnauthRole
+CFN --> RoleAttachment
+CFN --> APIGW
+CFN --> APIGWAuth
+CFN --> WhoAmI
+CFN --> ECSProxy
+CFN --> APIDeploy
+CFN --> CallbackOut
+CFN --> VpcLink
+CFN --> SQSEndpoint
+CFN --> EndpointSG
+
+/' Cognito dependencies '/
+CognitoIdentityPool --> CognitoUserPool : binds provider (UserPoolId/ProviderName)
+CognitoIdentityPool --> CognitoUserPoolClient : uses ClientId
+
+/' Security mappings '/
+UnauthRole --> CognitoIdentityPool : trust (unauthenticated)
+RoleAttachment --> CognitoIdentityPool : attaches roles
+RoleAttachment --> AuthRole : maps authenticated
+RoleAttachment --> UnauthRole : maps unauthenticated
+
+/' API Gateway dependencies '/
+APIGWAuth --> CognitoUserPool : uses User Pool ARN
+APIGWAuth --> APIGW : authorizer on API
+WhoAmI --> APIGWAuth : authorizes
+ECSProxy --> APIGWAuth : authorizes (role claim)
+ECSProxy --> VpcLink : integrates
+ECSProxy --> VpcLink : forwards x-pagopa-pn-cx-role
+APIDeploy --> WhoAmI : depends
+APIDeploy --> ECSProxy : depends
+CallbackOut --> APIDeploy : built from stage
+WhoAmI --> APIGW
+ECSProxy --> APIGW
+APIDeploy --> APIGW
+
+/' Integration '/
+VpcLink --> NLB : targets NLB ARN
+
+/' Network access and endpoint '/
+SQSEndpoint --> EndpointSG : applies SG
+SQSEndpoint --> VPC : requires VPC
+SQSEndpoint --> Subnets : requires subnets
+SQSEndpoint --> SQS : private interface
+EndpointSG --> VPC : restricted by VPC CIDR
+
+/' External service context (non-functional links for context) '/
+AuthRole --> AWSIAM
+UnauthRole --> AWSIAM
+APIGW --> AWSAPIG
+CognitoUserPool --> AWSCognito
+CognitoIdentityPool --> AWSCognito
+VPC --> AWSVPC
+
+note right of WhoAmI
+  maps custom:Role -> x-pagopa-pn-cx-role (optional)
+end note
+
+@enduml

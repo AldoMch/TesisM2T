@@ -1,0 +1,39 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam rectangle {
+    BorderColor #777777
+    BorderThickness 1
+}
+skinparam package {
+    BorderColor #D45D5D
+    BorderThickness 1
+}
+
+rectangle "process-prediction-\nservice" as PredictionProcess #BDCCD9
+rectangle "oracle-service" as OracleService #FFF1C9
+
+package "aeternity blockchain" as Blockchain #F8CCCC {
+    rectangle "PredictionCards\nSmart Contract" as PredictionContract #D8EFD5
+}
+
+rectangle "User" as User #FFFFFF
+rectangle "Frontend" as Frontend #FFFFFF
+rectangle "IPFS" as IPFS #D8E8FA
+
+User --> Frontend
+
+PredictionProcess --> PredictionContract : poll for predictions with state "CLOSED"\ncall function "ask_for_winning_option"\ncall function "process_oracle_response" if oracle has responded
+
+OracleService --> PredictionContract : poll for oracle queries\nget price from coingecko API\ndetermine outcome\nrespond to query with outcome (higher/lower)
+
+Frontend --> PredictionContract : create prediction\ndeposit / rent NFT\nwithdraw / claim rewards
+PredictionContract --> Frontend : get data\nvia dry-runs
+
+Frontend --> IPFS : load GIFs of NFTs
+@enduml

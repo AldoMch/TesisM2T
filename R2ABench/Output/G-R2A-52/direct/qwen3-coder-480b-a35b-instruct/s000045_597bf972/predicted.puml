@@ -1,0 +1,88 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Android Application" as App {
+    + Integrates QAPM SDK
+    + Uses background execution
+}
+
+RECTANGLE "QAPM SDK" as SDK {
+    + Background handler support
+    + Work scheduling
+    + Upload processing
+    + Apache HttpClient instrumentation
+}
+
+RECTANGLE "Background Handler Thread" as HandlerThread {
+    + HandlerThread looper
+    + Work handler
+    + Main-thread handler
+}
+
+RECTANGLE "Upload Processing" as UploadProc {
+    + Network connectivity check
+    + Upload file enumeration
+    + Parameter derivation (bParam, cParam)
+    + Sender invocation
+    + Success/failure handling
+}
+
+RECTANGLE "Apache HttpClient Wrapper" as HttpWrapper {
+    + ResponseHandler instrumentation
+    + HttpEntity wrapping
+    + Transaction state management
+}
+
+RECTANGLE "Data Sender" as Sender {
+    + Receives bParam/cParam pairs
+    + Reports success/failure
+}
+
+RECTANGLE "Storage" as Storage {
+    + Upload directory
+    + Upload files
+    + Pending data queue
+}
+
+RECTANGLE "Android Platform" as Android {
+    + Handler
+    + Looper
+    + Context
+    + Network connectivity
+}
+
+App --> SDK : integrates
+SDK --> HandlerThread : initializes
+SDK --> UploadProc : processes uploads
+SDK --> HttpWrapper : instruments
+UploadProc --> Storage : reads/writes
+UploadProc --> Sender : submits data
+UploadProc --> Android : queries context/network
+HttpWrapper --> Android : uses HttpClient APIs
+Sender --> UploadProc : reports status
+HandlerThread --> Android : uses platform APIs
+
+note right of SDK
+    Scoped functionality:
+    - Background work dispatch
+    - Upload scheduling
+    - File processing
+    - HTTP instrumentation
+end note
+
+note right of UploadProc
+    Key behaviors:
+    - Network-gated processing
+    - File enumeration
+    - Parameter derivation
+    - Success/failure callbacks
+end note
+
+note right of HttpWrapper
+    Instrumentation features:
+    - ResponseHandler wrapping
+    - HttpEntity content counting
+    - Transaction state tracking
+end note
+
+@enduml

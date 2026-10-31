@@ -1,0 +1,56 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #444444
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #444444
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #444444
+    BorderThickness 1
+}
+
+package "Web2 application stack" as Web2Stack {
+    rectangle "Applications" as Web2Applications
+    rectangle "Platform" as Web2Platform
+    rectangle "Processing\nBusiness Logic" as Web2Processing
+    rectangle "File System\nLarge Files and Media" as Web2FileSystem
+    database "BlockChain Database\nTransactions, Contracts,\nCertificates and Receipts" as Web2BlockchainDatabase
+    rectangle "IceFireDB" as Web2IceFireDB
+}
+
+package "Web3 application stack" as Web3Stack {
+    rectangle "Applications" as Web3Applications
+    rectangle "Platform" as Web3Platform
+    rectangle "Decentralized Processing\nBusiness Logic" as Web3Processing
+    rectangle "Decentralized File System\nLarge Files and Media" as Web3FileSystem
+    database "BlockChain Database\nTransactions, Contracts,\nCertificates and Receipts" as Web3BlockchainDatabase
+    rectangle "IceFireDB" as Web3IceFireDB
+}
+
+Web2Applications --> Web2Platform
+Web2Platform --> Web2Processing
+Web2Processing --> Web2FileSystem
+Web2Processing --> Web2BlockchainDatabase
+Web2BlockchainDatabase --> Web2IceFireDB
+
+Web3Applications --> Web3Platform
+Web3Platform --> Web3Processing
+Web3Processing --> Web3FileSystem
+Web3Processing --> Web3BlockchainDatabase
+Web3BlockchainDatabase --> Web3IceFireDB
+
+Web2IceFireDB ..> Web3IceFireDB : decentralized database support
+@enduml

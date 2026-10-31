@@ -1,0 +1,139 @@
+@startuml PromptHub_Architecture
+title PromptHub - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+' ===================== Client Layer =====================
+package "Client Layer" {
+  [Web Browser\n(Chrome / Firefox / Safari)] as Browser
+}
+
+' ===================== Front-End Layer =====================
+package "Front-End Layer (HTML/CSS/JS, Vue, JQuery)" {
+  [Home & Artwork List UI] as UI_Home
+  [Artwork Detail & Comments UI] as UI_Detail
+  [Account & Registration UI] as UI_Account
+  [Upload / Edit Artwork UI] as UI_Upload
+  [Favorite Management UI] as UI_Fav
+  [Notification UI] as UI_Notif
+  [Administrator Console UI] as UI_Admin
+}
+
+' ===================== Back-End Layer =====================
+package "Back-End Layer (Python / Django)" {
+  [Web/API Gateway\n(Secure HTTP, Auth, CORS, XSS/SQLi Guard)] as Gateway
+  [Account & Authentication Service] as SVC_Account
+  [Artwork & Upload Service] as SVC_Artwork
+  [Review / Moderation Service] as SVC_Review
+  [Search, Categorization & Sorting Service] as SVC_Search
+  [Comment & Reply Service] as SVC_Comment
+  [Favorite Service] as SVC_Fav
+  [User Relationship Service\n(Follow / Fans / History)] as SVC_Relation
+  [Notification Service] as SVC_Notif
+  [Administration & Governance Service] as SVC_Admin
+}
+
+' ===================== Algorithm Support Layer =====================
+package "Algorithm Support Layer (Python / PyTorch / TensorFlow)" {
+  [Recommendation Engine] as REC_Engine
+  [Popular Recommendation] as REC_Popular
+  [Personalized Recommendation] as REC_Personal
+}
+
+' ===================== Data Layer =====================
+package "Data Layer" {
+  database "SQLite Database\n(User, Artwork, Comment, Favorite,\nFollow, History, Review, Notification)" as DB
+  database "Log Store" as LOG
+  database "Encrypted Sensitive Data Store" as SENS
+}
+
+' ===================== External Systems =====================
+package "External Systems" {
+  [Email / Verification Code Service] as EXT_Email
+  [Offsite Disaster Recovery Backup] as EXT_Backup
+  [Monitoring & Alerting Service] as EXT_Monitor
+}
+
+' ===================== Infrastructure =====================
+package "Infrastructure (Ubuntu 22.0.4 / Docker 20.10.17)" {
+  [Docker Runtime / Containers] as INFRA_Docker
+  [Server Firewall] as INFRA_Firewall
+}
+
+' ---------------- Client to Front-end ----------------
+Browser --> UI_Home
+Browser --> UI_Detail
+Browser --> UI_Account
+Browser --> UI_Upload
+Browser --> UI_Fav
+Browser --> UI_Notif
+Browser --> UI_Admin
+
+' ---------------- Front-end to Gateway ----------------
+UI_Home --> Gateway
+UI_Detail --> Gateway
+UI_Account --> Gateway
+UI_Upload --> Gateway
+UI_Fav --> Gateway
+UI_Notif --> Gateway
+UI_Admin --> Gateway
+
+' ---------------- Gateway to Services ----------------
+Gateway --> SVC_Account
+Gateway --> SVC_Artwork
+Gateway --> SVC_Review
+Gateway --> SVC_Search
+Gateway --> SVC_Comment
+Gateway --> SVC_Fav
+Gateway --> SVC_Relation
+Gateway --> SVC_Notif
+Gateway --> SVC_Admin
+
+' ---------------- Service dependencies ----------------
+SVC_Artwork --> SVC_Review
+SVC_Review --> SVC_Notif
+SVC_Comment --> SVC_Notif
+SVC_Admin --> SVC_Review
+SVC_Admin --> SVC_Comment
+
+' ---------------- Services to Algorithm Support ----------------
+SVC_Search --> REC_Engine
+SVC_Relation --> REC_Personal
+SVC_Fav --> REC_Personal
+REC_Engine --> REC_Popular
+REC_Engine --> REC_Personal
+
+' ---------------- Data persistence ----------------
+SVC_Account --> DB
+SVC_Artwork --> DB
+SVC_Review --> DB
+SVC_Search --> DB
+SVC_Comment --> DB
+SVC_Fav --> DB
+SVC_Relation --> DB
+SVC_Notif --> DB
+SVC_Admin --> DB
+REC_Engine --> DB
+
+SVC_Account --> SENS
+SVC_Comment --> LOG
+SVC_Review --> LOG
+SVC_Admin --> LOG
+LOG --> EXT_Backup
+DB --> EXT_Backup
+
+' ---------------- External integrations ----------------
+SVC_Account --> EXT_Email
+SVC_Notif --> EXT_Email
+EXT_Monitor --> EXT_Email
+
+' ---------------- Infrastructure hosting ----------------
+INFRA_Docker ..> Gateway
+INFRA_Docker ..> REC_Engine
+INFRA_Docker ..> DB
+INFRA_Firewall ..> Gateway
+
+@enduml

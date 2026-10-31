@@ -1,0 +1,56 @@
+@startuml
+!define RECTANGLE class
+!define DATABASE rectangle
+
+title Activiti 7 Platform Architecture
+
+skinparam componentStyle rectangle
+
+package "Activiti 7 Platform" {
+  [Keycloak] as keycloak
+  [Spring Boot Application] as springboot
+  [Activiti Runtime Bundle] as runtimebundle
+  [Audit Service] as audit
+  [Query Service] as query
+  [NGINX Ingress Controller] as ingress
+}
+
+package "External Systems" {
+  [Authenticated User] as user
+  [Cluster Operator] as operator
+}
+
+user --> keycloak : Obtain Authentication Token
+user --> springboot : Access Endpoints (Token)
+springboot --> runtimebundle : Deploy & Start Processes
+runtimebundle --> audit : Generate Audit Events
+runtimebundle --> query : Provide Process State
+ingress --> springboot : Route External Requests
+operator --> ingress : Configure Ingress/Public IP
+
+note right of keycloak
+  Handles authentication and 
+  token issuance for users
+end note
+
+note right of runtimebundle
+  Hosts process definitions
+  and executes process instances
+end note
+
+note right of audit
+  Records audit events for
+  process instance activities
+end note
+
+note right of query
+  Exposes process execution
+  information for querying
+end note
+
+note right of ingress
+  Routes external traffic to
+  internal services via public IP
+end note
+
+@enduml

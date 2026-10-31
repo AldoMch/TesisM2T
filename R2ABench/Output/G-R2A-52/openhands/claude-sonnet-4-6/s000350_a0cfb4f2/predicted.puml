@@ -1,0 +1,92 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam rectangle {
+  BorderColor #555555
+}
+skinparam database {
+  BorderColor #555555
+}
+skinparam cloud {
+  BorderColor #555555
+}
+skinparam node {
+  BorderColor #555555
+}
+skinparam collections {
+  BorderColor #555555
+}
+
+title Squatm3gator System Architecture
+
+actor "Web User /\nClient Application" as Client
+
+package "Squatm3gator API Process" {
+
+  package "HTTP Layer" {
+    component "HTTP API\nRequest Handler" as HTTPHandler
+    component "Session Manager" as SessionMgr
+    component "Attack Option Parser\n(Hf, Hc, -add, F, R\ngodaddy, output flags)" as OptionParser
+    component "Error Handler\n(HTTP 400 / 404 / 500\nQuery Parse Failure)" as ErrorHandler
+    component "WebSocket /\nSocket.IO Server" as WSServer
+  }
+
+  package "Job Dispatch Layer" {
+    component "Redis Job Producer\n(Publishes job to Job Channel)\nJob ID = Session Key" as JobProducer
+  }
+
+  package "Background Consumer Thread" {
+    component "Redis Job Consumer\n(Subscribes to Job Channel)" as JobConsumer
+    component "Result Correlator\n(Matches WORKER_ID#JOB_UUID#MESSAGE\nwith Session Key)" as ResultCorrelator
+  }
+
+}
+
+database "Redis" {
+  collections "Job Channel" as JobChannel
+  collections "Reporting Channel\n(WORKER_ID#JOB_UUID#MESSAGE)" as ReportChannel
+}
+
+component "squatm3 CLI Engine\n(Subprocess)" as Squatm3Engine
+
+cloud "GoDaddy API\n(Optional External Service)" as GoDaddyAPI
+
+Client -right-> HTTPHandler : "HTTP GET /\nHTTP GET /homoglyph-complete?domain=\nHTTP POST attack request"
+Client <-right-> WSServer : "WebSocket / Socket.IO\nasync progress & results"
+
+HTTPHandler --> SessionMgr : "Create / Validate\nSession"
+HTTPHandler --> OptionParser : "Parse attack codes\nand optional flags"
+HTTPHandler --> ErrorHandler : "HTTP error conditions\nQuery parse exceptions"
+OptionParser --> JobProducer : "Constructed options string\nSession Key as Job ID"
+JobProducer -down-> JobChannel : "Publish\ndomain-generation job"
+
+JobConsumer -up-> JobChannel : "Subscribe &\nreceive jobs"
+JobConsumer -down-> Squatm3Engine : "Invoke subprocess\nwith CLI options\n(e.g. -Hf, --add,\n--output=json)"
+Squatm3Engine -right-> ReportChannel : "Publish worker\nresults / progress"
+ResultCorrelator -up-> ReportChannel : "Read & parse\nreport messages"
+ResultCorrelator --> WSServer : "Emit to matching\nclient session"
+
+HTTPHandler ..> GoDaddyAPI : "Authorization: sso-key <key>:<secret>\n(when godaddy == 1)"
+
+note bottom of Squatm3Engine
+  Third-party wrapped CLI engine
+  Generates typosquatting /
+  lookalike domain candidates
+  (substitution, flipping,
+  homoglyph fast/complete)
+end note
+
+note right of SessionMgr
+  Session Key doubles as
+  Job ID for result correlation
+  (DR-001, NFR-002)
+end note
+
+note right of GoDaddyAPI
+  Optional integration
+  Configured via key, secret,
+  base URL, endpoint definitions
+  (DR-005, C-002)
+end note
+
+@enduml

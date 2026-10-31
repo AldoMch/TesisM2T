@@ -1,0 +1,123 @@
+@startuml
+title TraceLeft Architecture (Refined)
+
+node "User Space" as UserSpace {
+    package "CLI/Interface Layer" {
+        component "CLI Entry Point" as CLIEntry
+        component "Trace Command" as TraceCmd
+        component "Event Registration Structure\n[ProgramID, Pids, ELFPath]" as EventReg
+    }
+
+    package "Tracing Coordination/Library Layer" {
+        component "TraceLeft Library" as TraceLeftLib
+    }
+
+    package "Probe and Handler Management Layer" {
+        component "Probe Loader / Probe Subsystem" as ProbeLoader
+    }
+
+    package "Userspace Event Delivery/Dispatch Layer" {
+        component "Userspace Tracer" as UserTracer
+    }
+
+    package "Implementation Dependencies" {
+        component "gobpf\n(implementation dependency)" as gobpf
+    }
+}
+
+node "Linux Kernel v4.11+" as KernelSpace {
+    package "kprobe/kretprobe Hooks/Facilities" {
+        component "kprobe Hook/Facility" as kprobeHook
+        component "kretprobe Hook/Facility" as kretprobeHook
+    }
+
+    package "Kernel-Space eBPF Layer" {
+        component "Main eBPF Program" as MainBPF
+        component "Default Handler eBPF Programs" as DefaultHandlerBPF
+        component "Process-Specific Handler eBPF Programs" as ProcHandlerBPF
+        component "No-op/Missing Handler Path\n(performs no handler action, returns 0)" as NoOpPath
+        component "Handler Naming Scheme\nhandle_NAME_progs, handle_NAME_progs_ret,\nkprobe/handle_NAME, kretprobe/handle_NAME" as HandlerNaming
+    }
+
+    package "eBPF Maps (Kernel/Shared)" {
+        database "Handler Maps and Return-Program Maps" as HandlerMaps
+    }
+
+    package "Event Capture Categories (FR-004)" {
+        component "Syscall Event Capture" as SyscallEvents
+        component "File Event Capture" as FileEvents
+        component "Network Event Capture" as NetworkEvents
+    }
+}
+
+node "Kernel/User Boundary" as KUBoundary {
+    package "Kernel-to-User Event Delivery" {
+        component "Perf-Based Event Channel\n(kernel-to-user delivery)" as PerfChannel
+    }
+
+    package "Shared Event ABI" {
+        component "Common Event Header/Section\n(event payload prefix)" as CommonHeader
+    }
+}
+
+node "Build-Time/Generation" as BuildTime {
+    package "Configuration-Driven Generation Layer" {
+        component "Generator Subsystem" as Generator
+        component "Event Configuration Metadata\n(position, type, name, suffix, hash_func)" as EventConfigMeta
+        component "Proto/JSON Event Configuration Source" as ConfigSource
+    }
+}
+
+cloud "External Systems" {
+    component "Traced Linux Processes" as TracedProc
+}
+
+CLIEntry --> TraceCmd : dispatches to
+TraceCmd --> EventReg : parses inputs into
+TraceCmd --> TraceLeftLib : initiates tracing
+TraceLeftLib --> EventReg : reads ProgramID/Pids/ELFPath for registration
+EventReg --> TraceLeftLib : provides handler registration data
+TraceLeftLib --> ProbeLoader : installs probes and registers handlers
+TraceLeftLib --> gobpf : depends on
+
+ProbeLoader --> EventReg : reads ProgramID/Pids/ELFPath
+ProbeLoader --> ProcHandlerBPF : loads process-specific handler probes
+ProbeLoader --> DefaultHandlerBPF : loads default handler probes
+ProbeLoader --> HandlerMaps : updates handler registrations via bpf syscall (cross-boundary)
+
+MainBPF --> HandlerMaps : selects handlers by process context
+MainBPF --> ProcHandlerBPF : invokes process-specific handler
+MainBPF --> DefaultHandlerBPF : invokes default handler
+MainBPF --> NoOpPath : if no configured handler
+NoOpPath --> MainBPF : returns 0
+
+TracedProc --> kprobeHook : triggers
+TracedProc --> kretprobeHook : triggers/returns
+MainBPF --> kprobeHook : attaches to
+MainBPF --> kretprobeHook : attaches to
+
+HandlerNaming --> ProcHandlerBPF : names
+HandlerNaming --> DefaultHandlerBPF : names
+HandlerNaming --> kprobeHook : kprobe/handle_NAME
+HandlerNaming --> kretprobeHook : kretprobe/handle_NAME
+
+ProcHandlerBPF --> SyscallEvents : captures
+ProcHandlerBPF --> FileEvents : captures
+ProcHandlerBPF --> NetworkEvents : captures
+DefaultHandlerBPF --> SyscallEvents : captures
+DefaultHandlerBPF --> FileEvents : captures
+DefaultHandlerBPF --> NetworkEvents : captures
+
+ProcHandlerBPF --> CommonHeader : writes common header section
+DefaultHandlerBPF --> CommonHeader : writes common header section
+ProcHandlerBPF --> PerfChannel : emits event with common header
+DefaultHandlerBPF --> PerfChannel : emits event with common header
+PerfChannel --> UserTracer : delivers events
+UserTracer --> CommonHeader : parses/dispatches using header
+
+ConfigSource --> EventConfigMeta : provides
+Generator --> EventConfigMeta : reads
+Generator ..> ProcHandlerBPF : generates source at build time
+Generator ..> DefaultHandlerBPF : generates source at build time
+
+@enduml

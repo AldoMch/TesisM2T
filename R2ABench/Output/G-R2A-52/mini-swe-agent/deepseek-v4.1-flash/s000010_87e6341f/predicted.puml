@@ -1,0 +1,97 @@
+@startuml
+title Home Recipes - Layered Architecture (Flutter + Go gRPC + gRPC-Gateway)
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+' ===================== Actors / External Systems =====================
+actor "End User" as EndUser
+actor "API Consumer / Tester\n(curl, HTTP client)" as ApiTester
+
+cloud "Azure Kubernetes Service\n(AKS Cluster)" as AKS
+node "Local Kubernetes Cluster" as K8sLocal
+node "Docker Runtime\n(local host)" as DockerRt
+
+' ===================== Client Layer =====================
+package "Client Layer" {
+  component "Home Recipes Flutter/Dart Client\n(Android, iOS, Web, macOS)" as ClientApp {
+    component "Client UI / Screens" as ClientUI
+    component "Dart Generated gRPC Client Stub" as DartStub
+  }
+}
+
+' ===================== Shared Contract Layer =====================
+package "Shared Contract Layer" {
+  component "Protocol Buffers Contract\n(.proto service + message definitions)" as ProtoContract
+  component "Code Generation Toolchain\n(protoc, protoc-gen-go, protoc-gen-dart,\nprotoc-gen-grpc-gateway)" as GenToolchain
+}
+
+' ===================== API / Edge Layer =====================
+package "API / Edge Layer" {
+  component "gRPC-Gateway Middleware" as Gateway {
+    component "HTTP Endpoints\naddRecipe, ListAllRecipes,\nListAllIngredientsAtHome,\nGetAllIngredientsForRecipe" as HttpEndpoints
+    component "HTTP-to-gRPC Translation\n(generated gateway handlers)" as GatewayHandlers
+  }
+}
+
+' ===================== Service Layer =====================
+package "Service Layer" {
+  component "Go gRPC Server" as GoServer {
+    component "Recipe Service\n(AddRecipe, ListAllRecipes)" as RecipeSvc
+    component "Ingredient Service\n(ListAllIngredientsAtHome,\nGetAllIngredientsForRecipe)" as IngredientSvc
+    component "Server-Streaming Support\n(ListAllRecipes)" as StreamingSupport
+  }
+}
+
+' ===================== Deployment Layer =====================
+package "Deployment Layer" {
+  component "Docker Image\n(server container image)" as DockerImage
+  component "Kubernetes Manifests\n(local cluster config)" as K8sManifests
+  component "AKS Manifests\n(Azure deployment config)" as AksManifests
+}
+
+' ===================== Relationships =====================
+EndUser --> ClientUI : uses
+ClientUI --> DartStub : invokes
+DartStub --> GoServer : gRPC via generated proto contract
+
+ApiTester --> HttpEndpoints : HTTP request (COM-002)
+HttpEndpoints --> GatewayHandlers : route
+GatewayHandlers --> GoServer : gRPC call (COM-003)
+GatewayHandlers --> StreamingSupport : preserves streaming response
+
+GoServer --> RecipeSvc
+GoServer --> IngredientSvc
+
+ProtoContract --> GenToolchain : consumed by
+GenToolchain ..> DartStub : generates Dart client code
+GenToolchain ..> GoServer : generates Go gRPC server code
+GenToolchain ..> GatewayHandlers : generates gateway code
+
+DockerImage --> GoServer : packages
+K8sManifests --> DockerImage : deploys
+AksManifests --> DockerImage : deploys
+DockerImage --> DockerRt : runs on
+K8sManifests --> K8sLocal : deployed to
+AksManifests --> AKS : deployed to
+
+note right of RecipeSvc
+  Recipe data exchanged via
+  add-recipe and list-recipes ops (DR-002, DR-004)
+end note
+
+note right of IngredientSvc
+  Ingredient data exchanged via
+  home-ingredient and recipe-ingredient ops (DR-003)
+end note
+
+note bottom of ProtoContract
+  Shared .proto contract drives client,
+  server, and gateway generation (NFR-002, DR-001)
+end note
+
+ClientApp -[hidden]-> Gateway
+Gateway -[hidden]-> GoServer
+
+@enduml

@@ -1,0 +1,96 @@
+@startuml
+skinparam componentStyle rectangle
+title HypnoLog Server — Architecture View
+
+' External producer
+component "Logging Producer\n(any language)" as producer <<external>>
+
+package "HypnoLog Server (Node.js/Express)" as server {
+  component "HTTP Server (Node)" as http
+  component "Express App" as express
+  component "JSON Body Parser\n(limit: 50mb)" as bodyparser
+  component "Logging Router (/logger)" as router
+  component "Endpoint: POST /logger/in" as ep_in
+  component "Endpoint: GET /logger/status" as ep_status
+  component "Static Web: /client.html & assets" as staticweb
+  component "Socket.IO Server" as sio_server
+}
+
+package "Browser Client (UI)" as browser {
+  component "Client Page & Scripts" as ui
+  component "Socket.IO Client" as sio_client
+  component "Ajv Validator" as ajv
+  component "Received-data List" as store
+  component "Window Dispatcher" as win_dispatch
+  component "Default Window" as window
+  component "Visualizer Dispatcher" as viz_dispatch
+  component "Visualizers\n(canDisplay / display)" as visualizers
+  component "Visualizer Config\n(default or user)" as viz_config
+  component "Tag & Name Display Handling" as tagname
+}
+
+package "Data Model" as data {
+  component "HypnoLog Data Object\n{ data, type, [tags], [name] }" as hdo
+  component "HypnoLog-error\n(wrapped invalid message)" as herr
+}
+
+' Hosting and mounting
+http --> express : hosts
+express --> router : mount /logger
+express --> staticweb : serve UI
+express --> sio_server : attach Socket.IO
+router --> bodyparser : parse JSON
+
+' Endpoints
+producer --> ep_in : HTTP POST JSON
+ep_in --> router : route to handler
+ep_status --> express : return HTTP 200
+
+' Forwarding to display clients
+router --> sio_server : emit "notification"\nwith parsed body
+
+' Browser loads UI and connects
+staticweb --> ui : GET /client.html
+ui --> sio_client : initialize
+sio_client --> sio_server : connect (same origin)
+sio_server --> sio_client : "notification" {object}
+
+' Validation and display pipeline
+sio_client --> ajv : validate
+ajv --> hdo : schema check
+ajv --> herr : on invalid -> wrap
+ajv --> store : valid or wrapped object
+store --> win_dispatch
+win_dispatch --> window
+window --> viz_dispatch
+viz_dispatch --> visualizers : pick first canDisplay(obj)
+visualizers --> window : display(element)
+visualizers --> tagname : apply tags/name
+viz_config --> viz_dispatch : load visualizers
+hdo --> visualizers
+herr --> visualizers
+
+note right of server
+- Default port: 7000
+- Configurable via CLI arg
+- Maintain list of connected clients
+- No persistence/auth/retention specified
+end note
+
+note bottom of sio_server
+Delivers Socket.IO "notification" events to browser clients
+end note
+
+note right of ajv
+Requires fields: data, type (string)
+end note
+
+note bottom of viz_dispatch
+Tolerate visualizer load failures; continue with others
+end note
+
+note top of sio_client
+Connects to same origin as UI page
+end note
+
+@enduml

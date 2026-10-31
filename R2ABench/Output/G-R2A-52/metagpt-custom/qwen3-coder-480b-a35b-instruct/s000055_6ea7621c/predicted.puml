@@ -1,0 +1,49 @@
+@startuml
+title Nobel Prize Laureates Autocomplete System - Component/Deployment Diagram
+
+skinparam componentStyle rectangle
+
+' === Deployment Nodes ===
+node "Web Browser" {
+  [Frontend Input Handler]
+}
+
+cloud "Heroku" {
+  node "Node.js Runtime" {
+    package "Routing Layer" {
+      [HTTP Router]
+    }
+
+    package "Handler Module" {
+      [Request Handler]
+    }
+
+    [Autocomplete Algorithm]
+    [NotFound Handler]
+    [Content-Type Mapper]
+  }
+
+  package "Data Access Layer" {
+    [Laureate Data Source]
+  }
+}
+
+database "File System" {
+  [Public Assets Directory]
+  [Laureate Data Files]
+}
+
+' === Component Dependencies ===
+[Frontend Input Handler] --> [HTTP Router] : Initiates search requests
+[HTTP Router] --> [Autocomplete Algorithm] : Routes search requests
+[HTTP Router] --> [Request Handler] : Routes home requests
+[HTTP Router] --> [NotFound Handler] : Routes unmatched URLs
+[Autocomplete Algorithm] --> [Laureate Data Source] : Reads laureate data
+[Request Handler] --> [Laureate Data Source] : Gets data for home page
+[NotFound Handler] --> [Laureate Data Source] : Gets data for error page
+[Request Handler] --> [Public Assets Directory] : Serves static files
+[Request Handler] --> [Content-Type Mapper] : Determines MIME types
+[Content-Type Mapper] --> [Public Assets Directory] : Maps extensions to types
+[Laureate Data Source] --> [Laureate Data Files] : Loads JSON data
+
+@enduml

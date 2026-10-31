@@ -1,0 +1,79 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define COMPONENT component
+!define INTERFACE interface
+
+title Escape Application System Architecture
+
+skinparam componentStyle rectangle
+
+' High-level containers
+package "Web Client (Browser)" {
+    [React App] as client #lightblue
+}
+
+package "Web Server (Node.js)" {
+    [Express Server] as server #lightgreen
+}
+
+package "External Services" {
+    [AWS S3\n(Image Storage)] as s3 #lightyellow
+    [Redis\n(Cache)] as redis #lightcoral
+    [MariaDB\n(Database)] as db #lightgray
+}
+
+' Client Components
+client --> [Authentication Views\n(Sign-up/Sign-in)] : renders
+client --> [Scene Renderer\n(A-Frame + aframe-react)] : renders
+client --> [Content Fetcher] : uses
+[Authentication Views\n(Sign-up/Sign-in)] --> [Shared Credential Handlers] : delegates input
+[Shared Credential Handlers] --> [Credential Submission\n(JSON POST)] : submits
+[Credential Submission\n(JSON POST)] --> server : HTTP POST /auth
+
+' Server Components
+server --> [User Controller] : routes
+[User Controller] --> [User Model] : interacts
+[User Model] --> db : CRUD operations
+[User Controller] --> [BCrypt Password Verification] : verifies passwords
+
+' Data Flows
+server --> [Content Service] : serves content
+[Content Service] --> [Database Access Layer] : queries
+[Database Access Layer] --> db : retrieves data
+[Content Service] --> client : returns content
+
+' External Integrations
+server --> s3 : stores/retrieves images
+server --> redis : caches data
+server --> db : persists user & app data
+
+' Styling
+note right of client
+  - React
+  - React-Router
+  - jQuery
+  - A-Frame
+  - aframe-react
+end note
+
+note right of server
+  - Node.js
+  - Express-style routing
+end note
+
+note right of db
+  - MariaDB
+  - Users, Likes, Photos, Comments
+end note
+
+note right of s3
+  - AWS S3-style storage
+  - Image assets
+end note
+
+note right of redis
+  - Redis-style caching
+end note
+
+@enduml

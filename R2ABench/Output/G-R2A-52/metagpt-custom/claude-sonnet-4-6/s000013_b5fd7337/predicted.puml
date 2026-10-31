@@ -1,0 +1,93 @@
+@startuml Song_Mood_Storage_Retrieval_Architecture
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #4A5568
+skinparam packageFontStyle bold
+skinparam packageFontSize 13
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentBorderColor #2D3748
+skinparam componentFontSize 11
+skinparam nodeBackgroundColor #F0FFF4
+skinparam nodeBorderColor #276749
+skinparam nodeFontSize 12
+skinparam databaseBackgroundColor #FFFBEB
+skinparam databaseBorderColor #B7791F
+skinparam cloudBackgroundColor #EBF8FF
+skinparam cloudBorderColor #2B6CB0
+skinparam interfaceBackgroundColor #E9D8FD
+skinparam interfaceBorderColor #553C9A
+skinparam arrowColor #4A5568
+skinparam arrowFontSize 10
+
+' ─────────────────────────────────────────────
+'  USER / BROWSER ACTOR
+' ─────────────────────────────────────────────
+actor "User\n(Browser Client)" as User
+
+' ─────────────────────────────────────────────
+'  EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+component "Genius API\n(External Song Search Service)" as GeniusAPI
+
+' ─────────────────────────────────────────────
+'  CONTAINERIZED APPLICATION STACK
+' ─────────────────────────────────────────────
+node "Containerized Application Stack\n(Docker / Multi-Container Environment)" as DockerEnv {
+
+  ' ── Presentation Layer ──────────────────────
+  package "Presentation Layer" as PresentationLayer {
+    component "ReactFrontend\n(Browser-Rendered SPA)" as ReactFrontend
+  }
+
+  ' ── Application / API Layer ─────────────────
+  package "Application / API Layer" as AppLayer {
+    component "FastAPIBackend\n(Orchestration & Lookup Logic)" as FastAPIBackend
+  }
+
+  ' ── Storage Layer ────────────────────────────
+  package "Storage Layer" as StorageLayer {
+    database "ElasticsearchService\n(Song Records & Mood Associations)" as ElasticsearchService
+  }
+
+  ' ── Auxiliary Inspection Layer ───────────────
+  package "Auxiliary Inspection Layer" as AuxLayer {
+    component "KibanaService\n(Data Inspection UI for Operators)" as KibanaService
+  }
+
+}
+
+' ─────────────────────────────────────────────
+'  INTERFACES
+' ─────────────────────────────────────────────
+interface "API-001\nFrontend-to-Backend API" as API001
+interface "API-002\nBackend-to-Elasticsearch API" as API002
+interface "API-003\nBackend-to-GeniusAPI Interface" as API003
+interface "API-004\nKibana-to-Elasticsearch API" as API004
+
+' ─────────────────────────────────────────────
+'  DEPENDENCIES / ARROWS
+' ─────────────────────────────────────────────
+
+' User → Presentation
+User                --> ReactFrontend           : accesses via\nbrowser
+
+' Presentation → Application
+ReactFrontend       --> API001
+API001              --> FastAPIBackend           : Song lookup\nrequests
+
+' Application → Storage
+FastAPIBackend      --> API002
+API002              --> ElasticsearchService     : query & write\nsong-mood records
+
+' Application → External
+FastAPIBackend      --> API003
+API003              --> GeniusAPI                : fetch songs\nnot in ES
+
+' Auxiliary → Storage
+KibanaService       --> API004
+API004              --> ElasticsearchService     : inspect stored\nsong & mood data
+
+@enduml

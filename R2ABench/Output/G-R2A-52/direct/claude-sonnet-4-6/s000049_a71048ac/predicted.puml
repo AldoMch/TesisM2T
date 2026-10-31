@@ -1,0 +1,139 @@
+@startuml
+!define RECTANGLE class
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam rectangle {
+  BackgroundColor #EEF7EE
+  BorderColor #33AA33
+}
+skinparam database {
+  BackgroundColor #FFF5CC
+  BorderColor #CC9900
+}
+skinparam cloud {
+  BackgroundColor #F5EEFF
+  BorderColor #7733CC
+}
+skinparam node {
+  BackgroundColor #FFE8E8
+  BorderColor #CC3333
+}
+skinparam arrow {
+  Color #333333
+}
+
+title NLP4L System Architecture\n(attic-nlp4l)
+
+' ===== EXTERNAL SYSTEMS =====
+cloud "External ML Tools\n(Apache Spark, Mahout)" as ML_TOOLS
+database "Lucene Index\n(Document & Term Data)" as LUCENE_INDEX
+node "Schema Configuration\n(Resource / File Path)" as SCHEMA_SOURCE
+actor "Scala Interactive User" as SCALA_USER
+actor "Schema Config User" as SCHEMA_USER
+actor "ML Workflow User" as ML_USER
+actor "Lucene Ecosystem User" as LUCENE_USER
+
+' ===== NLP4L SYSTEM BOUNDARY =====
+rectangle "NLP4L System (Scala / Apache Lucene 5.2.0)" {
+
+  ' ===== CORE NLP PROCESSING =====
+  rectangle "Core NLP Processing Layer" {
+    component "Document Processor\n[FR-001]" as DOC_PROC
+    component "Analyzer-Normalized\nTerm Access\n[FR-002a]" as TERM_ACCESS
+    component "Search Engine\n(Query / Filter / Sort)\n[FR-002b]" as SEARCH_ENG
+  }
+
+  ' ===== DOCUMENT VECTOR EXPORT =====
+  rectangle "Document Vector Export Layer" {
+    component "Document Vector\nCreator\n[FR-003]" as VEC_CREATOR
+    component "LIBSVM Format\nWriter\n[FR-003, NFR-002]" as LIBSVM_WRITER
+  }
+
+  ' ===== SCHEMA MANAGEMENT =====
+  rectangle "Schema Management Layer" {
+    component "Schema Loader\n(Resource / File Path)\n[FR-006, DR-006]" as SCHEMA_LOADER
+    component "Schema Parser\n(Root / Default Analyzer /\nField Defs / Custom Analyzers)\n[FR-006, DR-005]" as SCHEMA_PARSER
+    component "Schema Validator\n[FR-006, C-005, C-006]" as SCHEMA_VALIDATOR
+    component "Schema Model\n(Default Analyzer,\nField-Type Mappings,\nField Attributes)\n[DR-007, DR-008]" as SCHEMA_MODEL
+  }
+
+  ' ===== INTERACTIVE SCALA INTERFACE =====
+  rectangle "Interactive Scala Interface Layer" {
+    component "Scala REPL /\nAd Hoc Processor\n[FR-004, NFR-003]" as SCALA_REPL
+  }
+
+  ' ===== EXPERIMENTAL VISUALIZATION =====
+  rectangle "Experimental Visualization Layer [NFR-004]" {
+    component "Word Count\nChart Display\n[FR-005, DR-004]" as CHART_DISPLAY
+  }
+
+  ' ===== LUCENE INTEGRATION =====
+  rectangle "Apache Lucene Integration Layer\n[NFR-001, C-002]" {
+    component "Lucene Index Reader" as LUCENE_READER
+    component "Lucene Analyzer\nIntegration" as LUCENE_ANALYZER
+  }
+
+  ' ===== INTERNAL CONNECTIONS =====
+  DOC_PROC --> LUCENE_READER : reads documents
+  TERM_ACCESS --> LUCENE_READER : reads terms
+  TERM_ACCESS --> LUCENE_ANALYZER : normalized term data
+  SEARCH_ENG --> LUCENE_READER : executes queries
+
+  VEC_CREATOR --> LUCENE_READER : reads index for vectors
+  VEC_CREATOR --> LIBSVM_WRITER : passes vectors
+
+  SCHEMA_LOADER --> SCHEMA_PARSER : raw config content
+  SCHEMA_PARSER --> SCHEMA_VALIDATOR : parsed schema
+  SCHEMA_VALIDATOR --> SCHEMA_MODEL : valid schema
+  SCHEMA_MODEL --> DOC_PROC : field/analyzer config
+  SCHEMA_MODEL --> TERM_ACCESS : field/analyzer config
+  SCHEMA_MODEL --> SEARCH_ENG : field/analyzer config
+  SCHEMA_MODEL --> VEC_CREATOR : field config
+
+  SCALA_REPL --> DOC_PROC : ad hoc invocation
+  SCALA_REPL --> SEARCH_ENG : ad hoc queries
+  SCALA_REPL --> VEC_CREATOR : ad hoc vector ops
+  SCALA_REPL --> CHART_DISPLAY : word count data
+}
+
+' ===== EXTERNAL CONNECTIONS =====
+LUCENE_READER --> LUCENE_INDEX : reads
+LUCENE_ANALYZER --> LUCENE_INDEX : reads normalized terms
+
+SCHEMA_SOURCE --> SCHEMA_LOADER : provides config (resource or file)
+
+LIBSVM_WRITER --> ML_TOOLS : exports LIBSVM file [C-003]
+
+LUCENE_USER --> SCALA_REPL : uses interactively
+SCALA_USER --> SCALA_REPL : interactive / ad hoc
+ML_USER --> VEC_CREATOR : requests vector export
+SCHEMA_USER --> SCHEMA_SOURCE : supplies schema config
+
+' ===== NOTES =====
+note right of CHART_DISPLAY
+  EXPERIMENTAL (NFR-004, C-004)
+  Compatibility not guaranteed
+  across future revisions.
+end note
+
+note bottom of SCHEMA_VALIDATOR
+  Produces "invalid schema error" if:
+  - Load source unavailable
+  - Missing root "schema" object
+  - Missing default analyzer
+  - Missing/empty field definitions
+end note
+
+note bottom of LIBSVM_WRITER
+  Output: LIBSVM-format file
+  Interoperable with Apache Spark,
+  Apache Mahout, and similar ML tools.
+end note
+
+@enduml

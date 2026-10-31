@@ -1,0 +1,415 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Child Partition VM (Windows)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Child Partition VM (Windows)::Harness\\n(Fuzzing Payload Sender)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Root Partition VM (Windows)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Root Partition VM (Windows)::Crash Monitor\\n(Root Partition)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Root Partition VM (Windows)::VMSwitch\\n(vmswitch.sys)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host System (Linux)::hAFL2 / kAFL-Fuzzer::Launch Scripts\\n(bash)",
+        "Host System (Linux)::hAFL2 / kAFL-Fuzzer::Mutation Engine\\n(Bitflip / Deterministic / Havoc)",
+        "Host System (Linux)::hAFL2 / kAFL-Fuzzer::kAFL-Fuzzer Core\\n(pytest / Random / Deterministic / Havoc)",
+        "Host System (Linux)::hAFL2 / kAFL-Fuzzer::test.py\\n(Standalone Test Runner)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::hAFL2"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Child Partition VM (Windows)::DSE Disabled",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Child Partition VM (Windows)::Harness\\n(Fuzzing Payload Sender)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Child Partition VM (Windows)::loader.exe Instance",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Child Partition VM (Windows)::packet_sender.exe Instance",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Child Partition VM (Windows)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Crash-Monitoring Result",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Effector Map\\n(boolean[])",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Fuzzing Payload",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Host System (Linux)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Mutation Payload\\n(byte array)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Root Partition VM (Windows)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Windows Build Environment",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::initrd Archive",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::Linux Userspace Fuzzing Workflow::Embedded Forkserver\\n(kAFL hypercall → AFL I/O)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::Linux Userspace Fuzzing Workflow::Shared Libraries\\n(host copy)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::Linux Userspace Fuzzing Workflow::Target Binary",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::Linux Userspace Fuzzing Workflow::initrd Builder",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::Linux Userspace Fuzzing Workflow::initrd Image",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::hAFL2 / kAFL-Fuzzer::Launch Scripts\\n(bash)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::hAFL2 / kAFL-Fuzzer::Mutation Engine\\n(Bitflip / Deterministic / Havoc)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::hAFL2 / kAFL-Fuzzer::kAFL-Fuzzer Core\\n(pytest / Random / Deterministic / Havoc)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host System (Linux)::hAFL2 / kAFL-Fuzzer::test.py\\n(Standalone Test Runner)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Root Partition VM (Windows)::Crash Monitor\\n(Root Partition)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Root Partition VM (Windows)::Hyper-V Network Stack\\n(netvsc / VMBus)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Root Partition VM (Windows)::VMSwitch\\n(vmswitch.sys)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Windows Build Environment::Build Toolchain::Visual Studio\\nCompiler",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Windows Build Environment::Build Toolchain::compile.sh\\n(bash)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Windows Build Environment::Windows Drivers::Crash Monitor Driver",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Windows Build Environment::Windows Drivers::Harness Driver",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Build Environment::Windows Helper Binaries::loader.exe\\n(Snapshot + Load/Execute)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Windows Build Environment::Windows Helper Binaries::packet_sender.exe\\n(IOCTL Trigger)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "initrd Archive::Packaged Binary + Libs",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Child Partition VM (Windows)"
+      ],
+      "gt_node": "Global::KVM (L0)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Root Partition VM (Windows)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Child Partition VM (Windows)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Child Partition VM (Windows)::Harness\\n(Fuzzing Payload Sender)",
+        "Child Partition VM (Windows)::loader.exe Instance",
+        "Child Partition VM (Windows)::packet_sender.exe Instance",
+        "Windows Build Environment::Windows Helper Binaries::loader.exe\\n(Snapshot + Load/Execute)",
+        "Windows Build Environment::Windows Helper Binaries::packet_sender.exe\\n(IOCTL Trigger)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Root Partition VM (Windows)",
+        "Global::initrd Archive",
+        "Host System (Linux)::Linux Userspace Fuzzing Workflow::Shared Libraries\\n(host copy)",
+        "Host System (Linux)::Linux Userspace Fuzzing Workflow::Target Binary",
+        "Host System (Linux)::Linux Userspace Fuzzing Workflow::initrd Builder",
+        "Host System (Linux)::Linux Userspace Fuzzing Workflow::initrd Image",
+        "initrd Archive::Packaged Binary + Libs"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Root Partition VM (Windows)::Crash Monitor\\n(Root Partition)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Root Partition VM (Windows)::Hyper-V Network Stack\\n(netvsc / VMBus)",
+        "Root Partition VM (Windows)::VMSwitch\\n(vmswitch.sys)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host System (Linux)::hAFL2 / kAFL-Fuzzer::Launch Scripts\\n(bash)",
+        "Host System (Linux)::hAFL2 / kAFL-Fuzzer::Mutation Engine\\n(Bitflip / Deterministic / Havoc)",
+        "Host System (Linux)::hAFL2 / kAFL-Fuzzer::kAFL-Fuzzer Core\\n(pytest / Random / Deterministic / Havoc)",
+        "Host System (Linux)::hAFL2 / kAFL-Fuzzer::test.py\\n(Standalone Test Runner)"
+      ],
+      "gt_node": "KVM (L0)::hAFL2"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5347,
+      "completion_tokens": 976,
+      "total_tokens": 6323,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Global::KVM (L0)",
+    "KVM (L0)::Hyper-V (L1) - Host"
+  ],
+  "unmatched_predicted_nodes": [
+    "Child Partition VM (Windows)::DSE Disabled",
+    "Child Partition VM (Windows)::loader.exe Instance",
+    "Child Partition VM (Windows)::packet_sender.exe Instance",
+    "Global::Crash-Monitoring Result",
+    "Global::Effector Map\\n(boolean[])",
+    "Global::Fuzzing Payload",
+    "Global::Host System (Linux)",
+    "Global::Mutation Payload\\n(byte array)",
+    "Global::Windows Build Environment",
+    "Global::initrd Archive",
+    "Host System (Linux)::Linux Userspace Fuzzing Workflow::Embedded Forkserver\\n(kAFL hypercall → AFL I/O)",
+    "Host System (Linux)::Linux Userspace Fuzzing Workflow::Shared Libraries\\n(host copy)",
+    "Host System (Linux)::Linux Userspace Fuzzing Workflow::Target Binary",
+    "Host System (Linux)::Linux Userspace Fuzzing Workflow::initrd Builder",
+    "Host System (Linux)::Linux Userspace Fuzzing Workflow::initrd Image",
+    "Root Partition VM (Windows)::Hyper-V Network Stack\\n(netvsc / VMBus)",
+    "Windows Build Environment::Build Toolchain::Visual Studio\\nCompiler",
+    "Windows Build Environment::Build Toolchain::compile.sh\\n(bash)",
+    "Windows Build Environment::Windows Drivers::Crash Monitor Driver",
+    "Windows Build Environment::Windows Drivers::Harness Driver",
+    "Windows Build Environment::Windows Helper Binaries::loader.exe\\n(Snapshot + Load/Execute)",
+    "Windows Build Environment::Windows Helper Binaries::packet_sender.exe\\n(IOCTL Trigger)",
+    "initrd Archive::Packaged Binary + Libs"
+  ],
+  "_provenance": {
+    "fingerprint": "d4a2a7a3eaf270137a8eae495d6a3aa93b9784037c8e8c27eb2e2c8feed2492d",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

@@ -1,0 +1,46 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+rectangle "User" as User
+
+package "Cognito Account" as CognitoAccount {
+    rectangle "Cognito User Pool" as UserPool
+    rectangle "Cognito Hosted UI" as HostedUi
+}
+
+package "API Gateway Account" as ApiGatewayAccount {
+    rectangle "API Gateway" as ApiGateway
+    rectangle "auth-function" as AuthFunction
+    package "Cognito-authorizer" as CognitoAuthorizer {
+        rectangle "hello-function" as HelloFunction
+    }
+    rectangle "Calls hello/GET with id_token in headers" as AuthBehavior
+    rectangle "Returns hello plus user name when authorized" as HelloBehavior
+}
+
+User --> HostedUi : connect
+HostedUi --> UserPool : get-authorization-code
+UserPool --> HostedUi : authorization code
+HostedUi --> ApiGateway : passes code in query strings\nredirects to /auth
+ApiGateway --> AuthFunction : /auth/GET
+ApiGateway --> HelloFunction : /hello/GET
+AuthFunction --> AuthBehavior : uses authorization code\nand id_token
+AuthFunction --> ApiGateway : call /hello/GET\nwith id_token
+HelloFunction --> HelloBehavior : authorized response
+@enduml

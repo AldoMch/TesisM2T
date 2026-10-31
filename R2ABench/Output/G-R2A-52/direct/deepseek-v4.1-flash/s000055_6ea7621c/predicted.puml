@@ -1,0 +1,105 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName "Helvetica"
+skinparam arrowColor #4A4A4A
+
+title System Architecture — Nobel Prize Laureates Autocomplete (FAC10/week4-jajascript)
+
+actor "End User" as endUser
+actor "Developer / Tester" as devUser
+actor "Deployer / Operator" as opsUser
+
+package "Client Environment — Web Browser" as clientPkg {
+  component "Home Page UI\n(index.html)" as ui
+  component "Search Input Field" as searchInput
+  component "Suggestions List Output" as suggestions
+  component "Frontend Helper\n(user input event -> request initiation)" as feHelper
+}
+
+package "Server Runtime — Node.js / CommonJS" as serverPkg {
+
+  component "HTTP Server" as httpServer
+
+  component "Router\n(URL substring match for \"search\")" as router
+
+  package "Handler Module" as handlerPkg {
+    component "Home Page Serving\n(GET /)" as homeHandler
+    component "Static File Serving\n(non-home, non-search)" as staticHandler
+    component "Not-Found Handling\n(404 HTML)" as notFoundHandler
+    component "Content-Type Mapping\nhtml, css, js, jpg, ico" as contentTypeMap
+  }
+
+  package "Autocomplete / Search-Hint Algorithm" as algoPkg {
+    component "Prefix Match Filter\n(prefix of input string)" as prefixFilter
+    component "Result Limit\n(max 10)" as limit10
+    component "Field Value Extraction\n(e.g. firstname -> array)" as valueExtract
+  }
+
+  component "Data Access Module" as dataAccess
+}
+
+database "Local Laureate Data\n(JSON)" as laureateData
+
+package "Public Asset Directory" as publicPkg {
+  artifact "index.html\n(text/html)" as assetHtml
+  artifact "*.css\n(text/css)" as assetCss
+  artifact "*.js\n(application/javascript)" as assetJs
+  artifact "*.jpg\n(image/jpg)" as assetJpg
+  artifact "*.ico\n(image/x-icon)" as assetIco
+}
+
+' ---------- Actors and usage ----------
+endUser --> ui : browses
+endUser --> searchInput : types text (FR-001)
+devUser --> serverPkg : runs frontend and\nbackend tests (NFR-001, FR-008, FR-009)
+opsUser --> serverPkg : Node.js start script /\nHeroku deployment (NFR-004, C-005)
+
+' ---------- Client side ----------
+ui --> feHelper
+searchInput --> feHelper : captured search string (DR-004)
+feHelper --> suggestions : renders laureate names (FR-002)
+feHelper --> httpServer : HTTP request\n(search / home / static)
+
+' ---------- Server request path ----------
+httpServer --> router : routes incoming HTTP request\n(FR-003 .. FR-007)
+router --> algoPkg : URL contains substring \"search\"\n(FR-004, C-004)
+router --> handlerPkg : URL without \"search\"\n(FR-003, FR-005)
+
+homeHandler --> staticHandler : fallback on read
+staticHandler --> notFoundHandler : file read failure (FR-007)
+homeHandler --> contentTypeMap
+staticHandler --> contentTypeMap
+homeHandler --> publicPkg : filesystem read\n(C-002)
+staticHandler --> publicPkg : filesystem read\n(C-002)
+
+' ---------- Backend algorithm path ----------
+algoPkg --> prefixFilter
+prefixFilter --> limit10
+algoPkg --> valueExtract : extract field values\n(FR-008, DR-003)
+valueExtract --> dataAccess
+algoPkg --> dataAccess : request laureate names
+dataAccess --> laureateData : read object-based\nlaureate data (DR-001, DR-002)
+limit10 --> suggestions : array of matching\nlaureate names (<= 10)\n(FR-002, FR-009)
+
+' ---------- Notes ----------
+note right of router
+  Search routing is implemented by
+  plain URL substring matching; any URL
+  containing \"search\" reaches autocomplete
+  logic (C-004).
+end note
+
+note bottom of laureateData
+  Local JSON data source used by the
+  backend autocomplete (DR-002).
+end note
+
+note bottom of contentTypeMap
+  Explicit media types: text/html, text/css,
+  application/javascript, image/jpg,
+  image/x-icon (FR-006, NFR-002).
+end note
+
+@enduml

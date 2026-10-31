@@ -1,0 +1,53 @@
+@startuml
+' Layered architecture diagram for allegroai/clearml-agent'
+
+skinparam componentStyle rectangle
+
+package "ClearML Agent" {
+  [Kubernetes Glue Mode] as k8sGlue
+  [Service Pod Mode] as svcPod
+  [Worker Telemetry] as telemetry
+  [Backend Service Client] as backendClient
+  [Job Execution Engine] as jobEngine
+}
+
+package "External Systems" {
+  [ClearML Server] as clearmlServer
+  [Kubernetes Cluster] as k8sCluster
+  [Docker Daemon] as dockerDaemon
+}
+
+k8sGlue --> clearmlServer : Pull jobs from queue
+k8sGlue --> k8sCluster : Create K8s jobs
+k8sGlue --> jobEngine : Prepare & execute jobs
+
+svcPod --> dockerDaemon : Manage containers (Docker socket)
+svcPod --> jobEngine : Execute jobs
+
+jobEngine --> telemetry : Report status
+telemetry --> clearmlServer : Send telemetry & ping
+
+backendClient --> clearmlServer : API calls (create/get/etc.)
+
+note right of k8sGlue
+  Uses YAML template
+  for job creation
+end note
+
+note right of svcPod
+  Runs as long-lived pod
+  Requires Docker socket
+end note
+
+note top of telemetry
+  Periodic reporting
+  Default: every 2s
+  Ping: every 30s
+end note
+
+note bottom of backendClient
+  Supports models v2.4
+  and events v2.5 APIs
+end note
+
+@enduml

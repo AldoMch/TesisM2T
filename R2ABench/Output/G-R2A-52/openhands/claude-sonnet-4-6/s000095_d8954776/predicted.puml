@@ -1,0 +1,125 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+    BackgroundColor #DDEEFF
+    BorderColor #336699
+    FontColor #000000
+}
+skinparam package {
+    BackgroundColor #F0F8FF
+    BorderColor #5577AA
+}
+skinparam database {
+    BackgroundColor #FFF8DC
+    BorderColor #B8860B
+}
+skinparam node {
+    BackgroundColor #F5F5F5
+    BorderColor #888888
+}
+skinparam cloud {
+    BackgroundColor #E8F4E8
+    BorderColor #559955
+}
+
+title GPSLogger Android Application - System Architecture
+
+package "Build Environment" {
+    component [Gradle Build System] as gradle
+    component [local.properties\n(sdk.dir)] as localprops
+    component [~/.gradle/gradle.properties\n(OSM & Dropbox credentials)] as gradleprops
+    component [Android SDK\n(Build Tools 19.0.3)] as androidsdk
+    component [Android Support\nLibrary / Repository] as supportlib
+    component [Google Repository] as googlerepo
+}
+
+package "Android Application" {
+
+    package "Configuration" {
+        component [Application Settings\n(Session Config)] as appsettings
+        component [Build-Injected Config\n(OSM Keys, Dropbox Keys)] as buildconfig
+    }
+
+    package "Core Services" {
+        component [GPS Logging Service] as gpsservice
+        component [Location Listeners] as locationlisteners
+        component [Event Bus] as eventbus
+    }
+
+    package "UI Layer" {
+        component [Main Activity] as mainactivity
+        component [Fragments\n(Location Consumers)] as fragments
+    }
+
+    package "Log Writers" {
+        component [GPX Logger] as gpxlogger
+        component [KML Logger] as kmllogger
+        component [Text File Logger] as txtlogger
+    }
+
+    package "External Integration" {
+        component [OpenGTS Uploader] as opengtsuploader
+        component [GPRMC Encoder\n(SerializableLocation)] as gprmc
+        component [Dropbox Uploader] as dropboxuploader
+        component [OpenStreetMap Uploader] as osmuploader
+    }
+
+    component [Google Play Services\n(Framework)] as gps
+}
+
+package "Local Storage" {
+    database [GPX File] as gpxfile
+    database [KML File] as kmlfile
+    database [Text Log File] as txtfile
+}
+
+cloud "External Services" {
+    component [OpenGTS Server\n(UDP Endpoint)] as opengtsserver
+    component [Dropbox API] as dropboxapi
+    component [OpenStreetMap API] as osmapi
+}
+
+' Build-time relationships
+gradleprops --> gradle : OSM & Dropbox\ncredentials
+localprops --> gradle : sdk.dir
+androidsdk --> gradle : Build Tools 19.0.3
+supportlib --> gradle : dependency
+googlerepo --> gradle : dependency
+gradle --> buildconfig : inject credentials\nat build time
+
+' Core data flow
+locationlisteners --> gpsservice : GPS location updates
+gpsservice --> eventbus : publish location event (FR-001)
+eventbus --> fragments : consume location events
+eventbus --> gpxlogger : location data
+eventbus --> kmllogger : location data
+eventbus --> txtlogger : location data
+
+' UI
+mainactivity --> fragments : host
+fragments --> appsettings : read user config
+
+' Log writers to storage
+gpxlogger --> gpxfile : write GPX records (FR-007)
+kmllogger --> kmlfile : write KML records (FR-007)
+txtlogger --> txtfile : write text records (FR-007)
+
+' OpenGTS integration
+gpsservice --> opengtsuploader : trigger upload
+appsettings --> opengtsuploader : server, port,\nmethod, device ID,\npath (FR-004)
+opengtsuploader --> gprmc : encode location\nas GPRMC (FR-006)
+opengtsuploader --> opengtsserver : UDP datagram\n(account + device\n+ GPRMC) (FR-005)
+
+' Dropbox integration
+buildconfig --> dropboxuploader : DROPBOX_APPKEY\nDROPBOX_APPSECRET (FR-003)
+dropboxuploader --> dropboxapi : upload log files
+
+' OSM integration
+buildconfig --> osmuploader : OSM_CONSUMERKEY\nOSM_CONSUMERSECRET (FR-002)
+osmuploader --> osmapi : authenticated requests
+
+' Google Play Services
+gps --> gpsservice : location framework\n(Android 2.2+ / API 17+)
+
+@enduml

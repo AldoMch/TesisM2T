@@ -1,0 +1,46 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "React Frontend" as frontend {
+  RECTANGLE "Redux State Management" as redux
+  RECTANGLE "UI Components" as ui
+}
+
+RECTANGLE "Node/Express Backend" as backend {
+  RECTANGLE "User/Auth API" as userAPI
+  RECTANGLE "Follow API" as followAPI
+  RECTANGLE "Feed API" as feedAPI
+  RECTANGLE "Sound API" as soundAPI
+}
+
+RECTANGLE "PostgreSQL Database" as database
+
+RECTANGLE "Cloudinary" as cloudinary
+
+frontend --> redux : Manages state\nand actions
+ui --> redux : Dispatches actions
+redux --> backend : Sends requests via\nconfigured API base URL
+backend --> database : Persists application\nrecords and URLs
+frontend --> cloudinary : Direct media\nupload via HTTP
+cloudinary --> frontend : Returns hosted\nmedia URLs
+frontend --> backend : Sends media URLs\nfor persistence
+backend --> cloudinary : References stored\nmedia via URLs
+
+note right of frontend
+  Client Runtime:\nBrowser-based React/Redux app
+  Configured with:\n- API base URL\n- Cloudinary URL\n- Cloudinary upload preset
+end note
+
+note right of backend
+  Server Runtime:\nNode/Express backend
+end note
+
+note right of database
+  Data Platform:\nPostgreSQL for application data
+end note
+
+note right of cloudinary
+  Media Platform:\nCloudinary for audio/image storage
+end note
+
+@enduml

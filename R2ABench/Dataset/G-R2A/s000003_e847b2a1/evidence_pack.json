@@ -1,0 +1,117 @@
+{
+  "candidate": {
+    "sample_id": "s000003_e847b2a1",
+    "repository_name": "kryptokrauts/ae-prediction-cards",
+    "image_url": "https://github.com/kryptokrauts/ae-prediction-cards/blob/main/images/architecture.png",
+    "source_ref": "99dae5686d1542aae88bc67a22370ec6c6a567a0",
+    "total_score": 93,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 7114,
+    "document_count": 21,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "config",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 22,
+      "user_scenario": 17,
+      "api_io": 28,
+      "deployment": 19,
+      "constraints": 2
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 12,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 93
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "oracle-service/README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05487102649979435,
+      "text": "# Oracle Service This project uses Quarkus to create a scheduler which periodically checks for oracle requests and answers them. Additional the oracle periodically checks if an extension is necessary. For proper running an .env file is mandatory which contains the following properties ## Running the application in dev mode You can run your application in dev mode that enables live coding using: ## Packaging and running the application The application can be packaged using: It produces the file in the directory. Be aware that it’s not an _über-jar_ as the dependencies are copied into the directory. If you want to build an _über-jar_, execute the following command: The application is now ru..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "contract-test/docker/nginx-cors.conf",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.050233529028049576,
+      "text": "always; add_header 'Access-Control-Allow-Methods' 'GET, POST, OPTIONS' always; add_header 'Access-Control-Allow-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range' always; add_header 'Access-Control-Expose-Headers' 'DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Content-Range,Range' always; }"
+    },
+    {
+      "evidence_id": "E003",
+      "path": "frontend/src/common/api/PredictionCardsApiProvider.tsx",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05337835775335775,
+      "text": "import { createContext, useContext } from \"react\"; import { useWallet } from \"../aeternity/WalletProvider\"; import { PredictionCardsApi } from \"./PredictionCards.api\"; const PredictionCardsContext = createContext (undefined); export const usePredictionCardsApi = (): PredictionCardsApi => { return useContext(PredictionCardsContext)!; }; export const PredictionCardsProvider: React.FC = ({ children }) => { const wallet = useWallet(); const api = new PredictionCardsApi(wallet); return ( { children} ) };"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "frontend/src/common/api/PredictionCards.api.ts",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.051642584073090136,
+      "text": "import { Universal as Ae } from '@aeternity/aepp-sdk/es'; import { toAettos } from '@aeternity/aepp-sdk/es/utils/amount-formatter'; import { PredictionEvent } from \"../../events/types\"; import { WalletClient } from \"../aeternity/WalletClient\"; export class PredictionCardsApi { private walletClient: WalletClient; private code; private aensName = 'predictioncards.chain'; constructor(walletClient: WalletClient) { this.walletClient = walletClient; } async createPrediction(event: PredictionEvent, img_higher: string, img_lower: string): Promise { const instance = await this.getInteractiveInstance(); const callResult = await instance.methods.create_prediction(this.convertDate(event.start_timesta..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "contract-test/src/test/java/com/kryptokrauts/test/BaseTest.java",
+      "doc_type": "test",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05447975257599795,
+      "text": ".service.transaction.type.model.AbstractTransactionModel; import com.kryptokrauts.aeternity.sdk.service.transaction.type.model.NameClaimTransactionModel; import com.kryptokrauts.aeternity.sdk.service.transaction.type.model.NamePreclaimTransactionModel; import com.kryptokrauts.aeternity.sdk.service.transaction.type.model.NameUpdateTransactionModel; import com.kryptokrauts.aeternity.sdk.service.transaction.type.model.OracleQueryTransactionModel; import com.kryptokrauts.aeternity.sdk.service.transaction.type.model.OracleRegisterTransactionModel; import com.kryptokrauts.aeternity.sdk.service.transaction.type.model.OracleRespondTransactionModel; import com.kryptokrauts.aeternity.sdk.service.tr..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "contract-test/src/test/java/com/kryptokrauts/test/BaseTest.java",
+      "doc_type": "test",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05230797626952784,
+      "text": "package com.kryptokrauts.test; import com.kryptokrauts.aeternity.sdk.constants.AENS; import com.kryptokrauts.aeternity.sdk.constants.Network; import com.kryptokrauts.aeternity.sdk.constants.VirtualMachine; import com.kryptokrauts.aeternity.sdk.domain.secret.KeyPair; import com.kryptokrauts.aeternity.sdk.service.account.domain.AccountResult; import com.kryptokrauts.aeternity.sdk.service.aeternity.AeternityServiceConfiguration; import com.kryptokrauts.aeternity.sdk.service.aeternity.AeternityServiceFactory; import com.kryptokrauts.aeternity.sdk.service.aeternity.impl.AeternityService; import com.kryptokrauts.aeternity.sdk.service.info.domain.TransactionResult; import com.kryptokrauts.aetern..."
+    }
+  ]
+}

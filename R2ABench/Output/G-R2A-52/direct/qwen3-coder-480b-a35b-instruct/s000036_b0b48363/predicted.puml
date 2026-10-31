@@ -1,0 +1,59 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Logging Producer" as Producer {
+  Sends HTTP POST requests
+}
+
+RECTANGLE "HypnoLog Server" as Server {
+  Node.js/Express application
+}
+
+RECTANGLE "Browser Client" as Browser {
+  Receives and displays logs
+}
+
+RECTANGLE "Socket.IO" as SocketIO {
+  Real-time communication
+}
+
+RECTANGLE "Visualizer" as Visualizer {
+  Renders log objects
+}
+
+RECTANGLE "Window" as Window {
+  Display area for logs
+}
+
+Producer --> Server : HTTP POST /logger/in
+Server --> SocketIO : Forward log objects
+SocketIO --> Browser : Deliver notifications
+Browser --> Visualizer : Select & render
+Visualizer --> Window : Display output
+
+note right of Server
+  - Parses JSON bodies
+  - Mounts routes under /logger
+  - Serves static files from public/
+  - Listens on port 7000 by default
+end note
+
+note right of Browser
+  - Validates received messages
+  - Converts invalid messages
+  - Stores received data
+  - Dispatches to windows
+end note
+
+note right of Visualizer
+  - Implements canDisplay()
+  - Implements display()
+  - Loaded from configuration
+end note
+
+note top of Window
+  Receives log objects
+  Delegates rendering to visualizers
+end note
+
+@enduml

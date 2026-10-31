@@ -1,0 +1,155 @@
+@startuml
+skinparam componentStyle uml2
+
+node "PlugIt Runtime Environment" {
+  package "Presentation / User Experience" {
+    component "Unified Service Experience UI" as UI
+  }
+
+  package "Proxy / Integration" {
+    component "PlugIt Proxy" as Proxy
+    interface "PlugIt Protocol" as PlugItProtocol
+    interface "PlugIt Proxy API Endpoint" as ProxyApi
+    component "Network Access Control" as NetworkAC
+  }
+
+  package "Service A Isolation Boundary" {
+    component "PlugIt Service A" as ServiceA
+    database "Service A Data Store" as ServiceAStore
+  }
+
+  package "Service B Isolation Boundary" {
+    component "PlugIt Service B" as ServiceB
+    database "Service B Data Store" as ServiceBStore
+  }
+
+  package "Service C Isolation Boundary" {
+    component "PlugIt Service C" as ServiceC
+    database "Service C Data Store" as ServiceCStore
+  }
+
+  package "API Client" {
+    component "PlugIt API Client" as ApiClient
+    component "User Information API" as UserInfoApi
+    component "Subscription Tags API" as SubscriptionTagsApi
+    component "Organization Information API" as OrgInfoApi
+    component "Project Members API" as ProjectMembersApi
+    component "Email Sending API" as EmailSendingApi
+    component "Forum Topics API" as ForumTopicsApi
+  }
+
+  package "Data / Persistence" {
+    component "Proxy-side Data Store" as ProxyStore
+    component "Database Schema Upgrade Files" as Migrations
+  }
+
+  package "Configuration / Deployment" {
+    component "Service Configuration Files" as ConfigFiles
+    component "Local / Private Configuration" as LocalConfig
+    component "API_URL" as ApiUrl
+    component "SQLALCHEMY_URL" as SqlAlchemyUrl
+    component "DEBUG" as Debug
+    component "PI_BASE_URL" as PiBaseUrl
+    component "PI_ALLOWED_NETWORKS" as PiAllowedNetworks
+  }
+}
+
+package "Standalone / Example Proxy Mail Processing" {
+  component "Standalone Proxy Mail Workflow" as MailWorkflow
+  component "Mail Handler" as MailHandler
+  component "Mail Header Inspector" as HeaderInspector
+  component "Auto-Response Suppressor" as AutoResponseSuppressor
+  component "Mail Routing Token Parser" as TokenParser
+  component "SHA-512 Hash Slice [30:42] Extractor" as HashSliceExtractor
+  component "Expected Hash Comparator" as ExpectedHashComparator
+  component "Configured Mail Secret" as MailSecret
+}
+
+cloud "External Users or Systems" as ExternalUsers
+database "Database Technology (MySQL, SQLite)" as DatabaseTech
+cloud "Inbound Email / Mailbox System" as Mailbox
+cloud "Source Control" as SourceControl
+interface "Alembic Migration Interface" as Alembic
+
+ExternalUsers --> NetworkAC : source IP
+NetworkAC --> Proxy : allow/deny by PI_ALLOWED_NETWORKS CIDR
+UI --> Proxy : unified service experience
+
+Proxy --> ProxyApi : exposes
+Proxy --> PlugItProtocol : uses
+PlugItProtocol --> ServiceA : connects
+PlugItProtocol --> ServiceB : connects
+PlugItProtocol --> ServiceC : connects
+
+ServiceA --> ProxyApi : configured API_URL
+ServiceB --> ProxyApi : configured API_URL
+ServiceC --> ProxyApi : configured API_URL
+ApiClient --> ProxyApi : main endpoint URL / PlugIt API requests
+
+ApiClient --> UserInfoApi : user information
+ApiClient --> SubscriptionTagsApi : subscription tags
+ApiClient --> OrgInfoApi : organization information
+ApiClient --> ProjectMembersApi : project members
+ApiClient --> EmailSendingApi : email sending
+ApiClient --> ForumTopicsApi : forum topics
+UserInfoApi --> ProxyApi : PlugIt API interaction
+SubscriptionTagsApi --> ProxyApi : PlugIt API interaction
+OrgInfoApi --> ProxyApi : PlugIt API interaction
+ProjectMembersApi --> ProxyApi : PlugIt API interaction
+EmailSendingApi --> ProxyApi : PlugIt API interaction
+ForumTopicsApi --> ProxyApi : PlugIt API interaction
+
+Proxy --> ProxyStore : proxy-side data
+ServiceA --> ServiceAStore : own service data
+ServiceB --> ServiceBStore : own service data
+ServiceC --> ServiceCStore : own service data
+
+ServiceAStore --> DatabaseTech : own configured DB connection
+ServiceBStore --> DatabaseTech : own configured DB connection
+ServiceCStore --> DatabaseTech : own configured DB connection
+
+ServiceA --> Migrations : schema upgrade files
+ServiceB --> Migrations : schema upgrade files
+ServiceC --> Migrations : schema upgrade files
+Migrations --> Alembic : migration interface
+Migrations --> ServiceAStore : applies schema changes
+Migrations --> ServiceBStore : applies schema changes
+Migrations --> ServiceCStore : applies schema changes
+
+ConfigFiles --> ApiUrl : includes
+ConfigFiles --> SqlAlchemyUrl : includes
+ConfigFiles --> Debug : includes
+ConfigFiles --> PiBaseUrl : includes
+ConfigFiles --> PiAllowedNetworks : includes
+
+ApiUrl --> ServiceA : API_URL
+ApiUrl --> ServiceB : API_URL
+ApiUrl --> ServiceC : API_URL
+SqlAlchemyUrl --> ServiceA : SQLALCHEMY_URL for own DB
+SqlAlchemyUrl --> ServiceB : SQLALCHEMY_URL for own DB
+SqlAlchemyUrl --> ServiceC : SQLALCHEMY_URL for own DB
+Debug --> ServiceA : DEBUG
+Debug --> ServiceB : DEBUG
+Debug --> ServiceC : DEBUG
+PiBaseUrl --> ApiClient : PI_BASE_URL / main endpoint URL
+PiAllowedNetworks --> NetworkAC : PI_ALLOWED_NETWORKS CIDR
+
+ConfigFiles --> ServiceA : environment settings
+ConfigFiles --> ServiceB : environment settings
+ConfigFiles --> ServiceC : environment settings
+ConfigFiles --> MailWorkflow : mail settings
+LocalConfig ..> SourceControl : excluded from source control
+ConfigFiles ..> LocalConfig : local/private settings excluded
+
+Mailbox --> MailWorkflow : inbound email
+MailWorkflow --> HeaderInspector : inspect headers
+HeaderInspector --> AutoResponseSuppressor : suppress auto-responses
+MailWorkflow --> TokenParser : parse hash:data routing token
+TokenParser --> HashSliceExtractor : extract data for hash
+HashSliceExtractor --> ExpectedHashComparator : SHA-512 slice [30:42]
+ExpectedHashComparator --> MailSecret : configured secret
+ExpectedHashComparator --> MailWorkflow : expected hash comparison result
+MailWorkflow --> MailHandler : decoded routing data and text payload
+MailWorkflow --> Mailbox : removes/acknowledges only on successful handling
+
+@enduml

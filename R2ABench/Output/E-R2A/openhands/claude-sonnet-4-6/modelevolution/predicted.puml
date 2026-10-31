@@ -1,0 +1,139 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam database {
+  BackgroundColor #FFFACD
+  BorderColor #B8860B
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam arrow {
+  Color #444444
+}
+
+actor Learner
+actor "Model Contributor" as Contributor
+actor Administrator
+
+node "Client Browser\n(Firefox / Chrome / 360 Browser)" as Browser {
+  component "Account Management UI\n(Register / Login / Logout /\nPassword / Permission Request)" as AccountUI
+  component "Model Search & Viewing UI\n(Search / Basic Info /\nEvolution Graph / Evolution Details)" as ViewUI
+  component "Model Contribution UI\n(ONNX Upload / PyTorch Upload /\nOnline Edit / Profile Modify / Delete)" as ContribUI
+  component "Evolution Relationship UI\n(Add / Delete / Modify\nEvolution & Layer-Reuse)" as EvoUI
+  component "User Management UI\n(Manage Users / Delete Users /\nReview Permission Changes)" as AdminUI
+}
+
+node "Front-End Module" as FrontEnd {
+  component "Responsive Web Application\n(HTML / CSS / JavaScript)" as WebApp
+  component "Topology Graph Renderer\n(Evolution Graph Visualization)" as GraphRenderer
+  component "Online Code Editor\n(PyTorch Source Editing)" as CodeEditor
+}
+
+node "Back-End Module" as BackEnd {
+  component "Account Service\n(Registration / Login 2FA+OAuth2.0 /\nLogout / Password / Permission)" as AccountSvc
+  component "Model Service\n(Search / View / Upload /\nModify / Delete)" as ModelSvc
+  component "Evolution Relationship Service\n(Add / Delete / Modify\nEvolution & Layer-Reuse)" as EvoSvc
+  component "Dataset & Trained Model Service\n(Dataset Records / Trained Model Info)" as DatasetSvc
+  component "User Management Service\n(Manage / Delete / Permission Review)" as UserMgmtSvc
+  component "Security & Auth Layer\n(TLS / AES/DES Encryption /\nAccess Control / Privilege Control)" as SecurityLayer
+  component "Concurrency & Load Handler\n(50 concurrent users /\n50 queries/s / 10 modifications/s)" as ConcurrencyHandler
+}
+
+node "Algorithm Support Module" as AlgoModule {
+  component "Model Parsing Engine\n(ONNX / PyTorch Operator Analysis)" as ModelParser
+  component "Evolution Analysis Engine\n(Operator Diff / Layer Reuse Detection)" as EvoAnalyzer
+  component "Performance Metrics Engine\n(Execution Time / Prediction Accuracy)" as MetricsEngine
+  component "Python Library Interface" as PythonLib
+}
+
+database "Neo4j\n(Model Evolution Relationships\nTopology Graphs)" as Neo4j
+
+database "MySQL\n(Users / Roles / Permissions /\nModel Attributes / Datasets /\nTrained Models / Performance Metrics)" as MySQL
+
+node "Standby / Failover Server\n(Failover within 0.5 hours)" as Standby {
+  component "Backup Back-End" as BackupBackEnd
+  component "Backup Databases" as BackupDB
+}
+
+Learner --> Browser : HTTPS
+Contributor --> Browser : HTTPS
+Administrator --> Browser : HTTPS
+
+Browser --> FrontEnd : HTTP / HTTPS
+
+AccountUI ..> AccountSvc
+ViewUI ..> ModelSvc
+ViewUI ..> EvoSvc
+ContribUI ..> ModelSvc
+ContribUI ..> AlgoModule
+EvoUI ..> EvoSvc
+AdminUI ..> UserMgmtSvc
+
+FrontEnd --> BackEnd : HTTP / HTTPS / REST
+GraphRenderer --> EvoSvc : fetch graph data
+CodeEditor --> ModelSvc : save PyTorch source
+
+BackEnd --> AlgoModule : process model files\n& compute evolution details
+BackEnd --> SecurityLayer : all requests filtered
+SecurityLayer --> AccountSvc
+SecurityLayer --> ModelSvc
+SecurityLayer --> EvoSvc
+SecurityLayer --> UserMgmtSvc
+ConcurrencyHandler --> BackEnd
+
+AccountSvc --> MySQL : user / permission data
+ModelSvc --> MySQL : model attributes / ONNX / PyTorch
+ModelSvc --> Neo4j : model topology nodes
+EvoSvc --> Neo4j : evolution relationship edges
+EvoSvc --> MySQL : evolution details / layer-reuse
+DatasetSvc --> MySQL : dataset / trained model records
+UserMgmtSvc --> MySQL : user state / permission results
+
+ModelParser --> PythonLib : parse ONNX/PyTorch
+EvoAnalyzer --> PythonLib : diff computation
+MetricsEngine --> PythonLib : metric computation
+AlgoModule --> Neo4j : write graph structure
+AlgoModule --> MySQL : write model / metrics data
+
+BackEnd ..> Standby : replication / failover
+
+note right of SecurityLayer
+  NFR-010: Two-factor auth + OAuth 2.0
+  NFR-011: TLS / PCI DSS
+  NFR-012: AES / DES model encryption
+  NFR-013: Reject unauthenticated writes
+  NFR-014: Non-admin cannot delete/modify approved models
+end note
+
+note right of Browser
+  C-001: B/S architecture
+  NFR-021: Responsive UI
+  C-004: Firefox, Chrome, 360 Browser
+end note
+
+note bottom of Neo4j
+  DR-010: Evolution relationships
+  DR-011: Evolution method details
+  FR-009: Multi-model topology graph
+  FR-010: Two-model evolution detail graph
+end note
+
+note bottom of MySQL
+  DR-001: Users & roles
+  DR-003: ML model records
+  DR-007: Performance metrics
+  DR-008: Datasets
+  DR-009: Trained models
+end note
+@enduml

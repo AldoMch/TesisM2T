@@ -1,0 +1,63 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontName Monospace
+left to right direction
+title tokencard/contracts - System Architecture
+
+rectangle "Off-chain Clients" as Offchain {
+  component "Integrator/Developer App" as App <<App>>
+  component "Generated Go Bindings" as Bindings <<Library>>
+  App --> Bindings : uses
+}
+
+node "Owner Address (EOA)" as Owner <<EOA>> {
+  component "Gas Tank (ETH for gas payment)" as GasTank <<Balance>>
+}
+
+node "Ethereum Network" as EthNet {
+  component "ENS" as ENS <<ENS Contract>>
+  component "Consumer Contract Wallet" as Wallet <<Smart Contract>>
+  component "Controller Contract" as Controller <<Smart Contract>>
+  component "Token Whitelist Contract" as Whitelist <<Smart Contract>>
+  component "Oracle/Rate Provider Contract" as Oracle <<Smart Contract>>
+  component "TKN Holder Contract" as TknHolder <<Smart Contract>>
+}
+
+Owner --> Wallet : owns / controls
+GasTank --> EthNet : gas for tx
+
+Wallet ..> ENS : resolve Controller / Whitelist / Oracle addresses
+Bindings ..> ENS : resolve contract addresses
+
+' On-chain interactions among contracts
+Wallet --> Controller : control / confirmation ops
+Wallet ..> Whitelist : read token support, rates,\nloadability, burnability
+Wallet ..> Oracle : get exchange-rate data
+Wallet --> TknHolder : burn tokens (when allowed)
+
+' Off-chain interactions via generated bindings
+Bindings ..> Controller : Call: adminCount(),\ncontrollerCount()
+Bindings --> Controller : Transact / Transfer (paid)
+Bindings ..> Wallet : Call (read-only)
+Bindings --> Wallet : Transact / Transfer (paid)
+Bindings ..> Whitelist : Call: token rules / rates
+Bindings ..> Oracle : Call: exchange-rate
+Bindings --> TknHolder : Transact: burn (if permitted)
+
+note right of Owner
+Gas-payment ETH (Gas Tank) remains
+outside the Consumer Contract Wallet
+and its security protections.
+end note
+
+note right of ENS
+ENS-based resolution is required
+before interacting with supporting
+contracts (Controller, Whitelist, Oracle).
+end note
+
+legend right
+- Solid arrow: paid transaction (Transact / Transfer)
+- Dashed arrow: read-only call or address resolution
+endlegend
+@enduml

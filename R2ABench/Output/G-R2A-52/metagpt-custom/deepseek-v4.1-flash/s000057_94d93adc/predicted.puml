@@ -1,0 +1,72 @@
+@startuml
+package "Frontend/Presentation Layer" {
+  component "React Frontend App" as ReactApp
+  component "Audio Playback UI" as AudioUI
+  component "Waveform Navigation UI" as WaveformUI
+  component "Upload UI" as UploadUI
+  component "Image Upload UI" as ImageUploadUI
+  component "Follow UI" as FollowUI
+  component "Form UI" as FormUI
+}
+
+package "Frontend State Layer" {
+  component "Redux Store/Actions" as ReduxStore
+  component "Playback Manager/Controller" as PlaybackManager
+}
+
+package "Backend/Application Layer" {
+  component "Express Backend API" as ExpressAPI
+  component "User/Auth API" as AuthAPI
+  component "Follow API" as FollowAPI
+  component "Feed API" as FeedAPI
+  component "Sound API" as SoundAPI
+}
+
+package "Data Persistence Layer" {
+  database "PostgreSQL Persistence" as Postgres
+}
+
+package "Media Storage/External Service Layer" {
+  cloud "Cloudinary Integration" as Cloudinary
+}
+
+package "Configuration Layer" {
+  component "Frontend Configuration" as FrontendConfig
+}
+
+ReactApp --> ReduxStore
+ReactApp --> PlaybackManager
+AudioUI --> PlaybackManager
+WaveformUI --> PlaybackManager
+AudioUI --> ReduxStore
+WaveformUI --> ReduxStore
+UploadUI --> ReduxStore
+ImageUploadUI --> ReduxStore
+FollowUI --> ReduxStore
+FormUI --> ReduxStore
+
+ReduxStore --> ExpressAPI
+ReduxStore --> PlaybackManager
+PlaybackManager --> ReduxStore
+
+ExpressAPI --> AuthAPI
+ExpressAPI --> FollowAPI
+ExpressAPI --> FeedAPI
+ExpressAPI --> SoundAPI
+
+AuthAPI --> Postgres
+FollowAPI --> Postgres
+FeedAPI --> Postgres
+SoundAPI --> Postgres
+
+FrontendConfig --> ReactApp
+FrontendConfig --> ReduxStore
+FrontendConfig --> UploadUI
+FrontendConfig --> ImageUploadUI
+
+UploadUI --> Cloudinary
+ImageUploadUI --> Cloudinary
+Cloudinary --> UploadUI
+Cloudinary --> ImageUploadUI
+
+@enduml

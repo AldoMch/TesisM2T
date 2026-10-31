@@ -1,0 +1,79 @@
+@startuml
+
+package "Interface Layer" {
+  component "Onboarding and Credential Setup" as Onboarding
+  component "GitHub Actions Workflows (deploy.yml)" as GHWorkflows
+  interface "Manual Subscription Administration Surface" as ManualSub
+  interface "Terminal/Script Interface" as TerminalCLI
+}
+
+package "Application Services Layer" {
+  component "StageListing Procedure" as StageListing
+  component "ConnectorConfig Handler" as ConnectorConfig
+  component "DeploymentMetrics Collector" as DeployMetrics
+  component "PRMergeMetrics Collector" as PRMetrics
+}
+
+package "Integration Layer" {
+  component "Connector Management Adapter" as ConnectorAdapter
+  component "Event Routing Ruleset" as EventRoutingRules
+  component "GitHub API Pagination Aggregator" as GitHubPaginator
+  component "AWS CLI" as AWSCLI
+
+  cloud "AWS" as AWSCloud {
+    component "AWS EventBridge" as EventBridge
+    component "AWS SNS" as AWSSNS
+    component "SNS Notification Topic" as SNSTopic
+    component "Project Runtime Service (Event Producer)" as ProjectService
+  }
+
+  cloud "GitHub" as GitHubCloud {
+    component "GitHub Actions" as GitHubActions
+    component "GitHub Actions API" as GitHubActionsAPI
+    component "GitHub Pull Requests API" as GitHubPRsAPI
+  }
+
+  component "Connector Management Library (External)" as ConnectorLib
+
+  ' Subscriber Targets
+  component "Email Subscriber Endpoint" as EmailSub
+  component "Webhook Subscriber Endpoint" as WebhookSub
+}
+
+package "Configuration/Environment Layer" {
+  component "Connector Configuration Inputs (Env/Files)" as ConfigInputs
+  node "AWS Account/Region Context" as AWSContext
+}
+
+' Key dependencies and flows
+TerminalCLI --> StageListing : invoke procedure
+Onboarding --> StageListing : enables after setup
+Onboarding --> AWSCLI : provision credentials
+Onboarding --> AWSContext : select account/region
+
+StageListing --> AWSCLI : query running stages
+StageListing --> AWSContext : current account/region scope
+
+ConnectorConfig --> ConfigInputs : read connector+env inputs
+ConnectorConfig --> ConnectorAdapter : put, delete(empty), restart
+ConnectorAdapter --> ConnectorLib : invoke connector ops
+
+EventRoutingRules --> EventBridge : define rules/filters
+ProjectService --> EventBridge : emit runtime events
+EventBridge --> SNSTopic : route matching events
+SNSTopic --> AWSSNS : hosted in SNS
+
+' Subscription administration and deliveries
+ManualSub --> SNSTopic : manage subscriptions
+SNSTopic --> EmailSub : deliver notifications
+SNSTopic --> WebhookSub : deliver notifications
+
+' Metrics collection via paginator
+DeployMetrics --> GitHubPaginator : aggregate pages
+PRMetrics --> GitHubPaginator : aggregate pages
+GitHubPaginator --> GitHubActionsAPI
+GitHubPaginator --> GitHubPRsAPI
+
+GHWorkflows --> GitHubActions : hosted execution
+
+@enduml

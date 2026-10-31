@@ -1,0 +1,72 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+title lowes/auditor - Client-side Auditing Library Architecture
+
+component "Integrating JVM Application" as App <<Application>>
+
+package "Auditor Client Library (Kotlin/JVM)" as Lib {
+  [Auditor API] as API
+  [Diff Engine] as Diff
+  [Filter Engine] as Filter
+  [AuditEvent Builder] as Builder
+  [Publisher Adapter] as PubAdapter
+  [Logger Adapter] as LogAdapter
+}
+
+package "Abstractions" as Abstractions {
+  interface "EventPublisher" as IEventPublisher
+  interface "LogProvider" as ILogProvider
+  interface "AuditEventElementFilter" as IElementFilter
+}
+
+package "Default Implementation" as Default {
+  [KafkaEventPublisher] as KafkaPub
+}
+
+node "Event Stream" as Stream {
+  [Kafka Topic] as KafkaTopic
+}
+
+artifact "AuditEvent (JSON payload)" as AuditJSON
+
+' Inputs
+[oldObject] as Old
+[newObject] as New
+[AuditorEventConfig] as Config
+
+App --> API : audit(oldObject, newObject, config)
+Old --> API
+New --> API
+Config --> API
+
+API --> Diff : detect changes\nCREATED/UPDATED/DELETED
+Diff --> Filter : apply includes\n(InclusionFilter)
+Filter --> Builder : produce elements
+Builder --> PubAdapter : build AuditEvent
+LogAdapter ..> ILogProvider : logs
+
+PubAdapter ..> IEventPublisher : publish via abstraction
+IEventPublisher <.. KafkaPub : default binding
+
+PubAdapter --> AuditJSON : serialize
+KafkaPub --> KafkaTopic : send JSON
+AuditJSON --> KafkaTopic
+KafkaTopic --> [Downstream Consumers] : consume events\n(out of scope)
+
+IElementFilter <.. Filter : uses filter contract
+
+note right of API
+- Accepts oldObject, newObject
+- Applies AuditorEventConfig:
+  applicationName, eventSource, eventSubType,
+  metadata, element filters
+end note
+
+note bottom of Abstractions
+Integration-oriented via abstractions:\nEventPublisher, LogProvider, ElementFilter
+end note
+
+@enduml

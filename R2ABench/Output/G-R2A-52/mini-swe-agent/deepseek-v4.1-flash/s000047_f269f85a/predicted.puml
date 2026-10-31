@@ -1,0 +1,103 @@
+@startuml archifiltre-docs
+title archifiltre-docs - Layered Architecture (settings, export, hash)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+' ============ External actors / systems ============
+actor "End User\n(persisted preferences)" as EndUser
+actor "Operator / Integrator\n(triggers export & hash)" as Operator
+
+package "External Systems" {
+  [Electron Runtime Services\napp.getPath(\"userData\")] as ElectronRuntime
+  [Local Filesystem\n(files, folders, paths)] as Filesystem
+}
+
+' ============ Presentation / Integration layer ============
+package "Presentation / Integration Layer" {
+  [Application Settings Interface] as SettingsUI
+  [Export & Hash Trigger Interfaces] as ExportUI
+}
+
+' ============ Controller layer ============
+package "Controller Layer" {
+  [Settings Controller] as SettingsController
+  [Tree CSV Export Controller] as TreeExportController
+  [RESIP Export Controller] as ResipExportController
+  [CSV Export Controller] as CsvExportController
+  [Excel Export Controller] as ExcelExportController
+  [Hash Computation Controller] as HashController
+}
+
+' ============ Domain / Service layer ============
+package "Domain / Service Layer" {
+  [Settings Sanitizer\n(defaults: tracking, monitoring, language=en)] as SettingsSanitizer
+  [Translation Module\n(current language provider)] as TranslationModule
+  [Export Data Aggregator\n(files, metadata, aliases, comments, tags, hashes)] as ExportDataAggregator
+  [Hash Batch Processor\n(batch partitioning over paths + basePath)] as HashBatchProcessor
+  [Export Format Builder\n(CSV text, RESIP data, Excel data)] as ExportFormatBuilder
+}
+
+' ============ Async / Worker layer ============
+package "Asynchronous Execution Layer" {
+  [Background Worker Invoker\n(child-process / worker / batch runner)] as WorkerInvoker
+  [Observable Stream Gateway\n(progress + final results)] as ObservableGateway
+}
+
+' ============ Data / Persistence layer ============
+package "Data & Persistence Layer" {
+  database "Persisted User Settings Store\n(isTrackingEnabled, isMonitoringEnabled, language)" as SettingsStore
+  database "Application UserData Directory" as UserDataDir
+  database "Hash Debug Output Files\n(hash-result-debug, hash-error-debug)" as DebugFiles
+}
+
+' ============ Relationships ============
+EndUser --> SettingsUI
+Operator --> ExportUI
+
+SettingsUI --> SettingsController
+ExportUI --> TreeExportController
+ExportUI --> ResipExportController
+ExportUI --> CsvExportController
+ExportUI --> ExcelExportController
+ExportUI --> HashController
+
+' Settings flow
+SettingsController --> SettingsSanitizer
+SettingsSanitizer --> SettingsStore : read persisted settings
+SettingsSanitizer --> SettingsController : normalized settings with defaults
+
+' Export flows
+TreeExportController --> TranslationModule : current language
+TreeExportController --> WorkerInvoker
+ResipExportController --> ExportDataAggregator
+ResipExportController --> WorkerInvoker
+CsvExportController --> ExportDataAggregator
+CsvExportController --> TranslationModule : current language
+CsvExportController --> WorkerInvoker
+ExcelExportController --> CsvExportController : CsvExporterData
+ExcelExportController --> TranslationModule : current language
+ExcelExportController --> WorkerInvoker
+
+ExportDataAggregator --> ExportFormatBuilder
+ExportFormatBuilder --> WorkerInvoker
+WorkerInvoker --> ObservableGateway : async progress & results
+
+' Hash flows
+HashController --> HashBatchProcessor
+HashBatchProcessor --> Filesystem : read file paths / basePath
+HashBatchProcessor --> WorkerInvoker
+WorkerInvoker --> DebugFiles : buffered writers
+DebugFiles --> UserDataDir
+
+' Platform dependencies
+UserDataDir --> ElectronRuntime
+SettingsStore --> ElectronRuntime
+ObservableGateway --> TreeExportController
+ObservableGateway --> ResipExportController
+ObservableGateway --> CsvExportController
+ObservableGateway --> ExcelExportController
+ObservableGateway --> HashController
+
+@enduml

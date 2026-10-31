@@ -1,0 +1,83 @@
+@startuml
+
+node "Python Execution Environment" as pyEnv {
+
+  package "Configuration & Build Orchestration" as L1 {
+    component "YAML Config Reader" as yamlReader
+    component "Simulator Builder" as builder
+  }
+
+  package "MuJoCo XML Integration" as L2 {
+    component "MuJoCo XML Integration" as xmlMerge
+  }
+
+  package "Domain Modules" as L3 {
+    component "Biomechanical Model Module(s)" as bioMod
+    component "Perception Module(s)" as percMod
+    component "Interaction Task Module(s)" as taskMod
+  }
+
+  package "Simulator Runtime (Gym Interface & Packaging)" as L4 {
+    component "Standalone Gym-Compatible Simulator" as sim
+    component "Packaging Manager" as packer
+  }
+
+  package "Training Workflow" as L5 {
+    component "RL Trainer" as trainer
+  }
+
+  package "Evaluation & Artifacts" as L6 {
+    component "Evaluation Runner" as evalRunner
+    component "Checkpoint Loader" as ckptLoader
+    component "Simulator Loader" as simLoader
+    component "Evaluation Output Manager" as evalOut
+    component "Action Logger" as actionLog
+  }
+}
+
+cloud "MuJoCo" as mujoco
+interface "OpenAI Gym Interface" as gymIface
+database "File System (Run Folder)" as fs
+
+' Core dependencies
+yamlReader -> builder
+builder -> xmlMerge
+builder -> bioMod
+builder -> taskMod
+builder -> percMod
+bioMod -> xmlMerge
+taskMod -> xmlMerge
+
+' Build and packaging flow
+builder -> sim
+builder -> packer
+packer -> sim
+packer -> fs
+
+' Gym interface and runtime
+sim -> gymIface
+sim -> mujoco
+
+' Training workflow
+trainer -> builder
+trainer -> sim
+trainer -> fs
+
+' Evaluation workflow
+evalRunner -> ckptLoader
+evalRunner -> simLoader
+evalRunner -> evalOut
+evalRunner -> actionLog
+evalRunner -> sim
+evalRunner -> fs
+
+simLoader -> fs
+simLoader -> sim
+
+' File system interactions
+yamlReader -> fs
+ckptLoader -> fs
+evalOut -> fs
+actionLog -> fs
+
+@enduml

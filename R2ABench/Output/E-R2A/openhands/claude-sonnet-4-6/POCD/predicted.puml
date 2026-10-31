@@ -1,0 +1,191 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam defaultFontSize 12
+skinparam rectangle {
+    BackgroundColor #F8F8F8
+    BorderColor #888888
+}
+skinparam component {
+    BackgroundColor #DDEEFF
+    BorderColor #336699
+}
+skinparam database {
+    BackgroundColor #FFF3CD
+    BorderColor #856404
+}
+skinparam cloud {
+    BackgroundColor #E8F5E9
+    BorderColor #2E7D32
+}
+skinparam arrow {
+    Color #555555
+}
+
+title POCD — Persistent Object Consistency Detection\nSystem Architecture
+
+actor "Technical User /\nClass Diagram Manager" as TechUser
+actor "Unauthenticated\nUser" as AnonUser
+actor "New User" as NewUser
+actor "Third-Party\nApplication" as ThirdParty
+
+rectangle "User Interface Layer (Frontend)" as UILayer {
+    component "Registration &\nLogin UI" as AuthUI
+    component "File Management\nUI" as FileUI
+    component "Detection\nConfiguration UI" as ConfigUI
+    component "Detection Result\n& Repair UI" as ResultUI
+    component "Detection Records\n& Report Export UI" as RecordUI
+    component "Help & Cases\nUI" as HelpUI
+}
+
+rectangle "Business Logic Layer (Backend)" as BizLayer {
+    rectangle "Account & Access Control" {
+        component "Authentication &\nAuthorization Service" as AuthSvc
+        component "Role-Based Access\nControl (RBAC)" as RBAC
+    }
+
+    rectangle "File Management" {
+        component "File Upload /\nDownload Service" as FileSvc
+    }
+
+    rectangle "Parsing Engine" {
+        component "MDJ Class Diagram\nParser" as MDJParser
+        component "MySQL Database\nParser (JDBC)" as DBParser
+        component "JSON Conversion\n(Jackson)" as JsonConv
+    }
+
+    rectangle "Core Detection Engine" {
+        component "Entity / Attribute /\nRelationship Matching" as MatchingEngine
+        component "Field & Type\nInconsistency Detector" as FieldDetector
+        component "Attribute-Column\nMismatch Detector" as AttrDetector
+        component "Class-Table\nMismatch Detector" as ClassDetector
+        component "Relationship\nInconsistency Detector" as RelDetector
+    }
+
+    rectangle "Repair Engine" {
+        component "Class Diagram\nRepair Service" as CDRepairSvc
+        component "Database\nRepair Service" as DBRepairSvc
+    }
+
+    rectangle "Configuration & Reporting" {
+        component "Detection Rule\nConfiguration Service" as RuleSvc
+        component "Detection Exception\nConfiguration Service" as ExcSvc
+        component "Report Export\nService" as ReportSvc
+        component "Historical Records\nService" as HistorySvc
+    }
+
+    rectangle "Help & Cases" {
+        component "Help Manual\nService" as HelpSvc
+        component "Detection Case\nService" as CaseSvc
+    }
+
+    component "Open API\nGateway" as OpenAPI
+    component "Async Processing\n& Task Queue" as AsyncQueue
+    component "Operation Log\nService" as LogSvc
+    component "SSL / Secure\nTransport Layer" as SSLLayer
+}
+
+rectangle "Data Access Layer" as DALayer {
+    database "Application Database\n(MySQL)" as AppDB {
+        component "User Accounts\n& Sessions" as UserRepo
+        component "Class Diagram Files\n& Parsing Results" as CDRepo
+        component "Database Design Files\n& Parsing Results" as DBRepo
+        component "Detection Rules\n& Exceptions" as RuleRepo
+        component "Matching Results\n& Detection Reports" as MatchRepo
+        component "Repair Suggestions\n& Repair Results" as RepairRepo
+        component "Historical Records\n& Operation Logs" as LogRepo
+        component "Help Manuals\n& Case Files" as HelpRepo
+    }
+    component "JDBC Database\nConnector" as JDBCConn
+}
+
+cloud "External Systems" {
+    database "Target MySQL\nDatabase" as ExtMySQL
+    component "StarUML (.mdj)\nClass Diagram Files" as MDJFile
+}
+
+TechUser --> AuthUI
+TechUser --> FileUI
+TechUser --> ConfigUI
+TechUser --> ResultUI
+TechUser --> RecordUI
+AnonUser --> AuthUI
+AnonUser --> ResultUI
+AnonUser --> HelpUI
+NewUser --> HelpUI
+ThirdParty --> OpenAPI
+
+AuthUI --> SSLLayer
+FileUI --> SSLLayer
+ConfigUI --> SSLLayer
+ResultUI --> SSLLayer
+RecordUI --> SSLLayer
+HelpUI --> SSLLayer
+
+SSLLayer --> AuthSvc
+SSLLayer --> FileSvc
+SSLLayer --> RuleSvc
+SSLLayer --> ExcSvc
+SSLLayer --> ReportSvc
+SSLLayer --> HistorySvc
+SSLLayer --> HelpSvc
+SSLLayer --> CaseSvc
+SSLLayer --> MDJParser
+SSLLayer --> DBParser
+
+AuthSvc --> RBAC
+FileSvc --> MDJParser
+FileSvc --> DBParser
+
+MDJParser --> JsonConv
+DBParser --> JsonConv
+DBParser --> JDBCConn
+JsonConv --> MatchingEngine
+
+MatchingEngine --> FieldDetector
+MatchingEngine --> AttrDetector
+MatchingEngine --> ClassDetector
+MatchingEngine --> RelDetector
+
+FieldDetector --> CDRepairSvc
+FieldDetector --> DBRepairSvc
+AttrDetector --> CDRepairSvc
+AttrDetector --> DBRepairSvc
+ClassDetector --> CDRepairSvc
+ClassDetector --> DBRepairSvc
+RelDetector --> CDRepairSvc
+RelDetector --> DBRepairSvc
+
+AsyncQueue --> MatchingEngine
+AsyncQueue --> FieldDetector
+AsyncQueue --> AttrDetector
+AsyncQueue --> ClassDetector
+AsyncQueue --> RelDetector
+
+OpenAPI --> SSLLayer
+
+AuthSvc --> UserRepo
+FileSvc --> CDRepo
+FileSvc --> DBRepo
+MDJParser --> CDRepo
+DBParser --> DBRepo
+RuleSvc --> RuleRepo
+ExcSvc --> RuleRepo
+MatchingEngine --> MatchRepo
+FieldDetector --> MatchRepo
+AttrDetector --> MatchRepo
+ClassDetector --> MatchRepo
+RelDetector --> MatchRepo
+CDRepairSvc --> RepairRepo
+DBRepairSvc --> RepairRepo
+HistorySvc --> LogRepo
+LogSvc --> LogRepo
+HelpSvc --> HelpRepo
+CaseSvc --> HelpRepo
+ReportSvc --> MatchRepo
+
+JDBCConn --> ExtMySQL
+MDJParser ..> MDJFile : "reads"
+
+@enduml

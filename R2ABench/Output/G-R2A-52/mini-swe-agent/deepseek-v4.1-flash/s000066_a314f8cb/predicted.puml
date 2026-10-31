@@ -1,0 +1,112 @@
+@startuml
+title Earth Defender - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ===================== Client Layer =====================
+package "Client Layer (Browser / Three.js)" #E3F2FD {
+  component "3D Game Client\n(Three.js)" as GameClient
+  component "Asset Loader" as AssetLoader
+  component "WebSocket Session Manager\n(client-initiated only)" as WSSession
+  component "Message Codec\n[JSON event,data] / [action,data?]" as Codec
+  component "Heartbeat Timer\n(ping @ 60s)" as Heartbeat
+  component "Reconnect Handler\n(roomID, playerID, index)" as Reconnect
+  component "Room UI\n(create / join room)" as RoomUI
+  component "Server List UI" as ServerListUI
+  component "Gameplay Scene / Ship Manager" as Scene
+}
+
+' ===================== Web / Delivery Layer =====================
+package "Web / Delivery Layer" #E8F5E9 {
+  component "DNS / Load Balancer\n(server address resolution)" as DNS
+  component "Web Server\n(static asset delivery)" as WebServer
+}
+
+' ===================== Server Layer =====================
+package "Game Server Layer (Erlang/OTP)" #FFF3E0 {
+  component "WebSocket Endpoint\n(HTTP upgrade)" as WSEndpoint
+  component "Connection / Session Manager" as SessionMgr
+  component "Message Router\n(event dispatch)" as Router
+  component "Room Manager\n(create / join / lifecycle)" as RoomMgr
+  component "Game Loop Engine\n(soft real-time)" as GameLoop
+  component "Reconnect / Session Restore" as ReconnectSvc
+  component "Heartbeat Monitor\n(ping/pong, 60s)" as HbMonitor
+  component "Server List / Redirect Service" as ServerListSvc
+}
+
+package "Master / Replica Topology (Fault Tolerance)" #FCE4EC {
+  component "Primary Game Server Node\n(master)" as MasterNode
+  component "Replica Server Node\n(failover)" as ReplicaNode
+}
+
+' ===================== Data Layer =====================
+package "Data Layer" #F3E5F5 {
+  database "Room State Store\n(rooms, player counts)" as RoomStore
+  database "Player / Session Context Store\n(roomID, playerID, index)" as SessionStore
+  database "Server Registry\n(servers_list)" as ServerRegistry
+}
+
+' ===================== External Systems =====================
+package "External Systems" #ECEFF1 {
+  component "Player (Browser User)" as Player
+  component "Game Operator / Deployment Tools" as Operator
+}
+
+' ---------- Relationships ----------
+Player --> GameClient
+Player --> RoomUI
+GameClient --> RoomUI
+GameClient --> Scene
+GameClient --> AssetLoader
+RoomUI --> WSSession
+ServerListUI --> WSSession
+Scene --> WSSession
+
+AssetLoader --> DNS : resolve web server
+DNS --> WebServer : HTTP
+AssetLoader --> WebServer : HTTPS static assets
+
+WSSession --> Codec
+WSSession --> Heartbeat
+WSSession --> Reconnect
+Codec --> WSEndpoint : WebSocket over HTTP
+Heartbeat --> Codec
+Reconnect --> Codec
+
+WSEndpoint --> SessionMgr
+SessionMgr --> Router
+Router --> RoomMgr
+Router --> ReconnectSvc
+Router --> HbMonitor
+Router --> ServerListSvc
+RoomMgr --> GameLoop
+ReconnectSvc --> GameLoop
+
+RoomMgr --> RoomStore
+SessionMgr --> SessionStore
+ReconnectSvc --> SessionStore
+ServerListSvc --> ServerRegistry
+
+MasterNode --> RoomMgr
+MasterNode --> SessionMgr
+MasterNode --> GameLoop
+MasterNode --> ReplicaNode : state replication / failover
+ReplicaNode --> RoomStore
+ReplicaNode --> SessionStore
+
+Operator --> MasterNode : build / start / configure
+Operator --> ReplicaNode : deploy replica
+
+note right of WSSession
+  Client-initiated connections only.
+  No browser-to-browser P2P.
+end note
+
+note bottom of ServerListSvc
+  Outbound actions: servers_list,
+  servers_list_redirect, room_players_number,
+  game_reconnect, server_error, pong
+end note
+
+@enduml

@@ -1,0 +1,111 @@
+@startuml
+title AI-Driven Text Adventure Game and Community Platform - Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+
+package "Client Tier" as ClientTier {
+    component [Web Browser Vue.js Nuxt.js] as WebClient
+    component [Mobile Client] as MobileClient
+}
+
+package "API Gateway" as GatewayTier {
+    component [API Gateway] as APIGateway
+}
+
+package "Application Services Iris" as AppTier {
+    package "Game System" as GameSystem {
+        component [Game Engine Service] as GameEngine
+        component [Save Management Service] as SaveService
+        component [Background Setup Service] as BackgroundService
+    }
+    package "Community System" as CommunitySystem {
+        component [Post Service] as PostService
+        component [Comment Service] as CommentService
+        component [Favorites Service] as FavoritesService
+        component [Notification Service] as NotificationService
+    }
+    package "User and Admin System" as UserSystem {
+        component [User Account Service] as UserAccountService
+        component [User Profile Service] as UserProfileService
+        component [Admin Governance Service] as AdminService
+    }
+    package "Achievement System" as AchievementSystem {
+        component [Achievement Currency Service] as AchievementService
+    }
+}
+
+package "AI LLM Integration Layer" as AILayer {
+    component [LLM Adapter Service] as LLMAdapter
+    component [AIGC Media Service] as AIGCMedia
+}
+
+package "Data Tier MySQL GORM" as DataTier {
+    database [User Auth DB] as UserDB
+    database [Game Saves DB] as GameDB
+    database [Community DB] as CommunityDB
+    database [Achievement DB] as AchievementDB
+    database [Log Audit DB] as LogDB
+}
+
+package "External Services" as ExtTier {
+    component [LLM Cloud Provider] as LLMProvider
+    component [Cloud Storage] as CloudStorage
+    component [Email SMS Provider] as NotifProvider
+}
+
+package "Infrastructure Docker Kubernetes" as InfraTier {
+    component [Kubernetes Orchestration] as K8s
+    component [Docker Containers] as Docker
+}
+
+WebClient --> APIGateway : HTTPS
+MobileClient --> APIGateway : HTTPS
+APIGateway --> GameEngine
+APIGateway --> PostService
+APIGateway --> CommentService
+APIGateway --> UserAccountService
+APIGateway --> AdminService
+APIGateway --> NotificationService
+APIGateway --> FavoritesService
+
+GameEngine --> SaveService
+GameEngine --> BackgroundService
+GameEngine --> LLMAdapter
+SaveService --> PostService : share save
+
+PostService --> CommentService
+PostService --> NotificationService
+CommentService --> NotificationService
+PostService --> FavoritesService
+
+UserAccountService --> UserProfileService
+AdminService --> UserAccountService
+AdminService --> PostService
+
+GameEngine --> AchievementService
+PostService --> AchievementService
+
+LLMAdapter --> LLMProvider : LLM API
+AIGCMedia --> LLMProvider
+AIGCMedia --> CloudStorage
+GameEngine --> AIGCMedia
+
+UserAccountService --> UserDB
+UserProfileService --> UserDB
+GameEngine --> GameDB
+SaveService --> GameDB
+PostService --> CommunityDB
+CommentService --> CommunityDB
+FavoritesService --> CommunityDB
+NotificationService --> CommunityDB
+AchievementService --> AchievementDB
+AdminService --> LogDB
+
+NotificationService --> NotifProvider
+
+AppTier ..> Docker
+DataTier ..> Docker
+Docker ..> K8s
+
+@enduml

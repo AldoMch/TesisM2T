@@ -1,0 +1,51 @@
+@startuml
+title PromptHub - System Architecture (Component View)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+
+actor "Visitor / User / Admin" as Actor
+
+rectangle "Web Front End\n(HTML/CSS/JS, Vue, jQuery)" as FE
+boundary "Security Controls\n(HTTPS, AuthN/AuthZ, CORS, Firewall)" as SEC
+
+node "Server Runtime (Docker)" as DOCKER {
+  package "Back End API (Django, Python)" as BACKEND {
+    component "Auth & Account Service" as AUTH
+    component "Artwork & Review Service" as ART
+    component "Favorites & Categories Service" as FAV
+    component "Comment & Reply Service" as COM
+    component "Follow & History Service" as FOL
+    component "Search & Query Service" as SEARCH
+    component "Notification Service" as NOTIF
+    component "Recommendation Service" as RECO
+  }
+  component "Algorithm Support\n(Python, PyTorch/TensorFlow)" as ALG
+  database "SQLite\n(users, artworks, reviews,\ncomments, replies, favorites,\ncategories, follows, history,\nnotifications, logs)" as DB
+}
+
+cloud "Email Service" as EMAIL
+
+Actor --> FE : browse, upload, manage
+FE --> SEC : UI requests
+SEC --> BACKEND : HTTP API
+
+' Service persistence
+AUTH --> DB
+ART --> DB
+FAV --> DB
+COM --> DB
+FOL --> DB
+SEARCH --> DB
+NOTIF --> DB
+RECO --> DB
+
+' Recommendation path
+RECO --> ALG : recommend()
+ALG --> DB : read signals/preferences
+
+' Email interactions
+AUTH --> EMAIL : send verification codes
+
+@enduml

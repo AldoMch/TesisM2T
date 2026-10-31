@@ -1,0 +1,99 @@
+@startuml
+
+node "Web Browser (Firefox/Chrome/360)" {
+  package "Presentation Layer" {
+    component "Web UI Shell & Navigation"
+    component "Account Management UI"
+    component "Model Search & View UI"
+    component "Evolution Graph Viewer"
+    component "Contribution & Code Editor UI"
+    component "User Admin UI"
+  }
+  component "Browser Console"
+}
+
+node "API Backend" {
+  package "Application/API Layer" {
+    interface "HTTP/HTTPS API"
+    component "Authentication & Session Service"
+    component "Authorization/Permission Service"
+    component "Model Repository Service"
+    component "Source Management Service"
+    component "Search Service"
+    component "Evolution Relationship Service"
+    component "Dataset & Training Records Service"
+  }
+}
+
+package "Algorithm Support Layer" {
+  component "ONNX/PyTorch Parser"
+  component "Evolution Diff Engine"
+  component "Graph Data Builder"
+  component "Metrics Handler"
+}
+
+package "Data/Storage Layer" {
+  component "Neo4j Repository"
+  component "MySQL Repository"
+}
+
+package "Security & Compliance Layer" {
+  component "Encryption Module"
+  component "Privacy & Compliance Manager"
+}
+
+database "Neo4j"
+database "MySQL"
+cloud "Python Libraries"
+cloud "OAuth 2.0 Identity Provider"
+
+"Web UI Shell & Navigation" -> "HTTP/HTTPS API"
+"Account Management UI" -> "HTTP/HTTPS API"
+"Model Search & View UI" -> "HTTP/HTTPS API"
+"Evolution Graph Viewer" -> "HTTP/HTTPS API"
+"Contribution & Code Editor UI" -> "HTTP/HTTPS API"
+"User Admin UI" -> "HTTP/HTTPS API"
+
+"Web UI Shell & Navigation" -> "Browser Console"
+
+"HTTP/HTTPS API" -> "Authentication & Session Service"
+"HTTP/HTTPS API" -> "Authorization/Permission Service"
+"HTTP/HTTPS API" -> "Model Repository Service"
+"HTTP/HTTPS API" -> "Source Management Service"
+"HTTP/HTTPS API" -> "Search Service"
+"HTTP/HTTPS API" -> "Evolution Relationship Service"
+"HTTP/HTTPS API" -> "Dataset & Training Records Service"
+
+"Authentication & Session Service" -> "OAuth 2.0 Identity Provider"
+
+"Authorization/Permission Service" -> "MySQL Repository"
+"Model Repository Service" -> "MySQL Repository"
+"Source Management Service" -> "MySQL Repository"
+"Evolution Relationship Service" -> "Neo4j Repository"
+"Dataset & Training Records Service" -> "MySQL Repository"
+"Search Service" -> "MySQL Repository"
+"Search Service" -> "Neo4j Repository"
+
+"ONNX/PyTorch Parser" -> "Python Libraries"
+"Source Management Service" -> "ONNX/PyTorch Parser"
+"Model Repository Service" -> "ONNX/PyTorch Parser"
+"Evolution Relationship Service" -> "Evolution Diff Engine"
+"Evolution Relationship Service" -> "Graph Data Builder"
+"Dataset & Training Records Service" -> "Metrics Handler"
+
+"Model Repository Service" -> "Authorization/Permission Service"
+"Source Management Service" -> "Authorization/Permission Service"
+"Evolution Relationship Service" -> "Authorization/Permission Service"
+
+"Model Repository Service" -> "Encryption Module"
+"Dataset & Training Records Service" -> "Encryption Module"
+"Authorization/Permission Service" -> "Encryption Module"
+
+"HTTP/HTTPS API" -> "Privacy & Compliance Manager"
+"Authentication & Session Service" -> "Privacy & Compliance Manager"
+"Authorization/Permission Service" -> "Privacy & Compliance Manager"
+
+"Neo4j Repository" -> "Neo4j"
+"MySQL Repository" -> "MySQL"
+
+@enduml

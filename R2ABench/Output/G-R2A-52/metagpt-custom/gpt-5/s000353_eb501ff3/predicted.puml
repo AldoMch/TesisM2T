@@ -1,0 +1,64 @@
+@startuml
+
+package "API Layer" {
+  component "HTTP API Service" as api
+  component "OpenAPI Router and Handlers" as openapiRouter
+}
+
+package "Middleware Layer" {
+  component "Authorization Middleware" as authMw
+  component "OpenAPI Request Validation Middleware" as validationMw
+}
+
+package "Management/Controller Layer" {
+  component "Ensembler CRUD Controller" as ensemblerCRUD
+  component "Router Listing Controller" as routerList
+  component "Router Lifecycle Manager" as lifecycleMgr
+}
+
+package "Cluster Integration Layer" {
+  component "Kubernetes Adapter/Client" as k8sAdapter
+}
+
+package "Ensembler Runtime Layer" {
+  component "PyFuncEnsembler Service" as pyfunc
+  component "MLflow Artifact Fetcher" as mlfetch
+  component "Docker Image Builder" as imgBuilder
+}
+
+package "Observability Layer" {
+  component "Jaeger Tracing Client" as jaegerClient
+}
+
+' External Systems
+node "Kubernetes cluster" as k8s {
+  component "Router Deployment" as routerDeployment
+}
+cloud "MLflow model registry" as mlflow
+cloud "Jaeger" as jaeger
+node "Docker Engine" as docker
+
+' Dependencies
+api --> openapiRouter
+api --> authMw
+api --> validationMw
+
+openapiRouter --> ensemblerCRUD
+openapiRouter --> routerList
+openapiRouter --> lifecycleMgr
+
+lifecycleMgr --> k8sAdapter
+k8sAdapter --> k8s
+
+routerDeployment --> pyfunc
+
+imgBuilder --> mlfetch
+mlfetch --> mlflow
+
+imgBuilder --> docker
+pyfunc --> imgBuilder
+
+routerDeployment --> jaegerClient
+jaegerClient --> jaeger
+
+@enduml

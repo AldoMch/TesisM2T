@@ -1,0 +1,141 @@
+@startuml
+title EMBC ESS - System Architecture (SRS Scope)
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam monochrome true
+left to right direction
+
+actor "Role-Based Front-End User" as RoleUser
+actor "Logged-In User" as LoggedUser
+actor "Developer" as Developer
+actor "System Integrator / Operator" as Operator
+actor "Database Operator / Admin" as DBOperator
+
+package "Browser Environment" {
+  component "Angular ClientApp" as ClientApp
+
+  package "Routing and UI" {
+    component "Landing Routing" as LandingRouting
+    component "Login Handling" as LoginHandling
+    component "Route Role Guard" as RoleGuard
+    component "Redirect Guard" as RedirectGuard
+    component "Session-Expired Page" as SessionExpired
+    component "Notifier Component" as Notifier
+    component "Module Double-Load Diagnostic" as ModuleDiagnostic
+  }
+
+  package "Client Infrastructure" {
+    component "HTTP Interceptor" as HttpInterceptor
+    component "Watchdog Timer" as WatchdogTimer
+    component "Cookie Service" as CookieService
+    component "Notification Queue Service" as NotificationQueue
+  }
+
+  package "NgRx Client State" {
+    component "NgRx Store: Immutable State / Actions / Reducers" as NgRxStore
+    component "Controlled-List Loader" as ControlledListLoader
+  }
+
+  package "Front-End API Service Wrappers" {
+    component "Evacuee Service (Read)" as EvacueeService
+    component "Incident-Task Service (Create/Read/Update)" as IncidentTaskService
+    component "Organization Service (Create/Read/Update)" as OrganizationService
+    component "Referral Service (Create/Read/Update/Delete)" as ReferralService
+    component "Registration Service (Create/Read/Update)" as RegistrationService
+    component "Registration PDF Collection" as RegistrationPdf
+  }
+}
+
+package "Backend / Server Side" {
+  component "Backend API (.NET Core WebAPI)" as BackendApi
+  component "API Controllers" as Controllers
+  component "C# Domain Classes and Domain Services" as DomainServices
+  component "Entity Framework / DbContext" as EfDbContext
+}
+
+database "MS SQL Database" as MsSql
+component "Repository SQL Data-Maintenance Scripts" as SqlScripts
+component "SiteMinder Authentication / Access Control" as SiteMinder
+component "Development Back Door (designated dev env only)" as DevBackDoor
+component "Local Dev Proxy + Role-Paired SM_TOKENs\n(volunteer, local authority, provincial admin)" as LocalDev
+component "External URL" as ExternalUrl
+
+RoleUser --> ClientApp
+LoggedUser --> ClientApp
+Developer --> LocalDev
+Operator --> LocalDev
+DBOperator --> SqlScripts
+
+ClientApp --> LandingRouting
+ClientApp --> LoginHandling
+ClientApp --> RoleGuard
+ClientApp --> HttpInterceptor
+
+RoleUser --> LandingRouting
+LandingRouting --> RoleGuard : role-appropriate route
+LoginHandling --> RoleGuard : unauthenticated redirect
+
+RoleGuard --> LoginHandling : unauthenticated
+RoleGuard --> ClientApp : role-authorized access
+
+HttpInterceptor --> WatchdogTimer : reset on each request
+HttpInterceptor --> SessionExpired : 401 while logged in
+HttpInterceptor --> CookieService : get/set cookies
+ClientApp --> NgRxStore
+
+ControlledListLoader --> NgRxStore : initialization controlled-list data
+ClientApp --> ControlledListLoader : app initialization
+ControlledListLoader ..> BackendApi : controlled-list initialization data load\n(not a parameterized endpoint in SRS)
+
+NotificationQueue --> Notifier : observable notification queue
+ClientApp --> NotificationQueue : queue notification
+
+RedirectGuard --> ExternalUrl : router navigation
+ClientApp --> RedirectGuard
+
+ModuleDiagnostic --> Developer : alert on double-loaded module
+
+EvacueeService --> HttpInterceptor
+IncidentTaskService --> HttpInterceptor
+OrganizationService --> HttpInterceptor
+ReferralService --> HttpInterceptor
+RegistrationService --> HttpInterceptor
+RegistrationService --> RegistrationPdf : PDF collection capability
+
+ClientApp --> EvacueeService
+ClientApp --> IncidentTaskService
+ClientApp --> OrganizationService
+ClientApp --> ReferralService
+ClientApp --> RegistrationService
+
+ClientApp --> BackendApi : HTTP requests / API communication
+HttpInterceptor --> BackendApi : intercepts and forwards HTTP
+BackendApi --> Controllers
+Controllers --> DomainServices
+DomainServices --> EfDbContext
+EfDbContext --> MsSql
+
+ClientApp --> SiteMinder : respects authentication/access control
+BackendApi --> SiteMinder : SiteMinder-aware auth context
+LocalDev --> ClientApp : proxy configuration and role-paired tokens
+LocalDev --> DevBackDoor
+DevBackDoor --> Controllers : development-only bypass
+SqlScripts --> MsSql : targeted transactional data maintenance\n(e.g., Volunteer.Active = 0)
+
+note right of NgRxStore
+  NgRx usage is limited to selected models.
+  State changes use actions and reducers.
+end note
+
+note bottom of SqlScripts
+  Scripts use a target-filter variable at top,
+  run in a transaction, and require DB backup first.
+end note
+
+note bottom of BackendApi
+  No message queue component is required by this SRS.
+end note
+
+@enduml

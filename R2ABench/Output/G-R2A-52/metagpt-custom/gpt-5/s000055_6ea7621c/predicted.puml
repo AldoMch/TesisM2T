@@ -1,0 +1,48 @@
+@startuml
+cloud "Heroku" {
+  node "Node.js Runtime" {
+    package "Server/HTTP Layer" {
+      component "HTTP Server"
+    }
+
+    package "Routing Layer" {
+      component "Router Module"
+    }
+
+    package "Request Handling Layer" {
+      component "Handler Module"
+      component "Media Type Mapper"
+    }
+
+    package "Business Logic Layer" {
+      component "Autocomplete/Search Algorithm Module"
+    }
+
+    package "Data Access Layer" {
+      component "Local Data Access Module"
+      component "Value Extraction Utility"
+    }
+  }
+}
+
+node "Web Browser" {
+  package "Client/UI Layer" {
+    component "Frontend Search UI"
+    component "Frontend Request Initiator"
+  }
+}
+
+node "Local Filesystem\n(Public Asset Directory)" as FS
+node "Local JSON Laureate Data Source" as JSON
+
+"Frontend Search UI" --> "Frontend Request Initiator"
+"Frontend Request Initiator" --> "HTTP Server"
+"HTTP Server" --> "Router Module"
+"Router Module" --> "Handler Module"
+"Router Module" --> "Autocomplete/Search Algorithm Module"
+"Handler Module" --> "Media Type Mapper"
+"Handler Module" --> FS
+"Autocomplete/Search Algorithm Module" --> "Local Data Access Module"
+"Local Data Access Module" --> "Value Extraction Utility"
+"Local Data Access Module" --> JSON
+@enduml

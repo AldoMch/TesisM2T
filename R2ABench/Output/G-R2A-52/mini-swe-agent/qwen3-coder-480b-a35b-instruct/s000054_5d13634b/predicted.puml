@@ -1,0 +1,100 @@
+@startuml
+title tokencard/contracts System Architecture
+
+skinparam componentStyle rectangle
+
+' Layers
+package "Ethereum Network" {
+    [Ethereum Node]
+}
+
+package "Consumer Contract Wallet Layer" {
+    [Consumer Contract Wallet] as Wallet
+    [Gas Tank] as Gas
+}
+
+package "Supporting Contracts Layer" {
+    [Token Whitelist] as Whitelist
+    [Oracle/Rate Provider] as Oracle
+    [Controller Contracts] as Controller
+}
+
+package "ENS Layer" {
+    [Ethereum Name Service] as ENS
+}
+
+package "Integration Layer" {
+    [Go Bindings Generator] as Generator
+    [Integrator Applications] as Integrators
+}
+
+' Major Components and Data Stores
+database "Wallet Storage" {
+    [ETH & ERC20 Assets] as Assets
+}
+
+database "Whitelist Data" {
+    [Token Attributes] as TokenData
+}
+
+database "Exchange Rates" {
+    [Rate Data] as RateData
+}
+
+' External Systems
+actor "Owner" as Owner
+actor "Controllers" as Controllers
+actor "Integrators/Developers" as Developers
+
+' Dependencies and Interactions
+Wallet --> Assets : holds
+Wallet --> ENS : resolves contracts
+Wallet --> Whitelist : checks token support
+Wallet --> Oracle : gets exchange rates
+Wallet --> Gas : uses for transactions
+
+Whitelist --> TokenData : stores
+Oracle --> RateData : provides
+
+ENS --> Controller : resolves
+ENS --> Whitelist : resolves
+ENS --> Oracle : resolves
+
+Generator --> Wallet : generates bindings
+Generator --> Controller : generates bindings
+Generator --> Whitelist : generates bindings
+Generator --> Oracle : generates bindings
+
+Integrators --> Generator : uses bindings
+Developers --> Integrators : develops
+
+Owner --> Wallet : owns
+Controllers --> Controller : operates
+
+note right of Wallet
+  Core smart contract holding
+  user assets and managing
+  token operations
+end note
+
+note right of ENS
+  Resolves contract addresses
+  for wallet integrations
+end note
+
+note right of Whitelist
+  Determines token support,
+  loadability, burnability
+end note
+
+note right of Oracle
+  Provides exchange rates
+  for token operations
+end note
+
+note right of Gas
+  Separated gas-payment ETH
+  outside wallet protection
+end note
+
+@enduml

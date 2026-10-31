@@ -1,0 +1,222 @@
+@startuml EasyLaTex Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #FFF8E7
+  BorderColor #D4870A
+}
+skinparam database {
+  BackgroundColor #F0FFF4
+  BorderColor #2F855A
+}
+skinparam cloud {
+  BackgroundColor #FFF5F5
+  BorderColor #C53030
+}
+skinparam package {
+  BackgroundColor #EEF2FF
+  BorderColor #4A5568
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #4A90D9
+}
+
+'=== PRESENTATION LAYER ===
+package "Presentation Layer" {
+  component [WebUI / Frontend] as WebUI <<Browser SPA>>
+}
+
+'=== API GATEWAY / APPLICATION LAYER ===
+' H-003: SecurityMiddleware removed as primary routing hub; AuthService acts as the gateway authority
+package "API Gateway / Application Layer" {
+  component [AuthService] as AuthService <<Auth / Session / Permission Checks>>
+  component [PasswordRecoveryService] as PwdRecoverySvc <<Password Reset / Email Notification>>
+}
+
+'=== BUSINESS LOGIC LAYER ===
+package "Business Logic Layer" {
+  component [ProjectService] as ProjectSvc <<Project Management>>
+  component [GroupService] as GroupSvc <<Group Management>>
+  component [VersionControlService] as VersionSvc <<Version Control>>
+  component [FileUploadService] as FileUploadSvc <<File Ingestion>>
+  component [LaTeXGenerationService] as LaTeXGenSvc <<LaTeX Generation>>
+  component [ExportService] as ExportSvc <<Export Pipeline>>
+  component [CollaborationService] as CollabSvc <<Real-Time Collaboration>>
+  component [CommentService] as CommentSvc <<Comments>>
+}
+
+'=== AI / PROCESSING LAYER ===
+package "AI / Processing Layer" {
+  component [RecognitionOrchestrator] as RecOrch <<Routing Engine>>
+  component [HandwritingRecognitionModel] as HWModel <<Deep Learning>>
+  component [ImageRecognitionModel] as ImgModel <<OCR / Deep Learning>>
+  component [PDFExtractor] as PDFExt <<PDF Content Extraction>>
+  component [SpreadsheetParser] as SheetParser <<CSV / XLSX Parser>>
+}
+
+'=== RENDERING LAYER ===
+package "Rendering Layer" {
+  component [RenderingService] as RenderSvc <<LaTeX Compiler Wrapper>>
+}
+
+'=== DATA PERSISTENCE LAYER ===
+package "Data Persistence Layer" {
+  database [UserRepository] as UserRepo <<Users / Credentials>>
+  database [ProjectRepository] as ProjRepo <<Projects / Versions / Comments>>
+  database [GroupRepository] as GroupRepo <<Groups / Memberships>>
+  database [FileRepository] as FileRepo <<Uploaded File Metadata / DR-004>>
+  database [RecognitionResultRepository] as RecResultRepo <<Recognition Results / Generated LaTeX / DR-005>>
+}
+
+'=== FILE STORAGE LAYER ===
+package "File Storage Layer" {
+  component [FileStorageAdapter] as FileStor <<Object / File Storage Abstraction>>
+}
+
+'=== INFRASTRUCTURE LAYER ===
+package "Infrastructure Layer" {
+  node "Web Server" {
+    component "Apache 2.4+ / Nginx 1.18+" as WebSrv <<TLS Termination / Static Assets>>
+  }
+  node "Application Runtime - Python 3.8+" {
+    component "Python 3.8+ Runtime" as PyRuntime <<AI / Rendering Backend>>
+  }
+  node "Application Runtime - Node.js 14.x+" {
+    component "Node.js 14.x+ Runtime" as NodeRuntime <<Application Server>>
+  }
+}
+
+'=== EXTERNAL SYSTEMS ===
+' H-001: GDPR removed as runtime cloud component; compliance is a constraint, not a connected system
+' H-002: EditorCloud (Overleaf/TeXstudio) removed; .tex compatibility is a format requirement, not a runtime integration
+
+cloud "LaTeX Engine Runtime" as LatexCloud {
+  component "TeX Live" as TexLive <<LaTeX Engine>>
+  component "MiKTeX" as MiKTeX <<LaTeX Engine (Alt)>>
+}
+
+cloud "Relational Database Runtime" as DBCloud {
+  database "MySQL 8.0+" as MySQL <<Primary DB>>
+  database "PostgreSQL 12+" as PgSQL <<Alternative DB>>
+}
+
+cloud "External Email / SMTP" as SMTPCloud {
+  component "SMTP Relay" as SMTPRelay <<Email Delivery>>
+}
+
+note bottom of SMTPCloud
+  Required for FR-007 Password Recovery
+  email notification delivery
+end note
+
+note top of WebUI
+  GDPR / Data Protection (C-012):
+  Regulatory constraint applied to all
+  user data handling and storage components.
+  Not a runtime integration.
+end note
+
+'=== ARROWS: PRESENTATION -> APPLICATION LAYER ===
+' S-001: RestAPI and WsAPI interfaces removed as intermediate routing nodes;
+'        connections restructured directly between components
+' DE-008: WebSrv now forwards into AuthService (entry point), not back to interface nodes
+WebUI --> WebSrv : HTTPS requests
+WebUI --> WebSrv : WebSocket upgrade
+WebSrv --> AuthService : forward REST requests
+WebSrv --> CollabSvc : proxy WebSocket (real-time)
+
+'=== ARROWS: APPLICATION LAYER -> BUSINESS LOGIC ===
+' DE-001: AuthService now gates all business services (not just CollabSvc)
+AuthService --> ProjectSvc : authorized requests
+AuthService --> GroupSvc : authorized requests
+AuthService --> VersionSvc : authorized requests
+AuthService --> FileUploadSvc : authorized requests
+AuthService --> LaTeXGenSvc : authorized requests (FR-012, FR-013 standalone editing)
+AuthService --> ExportSvc : authorized requests
+AuthService --> CommentSvc : authorized requests
+AuthService --> UserRepo : credential R/W
+AuthService --> CollabSvc : permission context
+
+'=== ARROWS: PASSWORD RECOVERY (FR-007) ===
+PwdRecoverySvc --> UserRepo : lookup / reset credentials
+PwdRecoverySvc --> SMTPRelay : send recovery email
+
+'=== ARROWS: BUSINESS LOGIC INTERNAL ===
+FileUploadSvc --> RecOrch : dispatch recognition task
+FileUploadSvc --> FileStor : persist raw uploaded files
+FileUploadSvc --> FileRepo : register file metadata (user/project association)
+FileUploadSvc --> UserRepo : associate upload with user (FR-011, DR-004)
+FileUploadSvc --> ProjRepo : associate upload with project
+
+LaTeXGenSvc --> RenderSvc : compile for real-time preview (FR-013)
+LaTeXGenSvc --> RecResultRepo : persist generated LaTeX / results (DR-005)
+LaTeXGenSvc --> ProjRepo : associate generated content with project (DR-003)
+
+ExportSvc --> RenderSvc : compile for PDF / image export
+ExportSvc --> FileStor : persist generated artifacts
+ExportSvc --> LaTeXGenSvc : retrieve LaTeX source for export (FR-014)
+ExportSvc --> ProjRepo : retrieve LaTeX source content (FR-014)
+
+ProjectSvc --> ProjRepo : project CRUD
+ProjectSvc --> FileStor : retrieve file content
+
+GroupSvc --> GroupRepo : group / membership CRUD
+GroupSvc --> FileStor : retrieve shared file content
+
+' DE-007: VersionSvc connection to FileStor is bidirectional (read+write per FR-010)
+VersionSvc --> ProjRepo : version tree R/W
+VersionSvc --> FileStor : version snapshot read/write (FR-010)
+
+CommentSvc --> ProjRepo : comment R/W
+
+' M-002 / DE-002: CollabSvc wired to persistence and rendering for real-time loop
+CollabSvc --> ProjRepo : read/write project state (FR-009, FR-015)
+CollabSvc --> GroupRepo : read group membership (FR-010)
+CollabSvc --> FileStor : retrieve shared resources (FR-009)
+CollabSvc --> LaTeXGenSvc : trigger real-time LaTeX generation on edit (FR-013)
+CollabSvc --> RenderSvc : push preview render updates to clients (DE-002)
+CollabSvc --> WebSrv : push WebSocket render updates to WebUI (FR-013)
+
+'=== ARROWS: AI / PROCESSING LAYER ===
+RecOrch --> HWModel : handwritten input
+RecOrch --> ImgModel : image uploads
+RecOrch --> PDFExt : PDF uploads
+RecOrch --> SheetParser : CSV / XLSX uploads
+RecOrch --> LaTeXGenSvc : normalized recognized content
+RecOrch --> RecResultRepo : persist recognition results (DR-005)
+
+'=== ARROWS: RENDERING LAYER ===
+RenderSvc --> TexLive : LaTeX compilation
+RenderSvc --> MiKTeX : LaTeX compilation (alt)
+
+'=== ARROWS: PERSISTENCE LAYER -> DB RUNTIME ===
+UserRepo --> MySQL : SQL persistence
+UserRepo --> PgSQL : SQL persistence (alt)
+ProjRepo --> MySQL
+ProjRepo --> PgSQL
+GroupRepo --> MySQL
+GroupRepo --> PgSQL
+FileRepo --> MySQL
+FileRepo --> PgSQL
+RecResultRepo --> MySQL
+RecResultRepo --> PgSQL
+
+'=== ARROWS: INFRASTRUCTURE HOSTING ===
+' DE-003: FileUploadSvc, CommentSvc, LaTeXGenSvc now explicitly hosted
+PyRuntime --> RecOrch : hosts AI models
+PyRuntime --> RenderSvc : hosts rendering process
+NodeRuntime --> AuthService : hosts application services
+NodeRuntime --> PwdRecoverySvc
+NodeRuntime --> ProjectSvc
+NodeRuntime --> GroupSvc
+NodeRuntime --> VersionSvc
+NodeRuntime --> CollabSvc
+NodeRuntime --> ExportSvc
+NodeRuntime --> FileUploadSvc
+NodeRuntime --> CommentSvc
+NodeRuntime --> LaTeXGenSvc
+
+@enduml

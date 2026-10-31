@@ -1,0 +1,103 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define LOCAL_DEPLOYMENT #D4EDDA
+!define SERVER_DEPLOYMENT #F8D7DA
+
+skinparam component {
+  BackgroundColor COMPONENT_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+skinparam package {
+  BackgroundColor LAYER_COLOR
+  BorderColor #333333
+}
+
+skinparam rectangle {
+  BackgroundColor<<Local>> LOCAL_DEPLOYMENT
+  BackgroundColor<<Server>> SERVER_DEPLOYMENT
+  BorderColor #333333
+}
+
+' Client Layer (Front-end)
+package "Front-end Layer" as frontend {
+  component "Vue.js Web Client" as web_client
+}
+
+' Gateway Layer
+package "Gateway Layer" as gateway {
+  component "API Gateway" as api_gateway
+}
+
+' Service Layer with deployment boundaries
+rectangle "Local Computer Deployment" <<Local>> {
+  package "Service Layer" as service_local {
+    component "User Management Service" as user_service
+    component "Project Management Service" as project_service {
+      component "Baseline Management" as baseline_mgmt
+    }
+    component "Requirements Management Service" as req_service
+  }
+}
+
+rectangle "Server Deployment" <<Server>> {
+  package "Service Layer" as service_server {
+    component "Algorithm Service\n(NLP/PyTorch)" as algorithm_service
+  }
+}
+
+' Data Layer
+package "Data Layer" as data {
+  database "MongoDB Database" as mongodb
+}
+
+' Security Components
+cloud "Security Layer" as security {
+  component "HTTPS/TLS" as https
+  component "Data Encryption" as encryption
+}
+
+' Dependencies with security and network boundaries
+web_client --> https : "secure requests"
+https --> api_gateway : "HTTPS"
+
+api_gateway --> user_service : "routes requests"
+api_gateway --> project_service : "routes requests"
+api_gateway --> req_service : "routes requests"
+api_gateway --> algorithm_service : "routes analysis requests\nover network"
+
+req_service --> algorithm_service : "analysis requests\n(network boundary)"
+
+user_service --> mongodb : "CRUD operations"
+project_service --> mongodb : "CRUD operations"
+req_service --> mongodb : "CRUD operations"
+algorithm_service --> mongodb : "stores results\n(network boundary)"
+
+mongodb --> encryption : "data at rest"
+
+' Data flows for Word document processing
+web_client --> api_gateway : "Word document upload"
+api_gateway --> req_service : "document processing"
+req_service --> algorithm_service : "document analysis"
+
+' Forward tracing data flows
+req_service --> project_service : "tracing metadata"
+project_service --> baseline_mgmt : "baseline updates"
+baseline_mgmt --> mongodb : "stores baselines"
+
+' Network dependency annotation
+note top of api_gateway
+  Network Dependency (AD-001, C-008):
+  All services require network connectivity
+end note
+
+' Hardware requirement note
+note right of service_server
+  Server Hardware Requirements (C-007, C-012):
+  Recommended: EC2 t2.xlarge or equivalent
+  for algorithm service deployment
+end note
+
+@enduml

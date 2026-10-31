@@ -1,0 +1,155 @@
+@startuml
+!define RECTANGLE class
+
+skinparam rectangle {
+  BackgroundColor<<frontend>> #D6EAF8
+  BackgroundColor<<gateway>> #D5F5E3
+  BackgroundColor<<backend>> #FEF9E7
+  BackgroundColor<<storage>> #FDEDEC
+  BackgroundColor<<ml>> #F4ECF7
+  BackgroundColor<<infra>> #FDFEFE
+  BackgroundColor<<external>> #F0F3F4
+  BorderColor #555555
+  FontSize 13
+}
+
+skinparam component {
+  BackgroundColor<<frontend>> #D6EAF8
+  BackgroundColor<<gateway>> #D5F5E3
+  BackgroundColor<<backend>> #FEF9E7
+  BackgroundColor<<storage>> #FDEDEC
+  BackgroundColor<<ml>> #F4ECF7
+  BorderColor #555555
+}
+
+skinparam node {
+  BackgroundColor #EAECEE
+  BorderColor #555555
+}
+
+title Intelligent Text Annotation System (ITAS) - System Architecture
+
+actor "System Annotation\nAdministrator" as Admin
+actor "Data Annotator" as Annotator
+actor "Researcher" as Researcher
+
+node "Tencent Cloud" {
+
+  node "Client Tier" {
+    rectangle "Vue 3.0 Front End\n(vue-router, Pinia, Ant Design Vue, Axios)" <<frontend>> as FrontEnd
+  }
+
+  node "Edge / Proxy Tier" {
+    rectangle "Nginx\n(Reverse Proxy / Load Balancer)" <<gateway>> as Nginx
+  }
+
+  node "API Gateway & Security Tier" {
+    rectangle "Spring Gateway\n(Routing / Rate Limiting)" <<gateway>> as Gateway
+    rectangle "Spring Security\n(Authentication / Authorization)" <<gateway>> as Security
+  }
+
+  node "Microservice Tier (Spring Boot / Spring Cloud)" {
+
+    rectangle "Annotation Subsystem" <<backend>> {
+      component "User & Auth\nController\n(Login, Register, Profile)" <<backend>> as UserCtrl
+      component "Project\nController\n(Create, Update, Query)" <<backend>> as ProjectCtrl
+      component "Annotator\nController\n(Add, Remove, Query)" <<backend>> as AnnotatorCtrl
+      component "Document / Paper\nController\n(Upload, Delete, View)" <<backend>> as DocCtrl
+      component "Tag\nController\n(Create, Edit, Delete, Query)" <<backend>> as TagCtrl
+      component "Task\nController\n(Assign, Query, Complete)" <<backend>> as TaskCtrl
+      component "Annotation Mark\nController\n(Add, View, Modify, Delete)" <<backend>> as MarkCtrl
+      component "Result Export\nController\n(Return / Export Results)" <<backend>> as ResultCtrl
+    }
+
+    rectangle "Mining Subsystem" <<backend>> {
+      component "Document Upload\nController" <<backend>> as MineUpload
+      component "Format Conversion\nService\n(PDF/HTML/TXT)" <<backend>> as ConvSvc
+      component "Model Selection\nController\n(Preset / Community / 3rd-party)" <<backend>> as ModelSel
+      component "Information Extraction\nService\n(Paragraph & Entity)" <<backend>> as ExtractSvc
+    }
+
+    rectangle "Service Infrastructure\n(Spring Cloud)" <<backend>> {
+      component "Service Discovery\n(Spring Cloud)" <<backend>> as Discovery
+      component "Config Management\n(Spring Cloud Config)" <<backend>> as Config
+      component "Load Balancer\n(Spring Cloud LB)" <<backend>> as LB
+    }
+  }
+
+  node "Data & Storage Tier" {
+    database "MySQL\n(Users, Projects, Documents,\nTags, Tasks, Annotation Results)" <<storage>> as MySQL
+    database "Minio\n(Object Storage:\nPDF, HTML, TXT files)" <<storage>> as Minio
+    database "Redis\n(Cache)" <<storage>> as Redis
+  }
+
+  node "Messaging Tier" {
+    queue "RabbitMQ\n(Async Message Queue:\nFile Conversion Tasks)" <<infra>> as RabbitMQ
+  }
+
+  node "ML / Model Tier" {
+    rectangle "BERT Model\n(Paragraph Localization)" <<ml>> as BERT
+    rectangle "GPT / GPT API\n(Entity Recognition\n& Few-shot Extraction)" <<ml>> as GPT
+  }
+
+  node "Container & Deployment" {
+    rectangle "Docker\n(Containerized Services)" <<infra>> as Docker
+  }
+}
+
+node "External Services" {
+  rectangle "Third-party\nChatGPT-like API" <<external>> as ExtAPI
+}
+
+Admin --> FrontEnd
+Annotator --> FrontEnd
+Researcher --> FrontEnd
+
+FrontEnd -down-> Nginx : "HTTPS / Axios"
+Nginx -down-> Gateway : "HTTP forward"
+Gateway -down-> Security
+Security -down-> UserCtrl
+Security -down-> ProjectCtrl
+Security -down-> AnnotatorCtrl
+Security -down-> DocCtrl
+Security -down-> TagCtrl
+Security -down-> TaskCtrl
+Security -down-> MarkCtrl
+Security -down-> ResultCtrl
+Security -down-> MineUpload
+Security -down-> ModelSel
+
+UserCtrl -down-> MySQL
+ProjectCtrl -down-> MySQL
+AnnotatorCtrl -down-> MySQL
+DocCtrl -down-> MySQL
+DocCtrl -down-> Minio
+TagCtrl -down-> MySQL
+TaskCtrl -down-> MySQL
+MarkCtrl -down-> MySQL
+ResultCtrl -down-> MySQL
+
+MineUpload -down-> Minio
+MineUpload -right-> RabbitMQ : "queue conversion task"
+RabbitMQ -down-> ConvSvc : "consume"
+ConvSvc -down-> Minio : "store PDF/HTML/TXT"
+ConvSvc -down-> MySQL : "update document refs"
+
+ModelSel -down-> ExtractSvc
+ExtractSvc -down-> BERT : "paragraph localization"
+ExtractSvc -down-> GPT : "entity recognition\n& extraction"
+GPT -right-> ExtAPI : "API call"
+
+UserCtrl -right-> Redis : "session cache"
+ProjectCtrl -right-> Redis
+TaskCtrl -right-> Redis
+
+Discovery -[hidden]- Config
+Config -[hidden]- LB
+
+Docker ..> MySQL : hosts
+Docker ..> Minio : hosts
+Docker ..> Redis : hosts
+Docker ..> RabbitMQ : hosts
+Docker ..> BERT : hosts
+Docker ..> GPT : hosts
+
+@enduml

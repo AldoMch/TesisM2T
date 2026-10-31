@@ -1,0 +1,83 @@
+@startuml
+
+rectangle "HTTP Server" as http_server {
+    component "Node.js Runtime"
+}
+
+rectangle "Express App" as express_app {
+    component "Static File Server"
+    component "JSON Parser Middleware"
+    component "Status Endpoint Announcer"
+}
+
+rectangle "Logging Router" as logging_router {
+    component "/logger/in (POST)"
+    component "/logger/status (GET)"
+}
+
+rectangle "Socket.IO Server" as socketio_server {
+    component "Connection Manager"
+}
+
+express_app --> http_server : "hosted on"
+socketio_server --> http_server : "attaches to"
+logging_router --> express_app : "mounted under"
+
+rectangle "Web Browser" as browser {
+    rectangle "Browser UI" as browser_ui {
+        component "Client Interface"
+        component "Visualizer Loader"
+    }
+    
+    rectangle "Socket.IO Client" as socketio_client {
+        component "Connection Handler"
+        component "Message Receiver"
+    }
+    
+    rectangle "Validation & Error Handler" as validation_handler {
+        component "Ajv Schema Validator"
+        component "Error Object Generator"
+    }
+    
+    rectangle "Data Store" as data_store {
+        component "Log Objects List"
+        component "Metadata Processor"
+    }
+    
+    rectangle "Window Dispatcher" as window_dispatcher {
+        component "Default Window"
+        component "Window Registry"
+        component "Message Distributor"
+    }
+    
+    rectangle "Visualizer Dispatcher" as visualizer_dispatcher
+    
+    rectangle "Configuration Loader" as config_loader {
+        component "Visualizer Config"
+        component "User Overrides"
+    }
+    
+    rectangle "Visualizer Modules" as visualizer_modules {
+        component "Visualizer A"
+        component "Visualizer B"
+        component "Visualizer N"
+    }
+    
+    browser_ui --> socketio_client : "requires"
+    socketio_client --> validation_handler : "passes messages to"
+    validation_handler --> data_store : "stores objects\n(valid & wrapped errors)"
+    data_store --> window_dispatcher : "provides data"
+    window_dispatcher --> visualizer_dispatcher : "delegates rendering"
+    visualizer_dispatcher --> config_loader : "uses configuration"
+    config_loader --> visualizer_modules : "loads modules"
+    visualizer_dispatcher --> visualizer_modules : "calls"
+}
+
+rectangle "Logging Producers" as logging_producers {
+    component "External Clients"
+}
+
+logging_producers --> logging_router : "POST JSON logs to"
+socketio_server --> socketio_client : "broadcasts messages to"
+
+@enduml

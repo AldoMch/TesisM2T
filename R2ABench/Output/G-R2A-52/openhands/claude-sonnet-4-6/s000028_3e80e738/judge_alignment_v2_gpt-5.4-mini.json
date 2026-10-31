@@ -1,0 +1,317 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::API Gateway\\n(stage: StageName)"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::API Gateway"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "API Gateway Account::Calls hello/GET with id_token in headers",
+        "API Gateway Account::Returns hello plus user name when authorized"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::WhoAmI Method\\n(GET, Cognito auth,\\nresponse header:\\nx-pagopa-pn-cx-role [optional],\\nintegration maps custom:Role claim)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::Cognito User-Pool\\nAuthorizer\\n(CognitoUserPoolARN)"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::Cognito-authorizer::hello-function"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::ECS Proxy Method\\n(Cognito auth,\\nforwards x-pagopa-pn-cx-role\\nfrom custom:Role claim)"
+      ],
+      "gt_nodes": [
+        "API Gateway Account::auth-function"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Cognito Account::Cognito Stack (CloudFormation)::Cognito User Pool\\n(CognitoUserPoolName, token validity units:\\nAccessTokenValidityUnits,\\nIdTokenValidityUnits,\\nRefreshTokenValidityUnits)"
+      ],
+      "gt_nodes": [
+        "Cognito Account::Cognito Hosted UI"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Cognito Account::Cognito Stack (CloudFormation)::Cognito Identity Pool\\n(AuthName, AllowUnauthenticated=true)",
+        "Cognito Account::Cognito Stack (CloudFormation)::IAM Authenticated Role\\n(AssumeRoleWithWebIdentity\\nfederated: cognito-identity.amazonaws.com)",
+        "Cognito Account::Cognito Stack (CloudFormation)::IAM Unauthenticated Role\\n(AssumeRoleWithWebIdentity,\\ncognito-identity:amr = unauthenticated,\\naud = IdentityPool)",
+        "Cognito Account::Cognito Stack (CloudFormation)::Identity Pool\\nRole Attachment\\n(authenticated + unauthenticated)",
+        "Cognito Account::Cognito Stack (CloudFormation)::User Pool Client\\n(readable/writable attrs:\\ncustom:Role, email)"
+      ],
+      "gt_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::API Clients\\n(call API Gateway endpoint,\\nconsume x-pagopa-pn-cx-role header)"
+      ],
+      "gt_nodes": [
+        "Global::User"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::API Gateway Stack (CloudFormation)::API Gateway\\n(stage: StageName)",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Gateway Account::API Gateway Stack (CloudFormation)::API Gateway\\nVPC Link\\n(→ NLB ARN)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::API Gateway Stack (CloudFormation)::CallbackURL Output\\n(API Gateway endpoint:\\nhttps://{api-id}.execute-api.{region}.amazonaws.com/{stage})",
+      "reference_nodes": [
+        "API Gateway Account::API Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::API Gateway Stack (CloudFormation)::Cognito User-Pool\\nAuthorizer\\n(CognitoUserPoolARN)",
+      "reference_nodes": [
+        "API Gateway Account::Cognito-authorizer::hello-function"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::API Gateway Stack (CloudFormation)::ECS Proxy Method\\n(Cognito auth,\\nforwards x-pagopa-pn-cx-role\\nfrom custom:Role claim)",
+      "reference_nodes": [
+        "API Gateway Account::auth-function"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Gateway Account::API Gateway Stack (CloudFormation)::Network Load\\nBalancer (NLB)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "API Gateway Account::API Gateway Stack (CloudFormation)::WhoAmI Method\\n(GET, Cognito auth,\\nresponse header:\\nx-pagopa-pn-cx-role [optional],\\nintegration maps custom:Role claim)",
+      "reference_nodes": [
+        "API Gateway Account::Calls hello/GET with id_token in headers",
+        "API Gateway Account::Returns hello plus user name when authorized"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Gateway Account::VPC::Endpoint Security Group\\n(ingress: TCP 0-65535\\nfrom VpcCidr only)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Gateway Account::VPC::Subnets",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Gateway Account::VPC::Subnets::SQS VPC Interface\\nEndpoint\\n(type: interface,\\nregional SQS service name,\\nprivate DNS: enabled)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "AWS Services::Amazon SQS",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Cognito Stack (CloudFormation)::Cognito Identity Pool\\n(AuthName, AllowUnauthenticated=true)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Cognito Stack (CloudFormation)::Cognito User Pool\\n(CognitoUserPoolName, token validity units:\\nAccessTokenValidityUnits,\\nIdTokenValidityUnits,\\nRefreshTokenValidityUnits)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Cognito Stack (CloudFormation)::IAM Authenticated Role\\n(AssumeRoleWithWebIdentity\\nfederated: cognito-identity.amazonaws.com)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Cognito Stack (CloudFormation)::IAM Unauthenticated Role\\n(AssumeRoleWithWebIdentity,\\ncognito-identity:amr = unauthenticated,\\naud = IdentityPool)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Cognito Stack (CloudFormation)::Identity Pool\\nRole Attachment\\n(authenticated + unauthenticated)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Cognito Account::Cognito Stack (CloudFormation)::User Pool Client\\n(readable/writable attrs:\\ncustom:Role, email)",
+      "reference_nodes": [
+        "Cognito Account::Cognito User Pool"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::API Clients\\n(call API Gateway endpoint,\\nconsume x-pagopa-pn-cx-role header)",
+      "reference_nodes": [
+        "Global::User"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::API Gateway Account",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::AWS Services",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Cognito Account",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Installation Inputs\\n(CloudFormation YAML templates,\\nAWS CLI profiles, environment names,\\nDNS/domain values, API keys,\\naccount IDs, certificate IDs)",
+      "reference_nodes": []
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::API Gateway\\n(stage: StageName)",
+        "API Gateway Account::API Gateway Stack (CloudFormation)::CallbackURL Output\\n(API Gateway endpoint:\\nhttps://{api-id}.execute-api.{region}.amazonaws.com/{stage})",
+        "API Gateway Account::API Gateway Stack (CloudFormation)::Cognito User-Pool\\nAuthorizer\\n(CognitoUserPoolARN)"
+      ],
+      "gt_node": "API Gateway Account::API Gateway"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::WhoAmI Method\\n(GET, Cognito auth,\\nresponse header:\\nx-pagopa-pn-cx-role [optional],\\nintegration maps custom:Role claim)"
+      ],
+      "gt_node": "API Gateway Account::Calls hello/GET with id_token in headers"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::Cognito User-Pool\\nAuthorizer\\n(CognitoUserPoolARN)"
+      ],
+      "gt_node": "API Gateway Account::Cognito-authorizer::hello-function"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::WhoAmI Method\\n(GET, Cognito auth,\\nresponse header:\\nx-pagopa-pn-cx-role [optional],\\nintegration maps custom:Role claim)"
+      ],
+      "gt_node": "API Gateway Account::Returns hello plus user name when authorized"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "API Gateway Account::API Gateway Stack (CloudFormation)::ECS Proxy Method\\n(Cognito auth,\\nforwards x-pagopa-pn-cx-role\\nfrom custom:Role claim)"
+      ],
+      "gt_node": "API Gateway Account::auth-function"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Cognito Account::Cognito Stack (CloudFormation)::Cognito User Pool\\n(CognitoUserPoolName, token validity units:\\nAccessTokenValidityUnits,\\nIdTokenValidityUnits,\\nRefreshTokenValidityUnits)"
+      ],
+      "gt_node": "Cognito Account::Cognito Hosted UI"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Cognito Account::Cognito Stack (CloudFormation)::Cognito Identity Pool\\n(AuthName, AllowUnauthenticated=true)",
+        "Cognito Account::Cognito Stack (CloudFormation)::Cognito User Pool\\n(CognitoUserPoolName, token validity units:\\nAccessTokenValidityUnits,\\nIdTokenValidityUnits,\\nRefreshTokenValidityUnits)",
+        "Cognito Account::Cognito Stack (CloudFormation)::IAM Authenticated Role\\n(AssumeRoleWithWebIdentity\\nfederated: cognito-identity.amazonaws.com)",
+        "Cognito Account::Cognito Stack (CloudFormation)::IAM Unauthenticated Role\\n(AssumeRoleWithWebIdentity,\\ncognito-identity:amr = unauthenticated,\\naud = IdentityPool)",
+        "Cognito Account::Cognito Stack (CloudFormation)::Identity Pool\\nRole Attachment\\n(authenticated + unauthenticated)",
+        "Cognito Account::Cognito Stack (CloudFormation)::User Pool Client\\n(readable/writable attrs:\\ncustom:Role, email)"
+      ],
+      "gt_node": "Cognito Account::Cognito User Pool"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::API Clients\\n(call API Gateway endpoint,\\nconsume x-pagopa-pn-cx-role header)"
+      ],
+      "gt_node": "Global::User"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 6381,
+      "completion_tokens": 755,
+      "total_tokens": 7136,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "API Gateway Account::API Gateway Stack (CloudFormation)::API Gateway\\nVPC Link\\n(→ NLB ARN)",
+    "API Gateway Account::API Gateway Stack (CloudFormation)::CallbackURL Output\\n(API Gateway endpoint:\\nhttps://{api-id}.execute-api.{region}.amazonaws.com/{stage})",
+    "API Gateway Account::API Gateway Stack (CloudFormation)::Network Load\\nBalancer (NLB)",
+    "API Gateway Account::VPC::Endpoint Security Group\\n(ingress: TCP 0-65535\\nfrom VpcCidr only)",
+    "API Gateway Account::VPC::Subnets",
+    "API Gateway Account::VPC::Subnets::SQS VPC Interface\\nEndpoint\\n(type: interface,\\nregional SQS service name,\\nprivate DNS: enabled)",
+    "AWS Services::Amazon SQS",
+    "Global::API Gateway Account",
+    "Global::AWS Services",
+    "Global::Cognito Account",
+    "Global::Installation Inputs\\n(CloudFormation YAML templates,\\nAWS CLI profiles, environment names,\\nDNS/domain values, API keys,\\naccount IDs, certificate IDs)"
+  ],
+  "_provenance": {
+    "fingerprint": "54f49d227bf484172b8f5c6da0ae48cce6262e05f0f89b2f6b13d4b36089b6db",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

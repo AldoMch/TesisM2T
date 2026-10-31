@@ -1,0 +1,94 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "User" as user
+
+package "Frontend System" {
+    RECTANGLE "Main Interface" as mainUI
+    RECTANGLE "Configuration Interface" as configUI
+    RECTANGLE "Training Interface" as trainUI
+    RECTANGLE "Inference Interface" as inferUI
+}
+
+package "Backend System" {
+    RECTANGLE "Model Configuration Service" as modelConfigService
+    RECTANGLE "Data Loading Service" as dataLoadingService
+    RECTANGLE "Model Training Service" as modelTrainService
+    RECTANGLE "Model Inference Service" as modelInferService
+    RECTANGLE "Framework Extension Service" as frameworkExtService
+    RECTANGLE "Database Persistence Service" as dbPersistService
+}
+
+package "MyTorch/NNE Framework" {
+    RECTANGLE "GPU Acceleration Module" as gpuModule
+    RECTANGLE "Weight Initialization Module" as weightInitModule
+    RECTANGLE "Classic Models Module" as classicModelsModule
+    RECTANGLE "Preset Datasets Module" as presetDatasetsModule
+}
+
+package "Local Storage" {
+    RECTANGLE "SQLite Database" as sqliteDB
+}
+
+user --> mainUI : interacts with
+user --> configUI : configures models
+user --> trainUI : trains models
+user --> inferUI : performs inference
+
+mainUI --> modelConfigService : requests model config
+configUI --> modelConfigService : sends configuration
+trainUI --> modelTrainService : starts/stops training
+inferUI --> modelInferService : requests inference
+
+modelConfigService --> frameworkExtService : extends framework
+modelConfigService --> dbPersistService : saves config
+
+dataLoadingService --> presetDatasetsModule : loads datasets
+dataLoadingService --> dbPersistService : persists data logs
+
+modelTrainService --> gpuModule : accelerates training
+modelTrainService --> weightInitModule : initializes weights
+modelTrainService --> classicModelsModule : uses models
+modelTrainService --> dbPersistService : saves models & logs
+
+modelInferService --> gpuModule : accelerates inference
+modelInferService --> classicModelsModule : loads models
+modelInferService --> dbPersistService : logs inference
+
+dbPersistService --> sqliteDB : reads/writes data
+dbPersistService --> sqliteDB : backups/recovery
+
+note right of frameworkExtService
+  Includes GPU APIs,
+  weight init methods,
+  classic models,
+  and preset datasets
+end note
+
+note right of sqliteDB
+  Stores models,
+  datasets,
+  training logs,
+  inference logs,
+  and user history
+end note
+
+note top of gpuModule
+  Provides GPU-accelerated
+  matrix operations and
+  computation capabilities
+end note
+
+note bottom of modelTrainService
+  Handles training execution,
+  evaluation, saving,
+  and manual termination
+end note
+
+note bottom of modelInferService
+  Manages model loading,
+  forward execution,
+  and result returning
+end note
+
+@enduml

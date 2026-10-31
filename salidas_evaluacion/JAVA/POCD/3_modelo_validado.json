@@ -1,0 +1,286 @@
+{
+  "requirements": [
+    {
+      "id": "POCD-R001",
+      "description": "The system shall support account registration and login, persist account data, and enforce role-based authorization for protected resources."
+    },
+    {
+      "id": "POCD-R002",
+      "description": "The system shall allow logged-in users to upload, modify the metadata of, delete, and download class-diagram and database files, persist the changes, and refresh the file list."
+    },
+    {
+      "id": "POCD-R003",
+      "description": "The system shall parse StarUML MDJ class diagrams and MySQL database design files, scripts, or connection information, extract entities, attributes, keys, triggers, and relationships as applicable, and normalize and store the parsing results for downstream analysis."
+    },
+    {
+      "id": "POCD-R004",
+      "description": "The system shall establish and retain matching relationships between class-diagram and database entities, attributes, and relationships for subsequent consistency detection."
+    },
+    {
+      "id": "POCD-R005",
+      "description": "The system shall detect and report inconsistencies between class diagrams and databases in field names, data types, attribute-to-column and class-to-table correspondences, relationship multiplicities and types, and missing or extra relationships."
+    },
+    {
+      "id": "POCD-R006",
+      "description": "The system shall allow logged-in users to select or customize inconsistency detection rules and detection exclusions for classes and database tables, and persist these configurations."
+    },
+    {
+      "id": "POCD-R007",
+      "description": "The system shall retain historical detection and modification records and allow logged-in users to view record details and export detection reports."
+    },
+    {
+      "id": "POCD-R008-A",
+      "description": "The system shall generate and display class-diagram and database repair suggestions from inconsistency detection results and user-selected repair targets."
+    },
+    {
+      "id": "POCD-R008-B",
+      "description": "The system shall execute class-diagram and database repairs after user selection or an explicit repair request, arrange dependent repair operations in the correct order, store repair operations and results, and report execution exceptions."
+    },
+    {
+      "id": "POCD-R009",
+      "description": "The system shall provide browsable and searchable help manuals and detection examples, and allow users to download example class-diagram and database files."
+    },
+    {
+      "id": "POCD-R010",
+      "description": "The system shall support independent development and deployment of functional modules and allow its data model to accommodate future data types and structures."
+    },
+    {
+      "id": "POCD-R011",
+      "description": "The system shall provide open APIs for integration with and extension by third-party applications."
+    },
+    {
+      "id": "POCD-R012",
+      "description": "The system shall protect sensitive data in transit and record operation logs for security audits, retrospective review, and monitoring."
+    },
+    {
+      "id": "POCD-R013",
+      "description": "The system shall run inconsistency detection asynchronously so users can continue other work, and shall complete detection for a database containing thousands of entities within 30 minutes."
+    }
+  ],
+  "components": [
+    {
+      "id": "COMP-GATEWAY",
+      "name": "API Gateway & Security Proxy",
+      "description": "Handles TLS termination, rate limiting, routing, and exposes open APIs for third-party integrations.",
+      "tracesTo": [
+        "POCD-R010",
+        "POCD-R011",
+        "POCD-R012"
+      ]
+    },
+    {
+      "id": "COMP-AUTH",
+      "name": "Identity & Access Management Service",
+      "description": "Manages account registration, credentials, token issuance, and RBAC authorization policies.",
+      "tracesTo": [
+        "POCD-R001",
+        "POCD-R012"
+      ]
+    },
+    {
+      "id": "COMP-AUDIT",
+      "name": "Audit Logging & Monitoring Service",
+      "description": "Captures immutable audit logs for operations, data access, and system security events.",
+      "tracesTo": [
+        "POCD-R012"
+      ]
+    },
+    {
+      "id": "COMP-FILE",
+      "name": "Design Artifact Storage & File Manager",
+      "description": "Manages file upload, metadata maintenance, retrieval, and persistence of class diagram and database artifacts.",
+      "tracesTo": [
+        "POCD-R002",
+        "POCD-R010"
+      ]
+    },
+    {
+      "id": "COMP-PARSER",
+      "name": "Multi-Format Parsing Engine",
+      "description": "Parses StarUML MDJ and MySQL definitions/scripts/connections into extensible, normalized schema models.",
+      "tracesTo": [
+        "POCD-R003",
+        "POCD-R010"
+      ]
+    },
+    {
+      "id": "COMP-MAPPER",
+      "name": "Model Alignment & Mapping Service",
+      "description": "Establishes, matches, and persists alignment mappings between class diagram structures and database elements.",
+      "tracesTo": [
+        "POCD-R004",
+        "POCD-R010"
+      ]
+    },
+    {
+      "id": "COMP-RULE",
+      "name": "Rule & Exclusion Configuration Service",
+      "description": "Allows defining, selecting, and persisting detection rules and exclusion scopes for verification jobs.",
+      "tracesTo": [
+        "POCD-R006",
+        "POCD-R010"
+      ]
+    },
+    {
+      "id": "COMP-JOB-BROKER",
+      "name": "Asynchronous Message Broker & Task Dispatcher",
+      "description": "Distributes asynchronous verification and repair workloads to worker nodes for scalable processing.",
+      "tracesTo": [
+        "POCD-R010",
+        "POCD-R013"
+      ]
+    },
+    {
+      "id": "COMP-DETECTOR",
+      "name": "Consistency Detection Engine",
+      "description": "Executes asynchronous inconsistency evaluation across attributes, data types, and relationships based on active rules.",
+      "tracesTo": [
+        "POCD-R005",
+        "POCD-R010",
+        "POCD-R013"
+      ]
+    },
+    {
+      "id": "COMP-REPAIR-ADVISOR",
+      "name": "Repair Recommendation Service",
+      "description": "Analyzes detected discrepancies and generates targeted resolution proposals for class diagrams and databases.",
+      "tracesTo": [
+        "POCD-R008-A",
+        "POCD-R010"
+      ]
+    },
+    {
+      "id": "COMP-REPAIR-EXEC",
+      "name": "Repair Execution & Orchestration Engine",
+      "description": "Orders dependent repair steps topologically, applies changes, logs execution exceptions, and records outcomes.",
+      "tracesTo": [
+        "POCD-R008-B",
+        "POCD-R010"
+      ]
+    },
+    {
+      "id": "COMP-REPORT",
+      "name": "History & Report Management Service",
+      "description": "Persists and exposes historical verification runs, modification logs, and exportable consistency reports.",
+      "tracesTo": [
+        "POCD-R007",
+        "POCD-R010"
+      ]
+    },
+    {
+      "id": "COMP-HELP",
+      "name": "Help Center & Sample Data Service",
+      "description": "Provides searchable documentation, usage examples, and sample diagram and database files for download.",
+      "tracesTo": [
+        "POCD-R009"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "CONN-001",
+      "source": "COMP-GATEWAY",
+      "target": "COMP-AUTH",
+      "type": "gRPC/HTTPS",
+      "description": "Validates credentials and enforces access control tokens on incoming API traffic."
+    },
+    {
+      "id": "CONN-002",
+      "source": "COMP-GATEWAY",
+      "target": "COMP-AUDIT",
+      "type": "Asynchronous Event Stream",
+      "description": "Emits API access logs and security-related events for auditing."
+    },
+    {
+      "id": "CONN-003",
+      "source": "COMP-GATEWAY",
+      "target": "COMP-FILE",
+      "type": "HTTPS/REST",
+      "description": "Routes file upload, download, and file metadata management requests."
+    },
+    {
+      "id": "CONN-004",
+      "source": "COMP-FILE",
+      "target": "COMP-PARSER",
+      "type": "REST/RPC",
+      "description": "Sends saved StarUML files and MySQL scripts/connection params for schema extraction."
+    },
+    {
+      "id": "CONN-005",
+      "source": "COMP-PARSER",
+      "target": "COMP-MAPPER",
+      "type": "gRPC",
+      "description": "Transfers normalized entity, attribute, and relation definitions to establish mapping entries."
+    },
+    {
+      "id": "CONN-006",
+      "source": "COMP-GATEWAY",
+      "target": "COMP-RULE",
+      "type": "HTTPS/REST",
+      "description": "Manages configuration of inconsistency rules and exclusion filters."
+    },
+    {
+      "id": "CONN-007",
+      "source": "COMP-GATEWAY",
+      "target": "COMP-JOB-BROKER",
+      "type": "AMQP/Message Queue",
+      "description": "Publishes asynchronous inconsistency detection and repair execution jobs."
+    },
+    {
+      "id": "CONN-008",
+      "source": "COMP-JOB-BROKER",
+      "target": "COMP-DETECTOR",
+      "type": "Message Queue Consumer",
+      "description": "Dispatches asynchronous consistency verification tasks to detection workers."
+    },
+    {
+      "id": "CONN-009",
+      "source": "COMP-DETECTOR",
+      "target": "COMP-MAPPER",
+      "type": "Database/RPC",
+      "description": "Retrieves established entity and attribute correspondences for comparison."
+    },
+    {
+      "id": "CONN-010",
+      "source": "COMP-DETECTOR",
+      "target": "COMP-RULE",
+      "type": "REST/RPC",
+      "description": "Fetches active rules and exclusion definitions applicable to the verification target."
+    },
+    {
+      "id": "CONN-011",
+      "source": "COMP-DETECTOR",
+      "target": "COMP-REPORT",
+      "type": "REST/Event",
+      "description": "Persists inconsistency detection results and execution history."
+    },
+    {
+      "id": "CONN-012",
+      "source": "COMP-DETECTOR",
+      "target": "COMP-REPAIR-ADVISOR",
+      "type": "REST/RPC",
+      "description": "Supplies detected discrepancy details for generating remediation advice."
+    },
+    {
+      "id": "CONN-013",
+      "source": "COMP-JOB-BROKER",
+      "target": "COMP-REPAIR-EXEC",
+      "type": "Message Queue Consumer",
+      "description": "Dispatches approved repair jobs for dependency resolution and execution."
+    },
+    {
+      "id": "CONN-014",
+      "source": "COMP-REPAIR-EXEC",
+      "target": "COMP-REPORT",
+      "type": "REST/Event",
+      "description": "Stores modification results, execution errors, and updated repair history."
+    },
+    {
+      "id": "CONN-015",
+      "source": "COMP-GATEWAY",
+      "target": "COMP-HELP",
+      "type": "HTTPS/REST",
+      "description": "Serves user requests for help documentation and sample artifact downloads."
+    }
+  ]
+}

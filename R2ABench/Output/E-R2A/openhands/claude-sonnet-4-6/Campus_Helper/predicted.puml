@@ -1,0 +1,165 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam component {
+    BackgroundColor #DDEEFF
+    BorderColor #336699
+    FontColor #000000
+}
+skinparam package {
+    BackgroundColor #F5F5F5
+    BorderColor #999999
+    FontStyle bold
+}
+skinparam database {
+    BackgroundColor #FFF8DC
+    BorderColor #CC8800
+}
+skinparam actor {
+    BackgroundColor #E8FFE8
+    BorderColor #336633
+}
+skinparam rectangle {
+    BackgroundColor #F0F8FF
+    BorderColor #336699
+}
+
+actor "Guest" as Guest
+actor "Registered User\n(Customer / Seller)" as RegUser
+actor "Administrator" as Admin
+
+rectangle "WeChat Mini Program Runtime\n(WeChat 8.0+, Android 5.0+)" as WeChatClient {
+
+    package "Presentation Layer" {
+        [Homepage /\nPopular Products UI] as HomeUI
+        [Product Category UI] as CategoryUI
+        [Product Detail UI] as DetailUI
+        [Order UI] as OrderUI
+        [Personal Center UI] as PersonalUI
+        [Admin Product\nManagement UI] as AdminProductUI
+        [Admin Order\nManagement UI] as AdminOrderUI
+        [Admin User\nManagement UI] as AdminUserUI
+    }
+}
+
+package "Business Layer" {
+    [Product Browsing Service] as ProductBrowseSvc
+    [Order Service] as OrderSvc
+    [Personal Center Service] as PersonalSvc
+    [Authentication &\nPermission Service] as AuthSvc
+    [Search Service] as SearchSvc
+    [Admin Product\nManagement Service] as AdminProductSvc
+    [Admin Order\nManagement Service] as AdminOrderSvc
+    [Admin User\nManagement Service] as AdminUserSvc
+    [Input Validation &\nSecurity Service] as SecuritySvc
+    [Monitoring &\nLog Service] as MonitorSvc
+}
+
+package "Data Layer" {
+    [User Repository] as UserRepo
+    [Product Repository] as ProductRepo
+    [Order Repository] as OrderRepo
+    [Favorite Repository] as FavoriteRepo
+    [Tag & Category Repository] as TagRepo
+    [Admin Log Repository] as LogRepo
+    [Monitoring Data Repository] as MonitorRepo
+}
+
+package "Data Entity Layer (Database)" {
+    database "User &\nPermission Data" as UserDB
+    database "Product Data\n(Errand / Second-hand)" as ProductDB
+    database "Order Data" as OrderDB
+    database "Favorite Data" as FavoriteDB
+    database "Tag &\nCategory Data" as TagDB
+    database "Admin Log Data" as LogDB
+    database "Fault &\nMonitoring Data" as MonitorDB
+}
+
+' --- Actor to Presentation Layer ---
+Guest --> HomeUI
+Guest --> CategoryUI
+Guest --> DetailUI
+
+RegUser --> HomeUI
+RegUser --> CategoryUI
+RegUser --> DetailUI
+RegUser --> OrderUI
+RegUser --> PersonalUI
+
+Admin --> AdminProductUI
+Admin --> AdminOrderUI
+Admin --> AdminUserUI
+
+' --- Presentation Layer to Business Layer ---
+HomeUI --> ProductBrowseSvc
+CategoryUI --> ProductBrowseSvc
+DetailUI --> ProductBrowseSvc
+DetailUI --> AuthSvc
+
+OrderUI --> OrderSvc
+OrderUI --> AuthSvc
+
+PersonalUI --> PersonalSvc
+PersonalUI --> AuthSvc
+
+AdminProductUI --> AdminProductSvc
+AdminProductUI --> SearchSvc
+AdminOrderUI --> AdminOrderSvc
+AdminUserUI --> AdminUserSvc
+
+AdminProductSvc --> AuthSvc
+AdminOrderSvc --> AuthSvc
+AdminUserSvc --> AuthSvc
+
+' --- Business Layer internal dependencies ---
+ProductBrowseSvc --> SecuritySvc
+OrderSvc --> SecuritySvc
+AdminProductSvc --> SecuritySvc
+AdminOrderSvc --> SecuritySvc
+AdminUserSvc --> SecuritySvc
+
+OrderSvc --> MonitorSvc
+AdminProductSvc --> MonitorSvc
+AdminOrderSvc --> MonitorSvc
+AdminUserSvc --> MonitorSvc
+AuthSvc --> MonitorSvc
+SecuritySvc --> MonitorSvc
+
+SearchSvc --> ProductBrowseSvc
+
+' --- Business Layer to Data Layer ---
+ProductBrowseSvc --> ProductRepo
+ProductBrowseSvc --> TagRepo
+
+OrderSvc --> OrderRepo
+OrderSvc --> ProductRepo
+
+PersonalSvc --> FavoriteRepo
+PersonalSvc --> OrderRepo
+
+AuthSvc --> UserRepo
+
+AdminProductSvc --> ProductRepo
+AdminProductSvc --> TagRepo
+AdminProductSvc --> LogRepo
+
+AdminOrderSvc --> OrderRepo
+AdminOrderSvc --> LogRepo
+
+AdminUserSvc --> UserRepo
+AdminUserSvc --> LogRepo
+
+MonitorSvc --> MonitorRepo
+MonitorSvc --> LogRepo
+
+' --- Data Layer to Database ---
+UserRepo --> UserDB
+ProductRepo --> ProductDB
+OrderRepo --> OrderDB
+FavoriteRepo --> FavoriteDB
+TagRepo --> TagDB
+LogRepo --> LogDB
+MonitorRepo --> MonitorDB
+
+@enduml

@@ -1,0 +1,210 @@
+@startuml
+' Smart Recipe System - System Architecture Diagram
+left to right direction
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 240
+skinparam maxMessageSize 240
+
+actor "End User" as User
+actor "Administrator" as Admin
+actor "Catering Company" as Biz
+
+node "Mobile App (Android, iOS UI)" as Mobile {
+  component "Login & Registration UI\n(FR-001, FR-002)" as C_Login
+  component "Camera & Photo Recognition UI\n(Local preprocess & validity check)\n(FR-003)" as C_Camera
+  component "Text Search UI\n(FR-004)" as C_SearchUI
+  component "Recipe Display UI" as C_RecipeUI
+  component "Health Center UI\n(Nutrition analysis, Diet plan, Check-ins)\n(FR-005..FR-008)" as C_HealthUI
+  component "Community UI\n(Share, Like, Comment)\n(FR-009, FR-010)" as C_CommunityUI
+  component "Recommendation UI\n(FR-011)" as C_RecUI
+  component "Admin Console UI\n(Review, Add Recipes, User/DB Mgmt, Feedback)\n(FR-012..FR-014)" as C_AdminUI
+  component "Merchant Map View\n(FR-015)" as C_Map
+}
+
+User --> Mobile
+Admin --> C_AdminUI
+
+node "Backend Services" as Backend {
+  node "Spring Boot Application\n(Main Business Logic)\n(C-006)" as Spring {
+    package "Control Layer (Controllers)\n(C-005)" as Ctrl {
+      component "Auth Controller" as CtrlAuth
+      component "Vision Controller" as CtrlVision
+      component "Recipe Controller" as CtrlRecipe
+      component "Search Controller" as CtrlSearch
+      component "Health Controller" as CtrlHealth
+      component "Community Controller" as CtrlCommunity
+      component "Recommendation Controller" as CtrlRec
+      component "Admin Controller" as CtrlAdmin
+      component "Feedback Controller" as CtrlFeedback
+      component "Merchant Controller" as CtrlMerchant
+      component "Data Support Controller\n(FR-016)" as CtrlData
+    }
+
+    package "Business/Service Layer\n(C-005)" as Svc {
+      component "Auth Service\n(Login, Token, Roles)\n(FR-001, FR-002)" as SvcAuth
+      component "User Service" as SvcUser
+      component "Image Recognition Orchestrator\n(Validity, call Flask, merge recipe data)\n(FR-003)" as SvcVision
+      component "Recipe Service\n(Recipes, Ingredients, Taboos)" as SvcRecipe
+      component "Search Service\n(Text match & relevance ranking)\n(FR-004)" as SvcSearch
+      component "Health Analysis Service\n(Nutrition analysis, Advice, Diet plan,\nDaily check-ins)\n(FR-005..FR-008)" as SvcHealth
+      component "Community Service\n(Share submit/review/publish, Like, Comment)\n(FR-009, FR-010)" as SvcCommunity
+      component "Recommendation Service\n(History, follows, analysis, sharing)\n(FR-011)" as SvcRec
+      component "Admin Management Service\n(Add recipes, Review, User/DB Mgmt)\n(FR-012, FR-013, FR-014)" as SvcAdmin
+      component "Feedback Service\n(FR-014)" as SvcFeedback
+      component "Merchant Service\n(Location display)\n(FR-015)" as SvcMerchant
+      component "Data Support Service\n(Export/aggregation for catering)\n(FR-016)" as SvcData
+    }
+
+    package "Data Access Layer (DAO/Repositories)\n(C-005)" as DAO {
+      component "User Repo" as DaoUser
+      component "Auth Repo" as DaoAuth
+      component "Recipe Repo" as DaoRecipe
+      component "Nutrition Repo" as DaoNutrition
+      component "Health Repo" as DaoHealth
+      component "History Repo" as DaoHistory
+      component "Recommendation Repo" as DaoRecRepo
+      component "Community Repo" as DaoCommunity
+      component "Comment Repo" as DaoComment
+      component "Ingredient Repo" as DaoIngredient
+      component "Taboo Repo" as DaoTaboo
+      component "Merchant Repo" as DaoMerchant
+      component "Feedback Repo" as DaoFeedback
+    }
+
+    component "Cache Client (Redis)\n(NFR-004)" as RedisClient
+    component "Security & Validation\n(AuthZ/AuthN, input validation,\nerror handling)\n(NFR-006..NFR-008, AD-001)" as Sec
+  }
+
+  node "Flask Inference Service\n(Model Serving)\n(C-007)" as Flask {
+    component "Image Preprocessing API" as FlaskPrep
+    component "Food Recognition Model API\n(accepts image matrix vectors)" as FlaskModel
+  }
+}
+
+node "Data Stores" as Stores {
+  database "MySQL\n(Structured data)\n(C-008, NFR-005)" as MySQL
+  database "Redis\n(Cache)\n(C-009, NFR-004)" as Redis
+}
+
+' Mobile <-> Backend interactions (Ajax / direct)
+C_Login --> CtrlAuth : Ajax/Direct (account, password, verification code)\nAD-001
+C_Camera --> CtrlVision : Ajax/Direct (food image upload, metadata)\nFR-003
+C_SearchUI --> CtrlSearch : Ajax/Direct (keywords)\nFR-004
+C_HealthUI --> CtrlHealth : Ajax/Direct (health data ops)\nFR-005..FR-008
+C_CommunityUI --> CtrlCommunity : Ajax/Direct (share, like, comment)\nFR-009, FR-010
+C_RecUI --> CtrlRec : Ajax/Direct (get recommendations)\nFR-011
+C_AdminUI --> CtrlAdmin : Ajax/Direct (review, add, user/db mgmt)\nFR-012..FR-014
+C_AdminUI --> CtrlFeedback : Ajax/Direct (feedback handling)\nFR-014
+C_Map --> CtrlMerchant : Ajax/Direct (merchant locations)\nFR-015
+
+' Catering company access
+Biz --> CtrlData : Data request (aggregated/anonymized support)\nFR-016
+
+' Controllers to services
+CtrlAuth --> SvcAuth
+CtrlVision --> SvcVision
+CtrlRecipe --> SvcRecipe
+CtrlSearch --> SvcSearch
+CtrlHealth --> SvcHealth
+CtrlCommunity --> SvcCommunity
+CtrlRec --> SvcRec
+CtrlAdmin --> SvcAdmin
+CtrlFeedback --> SvcFeedback
+CtrlMerchant --> SvcMerchant
+CtrlData --> SvcData
+
+' Cross-cutting security enforcement
+Sec ..> CtrlAuth : login, token issuance
+Sec ..> CtrlVision : token, roles
+Sec ..> CtrlRecipe
+Sec ..> CtrlSearch
+Sec ..> CtrlHealth
+Sec ..> CtrlCommunity
+Sec ..> CtrlRec
+Sec ..> CtrlAdmin
+Sec ..> CtrlFeedback
+Sec ..> CtrlMerchant
+Sec ..> CtrlData
+
+' Services to DAOs (MySQL)
+SvcAuth --> DaoAuth
+SvcUser --> DaoUser
+SvcRecipe --> DaoRecipe
+SvcRecipe --> DaoIngredient
+SvcRecipe --> DaoTaboo
+SvcSearch --> DaoRecipe
+SvcHealth --> DaoHealth
+SvcHealth --> DaoNutrition
+SvcHealth --> DaoHistory
+SvcHealth --> DaoIngredient
+SvcHealth --> DaoTaboo
+SvcCommunity --> DaoCommunity
+SvcCommunity --> DaoComment
+SvcCommunity --> DaoRecipe
+SvcRec --> DaoRecRepo
+SvcRec --> DaoHistory
+SvcRec --> DaoRecipe
+SvcAdmin --> DaoRecipe
+SvcAdmin --> DaoUser
+SvcAdmin --> DaoCommunity
+SvcFeedback --> DaoFeedback
+SvcMerchant --> DaoMerchant
+SvcMerchant --> DaoComment
+SvcData --> DaoHistory
+SvcData --> DaoRecipe
+SvcData --> DaoMerchant
+
+' DAOs to MySQL
+DaoUser --> MySQL
+DaoAuth --> MySQL
+DaoRecipe --> MySQL
+DaoNutrition --> MySQL
+DaoHealth --> MySQL
+DaoHistory --> MySQL
+DaoRecRepo --> MySQL
+DaoCommunity --> MySQL
+DaoComment --> MySQL
+DaoIngredient --> MySQL
+DaoTaboo --> MySQL
+DaoMerchant --> MySQL
+DaoFeedback --> MySQL
+
+' Services to Redis cache
+SvcAuth --> RedisClient : sessions/tokens
+SvcSearch --> RedisClient : cached search results
+SvcRec --> RedisClient : cached recommendations
+SvcRecipe --> RedisClient : hot recipes
+RedisClient --> Redis
+
+' Vision orchestration to Flask service
+SvcVision --> FlaskPrep : send image (or features)\npreprocess server-side if needed
+FlaskPrep --> FlaskModel : image matrix vectors
+FlaskModel --> SvcVision : prediction (dish, ingredients, calories/probabilities)
+' Vision service combines model output with recipe & nutrition data via DAOs
+
+' Notes for constraints and qualities
+note right of Spring
+C-005: Layered backend (Control, Service, DAO)
+C-006: Spring Boot for main business logic
+NFR-010: Atomic uploads ensured in service layer
+NFR-006..NFR-008: Security, integrity, rejection of improper ops
+end note
+
+note right of Flask
+C-007: Flask model inference service
+AD-002: Photo recognition depends on inference + recipe data
+end note
+
+note bottom of Stores
+C-008: MySQL for structured data (DR-001..DR-014)
+C-009: Redis cache for performance (NFR-004)
+NFR-005: Reliable persistence
+end note
+
+note top of Mobile
+C-001/C-002: Android app, iOS usability
+NFR-001..NFR-003: Usability & performance for recognition and search
+end note
+
+@enduml

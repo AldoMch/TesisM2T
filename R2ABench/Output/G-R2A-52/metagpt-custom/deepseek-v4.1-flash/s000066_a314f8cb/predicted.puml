@@ -1,0 +1,92 @@
+@startuml
+package "Infrastructure Layer" {
+  cloud "DNS / Load Balancer" as DNSLB
+}
+
+package "Client Layer" {
+  node "Browser / Three.js Runtime" as BrowserRuntime {
+    component "Browser Client\n(Three.js 3D Game Client)" as BrowserClient
+    component "Single-Player Mode\n(local game session, no server)" as SinglePlayer
+    component "Client Message\nCodec / Dispatcher" as ClientCodec
+    component "Heartbeat Manager\n(60s ping)" as Heartbeat
+    component "Reconnection Manager" as Reconnect
+    component "Server List Handler\n(servers_list / servers_list_redirect)" as ServerListHandler
+    component "Room Player Count Handler\n(room_players_number)" as RoomCountHandler
+    component "Error Handler\n(server_error)" as ErrorHandler
+    component "Browser Page Reload" as BrowserReload
+    component "Server List UI / State" as ServerListState
+    component "Room Player Count UI / State" as RoomCountState
+    component "Game Scene / Ship Manager" as SceneManager
+    component "Three.js" as ThreeJS
+  }
+}
+
+package "Web / Static Asset Layer" {
+  node "Web Server Node" as WebServerNode {
+    component "Web Server /\nStatic Asset Server" as WebServer
+    database "Static Assets\nHTML, CSS, JavaScript, Images" as StaticAssets
+  }
+}
+
+package "Game Server Layer" {
+  node "Erlang/OTP Runtime" as ErlangRuntime {
+    component "Game Server" as GameServer
+    component "Room Manager" as RoomManager
+    component "Server List Manager" as ServerListManager
+  }
+  node "Master Server Node" as MasterNode {
+    component "Master Role" as MasterRole
+  }
+  node "Replica / Slave Server Node" as ReplicaNode {
+    component "Replica / Slave Role" as ReplicaRole
+  }
+}
+
+package "Communication / Protocol Layer" {
+  interface "WebSocket over HTTP\nJSON arrays [event,data] / [action,data?]\nping/pong" as WebSocket
+}
+
+BrowserClient --> DNSLB : obtain web server address
+BrowserClient --> WebServer : retrieve static assets
+BrowserClient --> WebSocket : initiate WebSocket-over-HTTP
+BrowserClient --> SinglePlayer : start single-player\n(local mode)
+BrowserClient --> ThreeJS : use Three.js
+
+SinglePlayer --> SceneManager : local scene / ship state
+SinglePlayer --> ThreeJS : local rendering
+
+ClientCodec --> WebSocket : send [event,data] / receive [action,data?]
+ClientCodec --> Reconnect : dispatch game_reconnect
+ClientCodec --> Heartbeat : inbound pong\n[ pong, null ]\n(pong handling)
+ClientCodec --> ServerListHandler : servers_list
+ClientCodec --> ServerListHandler : servers_list_redirect
+ClientCodec --> RoomCountHandler : room_players_number
+ClientCodec --> ErrorHandler : server_error
+
+Heartbeat --> ClientCodec : ping every 60s\n[ ping, null ]\nreset next ping timer
+ClientCodec --> WebSocket : send [ping,null]\nreceive [pong,null]
+
+Reconnect --> ClientCodec : send reconnect context\n(room ID, player ID, index)\nover WebSocket
+ClientCodec --> WebSocket : send [game_reconnect,{roomId,playerId,index}]
+Reconnect --> SceneManager : game_reconnect
+WebSocket --> Reconnect : WebSocket close event\n(trigger reconnect)
+ClientCodec --> WebSocket : close session / reconnect handshake
+
+ServerListHandler --> ServerListState : update server list
+ServerListHandler --> ClientCodec : disconnect current connection\n(after servers_list_redirect)
+
+RoomCountHandler --> RoomCountState : update room player count
+RoomCountHandler --> SceneManager : refresh room player count
+
+ErrorHandler --> BrowserReload : reload browser page
+
+GameServer --> RoomManager : room create/join, player count
+GameServer --> ServerListManager : servers_list / servers_list_redirect
+MasterNode --> ReplicaNode : fault-tolerant replication\n(master/replica deployment)
+
+GameServer ..|> WebSocket : provides WebSocket-over-HTTP sessions
+
+WebServer --> StaticAssets : serves HTML/CSS/JS/images
+
+SceneManager --> ThreeJS : update scene / re-add ship
+@enduml

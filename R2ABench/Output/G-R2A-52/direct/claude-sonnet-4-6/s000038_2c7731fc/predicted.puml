@@ -1,0 +1,155 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2E86AB
+  FontColor #1A1A2E
+}
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #2E86AB
+  FontColor #1A1A2E
+}
+skinparam database {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontColor #1A1A2E
+}
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #1A1A2E
+}
+skinparam rectangle {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #37474F
+  FontColor #37474F
+}
+
+title IceFireDB Decentralized Database Infrastructure\nSystem Architecture
+
+actor "Redis Application\nIntegrator" as RedisApp
+actor "Pub/Sub Application\nDeveloper" as PubSubApp
+actor "SQL Protocol\nDeveloper" as SQLDev
+
+rectangle "IceFireDB Infrastructure" {
+
+  rectangle "IceFireDB-Redis-Proxy\nSubsystem" as RedisProxySubsystem #E3F2FD {
+
+    component "Redis Proxy\nAgent Node" as RedisProxyNode {
+      component "Redis Command\nReceiver" as CmdReceiver
+      component "Redis Command\nProcessor\n(String, Set, List,\nHash, Sorted Set,\nStream, Control)" as CmdProcessor
+      component "Instruction\nSynchronizer" as InstructionSync
+      component "Redis Storage\nForwarder" as StorageForwarder
+      component "Cluster-Aware\nRouter" as ClusterRouter
+    }
+
+    component "Redis Proxy\nAgent Node (Peer)" as RedisProxyPeer {
+      component "Peer Instruction\nReceiver" as PeerReceiver
+      component "Peer Storage\nForwarder" as PeerForwarder
+    }
+  }
+
+  rectangle "IceFireDB-PubSub\nSubsystem" as PubSubSubsystem #FCE4EC {
+
+    component "PubSub Node A" as PubSubNodeA {
+      component "Redis Pub/Sub\nInterface" as PubSubInterfaceA
+      component "Message\nPublisher/Subscriber" as MsgPubSubA
+      component "Kademlia DHT\nPeer Discovery\n(libp2p/IPFS-style)" as DHTA
+      component "NAT Traversal\nHandler" as NATA
+    }
+
+    component "PubSub Node B\n(Same/Different Network)" as PubSubNodeB {
+      component "Redis Pub/Sub\nInterface" as PubSubInterfaceB
+      component "Message\nPublisher/Subscriber" as MsgPubSubB
+      component "Kademlia DHT\nPeer Discovery\n(libp2p/IPFS-style)" as DHTB
+      component "NAT Traversal\nHandler" as NATB
+    }
+  }
+
+  rectangle "IceFireDB-SQLite\nInternal Data Handling\n(Internal / Limited Scope)" as SQLiteSubsystem #F9FBE7 {
+
+    component "MySQL Protocol\nResult Handler" as MySQLResultHandler {
+      component "Result Field\nMetadata Parser" as FieldParser
+      component "Result Row\nReader" as RowReader
+      component "Warning & Status\nExtractor" as WarnStatusExtractor
+    }
+  }
+
+}
+
+database "Redis Standalone\nStorage" as RedisStandalone
+database "Redis Cluster\nStorage" as RedisCluster
+
+cloud "Decentralized\nP2P Network\n(Kademlia DHT /\nlibp2p / IPFS-style)" as P2PNetwork
+
+node "NAT / Private\nNetwork Boundary" as NATBoundary
+
+RedisApp --> CmdReceiver : Redis Commands\n(Redis Protocol)
+PubSubApp --> PubSubInterfaceA : Redis Pub/Sub\nSemantics
+PubSubApp --> PubSubInterfaceB : Redis Pub/Sub\nSemantics
+SQLDev --> MySQLResultHandler : Packetized\nMySQL Result Data
+
+CmdReceiver --> CmdProcessor : Parse & Classify\nRedis Command
+CmdProcessor --> InstructionSync : Synchronize\nInstruction
+CmdProcessor --> StorageForwarder : Forward Write\nto Storage
+CmdProcessor --> ClusterRouter : Route to\nCluster Node
+
+InstructionSync --> PeerReceiver : Synchronized\nRedis Instruction\n(Agent Network)
+PeerReceiver --> PeerForwarder : Forward to\nPeer Storage
+PeerForwarder --> RedisStandalone : Write Data
+PeerForwarder --> RedisCluster : Write Data
+
+StorageForwarder --> RedisStandalone : Write Data\n(Standalone Mode)
+ClusterRouter --> RedisCluster : Write Data\n(Cluster Mode)
+
+PubSubInterfaceA --> MsgPubSubA : Publish/Subscribe\nOps
+PubSubInterfaceB --> MsgPubSubB : Publish/Subscribe\nOps
+
+MsgPubSubA --> DHTA : Peer Lookup &\nRouting Data
+MsgPubSubB --> DHTB : Peer Lookup &\nRouting Data
+
+DHTA <--> P2PNetwork : Peer Discovery,\nRouting Metadata,\nKademlia DHT
+DHTB <--> P2PNetwork : Peer Discovery,\nRouting Metadata,\nKademlia DHT
+
+MsgPubSubA <--> MsgPubSubB : Pub/Sub Message\nDelivery (P2P)
+
+NATA --> NATBoundary : NAT Traversal
+NATB --> NATBoundary : NAT Traversal
+NATBoundary --> P2PNetwork : Cross-Network\nCommunication
+
+FieldParser --> RowReader : Field Metadata\nMappings
+RowReader --> WarnStatusExtractor : Row Data
+WarnStatusExtractor ..> SQLDev : Parsed Fields,\nRows, Warnings,\nStatus Values
+
+note bottom of RedisProxySubsystem
+  FR-001 to FR-004, FR-010, FR-011
+  NFR-001, NFR-003
+  Supports Standalone & Clustered Redis
+  Synchronizes instructions between agents
+  Command categories: String, Set, List,
+  Hash, Sorted Set, Stream, Control
+end note
+
+note bottom of PubSubSubsystem
+  FR-005 to FR-009
+  NFR-002, NFR-004
+  Redis Pub/Sub compatible semantics
+  Multi-node, cross-network, NAT/private
+  Kademlia DHT / libp2p / IPFS-style
+  peer discovery and routing
+end note
+
+note bottom of SQLiteSubsystem
+  DR-006, DR-007, DR-008
+  Internal scope only (C-005, C-006)
+  MySQL-protocol-style result parsing
+end note
+
+@enduml

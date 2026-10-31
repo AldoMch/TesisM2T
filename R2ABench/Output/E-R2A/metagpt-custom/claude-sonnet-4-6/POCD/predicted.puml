@@ -1,0 +1,206 @@
+@startuml POCD_Architecture_Refined
+
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #E8F0FE
+  FontSize 11
+}
+skinparam node {
+  BorderColor #555555
+  BackgroundColor #FFF8E1
+}
+skinparam database {
+  BorderColor #336699
+  BackgroundColor #E3F2FD
+}
+skinparam cloud {
+  BorderColor #888888
+  BackgroundColor #F3E5F5
+}
+
+legend right
+  --> : direct dependency / call
+  ..> : async / logging side-effect
+endlegend
+
+' ─────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────
+cloud "External Systems" {
+  component [StarUML\n(.mdj export files)] as StarUML
+  database "MySQL Database\n(External Target)" as MySQLDB
+}
+
+' ─────────────────────────────────────────
+' USER INTERFACE LAYER
+' ─────────────────────────────────────────
+package "User Interface Layer" #DCEEFB {
+
+  component [Registration / Login UI] as LoginUI
+  component [File Management UI] as FileUI
+  component [Detection Configuration UI] as DetConfigUI
+  component [Results Display UI] as ResultsUI
+  component [Repair Interaction UI] as RepairUI
+  component [Historical Records UI] as HistoryUI
+  component [Help & Cases UI] as HelpUI
+  component [Report Export UI] as ExportUI
+  component [Guest / Unauthenticated Detection UI] as GuestUI
+
+}
+
+' ─────────────────────────────────────────
+' BUSINESS LOGIC LAYER
+' ─────────────────────────────────────────
+package "Business Logic Layer" #E8F5E9 {
+
+  package "Access & Gateway" #C8E6C9 {
+    component [AuthManager] as AuthMgr
+    component [OpenAPIGateway] as OpenAPI
+    component [GuestDetectionFacade] as GuestFacade
+  }
+
+  package "File & Content Services" #C8E6C9 {
+    component [FileManagementService] as FileMgmt
+    component [HelpAndCaseService] as HelpSvc
+  }
+
+  package "Parsing Pipeline" #C8E6C9 {
+    component [MDJParser\n(+ Jackson Java Object Model)] as MDJParser
+    component [DatabaseParser] as DBParser
+    component [DatabaseRelationshipExtractor] as RelExtract
+    component [JSONConverter] as JSONConv
+  }
+
+  package "Matching & Detection" #C8E6C9 {
+    component [EntityMatchingEngine] as MatchEng
+    component [InconsistencyDetectionEngine] as DetectEng
+    component [DetectionRuleConfigService] as RuleConfig
+    component [DetectionExceptionConfigService] as ExceptConfig
+  }
+
+  package "Repair Services" #C8E6C9 {
+    component [RepairSuggestionGenerator] as RepairGen
+    component [RepairOrderScheduler] as RepairSched
+    component [AutoRepairExecutor] as AutoRepair
+  }
+
+  package "Reporting & History" #C8E6C9 {
+    component [DetectionReportService] as ReportSvc
+    component [ReportExportService] as ExportSvc
+    component [HistoricalRecordService] as HistorySvc
+  }
+
+  package "Infrastructure Services" #C8E6C9 {
+    component [AsyncTaskManager] as AsyncMgr
+    component [OperationLogService] as OpLog
+  }
+
+}
+
+' ─────────────────────────────────────────
+' DATA ACCESS LAYER
+' ─────────────────────────────────────────
+package "Data Access Layer" #FCE4EC {
+
+  component [JDBCConnector] as JDBC
+
+  database "Application Database\n(Users, Files, Models,\nDetection Results,\nRepair Records, Rules,\nExceptions, History,\nLogs, Help)" as AppDB
+
+}
+
+' ═══════════════════════════════════════════
+' CONNECTIONS
+' ═══════════════════════════════════════════
+
+' ── Authenticated UI → BLL (SSL encryption assumed on all web traffic) ──
+LoginUI      --> AuthMgr
+FileUI       --> FileMgmt
+DetConfigUI  --> RuleConfig
+DetConfigUI  --> ExceptConfig
+ResultsUI    --> ReportSvc
+ResultsUI    --> DetectEng
+RepairUI     --> RepairGen
+RepairUI     --> AutoRepair
+HistoryUI    --> HistorySvc
+HelpUI       --> HelpSvc
+ExportUI     --> ExportSvc
+
+' ── Guest / Unauthenticated path ──
+GuestUI      --> GuestFacade
+GuestFacade  --> DetectEng
+GuestFacade  --> MatchEng
+
+' ── OpenAPI Gateway delegates to BLL ──
+OpenAPI --> AuthMgr
+OpenAPI --> FileMgmt
+OpenAPI --> DetectEng
+OpenAPI --> RepairGen
+OpenAPI --> ReportSvc
+
+' ── External → File ingest ──
+StarUML ..> FileMgmt : ".mdj file upload"
+
+' ── File Management triggers parsing ──
+FileMgmt --> MDJParser
+FileMgmt --> DBParser
+
+' ── Live DB connection via DAL ──
+DBParser --> JDBC
+JDBC     --> MySQLDB : "JDBC / TCP"
+
+' ── Parsing Pipeline ──
+MDJParser  --> JSONConv
+DBParser   --> JSONConv
+DBParser   --> RelExtract
+RelExtract --> JSONConv
+
+' ── Matching & Detection (forward-only data flow) ──
+JSONConv   --> MatchEng
+MatchEng   --> DetectEng
+DetectEng  --> RuleConfig
+DetectEng  --> ExceptConfig
+
+' ── Async orchestration entry point ──
+FileMgmt   --> AsyncMgr
+AsyncMgr   --> DetectEng
+AsyncMgr   --> AutoRepair
+
+' ── Repair pipeline ──
+RepairGen  --> DetectEng
+RepairGen  --> RepairSched
+RepairSched --> AutoRepair
+
+' ── Reporting ──
+ReportSvc  --> DetectEng
+ExportSvc  --> ReportSvc
+
+' ── History write paths ──
+DetectEng  --> HistorySvc
+AutoRepair --> HistorySvc
+RepairGen  --> HistorySvc
+
+' ── Data Access: BLL → AppDB ──
+AuthMgr    --> AppDB
+FileMgmt   --> AppDB
+RuleConfig --> AppDB
+ExceptConfig --> AppDB
+ReportSvc  --> AppDB
+HistorySvc --> AppDB
+HelpSvc    --> AppDB
+MatchEng   --> AppDB
+DetectEng  --> AppDB
+RepairGen  --> AppDB
+AutoRepair --> AppDB
+
+' ── Operation logging (async side-effects) ──
+AuthMgr    ..> OpLog
+FileMgmt   ..> OpLog
+DetectEng  ..> OpLog
+AutoRepair ..> OpLog
+OpenAPI    ..> OpLog
+OpLog      --> AppDB
+
+@enduml

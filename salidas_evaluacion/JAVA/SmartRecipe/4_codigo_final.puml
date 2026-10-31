@@ -1,0 +1,30 @@
+@startuml
+component "Food Image Recognition Service" as CMPAIRECOGNITIONSERVICE
+component "API Gateway & Security Filter" as CMPAPIGATEWAY
+component "User and Authentication Service" as CMPAUTHSERVICE
+component "Distributed Cache Manager" as CMPCACHEMANAGER
+component "Community and Merchant Service" as CMPCOMMUNITYMERCHANTSERVICE
+component "Mobile Client Application" as CMPMOBILEAPP
+component "Nutrition and Diet Management Service" as CMPNUTRITIONDIETSERVICE
+component "Secure Media Storage" as CMPOBJECTSTORAGE
+component "Relational/Persistent Database" as CMPPRIMARYDATABASE
+component "Recipe Management & Search Service" as CMPRECIPESERVICE
+component "Personalized Recommendation Service" as CMPRECOMMENDATIONSERVICE
+CMPAPIGATEWAY --> CMPAUTHSERVICE : rpc/http
+CMPAPIGATEWAY --> CMPCOMMUNITYMERCHANTSERVICE : rpc/http
+CMPAPIGATEWAY --> CMPNUTRITIONDIETSERVICE : rpc/http
+CMPAPIGATEWAY --> CMPRECIPESERVICE : rpc/http
+CMPAPIGATEWAY --> CMPRECOMMENDATIONSERVICE : rpc/http
+CMPAUTHSERVICE --> CMPCACHEMANAGER : cache-access
+CMPAUTHSERVICE --> CMPPRIMARYDATABASE : database-access
+CMPCOMMUNITYMERCHANTSERVICE --> CMPPRIMARYDATABASE : database-access
+CMPMOBILEAPP --> CMPAPIGATEWAY : https/rest
+CMPNUTRITIONDIETSERVICE --> CMPPRIMARYDATABASE : database-access
+CMPRECIPESERVICE --> CMPAIRECOGNITIONSERVICE : internal-call
+CMPRECIPESERVICE --> CMPCACHEMANAGER : cache-access
+CMPRECIPESERVICE --> CMPNUTRITIONDIETSERVICE : internal-call
+CMPRECIPESERVICE --> CMPOBJECTSTORAGE : file-storage
+CMPRECIPESERVICE --> CMPPRIMARYDATABASE : database-access
+CMPRECOMMENDATIONSERVICE --> CMPPRIMARYDATABASE : database-access
+CMPRECOMMENDATIONSERVICE --> CMPRECIPESERVICE : query
+@enduml

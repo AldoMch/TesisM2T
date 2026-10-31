@@ -1,0 +1,30 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #006DCC
+skinparam ArrowThickness 1.5
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "C#" as CSharpProducer
+rectangle "Python" as PythonProducer
+rectangle "HTTP" as HttpProducer
+cloud "HypnoLog\nServer" as HypnoLogServer
+rectangle "In Browser Log" as BrowserLog
+
+CSharpProducer --> HypnoLogServer : log messages
+PythonProducer --> HypnoLogServer : log messages
+HttpProducer --> HypnoLogServer : HTTP JSON POST
+HypnoLogServer --> BrowserLog : real-time log display
+@enduml

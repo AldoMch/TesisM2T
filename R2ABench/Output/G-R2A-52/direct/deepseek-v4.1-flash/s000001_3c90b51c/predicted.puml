@@ -1,0 +1,110 @@
+@startuml
+title JSeats - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+package "JSeats" {
+
+  package "External Interfaces" {
+    [Command-Line Launcher] as CLI
+    [Caller-Facing Allocation API\n(Java Entry Point)] as API
+  }
+
+  package "Configuration and Workflow" {
+    [Configurable Processor] as Processor
+    [Processor Configuration\nproperties | method | tally | filters\n| tie-breaking | decorators] as Config
+  }
+
+  package "Extension Contracts" {
+    interface "AllocationMethod\n(protected tally view + properties)" as IMethod
+    interface "TallyFilter" as IFilter
+    interface "ResultDecorator" as IDecorator
+  }
+
+  package "Allocation Methods" {
+    [Majority\n(simple, qualified, absolute)] as Majority
+    [Ranked\n(by votes)] as Ranked
+    [Equal Proportions\n(Huntington-Hill)] as EP
+    [Largest Remainder\n(Hare, Droop, Imperiali)] as LR
+    [Highest Averages\n(D'Hondt, Sainte-Lague/Webster,\nImperiali, Danish)] as HA
+  }
+
+  package "Domain Model" {
+    [Tally] as Tally
+    [Candidate] as Candidate
+    [Result] as Result
+    [SeatAllocationException] as SeatExc
+    [Properties] as Props
+  }
+
+  package "Data Exchange and I-O" {
+    [XML Tally Loader\nTally.fromXML()] as XmlTally
+    [XML Config / Result I-O] as XmlConf
+  }
+}
+
+' --- Interface realization ---
+Majority ..|> IMethod
+Ranked ..|> IMethod
+EP ..|> IMethod
+LR ..|> IMethod
+HA ..|> IMethod
+
+' --- Caller-facing entry point ---
+API --> Processor : submits tally, method,\nconfig parameters
+API ..> Tally : accepts / sets
+API ..> Result : returns
+API ..> SeatExc : signals failure
+
+' --- CLI ---
+CLI --> API : delegates allocation
+CLI --> Config : selects method / parameters
+CLI --> XmlTally : reads tally files
+CLI --> XmlConf : reads / writes config,\ntally, result
+CLI ..> Result : writes output
+CLI ..> Tally : reads candidates\n(Name:Votes)
+
+' --- Configurable workflow ---
+Processor --> Config : reads
+Processor --> IFilter : applies (pre-processing)
+Processor --> IMethod : executes selected method
+Processor --> IDecorator : applies (post-processing)
+Processor ..> Result : produces
+Processor ..> SeatExc : raises on failure
+
+Config --> IMethod : selects
+Config --> IFilter : selects
+Config --> IDecorator : selects
+Config ..> Props : properties
+
+' --- Domain relations ---
+Tally o-- Candidate : contains votes
+IFilter --> Tally : transforms
+IMethod --> Tally : protected view
+IMethod ..> Result : returns
+IMethod ..> SeatExc : reports error
+IDecorator --> Result : decorates
+
+XmlTally --> Tally : loads
+XmlConf --> Config : loads / stores
+XmlConf --> Result : stores
+
+note right of IMethod
+  Immutable tally constraint applies
+  only to this allocation-method contract.
+end note
+
+note bottom of CLI
+  Supports: listing methods / filters /
+  decorators, candidate or file input,
+  method + property selection, and
+  optional tally / result / config output.
+end note
+
+note bottom of Processor
+  Web interface is out of scope.
+end note
+
+@enduml

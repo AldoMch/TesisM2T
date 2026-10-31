@@ -1,0 +1,84 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 12
+
+package "User Space" {
+
+    package "CLI Layer" {
+        component "CLI Entry Point" as CLI
+        component "Trace Command" as TraceCmd
+        component "Event Registration\nStructure\n(ProgramID, Pids, ELFPath)" as EventReg
+    }
+
+    package "TraceLeft Library" {
+        component "Probe Subsystem\n/ Probe Loader" as ProbeLoader
+        component "Userspace Tracer\n/ Event Dispatcher" as Dispatcher
+    }
+
+    package "Generator Subsystem" {
+        component "Handler Code\nGenerator" as Generator
+        component "Event Config\nMetadata\n(Proto/JSON)\n[position, type, name,\nsuffix, hash_func]" as EventConfig
+    }
+
+    component "gobpf Integration\nLayer" as GoBPF
+
+}
+
+package "Kernel Space (Linux eBPF)" {
+
+    component "Main eBPF Program\n(kprobe / kretprobe)" as MaineBPF
+
+    package "Handler Maps" {
+        component "Program Maps\nhandle_NAME_progs\n(kprobe)" as ProgMap
+        component "Return Program Maps\nhandle_NAME_progs_ret\n(kretprobe)" as RetProgMap
+    }
+
+    package "Handler eBPF Programs" {
+        component "Default Handler\nProbes\n(kprobe/handle_NAME)" as DefaultHandlers
+        component "Process-Specific\nHandler Probes\n(kretprobe/handle_NAME)" as ProcHandlers
+        component "No-Op Handler\n(returns 0)" as NoopHandler
+    }
+
+    component "Perf-Based\nEvent Channel" as PerfChannel
+
+}
+
+database "Generated eBPF\nHandler Source" as GenSource
+
+note right of PerfChannel
+  Events begin with
+  Common Event Header
+  Section for dispatch
+end note
+
+CLI --> TraceCmd : dispatches
+TraceCmd --> EventReg : parses inputs into
+EventReg --> ProbeLoader : registers\nhandlers for\nProgramID / Pids
+
+ProbeLoader --> GoBPF : uses
+GoBPF --> MaineBPF : loads &\nattaches
+
+ProbeLoader --> DefaultHandlers : loads default\nhandler probes
+ProbeLoader --> ProcHandlers : loads process-\nspecific probes
+
+MaineBPF --> ProgMap : selects handler via\n(kprobe path)
+MaineBPF --> RetProgMap : selects handler via\n(kretprobe path)
+
+ProgMap --> DefaultHandlers : keys to
+ProgMap --> ProcHandlers : keys to
+ProgMap --> NoopHandler : no handler set
+RetProgMap --> DefaultHandlers : keys to
+RetProgMap --> ProcHandlers : keys to
+RetProgMap --> NoopHandler : no handler set
+
+DefaultHandlers --> PerfChannel : emits events\n(with common header)
+ProcHandlers --> PerfChannel : emits events\n(with common header)
+
+PerfChannel --> Dispatcher : delivers events\nto userspace
+
+EventConfig --> Generator : supplies\nmetadata
+Generator --> GenSource : generates\neBPF handler\nsource code
+GenSource --> ProbeLoader : handler source\nloaded as probes
+
+@enduml

@@ -1,0 +1,117 @@
+{
+  "candidate": {
+    "sample_id": "s000068_a8b7a94e",
+    "repository_name": "nasa/cFS",
+    "image_url": "https://github.com/nasa/cFS/blob/main/.github/workflows/Reusable-Workflows-Architecture.svg",
+    "source_ref": "8053f8c655a6ef9f32ce1f6f6db5157cad7931b0",
+    "total_score": 96,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 7899,
+    "document_count": 13,
+    "document_types": [
+      "deployment_config",
+      "readme"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 12,
+      "user_scenario": 6,
+      "api_io": 41,
+      "deployment": 27,
+      "constraints": 9,
+      "non_functional": 9
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 96
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": ".github/workflows/changelog.yml",
+      "doc_type": "deployment_config",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05191422133369476,
+      "text": "name: Changelog # Controls when the action will run. on: # Allows you to run this workflow manually from the Actions tab workflow_dispatch: jobs: build: runs-on: ubuntu-latest steps: - uses: actions/checkout@v2 - name: Run Changelog uses: heinrichreimer/github-changelog-generator-action@v2.1.1 with: token: ${{ secrets.GITHUB_TOKEN }} issuesLabel: \"### Closed issues\" breakingLabel: \"### Breaking changes\" enhancementLabel: \"### Implemented enhancements\" bugsLabel: \"### Fixed bugs\" deprecatedLabel: \"### Deprecated\" removedLabel: \"### Removed\" securityLabel: \"### Security fixes\" pullRequests: false author: false - name: \"Upload changelog\" uses: actions/upload-artifact@v1.0.0 with: name: \"Chan..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": ".github/workflows/build-cfs-deprecated.yml",
+      "doc_type": "deployment_config",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05149610986510294,
+      "text": "}}-${{ matrix.buildtype }} - name: Checkout cFS if: steps.cache-src-bld.outputs.cache-hit != 'true' uses: actions/checkout@v2 with: submodules: true - name: Check versions run: git submodule - name: Copy Makefile run: | cp ./cfe/cmake/Makefile.sample Makefile cp -r ./cfe/cmake/sample_defs sample_defs - name: Prep Build run: make prep - name: Make run: make install tests-and-coverage-omit-deprecated-false: name: \"[Deprecated] Run Unit Tests and Check Coverage\" needs: build-cfs-omit-deprecated-false runs-on: ubuntu-18.04 strategy: fail-fast: false matrix: buildtype: [debug, release] # Set the type of machine to run on env: BUILDTYPE: ${{ matrix.buildtype }} ENABLE_UNIT_TESTS: true steps: -..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05493064312736444,
+      "text": "Other Interfaces - SIL: Simulink Interface Layer at - ECI: External Code Interface at - Other Libraries - cFS_IO_LIB: IO library at - cFS_LIB: at - Other Tools - CCDD: Command and Data Dictionary Tool at - Perfutils-java: Java based performance analyzer for cFS at - gen_sch_tbl: Tool to generated SCH app tables - Other OSALs - TBD - Other PSPs - TBD"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.0540258576548899,
+      "text": "em\" 4. Select \"Enable Tlm\" 5. Enter IP address of system executing cFS, 127.0.0.1 if running locally Should see telemetry, can send noops and see command counters increment. ## Compatible list of cFS apps The following applications have been tested against this release: - TBD ## Other cFS related elements/tools/apps/distributions The following list is user submitted, and not CCB controlled. They are released by various organizations, under various licenses. - Distributions - cFS-101: Virtual machine distribution at - OpenSatKit: Open source kit for satellite software at - Other Ground station software - TBD - Other Apps - CS: Checksum application at - CF: CFDP application at - CI: Command..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": ".github/workflows/format-check.yml",
+      "doc_type": "deployment_config",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053236724536655275,
+      "text": "name: Format Check # Run on all push and pull requests on: push: pull_request: workflow_call: jobs: #Checks for duplicate actions. Skips push actions if there is a matching or duplicate pull-request action. check-for-duplicates: runs-on: ubuntu-latest # Map a step output to a job output outputs: should_skip: ${{ steps.skip_check.outputs.should_skip }} steps: - id: skip_check uses: fkirc/skip-duplicate-actions@master with: concurrent_skipping: 'same_content' skip_after_successful_duplicate: 'true' do_not_skip: '[\"pull_request\", \"workflow_dispatch\", \"schedule\"]' format-checker: name: Run format check #Continue if check-for-duplicates found no duplicates. Always runs for pull-requests. needs..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": ".github/workflows/build-cfs-deprecated.yml",
+      "doc_type": "deployment_config",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05277653044390565,
+      "text": "run-cfs-omit-deprecated-false name: \"[DEPRECATED] cFS Functional Tests\" runs-on: ubuntu-18.04 timeout-minutes: 15 strategy: fail-fast: false matrix: buildtype: [debug, release] steps: - name: Cache Source and Deprecated Build id: cache-src-bld uses: actions/cache@v2 with: path: /home/runner/work/${{ env.REPO_NAME }}/${{ env.REPO_NAME }}/* key: deprecated-build-${{ github.run_number }}-${{ matrix.buildtype }} - name: List cpu1 run: ls build/exe/cpu1/ # Run cFS, send commands to set perf trigger and start perf data, and run functional tests - name: Run cFS Functional Tests run: | ./core-cpu1 & sleep 10 ../host/cmdUtil --pktid=0x1806 --cmdcode=17 --endian=LE --uint32=3 --uint32=0x40000000 ....."
+    }
+  ]
+}

@@ -1,0 +1,143 @@
+@startuml
+title DeepCode System Architecture
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+
+' Clients and edge
+actor "Visitor / User" as user
+component "Browser (HTML5)" as browser
+cloud "DNS" as dns
+cloud "CDN" as cdn
+node "Nginx Reverse Proxy" as nginx
+
+user --> browser
+browser --> dns : Resolve domain
+browser --> cdn : Static assets (HTTPS)
+browser --> nginx : HTTPS
+
+' Intranet boundary
+rectangle "Intranet (VPC / Firewall-restricted)" as intranet {
+  node "Spring Boot 3 Application" as app {
+    package "Presentation Layer" {
+      component "REST Controllers\nSwagger" as controllers
+    }
+    package "Proxy Layer" {
+      component "Filters / Interceptors\nAuth (JWT / OAuth2)" as proxy
+    }
+    package "Business Layer" {
+      component "User Service" as svc_user
+      component "Problem Service" as svc_problem
+      component "Solution Service" as svc_solution
+      component "Forum Service" as svc_forum
+      component "Record Service" as svc_record
+      component "AI Orchestrator" as svc_ai
+    }
+    package "Access Layer" {
+      component "MyBatis-Plus Repositories" as access_repo
+      component "Redis Client" as access_redis
+      component "MinIO SDK" as access_minio
+      component "HTTP Client (Judge)" as access_judge
+      component "LangChain4j Client" as access_llm
+      component "SMTP Client" as access_smtp
+    }
+  }
+
+  database "MySQL 5.7.44" as mysql
+  component "Redis 7.4.6" as redis
+  component "MinIO (Object Storage)" as minio
+  node "Judging Service" as judge {
+    component "JudgeHost" as judgehost
+    component "JudgeCore" as judgecore
+  }
+  component "LLM Provider" as llm
+  component "SMTP Server" as smtp
+
+  ' Observability
+  component "Prometheus" as prom
+  component "Grafana" as grafana
+  component "Alerting\n(PagerDuty / DingTalk)" as alerting
+
+  ' Deployment/CI/CD (informational)
+  node "CI/CD & Deployment" as cicd {
+    component "GitLab CI/CD" as gitlab
+    component "Docker Registry" as registry
+    node "Kubernetes Cluster" as k8s
+  }
+}
+
+' Edges within app
+nginx --> controllers : REST
+controllers --> proxy
+proxy --> svc_user
+proxy --> svc_problem
+proxy --> svc_solution
+proxy --> svc_forum
+proxy --> svc_record
+proxy --> svc_ai
+
+' Access layer wiring
+svc_user --> access_repo
+svc_problem --> access_repo
+svc_solution --> access_repo
+svc_forum --> access_repo
+svc_record --> access_repo
+
+' Caches and storage
+svc_user --> access_redis
+svc_problem --> access_redis
+svc_solution --> access_redis
+svc_forum --> access_redis
+svc_record --> access_redis
+access_redis --> redis
+
+access_repo --> mysql
+access_minio --> minio
+svc_problem --> access_minio : Test cases / images
+svc_solution --> access_minio : Images
+
+' External services
+svc_ai --> access_llm
+access_llm --> llm
+
+svc_problem --> access_judge : Submit code for judging (HTTP)
+access_judge --> judgehost
+judgehost --> judgecore
+judgehost --> minio : Fetch test case files
+judgehost --> access_judge : Results
+
+svc_user --> access_smtp : Send emails
+access_smtp --> smtp
+
+' Observability wiring
+app --> prom : Metrics
+mysql --> prom
+redis --> prom
+minio --> prom
+judgehost --> prom
+prom --> grafana
+prom --> alerting : Threshold alerts
+
+' Notes
+note top of browser
+Vue 3 SPA\nTypeScript, Vue Router, Vuex\nAnt Design Vue, CodeMirror, ECharts, Axios
+end note
+
+note top of browser
+All external communication over HTTPS
+end note
+
+note right of intranet
+Internal services communicate via intranet IPs\nand are restricted by firewalls
+end note
+
+note bottom of judgehost
+Queues tasks; returns busy when full
+end note
+
+note right of judgecore
+Executes code with resource limits\nand seccomp restrictions
+end note
+
+@enduml

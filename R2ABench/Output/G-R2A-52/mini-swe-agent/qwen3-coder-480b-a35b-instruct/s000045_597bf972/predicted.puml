@@ -1,0 +1,51 @@
+@startuml
+' Layered Component Architecture for QAPM Android SDK Subset'
+
+skinparam componentStyle rectangle
+
+package "Android Application" {
+  [Host Application] as App
+}
+
+package "QAPM SDK (Scoped)" {
+  [Background Handler Thread] as HandlerThread
+  [Work Scheduler] as Scheduler
+  [Upload Processor] as Uploader
+  [HTTP Client Wrapper] as HttpClientWrapper
+  [Data Sender] as Sender
+  
+  collections "Local Storage" as Storage
+  interface "Network Connectivity" as Network
+  interface "Android Context" as Context
+}
+
+package "External Systems" {
+  [Remote Server] as Server
+}
+
+' Connections '
+App --> Scheduler : schedules tasks
+Scheduler --> HandlerThread : posts runnables
+Uploader --> Storage : reads/writes files
+Uploader --> Network : checks connectivity
+Uploader --> Context : derives cParam
+Uploader --> Sender : sends bParam+cParam
+Sender --> Server : HTTP transport
+HttpClientWrapper --> Server : wrapped requests
+
+note right of Uploader
+  Upload Processing Steps:
+  1. Check network
+  2. Read file -> bParam
+  3. Derive cParam from context
+  4. Send via Sender
+  5. Delete on success / Log on failure
+end note
+
+note right of HttpClientWrapper
+  Wraps Apache HttpClient:
+  - ResponseHandler instrumentation
+  - HttpEntity content counting
+end note
+
+@enduml

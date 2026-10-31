@@ -1,0 +1,78 @@
+@startuml
+title Tengine Lite Architecture
+
+skinparam componentStyle rectangle
+
+package "Tengine Lite System" {
+  [User Applications] as user_apps
+  [Example Applications] as examples
+  
+  package "Core Modules" {
+    [Device Module] as device
+    [Scheduler Module] as scheduler
+    [Operator Module] as operator
+    [Serializer Module] as serializer
+  }
+  
+  database "Model Store" as model_store {
+    [Local Model Files] as models
+    [Binary tmfile Models] as tmfiles
+  }
+  
+  database "Data Store" as data_store {
+    [Image Assets] as images
+  }
+  
+  package "API Layer" {
+    [C API] as c_api
+    [C++ API] as cpp_api
+    [Python API] as python_api
+  }
+  
+  package "Tools" {
+    [Linux Model Converter] as linux_converter
+    [WebAssembly Model Converter] as wasm_converter
+  }
+}
+
+package "External Systems" {
+  [Web Browser] as browser
+  [Build Environment] as build_env
+}
+
+user_apps --> c_api : uses
+examples --> c_api : uses
+examples --> data_store : consumes
+examples --> model_store : consumes
+
+c_api --> device : interacts
+c_api --> scheduler : interacts
+c_api --> operator : interacts
+c_api --> serializer : interacts
+
+cpp_api --> c_api : wraps
+python_api --> c_api : wraps
+
+serializer --> tmfiles : reads
+operator --> device : registers ops
+scheduler --> operator : schedules
+scheduler --> serializer : uses
+
+linux_converter --> models : produces
+wasm_converter --> models : produces
+browser --> wasm_converter : executes
+build_env --> device : compiles
+build_env --> scheduler : compiles
+build_env --> operator : compiles
+build_env --> serializer : compiles
+
+note right of browser
+  WebAssembly-based
+  local execution
+end note
+
+note top of linux_converter
+  Pre-compiled for Linux
+end note
+
+@enduml

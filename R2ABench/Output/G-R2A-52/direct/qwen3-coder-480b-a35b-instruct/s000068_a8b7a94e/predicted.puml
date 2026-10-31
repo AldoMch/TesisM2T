@@ -1,0 +1,108 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "User" as user {
+  - Developer or build user
+  - CI maintainer or workflow operator
+  - Functional tester
+  - Telemetry or ground-test operator
+}
+
+RECTANGLE "Core Flight System (cFS)" as cfs_bundle {
+  + cFE
+  + OSAL
+  + PSP
+  + Framework Applications
+  + Tools
+}
+
+RECTANGLE "Build & Install Process" as build_process {
+  + Makefile.sample
+  + sample_defs
+  + make prep
+  + make install
+}
+
+RECTANGLE "Execution Target" as execution_target {
+  + core-cpu1 executable
+}
+
+RECTANGLE "Host Command Utility" as cmd_util {
+  + cmdUtil
+  + --pktid
+  + --cmdcode
+  + --endian
+  + --uint32
+}
+
+RECTANGLE "Telemetry System" as telemetry_system {
+  + IP Address Configuration
+  + Telemetry Observation
+}
+
+RECTANGLE "CI/CD Workflows" as ci_workflows {
+  + Changelog Generation
+  + Format Checking
+  + Static Analysis
+  + CodeQL
+  + Reusable Workflow Composition
+  + workflow_call
+}
+
+RECTANGLE "Environment" as environment {
+  + GitHub Actions Runners
+  + ubuntu-latest
+  + ubuntu-18.04
+  + Debug/Release Variants
+}
+
+RECTANGLE "External Interfaces" as external_interfaces {
+  + SIL
+  + ECI
+  + cFS_IO_LIB
+  + cFS_LIB
+  + CCDD
+  + Perfutils-java
+  + gen_sch_tbl
+}
+
+user --> build_process : Invokes build steps
+build_process --> cfs_bundle : Prepares and installs
+execution_target <-- cfs_bundle : Provides
+cmd_util --> execution_target : Sends commands
+telemetry_system <-- execution_target : Outputs telemetry
+user --> telemetry_system : Configures IP
+ci_workflows --> cfs_bundle : Validates
+environment --> ci_workflows : Hosts execution
+external_interfaces ..> cfs_bundle : Supports
+
+note right of cfs_bundle
+  Repository Bundle with Submodules
+end note
+
+note right of ci_workflows
+  Reusable Workflow Architecture
+  Deprecated workflows need revalidation
+end note
+
+note bottom of build_process
+  Constrained to Makefile.sample
+  and sample_defs assets
+end note
+
+note top of execution_target
+  Required for functional testing
+  Must be present for test execution
+end note
+
+note right of cmd_util
+  Host-side command transmission
+  Uses command-line flags
+end note
+
+note left of telemetry_system
+  Operator-configured IP address
+  Local (127.0.0.1) supported
+end note
+
+@enduml

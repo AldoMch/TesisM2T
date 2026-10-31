@@ -1,0 +1,233 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #111111
+}
+
+skinparam package {
+  BackgroundColor #F0F8FF
+  BorderColor #336699
+  FontStyle bold
+}
+
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #CC9900
+}
+
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+
+title Campus Helper Platform — System Architecture Diagram
+
+' ============================================================
+' CLIENT LAYER
+' ============================================================
+package "Client Environment" {
+  node "User Device\n(Android 5.0+, 4GB RAM, 64GB Disk)" as UserDevice {
+    component "WeChat 8.0+\nRuntime" as WeChatRuntime
+    package "Presentation Layer (WeChat Mini Program)" as PresentationLayer {
+      component "Homepage /\nPopular Products UI\n[FR-001]" as HomeUI
+      component "Product Category\nBrowse UI\n[FR-002]" as CategoryUI
+      component "Product Detail UI\n[FR-001,FR-002]" as ProductDetailUI
+      component "Order UI\n[FR-003,FR-004,FR-005,FR-006]" as OrderUI
+      component "Personal Center UI\n[FR-007,FR-008]" as PersonalCenterUI
+      component "Admin Product\nManagement UI\n[FR-009,FR-010,FR-011,FR-012]" as AdminProductUI
+      component "Admin Order\nManagement UI\n[FR-013,FR-014,FR-015]" as AdminOrderUI
+      component "Admin User\nManagement UI\n[FR-016,FR-017,FR-018]" as AdminUserUI
+    }
+  }
+}
+
+' ============================================================
+' BUSINESS LAYER
+' ============================================================
+package "Business Layer (Server)" as BusinessLayer {
+
+  package "User & Auth Module" as AuthModule {
+    component "Authentication &\nPermission Control\n[NFR-003,DR-001]" as AuthService
+    component "User Management\nService\n[FR-016,FR-017,FR-018]" as UserMgmtService
+  }
+
+  package "Product Module" as ProductModule {
+    component "Popular Product\nService\n[FR-001]" as PopularProductService
+    component "Product Category\nService\n[FR-002]" as CategoryService
+    component "Product Search\nService\n[FR-010]" as ProductSearchService
+    component "Product CRUD\nService\n[FR-009,FR-011,FR-012]" as ProductCRUDService
+    component "Favorite\nService\n[FR-007,DR-005]" as FavoriteService
+  }
+
+  package "Order Module" as OrderModule {
+    component "Order Creation\nService\n[FR-003]" as OrderCreateService
+    component "Order Modification\nService\n[FR-004,FR-005,FR-006]" as OrderModifyService
+    component "Order Query\nService\n[FR-008,FR-013,FR-014]" as OrderQueryService
+    component "Admin Order\nManagement Service\n[FR-015]" as AdminOrderService
+  }
+
+  package "Security & Validation Module" as SecurityModule {
+    component "Input Validation &\nSQL Injection Guard\n[NFR-002]" as InputValidation
+    component "Bot / Malicious\nBehavior Detection\n[NFR-001]" as BotDetection
+    component "Data Privacy\nReview\n[NFR-004,DR-008]" as PrivacyReview
+  }
+
+  package "Observability & Ops Module" as OpsModule {
+    component "Monitoring Collector\n(CPU/Mem/IO/QPS/\nSlowQuery/Cache)\n[NFR-019,DR-007]" as MonitoringCollector
+    component "Admin Operation\nLog Service\n[DR-006]" as AdminLogService
+    component "Fault Recovery &\nRollback Manager\n[NFR-017,NFR-018,NFR-020]" as FaultRecovery
+  }
+}
+
+' ============================================================
+' DATA LAYER
+' ============================================================
+package "Data Layer" as DataLayer {
+  component "User & Permission\nRepository\n[DR-001]" as UserRepo
+  component "Product\nRepository\n[DR-002]" as ProductRepo
+  component "Tag & Category\nRepository\n[DR-003]" as TagRepo
+  component "Order\nRepository\n[DR-004]" as OrderRepo
+  component "Favorite\nRepository\n[DR-005]" as FavoriteRepo
+  component "Admin Log\nRepository\n[DR-006]" as AdminLogRepo
+  component "Monitoring Metrics\nRepository\n[DR-007]" as MonitoringRepo
+}
+
+' ============================================================
+' DATA ENTITY LAYER
+' ============================================================
+package "Data Entity Layer (Database)" as DataEntityLayer {
+  database "User &\nPermission DB\n[DR-001]" as UserDB
+  database "Product &\nTag DB\n[DR-002,DR-003]" as ProductDB
+  database "Order DB\n[DR-004]" as OrderDB
+  database "Favorite DB\n[DR-005]" as FavoriteDB
+  database "Admin Log DB\n[DR-006]" as AdminLogDB
+  database "Monitoring &\nFault Metrics Store\n[DR-007]" as MonitoringDB
+}
+
+' ============================================================
+' EXTERNAL DEPENDENCY
+' ============================================================
+rectangle "WeChat Mini Program\nPlatform (External)\n[AD-001,C-001]" as WeChatPlatform
+
+' ============================================================
+' RELATIONSHIPS — Presentation → Business
+' ============================================================
+WeChatRuntime --> PresentationLayer : hosts
+
+HomeUI --> PopularProductService
+CategoryUI --> CategoryService
+ProductDetailUI --> PopularProductService
+ProductDetailUI --> CategoryService
+ProductDetailUI --> FavoriteService
+OrderUI --> OrderCreateService
+OrderUI --> OrderModifyService
+OrderUI --> OrderQueryService
+PersonalCenterUI --> FavoriteService
+PersonalCenterUI --> OrderQueryService
+AdminProductUI --> ProductSearchService
+AdminProductUI --> ProductCRUDService
+AdminProductUI --> AdminLogService
+AdminOrderUI --> AdminOrderService
+AdminOrderUI --> OrderQueryService
+AdminOrderUI --> AdminLogService
+AdminUserUI --> UserMgmtService
+AdminUserUI --> AdminLogService
+
+' ============================================================
+' RELATIONSHIPS — Business Cross-Module
+' ============================================================
+AuthService --> UserMgmtService
+AuthService -[#red]-> InputValidation : enforces
+AuthService -[#red]-> BotDetection : enforces
+OrderCreateService --> InputValidation
+OrderModifyService --> InputValidation
+ProductCRUDService --> InputValidation
+UserMgmtService --> InputValidation
+ProductCRUDService --> PrivacyReview
+UserMgmtService --> PrivacyReview
+MonitoringCollector --> FaultRecovery
+
+' ============================================================
+' RELATIONSHIPS — Business → Data Layer
+' ============================================================
+AuthService --> UserRepo
+UserMgmtService --> UserRepo
+PopularProductService --> ProductRepo
+PopularProductService --> TagRepo
+CategoryService --> ProductRepo
+CategoryService --> TagRepo
+ProductSearchService --> ProductRepo
+ProductSearchService --> TagRepo
+ProductCRUDService --> ProductRepo
+ProductCRUDService --> TagRepo
+FavoriteService --> FavoriteRepo
+FavoriteService --> ProductRepo
+OrderCreateService --> OrderRepo
+OrderModifyService --> OrderRepo
+OrderQueryService --> OrderRepo
+AdminOrderService --> OrderRepo
+AdminLogService --> AdminLogRepo
+MonitoringCollector --> MonitoringRepo
+
+' ============================================================
+' RELATIONSHIPS — Data Layer → Data Entity Layer
+' ============================================================
+UserRepo --> UserDB
+ProductRepo --> ProductDB
+TagRepo --> ProductDB
+OrderRepo --> OrderDB
+FavoriteRepo --> FavoriteDB
+AdminLogRepo --> AdminLogDB
+MonitoringRepo --> MonitoringDB
+
+' ============================================================
+' External WeChat Platform dependency
+' ============================================================
+WeChatPlatform --> WeChatRuntime : provides runtime\nframework [C-001,C-003]
+
+' ============================================================
+' NFR Annotations as notes
+' ============================================================
+note top of SecurityModule
+  NFR-001: Bot detection > 98%
+  NFR-002: SQL injection blocked
+  NFR-003: Auth & permission control
+  NFR-004: Privacy review before storage
+end note
+
+note top of OpsModule
+  NFR-019: CPU/Mem/IO/QPS/Slow-query/Cache monitored
+  NFR-017: Server restart < 30 min; HW replace < 12 h
+  NFR-018: Bug fix & redeploy < 2 h; scale < 6 h
+  NFR-020: Rollback, restart, emergency update supported
+end note
+
+note bottom of DataEntityLayer
+  NFR-008: Supports 10,000 users, GB-level data,
+  max 100,000 rows/table, max 100 GB DB, min 20 GB disk
+  NFR-005: 500–3000 concurrent users supported
+  NFR-006: 95th-pct response ≤ 1.5 s normal / ≤ 4 s peak
+  NFR-007: Off-peak search ≤ 3 s
+end note
+
+note right of BusinessLayer
+  C-004: Four-layer architecture enforced
+  NFR-013: Module fault isolation
+  NFR-014: Decoupled modules, clear documentation
+  NFR-016: Upgrade interfaces preserved
+end note
+
+@enduml

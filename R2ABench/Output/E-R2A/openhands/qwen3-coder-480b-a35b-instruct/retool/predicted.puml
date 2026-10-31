@@ -1,0 +1,69 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+skinparam maxMessageSize 100
+
+title ReTool System Architecture
+
+package "Client (Browser)" {
+  [Vue.js Frontend] as frontend
+}
+
+package "Local Computer Services" {
+  [API Gateway] as gateway
+  [User Management\nService] as user_service
+  [Project Management\nService] as project_service
+  [Requirements Management\nService] as req_service
+  database "MongoDB" as mongo_db
+}
+
+package "Server (High Performance)" {
+  [Algorithm Service\n(NLP, PyTorch)] as algo_service
+}
+
+frontend --> gateway : HTTPS/REST
+
+gateway --> user_service : Service Calls
+gateway --> project_service : Service Calls
+gateway --> req_service : Service Calls
+
+user_service --> mongo_db : CRUD Operations
+project_service --> mongo_db : CRUD Operations
+req_service --> mongo_db : CRUD Operations
+
+req_service <--> algo_service : Analysis Requests
+
+note right of frontend
+  Vue.js Framework
+  Google Chrome 81+
+end note
+
+note right of algo_service
+  NLP Processing
+  PyTorch Models
+  Word2Vec
+  Heuristic Rules
+end note
+
+note top of mongo_db
+  MongoDB Database
+  Data Persistence
+end note
+
+note bottom of gateway
+  Microservice Architecture
+  Flask-based Services
+end note
+
+cloud "Network" {
+  [Internet]
+}
+
+frontend --> [Internet] : Secure Connection
+gateway --> [Internet] : Secure Connection
+
+@enduml

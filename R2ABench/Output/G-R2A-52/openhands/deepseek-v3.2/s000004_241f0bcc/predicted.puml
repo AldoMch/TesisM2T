@@ -1,0 +1,160 @@
+@startuml
+' Architecture Diagram for EMBC ESS Application
+' Generated from Software Requirements Specification
+
+package "Client Layer" {
+  component "Web Browser" as browser
+  component "Angular ClientApp" as angular #lightgreen
+  component "NgRx Store" as ngrx #lightblue
+  component "Cookie Service" as cookie
+  
+  component "Service Wrappers" as services {
+    component "Evacuee Service" as evacuee
+    component "Incident-Task Service" as incident
+    component "Organization Service" as org
+    component "Referral Service" as referral
+    component "Registration Service" as registration
+    component "Notification Service" as notification
+    component "Controlled-List Loader" as controlled
+  }
+  
+  component "Routing & Auth" as routing {
+    component "Role-Based Routing" as role_routing
+    component "Login/Session Handler" as login
+    component "HTTP Interceptor" as interceptor
+    component "Redirect Guard" as redirect
+    component "Watchdog Timer" as watchdog
+  }
+  
+  browser --> angular : "Renders UI"
+  angular --> routing : "Uses"
+  angular --> services : "Calls"
+  angular --> ngrx : "Manages State"
+  angular --> cookie : "Reads/Writes"
+  services --> controlled : "Loads at init"
+  controlled --> ngrx : "Stores data"
+  interceptor --> watchdog : "Resets on HTTP"
+}
+
+package "API/Server Layer" {
+  component "HTTP API Gateway" as api_gateway #orange
+  component ".NET Core WebAPI" as webapi #orange
+  component "Controllers" as controllers
+  component "SiteMinder Auth" as siteminder #red
+  component "Development Back Door" as dev_backdoor #yellow
+  
+  api_gateway --> webapi : "Routes"
+  webapi --> controllers : "Processes"
+  controllers --> siteminder : "Validates"
+  siteminder -.-> dev_backdoor : "Bypass in dev"
+}
+
+package "Domain/Business Layer" {
+  component "Domain Services" as domain_services #pink
+  component "C# Domain Classes" as domain_classes
+  
+  controllers --> domain_services : "Calls"
+  domain_services --> domain_classes : "Uses"
+}
+
+package "Data Access Layer" {
+  component "Entity Framework" as ef #purple
+  component "DbContext" as dbcontext
+  
+  domain_services --> ef : "Uses"
+  ef --> dbcontext : "Manages"
+}
+
+package "Database Layer" {
+  database "MS SQL Database" as mssql #blue
+  component "Persistent Entities" as entities
+  component "Repository SQL Scripts" as sql_scripts #gray
+  
+  dbcontext --> mssql : "Reads/Writes"
+  mssql --> entities : "Stores"
+  sql_scripts --> mssql : "Maintains"
+}
+
+package "External Systems" {
+  component "External URLs" as external_urls
+  component "Role-Paired Tokens" as dev_tokens #yellow
+  component "Proxy Configuration" as proxy #gray
+}
+
+' Key relationships between layers
+angular --> api_gateway : "HTTP Requests"
+api_gateway --> angular : "HTTP Responses"
+
+' Development environment relationships
+dev_tokens --> angular : "Local dev"
+proxy --> angular : "Local dev"
+dev_backdoor --> controllers : "Dev only"
+
+' External relationships
+redirect --> external_urls : "Routes to"
+
+' User roles context
+actor "Role-Based User" as user
+actor "Developer" as developer
+actor "DB Operator" as db_operator
+
+user --> browser : "Uses"
+developer --> angular : "Develops"
+developer --> dev_tokens : "Uses"
+developer --> proxy : "Configures"
+db_operator --> sql_scripts : "Executes"
+
+' Key flows and annotations
+note right of angular
+  - Role-based landing routing
+  - Login/session handling
+  - Unauthorized response handling
+  - Module import diagnostics
+end note
+
+note right of webapi
+  - Business endpoint operations
+  - Registration PDF collection
+  - Notification queue support
+end note
+
+note right of mssql
+  - Volunteer deactivation scripts
+  - Transaction safety
+  - Backup required before execution
+end note
+
+note right of ngrx
+  - Single immutable state
+  - Action/Reducer pattern
+  - Selected shared data only
+end note
+
+' Styling and layout
+skinparam component {
+  BackgroundColor<<$0>> #F0F0F0
+  BorderColor #333333
+}
+
+skinparam package {
+  BackgroundColor #E8E8E8
+  BorderColor #666666
+}
+
+skinparam actor {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+}
+
+title EMBC ESS Application Architecture
+legend right
+  |Color Legend|
+  Green: Front-end Components
+  Orange: API/Server Components
+  Pink: Domain Components
+  Purple: Data Access Components
+  Blue: Database Components
+  Yellow: Development Components
+  Gray: Infrastructure/Support
+endlegend
+@enduml

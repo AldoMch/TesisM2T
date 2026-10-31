@@ -1,0 +1,100 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> LightSteelBlue
+  BorderColor<<layer>> DarkSlateBlue
+}
+
+title AWS IoT Device Simulator - Architecture Diagram
+
+actor "Administrator / Operator" as Admin
+actor "API Client" as APIClient
+actor "AWS Deployment Workflow" as DeployWorkflow
+
+rectangle "Presentation Layer" <<layer>> {
+  [Web Management Console] as WebConsole
+  [Amazon CloudFront / S3 Hosting] as CDN
+}
+
+rectangle "API Layer" <<layer>> {
+  [Amazon API Gateway\n(Regional REST API, stage: prod)] as APIGW
+  note right of APIGW
+    - CORS: GET, POST, PUT, DELETE, OPTIONS
+    - Request Validation (params + body)
+    - Access Logging (JSON, INFO level)
+    - X-Ray Tracing enabled
+  end note
+}
+
+rectangle "Application / Service Layer" <<layer>> {
+  [Simulation Management\nLambda Service] as SimMgmtLambda
+  [Device Type Management\nLambda Service] as DevTypeLambda
+  [Device Simulator\nLambda / Execution Engine] as SimExecLambda
+  [Route Loader\nLambda Service] as RouteLoaderLambda
+  [Custom Resource Handler\nLambda] as CustomResourceLambda
+}
+
+rectangle "Orchestration Layer" <<layer>> {
+  [AWS Step Functions\n(Simulation Workflow)] as StepFunctions
+}
+
+rectangle "Data & Storage Layer" <<layer>> {
+  database "Amazon DynamoDB\n(Simulations & Device Types)" as DynamoDB
+  storage "Amazon S3\n(Route Data: ROUTE_BUCKET)" as S3Routes
+  storage "Amazon S3\n(Web Console Hosting)" as S3Console
+}
+
+rectangle "Messaging & IoT Layer" <<layer>> {
+  [AWS IoT Core\n(IoT Topics)] as IoTCore
+  [Amazon CloudWatch Logs\n(API Access Logs)] as CloudWatchLogs
+}
+
+rectangle "Identity & Security Layer" <<layer>> {
+  [Amazon Cognito\n(Identity & Auth)] as Cognito
+}
+
+rectangle "Deployment Layer" <<layer>> {
+  [AWS CloudFormation\n(Stack Deployment)] as CloudFormation
+}
+
+' User interactions
+Admin --> CDN : HTTPS
+APIClient --> APIGW : REST API (HTTPS)
+DeployWorkflow --> CloudFormation : Stack deployment
+
+' Presentation layer
+CDN --> S3Console : serve static assets
+WebConsole --> APIGW : REST API calls
+
+' API to Application layer
+APIGW --> SimMgmtLambda : invoke
+APIGW --> DevTypeLambda : invoke
+APIGW --> SimExecLambda : invoke
+APIGW --> Cognito : auth/authorization
+
+' Application to Orchestration
+SimMgmtLambda --> StepFunctions : start/manage simulation workflows
+
+' Step Functions to Execution
+StepFunctions --> SimExecLambda : orchestrate simulation steps
+StepFunctions --> RouteLoaderLambda : trigger route loading
+
+' Application to Data layer
+SimMgmtLambda --> DynamoDB : read/write simulation records
+DevTypeLambda --> DynamoDB : read/write device type records
+SimExecLambda --> DynamoDB : read simulation state
+
+' Route Loading
+RouteLoaderLambda --> S3Routes : GetObject (ROUTE_BUCKET / route key)
+
+' IoT Publishing
+SimExecLambda --> IoTCore : publish simulated device messages
+
+' Logging
+APIGW --> CloudWatchLogs : JSON access logs
+
+' Custom Resource
+CloudFormation --> CustomResourceLambda : invoke on deploy/update/delete
+CustomResourceLambda --> S3Routes : initialize route bucket resources
+
+@enduml

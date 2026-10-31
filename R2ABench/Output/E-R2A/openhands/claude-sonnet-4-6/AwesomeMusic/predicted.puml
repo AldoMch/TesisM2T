@@ -1,0 +1,112 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam ArrowColor #555555
+skinparam NodeBackgroundColor #DDEEFF
+skinparam ComponentBackgroundColor #EEF7EE
+skinparam DatabaseBackgroundColor #FFF3CD
+skinparam QueueBackgroundColor #FFE4B5
+
+title AwesomeMusic System Architecture
+
+actor "Music Enthusiast\n(Browser)" as User
+
+rectangle "External Network" {
+  component "Nginx\n(Gateway / Load Balancer)" as Nginx
+}
+
+rectangle "Internal Network" {
+
+  node "Web Frontend\n(HTML / CSS / JavaScript / Bootstrap)" as Frontend {
+    [Registration & Login UI] as RegUI
+    [Homepage UI\n(Recommendations & Hot Charts)] as HomeUI
+    [Search & List UI] as SearchUI
+    [Song Detail UI\n(Favorite / Download)] as DetailUI
+    [Score Generation UI] as GenUI
+    [Personal Center UI\n(Favorites / Follows / Models)] as PersonalUI
+  }
+
+  node "Web Backend\n(Golang / Gin)" as Backend {
+    [Account Service\n(Register / Login)] as AccSvc
+    [Score Service\n(Upload / Download / Search)] as ScoreSvc
+    [Favorite & Follow Service] as FavFollowSvc
+    [Recommendation & Hot Chart Service] as RecHotSvc
+    [Scheduling Module] as SchedMod
+  }
+
+  node "Algorithm Service" as AlgoService {
+    [Online Score Generation\n(midi→abc→5 seeds→GPT-2→abc→midi)] as OnlineGen
+    [Offline Model Training\n(midi→abc→GPT-2 fine-tuning)] as ModelTrain
+    [Score Classification\n(midi→abc→LSTM representation→labels)] as Classification
+    [Song Recommendation\n(Cosine similarity / User similarity)] as SongRec
+  }
+
+  queue "RabbitMQ\n(Task Queue / MQ)" as MQ
+
+  database "Database\n(3-Replica Storage)" as DB {
+    [User Accounts\n(username / password / email)] as UserTable
+    [Score Records\n(score data / labels / attention)] as ScoreTable
+    [Favorite & Follow Records] as FavTable
+    [Model Parameters\n(per-user GPT-2 params)] as ModelTable
+    [Task Metadata & Logs\n(status / errors / retries)] as TaskTable
+    [Hot Chart Data\n(score & user popularity)] as HotTable
+  }
+
+  storage "Apache Hadoop\n(Distributed File Storage)" as Hadoop
+
+  component "etcd\n(Service Coordination &\nDistributed Configuration)" as Etcd
+}
+
+' External access
+User --> Nginx : HTTPS
+
+' Nginx routes
+Nginx --> Frontend : static assets
+Nginx --> Backend : API requests (HTTPS)
+
+' Frontend calls backend
+Frontend --> Backend : REST API calls
+
+' Backend internal services
+Backend --> AccSvc
+Backend --> ScoreSvc
+Backend --> FavFollowSvc
+Backend --> RecHotSvc
+
+' Backend to persistence
+Backend --> DB : read / write
+Backend --> Hadoop : midi & abc score files
+
+' Scheduling module pushes tasks to MQ
+SchedMod --> MQ : serialize & push\n(training / classification /\nrecommendation / generation tasks)
+SchedMod --> DB : read/write task metadata & logs
+
+' Algorithm service consumes from MQ
+MQ --> AlgoService : dispatch tasks\n(triggered when algorithm idle)
+
+' Algorithm service reads/writes data
+AlgoService --> Hadoop : model params, midi & abc files
+AlgoService --> DB : write classification labels,\nrecommendation results,\nmodel parameters
+
+' Service coordination
+Backend --> Etcd : service discovery & config
+AlgoService --> Etcd : register & coordinate
+
+' Scheduled triggers (time-based)
+note right of SchedMod
+  Daily 02:00: trigger training,
+  classification, recommendation tasks.
+  On user request: trigger generation task.
+  Polls task status; logs & retries on failure.
+end note
+
+' Algorithm processing note
+note right of AlgoService
+  Online: GPT-2 per-user score generation
+  Offline: daily GPT-2 fine-tuning per user
+  Classification: LSTM score representations
+  Recommendation: cosine & user similarity
+end note
+
+@enduml

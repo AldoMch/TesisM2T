@@ -1,0 +1,134 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  ArrowColor #333333
+  FontColor #333333
+}
+
+title Activiti 7 Platform Architecture from SRS
+
+package "External Environment" {
+  [External User] as EU
+  [Cluster Operator] as CO
+  [Developer/Integrator] as DI
+  [Public IP] as PIP
+}
+
+package "Identity & Access Management" {
+  [Keycloak] as KC
+  [Spring Security] as SS
+  [Authentication Token] as TOKEN
+}
+
+package "API Gateway & Routing" {
+  [NGINX Ingress Controller] as INGRESS
+  [Gateway/API Gateway] as GATEWAY
+}
+
+package "Core Runtime Services" {
+  [Example Runtime Bundle] as RB
+  [ProcessRuntime API] as PRA
+  [TaskRuntime API] as TRA
+  [Audit Service] as AUDIT
+  [Query Service] as QUERY
+}
+
+package "Supporting Services" {
+  [Notification Service] as NOTIF
+  [Cloud Connectors] as CONN
+}
+
+package "Deployment & Configuration" {
+  [Kubernetes/GKE] as K8S
+  [Deployment Descriptors] as DEPLOY
+  [Registry/Config Maps] as CONFIG
+}
+
+package "Process Components" {
+  [SimpleProcess Definition] as SPD
+  [Process Instance] as PI
+  [Human Participant] as HP
+}
+
+' External connections
+EU --> INGRESS : "External requests"
+CO --> K8S : "Cluster configuration"
+DI --> GATEWAY : "API calls"
+PIP --> INGRESS : "Routes traffic"
+
+' Identity flow
+EU --> KC : "Obtains token"
+KC --> TOKEN : "Issues"
+TOKEN --> GATEWAY : "Bearer token"
+GATEWAY --> SS : "Validates"
+SS --> RB : "Authorizes"
+SS --> TRA : "Checks ROLE_ACTIVITI_USER"
+
+' API Gateway routing
+INGRESS --> GATEWAY : "Routes requests"
+GATEWAY --> RB : "Process API calls"
+GATEWAY --> AUDIT : "Audit queries"
+GATEWAY --> QUERY : "Query requests"
+GATEWAY --> TRA : "Task API calls"
+
+' Core runtime interactions
+RB --> SPD : "Hosts"
+RB --> PI : "Creates/Manages"
+PRA --> RB : "Process operations"
+TRA --> RB : "Task operations"
+PI --> HP : "Involves"
+HP --> TRA : "Interacts via"
+
+' Audit and query
+RB --> AUDIT : "Generates events"
+RB --> QUERY : "Provides state"
+
+' Supporting services connections
+RB --> NOTIF : "May use"
+RB --> CONN : "May use"
+
+' Deployment configuration
+K8S --> DEPLOY : "Uses"
+K8S --> CONFIG : "Uses"
+DEPLOY --> RB : "Configures scalability"
+DEPLOY --> CONN : "Configures input rate"
+
+' Component relationships
+SPD --> PI : "Instantiates"
+PI --> AUDIT : "Produces events"
+PI --> QUERY : "Provides execution info"
+
+note right of KC
+  Issues time-limited tokens
+  for protected endpoints
+end note
+
+note right of SS
+  Manages user/group/role data
+  Enforces ROLE_ACTIVITI_USER
+end note
+
+note right of RB
+  Hosts process definitions
+  Executes process instances
+end note
+
+note right of TRA
+  Requires logged-in user
+  with ROLE_ACTIVITI_USER
+end note
+
+note right of DEPLOY
+  Contains configurable:
+  - Data input rate
+  - Replica counts
+  For scalability experiments
+end note
+
+@enduml

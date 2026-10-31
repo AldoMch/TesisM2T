@@ -1,0 +1,124 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 20
+skinparam ranksep 30
+
+title EMBC ESS System Architecture
+
+package "Client Layer" {
+  [Angular ClientApp] as ClientApp
+  [NgRx Store] as NgRxStore
+  [Cookie Service] as CookieService
+  [Notification Queue] as NotificationQueue
+  [Notifier Component] as NotifierComponent
+  [Role-based Router] as Router
+  [HTTP Interceptor] as HTTPInterceptor
+  [Watchdog Timer] as WatchdogTimer
+  [Module Load Diagnostic] as ModuleDiagnostic
+
+  package "Service Wrappers" {
+    [Evacuee Service] as EvacueeService
+    [Incident-Task Service] as IncidentTaskService
+    [Organization Service] as OrganizationService
+    [Referral Service] as ReferralService
+    [Registration Service] as RegistrationService
+    [Controlled-list Loader] as ControlledListLoader
+  }
+}
+
+package "API/Server Layer" {
+  [.NET Core WebAPI] as WebAPI
+  [API Controllers] as Controllers
+  [SiteMinder Auth] as SiteMinder
+  [Development Back Door] as DevBackDoor
+}
+
+package "Domain Layer" {
+  [C# Domain Classes] as DomainClasses
+  [Domain Services] as DomainServices
+}
+
+package "Data Access Layer" {
+  [Entity Framework] as EF
+  [DbContext] as DbContext
+}
+
+package "Persistence Layer" {
+  database "MS SQL Database" as MSSQL
+  [Persistent Entities] as Entities
+  [Repository SQL Scripts] as SQLScripts
+}
+
+package "External Systems" {
+  [Web Browser] as Browser
+  [External URL] as ExternalURL
+}
+
+' Client Layer Internal Connections
+ClientApp --> Router : "uses"
+ClientApp --> NgRxStore : "manages state"
+ClientApp --> HTTPInterceptor : "intercepts requests"
+ClientApp --> ModuleDiagnostic : "alerts on"
+HTTPInterceptor --> WatchdogTimer : "resets"
+Router --> CookieService : "checks auth"
+ControlledListLoader --> NgRxStore : "loads data into"
+EvacueeService ..> NgRxStore : "may cache"
+IncidentTaskService ..> NgRxStore : "may cache"
+OrganizationService ..> NgRxStore : "may cache"
+ReferralService ..> NgRxStore : "may cache"
+RegistrationService ..> NgRxStore : "may cache"
+RegistrationService --> RegistrationService : "PDF collection"
+NotificationQueue --> NotifierComponent : "observed by"
+
+' Client to API Communication
+ClientApp --> WebAPI : "HTTP Requests (with role-paired tokens)"
+HTTPInterceptor --> WebAPI : "forwards requests"
+EvacueeService --> Controllers : "read"
+IncidentTaskService --> Controllers : "create, read, update"
+OrganizationService --> Controllers : "create, read, update"
+ReferralService --> Controllers : "create, read, update, delete"
+RegistrationService --> Controllers : "create, read, update"
+ControlledListLoader --> Controllers : "initial load"
+CookieService --> SiteMinder : "respects"
+Router --> ExternalURL : "redirects to"
+
+' API/Server Layer Internal Connections
+WebAPI --> Controllers : "routes to"
+Controllers --> SiteMinder : "authenticates via"
+DevBackDoor --> Controllers : "bypasses in dev"
+Controllers --> DomainServices : "invokes"
+
+' Domain Layer to Data Access
+DomainServices --> DomainClasses : "operates on"
+DomainServices --> EF : "uses"
+
+' Data Access to Persistence
+EF --> DbContext : "manages"
+DbContext --> Entities : "maps to"
+Entities --> MSSQL : "stored in"
+SQLScripts --> MSSQL : "executes against"
+
+' External Interface
+Browser --> ClientApp : "hosts"
+
+note right of ClientApp
+  Role-based routing
+  Session handling
+  Local dev proxy config
+end note
+
+note right of SQLScripts
+  Uses target variables
+  Runs in transaction
+  Requires DB backup
+end note
+
+note right of DevBackDoor
+  Backend-only
+  Enabled in designated
+  dev environments only
+end note
+
+@enduml

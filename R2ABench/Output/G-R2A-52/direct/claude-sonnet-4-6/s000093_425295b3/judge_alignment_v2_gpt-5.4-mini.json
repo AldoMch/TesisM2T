@@ -1,0 +1,210 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::SteamVR / OpenVR Runtime\\n\\n- Loads and hosts VMT Driver\\n- OpenVR driver interface\\n- Provides runtime environment"
+      ],
+      "gt_nodes": [
+        "Global::OpenVR\\nSteamVR Runtime"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Global::User Application"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "User Application Environment::User Application\\n(External Control Input Provider)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "VMT Driver Process (SteamVR Plugin)::Legacy Controller Binding\\n(mycontroller)\\n\\n- controller_type: mycontroller\\n- /user/hand/right/input/a\\n  → /actions/legacy/in/right_axis1_press\\n- /user/hand/right/input/c\\n  → /actions/legacy/in/right_a_press\\n- /user/hand/right/input/b\\n  → /actions/legacy/in/right_grip_press\\n- mode: button, sub_mode: complex"
+      ],
+      "gt_nodes": [
+        "Virtual Motion Tracker::Legacy Controller Binding\\nmycontroller JSON"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "VMT Driver Process (SteamVR Plugin)::VMT Driver\\n\\n- Exposes virtual motion tracking capability\\n- Integrates with OpenVR driver interface\\n- Loadable by SteamVR/OpenVR runtime"
+      ],
+      "gt_nodes": [
+        "Virtual Motion Tracker::VMT Driver\\nC++"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "VMT Management Process::VMT Manager\\n\\n- Receives external control input\\n- Manages shared-memory communication\\n- Drives virtual motion tracking state updates"
+      ],
+      "gt_nodes": [
+        "Virtual Motion Tracker::VMT Manager\\nC#"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::SteamVR / OpenVR Runtime\\n\\n- Loads and hosts VMT Driver\\n- OpenVR driver interface\\n- Provides runtime environment",
+        "VMT Driver Process (SteamVR Plugin)::VMT Driver\\n\\n- Exposes virtual motion tracking capability\\n- Integrates with OpenVR driver interface\\n- Loadable by SteamVR/OpenVR runtime"
+      ],
+      "gt_node": "Global::OpenVR\\nSteamVR Runtime"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::User Application Environment",
+        "User Application Environment::User Application\\n(External Control Input Provider)"
+      ],
+      "gt_node": "Global::User Application"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "VMT Driver Process (SteamVR Plugin)::Legacy Controller Binding\\n(mycontroller)\\n\\n- controller_type: mycontroller\\n- /user/hand/right/input/a\\n  → /actions/legacy/in/right_axis1_press\\n- /user/hand/right/input/c\\n  → /actions/legacy/in/right_a_press\\n- /user/hand/right/input/b\\n  → /actions/legacy/in/right_grip_press\\n- mode: button, sub_mode: complex"
+      ],
+      "gt_node": "Virtual Motion Tracker::Legacy Controller Binding\\nmycontroller JSON"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Virtual Motion Tracker::OpenVR Path Constants\\n/user/body and /client_info"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::VMT Driver Process (SteamVR Plugin)",
+        "VMT Driver Process (SteamVR Plugin)::VMT Driver\\n\\n- Exposes virtual motion tracking capability\\n- Integrates with OpenVR driver interface\\n- Loadable by SteamVR/OpenVR runtime"
+      ],
+      "gt_node": "Virtual Motion Tracker::VMT Driver\\nC++"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::VMT Management Process",
+        "VMT Management Process::VMT Manager\\n\\n- Receives external control input\\n- Manages shared-memory communication\\n- Drives virtual motion tracking state updates"
+      ],
+      "gt_node": "Virtual Motion Tracker::VMT Manager\\nC#"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Global::Shared Memory IPC Layer",
+      "reference_nodes": [
+        "Virtual Motion Tracker::VMT Driver\\nC++",
+        "Virtual Motion Tracker::VMT Manager\\nC#"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::SteamVR / OpenVR Runtime\\n\\n- Loads and hosts VMT Driver\\n- OpenVR driver interface\\n- Provides runtime environment",
+      "reference_nodes": [
+        "Global::OpenVR\\nSteamVR Runtime"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::User Application Environment",
+      "reference_nodes": [
+        "Global::User Application"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::VMT Driver Process (SteamVR Plugin)",
+      "reference_nodes": [
+        "Virtual Motion Tracker::VMT Driver\\nC++"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::VMT Management Process",
+      "reference_nodes": [
+        "Virtual Motion Tracker::VMT Manager\\nC#"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Shared Memory IPC Layer::Shared Memory Channel\\n(Driver → Manager)\\n\\nPayload: JSON string\\nMetadata: send_count,\\nhandshake_count, message_length",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Shared Memory IPC Layer::Shared Memory Channel\\n(Manager → Driver)\\n\\nPayload: JSON string\\nMetadata: send_count,\\nhandshake_count, message_length",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "User Application Environment::User Application\\n(External Control Input Provider)",
+      "reference_nodes": [
+        "Global::User Application"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "VMT Driver Process (SteamVR Plugin)::Legacy Controller Binding\\n(mycontroller)\\n\\n- controller_type: mycontroller\\n- /user/hand/right/input/a\\n  → /actions/legacy/in/right_axis1_press\\n- /user/hand/right/input/c\\n  → /actions/legacy/in/right_a_press\\n- /user/hand/right/input/b\\n  → /actions/legacy/in/right_grip_press\\n- mode: button, sub_mode: complex",
+      "reference_nodes": [
+        "Virtual Motion Tracker::Legacy Controller Binding\\nmycontroller JSON"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "VMT Driver Process (SteamVR Plugin)::VMT Driver\\n\\n- Exposes virtual motion tracking capability\\n- Integrates with OpenVR driver interface\\n- Loadable by SteamVR/OpenVR runtime",
+      "reference_nodes": [
+        "Global::OpenVR\\nSteamVR Runtime",
+        "Virtual Motion Tracker::VMT Driver\\nC++"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "VMT Management Process::VMT Manager\\n\\n- Receives external control input\\n- Manages shared-memory communication\\n- Drives virtual motion tracking state updates",
+      "reference_nodes": [
+        "Virtual Motion Tracker::VMT Manager\\nC#"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1168,
+      "completion_tokens": 113,
+      "total_tokens": 1281,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Virtual Motion Tracker::OpenVR Path Constants\\n/user/body and /client_info"
+  ],
+  "unmatched_predicted_nodes": [
+    "Global::Shared Memory IPC Layer",
+    "Global::User Application Environment",
+    "Global::VMT Driver Process (SteamVR Plugin)",
+    "Global::VMT Management Process",
+    "Shared Memory IPC Layer::Shared Memory Channel\\n(Driver → Manager)\\n\\nPayload: JSON string\\nMetadata: send_count,\\nhandshake_count, message_length",
+    "Shared Memory IPC Layer::Shared Memory Channel\\n(Manager → Driver)\\n\\nPayload: JSON string\\nMetadata: send_count,\\nhandshake_count, message_length"
+  ],
+  "_provenance": {
+    "fingerprint": "bd485bfc779a8864bc2d93091b2bc04a36d97029490a82a43cf5a1188a9d7087",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

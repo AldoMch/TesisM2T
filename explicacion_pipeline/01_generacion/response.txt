@@ -1,0 +1,27 @@
+{
+  "case_id": "ejemplo-usuarios",
+  "requirements": [
+    {
+      "id": "REQ-01", 
+      "description": "El sistema debe permitir registrar usuarios."
+    },
+    {"id": "REQ-02", "description": "El sistema debe almacenar los datos de usuarios."}
+  ],
+  "components": [
+    {"id": "CMP_01", 
+     "name": "Servicio de Usuarios", 
+     "type": "component", 
+     "layer": "business", 
+     "tracesTo": ["REQ-01"]
+    },
+    {"id": "CMP_02", 
+    "name": "Repositorio de Usuarios", 
+    "type": "component", 
+    "layer": "data", 
+    "tracesTo": ["REQ-02"]
+    }
+  ],
+  "connectors": [
+    {"source": "CMP_01", "target": "CMP_02", "type": "repository"}
+  ]
+}

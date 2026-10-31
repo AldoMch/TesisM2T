@@ -1,0 +1,46 @@
+@startuml
+title IceFireDB Architecture - Component & Deployment View
+
+' === LAYERS ===
+package "Proxy Layer" {
+    component "Redis Proxy"
+    component "Command Processor"
+}
+
+package "Storage Layer" {
+    database "Redis Standalone"
+    database "Redis Cluster"
+}
+
+package "Decentralized Network Layer" {
+    component "PubSub"
+    component "Peer Discovery Module"
+    component "Networked Redis Agents"
+}
+
+package "Internal Data Handling Layer" {
+    component "SQL Result Parser"
+}
+
+node "External Systems" {
+    component "Redis Clients"
+    component "Pub/Sub Clients"
+}
+
+' === DEPENDENCIES ===
+"Redis Proxy" --> "Command Processor" : FR-011\n(Command Handling)
+"Redis Proxy" --> "Redis Standalone" : FR-003\n(Write Forwarding)
+"Redis Proxy" --> "Redis Cluster" : FR-003\n(Write Forwarding)
+"Redis Proxy" --> "Networked Redis Agents" : AD-002\n(Synchronization)
+"Redis Proxy" --> "PubSub" : FR-004\n(Decentralized Sync)
+
+"PubSub" --> "Peer Discovery Module" : AD-003\n(Discovery & Routing)
+"Peer Discovery Module" ..> "Kademlia DHT" : FR-009\n(Distributed Hash Table)
+"Peer Discovery Module" ..> "libp2p" : C-003\n(Peer-to-Peer Networking)
+
+"SQL Result Parser" --> "Internal SQL Engine" : C-006\n(Local Processing)
+
+"Redis Clients" --> "Redis Proxy" : Client Requests
+"Pub/Sub Clients" --> "PubSub" : Pub/Sub Interactions
+
+@enduml

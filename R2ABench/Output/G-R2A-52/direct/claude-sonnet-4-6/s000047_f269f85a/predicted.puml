@@ -1,0 +1,161 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontStyle bold
+}
+
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+
+skinparam rectangle {
+  BackgroundColor #FFFFFF
+  BorderColor #555555
+}
+
+skinparam database {
+  BackgroundColor #FFF9E6
+  BorderColor #F39C12
+}
+
+skinparam package {
+  BackgroundColor #F0F0F0
+  BorderColor #888888
+  FontStyle bold
+}
+
+skinparam cloud {
+  BackgroundColor #EBF5EB
+  BorderColor #27AE60
+}
+
+title Archifiltre-Docs System Architecture\n(Settings Sanitization, Export Generation, Hash Computation, Language-Parameter Passing)
+
+node "Electron Desktop Application Runtime" as ElectronRuntime {
+
+  package "Main Process" as MainProcess {
+
+    rectangle "Settings Sanitization\nController" as SettingsCtrl {
+      rectangle "Sanitize Empty /\nUndefined Settings\n[FR-001]" as SanitizeEmpty
+      rectangle "Sanitize Invalid\nBoolean / Language\nValues [FR-002]" as SanitizeInvalid
+    }
+
+    rectangle "Export Controllers" as ExportControllers {
+      rectangle "Tree CSV Export\nController\n[FR-003, FR-004]" as TreeCSVCtrl
+      rectangle "RESIP Export\nController\n[FR-005]" as ResipCtrl
+      rectangle "CSV Export\nController\n[FR-006]" as CSVCtrl
+      rectangle "Excel Export\nController\n[FR-007]" as ExcelCtrl
+    }
+
+    rectangle "Hash Computation\nController\n[FR-008, FR-009]" as HashCtrl
+
+    rectangle "Translation Module\n(Current Language Provider)\n[FR-004, FR-006, FR-007, C-002]" as TranslationModule
+
+  }
+
+  package "Background Worker / Child-Process Layer\n[C-003, NFR-001]" as WorkerLayer {
+
+    component "Tree CSV Export\nWorker\n[FR-003, FR-004]" as TreeCSVWorker
+    component "RESIP Export\nWorker\n[FR-005]" as ResipWorker
+    component "CSV Export\nWorker\n[FR-006]" as CSVWorker
+    component "Excel Export\nWorker\n[FR-007]" as ExcelWorker
+    component "Batch Hash\nComputation Worker\n[FR-008, NFR-002]" as HashWorker
+
+  }
+
+  package "Observable / Stream Interface Layer\n[NFR-001]" as ObservableLayer {
+    component "Progress &\nResult Observable\n(Tree CSV)" as TreeObs
+    component "Progress &\nResult Observable\n(RESIP)" as ResipObs
+    component "Result Observable\n(CSV / Excel)" as CsvExcelObs
+    component "Hash Processing\nStream\n[FR-008]" as HashStream
+  }
+
+}
+
+package "Settings Data Model [DR-001]" as SettingsModel {
+  database "Persisted User\nSettings Store" as SettingsStore {
+    rectangle "isTrackingEnabled\nisMonitoringEnabled\nlanguage" as SettingsFields
+  }
+}
+
+package "Export Input Data Models" as ExportInputs {
+  database "Files & Folders Map\n[DR-002, DR-003]" as FilesMap
+  database "Metadata\n[DR-002, DR-003]" as Metadata
+  database "Aliases / Comments /\nTags\n[DR-002, DR-003]" as AliasCommentTags
+  database "Hashes\n[DR-002, DR-006]" as Hashes
+  database "CsvExporterData\n[DR-004]" as CsvExporterData
+}
+
+package "Export Output Data\n[DR-007]" as ExportOutputs {
+  rectangle "Tree CSV Export\nString" as TreeCSVOut
+  rectangle "RESIP CSV\nExport Data" as ResipOut
+  rectangle "CSV Export\nResult" as CSVOut
+  rectangle "Excel Export\nResult" as ExcelOut
+}
+
+package "Hash Data & Debug Artifacts\n[DR-005, DR-006, DR-008, DR-009, NFR-004]" as HashArtifacts {
+  database "Hash Map\nResults\n[DR-006]" as HashMaps
+}
+
+node "Electron app.getPath(userData)\n[C-001, NFR-004]" as UserDataDir {
+  database "hash-result-debug\n[FR-009, DR-008]" as HashResultDebug
+  database "hash-error-debug\n[FR-009, DR-008]" as HashErrorDebug
+}
+
+' Settings flow
+SettingsStore --> SettingsCtrl : persisted settings input
+SanitizeEmpty --> SettingsFields : returns defaults\n{isTrackingEnabled:true,\nisMonitoringEnabled:true,\nlanguage:"en"}
+SanitizeInvalid --> SettingsFields : replaces invalid values\npreserves valid ones
+
+' Export controller to worker
+TreeCSVCtrl --> TreeCSVWorker : submit files-and-folders map\n+ language [FR-004]
+ResipCtrl --> ResipWorker : submit files, metadata,\naliases, comments, tags
+CSVCtrl --> CSVWorker : submit aliases, comments,\nfiles, metadata, tags,\nhashes + language [FR-006]
+ExcelCtrl --> ExcelWorker : submit CsvExporterData\n+ language [FR-007]
+HashCtrl --> HashWorker : submit paths + basePath\n[FR-008, DR-005]
+
+' Translation module provides language
+TranslationModule --> TreeCSVCtrl : current language [FR-004]
+TranslationModule --> CSVCtrl : current language [FR-006]
+TranslationModule --> ExcelCtrl : current language [FR-007]
+
+' Worker to Observable
+TreeCSVWorker --> TreeObs : emit progress updates\nthen final CSV string [FR-003]
+ResipWorker --> ResipObs : emit in-progress counts\n+ empty RESIP CSV,\nthen final RESIP CSV [FR-005]
+CSVWorker --> CsvExcelObs : deliver CSV result
+ExcelWorker --> CsvExcelObs : deliver Excel result
+HashWorker --> HashStream : hash processing stream [FR-008]
+
+' Observable to outputs
+TreeObs --> TreeCSVOut
+ResipObs --> ResipOut
+CsvExcelObs --> CSVOut
+CsvExcelObs --> ExcelOut
+HashStream --> HashMaps : aggregate hash map results [DR-006]
+
+' Hash debug output
+HashCtrl --> UserDataDir : create buffered writers\nfor debug files [FR-009]
+HashWorker --> HashResultDebug : write hash result debug
+HashWorker --> HashErrorDebug : write hash error debug
+
+' Input data to controllers
+FilesMap --> TreeCSVCtrl
+FilesMap --> ResipCtrl
+FilesMap --> CSVCtrl
+Metadata --> ResipCtrl
+Metadata --> CSVCtrl
+AliasCommentTags --> ResipCtrl
+AliasCommentTags --> CSVCtrl
+Hashes --> CSVCtrl
+CsvExporterData --> ExcelCtrl
+
+@enduml

@@ -1,0 +1,143 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2C7BB6
+  FontColor #1A1A1A
+}
+skinparam package {
+  BackgroundColor #F0F8FF
+  BorderColor #4A90D9
+  FontColor #1A1A1A
+}
+skinparam node {
+  BackgroundColor #FFF8E7
+  BorderColor #E6A817
+}
+skinparam database {
+  BackgroundColor #F0FFF0
+  BorderColor #3A8A3A
+}
+skinparam arrow {
+  Color #555555
+}
+
+title psmpi System Architecture
+
+package "Embedded hwloc Verification Layer" as hwloc_layer {
+  component "run-embedded-tests.sh" as run_tests <<Entry Point>>
+  component "autogen.sh / configure / make" as autotools <<Build Tools>>
+  component "hwloc-tree/ Source Tree" as hwloc_tree <<Source>>
+  component "Embedded hwloc Test Suite" as hwloc_suite <<Tests>>
+
+  run_tests --> hwloc_suite : executes against tarball
+  autotools --> hwloc_tree : manual build workflow
+  hwloc_tree --> hwloc_suite : provides source
+}
+
+package "psmpi Communication Subsystem" as comm_subsystem {
+  component "Lifecycle Manager" as lifecycle <<Subsystem>> {
+  }
+  note right of lifecycle
+    - Initialization
+    - Finalization
+    - Connection Establishment
+  end note
+
+  component "Progress Engine" as progress <<Subsystem>> {
+  }
+  note right of progress
+    - Progress Advancement
+    - Blocking Progress
+  end note
+
+  component "One-to-Many Transfer" as one_to_many <<Subsystem>> {
+  }
+  note right of one_to_many
+    - Scatter-style Transfer
+  end note
+
+  lifecycle --> progress : drives
+  lifecycle --> one_to_many : manages
+}
+
+package "Send State Machine" as send_sm {
+  component "Flow Control Checker" as flow_ctrl <<Guard>>
+  component "Direct-Access Send Path" as direct_send <<Send Path>>
+  component "Packet-Buffer Packing Path" as pkt_packing <<Send Path>>
+  component "Rendezvous Control Handler" as rndv_ctrl <<Packet Handler>>
+
+  database "Flow-Control State" as flow_state <<State>>
+  database "Packet Buffer" as pkt_buf <<Data>>
+  database "Network Send Descriptor" as net_desc <<Descriptor>>
+
+  component "DD (Data Descriptor)" as dd <<Data>>
+  component "OD (Object/Control Descriptor)" as od <<Data>>
+  component "LIBA (Rendezvous Control ID)" as liba <<Data>>
+  component "Envelope (Msg-Matching Info)" as envelope <<Data>>
+
+  flow_ctrl --> flow_state : reads
+  flow_ctrl --> direct_send : allows [flow enabled]
+  flow_ctrl --> pkt_packing : allows [flow enabled]
+  flow_ctrl ..> flow_state : defers [flow restricted]
+
+  direct_send --> net_desc : binds to pinned user data
+  pkt_packing --> dd : reads payload from
+  pkt_packing --> pkt_buf : packs payload into
+
+  rndv_ctrl --> pkt_buf : populates control fields
+  rndv_ctrl --> envelope : uses for rndv-rts
+  rndv_ctrl --> liba : uses (1x rndv-data,\n2x rndv-cts)
+  rndv_ctrl --> od : uses LIBA(OD) for rndv-rts
+
+  net_desc --> pkt_buf : references [no direct access]
+}
+
+package "CH4 Network Module" as ch4 {
+  component "OFI / libfabric Transport" as ofi_transport <<Transport>>
+  component "UCX Transport" as ucx_transport <<Transport>>
+}
+
+package "Embedded Libfabric Module" as libfabric_module {
+  component "Libfabric Core" as libfabric_core <<Library>>
+  component "Verbs Provider" as verbs_provider <<Optional Provider>>
+}
+
+package "Linux Verbs Environment" as verbs_env {
+  component "libibverbs >= 1.1.8" as libibverbs <<External Lib>>
+  component "librdmacm >= 1.0.16" as librdmacm <<External Lib>>
+  component "Linux Verbs API" as linux_verbs_api <<API>>
+
+  note bottom of libibverbs
+    Control and data transfer
+  end note
+  note bottom of librdmacm
+    Communication management
+  end note
+
+  libibverbs --> linux_verbs_api : implements
+  librdmacm --> linux_verbs_api : implements
+}
+
+package "Build Environment" as build_env {
+  component "CFLAGS / LDFLAGS" as cflags <<Env Var>>
+  component "LD_LIBRARY_PATH" as ldpath <<Env Var>>
+  note bottom of cflags
+    Non-default include/lib paths
+  end note
+}
+
+comm_subsystem --> send_sm : invokes send path
+send_sm --> ch4 : posts sends via
+ch4 --> ofi_transport : routes to
+ch4 --> ucx_transport : routes to
+ofi_transport --> libfabric_module : uses
+libfabric_core --> verbs_provider : optionally enables
+verbs_provider --> linux_verbs_api : requires [when enabled]
+build_env --> verbs_provider : supplies paths for [when non-default]
+
+hwloc_layer ..> build_env : uses for manual\nverification builds
+
+@enduml

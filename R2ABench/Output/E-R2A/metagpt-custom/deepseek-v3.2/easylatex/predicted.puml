@@ -1,0 +1,88 @@
+@startuml
+!include <C4/C4_Container>
+
+LAYOUT_WITH_LEGEND()
+
+title EasyLaTeX System - Container Diagram
+
+System_Boundary(easy, "EasyLaTeX System") {
+
+    Container(web_app, "Web Application", "React/Angular", "Provides the user interface and handles client-side logic")
+    
+    Container(api_gateway, "API Gateway", "Node.js/Java", "Routes HTTP requests, manages API endpoints")
+    
+    Container(user_service, "User Service", "Node.js/Java", "Handles user registration, authentication, and profile management")
+    
+    Container(project_service, "Project Service", "Node.js/Java", "Manages projects, groups, and user permissions")
+    
+    Container(version_service, "Version Service", "Node.js/Java", "Manages document versioning, branching, and restoration")
+    
+    Container(comment_service, "Comment Service", "Node.js/Java", "Manages annotations and comments on document versions")
+    
+    Container(collaboration_service, "Collaboration Service", "Node.js/Java", "Handles real-time editing and synchronization via WebSockets")
+    
+    Container(file_service, "File Service", "Node.js/Java", "Manages uploads, storage, and retrieval of files and artifacts")
+    
+    Container(ai_recognition_service, "AI Recognition Service", "Python/TensorFlow", "Performs OCR and deep learning for formula/table extraction")
+    
+    Container(latex_service, "LaTeX Service", "Node.js/Java", "Generates LaTeX code and manages compilation")
+    
+    Container(preview_service, "Preview Service", "Node.js/Java", "Generates real-time previews of LaTeX documents")
+    
+    Container(export_service, "Export Service", "Node.js/Java", "Handles export to PDF, LaTeX source, PNG, and JPEG formats")
+    
+    Container(validation_service, "Validation Service", "Node.js/Java", "Performs input validation and security checks")
+    
+    ContainerDb(database, "Database", "MySQL/PostgreSQL", "Stores user data, projects, versions, comments, and metadata")
+    
+    Container(file_storage, "File Storage", "Object Storage", "Stores uploaded files and generated artifacts (PDFs, images)")
+}
+
+System_Ext(user_browser, "Web Browser", "Chrome/Firefox/Safari/Edge", "The user's web browser")
+System_Ext(latex_engine, "LaTeX Engine", "TeX Live/MiKTeX", "External LaTeX compilation engine")
+
+Rel(user_browser, web_app, "Uses", "HTTPS, WebSocket")
+Rel(web_app, api_gateway, "Makes API calls to", "HTTPS")
+
+Rel(api_gateway, user_service, "Routes requests to", "HTTP")
+Rel(api_gateway, project_service, "Routes requests to", "HTTP")
+Rel(api_gateway, version_service, "Routes requests to", "HTTP")
+Rel(api_gateway, comment_service, "Routes requests to", "HTTP")
+Rel(api_gateway, collaboration_service, "Routes requests to", "HTTP, WebSocket")
+Rel(api_gateway, file_service, "Routes requests to", "HTTP")
+Rel(api_gateway, validation_service, "Routes requests to", "HTTP")
+
+Rel(user_service, database, "Reads/writes user data", "SQL")
+Rel(project_service, database, "Reads/writes project data", "SQL")
+Rel(version_service, database, "Reads/writes version data", "SQL")
+Rel(comment_service, database, "Reads/writes comment data", "SQL")
+Rel(collaboration_service, database, "Reads/writes collaboration state", "SQL")
+
+Rel(file_service, file_storage, "Stores/retrieves files", "API")
+Rel(file_service, database, "Reads/writes file metadata", "SQL")
+
+Rel(file_service, ai_recognition_service, "Sends files for recognition", "HTTP")
+Rel(ai_recognition_service, database, "Stores recognition results", "SQL")
+
+Rel(file_service, latex_service, "Sends content for LaTeX generation", "HTTP")
+Rel(latex_service, latex_engine, "Compiles LaTeX", "Subprocess/API")
+Rel(latex_service, database, "Stores generated LaTeX code", "SQL")
+Rel(latex_service, file_storage, "Stores compilation outputs", "API")
+
+Rel(latex_service, preview_service, "Provides LaTeX for preview", "HTTP")
+Rel(preview_service, web_app, "Sends real-time preview updates", "WebSocket")
+
+Rel(latex_service, export_service, "Provides content for export", "HTTP")
+Rel(export_service, file_storage, "Stores exported files", "API")
+Rel(export_service, web_app, "Provides export download links", "HTTP")
+
+Rel(validation_service, user_service, "Validates auth requests", "HTTP")
+Rel(validation_service, project_service, "Validates project requests", "HTTP")
+Rel(validation_service, version_service, "Validates version requests", "HTTP")
+Rel(validation_service, file_service, "Validates file requests", "HTTP")
+
+Rel(project_service, version_service, "Coordinates version operations", "HTTP")
+Rel(project_service, collaboration_service, "Manages collaborative sessions", "HTTP")
+Rel(version_service, comment_service, "Manages version comments", "HTTP")
+
+@enduml

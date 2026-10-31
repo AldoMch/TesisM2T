@@ -1,0 +1,146 @@
+@startuml
+title User-in-the-box Simulator Framework - System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+skinparam ArrowColor #4A4A4A
+skinparam ComponentBorderColor #2F4F6F
+skinparam ComponentBackgroundColor #EAF2FA
+skinparam PackageBorderColor #7A7A7A
+skinparam PackageBackgroundColor #F7F7F7
+
+' ------------------------------------------------------------------
+' Configuration
+' ------------------------------------------------------------------
+package "Configuration Layer (YAML)" as CFG {
+  [Simulator Configuration\n(model, task, perception)] as SimConf
+  [Training Configuration\n(RL algorithm, params)] as TrainConf
+}
+
+' ------------------------------------------------------------------
+' Simulator builder subsystem
+' ------------------------------------------------------------------
+package "Simulator Builder Subsystem" as BUILD {
+  [Simulator Builder] as Builder
+  [MuJoCo XML Integration Layer] as XMLInt
+  [Wrapper Initialization\n(model, task, perception)] as WrapInit
+}
+
+' ------------------------------------------------------------------
+' Extension modules
+' ------------------------------------------------------------------
+package "Modular Extension Modules" as EXT {
+
+  package "Biomechanical Models" as BMDIR {
+    [Biomechanical Model Base Contract] as BMBase
+    [MuJoCo Biomechanical Model\n(muscle actuation)] as BMModel
+  }
+
+  package "Perception Modules (by modality)" as PDIR {
+    [Perception Base Module Contract] as PBase
+    [Egocentric Vision Module] as Vision
+    [Proprioception Module] as Proprio
+  }
+
+  package "Interaction Tasks" as TDIR {
+    [Interaction Task Base Contract] as TBase
+    [Interaction Task Environment] as Task
+  }
+}
+
+' ------------------------------------------------------------------
+' Runtime / platform
+' ------------------------------------------------------------------
+[MuJoCo Simulation Engine] as MuJoCo
+[OpenAI Gym Interface] as Gym
+
+' ------------------------------------------------------------------
+' Produced artifact
+' ------------------------------------------------------------------
+artifact "Standalone Gym-Compatible\nSimulator Package" as SimPkg
+
+' ------------------------------------------------------------------
+' Training workflow
+' ------------------------------------------------------------------
+package "Reinforcement-Learning Training Workflow" as TRAIN {
+  [RL Trainer] as Trainer
+}
+
+' ------------------------------------------------------------------
+' Evaluation subsystem
+' ------------------------------------------------------------------
+package "Evaluation Subsystem" as EVAL {
+  [Evaluation Runner] as EvalRunner
+  [Checkpoint Loader] as ChkLoader
+  [Action Logger / Recorder] as Recorder
+}
+
+' ------------------------------------------------------------------
+' Run-folder artifacts
+' ------------------------------------------------------------------
+package "Run Folder Artifacts" as RUN {
+  folder "checkpoints/" as ChkDir
+  folder "evaluate/" as EvalDir
+  file "action log file" as ActLog
+}
+
+' ------------------------------------------------------------------
+' Relationships
+' ------------------------------------------------------------------
+SimConf --> Builder : read by
+TrainConf --> Trainer : read by
+TrainConf --> Builder : build config
+
+Builder --> XMLInt : 1. integrate MuJoCo XML
+XMLInt --> BMModel : biomechanical XML
+XMLInt --> Task : task environment XML
+XMLInt --> SimPkg : standalone MuJoCo XML
+
+Builder --> WrapInit : 2. initialize wrappers
+WrapInit --> BMModel : instantiate model
+WrapInit --> Task : instantiate task
+WrapInit --> PBase : instantiate perception
+
+BMBase <|-- BMModel
+PBase <|-- Vision
+PBase <|-- Proprio
+TBase <|-- Task
+
+Vision -up-|> PBase
+Proprio -up-|> PBase
+
+Builder --> SimPkg : produces
+SimPkg --> Gym : implements
+SimPkg ..> MuJoCo : runs on
+
+Trainer --> Builder : builds configured simulator
+Trainer --> Gym : trains user model / policy
+Trainer --> ChkDir : writes model checkpoints
+Trainer --> EvalDir : training run artifacts
+
+EvalRunner --> SimPkg : loads simulator from run folder
+EvalRunner --> ChkLoader
+ChkLoader --> ChkDir : specified or latest checkpoint
+EvalRunner --> EvalDir : ensures directory exists
+EvalRunner --> Recorder
+Recorder --> ActLog : writes when logging enabled
+EvalRunner ..> Gym : evaluates through Gym API
+
+note right of BMModel
+  Action input values: [-1, 1]
+  Applied motor/muscle controls: [0, 1]
+end note
+
+note bottom of PDIR
+  Extensions follow modality-based
+  organization and base-class inheritance
+end note
+
+note bottom of RUN
+  Evaluation reads run-folder artifacts
+  and writes enabled outputs under evaluate/
+end note
+
+@enduml

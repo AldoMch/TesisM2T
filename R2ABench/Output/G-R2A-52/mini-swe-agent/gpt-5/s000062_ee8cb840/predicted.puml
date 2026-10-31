@@ -1,0 +1,88 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "Execution Environment" {
+  component "Docker" as docker
+  component "ROS Runtime" as ros
+  component "Launch: styx.launch" as styx
+  component "Launch: site.launch" as site
+  docker --> ros
+  styx --> ros
+  site --> ros
+}
+
+package "External Systems" {
+  component "Udacity Simulator" as simulator
+  component "Recorded Training Bag" as bagdata
+  component "Bag Playback Tool (rosbag play)" as bagplay
+}
+
+package "Perception Subsystem" {
+  component "Traffic Light Detector/Classifier" as tl_detector
+}
+
+package "Planning Subsystem" {
+  component "Waypoint Loader" as waypoint_loader
+  component "Waypoint Updater" as waypoint_updater
+}
+
+package "Control Subsystem" {
+  component "Waypoint Follower" as waypoint_follower
+  component "Drive-By-Wire Controller" as dbw
+}
+
+' Data stores and ROS topics
+component "current_pose" <<topic>> as topic_pose
+component "base_waypoints" <<topic>> as topic_base
+component "traffic_waypoint" <<topic>> as topic_traffic
+component "final_waypoints" <<topic>> as topic_final
+component "twist_cmd" <<topic>> as topic_twist
+component "vehicle_cmd" <<topic>> as topic_vehicle_cmd
+component "camera_image" <<topic>> as topic_camera
+
+database "Base Waypoints Store" as base_waypoints_store
+
+' External data flows
+simulator --> topic_pose
+bagplay --> topic_pose
+bagdata --> bagplay
+bagplay --> topic_camera
+
+' Perception: consume camera images, publish traffic waypoint for stop behavior
+topic_camera --> tl_detector
+tl_detector --> topic_traffic
+
+' Planning: load base waypoints and update final waypoints based on pose and traffic waypoint
+base_waypoints_store --> waypoint_loader
+waypoint_loader --> topic_base
+
+topic_pose --> waypoint_updater
+topic_base --> waypoint_updater
+topic_traffic --> waypoint_updater
+waypoint_updater --> topic_final
+
+' Control: follow final waypoints and generate DBW vehicle commands
+topic_final --> waypoint_follower
+waypoint_follower --> topic_twist
+
+topic_twist --> dbw
+
+' Vehicle command output to simulator/vehicle interface
+dbw --> topic_vehicle_cmd
+topic_vehicle_cmd --> simulator
+
+' Notes on modes
+note right of styx
+Simulator mode launch
+- Uses Udacity Simulator
+- Evaluated via waypoint following
+end note
+
+note right of site
+Site mode launch
+- Uses recorded training bag playback
+- Real-image TL detection/classification
+end note
+
+@enduml

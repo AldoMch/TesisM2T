@@ -1,0 +1,160 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam classFontSize 12
+skinparam classBackgroundColor #FFFFFF
+skinparam classBorderColor #000000
+skinparam arrowColor #000000
+skinparam arrowThickness 1.5
+
+title torc_py System Architecture
+
+package "Python Application Layer" {
+    RECTANGLE "Application Code" as App
+    RECTANGLE "Example Applications" as Examples
+    RECTANGLE "Test Suite" as Tests
+}
+
+package "torc Public API" {
+    RECTANGLE "Task Submission API" as SubmitAPI
+    RECTANGLE "Control API" as ControlAPI
+    RECTANGLE "Query API" as QueryAPI
+    RECTANGLE "SPMD API" as SPMDAPI
+}
+
+package "Core Runtime System" {
+    RECTANGLE "Task Manager" as TaskManager
+    RECTANGLE "Worker Scheduler" as Scheduler
+    RECTANGLE "Task Descriptor Store" as TaskStore
+    RECTANGLE "Callback Handler" as CallbackHandler
+    RECTANGLE "Map Executor" as MapExecutor
+}
+
+package "Parallel Execution Layer" {
+    package "Thread Pool" {
+        RECTANGLE "Worker Threads" as Workers
+        RECTANGLE "Worker Queues" as Queues
+    }
+    
+    package "MPI Layer" {
+        RECTANGLE "MPI Communicator" as MPI
+        RECTANGLE "Task Stealing Manager" as Stealing
+        RECTANGLE "SPMD Executor" as SPMDExec
+    }
+}
+
+package "Configuration & Environment" {
+    RECTANGLE "Environment Variables" as EnvVars
+    RECTANGLE "Runtime Configuration" as Config
+}
+
+package "External Dependencies" {
+    RECTANGLE "MPI Runtime" as MPIRuntime
+    RECTANGLE "Python Runtime" as PythonRuntime
+    RECTANGLE "Optional Libraries" as OptLibs
+}
+
+' Application Layer connections
+App --> SubmitAPI : "calls"
+App --> ControlAPI : "calls"
+App --> QueryAPI : "calls"
+App --> SPMDAPI : "calls"
+Examples --> App : "implements"
+Tests --> App : "validates"
+
+' API to Core connections
+SubmitAPI --> TaskManager : "submits tasks"
+ControlAPI --> TaskManager : "controls lifecycle"
+QueryAPI --> TaskManager : "queries state"
+SPMDAPI --> SPMDExec : "executes SPMD"
+
+' Core Runtime connections
+TaskManager --> Scheduler : "schedules"
+TaskManager --> TaskStore : "stores descriptors"
+TaskManager --> CallbackHandler : "triggers callbacks"
+TaskManager --> MapExecutor : "executes maps"
+Scheduler --> Workers : "assigns tasks"
+Scheduler --> Queues : "manages queues"
+CallbackHandler --> TaskStore : "retrieves results"
+MapExecutor --> SubmitAPI : "uses submission"
+
+' Parallel Execution connections
+Workers --> Queues : "consumes from"
+Queues --> Stealing : "supports stealing"
+Stealing --> MPI : "communicates"
+SPMDExec --> MPI : "uses MPI"
+MPI --> MPIRuntime : "depends on"
+
+' Configuration connections
+EnvVars --> Config : "provides settings"
+Config --> TaskManager : "configures"
+Config --> Scheduler : "configures"
+Config --> Stealing : "configures"
+
+' External dependencies
+PythonRuntime --> App : "hosts"
+MPIRuntime --> MPI : "provides"
+OptLibs --> Examples : "optional for"
+
+' Task flow
+TaskManager --> Queues : "enqueues tasks"
+Queues --> Workers : "dequeues for execution"
+Workers --> TaskStore : "stores results"
+TaskStore --> CallbackHandler : "notifies completion"
+
+' Stealing mechanism
+Workers --> Stealing : "initiates steal"
+Stealing --> Queues : "transfers tasks"
+
+' SPMD flow
+SPMDExec --> Workers : "executes on all"
+Workers --> SPMDExec : "returns results"
+
+note right of TaskManager
+    Manages task lifecycle:
+    - Creation
+    - Submission
+    - Completion
+    - Result storage
+end note
+
+note right of Scheduler
+    Implements:
+    - Cyclic assignment (qid=-1)
+    - Directed submission
+    - Load balancing
+end note
+
+note right of Stealing
+    Controlled by:
+    - TORC_STEALING env var
+    - enable_stealing()/disable_stealing()
+    - Adaptive load balancing
+end note
+
+note right of Workers
+    Configured by:
+    - TORC_WORKERS env var
+    - Default: 1 per MPI process
+    - Executes Python functions
+end note
+
+note right of MPI
+    Provides:
+    - Inter-process communication
+    - Rank/node identification
+    - Compatibility with app-level MPI
+end note
+
+note right of Config
+    Environment variables:
+    - TORC_WORKERS
+    - TORC_STEALING
+    - TORC_SERVER_YIELDTIME
+    - TORC_WORKER_YIELDTIME
+end note
+
+@enduml

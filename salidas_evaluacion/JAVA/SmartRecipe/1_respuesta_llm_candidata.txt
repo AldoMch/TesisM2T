@@ -1,0 +1,254 @@
+{
+  "requirements": [
+    {
+      "id": "SmartRecipe-R001-A",
+      "description": "The system shall support user registration and user or administrator login using account, password, and verification code, validate the selected identity and permissions, and persist user profiles, role information, and login-state data."
+    },
+    {
+      "id": "SmartRecipe-R001-B",
+      "description": "The system shall allow authenticated administrators to manage user accounts in batches and reject unauthorized access to management functions."
+    },
+    {
+      "id": "SmartRecipe-R002",
+      "description": "The system shall allow logged-in users to submit food photos, preprocess and validate images locally, run backend model inference, and combine the results with recipe data to return recipes including ingredients and cooking steps; non-food images shall be rejected with explanatory feedback."
+    },
+    {
+      "id": "SmartRecipe-R003",
+      "description": "The system shall allow logged-in users to search recipes by keywords, return matching recipes ranked by relevance, and indicate when no matching recipe is found."
+    },
+    {
+      "id": "SmartRecipe-R004-A",
+      "description": "The system shall analyze recognized recipes using recipe and nutrition data to provide nutritional information and calorie assessment, and shall retain ingredient calorie data used in the analysis."
+    },
+    {
+      "id": "SmartRecipe-R004-B",
+      "description": "The system shall store ingredient-pair food-combination restriction rules and use them to provide food-combination warnings for recipes."
+    },
+    {
+      "id": "SmartRecipe-R004-C",
+      "description": "The system shall retain users' health profiles and health-analysis records, combine recipe, nutrition, and personal health data to generate personalized nutrition advice, and create diet plans with calorie targets for each meal based on user needs and physical conditions."
+    },
+    {
+      "id": "SmartRecipe-R004-D",
+      "description": "The system shall record daily diet-plan check-ins and provide an overall diet evaluation, calorie analysis, and subsequent advice based on the check-in records after the plan cycle."
+    },
+    {
+      "id": "SmartRecipe-R005",
+      "description": "The system shall allow logged-in users to submit recipe text and images for administrator approval or rejection, persist the content and review status, publish and distribute approved content to the community, and return the review outcome to the submitter."
+    },
+    {
+      "id": "SmartRecipe-R006",
+      "description": "The system shall allow users to browse shared recipe content, like and comment on it, and persist the resulting interaction records."
+    },
+    {
+      "id": "SmartRecipe-R007",
+      "description": "The system shall retain recommendation features and user query, search, recipe-analysis, and sharing history, and use these records together with user follows to generate and retain recipe or user recommendations."
+    },
+    {
+      "id": "SmartRecipe-R008",
+      "description": "The system shall allow authenticated administrators to add recipes to the recipe database, upload datasets, and handle user feedback."
+    },
+    {
+      "id": "SmartRecipe-R009",
+      "description": "The system shall retain merchant information and geographic coordinates and display merchant locations on a map when users access community sharing or merchant-related content."
+    },
+    {
+      "id": "SmartRecipe-R011",
+      "description": "The system shall provide a mobile client interface that communicates with backend services and is usable on common Android and iOS terminals."
+    },
+    {
+      "id": "SmartRecipe-R012-A",
+      "description": "The mobile interface shall provide clear, simple, and smooth workflows for uploading photos and obtaining recipe information."
+    },
+    {
+      "id": "SmartRecipe-R012-B",
+      "description": "The system shall be immediately restartable after non-hardware faults and preserve persistent data across the restart."
+    },
+    {
+      "id": "SmartRecipe-R013-A",
+      "description": "The system shall protect user personal information and uploaded photos from disclosure to third parties."
+    },
+    {
+      "id": "SmartRecipe-R013-B",
+      "description": "The system shall reject improper operations and invalid data writes, and perform image and recipe uploads atomically so incomplete recipe entries are not created."
+    },
+    {
+      "id": "SmartRecipe-R014-A",
+      "description": "The backend shall cache data to improve processing performance."
+    },
+    {
+      "id": "SmartRecipe-R014-B",
+      "description": "The backend shall be deployable on mainstream operating systems."
+    },
+    {
+      "id": "SmartRecipe-R014-C",
+      "description": "The system shall allow its data representations, backend interfaces, and frontend layout to be modified and extended for future business growth."
+    }
+  ],
+  "components": [
+    {
+      "id": "CMP_MOBILE_APP",
+      "name": "Mobile Client Application",
+      "layer": "presentation",
+      "responsibility": "Provides Android/iOS user interface, handles local image preprocessing/validation, user workflows for uploading food photos, browsing, and interaction.",
+      "tracesTo": ["SmartRecipe-R002", "SmartRecipe-R011", "SmartRecipe-R012-A", "SmartRecipe-R014-C"]
+    },
+    {
+      "id": "CMP_API_GATEWAY",
+      "name": "API Gateway & Security Filter",
+      "layer": "entrypoint",
+      "responsibility": "Routes API requests, validates authentication tokens and RBAC permissions, enforces access control, and sanitizes incoming payloads.",
+      "tracesTo": ["SmartRecipe-R001-A", "SmartRecipe-R001-B", "SmartRecipe-R013-A", "SmartRecipe-R013-B", "SmartRecipe-R014-B", "SmartRecipe-R014-C"]
+    },
+    {
+      "id": "CMP_AUTH_SERVICE",
+      "name": "User and Authentication Service",
+      "layer": "business",
+      "responsibility": "Manages user registration, credential verification, captcha/verification codes, profile/role management, and batch account administration.",
+      "tracesTo": ["SmartRecipe-R001-A", "SmartRecipe-R001-B", "SmartRecipe-R013-A"]
+    },
+    {
+      "id": "CMP_AI_RECOGNITION_SERVICE",
+      "name": "Food Image Recognition Service",
+      "layer": "business",
+      "responsibility": "Runs AI model inference on submitted food photos, classifies dish categories, detects non-food images, and returns recognition results with feedback.",
+      "tracesTo": ["SmartRecipe-R002"]
+    },
+    {
+      "id": "CMP_RECIPE_SERVICE",
+      "name": "Recipe Management & Search Service",
+      "layer": "business",
+      "responsibility": "Manages recipe data, performs keyword-based search with relevance ranking, and handles atomic recipe submission and moderation workflows.",
+      "tracesTo": ["SmartRecipe-R002", "SmartRecipe-R003", "SmartRecipe-R005", "SmartRecipe-R008", "SmartRecipe-R013-B"]
+    },
+    {
+      "id": "CMP_NUTRITION_DIET_SERVICE",
+      "name": "Nutrition and Diet Management Service",
+      "layer": "business",
+      "responsibility": "Computes nutritional content, checks ingredient compatibility rules, manages user health profiles, creates diet plans, and analyzes check-in evaluations.",
+      "tracesTo": ["SmartRecipe-R004-A", "SmartRecipe-R004-B", "SmartRecipe-R004-C", "SmartRecipe-R004-D"]
+    },
+    {
+      "id": "CMP_COMMUNITY_MERCHANT_SERVICE",
+      "name": "Community and Merchant Service",
+      "layer": "business",
+      "responsibility": "Manages community posts, likes, comments, user follows, merchant directory with geolocation coordinates, and feedback handling.",
+      "tracesTo": ["SmartRecipe-R005", "SmartRecipe-R006", "SmartRecipe-R008", "SmartRecipe-R009"]
+    },
+    {
+      "id": "CMP_RECOMMENDATION_SERVICE",
+      "name": "Personalized Recommendation Service",
+      "layer": "business",
+      "responsibility": "Analyzes user query, search, recipe analysis, and social history to generate and maintain personalized recipe and user recommendations.",
+      "tracesTo": ["SmartRecipe-R007"]
+    },
+    {
+      "id": "CMP_CACHE_MANAGER",
+      "name": "Distributed Cache Manager",
+      "layer": "infrastructure",
+      "responsibility": "Caches session states, frequent queries, and recipe data to enhance backend performance.",
+      "tracesTo": ["SmartRecipe-R001-A", "SmartRecipe-R014-A"]
+    },
+    {
+      "id": "CMP_OBJECT_STORAGE",
+      "name": "Secure Media Storage",
+      "layer": "data",
+      "responsibility": "Stores food photos, recipe media, and uploaded datasets securely with access control policies.",
+      "tracesTo": ["SmartRecipe-R002", "SmartRecipe-R005", "SmartRecipe-R008", "SmartRecipe-R013-A", "SmartRecipe-R013-B"]
+    },
+    {
+      "id": "CMP_PRIMARY_DATABASE",
+      "name": "Relational/Persistent Database",
+      "layer": "data",
+      "responsibility": "Persists transactional data including accounts, recipes, reviews, nutrition rules, health profiles, check-ins, and geo-data across restarts.",
+      "tracesTo": ["SmartRecipe-R001-A", "SmartRecipe-R004-A", "SmartRecipe-R004-B", "SmartRecipe-R004-C", "SmartRecipe-R004-D", "SmartRecipe-R005", "SmartRecipe-R006", "SmartRecipe-R007", "SmartRecipe-R008", "SmartRecipe-R009", "SmartRecipe-R012-B", "SmartRecipe-R013-A", "SmartRecipe-R013-B"]
+    }
+  ],
+  "connectors": [
+    {
+      "source": "CMP_MOBILE_APP",
+      "target": "CMP_API_GATEWAY",
+      "type": "https/rest"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_AUTH_SERVICE",
+      "type": "rpc/http"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_RECIPE_SERVICE",
+      "type": "rpc/http"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_NUTRITION_DIET_SERVICE",
+      "type": "rpc/http"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_COMMUNITY_MERCHANT_SERVICE",
+      "type": "rpc/http"
+    },
+    {
+      "source": "CMP_API_GATEWAY",
+      "target": "CMP_RECOMMENDATION_SERVICE",
+      "type": "rpc/http"
+    },
+    {
+      "source": "CMP_RECIPE_SERVICE",
+      "target": "CMP_AI_RECOGNITION_SERVICE",
+      "type": "internal-call"
+    },
+    {
+      "source": "CMP_RECIPE_SERVICE",
+      "target": "CMP_NUTRITION_DIET_SERVICE",
+      "type": "internal-call"
+    },
+    {
+      "source": "CMP_RECOMMENDATION_SERVICE",
+      "target": "CMP_RECIPE_SERVICE",
+      "type": "query"
+    },
+    {
+      "source": "CMP_AUTH_SERVICE",
+      "target": "CMP_CACHE_MANAGER",
+      "type": "cache-access"
+    },
+    {
+      "source": "CMP_RECIPE_SERVICE",
+      "target": "CMP_CACHE_MANAGER",
+      "type": "cache-access"
+    },
+    {
+      "source": "CMP_RECIPE_SERVICE",
+      "target": "CMP_OBJECT_STORAGE",
+      "type": "file-storage"
+    },
+    {
+      "source": "CMP_AUTH_SERVICE",
+      "target": "CMP_PRIMARY_DATABASE",
+      "type": "database-access"
+    },
+    {
+      "source": "CMP_RECIPE_SERVICE",
+      "target": "CMP_PRIMARY_DATABASE",
+      "type": "database-access"
+    },
+    {
+      "source": "CMP_NUTRITION_DIET_SERVICE",
+      "target": "CMP_PRIMARY_DATABASE",
+      "type": "database-access"
+    },
+    {
+      "source": "CMP_COMMUNITY_MERCHANT_SERVICE",
+      "target": "CMP_PRIMARY_DATABASE",
+      "type": "database-access"
+    },
+    {
+      "source": "CMP_RECOMMENDATION_SERVICE",
+      "target": "CMP_PRIMARY_DATABASE",
+      "type": "database-access"
+    }
+  ]
+}

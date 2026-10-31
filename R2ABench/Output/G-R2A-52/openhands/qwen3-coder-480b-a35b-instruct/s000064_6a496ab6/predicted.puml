@@ -1,0 +1,113 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+
+title Gran-Book Backend Platform Architecture
+
+' Cloud boundary
+cloud "Google Cloud Platform" {
+  ' Load Balancer
+  component "Load Balancer" as lb
+  
+  ' Gateway/BFF Layer
+  component "Gateway/BFF Layer\n(Node.js)" as gateway
+  
+  ' Authentication Service
+  component "Authentication API\n(Golang)" as auth_api
+  database "Firebase Authentication" as firebase_auth
+  
+  ' User Management Service
+  component "User Management API\n(Golang)" as user_api
+  database "MySQL - User Data" as user_db
+  
+  ' Book Management Service
+  component "Book Management API\n(Golang)" as book_api
+  database "MySQL - Book Data" as book_db
+  
+  ' EC Site Service
+  component "EC Site API\n(Golang)" as ec_api
+  database "MySQL - EC Data" as ec_db
+  
+  ' Support Service
+  component "Support API\n(Golang)" as support_api
+  
+  ' Notification Service
+  component "Notification Service" as notification_service
+  component "Push Notification Provider" as push_provider
+  component "Email Notification Provider" as email_provider
+  
+  ' Message Management
+  component "Message Management" as message_service
+  database "NoSQL Storage\n(Message Data)" as nosql_db
+  
+  ' Object Storage
+  database "Object Storage\n(Thumbnails, etc.)" as object_storage
+  
+  ' External Services
+  component "Book Search API" as book_search
+  component "Stripe Payment Service" as stripe
+}
+
+' Clients
+actor "End Users\n(Mobile Apps)" as mobile_users
+actor "Administrators\n(Web App)" as admin_users
+actor "Operations Engineers" as ops_engineers
+
+' Connections
+mobile_users --> lb
+admin_users --> lb
+lb --> gateway
+
+gateway --> auth_api
+gateway --> user_api
+gateway --> book_api
+gateway --> ec_api
+gateway --> support_api
+
+auth_api --> firebase_auth
+user_api --> user_db
+book_api --> book_db
+ec_api --> ec_db
+support_api --> [DR-007]
+
+message_service --> nosql_db
+book_api --> object_storage
+ec_api --> object_storage
+
+notification_service --> push_provider
+notification_service --> email_provider
+
+book_search <-- book_api : FR-005
+stripe <-- ec_api : FR-006
+
+ops_engineers --> [NFR-002] : VM Operations
+ops_engineers --> [NFR-001] : GKE Cluster Access
+
+note right of gateway
+  BFF/Gateway handles routing to
+  appropriate backend services
+end note
+
+note right of firebase_auth
+  External authentication service
+end note
+
+note right of book_search
+  External book search provider
+  (specific vendor TBD)
+end note
+
+note right of stripe
+  External payment processor
+end note
+
+note bottom of notification_service
+  Handles push and email notifications
+  through external providers
+end note
+
+@enduml

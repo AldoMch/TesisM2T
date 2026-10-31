@@ -1,0 +1,96 @@
+@startuml
+title ClearML Agent (allegroai/clearml-agent) - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' External Systems / Actors
+' ============================================================
+package "External Systems & Actors" {
+  actor "ClearML User\n(job submitter)" as USER
+  component "ClearML Server / Backend\n(experiment mgmt, MLOps, queues)" as SERVER
+  component "ClearML Execution Queue" as QUEUE
+  component "Kubernetes Cluster\n(pods & Kubernetes Jobs)" as K8S
+  component "Docker Daemon\n(mapped docker.sock)" as DOCKER
+  component "Kubernetes YAML Template\n(job specification)" as TEMPLATE
+}
+
+' ============================================================
+' Integration / Execution Layer
+' ============================================================
+package "Integration & Execution Layer" {
+  component "Kubernetes Glue\n- pulls queued jobs\n- builds K8s job from YAML template" as K8S_GLUE
+  component "Long-Lasting Service Pod Mode\n- runs from clearml-agent image\n- manages sibling containers" as SERVICE_POD
+  component "In-Pod Experiment Runner\n- installs experiment environment\n- starts & monitors process" as RUNNER
+}
+
+' ============================================================
+' Agent Runtime Layer
+' ============================================================
+package "Agent Runtime Layer" {
+  component "Worker Telemetry\n- status reporting (report_period_sec)\n- server connectivity ping (ping_period_sec)" as TELEMETRY
+  component "Memory Reporting\n- process/subprocess scope\n- global machine scope" as MEMORY
+  component "Logging\n- stdout / stderr (log_stdout)" as LOGGING
+  component "Worker Configuration\n(report_period_sec, ping_period_sec,\nlog_stdout, report_global_mem_used)" as CONFIG
+}
+
+' ============================================================
+' Backend Service Client Layer
+' ============================================================
+package "Backend Service Client Layer" {
+  component "Backend Service Client\n- create / get / get_by_id /\n  get_all / get_all_ex" as BSCLIENT
+  component "Session Request Handler\n(structured request/response objects)" as SESSION
+  component "Events Service v2.5\n- multi-task scalar metrics\n  iteration histograms" as EVENTS
+  component "Models Service v2.4\n- model delete request\n- model data object" as MODELS
+}
+
+' ============================================================
+' Data Layer
+' ============================================================
+package "Data Layer" {
+  database "ClearML Server Data Store\n(queues, tasks, experiments, models)" as DATASTORE
+  database "YAML Template Store" as TEMPLATE_STORE
+  component "Data Structures\n- HistogramRequest (task, samples, key)\n- ModelDeleteRequest (model, force)\n- Model object\n- TableResponse" as STRUCTS
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+
+' Users & inputs
+USER --> QUEUE : submits jobs
+USER --> TEMPLATE : provides
+
+' Integration flows
+QUEUE --> K8S_GLUE : queue job input (FR-001)
+TEMPLATE --> K8S_GLUE : YAML template (DR-006 / C-003)
+TEMPLATE_STORE --> K8S_GLUE : template retrieval
+K8S_GLUE --> K8S : creates/prepares Kubernetes Job (FR-001)
+SERVICE_POD --> K8S : deployed as pod (FR-003 / C-001)
+SERVICE_POD --> DOCKER : sibling container mgmt via socket (C-002)
+K8S --> RUNNER : executes prepared job (FR-002)
+RUNNER --> SERVER : reports running experiment state
+
+' Runtime flows
+CONFIG --> TELEMETRY : reporting & ping periods
+CONFIG --> MEMORY : memory scope
+CONFIG --> LOGGING : log_stdout
+TELEMETRY --> SERVER : status reports (FR-004) & pings (FR-005)
+MEMORY --> SERVER : memory metrics (NFR-002)
+LOGGING --> SERVER : stdout/stderr logs (FR-006)
+RUNNER --> TELEMETRY : process status
+RUNNER --> LOGGING : process output
+
+' Backend client flows
+BSCLIENT --> SESSION : session-based requests (FR-007)
+SESSION --> EVENTS : events v2.5 (NFR-003 / C-004)
+SESSION --> MODELS : models v2.4 (NFR-003 / C-004)
+BSCLIENT --> STRUCTS : structured objects
+EVENTS --> DATASTORE : histogram queries (iter/iso_time/timestamp)
+MODELS --> DATASTORE : model CRUD
+BSCLIENT --> DATASTORE : entity create/get/get_all (TableResponse)
+SERVER --> DATASTORE : persistence
+
+@enduml

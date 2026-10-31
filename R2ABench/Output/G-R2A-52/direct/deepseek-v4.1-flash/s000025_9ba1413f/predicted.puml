@@ -1,0 +1,134 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam ArrowColor #555555
+skinparam ComponentBackgroundColor #F8F9FA
+skinparam PackageBackgroundColor #FFFFFF
+skinparam ActorBackgroundColor #FFFFFF
+
+title Help With COVID - Session and Task Workflow Architecture
+
+actor "Authenticated User" as AuthUser
+actor "Unauthenticated / Logged-out User" as UnauthUser
+actor "End User\n(Task Requester)" as EndUser
+actor "Maintainer /\nContributor" as Maintainer
+actor "Deployment /\nConfig Operator" as Operator
+actor "Integrator" as Integrator
+
+package "External Entry Channels" {
+  component "Text / Call Based Channel" as TextCall
+}
+
+package "Frontend - Next.js Application" {
+  component "Next.js Frontend" as NextApp
+  component "Frontend Form\n(Help-task entry)" as FrontendForm
+  component "Session Interaction Logic" as SessionLogic
+  component "Firebase Session Handler" as SessionHandler
+}
+
+package "Runtime / Build Configuration" {
+  component "Environment Variables\nFIREBASE_AUTH_DOMAIN\nFIREBASE_DATABASE_URL\nFIREBASE_PROJECT_ID\nFIREBASE_PUBLIC_API_KEY" as EnvVars
+  component "Runtime Firebase Config" as FirebaseConfig
+  component "Build & Run Modes\nboth / frontend-only / backend-only" as BuildRun
+}
+
+package "Session API Layer - Next.js API Routes" {
+  component "POST /api/login" as LoginAPI
+  component "POST /api/logout" as LogoutAPI
+  component "Session Middleware" as SessionMW
+  database "Server-side Session Object" as SessionStore
+}
+
+package "Task Middleware Layer" {
+  component "Task Request Middleware" as TaskMW
+  component "Address-to-Neighborhood\nProcessing" as AddressProcess
+  component "Service-Area Decision" as ServiceArea
+}
+
+package "Backend" {
+  component "Firebase Functions\n(Custom APIs)" as FBFunctions
+  component "Backend Task Handler" as BackendTask
+  component "OnFleet Task Handling" as OnFleetHandler
+}
+
+package "External Services" {
+  component "Firebase Authentication\n/ Admin Token Verification" as FirebaseAuth
+  component "OnFleet" as OnFleet
+}
+
+' Session workflow
+AuthUser --> SessionLogic
+UnauthUser --> SessionLogic
+SessionLogic --> SessionHandler
+SessionHandler --> FirebaseAuth : user.getIdToken()
+SessionHandler --> LoginAPI : POST /api/login\nContent-Type: application/json\nsame-origin credentials\n{ token: <token> }
+SessionHandler --> LogoutAPI : POST /api/logout\nsame-origin credentials
+
+LoginAPI --> LoginAPI : reject missing body with HTTP 400
+LoginAPI --> LoginAPI : extract req.body.token
+LoginAPI --> FirebaseAuth : verify Firebase ID token
+FirebaseAuth --> LoginAPI : decoded token / verification error
+LoginAPI ..> SessionMW : execute with session support
+SessionMW --> SessionStore : provide session object
+LoginAPI --> SessionStore : store decoded token\nand original token
+LoginAPI --> SessionHandler : HTTP 200\nJSON { status, decodedToken }
+LogoutAPI ..> SessionMW
+LogoutAPI --> SessionStore : teardown session
+
+' Task workflow
+EndUser --> TextCall
+EndUser --> FrontendForm
+TextCall --> TaskMW : help-task request
+FrontendForm --> TaskMW : help-task request
+TaskMW --> AddressProcess : address data
+AddressProcess --> ServiceArea : neighborhood / routing data
+ServiceArea --> TaskMW : operated-area decision
+TaskMW --> BackendTask : eligible request
+BackendTask --> OnFleetHandler : create task
+OnFleetHandler --> OnFleet : task creation call
+OnFleet --> OnFleetHandler : task result
+OnFleetHandler --> BackendTask : task result
+BackendTask --> TaskMW : workflow result
+
+' Frontend hosting
+NextApp --> SessionHandler : hosts
+NextApp --> FrontendForm : hosts
+NextApp --> LoginAPI : hosts API route
+NextApp --> LogoutAPI : hosts API route
+
+' Config / runtime
+EnvVars --> FirebaseConfig : map runtime values
+FirebaseConfig --> NextApp : provide Firebase runtime config
+BuildRun --> NextApp : frontend run mode
+BuildRun --> FBFunctions : backend run mode
+FBFunctions ..> BackendTask : host backend task handling
+
+' Roles
+Maintainer --> NextApp
+Maintainer --> TaskMW
+Maintainer --> FBFunctions
+Operator --> EnvVars
+Operator --> BuildRun
+Integrator --> FirebaseAuth
+Integrator --> OnFleet
+
+note right of NextApp
+Next.js frontend can run independently.
+end note
+
+note right of SessionStore
+Stores decoded token data
+and the original Firebase ID token
+after successful login verification.
+end note
+
+note bottom of TaskMW
+Determines neighborhood / routing result
+and whether the product operates for
+the request before backend task creation.
+end note
+
+@enduml

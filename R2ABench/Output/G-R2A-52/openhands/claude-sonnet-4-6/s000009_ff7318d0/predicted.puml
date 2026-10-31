@@ -1,0 +1,116 @@
+@startuml
+skinparam rectangle {
+    BackgroundColor #F8F8F8
+    BorderColor #555555
+    FontSize 12
+}
+skinparam node {
+    BackgroundColor #E8F4FD
+    BorderColor #2980B9
+}
+skinparam component {
+    BackgroundColor #FFFDE7
+    BorderColor #F9A825
+}
+skinparam actor {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+}
+skinparam package {
+    BackgroundColor #F0F0F0
+    BorderColor #888888
+    FontStyle bold
+}
+skinparam arrow {
+    Color #444444
+    FontSize 10
+}
+
+actor "User\n(Web Browser)" as User
+
+package "Frontend (HTML / CSS / Bootstrap / jQuery)" {
+    [Web Application UI\n(Fixtures · Standings · Live Scores\nPredictions · Chatbot · Reminders)] as WebUI
+}
+
+package "AWS Cloud" {
+
+    package "Hosting" {
+        [Amazon S3\n(Static Website Hosting)] as S3
+    }
+
+    package "API & Compute" {
+        [Amazon API Gateway\n(REST / execute-api · AWS Sig v4 · JSON)] as APIGW
+        rectangle "AWS Lambda\n(Python / Node)" as Lambda {
+            [Football Info Handler\n(Fixtures · Standings · Results · Live Scores)] as InfoHandler
+            [Prediction Handler\n(SageMaker Integration)] as PredHandler
+            [Chatbot / Conversation Handler\n(Intent Resolution · Screening Recommendations)] as ChatHandler
+            [Reminder Handler\n(Reminder Queue Dispatch)] as ReminderHandler
+        }
+    }
+
+    package "Authentication & Security" {
+        [Amazon Cognito\n(User Auth)] as Cognito
+        [AWS IAM\n(Access Control)] as IAM
+    }
+
+    package "Data Storage & Search" {
+        [Amazon DynamoDB\n(Match Results · Statistics · Fixtures)] as DynamoDB
+        [Amazon Elasticsearch\n(Match Data Search & Retrieval)] as Elasticsearch
+    }
+
+    package "Prediction Service" {
+        [Amazon SageMaker\n(ML Match Outcome Predictions\nHome Win · Draw · Away Win)] as SageMaker
+    }
+
+    package "Notification Service" {
+        [Amazon SQS\n(Reminder Request Queue)] as SQS
+        [Amazon SNS\n(SMS Delivery)] as SNS
+    }
+
+    package "Streaming Infrastructure (EC2)" {
+        [Apache Kafka\n(Live Score Event Broker)] as Kafka
+        [Apache Avro\n(Streaming Payload Encoding)] as Avro
+    }
+}
+
+' User to Frontend
+User --> S3 : "Load static web app"
+S3 --> WebUI : "Serve HTML/CSS/JS"
+
+' Frontend to API Gateway
+WebUI --> APIGW : "API requests\n(JSON · AWS Sig v4)"
+
+' API Gateway Auth
+APIGW --> Cognito : "Authenticate user"
+APIGW --> IAM : "Authorize access"
+
+' API Gateway to Lambda handlers
+APIGW --> InfoHandler : "Match info requests"
+APIGW --> PredHandler : "Prediction requests"
+APIGW --> ChatHandler : "Chatbot messages\n(recommendation endpoint)"
+APIGW --> ReminderHandler : "Reminder requests"
+
+' Lambda: data access
+InfoHandler --> DynamoDB : "Read/write\nfixtures · results · statistics"
+InfoHandler --> Elasticsearch : "Search match data"
+DynamoDB --> Elasticsearch : "Index match data"
+
+' Lambda: predictions
+PredHandler --> SageMaker : "Invoke prediction model"
+SageMaker --> PredHandler : "Return outcome probabilities"
+
+' Lambda: chatbot
+ChatHandler --> DynamoDB : "Query fixture/result data"
+ChatHandler --> Elasticsearch : "Search screening locations"
+
+' Lambda: notifications
+ReminderHandler --> SQS : "Enqueue reminder"
+SQS --> SNS : "Trigger SMS notification"
+SNS --> User : "Deliver SMS reminder"
+
+' Streaming pipeline
+Kafka --> Avro : "Encode live score events"
+Avro --> InfoHandler : "Stream decoded live score updates"
+InfoHandler --> Kafka : "Consume live score stream"
+
+@enduml

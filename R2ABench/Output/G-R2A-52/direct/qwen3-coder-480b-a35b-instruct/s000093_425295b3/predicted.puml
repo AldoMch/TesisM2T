@@ -1,0 +1,63 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "User Application" as UserApp {
+    + Sends external control input
+}
+
+RECTANGLE "VMT Manager" as VMTManager {
+    + Receives external control input
+    + Exchanges JSON messages via shared memory
+    + Manages communication flow
+}
+
+RECTANGLE "VMT Driver" as VMTDriver {
+    + Loads into SteamVR/OpenVR
+    + Exposes virtual motion tracking
+    + Exchanges JSON messages via shared memory
+}
+
+RECTANGLE "Shared Memory" as SharedMemory {
+    + JSON message exchange
+    + Bidirectional channels
+    + Synchronization fields (send count, handshake count, message length)
+}
+
+RECTANGLE "SteamVR / OpenVR Runtime" as SteamVR {
+    + Hosts VMT Driver
+    + Provides OpenVR driver interface
+}
+
+RECTANGLE "Legacy Binding File\n(mycontroller)" as LegacyBinding {
+    + Maps right-hand inputs
+    + Defines button modes and sub-modes
+    + Encoded as JSON
+}
+
+UserApp --> VMTManager : "External Control Input (OSC)"
+VMTManager <--> SharedMemory : "JSON Messages"
+VMTDriver <--> SharedMemory : "JSON Messages"
+VMTDriver --> SteamVR : "OpenVR Driver Interface"
+LegacyBinding ..> VMTDriver : "Provides Binding Definition"
+
+note right of VMTManager
+  Handles external input and 
+  coordinates with VMT Driver
+end note
+
+note left of VMTDriver
+  Integrates with SteamVR/OpenVR
+  and processes tracking data
+end note
+
+note bottom of SharedMemory
+  Bidirectional JSON communication
+  with synchronization metadata
+end note
+
+note top of LegacyBinding
+  Controller type: mycontroller
+  Button mode with complex sub-mode
+end note
+
+@enduml

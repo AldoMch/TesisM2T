@@ -1,0 +1,66 @@
+@startuml
+package "Presentation Layer" {
+  component "Web Application\n(HTML, CSS, Bootstrap, jQuery)" as WebApp
+}
+
+package "API/Integration Layer" {
+  component "Amazon API Gateway\n(execute-api, AWS SigV4, HTTP/JSON)" as APIGW
+}
+
+package "Backend/Application Layer" {
+  component "Lambda Backend Services\n(Python / Node)" as Lambda
+  component "Chatbot Recommendation Endpoint" as ChatEndpoint
+  component "Conversation Handler\n(intent handling)" as ConvHandler
+  component "Nearby Live Match-Screening\nRecommendation Endpoint" as ScreeningRec
+}
+
+package "Security/Authentication Layer" {
+  component "Amazon Cognito" as Cognito
+  component "AWS IAM" as IAM
+}
+
+package "Data/Persistence and Search Layer" {
+  database "Amazon DynamoDB\n(match/venue/location data)" as DDB
+  database "Elasticsearch\n(search/retrieval)" as ES
+}
+
+package "Prediction/ML Layer" {
+  component "Amazon SageMaker\n(match probabilities)" as SageMaker
+}
+
+package "Notification/Messaging Layer" {
+  component "Amazon SQS\n(reminder queue)" as SQS
+  component "Amazon SNS\n(SMS delivery)" as SNS
+}
+
+package "Streaming/Real-time Layer" {
+  component "Live Score Events" as LiveEvents
+  component "Kafka with Apache Avro" as Kafka
+}
+
+package "Hosting/Infrastructure Layer" {
+  node "Amazon EC2" as EC2
+  cloud "Amazon S3\n(static frontend / files)" as S3
+}
+
+WebApp --> APIGW : invokes backend endpoints\n(chatbot, screening)
+WebApp --> S3 : static hosting / files
+APIGW --> Lambda : routes API requests
+Lambda --> ChatEndpoint : chatbot recommendation
+ChatEndpoint --> ConvHandler : conversation/intent handling
+Lambda --> ScreeningRec : nearby screening recommendations
+ScreeningRec --> DDB : venue/location data
+ScreeningRec --> ES : venue search/retrieval
+APIGW --> Cognito : authentication
+APIGW --> IAM : authorization
+Lambda --> Cognito : token validation
+Lambda --> IAM : execution roles/permissions
+Lambda --> DDB : match/venue data storage/retrieval
+Lambda --> ES : search/retrieval queries
+DDB --> ES : connected retrieval/search
+Lambda --> SageMaker : prediction requests
+Lambda --> SQS : enqueue reminders
+SQS --> SNS : SMS reminder delivery
+LiveEvents --> Kafka : live score updates
+EC2 --> Kafka : hosts/runs live score pipeline
+@enduml

@@ -1,0 +1,113 @@
+@startuml
+title ReTool - Requirements Management System Architecture
+
+package "Client Tier" {
+  [Web Browser (Vue.js Frontend)] as Browser
+  note right of Browser
+    Google Chrome 81.0+
+    Windows 10 64-bit
+    Intel Core i7-6700HQ
+    8GB RAM
+  end note
+}
+
+package "Local Computer Deployment" {
+  [API Gateway] as Gateway
+
+  package "Core Services" {
+    [User Management Service] as UserService
+    [Project Management Service] as ProjectService
+    [Requirements Management Service] as ReqService
+  }
+}
+
+package "Server Deployment" {
+  [Algorithm Service (NLP/PyTorch)] as AlgorithmService
+  note right of AlgorithmService
+    EC2 t2.xlarge
+    4 vCPU, 16GB RAM
+    Amazon Linux 2
+  end note
+}
+
+package "Data Tier" {
+  [MongoDB Database] as MongoDB
+  note right of MongoDB
+    Data persistence
+    CRUD operations
+    Three-copy backup
+  end note
+}
+
+package "External Systems" {
+  [Word Documents] as WordDocs
+  [External Users] as Users
+}
+
+'' Client connections
+Browser --> Gateway : HTTP/HTTPS
+
+'' Gateway routing
+Gateway --> UserService : API calls
+Gateway --> ProjectService : API calls
+Gateway --> ReqService : API calls
+Gateway --> AlgorithmService : API calls
+
+'' Service dependencies
+UserService --> MongoDB : CRUD operations
+ProjectService --> MongoDB : CRUD operations
+ReqService --> MongoDB : CRUD operations
+AlgorithmService --> MongoDB : Read/Write
+
+'' External interactions
+Users --> Browser : User interaction
+WordDocs --> ReqService : Document upload
+
+'' Service collaborations
+ReqService --> AlgorithmService : Analysis requests
+AlgorithmService --> ReqService : Analysis results
+
+'' Layered architecture notes
+note top of Browser
+  Presentation Layer
+  Vue.js frontend
+end note
+
+note top of Gateway
+  Gateway Layer
+  Request routing
+  Load balancing
+end note
+
+note top of UserService
+  Business Logic Layer
+  User authentication
+  Authorization
+end note
+
+note top of ProjectService
+  Business Logic Layer
+  Project lifecycle
+  Member management
+end note
+
+note top of ReqService
+  Business Logic Layer
+  Requirements management
+  Analysis coordination
+end note
+
+note top of AlgorithmService
+  Algorithm Layer
+  NLP processing
+  Machine learning
+  High-performance computing
+end note
+
+note top of MongoDB
+  Data Layer
+  Persistent storage
+  Data management
+end note
+
+@enduml

@@ -1,0 +1,102 @@
+@startuml
+title macpro-appian-connector Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BackgroundColor #EEF2FF
+  BorderColor #3B5BDB
+}
+skinparam component {
+  BackgroundColor #DBEAFE
+  BorderColor #1D4ED8
+}
+skinparam database {
+  BackgroundColor #FEF3C7
+  BorderColor #D97706
+}
+skinparam cloud {
+  BackgroundColor #F0FDF4
+  BorderColor #16A34A
+}
+skinparam actor {
+  BackgroundColor #FCE7F3
+  BorderColor #9D174D
+}
+
+actor "Developer / Operator" as User
+actor "Repository Maintainer" as Maintainer
+
+rectangle "Local Environment" {
+  component "Terminal / Script Runner\n(nvm, run listRunningStages)" as Terminal
+  component "AWS CLI\n(credentials setup)" as AWSCLI
+}
+
+rectangle "macpro-appian-connector Repository" {
+
+  rectangle "Stage Listing Layer" {
+    component "Stage Listing Service\n(FR-001)" as StageListing
+  }
+
+  rectangle "Connector Management Layer" {
+    component "Connector Configuration Handler\n(FR-002: put / delete / restart)" as ConnectorHandler
+    component "Connector Management Library" as ConnectorLib
+  }
+
+  rectangle "Event Alerting Layer" {
+    component "Event Alert Router\n(FR-003: event filtering)" as EventRouter
+  }
+
+  rectangle "Metrics Collection Layer" {
+    component "Deployment Metrics Service\n(FR-005: failedRuns / passedRuns)" as DeployMetrics
+    component "PR Metrics Service\n(FR-006: averageTimeToMerge)" as PRMetrics
+  }
+
+}
+
+rectangle "AWS Cloud" {
+  component "AWS EventBridge\n(event routing rules)" as EventBridge
+  component "AWS SNS Topic\n(alert notifications)" as SNSTopic
+  component "SNS Subscriptions\n(manually managed)" as SNSSubs
+  database "AWS Account / Region\n(running stages)" as AWSAccount
+}
+
+rectangle "GitHub" {
+  component "GitHub Actions\n(CI/CD: deploy.yml)" as GHActions
+  component "GitHub Actions API\n(workflow runs)" as GHActionsAPI
+  component "GitHub Pull Requests API\n(closed PRs)" as GHPRAPI
+}
+
+rectangle "CMS BigMAC" as BigMAC
+
+' User interactions
+User --> Terminal : run stage listing
+User --> AWSCLI : set AWS credentials
+Maintainer --> ConnectorHandler : manage connector definitions
+Maintainer --> SNSSubs : manually manage subscriptions
+
+' Local environment to system
+Terminal --> AWSCLI : requires credentials
+Terminal --> StageListing : invokes
+
+' Stage listing to AWS
+StageListing --> AWSAccount : query running stages (AWS CLI)
+
+' Connector management flow
+ConnectorHandler --> ConnectorLib : put / delete / restart connectors
+ConnectorLib --> BigMAC : transfer Appian data changes
+
+' Event alerting flow
+EventBridge --> EventRouter : matching service events
+EventRouter --> SNSTopic : publish routed events
+SNSTopic --> SNSSubs : deliver notifications
+
+' Metrics collection flow
+DeployMetrics --> GHActionsAPI : query deploy.yml workflow runs\n(paginated, per_page=100)
+PRMetrics --> GHPRAPI : query closed PRs for branch\n(paginated, per_page=100)
+
+' CI/CD
+GHActions --> ConnectorHandler : deploy trigger
+GHActions --> GHActionsAPI : workflow run data
+
+@enduml

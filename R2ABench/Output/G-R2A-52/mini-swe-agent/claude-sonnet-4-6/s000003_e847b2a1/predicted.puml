@@ -1,0 +1,74 @@
+@startuml
+title Prediction Cards System Architecture
+
+actor "Prediction Participant" as User
+
+package "Frontend Layer" {
+    component [Frontend Application] as Frontend
+    component [Wallet Provider / Context] as WalletProvider
+    component [Aeternity SDK] as AeSDK
+}
+
+package "Backend Services Layer" {
+    component [Oracle Service\n(Quarkus)] as OracleService
+    component [Prediction-Processing Service] as PredProcessingService
+}
+
+package "Blockchain Layer (Aeternity)" {
+    component [PredictionCards Smart Contract\n(Sophia)] as SmartContract
+    component [AENS Name Registry] as AENS
+    component [Aeternity Oracle] as AeOracle
+}
+
+package "Storage Layer" {
+    database [Prediction Media Storage\n(NFT Images / Animations)] as MediaStorage
+}
+
+package "Local Test Environment" {
+    component [CORS / Proxy Server] as CORSProxy
+}
+
+cloud "External Systems" {
+    component [External Price Provider] as PriceProvider
+    component [Aeternity Node] as AeNode
+    component [Aeternity Compiler Service] as AeCompiler
+}
+
+User --> Frontend : interact (create, view, fund, withdraw, claim)
+Frontend --> WalletProvider : wallet-backed API
+WalletProvider --> AeSDK : SDK integration
+AeSDK --> AeNode : submit transactions
+Frontend --> SmartContract : create prediction, fund, withdraw, claim (via wallet)
+Frontend --> MediaStorage : load NFT media references
+AENS --> SmartContract : locate contract
+
+OracleService --> AeOracle : register / extend / submit responses
+OracleService --> PriceProvider : fetch external price data
+OracleService --> AeNode : node connection
+OracleService --> AeCompiler : compiler-service connection
+OracleService --> SmartContract : submit oracle result response
+
+PredProcessingService --> SmartContract : initiate oracle query for closed predictions
+PredProcessingService --> SmartContract : drive on-chain result processing
+PredProcessingService --> AeOracle : poll oracle response availability
+
+SmartContract --> AeOracle : emit oracle queries
+SmartContract --> MediaStorage : reference outcome NFT media
+
+CORSProxy --> SmartContract : proxy contract calls (test only)
+
+note right of OracleService
+  Quarkus runtime
+  Scheduled periodic execution
+  Externalized runtime configuration
+  (keys, node/compiler URLs, fees,
+  scheduling, validity thresholds)
+end note
+
+note right of SmartContract
+  Sophia smart contract
+  Maintains prediction & outcome NFT state
+  Determines winning outcome
+  Opens reward-claiming path
+end note
+@enduml

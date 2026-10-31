@@ -1,0 +1,93 @@
+@startuml
+!define RECTANGLE class
+
+title System Architecture - Udacity Self-Driving Car Capstone
+
+skinparam componentStyle rectangle
+
+package "Operating Environment" {
+    [Docker Container] as docker
+    [ROS Environment] as ros
+    [Udacity Simulator] as simulator
+    [Training Bag Playback] as bag_playback
+}
+
+package "System Components" {
+    package "Perception Subsystem" {
+        [Traffic Light Detection\nand Classification] as tl_perception
+    }
+
+    package "Planning Subsystem" {
+        [Waypoint Loader] as wp_loader
+        [Waypoint Updater] as wp_updater
+    }
+
+    package "Control Subsystem" {
+        [Waypoint Follower] as wp_follower
+        [Drive-by-Wire] as dbw
+    }
+}
+
+package "Launch Entry Points" {
+    [styx.launch] as styx_launch
+    [site.launch] as site_launch
+}
+
+package "Data Exchange Topics" {
+    [Current Pose] as current_pose_topic
+    [Base Waypoints] as base_waypoints_topic
+    [Traffic Waypoint] as traffic_wp_topic
+    [Final Waypoints] as final_waypoints_topic
+    [Twist Command] as twist_cmd_topic
+    [Vehicle Command] as vehicle_cmd_topic
+}
+
+' Connections between components and environment
+docker --> ros : Contains
+ros --> styx_launch : Launches
+ros --> site_launch : Launches
+styx_launch --> simulator : Interfaces with
+site_launch --> bag_playback : Interfaces with
+
+' Perception connections
+tl_perception --> site_launch : Activated in
+tl_perception --> traffic_wp_topic : Outputs to
+
+' Planning connections
+wp_loader --> base_waypoints_topic : Provides
+wp_updater --> base_waypoints_topic : Consumes
+wp_updater --> traffic_wp_topic : Consumes
+wp_updater --> final_waypoints_topic : Produces
+
+' Control connections
+wp_follower --> final_waypoints_topic : Consumes
+wp_follower --> current_pose_topic : Consumes
+wp_follower --> twist_cmd_topic : Produces
+dbw --> twist_cmd_topic : Consumes
+dbw --> vehicle_cmd_topic : Produces
+
+' Data flow connections
+current_pose_topic <-- wp_follower : Receives from vehicle
+base_waypoints_topic <-- wp_loader : Loads waypoints
+final_waypoints_topic --> wp_follower : Sends updated path
+vehicle_cmd_topic --> dbw : Controls actuators
+
+note right of tl_perception
+  Processes real images
+  Classifies traffic lights
+  Generates stop waypoints
+end note
+
+note right of wp_updater
+  Updates waypoints based on
+  traffic light information
+  and vehicle position
+end note
+
+note bottom of dbw
+  Converts twist commands
+  to actual vehicle controls
+  (throttle, brake, steering)
+end note
+
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+title BeeGreen - System Architecture
+
+package "Client Tier" {
+  component "Website Client\n<<React / TypeScript>>" as WEB
+  component "Chrome Browser Extension" as EXT
+}
+
+package "Backend API Tier\n<<Node.js / LoopBack>>" {
+  component "UserController" as UC
+  component "PingController" as PC
+  component "UserRepository" as UR
+  component "Model Definitions\n(User, InventoryItem,\nPingResponse)" as MODELS
+}
+
+package "Data / Processing Tier" {
+  database "Persistent Data Storage" as DB
+  component "Sustainability Scoring &\nRecommendation Processing" as SCORE
+}
+
+interface "REST / JSON API\n(application/json)" as REST
+interface "Ping Diagnostic API" as PINGAPI
+
+WEB -down-> REST
+EXT -down-> REST
+WEB -down-> PINGAPI
+EXT -down-> PINGAPI
+
+REST -down-> UC
+PINGAPI -down-> PC
+
+UC -down-> UR : <<uses>>
+UR -down-> DB : <<persists / queries>>
+SCORE -down-> DB : <<reads / writes>>
+
+MODELS ..> UC : <<types>>
+MODELS ..> UR : <<types>>
+
+note right of UC
+  POST   /users        create User        (FR-001)
+  GET    /users        list Users         (FR-002)
+  PATCH  /users        bulk update Users  (FR-003)
+  GET    /users/{id}   read User by id    (FR-004)
+  Content: application/json (NFR-001)
+end note
+
+note bottom of PC
+  GET /ping (FR-005)
+  Returns JSON: greeting, date,
+  url, headers (NFR-002)
+end note
+
+note top of MODELS
+  User: id, ip, creationDate,
+  purchaseIds, username, region
+  InventoryItem: id, stats, totalScore,
+  category, details, comments, name,
+  associatedStores (no external API specified)
+end note
+
+@enduml

@@ -1,0 +1,99 @@
+@startuml
+title Deep Learning Model Sharing Platform - System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+' Actors
+actor "General User" as User
+actor "Administrator" as Admin
+
+' Presentation Layer
+package "Presentation Layer" {
+  [Web Frontend\n(Vue + TypeScript)] as Frontend
+}
+
+' Application Layer
+package "Application Layer\n(Spring Boot)" {
+  [API Gateway] as APIGW
+  [Auth & Account Service] as Auth
+  [Q&A Service] as QA
+  [Blog Service] as Blog
+  [Model Service] as Model
+  [Dataset Service] as Dataset
+  [Follow Service] as Follow
+  [Recommendation Service] as Rec
+  [Purchase Service] as Purchase
+  [Admin Governance Service] as AdminSvc
+  [Online Invocation Service] as Invoke
+  [Notification Service\n(Email/SMS)] as Notify
+}
+
+' Data Layer
+package "Data Layer" {
+  database "MySQL\n(users, content, metadata,\norders, follows, recommendations)" as DB
+  cloud "Object Storage\n(models, datasets, artifacts)" as Store
+}
+
+' External Systems
+package "External Systems" {
+  [Email Provider] as Email
+  [Payment Gateway] as Pay
+}
+
+' Interactions
+User --> Frontend
+Admin --> Frontend
+
+Frontend --> APIGW
+APIGW --> Auth
+APIGW --> QA
+APIGW --> Blog
+APIGW --> Model
+APIGW --> Dataset
+APIGW --> Follow
+APIGW --> Rec
+APIGW --> Purchase
+APIGW --> AdminSvc
+APIGW --> Invoke
+APIGW --> Notify
+
+' Data access
+Auth --> DB
+QA --> DB
+Blog --> DB
+Model --> DB
+Dataset --> DB
+Follow --> DB
+Rec --> DB
+Purchase --> DB
+AdminSvc --> DB
+Invoke --> DB
+
+' Files and artifacts
+Model --> Store : store/retrieve model files
+Dataset --> Store : store/retrieve datasets
+Invoke --> Store : read model & dataset files
+
+' External integrations
+Notify --> Email : send password reset emails
+Purchase --> Pay : process payments
+
+' Notes reflecting constraints and assumptions
+note right of Frontend
+Runs in modern browsers.
+Supports Chinese/English UI.
+end note
+
+note right of APIGW
+Enforces authentication and routes requests
+to domain services.
+end note
+
+note bottom of DB
+Relational data in MySQL
+(tech reference constraint).
+end note
+
+@enduml

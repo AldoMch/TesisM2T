@@ -1,0 +1,113 @@
+@startuml
+!define RECTANGLE rectangle
+!define DATABASE database
+!define COMPONENT component
+!define INTERFACE interface
+
+skinparam componentStyle rectangle
+
+package "Frontend Layer" {
+  [Web Browser] as browser #lightblue
+  [Vue.js Client] as vue #lightgreen
+}
+
+package "API Gateway Layer" {
+  [API Gateway] as gateway #yellow
+}
+
+package "Application Layer" {
+  [User Service] as userService #orange
+  [Authentication Service] as authService #orange
+  [Q&A Service] as qaService #orange
+  [Blog Service] as blogService #orange
+  [Model Service] as modelService #orange
+  [Dataset Service] as datasetService #orange
+  [Follow Service] as followService #orange
+  [Admin Service] as adminService #orange
+  [Payment Service] as paymentService #orange
+  [Recommendation Service] as recService #orange
+}
+
+package "Data Layer" {
+  database "MySQL Database" as mysql {
+    [User Table] as userTable
+    [Question Table] as questionTable
+    [Answer Table] as answerTable
+    [Blog Table] as blogTable
+    [Comment Table] as commentTable
+    [Model Table] as modelTable
+    [Dataset Table] as datasetTable
+    [Follow Table] as followTable
+    [Transaction Table] as transactionTable
+  }
+  
+  folder "Storage" as storage {
+    [Model Files] as modelFiles
+    [Dataset Files] as datasetFiles
+  }
+}
+
+package "External Services" {
+  [Email Service] as emailService #pink
+  [Payment Gateway] as paymentGateway #pink
+}
+
+' Frontend connections
+browser --> vue : Uses
+vue --> gateway : API Calls
+
+' Gateway to services
+gateway --> authService : Auth Requests
+gateway --> userService : User Requests
+gateway --> qaService : Q&A Requests
+gateway --> blogService : Blog Requests
+gateway --> modelService : Model Requests
+gateway --> datasetService : Dataset Requests
+gateway --> followService : Follow Requests
+gateway --> adminService : Admin Requests
+gateway --> paymentService : Payment Requests
+gateway --> recService : Recommendation Requests
+
+' Service to database connections
+authService --> userTable : Read/Write
+userService --> userTable : Read/Write
+qaService --> questionTable : Read/Write
+qaService --> answerTable : Read/Write
+blogService --> blogTable : Read/Write
+blogService --> commentTable : Read/Write
+modelService --> modelTable : Read/Write
+datasetService --> datasetTable : Read/Write
+followService --> followTable : Read/Write
+paymentService --> transactionTable : Read/Write
+adminService --> userTable : Read/Delete
+adminService --> questionTable : Delete
+adminService --> answerTable : Delete
+adminService --> blogTable : Delete
+adminService --> commentTable : Delete
+adminService --> modelTable : Delete
+adminService --> datasetTable : Delete
+
+' Recommendation service connections
+recService --> modelTable : Read
+recService --> userTable : Read
+
+' File storage connections
+modelService --> modelFiles : Store/Retrieve
+datasetService --> datasetFiles : Store/Retrieve
+
+' External service connections
+authService --> emailService : Send Emails
+paymentService --> paymentGateway : Process Payments
+
+' Data relationships
+userTable --> followTable : Has
+questionTable --> answerTable : Has
+blogTable --> commentTable : Has
+userTable --> modelTable : Owns
+userTable --> datasetTable : Owns
+userTable --> questionTable : Authors
+userTable --> answerTable : Authors
+userTable --> blogTable : Authors
+userTable --> commentTable : Authors
+modelTable --> transactionTable : Purchased
+@enduml

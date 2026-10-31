@@ -1,0 +1,95 @@
+@startuml
+!theme plain
+skinparam rectangleLineWidth 1
+skinparam rectangleFontSize 12
+skinparam componentStyle rectangle
+
+' Main system boundary
+rectangle "Core Flight System (cFS)" as cfs_bundle {
+  rectangle "cFE (Core Flight Executive)" as cfe
+  rectangle "OSAL (Operating System Abstraction Layer)" as osal
+  rectangle "PSP (Platform Support Package)" as psp
+  
+  rectangle "Framework Applications" as framework_apps {
+    rectangle "core-cpu1" as core_cpu1
+  }
+  
+  rectangle "Tools" as tools {
+    rectangle "cmdUtil" as cmdutil
+  }
+  
+  rectangle "Build System" as build_system {
+    rectangle "Makefile.sample" as makefile_sample
+    rectangle "sample_defs" as sample_defs
+    rectangle "make prep/install" as make_commands
+  }
+}
+
+' External entities
+actor "Developer/Build User" as developer
+actor "Tester" as tester
+actor "Operator" as operator
+actor "CI Maintainer" as ci_maintainer
+
+' CI/CD Components
+rectangle "GitHub Actions" as github_actions {
+  rectangle "Reusable Workflows" as reusable_workflows
+  rectangle "Changelog Generation" as changelog_wf
+  rectangle "Format Checker" as format_checker
+  rectangle "Static Analysis" as static_analysis
+  rectangle "CodeQL" as codeql
+}
+
+' Connections
+developer --> build_system : uses
+tester --> core_cpu1 : executes
+tester --> cmdutil : sends commands
+operator --> core_cpu1 : configures telemetry
+operator --> cmdutil : sends no-op commands
+ci_maintainer --> changelog_wf : triggers
+
+build_system --> cfe : builds
+build_system --> osal : builds
+build_system --> psp : builds
+
+cfe --> core_cpu1 : included in
+osal --> core_cpu1 : included in
+psp --> core_cpu1 : included in
+
+cmdutil --> core_cpu1 : communicates with
+
+github_actions --> reusable_workflows : contains
+reusable_workflows --> changelog_wf : includes
+reusable_workflows --> format_checker : includes
+reusable_workflows --> static_analysis : includes
+reusable_workflows --> codeql : includes
+
+changelog_wf --> cfs_bundle : analyzes
+format_checker --> cfs_bundle : validates
+
+note right of core_cpu1
+  Functional testing target
+  Accepts commands from cmdUtil
+  Produces telemetry data
+end note
+
+note right of cmdutil
+  Host-side command utility
+  Sends commands to cFS target
+  Used in functional testing
+end note
+
+note right of build_system
+  Build preparation and installation
+  Using Makefile.sample and sample_defs
+  Supports debug/release variants
+end note
+
+note right of github_actions
+  Reusable workflow architecture
+  workflow_call mechanism for composition
+  Runner: ubuntu-18.04 (build/test)
+  Runner: ubuntu-latest (changelog/duplicate-check)
+end note
+
+@enduml

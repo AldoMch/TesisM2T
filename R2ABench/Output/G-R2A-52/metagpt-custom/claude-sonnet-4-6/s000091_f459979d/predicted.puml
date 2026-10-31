@@ -1,0 +1,98 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF4FB
+skinparam packageBorderColor #5A7FA8
+skinparam packageFontStyle bold
+skinparam componentBackgroundColor #DDEEFF
+skinparam componentBorderColor #336699
+skinparam nodeFontStyle bold
+skinparam nodeBackgroundColor #E8F5E9
+skinparam nodeBorderColor #388E3C
+skinparam databaseBackgroundColor #FFF9C4
+skinparam databaseBorderColor #F9A825
+
+' ─────────────────────────────────────────────
+' External Systems
+' ─────────────────────────────────────────────
+cloud "Leshan / Eclipse LwM2M Library" as LeshanLib
+
+frame "Ethereum-compatible Blockchain Node" as EthNode {
+  database "Ethereum Smart Contract\n(getAllClients / addClient /\ngetClientByEndpoint)" as SmartContract
+}
+
+' ─────────────────────────────────────────────
+' Backend System
+' ─────────────────────────────────────────────
+node "LwM2M Device Management Backend (Java)" {
+
+  ' ── API Layer ──────────────────────────────
+  package "API Layer" {
+    component "UserController" as UserCtrl
+    component "JwtUtility\n[local token validation]" as JwtUtil
+  }
+
+  ' ── Service Layer ──────────────────────────
+  package "Service Layer" {
+    component "UserService" as UserSvc
+    component "BlockchainClientService\n[returns empty collection\non contract failure]" as BCClientSvc
+  }
+
+  ' ── Blockchain Integration Layer ───────────
+  package "Blockchain Integration Layer" {
+    component "Web3jConnector\n[Web3j library embedded]" as Web3jConn
+    component "SmartContractProxy" as SCProxy
+    component "BootstrapDataEncoder" as BDEncoder
+  }
+
+  ' ── LwM2M / Parsing Layer ──────────────────
+  package "LwM2M / Parsing Layer" {
+    component "LwM2MNodeDeserializer" as LwM2MDeser
+  }
+
+  ' ── Data / Model Layer ─────────────────────
+  package "Data / Model Layer" {
+    component "User" as UserModel
+    component "ClientBootstrapPayload" as CBPayload
+    component "SecurityInfoRecord" as SecInfoRec
+  }
+
+  ' ── Internal Dependencies ──────────────────
+
+  ' API Layer internal
+  UserCtrl --> JwtUtil : validates token locally\n[Authorization header]
+
+  ' API → Service
+  UserCtrl --> UserSvc : delegate user\nretrieval / creation
+
+  ' API → Model (response data flow)
+  UserCtrl --> UserModel : reads User entity\nfor HTTP response\n(200 OK / 201 Created)
+
+  ' Service → Model
+  UserSvc --> UserModel : read / write User entity
+
+  ' Service → Blockchain Integration
+  BCClientSvc --> BDEncoder : encode / decode\n32-byte ASCII fields
+  BCClientSvc --> SCProxy : invoke contract methods\n(getAllClients / addClient /\ngetClientByEndpoint)
+
+  ' Service → LwM2M Parsing
+  BCClientSvc --> LwM2MDeser : parse JSON input\nto typed LwM2M nodes
+
+  ' Service → bootstrap config construction (FR-005)
+  BCClientSvc --> CBPayload : construct bootstrap\nconfiguration from\ndecoded values
+
+  ' Blockchain Integration internal
+  SCProxy --> Web3jConn : routes method calls\nvia Web3j HTTP transport
+  Web3jConn --> SmartContract : HTTP connection\nto blockchain node\n& contract binding
+
+  ' Service → Model
+  BCClientSvc --> SecInfoRec : produces SecurityInfoRecord\ncollection
+  BCClientSvc --> CBPayload : reads / writes\nClientBootstrapPayload
+}
+
+' ─────────────────────────────────────────────
+' External System Connections
+' ─────────────────────────────────────────────
+LwM2MDeser ..> LeshanLib : maps JSON →\nLeshan node/resource types
+
+@enduml

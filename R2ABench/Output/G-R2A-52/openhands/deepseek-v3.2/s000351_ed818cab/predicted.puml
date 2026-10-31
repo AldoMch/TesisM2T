@@ -1,0 +1,144 @@
+@startuml
+!define RECTANGLE rectangle
+!define COMPONENT component
+!define INTERFACE interface
+!define NODE node
+!define FOLDER folder
+!define FILE file
+!define DATABASE database
+!define CLOUD cloud
+!define ACTOR actor
+
+skinparam componentStyle uml2
+skinparam backgroundColor #F5F5F5
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundCorner 10
+skinparam shadowing true
+
+title Kangrand - System Architecture Diagram
+
+' Actors
+actor "Local Operator" as LocalOp
+actor "Distributed Operator" as DistOp
+actor "Offline Analyst" as OfflineAnalyst
+
+' Main Components
+rectangle "Kangrand System" {
+  component "Local Kangrand Solver" as LocalSolver #LightSkyBlue {
+    component "Pollard's Kangaroo Algorithm" as KangarooAlgo #LightCyan
+    component "Distinguished Points Manager" as DPMgr #LightCyan
+    component "Work File Manager" as WorkFileMgr #LightCyan
+  }
+  
+  component "Distributed Server" as Server #LightGreen {
+    component "Client Connection Handler" as ConnHandler #PaleGreen
+    component "Work Distribution" as WorkDist #PaleGreen
+    component "Result Aggregation" as ResultAgg #PaleGreen
+  }
+  
+  component "Distributed Clients" as Clients #LightYellow {
+    component "Client 1" as Client1 #LightGoldenrodYellow
+    component "Client 2" as Client2 #LightGoldenrodYellow
+    component "Client N" as ClientN #LightGoldenrodYellow
+  }
+  
+  component "Offline Merger" as Merger #LightSalmon {
+    component "Work File Parser" as WFParser #MistyRose
+    component "Hash Table Combiner" as HashCombiner #MistyRose
+    component "Collision Detector" as CollisionDetector #MistyRose
+  }
+}
+
+' Interfaces
+interface "Command Line Interface" as CLI
+interface "Network Interface" as Network
+interface "File System Interface" as FS
+
+' External Components
+cloud "Network" as ExternalNetwork #LightGray
+database "File System" as FileSystem #LightGray
+
+' Data/File Entities
+file "Input ASCII File\n(Hex values, public keys)" as InputFile #White
+file "Configuration File\n(Server settings)" as ConfigFile #White
+file "Work Files\n(Persistence/Resume)" as WorkFiles #White
+file "Split Work Files\n(Prefixed backups)" as SplitWorkFiles #White
+file "Result Files\n(Solving output)" as ResultFiles #White
+file "Hash Table Data" as HashTableData #White
+
+' Relationships - User Interactions
+LocalOp --> CLI : "uses"
+DistOp --> CLI : "uses"
+OfflineAnalyst --> CLI : "uses"
+
+CLI --> LocalSolver : "invokes"
+CLI --> Server : "starts"
+CLI --> Clients : "starts"
+CLI --> Merger : "invokes"
+
+' File Interactions
+InputFile --> LocalSolver : "provides problem"
+InputFile --> Server : "optional config"
+ConfigFile --> Server : "provides settings"
+
+LocalSolver --> WorkFiles : "saves/loads"
+Server --> WorkFiles : "saves/loads"
+Server --> SplitWorkFiles : "generates"
+Server --> HashTableData : "manages"
+Clients --> WorkFiles : "saves/loads"
+
+WorkFiles --> Merger : "inputs for merge"
+SplitWorkFiles --> Merger : "inputs for merge"
+HashTableData --> Merger : "inputs for merge"
+Merger --> ResultFiles : "outputs results"
+Merger --> WorkFiles : "outputs merged work"
+
+' Internal Component Relationships
+KangarooAlgo --> DPMgr : "uses"
+KangarooAlgo --> WorkFileMgr : "saves state"
+DPMgr --> WorkFileMgr : "stores points"
+WorkFileMgr --> FS : "reads/writes files"
+
+ConnHandler --> WorkDist : "coordinates"
+WorkDist --> ResultAgg : "aggregates"
+ResultAgg --> FS : "saves results"
+
+Client1 --> KangarooAlgo : "executes"
+Client2 --> KangarooAlgo : "executes"
+ClientN --> KangarooAlgo : "executes"
+
+WFParser --> HashCombiner : "feeds data"
+HashCombiner --> CollisionDetector : "checks collisions"
+CollisionDetector --> FS : "outputs results"
+
+' Network Communications
+Server --> Network : "listens"
+Clients --> Network : "connects"
+Network --> ExternalNetwork : "via TCP/IP"
+Client1 --> Server : "requests work"
+Client2 --> Server : "requests work"
+ClientN --> Server : "requests work"
+Server --> Client1 : "sends work"
+Server --> Client2 : "sends work"
+Server --> ClientN : "sends work"
+
+' File System Access
+LocalSolver --> FS : "accesses files"
+Server --> FS : "accesses files"
+Clients --> FS : "accesses files"
+Merger --> FS : "accesses files"
+FS --> FileSystem : "persistent storage"
+
+' Legend
+legend right
+  <b>Color Legend:</b>
+  | Component Type | Color |
+  | Actors | #FFFFFF |
+  | Main Processes | Light colors |
+  | Sub-components | Lighter colors |
+  | Interfaces | #F0F0F0 |
+  | Data/File Entities | #FFFFFF |
+endlegend
+
+@enduml

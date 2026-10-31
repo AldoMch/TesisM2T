@@ -1,0 +1,27 @@
+@startuml
+component "Admin Moderation & Risk Audit Service" as compadminauditservice
+component "API Gateway & Access Controller" as compapigateway
+component "Authentication & Identity Service" as compauthservice
+component "Encrypted Messaging & Chat Service" as compchatservice
+component "Community & Referral Post Service" as compcommunityservice
+component "Notification & Event Dispatcher" as compnotificationservice
+component "Project Search & Recommendation Engine" as compprojectdiscoveryservice
+component "Project Lifecycle & Application Manager" as compprojectlifecycleservice
+component "User Profile & Document Service" as compuserprofileservice
+compadminauditservice --> compauthservice : gRPC
+compadminauditservice --> compcommunityservice : gRPC
+compapigateway --> compadminauditservice : Event/Async
+compapigateway --> compadminauditservice : HTTPS/REST
+compapigateway --> compauthservice : HTTPS/REST
+compapigateway --> compchatservice : WSS/HTTPS
+compapigateway --> compcommunityservice : HTTPS/REST
+compapigateway --> compprojectdiscoveryservice : HTTPS/REST
+compapigateway --> compprojectlifecycleservice : HTTPS/REST
+compapigateway --> compuserprofileservice : HTTPS/REST
+compchatservice --> compnotificationservice : Event/Async
+compcommunityservice --> compauthservice : gRPC
+compprojectlifecycleservice --> compchatservice : gRPC
+compprojectlifecycleservice --> compnotificationservice : Event/Async
+compprojectlifecycleservice --> compprojectdiscoveryservice : Event/Async
+compprojectlifecycleservice --> compuserprofileservice : gRPC
+@enduml

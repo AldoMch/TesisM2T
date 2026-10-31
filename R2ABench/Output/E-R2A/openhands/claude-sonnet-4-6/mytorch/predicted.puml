@@ -1,0 +1,118 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam component {
+    BackgroundColor #EEF2FF
+    BorderColor #4B5EAA
+    FontColor #1A1A2E
+}
+skinparam package {
+    BackgroundColor #F8F9FF
+    BorderColor #7B8CDE
+    FontColor #1A1A2E
+}
+skinparam database {
+    BackgroundColor #FFF8EE
+    BorderColor #C8864A
+    FontColor #1A1A2E
+}
+skinparam node {
+    BackgroundColor #F0FFF0
+    BorderColor #4A9A4A
+    FontColor #1A1A2E
+}
+skinparam arrow {
+    Color #444466
+}
+
+actor "Deep Learning User" as User
+
+package "Frontend Layer" {
+    component "Main Interface" as UI_Main
+    component "Configuration Interface" as UI_Config
+    component "Training Interface" as UI_Train
+    component "Inference Interface" as UI_Infer
+    component "Guidance & Help" as UI_Help
+}
+
+package "Backend Layer" {
+    component "Model Initialization Service" as BE_Init
+    component "Model Training Service" as BE_Train
+    component "Inference Service" as BE_Infer
+    component "Model Management Service" as BE_Manage
+    component "Fault & Resource Monitor" as BE_Monitor
+}
+
+package "MyTorch / NNE Framework" {
+    package "Data Layer" {
+        component "Data Loader" as FW_DataLoader
+        component "Preset Dataset Registry" as FW_Datasets
+    }
+    package "Training Layer" {
+        component "Training Engine" as FW_TrainEngine
+        component "Weight Initializer\n(He / LeCun / Xavier)" as FW_WeightInit
+        component "Classic Model Library\n(ResNet / VGG / Transformer)" as FW_ClassicModels
+    }
+    package "Inference Layer" {
+        component "Inferencer" as FW_Inferencer
+        component "Model Loader" as FW_ModelLoader
+    }
+    package "GPU Acceleration Layer" {
+        component "GPU API" as FW_GPUAPI
+        component "GPU Compute Engine\n(matrix ops / async CPU-GPU)" as FW_GPUCompute
+    }
+}
+
+database "SQLite Local Database" as DB {
+    component "Model Store" as DB_Models
+    component "Dataset Store" as DB_Datasets
+    component "Training Log Store" as DB_TrainLogs
+    component "Inference Log Store" as DB_InferLogs
+    component "Backup & Recovery" as DB_Backup
+}
+
+node "Hardware" {
+    component "GPU Device" as HW_GPU
+}
+
+User --> UI_Main : navigates
+UI_Main --> UI_Config : opens
+UI_Main --> UI_Train : opens
+UI_Main --> UI_Infer : opens
+UI_Main --> UI_Help : accesses
+
+UI_Config --> BE_Init : configure model / init request
+UI_Train --> BE_Train : start / stop training
+UI_Infer --> BE_Infer : inference request
+UI_Train --> BE_Monitor : monitor training
+UI_Infer --> BE_Monitor : monitor inference
+
+BE_Init --> FW_WeightInit : select initialization method
+BE_Init --> FW_ClassicModels : load preset model structure
+BE_Init --> FW_DataLoader : configure data loading
+BE_Train --> FW_TrainEngine : execute training
+BE_Infer --> FW_Inferencer : execute inference
+BE_Manage --> DB_Models : save / load / manage models
+
+FW_DataLoader --> FW_Datasets : load preset dataset
+FW_DataLoader --> DB_Datasets : persist dataset reference
+
+FW_TrainEngine --> FW_WeightInit : apply initialization
+FW_TrainEngine --> FW_GPUAPI : request GPU acceleration
+FW_TrainEngine --> DB_Models : save trained model
+FW_TrainEngine --> DB_TrainLogs : write training log
+
+FW_Inferencer --> FW_ModelLoader : load model by address
+FW_Inferencer --> FW_DataLoader : load inference data
+FW_Inferencer --> FW_GPUAPI : request GPU acceleration
+FW_Inferencer --> DB_InferLogs : write inference log
+
+FW_GPUAPI --> FW_GPUCompute : dispatch matrix operations
+FW_GPUCompute --> HW_GPU : GPU multi-core execution
+
+BE_Monitor --> DB_TrainLogs : read logs
+BE_Monitor --> DB_InferLogs : read logs
+
+DB_Backup --> DB : auto backup / recovery
+
+@enduml

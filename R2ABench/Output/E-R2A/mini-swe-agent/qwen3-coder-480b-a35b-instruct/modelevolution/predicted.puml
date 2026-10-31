@@ -1,0 +1,97 @@
+@startuml
+!define RECTANGLE class
+!define DATABASE rectangle
+!define COMPONENT rectangle
+!define INTERFACE rectangle
+
+skinparam componentStyle rectangle
+
+title Model Evolution Version Management Visualization Tool - Component Architecture
+
+package "Frontend Layer" {
+  [Browser UI] as frontend #LightBlue
+  note right of frontend
+    - Account management interface
+    - Model search and viewing interface
+    - Model contribution and editing interface
+    - Evolution relationship editing interface
+    - User management interface
+    - Navigation interface
+  end note
+}
+
+package "Backend Layer" {
+  [Web Server] as backend #LightYellow
+  note right of backend
+    - Handles HTTP requests
+    - Implements business logic
+    - Manages user sessions
+    - Controls access permissions
+  end note
+
+  [Algorithm Support] as algo #LightYellow
+  note right of algo
+    - Model processing algorithms
+    - Evolution relationship analysis
+    - Performance metrics calculation
+  end note
+}
+
+package "Data Layer" {
+  database "Neo4j Graph DB" as neo4j #LightGreen
+  note right of neo4j
+    - Stores model evolution relationships
+    - Graph-based model structure data
+    - Computational-layer reuse relationships
+  end note
+
+  database "MySQL Relational DB" as mysql #LightGreen
+  note right of mysql
+    - User account data
+    - Model metadata
+    - Permission records
+    - Audit logs
+  end note
+}
+
+package "External Systems" {
+  [Python Libraries] as python #LightGray
+  [Authentication Service] as auth #LightGray
+}
+
+frontend --> backend : HTTP/HTTPS
+backend --> algo : Internal API
+backend --> neo4j : Graph queries
+backend --> mysql : SQL queries
+backend --> python : Library calls
+backend --> auth : Auth protocols
+algo --> python : Library calls
+
+note top of frontend
+  Supported browsers:
+  Chrome, Firefox, 360 Browser
+end note
+
+note top of backend
+  B/S architecture
+  Cross-platform support
+end note
+
+note bottom of neo4j
+  Graph database for
+  model evolution tracking
+end note
+
+note bottom of mysql
+  Relational database for
+  user and model metadata
+end note
+
+legend center
+  <#FEFECE,#999> Legend |
+  <#LightBlue> Frontend Component |
+  <#LightYellow> Backend Component |
+  <#LightGreen> Data Store |
+  <#LightGray> External System |
+endlegend
+@enduml

@@ -1,0 +1,85 @@
+@startuml
+package "Proxy Layer" {
+  component "PlugIt Proxy" as Proxy
+  interface "Main API Endpoint" as MainAPI
+  interface "PlugIt Protocol" as PlugItProtocol
+
+  Proxy - MainAPI
+  Proxy - PlugItProtocol
+
+  package "Example Mail Processing Layer" {
+    component "Mail Intake Parser" as MailParser
+    component "Auto-Response Filter" as AutoFilter
+    component "Mail Routing Validator" as MailValidator
+    component "Mail Handler Invoker" as MailInvoker
+    component "Message Acknowledger" as MailAck
+  }
+}
+
+package "Service Layer" {
+  component "PlugIt Service A" as ServiceA
+  component "PlugIt Service B" as ServiceB
+}
+
+package "Data Layer" {
+  database "Proxy Data Store" as ProxyDB
+  database "Service Data Store A" as ServiceDBA
+  database "Service Data Store B" as ServiceDBB
+  component "Alembic Migration Engine" as AlembicEngine
+}
+
+package "Configuration Layer" {
+  component "Configuration Files" as ConfigFiles
+  component "Local/Private Configuration" as LocalConfig
+  component "Allowed Networks Control" as AllowedNetworks
+}
+
+package "Client SDK Layer" {
+  component "API Client SDK" as ClientSDK
+}
+
+cloud "External Users/Systems" as ExternalUsers
+cloud "Inbound Email Server/Mailbox" as Mailbox
+cloud "Alembic Migration Tool" as AlembicTool
+cloud "Database Technology" as DBTech
+
+ExternalUsers --> MainAPI
+ClientSDK --> MainAPI
+
+AllowedNetworks --> Proxy
+Proxy --> ProxyDB
+
+ServiceA ..> PlugItProtocol
+ServiceB ..> PlugItProtocol
+
+ServiceA --> ClientSDK
+ServiceB --> ClientSDK
+ClientSDK --> ConfigFiles
+
+ServiceA --> ConfigFiles
+ServiceB --> ConfigFiles
+
+ServiceA --> ServiceDBA
+ServiceB --> ServiceDBB
+
+AlembicEngine --> ServiceDBA
+AlembicEngine --> ServiceDBB
+AlembicTool --> AlembicEngine
+
+ProxyDB --> DBTech
+ServiceDBA --> DBTech
+ServiceDBB --> DBTech
+
+Mailbox --> MailParser
+MailParser --> AutoFilter
+AutoFilter --> MailValidator
+MailParser --> MailValidator : extracted payload
+MailValidator --> ConfigFiles
+MailValidator --> MailInvoker
+MailParser --> MailInvoker : extracted payload
+MailInvoker --> Proxy
+MailInvoker --> MailAck
+MailAck --> Mailbox
+
+ConfigFiles --> LocalConfig
+@enduml

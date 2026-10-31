@@ -1,0 +1,93 @@
+@startuml
+title AI-Driven Text Adventure Game & Community - Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+actor "Guest" as guest
+actor "Registered User / Player" as user
+actor "Community Administrator" as admin
+
+node "Client Devices" as client {
+  component "Web App\n(Vue.js + Nuxt.js)" as web
+}
+
+node "Kubernetes Cluster\n(Dockerized Services)" as cluster {
+
+  component "API Gateway / Router\n(Iris)" as gateway
+
+  package "User System" as userpkg {
+    component "Auth Service" as auth
+    component "Profile Service" as profile
+  }
+
+  package "Game System" as gamepkg {
+    component "Game Service\n(background, choices, progression)" as game
+    component "Save Management" as save
+    component "LLM Adapter" as llm_adapter
+  }
+
+  package "Community System" as communitypkg {
+    component "Post Service" as post
+    component "Comment & Reply Service" as comment
+    component "Favorites Service" as favorites
+    component "Search & Recommendation Service" as search
+  }
+
+  package "Administration System" as adminpkg {
+    component "Review & Moderation Service" as review
+    component "User Governance Service" as governance
+  }
+
+  package "Notification System" as notifpkg {
+    component "Notification Service" as notif
+  }
+
+  database "MySQL\n(via Gorm)" as mysql
+}
+
+cloud "LLM Provider" as llm
+
+guest --> web
+user --> web
+admin --> web
+
+web --> gateway : HTTPS
+
+gateway --> auth
+gateway --> profile
+gateway --> game
+gateway --> save
+gateway --> post
+gateway --> comment
+gateway --> favorites
+gateway --> search
+gateway --> review
+gateway --> governance
+gateway --> notif
+
+auth --> mysql
+profile --> mysql
+game --> mysql
+save --> mysql
+post --> mysql
+comment --> mysql
+favorites --> mysql
+search --> mysql
+review --> mysql
+governance --> mysql
+notif --> mysql
+
+game --> llm_adapter
+llm_adapter --> llm
+
+post --> notif : "create/update events"
+comment --> notif : "comment/reply events"
+review --> notif : "review status events"
+
+game --> post : "share save as post"
+
+profile --> notif : "notification settings"
+
+@enduml

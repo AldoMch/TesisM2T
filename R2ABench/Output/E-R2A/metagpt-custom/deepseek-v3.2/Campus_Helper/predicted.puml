@@ -1,0 +1,117 @@
+@startuml
+
+' Define colors for layers
+skinparam packageBackgroundColor<<Presentation>> #E1F5FE
+skinparam packageBackgroundColor<<Business>> #F1F8E9
+skinparam packageBackgroundColor<<Data>> #FFF3E0
+skinparam packageBackgroundColor<<DataEntity>> #FFEBEE
+
+' External Systems
+cloud "WeChat Platform" as WeChatPlatform {
+    node "WeChat Mini Program Client" as MiniProgramClient
+}
+
+' Presentation Layer
+package "Presentation Layer" <<Presentation>> {
+    component "User Client Interface" as UserInterface
+    component "Admin Interface" as AdminInterface
+}
+
+' Business Layer
+package "Business Layer" <<Business>> {
+    component "Product Service" as ProductService
+    component "Order Service" as OrderService
+    component "User & Auth Service" as UserAuthService
+    component "Admin Service" as AdminService
+    component "Search Service" as SearchService
+    component "Favorite Service" as FavoriteService
+    component "Security Gateway" as SecurityGateway
+    component "Monitoring Service" as MonitoringService
+    component "Data Review Service" as DataReviewService
+}
+
+' Data Layer
+package "Data Layer" <<Data>> {
+    component "Product Repository" as ProductRepo
+    component "Order Repository" as OrderRepo
+    component "User Repository" as UserRepo
+    component "Favorite Repository" as FavoriteRepo
+    component "Log Repository" as LogRepo
+}
+
+' Data Entity Layer
+package "Data Entity Layer" <<DataEntity>> {
+    database "Product Database" as ProductDB
+    database "Order Database" as OrderDB
+    database "User Database" as UserDB
+    database "Log Database" as LogDB
+}
+
+' External connections
+MiniProgramClient --> UserInterface : "user interactions"
+MiniProgramClient --> AdminInterface : "admin interactions"
+
+' Presentation to Business Layer
+UserInterface --> SecurityGateway : "request authentication"
+AdminInterface --> SecurityGateway : "admin authentication"
+
+SecurityGateway --> UserAuthService : "validate credentials"
+SecurityGateway --> ProductService : "guest product access"
+SecurityGateway --> SearchService : "guest search access"
+
+UserInterface --> ProductService : "browse products"
+UserInterface --> SearchService : "search products"
+UserInterface --> OrderService : "manage orders"
+UserInterface --> FavoriteService : "manage favorites"
+UserInterface --> UserAuthService : "login/personal data"
+
+AdminInterface --> AdminService : "management operations"
+
+' Business Layer internal dependencies
+ProductService --> OrderService : "validate products for orders"
+ProductService --> SearchService : "index products"
+ProductService --> DataReviewService : "review product data"
+
+OrderService --> UserAuthService : "verify user permissions"
+OrderService --> ProductService : "check product availability"
+
+FavoriteService --> UserAuthService : "verify user permissions"
+FavoriteService --> ProductService : "access product info"
+
+AdminService --> ProductService : "manage products"
+AdminService --> OrderService : "manage orders"
+AdminService --> UserAuthService : "manage users"
+AdminService --> MonitoringService : "view system metrics"
+
+SearchService --> ProductService : "retrieve product data"
+
+UserAuthService --> MonitoringService : "log auth events"
+
+DataReviewService --> MonitoringService : "log review actions"
+
+MonitoringService --> LogRepo : "store monitoring data"
+
+' Business to Data Layer
+ProductService --> ProductRepo : "product CRUD"
+OrderService --> OrderRepo : "order CRUD"
+UserAuthService --> UserRepo : "user CRUD"
+FavoriteService --> FavoriteRepo : "favorite CRUD"
+AdminService --> ProductRepo : "product management"
+AdminService --> OrderRepo : "order management"
+AdminService --> UserRepo : "user management"
+AdminService --> LogRepo : "log access"
+
+' Data Layer to Data Entity Layer
+ProductRepo --> ProductDB : "persist product data"
+OrderRepo --> OrderDB : "persist order data"
+UserRepo --> UserDB : "persist user data"
+FavoriteRepo --> UserDB : "persist favorite data"
+LogRepo --> LogDB : "persist log data"
+
+' Monitoring dependencies
+ProductService --> MonitoringService : "log product operations"
+OrderService --> MonitoringService : "log order operations"
+UserAuthService --> MonitoringService : "log auth operations"
+AdminService --> MonitoringService : "log admin operations"
+
+@enduml

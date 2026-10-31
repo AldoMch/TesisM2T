@@ -1,0 +1,31 @@
+@startuml
+component "Admin Management & Moderation Service" as COMPADMINSVC
+component "API Gateway & Security Proxy" as COMPAPIGATEWAY
+component "Audit Logging & Observability Platform" as COMPAUDITMONITOR
+component "Authentication & Access Control Service" as COMPAUTHSVC
+component "Cross-Platform Responsive Client" as COMPCLIENTUI
+component "Community & Interaction Service" as COMPCOMMUNITYSVC
+component "Encrypted Persistence Store" as COMPDATASTORE
+component "AI Text-Adventure Engine" as COMPGAMEENGINE
+component "Notification Service" as COMPNOTIFICATIONSVC
+component "User Profile & History Service" as COMPPROFILESVC
+component "Game Save Management Service" as COMPSAVEMGR
+COMPADMINSVC --> COMPAUDITMONITOR : gRPC / Structured Logging
+COMPADMINSVC --> COMPCOMMUNITYSVC : gRPC
+COMPADMINSVC --> COMPNOTIFICATIONSVC : Async Message Queue
+COMPADMINSVC --> COMPPROFILESVC : gRPC
+COMPAPIGATEWAY --> COMPADMINSVC : gRPC
+COMPAPIGATEWAY --> COMPAUDITMONITOR : gRPC / OpenTelemetry
+COMPAPIGATEWAY --> COMPAUTHSVC : gRPC
+COMPAPIGATEWAY --> COMPCOMMUNITYSVC : gRPC
+COMPAPIGATEWAY --> COMPGAMEENGINE : gRPC / WSS
+COMPAPIGATEWAY --> COMPNOTIFICATIONSVC : gRPC
+COMPAPIGATEWAY --> COMPPROFILESVC : gRPC
+COMPAPIGATEWAY --> COMPSAVEMGR : gRPC
+COMPAUTHSVC --> COMPDATASTORE : Database Protocol (TLS)
+COMPCLIENTUI --> COMPAPIGATEWAY : HTTPS / WSS
+COMPCOMMUNITYSVC --> COMPDATASTORE : Database Protocol (TLS)
+COMPCOMMUNITYSVC --> COMPNOTIFICATIONSVC : Async Message Queue
+COMPGAMEENGINE --> COMPSAVEMGR : gRPC
+COMPSAVEMGR --> COMPDATASTORE : Database Protocol (TLS)
+@enduml

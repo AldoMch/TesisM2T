@@ -1,0 +1,209 @@
+@startuml
+left to right direction
+skinparam componentStyle rectangle
+
+title LabHire System Architecture (Components, Services, Data, and External Integrations)
+
+actor "Student" as Student
+actor "Enterprise-Certified\nStudent" as EntStudent
+actor "Mentor" as Mentor
+actor "Administrator" as Admin
+
+package "Client Layer" {
+  component "Student/Mentor Web & Mobile UI" as UI_SM
+  component "Admin Console (Web)" as UI_Admin
+}
+
+Student --> UI_SM
+EntStudent --> UI_SM
+Mentor --> UI_SM
+Admin --> UI_Admin
+
+package "API Edge" {
+  component "API Gateway + Edge Security\n(Rate-limit, CAPTCHA, IP/Behavior Limits)" as APIGW
+  note right of APIGW
+    - Aggregates APIs for web/mobile
+    - Enforces rate limiting, CAPTCHA (NFR-005)
+    - Protocol unspecified by SRS
+  end note
+}
+
+UI_SM --> APIGW
+UI_Admin --> APIGW
+
+package "Application Services" {
+  component "Auth & IAM Service" as Auth
+  component "Verification Code Service" as VCode
+  component "Access Control\n(RBAC/Scope Enforcement)" as AccessCtrl
+
+  component "Profile & Resume Service" as Profile
+  component "Project Service" as ProjectSvc
+  component "Application Service\n(Project Applications)" as AppSvc
+  component "Mutual Evaluation Service" as EvalSvc
+
+  component "Search Service" as SearchSvc
+  component "Recommendation Service" as RecoSvc
+  component "Favorites Service\n(Projects, Mentors, Posts)" as FavSvc
+
+  component "Community Service\n(Posts & Comments)" as CommunitySvc
+  component "Popularity Ranking Service" as PopularSvc
+
+  component "Review & Certification Service\n(University Identity, Enterprise Cert)" as ReviewSvc
+
+  component "Notification Service\n(In-site Messages + Email Push)" as NotifSvc
+  component "Chat Service\n(Encrypted Mentor–Applicant Chat)" as ChatSvc
+
+  component "Admin Management Service\n(User & Content Governance)" as AdminMgmt
+  component "Risk Control & Audit Service\n(Logs, Alerts, Anomaly Detection)" as RiskSvc
+}
+
+APIGW --> Auth
+APIGW --> Profile
+APIGW --> ProjectSvc
+APIGW --> AppSvc
+APIGW --> EvalSvc
+APIGW --> SearchSvc
+APIGW --> RecoSvc
+APIGW --> FavSvc
+APIGW --> CommunitySvc
+APIGW --> PopularSvc
+APIGW --> ReviewSvc
+APIGW --> NotifSvc
+APIGW --> ChatSvc
+APIGW --> AdminMgmt
+APIGW --> RiskSvc
+APIGW --> AccessCtrl
+
+Auth --> VCode
+Auth --> AccessCtrl
+AdminMgmt --> AccessCtrl
+
+ProjectSvc --> AppSvc
+ProjectSvc --> EvalSvc
+AppSvc --> NotifSvc
+CommunitySvc --> PopularSvc
+FavSvc --> NotifSvc
+ReviewSvc --> NotifSvc
+ChatSvc --> NotifSvc
+RiskSvc --> NotifSvc
+
+note right of Auth
+  - Campus email registration/login (FR-010)
+  - Admin login via DB-assigned accounts (FR-021, C-004)
+end note
+
+note right of VCode
+  - Sends verification codes to university & enterprise emails (AD-001, FR-010, FR-012)
+end note
+
+note top of ProjectSvc
+  - Publish/manage projects (FR-003, FR-005)
+  - View details (FR-002), search (FR-004)
+end note
+
+note right of AppSvc
+  - Student applies to projects; mentor screens (FR-009)
+end note
+
+note right of EvalSvc
+  - Teacher–student mutual evaluations after completion (FR-008)
+end note
+
+note right of RecoSvc
+  - Collaborative filtering, tag matching, cold-start rules (FR-001, AD-004)
+end note
+
+note right of Profile
+  - Personal info & resume upload with permissions (FR-011, FR-013, FR-015)
+end note
+
+note right of CommunitySvc
+  - Posts, comments, favorites, modification/deletion
+  - Referral posts by enterprise-certified students only (FR-016..FR-019, FR-017, C-007)
+end note
+
+note right of PopularSvc
+  - Popularity = likes, comments, views, time decay (FR-020)
+end note
+
+note right of ReviewSvc
+  - Auto field validation + manual review within 72h (FR-022)
+  - Enterprise qualification review (FR-023)
+end note
+
+note right of NotifSvc
+  - In-site messages & email push for favorites, replies, applications, review feedback (FR-007, AD-003)
+end note
+
+note right of ChatSvc
+  - Mentor–applicant chat in project management
+  - Chat content must be encrypted (FR-005, NFR-004)
+end note
+
+note right of RiskSvc
+  - Risk-control logs, behavior audit, alerts (NFR-006)
+  - Abnormal behavior detection & limits (NFR-005)
+end note
+
+package "Data Layer (Products Unspecified by SRS)" {
+  database "Core DB\n(Users, Projects, Applications,\nFavorites, Posts, Comments,\nEvaluations, Certifications,\nNotifications, Review Records)" as CoreDB
+  cloud "Cache (Key-Value)\nSessions, Verification Codes,\nRate Limits" as Cache
+  database "Search Index" as SearchIndex
+  folder "Object Storage\n(Resume Files ≤ 10MB)" as ResumeStore
+  queue "Event Bus / Message Queue" as MQ
+  folder "Audit Log Store\n(Risk-Control Logs)" as AuditStore
+}
+
+Auth --> CoreDB
+Auth --> Cache
+VCode --> Cache
+Profile --> CoreDB
+Profile --> ResumeStore
+ProjectSvc --> CoreDB
+AppSvc --> CoreDB
+EvalSvc --> CoreDB
+FavSvc --> CoreDB
+CommunitySvc --> CoreDB
+PopularSvc --> CoreDB
+SearchSvc --> SearchIndex
+SearchSvc --> CoreDB
+RecoSvc --> CoreDB
+RecoSvc --> Cache
+ReviewSvc --> CoreDB
+NotifSvc --> CoreDB
+ChatSvc --> CoreDB
+RiskSvc --> AuditStore
+RiskSvc --> CoreDB
+
+APIGW --> Cache
+NotifSvc --> MQ
+CommunitySvc --> MQ
+AppSvc --> MQ
+PopularSvc --> MQ
+
+package "External Integrations" {
+  cloud "Email Service Provider\n(Verification Codes & Email Push)" as EmailSvc
+  cloud "SMS Provider (Optional)" as SMS
+}
+
+VCode --> EmailSvc
+NotifSvc --> EmailSvc
+VCode --> SMS
+
+note bottom
+  System scope limited to university research internship information and community referral posts.
+  Excludes social enterprise recruitment and headhunting ads (C-001).
+  Database products, API protocols, and encryption algorithms are not specified by the SRS (AD-005).
+end note
+
+legend right
+  Actors: Student, Enterprise-Certified Student, Mentor, Administrator
+  Client Layer: Web/Mobile UI for students & mentors, Admin Console
+  API Edge: API Gateway + Edge Security (rate limiting, CAPTCHA)
+  Services: Auth/IAM, Profile/Resume, Project, Application, Evaluation,
+            Search, Recommendation, Favorites, Community, Popularity,
+            Review & Certification, Notification, Chat, Admin Management, Risk Control
+  Data: Core DB, Cache, Search Index, Resume Object Storage, Event Bus, Audit Logs
+  External: Email Service Provider, optional SMS Provider
+endlegend
+@enduml

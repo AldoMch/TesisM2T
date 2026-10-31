@@ -1,0 +1,177 @@
+@startuml
+!define LAYER_COLOR #e6f3ff
+!define COMPONENT_COLOR #cce6ff
+!define EXTERNAL_COLOR #ffe6cc
+!define DATA_COLOR #e6ffe6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Data>> DATA_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title torc_py Task-Based Parallelism Library - Architecture Diagram
+
+package "Application Layer" <<Layer>> {
+  component "Python Application" as APP <<Component>> {
+    component "User Code" as USER_CODE
+    component "torc API Calls" as API_CALLS
+  }
+}
+
+package "torc API Layer" <<Layer>> {
+  component "torc Module" as TORC_MODULE <<Component>> {
+    component "Task Submission API" as SUBMIT_API
+    component "Task Control API" as CONTROL_API
+    component "Query API" as QUERY_API
+    component "SPMD API" as SPMD_API
+    component "Configuration API" as CONFIG_API
+  }
+}
+
+package "Task Management Layer" <<Layer>> {
+  component "Task Scheduler" as TASK_SCHEDULER <<Component>> {
+    component "Task Queue Manager" as QUEUE_MANAGER
+    component "Load Balancer" as LOAD_BALANCER
+    component "Task Stealing" as TASK_STEALING
+  }
+  
+  component "Task Execution Engine" as EXECUTION_ENGINE <<Component>> {
+    component "Worker Pool" as WORKER_POOL
+    component "Thread Manager" as THREAD_MANAGER
+    component "Callback Handler" as CALLBACK_HANDLER
+  }
+}
+
+package "Communication Layer" <<Layer>> {
+  component "MPI Communication" as MPI_COMM <<Component>> {
+    component "Inter-process Messaging" as INTER_PROCESS
+    component "Task Distribution" as TASK_DIST
+    component "Result Collection" as RESULT_COLLECT
+  }
+  
+  component "Shared Memory Communication" as SHARED_MEM <<Component>> {
+    component "Thread Synchronization" as THREAD_SYNC
+    component "Queue Access" as QUEUE_ACCESS
+  }
+}
+
+package "Runtime & Configuration" <<Layer>> {
+  component "Runtime Manager" as RUNTIME_MGR <<Component>> {
+    component "Initialization" as INIT
+    component "Shutdown" as SHUTDOWN
+    component "Lifecycle Control" as LIFECYCLE
+  }
+  
+  component "Configuration Manager" as CONFIG_MGR <<Component>> {
+    component "Environment Variables" as ENV_VARS
+    component "Runtime Settings" as RUNTIME_SETTINGS
+  }
+}
+
+package "External Dependencies" <<Layer>> {
+  component "MPI Runtime" as MPI_RUNTIME <<External>>
+  component "Python Runtime" as PYTHON_RUNTIME <<External>>
+  component "mpi4py Library" as MPI4PY <<External>>
+  component "Optional Libraries" as OPTIONAL_LIBS <<External>> {
+    component "numpy" as NUMPY
+    component "h5py" as H5PY
+    component "pillow" as PILLOW
+    component "cma" as CMA
+  }
+}
+
+package "Data Storage" <<Layer>> {
+  component "Task Descriptors" as TASK_DESCRIPTORS <<Data>> {
+    component "Input Values" as INPUT_VALUES
+    component "Result Values" as RESULT_VALUES
+  }
+  
+  component "Worker Queues" as WORKER_QUEUES <<Data>> {
+    component "Local Queues" as LOCAL_QUEUES
+    component "Remote Queues" as REMOTE_QUEUES
+  }
+  
+  component "HDF5 Files" as HDF5_FILES <<Data>>
+  component "Image Files" as IMAGE_FILES <<Data>>
+}
+
+' Application Layer to API Layer
+APP --> TORC_MODULE : "imports & uses"
+
+' API Layer to Task Management
+SUBMIT_API --> TASK_SCHEDULER : "submits tasks"
+CONTROL_API --> EXECUTION_ENGINE : "controls execution"
+QUERY_API --> EXECUTION_ENGINE : "queries status"
+SPMD_API --> MPI_COMM : "initiates SPMD"
+CONFIG_API --> CONFIG_MGR : "configures runtime"
+
+' Task Management internal connections
+TASK_SCHEDULER --> EXECUTION_ENGINE : "dispatches tasks"
+QUEUE_MANAGER --> WORKER_QUEUES : "manages queues"
+LOAD_BALANCER --> TASK_STEALING : "balances load"
+TASK_STEALING --> MPI_COMM : "steals tasks"
+
+' Task Management to Communication
+EXECUTION_ENGINE --> MPI_COMM : "distributes tasks"
+EXECUTION_ENGINE --> SHARED_MEM : "synchronizes threads"
+WORKER_POOL --> THREAD_MANAGER : "manages workers"
+CALLBACK_HANDLER --> EXECUTION_ENGINE : "handles callbacks"
+
+' Communication to External Dependencies
+MPI_COMM --> MPI_RUNTIME : "uses MPI"
+MPI_COMM --> MPI4PY : "uses mpi4py"
+SHARED_MEM --> PYTHON_RUNTIME : "uses threading"
+
+' Runtime & Configuration connections
+RUNTIME_MGR --> MPI_COMM : "initializes MPI"
+RUNTIME_MGR --> EXECUTION_ENGINE : "manages lifecycle"
+CONFIG_MGR --> ENV_VARS : "reads configuration"
+CONFIG_MGR --> RUNTIME_SETTINGS : "applies settings"
+
+' Data connections
+TASK_SCHEDULER --> TASK_DESCRIPTORS : "creates/manages"
+EXECUTION_ENGINE --> TASK_DESCRIPTORS : "executes/updates"
+MPI_COMM --> TASK_DESCRIPTORS : "transfers data"
+APP --> HDF5_FILES : "writes output"
+APP --> IMAGE_FILES : "reads input"
+
+' External dependencies to components
+PYTHON_RUNTIME --> EXECUTION_ENGINE : "provides threading"
+OPTIONAL_LIBS --> APP : "used by examples"
+
+note right of TORC_MODULE
+  API Functions:
+  - submit(), wait(), map()
+  - as_completed(), spmd()
+  - start(), init(), launch()
+  - shutdown(), enable_stealing()
+  - gettime(), worker_id(), node_id()
+end note
+
+note right of CONFIG_MGR
+  Environment Variables:
+  - TORC_WORKERS (default: 1)
+  - TORC_STEALING (default: False)
+  - TORC_SERVER_YIELDTIME
+  - TORC_WORKER_YIELDTIME
+end note
+
+note right of TASK_SCHEDULER
+  Scheduling Modes:
+  - Cyclic distribution (default)
+  - Directed submission (by qid)
+  - Task stealing (when enabled)
+end note
+
+note right of MPI_COMM
+  Communication Modes:
+  - Internal MPI for inter-process
+  - Shared memory for intra-process
+  - Compatible with app-level MPI
+end note
+
+@enduml

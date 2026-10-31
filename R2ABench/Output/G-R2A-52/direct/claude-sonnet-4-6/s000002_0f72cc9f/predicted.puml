@@ -1,0 +1,145 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #1a1a1a
+}
+skinparam node {
+  BackgroundColor #EEF5DD
+  BorderColor #557733
+  FontColor #1a1a1a
+}
+skinparam database {
+  BackgroundColor #FFF3CD
+  BorderColor #CC9900
+  FontColor #1a1a1a
+}
+skinparam rectangle {
+  BackgroundColor #F0E6FF
+  BorderColor #7755AA
+  FontColor #1a1a1a
+}
+skinparam cloud {
+  BackgroundColor #FFE6E6
+  BorderColor #CC3333
+  FontColor #1a1a1a
+}
+skinparam arrow {
+  Color #444444
+  FontColor #444444
+}
+skinparam defaultFontSize 12
+
+title Escape Application - System Architecture
+
+node "Browser / Client Environment" as browser {
+
+  rectangle "React Application Shell" as reactapp {
+    component "App Component\n(Shared Credential State\nEmail / Password Handlers\nCredential Submit Handler)" as appcomp
+
+    rectangle "Authentication Views" as authviews {
+      component "Sign-Up View\n(Escape Signup UI)\n[FR-001, FR-008]" as signup
+      component "Sign-In View\n(Escape Signin UI)\n[FR-002, FR-008]" as signin
+    }
+
+    rectangle "Content Retrieval Module" as contentmod {
+      component "Sequential Title Fetcher\n(Async / Recursive Callbacks)\n[FR-006, NFR-002]" as titlefetcher
+      component "Error Handler / Display\n[FR-007]" as errorhandler
+    }
+
+    rectangle "Scene Rendering Module\n(A-Frame + aframe-react)\n[FR-009, C-002]" as scenemod {
+      component "Scene Root" as sceneroot
+      component "Lobby" as lobby
+      component "SF" as sf
+      component "Louvre" as louvre
+      component "Berlin" as berlin
+      component "Milan" as milan
+      component "Rome" as rome
+      component "Hack" as hack
+      component "Camera" as camera
+      component "Sky" as sky
+      component "Plane" as plane
+      component "TextPlane" as textplane
+    }
+
+    component "React-Router\n(Client Navigation)\n[C-001]" as router
+    component "jQuery\n(HTTP Content Requests)" as jquery
+  }
+}
+
+node "Web Server\n(Node.js / Express)\n[C-005]" as webserver {
+
+  rectangle "HTTP Routing Layer" as routelayer {
+    component "Auth Routes\n(Registration / Login Endpoints)\n[FR-008]" as authroutes
+    component "Content Routes\n(Title-Based Content Endpoint)\n[FR-006]" as contentroutes
+  }
+
+  rectangle "User Controller Layer" as controllerlayer {
+    component "User Controller\n(Create / Lookup / Auth Logic)\n[FR-003, FR-004, FR-005]" as usercontroller
+  }
+
+  rectangle "User Model Layer" as modellayer {
+    component "User Model\n(Create / Save / FindAll / FindOne)\n[FR-003, FR-004, C-004]" as usermodel
+    component "bcrypt-nodejs\n(Password Verification)\n[FR-005, NFR-001, C-003]" as bcrypt
+  }
+}
+
+database "MariaDB\n(Relational Database)\n[C-006]" as mariadb {
+  component "users" as tbl_users
+  component "photos" as tbl_photos
+  component "likes" as tbl_likes
+  component "comments" as tbl_comments
+}
+
+node "Redis Cache\n[C-006]" as cache {
+  component "Cache Store" as cachestore
+}
+
+cloud "AWS S3\n(Image Storage Service)\n[C-006]" as s3 {
+  component "Image / Photo Store" as imagestore
+}
+
+' --- Client Internal Relationships ---
+appcomp --> signup : provides shared handlers\n[NFR-005]
+appcomp --> signin : provides shared handlers\n[NFR-005]
+signup --> router : navigate to sign-in\n[NFR-003]
+signin --> router : navigate to sign-up\n[NFR-003]
+appcomp --> titlefetcher : triggers content retrieval
+titlefetcher --> errorhandler : on failure [FR-007]
+sceneroot --> lobby
+sceneroot --> sf
+sceneroot --> louvre
+sceneroot --> berlin
+sceneroot --> milan
+sceneroot --> rome
+sceneroot --> hack
+sceneroot --> camera
+sceneroot --> sky
+sceneroot --> plane
+sceneroot --> textplane
+
+' --- Client to Server Communication ---
+appcomp --> authroutes : HTTP POST\nJSON {email, password}\n[FR-008, 3.3]
+titlefetcher --> contentroutes : HTTP GET\ntitle-based query\n[FR-006, 3.2]
+
+' --- Server Internal Relationships ---
+authroutes --> usercontroller : dispatch create / auth
+contentroutes --> usercontroller : dispatch content lookup
+usercontroller --> usermodel : create / findAll / findOne\n[FR-003, FR-004]
+usercontroller --> bcrypt : compareSync\n(attempted vs stored password)\n[FR-005, NFR-001]
+
+' --- Server to Persistence ---
+usermodel --> mariadb : SQL queries\n(users, photos, likes, comments)
+usermodel --> cache : read/write\ncached records
+
+' --- Server to Storage ---
+webserver --> s3 : image upload / retrieval\n[6.1 Photo/image data]
+
+' --- Response Paths ---
+authroutes --> appcomp : auth response\n(navigate on success)\n[FR-008, 3.4]
+contentroutes --> titlefetcher : paragraph/content result\n[FR-006, 3.4]
+
+@enduml

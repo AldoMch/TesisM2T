@@ -1,0 +1,45 @@
+@startuml
+title Earth Defender - Layered Component Deployment Diagram
+
+' ========= Layers ========= '
+node "Client Layer" {
+    component "Browser Client" as Client
+}
+
+node "Web Server Layer" {
+    component "Web Server" as WebServer
+}
+
+node "Game Server Layer" {
+    component "Game Server (Master)" as GameServer
+    component "Replica Node (Slave)" as Replica
+}
+
+cloud "External Systems" {
+    component "DNS/Load Balancer" as DNS
+    component "Network Infrastructure" as Network
+}
+
+' ========= Message Handling Components ========= '
+component "JSON Message Parser" as JSONParser
+component "Reconnection Manager" as ReconnManager
+component "Ping/Pong Handler" as PingPongHandler
+component "Server List Manager" as ServerListManager
+
+' ========= Dependencies ========= '
+Client --> WebServer : Downloads static assets
+DNS --> WebServer : Routes client requests
+Network --> Client : Provides connectivity
+Network --> GameServer : Provides connectivity
+
+' ========= Protocol-based Communication ========= '
+Client ..> GameServer : <<WebSocket>>\nBidirectional messaging\n(room_players_number, server_error, etc.)
+GameServer ..> Replica : <<Replication Sync>>
+
+' ========= Internal Component Dependencies ========= '
+GameServer --> JSONParser : Parses incoming/outgoing messages
+GameServer --> ReconnManager : Handles game_reconnect logic
+GameServer --> PingPongHandler : Manages heartbeat mechanism
+GameServer --> ServerListManager : Processes servers_list/_redirect
+
+@enduml

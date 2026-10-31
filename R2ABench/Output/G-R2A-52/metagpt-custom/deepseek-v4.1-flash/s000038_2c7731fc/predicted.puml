@@ -1,0 +1,117 @@
+@startuml
+package "Client/API Layer" {
+  component "Redis-backed Applications" as RedisApps
+  component "Redis Pub/Sub-style Applications" as PubSubApps
+  interface "Redis Command/Proxy Interface" as RedisProxyIface
+  interface "Redis Publish/Subscribe Interface" as RedisPubSubIface
+}
+
+package "Redis Proxy / Synchronization Layer" {
+  component "IceFireDB-Redis-Proxy" as RedisProxy
+
+  package "Decentralized Redis Agent Network" {
+    component "Redis Agent Node A" as RedisAgentA
+    component "Redis Agent Node B" as RedisAgentB
+    component "Redis Agent Node N" as RedisAgentN
+  }
+
+  package "Redis Command Category Support" {
+    component "String Commands" as CmdString
+    component "Set Commands" as CmdSet
+    component "List Commands" as CmdList
+    component "Hash Commands" as CmdHash
+    component "Sorted Set Commands" as CmdSortedSet
+    component "Stream Commands" as CmdStream
+    component "Basic Control Commands" as CmdControl
+  }
+}
+
+package "Decentralized Pub/Sub Layer" {
+  component "IceFireDB-PubSub" as PubSub
+}
+
+package "Peer Discovery and Routing Layer" {
+  component "Peer Discovery and Routing" as PeerRouting
+}
+
+package "Redis Storage Layer" {
+  interface "Redis Storage Interface" as RedisStorageIface
+  database "Redis Standalone Deployment" as RedisStandalone
+  database "Redis Cluster Deployment" as RedisCluster
+}
+
+package "Internal Protocol / Data Handling Layer" {
+  artifact "Packetized SQL/MySQL-Style Response Data" as PacketizedSql
+  component "IceFireDB-SQLite" as SQLite
+  component "SQL Result Field Metadata" as SqlFieldMetadata
+  component "SQL Field-Name Mapping" as SqlFieldNameMapping
+  component "SQL Result Rows" as SqlRows
+  component "SQL Warning Counts" as SqlWarnings
+  component "SQL Status Values" as SqlStatus
+}
+
+package "External Systems / Network Topology" {
+  cloud "Kademlia DHT with libp2p/IPFS-Style Peer Discovery and Routing" as Kademlia
+
+  cloud "Same-Network Topology" as SameNetwork {
+    component "PubSub Node A" as PubSubNodeA
+    component "PubSub Node B" as PubSubNodeB
+  }
+
+  cloud "Cross-Network Topology" as CrossNetwork {
+    component "PubSub Node C" as PubSubNodeC
+  }
+
+  cloud "NAT/Private-Network Topology" as NatPrivate {
+    component "PubSub Node D" as PubSubNodeD
+  }
+}
+
+RedisApps --> RedisProxyIface
+RedisProxyIface --> RedisProxy
+
+PubSubApps --> RedisPubSubIface
+RedisPubSubIface --> PubSub
+
+RedisProxy --> RedisStorageIface
+RedisStorageIface --> RedisStandalone
+RedisStorageIface --> RedisCluster
+RedisProxy --> RedisCluster : cluster state / failover
+
+RedisProxy --> RedisAgentA : instruction dissemination
+RedisProxy --> RedisAgentB : instruction dissemination
+RedisProxy --> RedisAgentN : instruction dissemination
+RedisAgentA --> RedisProxy : participating agent status
+RedisAgentB --> RedisProxy : participating agent status
+RedisAgentN --> RedisProxy : participating agent status
+RedisAgentA <--> RedisAgentB : agent-to-agent synchronization
+RedisAgentB <--> RedisAgentN : agent-to-agent synchronization
+RedisAgentN <--> RedisAgentA : agent-to-agent synchronization
+
+RedisProxy --> CmdString
+RedisProxy --> CmdSet
+RedisProxy --> CmdList
+RedisProxy --> CmdHash
+RedisProxy --> CmdSortedSet
+RedisProxy --> CmdStream
+RedisProxy --> CmdControl
+
+PubSub --> PeerRouting
+PeerRouting --> Kademlia
+
+PubSub --> PubSubNodeA : runtime
+PubSub --> PubSubNodeB : runtime
+PubSub --> PubSubNodeC : runtime
+PubSub --> PubSubNodeD : runtime
+PubSubNodeA <--> PubSubNodeB : same-network publish/subscribe
+PubSubNodeB <--> PubSubNodeC : cross-network publish/subscribe
+PubSubNodeC <--> PubSubNodeD : NAT/private-network publish/subscribe
+PubSubNodeA <--> PubSubNodeD : NAT/private-network publish/subscribe
+
+PacketizedSql --> SQLite : packetized input/result data
+SQLite --> SqlFieldMetadata : field metadata
+SQLite --> SqlFieldNameMapping : field-name mappings
+SQLite --> SqlRows : rows
+SQLite --> SqlWarnings : warning counts
+SQLite --> SqlStatus : status values
+@enduml

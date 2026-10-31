@@ -1,0 +1,129 @@
+@startuml
+title EasyLaTex System Architecture (Component Diagram)
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+' Client Layer
+node "Client" as Client {
+  component "Web UI (SPA)\n- Registration/Login\n- Upload & Edit\n- Real-time Preview\n- Projects/Groups/Versions\n- Export" as WebUI
+  note right of WebUI
+    Roles:
+    - General user
+    - Registered user
+    - Collaborator
+    - Project owner
+  end note
+}
+
+' Edge / Delivery
+node "Edge Delivery" as Edge {
+  component "CDN / Static Assets"
+  component "Web Server / Reverse Proxy\n(Nginx/Apache)" as WebServer
+}
+
+Client -down-> Edge
+WebUI -down-> WebServer : HTTPS (GET) Static Assets
+WebUI -right-> WebServer : HTTPS (REST) API
+WebUI -right-> WebServer : WSS (WebSocket)
+
+' Backend Core
+node "Backend Cluster" as Backend {
+  component "API Gateway\n- Routing\n- Validation\n- Rate limit" as APIGW
+  component "Security Filters\n- XSS/CSRF Defense\n- Input Validation\n- SQLi Protection" as SecFilters
+  component "Auth & User Service\n- Register/Login\n- Password Recovery\n- Roles & Permissions" as AuthService
+  component "Project Service\n- Projects & Workspaces" as ProjectService
+  component "Group/Collaboration Service\n- Groups & Membership\n- Sharing & Permissions" as GroupService
+  component "Version Control Service\n- Version Tree\n- Branching\n- Comments\n- Downloads" as VersionService
+  component "Real-time Collaboration & Preview\n(WebSocket Hub)" as RealtimeService
+  component "File Ingestion Service\n- Drag&Drop / Select\n- Validation\n- Scheduling" as IngestService
+  component "Export Service\n- PDF\n- LaTeX source\n- PNG/JPEG" as ExportService
+}
+
+WebServer -right-> APIGW : HTTPS (REST)
+WebServer -right-> RealtimeService : WSS
+
+APIGW -down-> SecFilters
+SecFilters -down-> AuthService
+SecFilters -down-> ProjectService
+SecFilters -down-> GroupService
+SecFilters -down-> VersionService
+SecFilters -down-> IngestService
+SecFilters -down-> ExportService
+SecFilters -down-> RealtimeService
+
+' AI/Processing Pipeline
+package "Recognition & Conversion Pipeline" as Pipeline {
+  component "Recognition Orchestrator\n- Input Routing\n- Post-processing" as RecOrch
+  component "OCR/Formula Model\n(Deep Learning)" as OCRModel
+  component "Table Detection & Structure Model" as TableModel
+  component "CSV/Excel Parser" as CSVExcelParser
+  component "PDF Parser" as PDFParser
+  component "LaTeX Generator\n- Formula/Table Builders" as LaTeXGen
+  component "LaTeX Renderer\n- Preview generation" as RenderService
+}
+
+IngestService -down-> RecOrch : Task/Invoke
+SecFilters -down-> RecOrch : Convert Request
+RecOrch -down-> OCRModel : Images/Handwritten
+RecOrch -down-> TableModel : Table structure
+RecOrch -down-> CSVExcelParser : CSV/XLSX
+RecOrch -down-> PDFParser : PDF
+OCRModel -down-> LaTeXGen
+TableModel -down-> LaTeXGen
+CSVExcelParser -down-> LaTeXGen
+PDFParser -down-> LaTeXGen
+LaTeXGen -down-> RenderService : LaTeX Code
+RenderService -up-> RealtimeService : Preview Updates
+RenderService -up-> SecFilters : Preview on demand
+LaTeXGen -up-> SecFilters : Generated LaTeX
+
+ExportService -down-> RenderService : Render for export
+
+' Data Stores
+folder "Data Stores" as DataStores {
+  database "Relational Database\n(MySQL/PostgreSQL)\n- Users\n- Groups\n- Projects\n- Versions\n- Comments\n- Metadata" as RDB
+  collections "Object Storage\n- Uploaded Files (JPG, PNG, PDF, CSV, XLSX)\n- Generated Artifacts (PDF, LaTeX, PNG, JPEG)" as ObjStore
+  component "LaTeX Engine\n(TeX Live/MiKTeX)" as TeXEngine
+}
+
+' Backend to Data Stores
+AuthService -down-> RDB : Users, Credentials\n(encrypted at rest)
+ProjectService -down-> RDB : Projects/Workspaces
+GroupService -down-> RDB : Groups/Memberships
+VersionService -down-> RDB : Versions/Comments
+IngestService -down-> ObjStore : Store uploads
+ExportService -down-> ObjStore : Store exports
+RecOrch -down-> ObjStore : Read inputs / Write intermediates
+RenderService -right-> TeXEngine : Compile for preview/export
+ExportService -right-> TeXEngine : Compile PDFs
+
+' Realtime collaboration and preview flows
+WebUI <-left- RealtimeService : Live updates (preview/collab)
+WebUI -right-> APIGW : Auth, Projects, Groups, Versions, Comments
+WebUI -right-> IngestService : Upload files
+WebUI -right-> ExportService : Export requests
+
+' Notes mapping key requirements
+note top of Pipeline
+  FR-001..FR-004: Convert Handwritten/Image/CSV-Excel/PDF to LaTeX
+  FR-013: Real-time rendering
+  NFR-001: Accuracy ≥ 88%
+  NFR-002: Render latency < 2s
+end note
+
+note right of Backend
+  NFR-008/NFR-010:
+  - TLS in transit
+  - Encrypted credentials at rest
+  - XSS/CSRF/SQLi defenses
+  NFR-004: >=100 concurrent requests
+end note
+
+note bottom of DataStores
+  DR-001..DR-006: Persistence for users/groups/projects/versions/files/results
+  NFR-006/NFR-007: Format & LaTeX compatibility
+end note
+
+@enduml

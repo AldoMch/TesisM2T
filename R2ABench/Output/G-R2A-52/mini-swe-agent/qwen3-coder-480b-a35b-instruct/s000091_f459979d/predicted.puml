@@ -1,0 +1,46 @@
+@startuml
+title System Architecture for LwM2M Device Management with Blockchain Integration
+
+skinparam componentStyle rectangle
+
+package "Backend Layer" {
+  [Spring HTTP Controllers] as controllers
+  [User Management Service] as userService
+  [Blockchain Integration Service] as blockchainService
+  [LwM2M Node Parsing Service] as lwm2mService
+}
+
+package "Data Layer" {
+  [User Database] as userDB
+  [Ethereum Blockchain] as ethereum
+}
+
+package "External Systems" {
+  [Authenticated API Clients] as apiClients
+  [LwM2M Service Components] as lwm2mComponents
+}
+
+[controllers] --> [userService] : handles user requests
+[controllers] --> [blockchainService] : manages client/bootstrap data
+[controllers] --> [lwm2mService] : processes LwM2M node data
+[userService] --> [userDB] : persists user data
+[blockchainService] --> [ethereum] : interacts via Web3j
+[lwm2mService] --> [lwm2mComponents] : provides parsed nodes
+[apiClients] --> [controllers] : sends authorized requests
+
+note right of controllers
+  Exposes RESTful endpoints
+  for user and blockchain operations
+end note
+
+note right of blockchainService
+  Encodes/decodes data using
+  fixed 32-byte ASCII format
+end note
+
+note right of lwm2mService
+  Validates and parses JSON
+  into LwM2M node structures
+end note
+
+@enduml

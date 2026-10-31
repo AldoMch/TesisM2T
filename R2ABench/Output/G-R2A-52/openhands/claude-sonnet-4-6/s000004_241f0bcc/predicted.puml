@@ -1,0 +1,113 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Arial
+skinparam packageBackgroundColor #F8F8F8
+skinparam componentBackgroundColor #DDEEFF
+skinparam databaseBackgroundColor #FFFACD
+skinparam arrowColor #444444
+skinparam packageBorderColor #AAAAAA
+skinparam componentBorderColor #5588AA
+
+title EMBC ESS System Architecture
+
+actor "Role-Based\nFront-End User" as User
+actor "Developer" as Dev
+actor "Database\nOperator" as DBO
+
+package "Web Browser" {
+  package "Angular ClientApp" {
+    component "Router\n(Role-Based Landing,\nLogin Guard,\nRedirect Guard)" as Router
+
+    component "HTTP Interceptor\n(Unauthorized-Response Handler,\nWatchdog Timer Reset)" as Interceptor
+
+    component "NgRx Store\n(Immutable Client State,\nControlled-List Cache,\nNotification Queue)" as NgRx
+
+    package "Service Wrappers" {
+      component "Evacuee Service\n[Read]" as EvacSvc
+      component "Incident-Task Service\n[Create / Read / Update]" as IncSvc
+      component "Organization Service\n[Create / Read / Update]" as OrgSvc
+      component "Referral Service\n[Create / Read / Update / Delete]" as RefSvc
+      component "Registration Service\n[Create / Read / Update / PDF Collection]" as RegSvc
+      component "Notification Service\n[Queue Notifications]" as NotifSvc
+      component "Controlled-List Loader\n[Init Load → NgRx]" as CtrlListLoader
+      component "Cookie Service\n[Get / Set]" as CookieSvc
+    }
+
+    component "Notifier Component\n(Observes Notification Queue)" as Notifier
+    component "Session-Expired Page" as SessionExpiredPage
+  }
+}
+
+package "Local Development Environment" {
+  component "Proxy Configuration\n(Role-Paired SM_TOKEN:\nvolunteer / local authority /\nprovincial admin)" as DevProxy
+}
+
+package ".NET Core WebAPI Server" {
+  component "API Controllers" as Controllers
+
+  package "Domain Layer" {
+    component "Domain Services" as DomainSvc
+    component "Domain Classes (C#)" as DomainClasses
+  }
+
+  component "Entity Framework / DbContext" as EF
+
+  component "Dev Back Door\n(Backend-Only,\nDesignated Dev Env Only)" as DevBackDoor
+}
+
+database "MS SQL Database" {
+  component "Persistent Database Entities" as DBEntities
+  component "SQL Maintenance Scripts\n(e.g. Volunteer Deactivation:\nset Volunteer.Active = 0\nwhere Id = @target;\ntransaction-wrapped)" as SQLScripts
+}
+
+cloud "SiteMinder" as SiteMinder
+
+' User interactions
+User --> Router : navigates / requests routes
+Dev --> DevProxy : local dev access
+
+' Router and guards
+Router --> NgRx : reads user role state
+Router --> SessionExpiredPage : redirects on session expiry
+
+' HTTP Interceptor wires all service wrapper calls
+EvacSvc --> Interceptor : HTTP request
+IncSvc --> Interceptor : HTTP request
+OrgSvc --> Interceptor : HTTP request
+RefSvc --> Interceptor : HTTP request
+RegSvc --> Interceptor : HTTP request
+CtrlListLoader --> Interceptor : HTTP request
+
+' Interceptor behaviour
+Interceptor --> Controllers : HTTP API calls
+Interceptor --> NgRx : triggers logout / session-expired on 401
+
+' Controlled-list loader populates NgRx at init
+CtrlListLoader --> NgRx : loads controlled-list data on init
+
+' Notification flow
+NotifSvc --> NgRx : enqueues notification
+NgRx --> Notifier : observable notification queue
+
+' Cookie service
+CookieSvc --> Router : supports auth cookie access
+
+' Backend layers
+Controllers --> DomainSvc : delegates to domain
+DomainSvc --> DomainClasses : uses
+DomainSvc --> EF : data access
+EF --> DBEntities : reads / writes
+
+' SiteMinder auth
+SiteMinder --> Controllers : access-control / token validation
+
+' Dev back door (dev env only)
+DevBackDoor --> Controllers : bypass (dev env only)
+DevProxy --> DevBackDoor : role-paired SM_TOKEN
+
+' DBO runs SQL scripts directly against DB
+DBO --> SQLScripts : executes (backup required first)
+SQLScripts --> DBEntities : targeted transactional update
+
+@enduml

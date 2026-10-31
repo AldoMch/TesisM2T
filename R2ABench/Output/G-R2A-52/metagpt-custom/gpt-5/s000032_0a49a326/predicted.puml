@@ -1,0 +1,58 @@
+@startuml
+
+' External identity and access
+cloud "Identity & Access" {
+  cloud "Keycloak" as Keycloak {
+    component "Token Endpoint" as KC_Token
+  }
+}
+
+' Kubernetes cluster hosting
+cloud "Kubernetes/GKE" as K8S {
+  node "NGINX Ingress Controller" as NGINX
+
+  package "Application Runtime" {
+    component "Spring Boot Application" as SpringBootApp {
+      component "User Endpoints" as UserEndpoints
+      component "Spring Security" as SpringSecurity
+    }
+  }
+
+  package "Process Execution" {
+    component "Example Runtime Bundle" as RuntimeBundle
+    interface "ProcessRuntime API" as ProcessRuntimeAPI
+    interface "TaskRuntime API" as TaskRuntimeAPI
+  }
+
+  package "Observability" {
+    component "Audit Service" as AuditService
+    component "Query Service" as QueryService
+  }
+}
+
+component "Deployment Descriptors" as DeployDescriptors
+component "Human Participant" <<actor>> as Human
+
+' Token acquisition and ingress path
+Human --> KC_Token : obtain access token (OAuth2/OIDC)
+Human --> NGINX : invoke protected endpoints (Bearer token)
+NGINX --> UserEndpoints : route external requests
+
+' Security and identity
+UserEndpoints --> SpringSecurity : enforce token/role auth
+SpringSecurity --> Keycloak : validate tokens (JWKS/introspection)
+
+' App-to-runtime APIs
+UserEndpoints --> ProcessRuntimeAPI : view definitions / start process
+UserEndpoints --> TaskRuntimeAPI : task operations
+ProcessRuntimeAPI --> RuntimeBundle : process interaction
+TaskRuntimeAPI --> SpringSecurity : user/role authorization
+
+' Eventing and read models
+RuntimeBundle --> AuditService : publish audit events
+RuntimeBundle --> QueryService : publish execution events/state
+
+' Deployment configuration
+DeployDescriptors --> K8S : configure deployments (replicas, limits)
+
+@enduml

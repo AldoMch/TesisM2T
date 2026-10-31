@@ -1,0 +1,54 @@
+@startuml
+' NLP4L System Architecture Diagram
+'
+' Components:
+' - Core NLP Engine
+' - Lucene Integration Layer
+' - Schema Configuration System
+' - Document Vector Exporter
+' - Interactive Scala Interface
+' - Chart Display Module
+
+package "NLP4L System" {
+  [Core NLP Processing Engine] as coreEngine
+  [Lucene Integration Layer] as luceneLayer
+  [Schema Configuration System] as schemaSystem
+  [Document Vector Exporter\n(LIBSVM Format)] as vectorExporter
+  [Interactive Scala Interface] as scalaInterface
+  [Chart Display Module\n(Experimental)] as chartModule
+  
+  ' Data stores
+  database "Lucene Index" as luceneIndex
+  file "LIBSVM File" as libsvmFile
+  file "Schema Configuration\n(Resource/File)" as schemaConfig
+  
+  ' External systems
+  node "Machine Learning Tools" as mlTools
+  node "Scala Environment" as scalaEnv
+}
+
+' Relationships
+luceneIndex --> luceneLayer : Provides document\ndata and analyzer terms
+luceneLayer --> coreEngine : Supplies processed\ndocument data
+schemaConfig --> schemaSystem : Loads configuration
+schemaSystem --> coreEngine : Provides schema\nconfiguration
+coreEngine --> vectorExporter : Processes documents\nfor vector creation
+vectorExporter --> libsvmFile : Writes vectors
+libsvmFile --> mlTools : Consumed by
+scalaEnv --> scalaInterface : Hosts
+scalaInterface --> coreEngine : Controls
+chartModule <-- coreEngine : Receives word\ncount data
+
+note right of chartModule
+  Experimental Feature
+end note
+
+note bottom of luceneLayer
+  Apache Lucene 5.2.0
+end note
+
+note bottom of vectorExporter
+  LIBSVM Format
+end note
+
+@enduml

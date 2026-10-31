@@ -1,0 +1,96 @@
+@startuml
+title Help With COVID - Session and Task Workflow Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ===== External Actors / Entry Channels =====
+actor "Authenticated Application User" as AuthUser
+actor "Logged-Out / Unauthenticated User" as UnauthUser
+actor "End User" as EndUser
+
+' ===== Frontend =====
+package "Frontend (Next.js Application)" as Frontend {
+  component "Help-Task Request Form\n(UI-001)" as TaskForm
+  component "Firebase Session Handler\n(FR-001, FR-002)" as SessionHandler
+  interface "POST /api/login\nPOST /api/logout" as SessionAPI
+}
+
+' ===== External User Channels =====
+package "End-User Entry Channels" as Channels {
+  component "Text / Call Channel\n(UI-002)" as TextCallChannel
+}
+
+' ===== Middleware =====
+package "Middleware Layer" as Middleware {
+  component "Task Request Middleware\n(FR-010, FR-011)" as TaskMiddleware
+  component "Address-to-Neighborhood\nProcessor (FR-011)" as AddressProcessor
+  component "Service-Area Decision\nLogic (FR-011)" as ServiceAreaCheck
+}
+
+' ===== Backend =====
+package "Backend" as Backend {
+  package "Firebase Functions (Custom APIs)" as Functions {
+    component "Login API\nPOST /api/login\n(FR-003, FR-004, FR-005, FR-006, FR-007)" as LoginAPI
+    component "Logout API\nPOST /api/logout\n(SI-002)" as LogoutAPI
+  }
+  package "OnFleet Task Handling" as OnFleetLayer {
+    component "OnFleet Task Creator\n(FR-012)" as OnFleetCreator
+  }
+}
+
+' ===== External Services =====
+package "External Services" as External {
+  component "Firebase Authentication" as FirebaseAuth
+  component "Firebase Admin Token\nVerification (SI-003, FR-005)" as FirebaseAdmin
+  component "OnFleet" as OnFleet
+}
+
+' ===== Configuration =====
+package "Runtime Configuration" as Config {
+  component "Firebase Runtime Config\n(FR-008, NFR-003, DR-005)" as FirebaseConfig
+  database "Environment Variables\nFIREBASE_AUTH_DOMAIN\nFIREBASE_DATABASE_URL\nFIREBASE_PROJECT_ID\nFIREBASE_PUBLIC_API_KEY" as EnvVars
+}
+
+' ===== Session State =====
+database "Server-Side Session Object\n(DR-004)" as SessionStore
+
+' ===== Relationships =====
+AuthUser --> SessionHandler : initiates login
+UnauthUser --> SessionHandler : triggers logout
+
+SessionHandler --> AuthUser : getIdToken() (DR-001, DR-002)
+SessionHandler --> SessionAPI : POST /api/login (JSON, same-origin)\n(FR-001, CI-001, DI-001, NFR-001)
+SessionHandler --> SessionAPI : POST /api/logout (same-origin)\n(FR-002, CI-002, DI-002, NFR-002)
+
+SessionAPI --> LoginAPI : routes login request
+SessionAPI --> LogoutAPI : routes logout request
+
+LoginAPI --> LoginAPI : validate request body -> 400 (FR-003)
+LoginAPI --> LoginAPI : extract token from req.body (FR-004)
+LoginAPI --> FirebaseAdmin : verify Firebase ID token (FR-005)
+FirebaseAdmin --> FirebaseAuth : token verification
+LoginAPI --> SessionStore : store decoded token + original token\n(FR-006, DR-004)
+SessionStore --> LoginAPI : session middleware support (SI-004, CON-004)
+LoginAPI --> SessionHandler : HTTP 200 JSON success + decoded token (FR-007)
+
+EndUser --> TextCallChannel : help request
+EndUser --> TaskForm : help request
+
+TextCallChannel --> TaskMiddleware : task request (CI-003, DR-006)
+TaskForm --> TaskMiddleware : task request (CI-003, DR-006)
+
+TaskMiddleware --> AddressProcessor : address information (DR-007)
+AddressProcessor --> TaskMiddleware : neighborhood / routing result
+TaskMiddleware --> ServiceAreaCheck : service-area decision (DR-008)
+ServiceAreaCheck --> TaskMiddleware : operated-area result
+TaskMiddleware --> OnFleetCreator : eligible task request (CI-004, FR-012)
+OnFleetCreator --> OnFleet : create task (SI-005, DR-009)
+OnFleet --> OnFleetCreator : task creation result
+
+EnvVars --> FirebaseConfig : map environment values (FR-008, CON-001)
+FirebaseConfig --> Frontend : Firebase runtime configuration
+FirebaseConfig --> Functions : Firebase runtime configuration
+
+@enduml

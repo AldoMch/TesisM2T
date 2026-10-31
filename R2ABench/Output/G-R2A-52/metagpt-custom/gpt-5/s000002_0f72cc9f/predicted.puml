@@ -1,0 +1,167 @@
+@startuml
+
+package "Client UI Layer" {
+  component WebClientApp
+  component ReactRouter
+  component SignUpView
+  component SignInView
+  component SharedCredentialHandlers
+  component CredentialSubmissionFunction
+  component ContentRetrievalClient
+  component ErrorDisplay
+}
+
+package "Client Rendering Layer" {
+  component Lobby
+  component SF
+  component Louvre
+  component Berlin
+  component Milan
+  component Rome
+  component Hack
+  component Camera
+  component Sky
+  component Plane
+  component TextPlane
+}
+
+package "Communication Layer" {
+  interface "HTTP/JSON" as HTTPJSON
+}
+
+package "Server API Layer" {
+  component WebServer
+  component HTTPRouter
+  component AuthenticationRoutes
+  component ContentRoutes
+  component UserController
+}
+
+package "Domain/Model Layer" {
+  component UserModel
+}
+
+package "Data Persistence Layer" {
+  database "MariaDB Database" as DB
+  cloud "Redis Cache" as CacheStore
+}
+
+package "External Storage Layer" {
+  cloud "ImageStorageService (S3-style)" as ImageStorage
+}
+
+package "External Libraries Layer" {
+  component "bcrypt-nodejs" as Bcrypt
+  component "React" as ReactLib
+  component "A-Frame" as AFrameLib
+  component "aframe-react" as AFrameReactLib
+  component "jQuery" as JQueryLib
+}
+
+' Client-side dependencies
+SignUpView --> SharedCredentialHandlers
+SignInView --> SharedCredentialHandlers
+SignUpView --> CredentialSubmissionFunction
+SignInView --> CredentialSubmissionFunction
+WebClientApp --> ReactRouter
+WebClientApp --> ContentRetrievalClient
+ContentRetrievalClient --> ErrorDisplay
+
+' Client rendering dependencies (scenes and supports)
+WebClientApp --> Lobby
+WebClientApp --> SF
+WebClientApp --> Louvre
+WebClientApp --> Berlin
+WebClientApp --> Milan
+WebClientApp --> Rome
+WebClientApp --> Hack
+
+Lobby --> Camera
+Lobby --> Sky
+Lobby --> Plane
+Lobby --> TextPlane
+
+SF --> Camera
+SF --> Sky
+SF --> Plane
+SF --> TextPlane
+
+Louvre --> Camera
+Louvre --> Sky
+Louvre --> Plane
+Louvre --> TextPlane
+
+Berlin --> Camera
+Berlin --> Sky
+Berlin --> Plane
+Berlin --> TextPlane
+
+Milan --> Camera
+Milan --> Sky
+Milan --> Plane
+Milan --> TextPlane
+
+Rome --> Camera
+Rome --> Sky
+Rome --> Plane
+Rome --> TextPlane
+
+Hack --> Camera
+Hack --> Sky
+Hack --> Plane
+Hack --> TextPlane
+
+' Client library usage
+WebClientApp --> ReactLib
+ReactRouter --> ReactLib
+SignUpView --> ReactLib
+SignInView --> ReactLib
+
+Lobby --> AFrameLib
+SF --> AFrameLib
+Louvre --> AFrameLib
+Berlin --> AFrameLib
+Milan --> AFrameLib
+Rome --> AFrameLib
+Hack --> AFrameLib
+
+Camera --> AFrameLib
+Sky --> AFrameLib
+Plane --> AFrameLib
+TextPlane --> AFrameLib
+
+Lobby --> AFrameReactLib
+SF --> AFrameReactLib
+Louvre --> AFrameReactLib
+Berlin --> AFrameReactLib
+Milan --> AFrameReactLib
+Rome --> AFrameReactLib
+Hack --> AFrameReactLib
+
+WebClientApp --> JQueryLib
+ContentRetrievalClient --> JQueryLib
+
+' Client to Server communication via HTTP/JSON
+CredentialSubmissionFunction --> HTTPJSON
+ContentRetrievalClient --> HTTPJSON
+
+' Server provides HTTP/JSON
+WebServer ..|> HTTPJSON
+
+' Server-side HTTP routing and controllers
+WebServer --> HTTPRouter
+HTTPRouter --> AuthenticationRoutes
+HTTPRouter --> ContentRoutes
+AuthenticationRoutes --> UserController
+ContentRoutes --> UserController
+
+' Controller dependencies
+UserController --> Bcrypt
+UserController --> UserModel
+
+' Persistence and external services
+UserModel --> DB
+WebServer --> CacheStore
+' ImageStorage service present in architecture (no direct server dependency per SRS)
+
+@enduml

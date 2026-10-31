@@ -1,0 +1,260 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::GoDaddy API\\n(Optional External Service)"
+      ],
+      "gt_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Squatm3gator API Process::HTTP Layer::WebSocket /\\nSocket.IO Server"
+      ],
+      "gt_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::squatm3 CLI Engine\\n(Subprocess)"
+      ],
+      "gt_nodes": [
+        "Global::Squatm3\\nDomain generation engine"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Web User /\\nClient Application"
+      ],
+      "gt_nodes": [
+        "Global::Web UI\\nindex.html"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Squatm3gator API Process::Background Consumer Thread::Redis Job Consumer\\n(Subscribes to Job Channel)",
+        "Squatm3gator API Process::Background Consumer Thread::Result Correlator\\n(Matches WORKER_ID#JOB_UUID#MESSAGE\\nwith Session Key)"
+      ],
+      "gt_nodes": [
+        "Global::Workers\\nCommand consumers"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Global::HTTP API\\nSession and attack requests",
+        "Global::Redis\\nCommand and reporting queues"
+      ],
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "Global::Redis"
+      ],
+      "match_type": "N:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::GoDaddy API\\n(Optional External Service)"
+      ],
+      "gt_node": "Global::GoDaddy API\\nDomain availability"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Squatm3gator API Process::HTTP Layer::Attack Option Parser\\n(Hf, Hc, -add, F, R\\ngodaddy, output flags)",
+        "Squatm3gator API Process::HTTP Layer::HTTP API\\nRequest Handler",
+        "Squatm3gator API Process::HTTP Layer::Session Manager",
+        "Squatm3gator API Process::Job Dispatch Layer::Redis Job Producer\\n(Publishes job to Job Channel)\\nJob ID = Session Key"
+      ],
+      "gt_node": "Global::HTTP API\\nSession and attack requests"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Redis",
+        "Redis::Job Channel",
+        "Redis::Reporting Channel\\n(WORKER_ID#JOB_UUID#MESSAGE)",
+        "Squatm3gator API Process::Job Dispatch Layer::Redis Job Producer\\n(Publishes job to Job Channel)\\nJob ID = Session Key"
+      ],
+      "gt_node": "Global::Redis\\nCommand and reporting queues"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Squatm3gator API Process::HTTP Layer::WebSocket /\\nSocket.IO Server"
+      ],
+      "gt_node": "Global::Socket.io\\nWebSocket result channel"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::squatm3 CLI Engine\\n(Subprocess)"
+      ],
+      "gt_node": "Global::Squatm3\\nDomain generation engine"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Web User /\\nClient Application"
+      ],
+      "gt_node": "Global::Web UI\\nindex.html"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Squatm3gator API Process::Background Consumer Thread::Redis Job Consumer\\n(Subscribes to Job Channel)",
+        "Squatm3gator API Process::Background Consumer Thread::Result Correlator\\n(Matches WORKER_ID#JOB_UUID#MESSAGE\\nwith Session Key)"
+      ],
+      "gt_node": "Global::Workers\\nCommand consumers"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Global::GoDaddy API\\n(Optional External Service)",
+      "reference_nodes": [
+        "Global::GoDaddy API\\nDomain availability"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Redis",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web User /\\nClient Application",
+      "reference_nodes": [
+        "Global::Web UI\\nindex.html"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::squatm3 CLI Engine\\n(Subprocess)",
+      "reference_nodes": [
+        "Global::Squatm3\\nDomain generation engine"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Redis::Job Channel",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Redis::Reporting Channel\\n(WORKER_ID#JOB_UUID#MESSAGE)",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues",
+        "Global::Socket.io\\nWebSocket result channel"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Squatm3gator API Process::Background Consumer Thread::Redis Job Consumer\\n(Subscribes to Job Channel)",
+      "reference_nodes": [
+        "Global::Workers\\nCommand consumers"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Squatm3gator API Process::Background Consumer Thread::Result Correlator\\n(Matches WORKER_ID#JOB_UUID#MESSAGE\\nwith Session Key)",
+      "reference_nodes": [
+        "Global::Workers\\nCommand consumers",
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Squatm3gator API Process::HTTP Layer::Attack Option Parser\\n(Hf, Hc, -add, F, R\\ngodaddy, output flags)",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Squatm3gator API Process::HTTP Layer::Error Handler\\n(HTTP 400 / 404 / 500\\nQuery Parse Failure)",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Squatm3gator API Process::HTTP Layer::HTTP API\\nRequest Handler",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Squatm3gator API Process::HTTP Layer::Session Manager",
+      "reference_nodes": [
+        "Global::HTTP API\\nSession and attack requests"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Squatm3gator API Process::HTTP Layer::WebSocket /\\nSocket.IO Server",
+      "reference_nodes": [
+        "Global::Socket.io\\nWebSocket result channel"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Squatm3gator API Process::Job Dispatch Layer::Redis Job Producer\\n(Publishes job to Job Channel)\\nJob ID = Session Key",
+      "reference_nodes": [
+        "Global::Redis\\nCommand and reporting queues",
+        "Global::HTTP API\\nSession and attack requests",
+        "Global::Workers\\nCommand consumers"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1196,
+      "completion_tokens": 139,
+      "total_tokens": 1335,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Redis::Job Channel",
+    "Redis::Reporting Channel\\n(WORKER_ID#JOB_UUID#MESSAGE)",
+    "Squatm3gator API Process::HTTP Layer::Attack Option Parser\\n(Hf, Hc, -add, F, R\\ngodaddy, output flags)",
+    "Squatm3gator API Process::HTTP Layer::Error Handler\\n(HTTP 400 / 404 / 500\\nQuery Parse Failure)",
+    "Squatm3gator API Process::HTTP Layer::HTTP API\\nRequest Handler",
+    "Squatm3gator API Process::HTTP Layer::Session Manager",
+    "Squatm3gator API Process::Job Dispatch Layer::Redis Job Producer\\n(Publishes job to Job Channel)\\nJob ID = Session Key"
+  ],
+  "_provenance": {
+    "fingerprint": "36bf3f580e78def50fe0030a2d42a288c52a6c3b5c3ec3889eb1bb58805378a0",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

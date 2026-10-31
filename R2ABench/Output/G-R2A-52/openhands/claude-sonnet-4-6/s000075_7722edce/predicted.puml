@@ -1,0 +1,103 @@
+@startuml
+!define RECTANGLE class
+
+skinparam rectangle {
+  BackgroundColor<<client>> LightSkyBlue
+  BackgroundColor<<server>> LightGreen
+  BackgroundColor<<storage>> LightYellow
+  BackgroundColor<<display>> LightPink
+  BackgroundColor<<infra>> LightGray
+}
+
+skinparam componentStyle rectangle
+
+title statlord System Architecture
+
+actor "Browser Editor User" as editorUser
+actor "API Client" as apiClient
+actor "Operator/Developer" as operator
+
+package "Client Layer (Node.js / TypeScript / React)" <<client>> {
+  component "Browser Editor SPA" as editorSPA {
+    component "Redux Store" as redux {
+      component "Controls State" as controls
+      component "Elements State" as elements
+      component "Layouts State" as layouts
+      component "Gauges State" as gauges
+      component "Displays State" as displays
+    }
+    component "Layout Editor UI" as layoutEditor
+    component "Canvas (Render/Delete ops)" as canvas
+    component "Viewer Interface" as viewerUI
+  }
+}
+
+package "Server Layer (Python / Django)" <<server>> {
+  component "Django Dev Server\n(manage.py runserver)" as djangoServer
+
+  component "REST API" as api {
+    component "Gauge API Resource\n(key, value)" as gaugeAPI
+    component "Display API Resource\n(key, available, resolution_x,\nresolution_y, current_layout,\ndisplay_data, rotation)" as displayAPI
+    component "Layout API Resource\n(key, data, display_positions)" as layoutAPI
+  }
+
+  component "Viewer Path / Renderer\n(B&W pixel view @ display resolution)" as viewerPath
+
+  component "Static Asset Server\n(built client assets)" as staticServer
+}
+
+package "Data Layer" <<storage>> {
+  database "PostgreSQL" as postgres {
+    component "Gauge Entity\n(key, value[600])" as gaugeEntity
+    component "Display Entity\n(key, available, resolution_x,\nresolution_y, current_layout FK,\ndisplay_data, rotation)" as displayEntity
+    component "Layout Entity\n(key, data[binary],\ndisplay_positions[text])" as layoutEntity
+  }
+}
+
+package "Containerized Environment (Dev-grade)" <<infra>> {
+  component "Docker Container\n(Python 3.7 base)" as dockerContainer
+}
+
+package "Target Displays" <<display>> {
+  component "OLEDs / e-paper /\nLCDs / Browsers" as physicalDisplays
+}
+
+editorUser --> editorSPA : opens editor in browser
+apiClient --> api : POST data / register displays
+operator --> dockerContainer : deploy & run stack
+
+editorSPA --> staticServer : served as static assets
+layoutEditor --> canvas : render / delete operations
+layoutEditor --> redux : reads/updates state
+
+editorSPA --> api : HTTP (layout, display, gauge CRUD)
+viewerUI --> viewerPath : HTTP (viewer route)
+
+djangoServer --> api : routes
+djangoServer --> viewerPath : routes
+djangoServer --> staticServer : serves
+
+gaugeAPI --> gaugeEntity : persist / retrieve
+displayAPI --> displayEntity : persist / retrieve
+layoutAPI --> layoutEntity : persist / retrieve
+
+displayEntity --> layoutEntity : current_layout FK\n(null on layout delete)
+
+viewerPath --> displayEntity : read display data & layout
+viewerPath --> physicalDisplays : rendered B&W pixel view
+
+dockerContainer --> djangoServer : starts server
+dockerContainer --> staticServer : includes built client
+
+note bottom of dockerContainer
+  Development-grade only.
+  Django dev server (not production-ready).
+  Build: npm install && npm run build
+  Run: ./manage.py runserver
+end note
+
+note right of redux
+  Client-side Display state omits
+  current_layout (server-only field)
+end note
+@enduml

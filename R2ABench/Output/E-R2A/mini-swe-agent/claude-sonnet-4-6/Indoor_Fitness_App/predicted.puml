@@ -1,0 +1,64 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+title Indoor Fitness App - Layered Architecture
+
+package "Mobile Client" {
+    [UI Layer] as UI
+    [Camera and Video] as Camera
+    [Pose Estimation Engine] as PoseEngine
+    [Screen Casting Client] as CastClient
+    [Local Storage] as LocalStorage
+}
+
+package "Backend Server" {
+    [Auth Service] as AuthService
+    [Training Plan Service] as PlanService
+    [Posture Evaluation Service] as EvalService
+    [Report and Poster Generator] as ReportService
+    [User Management Service] as UserMgmt
+    [Screen Cast Server] as CastServer
+}
+
+package "Data Layer" {
+    database "User DB" as UserDB
+    database "Training Store" as TrainingDB
+    database "Movement Library" as MovementDB
+    database "Media Store" as MediaDB
+}
+
+package "External Systems" {
+    [Android Target Device] as AndroidDevice
+    [Mobile Camera Hardware] as CameraHW
+}
+
+UI --> Camera
+Camera --> CameraHW
+Camera --> PoseEngine : frames
+PoseEngine --> UI : skeleton and score
+UI --> CastClient
+CastClient --> CastServer : LAN stream
+
+UI --> AuthService : login and register
+UI --> PlanService : request plan
+UI --> EvalService : posture data
+UI --> ReportService : poster or report
+UI --> UserMgmt : profile update
+UI --> TrainingDB : history read
+
+PoseEngine --> EvalService : keypoints
+
+AuthService --> UserDB
+PlanService --> MovementDB
+PlanService --> TrainingDB
+EvalService --> MovementDB
+EvalService --> TrainingDB
+ReportService --> TrainingDB
+ReportService --> MediaDB
+UserMgmt --> UserDB
+
+CastServer --> AndroidDevice : video stream
+CastServer --> CastClient : control commands
+
+@enduml

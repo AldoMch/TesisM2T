@@ -1,0 +1,151 @@
+@startuml
+title JSeats System Architecture
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+
+rectangle "External Environments" {
+  component "Java Client Application" as ClientApp
+  component "Command-line Shell" as Shell
+  folder "File System" as FS
+  node "Java Runtime (JRE)" as JRE
+}
+
+package "JSeats Library" as Lib {
+  component "Allocation API\n(Caller-facing Entry Point)" as API
+  interface "AllocationMethod\nContract" as MethodContract
+  component "Processor Configuration\n(Properties)" as ProcConfig
+  component "Tally Model\n(Tally, Candidate, PotentialVotes)" as Tally
+  component "XML Loader\n(Tally.fromXML)" as XMLLoader
+  component "Tally Filters API\n(TallyFilter)" as FiltersAPI
+  component "Tie-Breaking Rules\n(TieBreaker)" as TieRules
+  component "Result Model\n(Result)" as ResultModel
+  component "Result Decoration API\n(ResultDecorator)" as DecorAPI
+  component "Highest Averages Engine\n(Divisor Sequences)" as HAEngine
+  component "Method Registry\n(Built-in methods, Listing)" as MethodRegistry
+  component "SeatAllocationException" as SAE
+
+  package "Built-in Allocation Methods" as Methods {
+    component "Majority\n(Simple, Qualified, Absolute)" as Majority
+    component "Ranked by Votes" as Ranked
+    component "Equal Proportions\n(Huntington-Hill)" as HH
+    package "Largest Remainder" as LR {
+      component "Hare" as Hare
+      component "Droop" as DroopLR
+      component "Imperiali" as ImperialiLR
+    }
+    package "Highest Averages" as HA {
+      component "D'Hondt" as Dhondt
+      component "Sainte-Laguë/Webster\n(user-provided first divisor)" as SLW
+      component "Imperiali" as ImperialiHA
+      component "Danish" as Danish
+    }
+  }
+}
+
+package "JSeats CLI Launcher" as CLIPkg {
+  component "CLI Frontend\n(Options Parser, Commands)" as Frontend
+  component "I/O Handlers\n(XML In/Out, Files, Stdout/Stderr)" as IO
+}
+
+' External interactions
+ClientApp --> API : uses Java API\n(submit tally, method, properties)
+Shell --> Frontend : runs commands / options
+JRE -[hidden]- Lib
+
+' CLI to Library and FS
+Frontend --> API : invokes processing
+Frontend --> MethodRegistry : list methods/filters/decorators
+IO --> FS : read/write XML/config/result files
+IO --> XMLLoader : load/save tally/config/result XML
+
+' Core processing workflow
+API --> ProcConfig : accepts/uses
+API --> FiltersAPI : apply configured filters
+FiltersAPI --> Tally : transform tally (pre-allocation)
+
+API --> MethodRegistry : resolve selected method
+API --> MethodContract : invoke allocation method
+
+' Methods implement contract
+Majority ..|> MethodContract
+Ranked ..|> MethodContract
+HH ..|> MethodContract
+Hare ..|> MethodContract
+DroopLR ..|> MethodContract
+ImperialiLR ..|> MethodContract
+Dhondt ..|> MethodContract
+SLW ..|> MethodContract
+ImperialiHA ..|> MethodContract
+Danish ..|> MethodContract
+
+' Method dependencies
+MethodContract --> Tally : read protected view
+MethodContract --> ProcConfig : read method-specific properties
+MethodContract --> ResultModel : return allocation result
+MethodContract ..> SAE : on allocation failure
+
+' Highest averages variants via engine
+Dhondt --> HAEngine
+SLW --> HAEngine
+ImperialiHA --> HAEngine
+Danish --> HAEngine
+
+' Majority specifics and tie-breaking
+Majority --> TieRules : tie-breaking rules
+
+' Absolute majority threshold derivation note
+note right of Majority
+  Absolute Majority:
+  minimumVotes = (potentialVotes / 2) + 1
+  used as threshold for qualified-majority processing
+end note
+
+' Post-processing (decoration)
+API --> DecorAPI : optional result decoration
+DecorAPI --> ResultModel : decorated result
+
+' XML-based tally loading
+XMLLoader --> Tally : construct from XML
+
+' Exceptions surfaced to callers
+API ..> SAE : throws on failure
+SAE ..> ClientApp : propagated
+SAE ..> Frontend : propagated (prints error)
+
+' Outputs
+API --> ResultModel : final result to callers
+Frontend --> Shell : listings, results, errors (stdout/stderr)
+Frontend --> IO : write outputs as requested
+
+' Data exchange formats and CLI args
+note right of IO
+  Data exchange formats:
+  - XML: Tally, Configuration, Result
+  - Files: input/output via paths
+  - Stdout/Stderr: listings, results, errors
+end note
+
+note bottom of Frontend
+  CLI arguments include:
+  - Candidates as Name:Votes
+  - Potential votes
+  - Method name
+  - Processor properties
+  - File paths (tally/config/result)
+end note
+
+' Constraints and scope notes
+note top of Lib
+  Constraints:
+  - Java implementation (C-001)
+  - Immutable Tally within AllocationMethod contract only (C-002)
+  - Supported methods limited to documented set (C-003)
+  - Web interface out of scope (C-004)
+end note
+
+note left of MethodContract
+  Extensibility:
+  - New methods implement this contract
+  - Highest-averages variants via divisor sequences
+end note
+@enduml

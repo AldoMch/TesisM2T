@@ -1,0 +1,131 @@
+@startuml
+title Tengine Lite - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "C API Integrator" as CAPIActor
+actor "C++ API User" as CppActor
+actor "Python API User" as PyActor
+actor "Example User" as ExampleUser
+actor "Tool User" as ToolUser
+
+package "Tengine Lite" {
+
+  package "API Surfaces" {
+    component "C API (Tengine-compatible)" as CAPI
+    component "C++ API" as CppAPI
+    component "Python API" as PyAPI
+  }
+
+  package "Example Applications" {
+    component "Classification" as ExClassification
+    component "Facial Landmark Detection" as ExLandmark
+    component "SSD Object Detection" as ExSSD
+    component "RetinaFace Face Detection" as ExRetinaFace
+    component "Yolact Instance Segmentation" as ExYolact
+    component "U-Net Image Segmentation" as ExUNet
+    component "YoloV3" as ExYoloV3
+    component "YoloV4-tiny" as ExYoloV4tiny
+    component "YoloV5s" as ExYoloV5s
+    component "NanoDet" as ExNanoDet
+    component "EfficientDet" as ExEfficientDet
+    component "OpenPose" as ExOpenPose
+    component "HRNet" as ExHRNet
+    component "CRNN Chinese Character Recognition" as ExCRNN
+  }
+
+  package "Core Architecture" {
+    component "device\n(NN Operators backend)" as Device
+    component "scheduler\n(scheduling, NNIR, computation graphs,\nhardware resources, model serializer)" as Scheduler
+    component "operator\n(NN Operator registration\nand initialization)" as Operator
+    component "serializer\n(binary tmfile decoding)" as Serializer
+  }
+
+  package "Model Conversion Tooling" {
+    component "Linux Pre-compiled\nModel Converter" as LinuxConverter
+    component "Online WebAssembly-based\nBrowser Converter" as WASMConverter
+  }
+}
+
+package "Operating Environment" {
+  node "CMake-based\nCross-platform Build" as CMakeBuild
+  node "Linux Environment" as LinuxHost
+  node "Web Browser with\nWebAssembly Support" as Browser
+  node "Local Execution Environment\n(models and images)" as LocalEnv
+}
+
+database "Local Model Files" as ModelFiles
+database "Local Image Files" as ImageFiles
+database "Binary tmfile Models" as TmfileModels
+database "Serialized Model Parameters" as SerializedParams
+database "Converted Model Artifacts" as ConvertedArtifacts
+
+CAPIActor --> CAPI
+CppActor --> CppAPI
+PyActor --> PyAPI
+ExampleUser --> ExClassification
+ToolUser --> LinuxConverter
+ToolUser --> WASMConverter
+
+CAPI --> ExClassification
+CAPI --> ExSSD
+CAPI --> ExRetinaFace
+CAPI --> ExYolact
+CAPI --> ExUNet
+CAPI --> ExYoloV3
+CAPI --> ExYoloV4tiny
+CAPI --> ExYoloV5s
+CAPI --> ExNanoDet
+CAPI --> ExEfficientDet
+CAPI --> ExOpenPose
+CAPI --> ExHRNet
+CAPI --> ExCRNN
+CAPI --> ExLandmark
+
+ExClassification --> Scheduler
+ExLandmark --> Scheduler
+ExSSD --> Scheduler
+ExRetinaFace --> Scheduler
+ExYolact --> Scheduler
+ExUNet --> Scheduler
+ExYoloV3 --> Scheduler
+ExYoloV4tiny --> Scheduler
+ExYoloV5s --> Scheduler
+ExNanoDet --> Scheduler
+ExEfficientDet --> Scheduler
+ExOpenPose --> Scheduler
+ExHRNet --> Scheduler
+ExCRNN --> Scheduler
+
+Scheduler --> Device
+Scheduler --> Operator
+Scheduler --> Serializer
+
+Serializer --> TmfileModels : decodes
+Serializer --> SerializedParams : produces
+
+ModelFiles --> ExClassification
+ImageFiles --> ExClassification
+ModelFiles --> LinuxConverter
+ModelFiles --> WASMConverter
+LinuxConverter --> ConvertedArtifacts
+WASMConverter --> ConvertedArtifacts
+
+LinuxHost --> LinuxConverter
+Browser --> WASMConverter
+LocalEnv --> ModelFiles
+LocalEnv --> ImageFiles
+
+note bottom of WASMConverter
+  Converts models locally in the browser
+  through WebAssembly; no private data
+  is uploaded.
+end note
+
+note bottom of CMakeBuild
+  NFR-001: cross-platform compilation
+  based on CMake.
+end note
+
+@enduml

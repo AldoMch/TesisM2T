@@ -1,0 +1,74 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BorderColor #777777
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #1F78D1
+    BorderThickness 1
+}
+
+package "Client-side" as ClientSide #DDEEDB {
+    package "Technology" as ClientTechnology {
+        rectangle "Angular 7" as Angular7
+    }
+
+    package "Logic" as ClientLogic {
+        rectangle "UI Components" as UIComponents {
+            rectangle "HTML\nTemplates" as HtmlTemplates
+            rectangle "Component\nClass" as ComponentClass
+        }
+        rectangle "Angular\nServices" as AngularServices
+    }
+
+    package "Data" as ClientData {
+        rectangle "ngRX state store" as NgRxStore
+        rectangle "View-Models\n(JSON)" as JsonViewModels
+    }
+}
+
+package "Server-side" as ServerSide #DDEBFA {
+    package "Technology" as ServerTechnology {
+        rectangle ".NET Core\nWebAPI" as DotNetWebApi
+        rectangle "Standard\nC# Classes" as StandardCSharpClasses
+        rectangle "Entity\nFramework\n(ORM)" as EntityFramework
+    }
+
+    package "Logic" as ServerLogic {
+        rectangle "WebAPI\nControllers" as WebApiControllers
+        rectangle "Domain Services" as DomainServices {
+            rectangle "PDF" as PdfService
+            rectangle "CAPTCHA" as CaptchaService
+            rectangle "Email" as EmailService
+        }
+        rectangle "DbContext" as DbContext
+    }
+
+    package "Data" as ServerData {
+        rectangle "View-Models\n(C#)" as CSharpViewModels
+        database "DB Entities\n(Registration, Community, etc.)" as DbEntities
+    }
+}
+
+Angular7 --> DotNetWebApi : HTTP
+UIComponents --> AngularServices
+AngularServices --> WebApiControllers : HTTP
+
+DotNetWebApi --> StandardCSharpClasses
+StandardCSharpClasses --> EntityFramework
+WebApiControllers --> DomainServices
+DomainServices --> DbContext
+@enduml

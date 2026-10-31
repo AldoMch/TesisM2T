@@ -1,0 +1,114 @@
+@startuml
+title Bunny Code - System Architecture
+skinparam componentStyle rectangle
+left to right direction
+
+actor "User" as User
+
+node "Browser" as Browser {
+  component "Vue Frontend App\n- Login & JWT\n- Projects & Versions\n- Workspace Editor\n- Playback View\n- Battle View" as Frontend
+}
+
+cloud "CDN Distribution\n(CloudFront-style)" as CDN
+node "Object Storage\n(S3-compatible)" as S3
+
+node "Nginx Reverse Proxy" as Nginx
+
+node "Backend\nNode.js/Express + Socket.IO" as Backend {
+  package "REST APIs" {
+    component "Authentication API\n(JWT issue/validate)" as AuthAPI
+    component "Project API" as ProjectAPI
+    component "Version API\n(Initial Files)" as VersionAPI
+    component "Code Execution API" as ExecAPI
+    component "Playback API" as PlaybackAPI
+    component "File Upload API" as UploadAPI
+  }
+  package "Real-time Sockets" {
+    component "Workspace Namespace\n- Authorization statusChecked\n- Edit state & occupation\n- Leave & disconnect cleanup" as WorkspaceSock
+    component "Battle Namespace\n- Invite & accept (atomic)\n- Readiness & code sync\n- Compile/Judge\n- Outcome & leave" as BattleSock
+  }
+}
+
+database "MySQL\n(Relational: users, projects,\nversions, battles, ...)" as MySQL
+database "InfluxDB\n(Time-series: coding-process records)" as InfluxDB
+node "Redis\n(Cache: workspace map,\ninvitation & battle state)" as Redis
+node "Docker Sandbox\n(Compile/Execute Code)" as Sandbox
+node "CI/CD & Automated Deployment" as CICD
+
+User --> Frontend : UI interaction
+
+Frontend --> CDN : GET static assets & archives
+S3 --> CDN : Origin for distribution
+
+Frontend --> Nginx : REST APIs (HTTPS)
+Frontend --> Nginx : Socket.IO (WebSocket)
+
+Nginx --> AuthAPI
+Nginx --> ProjectAPI
+Nginx --> VersionAPI
+Nginx --> ExecAPI
+Nginx --> PlaybackAPI
+Nginx --> UploadAPI
+Nginx --> WorkspaceSock
+Nginx --> BattleSock
+
+AuthAPI --> MySQL : Users, credentials
+ProjectAPI --> MySQL : Projects CRUD
+VersionAPI --> MySQL : Versions & initial files metadata
+
+WorkspaceSock --> MySQL : Project/version access check
+WorkspaceSock --> Redis : Socket<->workspace mapping
+WorkspaceSock --> InfluxDB : Write coding events
+
+PlaybackAPI --> InfluxDB : Query playback by project/version/time
+
+ExecAPI --> Sandbox : Submit code to compile/execute
+Sandbox --> ExecAPI : Execution result (status/output/errors)
+
+BattleSock --> Redis : Temp invitations (WATCH)\nState updates (readiness, code)
+BattleSock --> MySQL : Create battle & outcomes
+BattleSock --> Sandbox : Compile & judge
+
+UploadAPI --> S3 : Upload code/user/battle files
+S3 --> UploadAPI : Metadata & distributable URL
+
+AuthAPI --> Frontend : JWT/user details or errors
+ProjectAPI --> Frontend : Project results
+VersionAPI --> Frontend : Version & initial files
+ExecAPI --> Frontend : Execution result
+PlaybackAPI --> Frontend : Playback data
+UploadAPI --> Frontend : Distributable file URLs
+WorkspaceSock --> Frontend : statusChecked & workspace events
+BattleSock --> Frontend : Battle events
+
+CICD --> Frontend : Deploy SPA build to S3/CDN
+CICD --> Backend : Deploy Node/Express & Socket.IO
+CICD --> Nginx : Deploy reverse-proxy config
+CICD --> Redis : Configure connectivity
+CICD --> MySQL : Schema/init
+CICD --> InfluxDB : Retention/policies
+CICD --> Sandbox : Build images/config
+CICD --> S3 : Buckets & distribution
+
+note right of Redis
+- Verify readiness before cache ops (NFR-002)
+- Isolated execution & WATCH for acceptance\n(NFR-001, C-006)
+- Stores: socket/version mappings,\n  temp invitations, battle state
+end note
+
+note right of Sandbox
+All code execution runs in Docker\n(NFR-005, C-009)
+end note
+
+note bottom of AuthAPI
+Reject empty/malformed JWT (FR-003)\nReturn user info on valid JWT (FR-002)
+end note
+
+note top of WorkspaceSock
+Default readOnly=true & authorization=false\nwhen project/version missing (FR-008)\nPersist mapping only when authorized\nand Redis is ready (FR-009)
+end note
+
+note top of CDN
+Distribute static assets and archives (FR-018)
+end note
+@enduml

@@ -1,0 +1,68 @@
+@startuml  
+title "Smart Recipe System - Layered Architecture"  
+  
+package "Presentation Layer" {  
+"  [Mobile App (Android/iOS)]"  
+"}"  
+  
+package "Application Layer" {  
+"  [API Gateway]"  
+"}"  
+  
+package "Business Layer" {  
+"  [User Service]"  
+"  [Recipe Service]"  
+"  [Health Service]"  
+"  [Community Service]"  
+"  [Recommendation Service]"  
+"  [Admin Service]"  
+"}"  
+  
+package "Model Layer" {  
+"  [Flask Model Service]"  
+"}"  
+  
+package "Data Layer" {  
+"  [MySQL Database]"  
+"  [Redis Cache]"  
+"}"  
+  
+package "External" {  
+"  [Image Storage]"  
+"}"  
+  
+"[Mobile App (Android/iOS)] --> [API Gateway]"  
+  
+"[API Gateway] --> [User Service]"  
+"[API Gateway] --> [Recipe Service]"  
+"[API Gateway] --> [Health Service]"  
+"[API Gateway] --> [Community Service]"  
+"[API Gateway] --> [Recommendation Service]"  
+"[API Gateway] --> [Admin Service]"  
+  
+"[Recipe Service] --> [Flask Model Service]"  
+"[Flask Model Service] --> [Recipe Service]"  
+  
+"[User Service] --> [MySQL Database]"  
+"[Recipe Service] --> [MySQL Database]"  
+"[Health Service] --> [MySQL Database]"  
+"[Community Service] --> [MySQL Database]"  
+"[Recommendation Service] --> [MySQL Database]"  
+"[Admin Service] --> [MySQL Database]"  
+  
+"[User Service] --> [Redis Cache]"  
+"[Recipe Service] --> [Redis Cache]"  
+"[Recommendation Service] --> [Redis Cache]"  
+  
+"[Recipe Service] --> [Image Storage]"  
+"[Community Service] --> [Image Storage]"  
+  
+note bottom  
+"Architecture based on SRS"  
+"Spring Boot for business logic"  
+"Flask for model inference"  
+"MySQL for structured data"  
+"Redis for caching"  
+end note  
+  
+@enduml 

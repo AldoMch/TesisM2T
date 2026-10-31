@@ -1,0 +1,59 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #2F3A45
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #D9ECFF
+    BorderColor #34495E
+    BorderThickness 1
+}
+
+package "Udacity Self-Driving Car Capstone\nROS Architecture" as CapstoneSystem {
+    rectangle "Car / Simulator" as CarSimulator
+
+    package "Perception" as Perception {
+        rectangle "Obstacle Detection\nROS Node" as ObstacleDetection
+        rectangle "Traffic Light\nDetection Node" as TrafficLightDetection
+    }
+
+    package "Planning" as Planning {
+        rectangle "Waypoint Loader\nROS Node" as WaypointLoader
+        rectangle "Waypoint Updater Node\nROS Node" as WaypointUpdater
+    }
+
+    package "Control" as Control {
+        rectangle "DBW Node\nDrive-by-wire" as DbwNode
+        rectangle "Waypoint Follower\nController" as WaypointFollower
+    }
+}
+
+CarSimulator --> ObstacleDetection : /image_color
+CarSimulator --> TrafficLightDetection : /image_color
+CarSimulator --> ObstacleDetection : /current_pose
+CarSimulator --> TrafficLightDetection : /current_pose
+CarSimulator --> WaypointUpdater : /current_pose
+CarSimulator --> DbwNode : /current_velocity
+CarSimulator --> DbwNode : /vehicle/dbw_enabled
+
+WaypointLoader --> ObstacleDetection : /base_waypoints
+WaypointLoader --> TrafficLightDetection : /base_waypoints
+WaypointLoader --> WaypointUpdater : /base_waypoints
+
+ObstacleDetection --> WaypointUpdater : /obstacle_waypoint
+TrafficLightDetection --> WaypointUpdater : /traffic_waypoint
+
+WaypointUpdater --> WaypointFollower : /final_waypoints
+WaypointFollower --> DbwNode : /twist_cmd
+DbwNode --> CarSimulator : /vehicle/throttle_cmd
+DbwNode --> CarSimulator : /vehicle/brake_cmd
+DbwNode --> CarSimulator : /vehicle/steering_cmd
+@enduml

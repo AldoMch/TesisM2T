@@ -1,0 +1,198 @@
+@startuml Indoor_Fitness_App_Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam packageBorderColor #4A5568
+skinparam packageFontStyle bold
+skinparam componentBackgroundColor #FFFFFF
+skinparam componentBorderColor #2D3748
+skinparam nodeBackgroundColor #EBF8FF
+skinparam nodeBorderColor #2B6CB0
+skinparam databaseBackgroundColor #FFF5F5
+skinparam databaseBorderColor #C53030
+
+title Indoor Fitness App – Layered Architecture Diagram
+
+' ─────────────────────────────────────────────
+' EXTERNAL HARDWARE NODES
+' ─────────────────────────────────────────────
+node "Mobile Device Camera\n(Hardware)" as CameraHW
+note right of CameraHW : Provides Live Video >= 30fps
+
+node "Android Target Device\n(Screen Cast Receiver)" as CastReceiver
+note right of CastReceiver : Receives Cast Input
+
+' ─────────────────────────────────────────────
+' PC CLIENT NODE (C-004, C-006)
+' ─────────────────────────────────────────────
+node "PC Client\n(Windows Environment, C-004, C-006)" as PCClient {
+  package "PC Presentation Layer" as PCPresentationLayer {
+    component "PC Dashboard / Plan Viewer\n(C-004)" as PCDashboard
+  }
+  package "PC Networking Layer" as PCNetworkLayer {
+    component "PCServerGateway\n(Unspecified Protocol)" as PCServerGateway
+  }
+}
+
+' ─────────────────────────────────────────────
+' MOBILE CLIENT
+' ─────────────────────────────────────────────
+node "Mobile Client (Android / iOS)" as MobileClient {
+
+  ' ── Presentation Layer ──────────────────────
+  package "Mobile Presentation Layer" as PresentationLayer {
+    component "MainDashboard\n(FR-001)" as MainDashboard
+    component "PlanCustomizationUI\n(FR-002)" as PlanCustomizationUI
+    component "ExerciseInterface\n(FR-005)" as ExerciseInterface
+    component "CastingControlUI\n(FR-014, FR-015)" as CastingControlUI
+    component "ReportAndPosterViewer\n(FR-009, FR-010)" as ReportAndPosterViewer
+    component "HistoryAndProfileUI\n(FR-011, FR-012)" as HistoryAndProfileUI
+  }
+
+  ' ── Processing Layer ────────────────────────
+  package "Mobile Processing Layer" as ProcessingLayer {
+    component "CameraCapture\n(FR-003, C-001)" as CameraCapture
+    component "PoseEstimationEngine\n(FR-004, NFR-002, NFR-003, NFR-004)" as PoseEstimationEngine
+    component "StandardSkeletonCache\n(FR-004)" as StandardSkeletonCache
+    component "PostureEvaluator\n(FR-004, NFR-005, NFR-006, NFR-007)" as PostureEvaluator
+    component "PostureStickDiagramRenderer\n(FR-005)" as PostureStickDiagramRenderer
+    component "ExerciseStateMonitor\n(FR-006)" as ExerciseStateMonitor
+    component "ExerciseTimerCountdown\n(FR-005)" as ExerciseTimerCountdown
+    component "VoicePromptEngine\n(FR-008)" as VoicePromptEngine
+    component "CastingStreamEncoder\n(FR-015, NFR-010)" as CastingStreamEncoder
+  }
+
+  ' ── Networking / Communication Layer ────────
+  package "Networking / Communication Layer" as NetworkLayer {
+    component "AppServerGateway\n(Unspecified Protocol)" as AppServerGateway
+    component "LANDeviceDiscovery\n(FR-014, C-002)" as LANDeviceDiscovery
+    component "CastingCommandChannel\n(NFR-011, <= 50ms)" as CastingCommandChannel
+  }
+
+}
+
+' ─────────────────────────────────────────────
+' SERVER
+' ─────────────────────────────────────────────
+node "Server Hardware Platform\n(CPU >= Pentium 900M, RAM >= 256MB, C-003)" as ServerHW {
+
+  ' ── Server Application Layer ────────────────
+  package "Server-Side Application Layer" as AppLayer {
+    component "PlanRecommendationService\n(FR-007, FR-008, NFR-008, <= 1s)" as PlanRecommendationService
+    component "ReportAndPosterService\n(FR-009, FR-010, NFR-009, <= 3s)" as ReportAndPosterService
+    component "AuthAndPermissionService\n(FR-013, NFR-012, NFR-013)" as AuthAndPermissionService
+  }
+
+  ' ── Data Layer ──────────────────────────────
+  package "Data Layer" as DataLayer {
+    database "UserDataStore\n(DR-002)" as UserDataStore
+    database "TrainingPlanStore\n(DR-005)" as TrainingPlanStore
+    database "HistoricalRecordStore\n(DR-004, DR-007)" as HistoricalRecordStore
+    database "StandardMovementRepository\n(DR-001)" as StandardMovementRepository
+    database "MediaMaterialStore\n(DR-006)" as MediaMaterialStore
+    database "ExerciseVideoStore\n(DR-003)" as ExerciseVideoStore
+    database "RolePermissionStore\n(FR-013)" as RolePermissionStore
+
+    database "SQL-Style Database Engine\n[Product Unspecified]" as SQLDB
+  }
+
+}
+
+' ─────────────────────────────────────────────
+' INTRA-MOBILE: Presentation → Processing
+' ─────────────────────────────────────────────
+PlanCustomizationUI  --> AppServerGateway     : browse standard videos & assemble plan
+MainDashboard        --> AppServerGateway     : load plan preview
+HistoryAndProfileUI  --> AppServerGateway     : fetch history & profile
+ReportAndPosterViewer --> AppServerGateway    : retrieve reports & posters
+CastingControlUI     --> LANDeviceDiscovery   : initiates LAN search
+CastingControlUI     --> CastingStreamEncoder : starts cast
+
+' Camera capture feeds ExerciseInterface for display
+CameraCapture        --> ExerciseInterface    : live camera feed for display
+
+' ExerciseInterface receives rendered outputs
+PostureStickDiagramRenderer --> ExerciseInterface : rendered stick diagram
+ExerciseTimerCountdown      --> ExerciseInterface : remaining action time
+ExerciseStateMonitor        --> ExerciseInterface : rep count & session state
+
+' ─────────────────────────────────────────────
+' INTRA-MOBILE: Processing pipeline
+' ─────────────────────────────────────────────
+CameraHW             --> CameraCapture        : raw video frames >= 30fps
+CameraCapture        --> PoseEstimationEngine : video frames >= 30fps
+PoseEstimationEngine --> PostureEvaluator     : skeleton keypoints
+StandardSkeletonCache --> PostureEvaluator    : cached standard skeleton templates
+PostureEvaluator     --> PostureStickDiagramRenderer : scored posture & keypoints
+PostureEvaluator     --> ExerciseStateMonitor : scored posture data
+ExerciseStateMonitor --> AppServerGateway     : session results & state
+ExerciseStateMonitor --> ExerciseTimerCountdown : action state updates
+
+' Voice prompt triggered by plan recommendation / state monitor
+ExerciseStateMonitor --> VoicePromptEngine    : exercise state events
+VoicePromptEngine    --> ExerciseInterface    : audio prompt output (FR-008)
+
+' Standard skeleton templates fetched once and cached locally
+AppServerGateway     --> StandardSkeletonCache : fetch standard skeleton templates (one-time/refresh)
+
+' Casting pipeline: ExerciseInterface content fed into encoder
+ExerciseInterface    --> CastingStreamEncoder : screen content to encode
+ExerciseStateMonitor --> CastingStreamEncoder : real-time exercise state for cast
+LANDeviceDiscovery   --> CastingCommandChannel : established connection context
+LANDeviceDiscovery   --> CastingStreamEncoder  : provides active connection
+CastingCommandChannel --> CastingStreamEncoder : cast control commands
+CastingStreamEncoder --> CastReceiver          : encoded video stream <= 100ms
+CastingCommandChannel --> CastReceiver         : control commands <= 50ms
+
+' ─────────────────────────────────────────────
+' MOBILE → SERVER: Gateway to Application Layer
+' ─────────────────────────────────────────────
+AppServerGateway --> PlanRecommendationService : session data / plan requests
+AppServerGateway --> ReportAndPosterService    : training material & video upload
+AppServerGateway --> AuthAndPermissionService  : login / register / permissions
+
+' ─────────────────────────────────────────────
+' SERVER: Application Layer → Data Layer
+' ─────────────────────────────────────────────
+PlanRecommendationService --> TrainingPlanStore          : persist & retrieve plans
+PlanRecommendationService --> HistoricalRecordStore      : read prior session records
+PlanRecommendationService --> UserDataStore              : read user profile & physical condition (DR-002)
+
+ReportAndPosterService    --> MediaMaterialStore         : read source / write artifacts
+ReportAndPosterService    --> ExerciseVideoStore         : read captured exercise video (DR-003)
+ReportAndPosterService    --> HistoricalRecordStore      : read posture & plan data
+ReportAndPosterService    --> TrainingPlanStore          : read plan data for report (DR-005)
+ReportAndPosterService    --> UserDataStore              : read user body info for report (DR-002)
+
+AuthAndPermissionService  --> UserDataStore              : user credentials & profiles
+AuthAndPermissionService  --> RolePermissionStore        : role & permission management (FR-013)
+AuthAndPermissionService  --> TrainingPlanStore          : enforce plan access control
+AuthAndPermissionService  --> HistoricalRecordStore      : enforce history access control (DR-007)
+
+' Standard movement served via gateway
+AppServerGateway          --> StandardMovementRepository : serve standard skeletons
+
+' Exercise video uploaded and stored
+AppServerGateway          --> ExerciseVideoStore         : persist captured exercise video (DR-003)
+
+' ─────────────────────────────────────────────
+' DATA LAYER → DB ENGINE
+' ─────────────────────────────────────────────
+UserDataStore              --> SQLDB : SQL queries
+TrainingPlanStore          --> SQLDB : SQL queries
+HistoricalRecordStore      --> SQLDB : SQL queries
+StandardMovementRepository --> SQLDB : SQL queries
+MediaMaterialStore         --> SQLDB : SQL queries
+ExerciseVideoStore         --> SQLDB : SQL queries
+RolePermissionStore        --> SQLDB : SQL queries
+
+' ─────────────────────────────────────────────
+' PC CLIENT → SERVER
+' ─────────────────────────────────────────────
+PCDashboard    --> PCServerGateway       : load plan / history / reports
+PCServerGateway --> PlanRecommendationService : plan requests
+PCServerGateway --> ReportAndPosterService    : retrieve reports & posters
+PCServerGateway --> AuthAndPermissionService  : login / permissions
+
+@enduml

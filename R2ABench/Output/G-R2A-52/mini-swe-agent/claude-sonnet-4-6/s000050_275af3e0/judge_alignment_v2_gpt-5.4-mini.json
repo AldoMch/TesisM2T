@@ -1,0 +1,308 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Host Environment::kAFL Hypervisor\\n(kAFL-based)"
+      ],
+      "gt_nodes": [
+        "Global::KVM (L0)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::Hyper-V Networking Path\\n(netvsc / VMBus)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::Crash Monitor Driver\\n(crash-monitoring)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::VMSwitch\\n(vmswitch.sys)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ],
+      "predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::Child Partition Harness\\n(fuzzing driver)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Crash Monitoring Feedback Handler"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::Embedded Forkserver\\n(kAFL hypercall mapper)",
+        "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::initrd Builder\\n(target + shared libs)",
+        "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::initrd Image\\n(target binary + libs)",
+        "hAFL2 Fuzzing Platform::Test & Control Layer::Launch Scripts\\n(bash)",
+        "hAFL2 Fuzzing Platform::Test & Control Layer::Standalone Test Runner\\n(test.py)",
+        "hAFL2 Fuzzing Platform::Test & Control Layer::kAFL-Fuzzer\\n(pytest test suite)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::hAFL2"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Host Environment::kAFL Hypervisor\\n(kAFL-based)"
+      ],
+      "gt_node": "Global::KVM (L0)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::Hyper-V Networking Path\\n(netvsc / VMBus)",
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::VMSwitch\\n(vmswitch.sys)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::Child Partition Harness\\n(fuzzing driver)",
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::loader.exe\\n(snapshot creator)",
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::packet_sender.exe\\n(IOCTL trigger)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::Child Partition Harness\\n(fuzzing driver)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::Crash Monitor Driver\\n(crash-monitoring)",
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::Hyper-V Networking Path\\n(netvsc / VMBus)",
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::VMSwitch\\n(vmswitch.sys)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Crash Monitoring Feedback Handler"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::VMSwitch\\n(vmswitch.sys)"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::Embedded Forkserver\\n(kAFL hypercall mapper)",
+        "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::initrd Builder\\n(target + shared libs)",
+        "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::initrd Image\\n(target binary + libs)",
+        "hAFL2 Fuzzing Platform::Test & Control Layer::Launch Scripts\\n(bash)",
+        "hAFL2 Fuzzing Platform::Test & Control Layer::Standalone Test Runner\\n(test.py)",
+        "hAFL2 Fuzzing Platform::Test & Control Layer::kAFL-Fuzzer\\n(pytest test suite)"
+      ],
+      "gt_node": "KVM (L0)::hAFL2"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "Build Toolchain::Visual Studio\\n(Windows driver build)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Build Toolchain::compile.sh\\n(bash script)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Fuzzing Operator",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Host Environment::Host Shared Libraries",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Host Environment::kAFL Hypervisor\\n(kAFL-based)",
+      "reference_nodes": [
+        "Global::KVM (L0)",
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Crash Monitoring Feedback Handler",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::Embedded Forkserver\\n(kAFL hypercall mapper)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::initrd Builder\\n(target + shared libs)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Linux Userspace Fuzzing Workflow::initrd Image\\n(target binary + libs)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Test & Control Layer::Launch Scripts\\n(bash)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Test & Control Layer::Standalone Test Runner\\n(test.py)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Test & Control Layer::kAFL-Fuzzer\\n(pytest test suite)",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::Child Partition Harness\\n(fuzzing driver)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::loader.exe\\n(snapshot creator)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::packet_sender.exe\\n(IOCTL trigger)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::Crash Monitor Driver\\n(crash-monitoring)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::Hyper-V Networking Path\\n(netvsc / VMBus)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys",
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Root Partition VM::VMSwitch\\n(vmswitch.sys)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys",
+        "KVM (L0)::Hyper-V (L1) - Host",
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1526,
+      "completion_tokens": 188,
+      "total_tokens": 1714,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Build Toolchain::Visual Studio\\n(Windows driver build)",
+    "Build Toolchain::compile.sh\\n(bash script)",
+    "Global::Fuzzing Operator",
+    "Host Environment::Host Shared Libraries",
+    "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::loader.exe\\n(snapshot creator)",
+    "hAFL2 Fuzzing Platform::Windows Hyper-V Fuzzing Workflow::Child Partition VM::packet_sender.exe\\n(IOCTL trigger)"
+  ],
+  "_provenance": {
+    "fingerprint": "fcff61a918048a5dcc51b4c55e897386aece6d7fdb82ca877e2622ddf673a045",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

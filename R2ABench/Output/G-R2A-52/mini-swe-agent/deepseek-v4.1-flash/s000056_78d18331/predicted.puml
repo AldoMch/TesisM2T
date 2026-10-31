@@ -1,0 +1,85 @@
+@startuml
+title host-scanner (kubescape) - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ===================== External Actors / Clients =====================
+package "External Clients & Systems" as EXT {
+  [HTTP Client] as HTTPCLIENT
+  [Kubernetes Operator\n(kubectl / DaemonSet deploy)] as OPERATOR
+  [End-to-End Test Suite\n(Go build-tag selected)] as E2E
+  [Kubernetes Node Host\n/filesystem & runtime state] as NODEHOST
+  [Container Runtime\n(kubelet / containerd / CRI-O)] as RUNTIME
+}
+
+' ===================== Interface Layer =====================
+package "Interface Layer (HTTP)" as IFACE {
+  [HTTP API Server\n(standard HTTP GET handling)] as HTTPSRV
+  [Endpoint Router\n(known paths / unknown path -> 404)] as ROUTER
+  [JSON Response Serializer] as JSONSER
+}
+
+' ===================== Application Layer =====================
+package "Application / Domain Layer" as APP {
+  [Host Info Collection Service] as HOSTSVC
+  [CNI Directory Resolver] as CNIRES
+  [Control-Plane Data Sanitizer\n(encryption provider secret removal)] as SANITIZER
+}
+
+' ===================== Adapter / Infrastructure Layer =====================
+package "Adapter / Host Access Layer" as ADAPTER {
+  [Runtime Detection Adapter] as RTADAPT
+  [Process Argument Reader] as ARGREADER
+  [Configuration File Reader] as CFGREADER
+  [Default Configuration Provider] as DEFAULTS
+  [Host Filesystem Access] as FSACCESS
+}
+
+' ===================== Data / Configuration Stores =====================
+package "Data Stores & Host Paths" as DATA {
+  database "Host Configuration Files\n(/etc, /run, /var/lib)" as HOSTCFG
+  database "CNI Directory Paths\n(/etc/cni/, /var/lib/cni/, subpaths)" as CNIPATHS
+  database "Control-Plane JSON Data" as CPJSON
+  database "Sanitized JSON Output\n(secrets removed)" as SANJSON
+}
+
+' ===================== Build / Test Concerns =====================
+package "Build & Verification Concerns" as BUILD {
+  [Go Build Tags\n(//go:build <provider>)] as BUILDTAG
+  [Provider-Specific Expected Data] as PROVIDERDATA
+}
+
+' ===================== Relationships =====================
+HTTPCLIENT --> HTTPSRV : GET requests\n(incl. /doesnotexist)
+E2E --> HTTPSRV : HTTP endpoint tests
+OPERATOR --> HOSTSVC : deploy privileged DaemonSet\n(no GUI)
+
+HTTPSRV --> ROUTER
+ROUTER --> HOSTSVC : dispatch endpoint request
+ROUTER --> JSONSER : unknown path -> HTTP 404
+HOSTSVC --> CNIRES
+HOSTSVC --> SANITIZER
+JSONSER --> SANJSON : HTTP 200 + JSON body
+
+CNIRES --> RTADAPT
+CNIRES --> ARGREADER
+CNIRES --> CFGREADER
+CNIRES --> DEFAULTS
+CNIRES --> CNIPATHS : resolved CNI directory
+
+RTADAPT --> RUNTIME
+RTADAPT --> FSACCESS
+ARGREADER --> FSACCESS
+CFGREADER --> FSACCESS
+FSACCESS --> NODEHOST
+FSACCESS --> HOSTCFG
+
+SANITIZER --> CPJSON : control-plane JSON input
+SANITIZER --> SANJSON : sanitized JSON (FR-003 / NFR-001)
+
+BUILDTAG --> E2E : selects provider expectations
+PROVIDERDATA --> E2E
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml
+title Airflow–Spark Integration (Docker Compose)
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+left to right direction
+
+actor "Data Engineer" as User
+
+rectangle "Docker Compose 3.7 Environment" as Compose {
+  database "Postgres\n(port 5432)\nAirflow metadata" as PG
+
+  component "Airflow Webserver + Scheduler\n(LocalExecutor)\nHTTP 8282\nPySpark installed" as Airflow
+
+  frame "Spark Standalone Cluster\n(Spark 2.4.5 / Hadoop 2.6)" as SparkCluster {
+    component "Spark Master\ncluster: 7077\nUI: 8181\nhostname: spark" as Master
+    component "Spark Worker 1" as Worker1
+    component "Spark Worker 2" as Worker2
+    component "Spark Worker 3" as Worker3
+    note right of Worker3
+      Additional workers can be added following the same pattern.
+    end note
+  }
+
+  component "Jupyter / PySpark Notebook\nHTTP 8888\nSpark App UIs 4040-4080" as Jupyter
+
+  folder "DAGs" as DAGs
+  folder "Spark Applications" as Apps
+  folder "Notebooks" as NB
+  folder "Input Data" as Data
+}
+
+User --> Airflow : HTTP 8282
+User --> Jupyter : HTTP 8888
+
+Airflow --> PG : Metadata (SQL)
+Airflow --> Master : Submit Spark apps\nSparkSubmitOperator via 'spark_default'\nspark://spark:7077
+
+Jupyter --> Master : Interactive PySpark jobs
+
+Master --> Worker1 : Dispatch workloads
+Master --> Worker2 : Dispatch workloads
+Master --> Worker3 : Dispatch workloads
+Worker1 --> Master : Register
+Worker2 --> Master : Register
+Worker3 --> Master : Register
+
+DAGs ..> Airflow : mounted
+Apps ..> Airflow : read
+Apps ..> Master : read
+Apps ..> Worker1 : read
+Apps ..> Worker2 : read
+Apps ..> Worker3 : read
+NB ..> Jupyter : mounted
+Data ..> Airflow : read
+Data ..> Jupyter : read/write
+Data ..> Worker1 : read
+Data ..> Worker2 : read
+Data ..> Worker3 : read
+
+note right of Airflow
+ Uses SparkSubmitOperator
+ Connection: spark_default -> spark://spark:7077
+ Includes pyspark for in-container spark-submit
+end note
+
+note right of Master
+ Web UI 8181; cluster endpoint 7077
+end note
+
+note bottom of Compose
+ Local dev/test only: Spark RPC auth/encryption and SSL disabled
+end note
+
+@enduml

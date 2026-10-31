@@ -1,0 +1,120 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #555555
+skinparam rectangleBackgroundColor #FAFAFA
+skinparam componentBackgroundColor #DDEEFF
+skinparam componentBorderColor #336699
+skinparam databaseBackgroundColor #FFF0CC
+skinparam databaseBorderColor #CC8800
+skinparam actorBackgroundColor #E8F5E9
+skinparam actorBorderColor #2E7D32
+skinparam cloudBackgroundColor #F3E5F5
+skinparam cloudBorderColor #7B1FA2
+skinparam nodeBackgroundColor #FFF8E1
+skinparam nodeBorderColor #F57F17
+skinparam arrowColor #444444
+skinparam linetype ortho
+
+actor "Epidemiological\nForm Filler" as Filler
+actor "Epidemiological\nAnalyst" as Analyst
+
+rectangle "Web Browser Client" {
+    rectangle "Epidemiological Reporting Module" as ReportingModule {
+        component "Outbreak Reporting Form\n(Basic / Disease / Itinerary /\nImported-Case Info)" as ReportForm
+        component "Investigation Prompt\n(High-Risk Area Activity Hints)" as InvPrompt
+        component "Address Confirmation\n(Map Candidate Display)" as AddrConfirm
+    }
+
+    rectangle "Case Management Module" as CaseMgmt {
+        component "Case Information List\n(Name / ID / Gender / Phone /\nAge / Residence / Status)" as CaseList
+        component "Search / Sort / Filter\n(by Name / Age / Gender)" as SearchFilter
+        component "Case Edit & Completion" as CaseEdit
+    }
+
+    rectangle "Individual Case Analysis Module" as IndivAnalysis {
+        component "Itinerary Visualization\n(Daily Path on Map)" as ItinViz
+        component "Associated Case Query\n(Spatial & Temporal Threshold)" as AssocQuery
+        component "Case Relationship Graph\n(Central Node + Co-Occurrence)" as RelGraph
+    }
+
+    rectangle "Overall Analysis Module" as OverallAnalysis {
+        component "Regional Flow Map\n(Algorithm-Generated)" as FlowMap
+        component "Case Clustering Graph\n(Algorithm-Generated)" as ClusterGraph
+        component "Data Quality Prompt\n(Missing / Problematic Data Alert)" as DataQualityPrompt
+    }
+
+    rectangle "Outbreak Overview Module" as OutbreakOverview {
+        component "Outbreak Heat Map\n(Stopover Count / Color Depth)" as HeatMap
+        component "Temperature & Humidity\nTrend Line Chart" as TempHumidity
+        component "Age Distribution\nPie Chart" as AgeDist
+        component "Occupation Distribution\nPie Chart" as OccDist
+        component "Transportation Statistics\nBar Chart" as TransStats
+    }
+}
+
+rectangle "Backend Server" as Backend {
+    component "API Gateway\n(Request Routing /\nEncryption / IP Cooldown)" as APIGateway
+    rectangle "Application Services" as AppServices {
+        component "Case Service\n(CRUD / Formatting /\nData Validation)" as CaseService
+        component "Itinerary & Association Service\n(Path Query / Threshold Filtering)" as ItinService
+        component "Analysis Orchestration Service\n(Trigger Algorithm Module /\nData Quality Check)" as AnalysisService
+        component "Chart & Statistics Service\n(Aggregate Case / Climate /\nAge / Occupation / Transport Data)" as ChartService
+    }
+    component "Failover Manager\n(Backup Server Switch < 20 min)" as Failover
+}
+
+database "Backend Database" as DB {
+    component "Case Investigation Records\n(Basic / Disease / Itinerary /\nImported-Case)" as CaseDB
+    component "Association & Itinerary Data\n(Spatial / Temporal Entries)" as AssocDB
+    component "Statistical & Climate Data\n(Temperature / Humidity /\nOccupation / Transport)" as StatDB
+}
+
+rectangle "Algorithm Module" as AlgoModule {
+    component "Regional Flow Map\nGenerator" as FlowAlgo
+    component "Case Clustering\nEngine" as ClusterAlgo
+}
+
+cloud "External Map Service\n(Geographic Visualization)" as MapService
+
+node "Backup Server" as BackupServer
+
+Filler --> ReportForm
+Filler --> AddrConfirm
+Analyst --> CaseList
+Analyst --> IndivAnalysis
+Analyst --> OverallAnalysis
+Analyst --> OutbreakOverview
+
+ReportingModule --> APIGateway
+CaseMgmt --> APIGateway
+IndivAnalysis --> APIGateway
+OverallAnalysis --> APIGateway
+OutbreakOverview --> APIGateway
+
+APIGateway --> CaseService
+APIGateway --> ItinService
+APIGateway --> AnalysisService
+APIGateway --> ChartService
+
+CaseService --> CaseDB
+ItinService --> CaseDB
+ItinService --> AssocDB
+AnalysisService --> CaseDB
+AnalysisService --> AssocDB
+ChartService --> CaseDB
+ChartService --> StatDB
+
+AnalysisService --> AlgoModule
+AlgoModule --> FlowAlgo
+AlgoModule --> ClusterAlgo
+
+AddrConfirm --> MapService
+ItinViz --> MapService
+HeatMap --> MapService
+
+FlowMap ..> DataQualityPrompt : error if data missing
+ClusterGraph ..> DataQualityPrompt : error if data missing
+
+Failover --> BackupServer : switches within 20 min\non unexpected event
+
+@enduml

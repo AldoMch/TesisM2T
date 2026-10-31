@@ -1,0 +1,107 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+skinparam roundcorner 15
+skinparam shadowing false
+skinparam linetype ortho
+
+title Gran-Book Backend System Architecture
+
+package "GCP Infrastructure" {
+  [Load Balancer] as LB
+  [GKE Cluster] as GKE
+  [GCE Virtual Machine] as GCE_VM
+  [Cloud Storage] as OBJECT_STORAGE
+}
+
+package "Client Applications" {
+  [Native Mobile Apps] as MOBILE
+  [Administrative Web App] as ADMIN_WEB
+}
+
+package "Gateway / BFF Layer" {
+  [API Gateway / BFF] as GATEWAY
+}
+
+package "Backend Services (Containerized)" {
+  [Authentication API] as AUTH_API
+  [User Management API] as USER_API
+  [Book Management API] as BOOK_API
+  [EC Site API] as EC_API
+  [Support API] as SUPPORT_API
+  [Notification Service] as NOTIFY_SVC
+}
+
+package "Data Stores" {
+  database "MySQL" as MYSQL {
+    [User Data]
+    [Book Data]
+    [EC Site Data]
+  }
+  database "NoSQL Storage" as NOSQL {
+    [Message Data]
+  }
+  [Firebase Authentication] as FIREBASE_AUTH
+}
+
+package "External Integrations" {
+  [Book-Search API] as BOOK_SEARCH
+  [Stripe Payment] as STRIPE
+  [Push Notification Provider] as PUSH
+  [Email Notification Provider] as EMAIL
+}
+
+' Client Connections
+MOBILE --> GATEWAY : API Calls
+ADMIN_WEB --> GATEWAY : API Calls
+
+' Gateway to Backend Services
+GATEWAY --> AUTH_API
+GATEWAY --> USER_API
+GATEWAY --> BOOK_API
+GATEWAY --> EC_API
+GATEWAY --> SUPPORT_API
+
+' Backend Service to Data Store Connections
+AUTH_API --> FIREBASE_AUTH : Authenticate
+USER_API --> MYSQL : CRUD User Data
+BOOK_API --> MYSQL : CRUD Book Data
+EC_API --> MYSQL : CRUD EC Data
+SUPPORT_API --> NOSQL : CRUD Message Data
+BOOK_API --> OBJECT_STORAGE : Store/Retrieve Thumbnails
+
+' Backend Service to External Integrations
+BOOK_API --> BOOK_SEARCH : Search Query
+EC_API --> STRIPE : Payment Processing
+NOTIFY_SVC --> PUSH : Send Notification
+NOTIFY_SVC --> EMAIL : Send Email
+USER_API --> NOTIFY_SVC : Trigger Notification
+EC_API --> NOTIFY_SVC : Trigger Notification
+SUPPORT_API --> NOTIFY_SVC : Trigger Notification
+
+' Infrastructure Hosting
+LB --> GKE : Routes Traffic
+GKE ..> AUTH_API : Hosts
+GKE ..> USER_API : Hosts
+GKE ..> BOOK_API : Hosts
+GKE ..> EC_API : Hosts
+GKE ..> SUPPORT_API : Hosts
+GKE ..> NOTIFY_SVC : Hosts
+GCE_VM ..> GATEWAY : Hosts (Node.js)
+GCE_VM ..> LB : Manages Certificates\n(Let's Encrypt DNS-01)
+
+' Operational Access
+note right of GKE
+  Access via documented
+  GKE credential retrieval
+end note
+
+note right of GCE_VM
+  Setup via Cloud SDK
+  TLS Certificate Management
+end note
+
+@enduml

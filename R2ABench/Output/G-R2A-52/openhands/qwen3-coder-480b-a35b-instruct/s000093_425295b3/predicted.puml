@@ -1,0 +1,47 @@
+@startuml
+!theme plain
+skinparam componentStyle rectangle
+
+' Define the main components
+component "User Application" as user_app
+component "VMT Manager" as vmt_manager
+component "VMT Driver" as vmt_driver
+component "SteamVR/OpenVR Runtime" as steamvr_runtime
+
+' Define the interfaces
+interface "OSC Interface" as osc_interface
+interface "Shared Memory (JSON)" as shared_memory
+interface "OpenVR Driver Interface" as openvr_interface
+
+' Define the relationships
+user_app --> osc_interface : Provides\ncontrol input
+osc_interface --> vmt_manager : Receives\nexternal input
+
+vmt_manager --> shared_memory : Exchanges JSON\nmessages
+shared_memory --> vmt_driver : Exchanges JSON\nmessages
+
+vmt_driver --> openvr_interface : Integrates with\nruntime
+openvr_interface --> steamvr_runtime : Loaded by
+
+' Add notes for additional context
+note right of vmt_manager
+  - Receives external control input
+  - Manages communication with driver
+  - Exchanges JSON messages through shared memory
+end note
+
+note right of vmt_driver
+  - Exposes virtual motion tracking to SteamVR
+  - Integrates through OpenVR driver interface
+  - Loads legacy controller binding for 'mycontroller'
+end note
+
+note bottom of shared_memory
+  - Bidirectional JSON communication
+  - Synchronization fields:
+    * Send count
+    * Handshake count
+    * Message length
+end note
+
+@enduml

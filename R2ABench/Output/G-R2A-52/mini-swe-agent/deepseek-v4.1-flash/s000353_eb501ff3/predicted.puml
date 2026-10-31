@@ -1,0 +1,106 @@
+@startuml
+title Turing - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =========================================================
+' Actors / Clients
+' =========================================================
+actor "API Client" as ApiClient
+actor "Platform Operator" as Operator
+actor "Ensembler User" as EnsUser
+
+' =========================================================
+' External Systems
+' =========================================================
+package "External Systems" <<Cloud>> {
+  component "Kubernetes Cluster" as K8s
+  component "MLflow Model Registry" as MLflow
+  component "Jaeger Tracing Backend" as Jaeger
+}
+
+' =========================================================
+' Presentation / API Layer
+' =========================================================
+package "Turing API Service" {
+  package "API Layer (HTTP / OpenAPI 3.0.3)" {
+    component "HTTP API Server" as ApiServer
+    component "OpenAPI Router / Handlers" as OpenApiRouter
+  }
+
+  package "Middleware Layer" {
+    component "Authorization Middleware" as AuthMW
+    component "OpenAPI Request Validation Middleware" as ValidationMW
+  }
+
+  package "Service Layer" {
+    component "Router Service" as RouterService
+    component "Ensembler Service" as EnsemblerService
+  }
+
+  package "Cluster / Deployment Layer" {
+    component "Router Deployment Controller" as DeployController
+  }
+
+  package "Tracing" {
+    component "Jaeger Client" as JaegerClient
+  }
+}
+
+' =========================================================
+' PyFuncEnsembler Runtime
+' =========================================================
+package "PyFuncEnsembler Runtime" {
+  component "PyFuncEnsembler Webservice" as PyFuncEnsembler
+  component "Docker Image Builder" as ImageBuilder
+}
+
+' =========================================================
+' Data Layer
+' =========================================================
+database "Router Store" as RouterStore
+database "Ensembler Store" as EnsemblerStore
+
+' =========================================================
+' Relationships
+' =========================================================
+ApiClient --> ApiServer : HTTP / JSON
+Operator --> ApiServer : HTTP / JSON
+EnsUser --> PyFuncEnsembler : use with Turing routers
+
+ApiServer --> AuthMW
+ApiServer --> ValidationMW
+AuthMW --> OpenApiRouter
+ValidationMW --> OpenApiRouter
+
+OpenApiRouter --> RouterService : list routers (FR-001)
+OpenApiRouter --> EnsemblerService : CRUD ensemblers (FR-002..FR-005)
+
+RouterService --> RouterStore : project-scoped routers
+RouterService --> DeployController : deployment lifecycle
+EnsemblerService --> EnsemblerStore : Ensembler / EnsemblerId
+EnsemblerService --> PyFuncEnsembler : expose as webservice (FR-006)
+
+DeployController --> K8s : create / update / delete router deployments (FR-007)
+
+ImageBuilder --> MLflow : download model artifacts (C-003)
+ImageBuilder --> PyFuncEnsembler : package / run (Docker)
+PyFuncEnsembler --> RouterStore : used by routers
+
+JaegerClient --> Jaeger : traces (NFR-002)
+RouterService --> JaegerClient : tracing
+
+note right of PyFuncEnsembler
+  Router user container default port 8080
+  overridable via ports.containerPort
+  (NFR-003 / C-004)
+end note
+
+note right of OpenApiRouter
+  API constrained to OpenAPI-defined
+  endpoints and schemas v3.0.3
+  (C-001 / NFR-004)
+end note
+
+@enduml

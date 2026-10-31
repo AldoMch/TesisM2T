@@ -1,0 +1,60 @@
+@startuml
+skinparam componentStyle rectangle
+title JSeats Seat Allocation Architecture (Layered Component Diagram)
+
+actor "CLI User" as CLIUser
+actor "Java API Caller" as APICaller
+
+package "Interface Layer" {
+  component "CLI Launcher" as CLI
+  component "Java Allocation API" as API
+}
+
+package "Processing Layer" {
+  component "Processor Orchestrator\n(Filtering, Allocation, Decoration)" as Orchestrator
+  component "Tally Filter Pipeline" as Filters
+  component "Allocation Methods\n(Contract + Implementations)" as Methods
+  component "Tie-breaking Rules" as Tie
+  component "Result Decorator Pipeline" as Decorators
+}
+
+package "Data & IO Layer" {
+  component "Tally Model" as Tally
+  component "Result Model" as Result
+  component "Processor Configuration\n(Properties)" as Props
+  component "XML IO (Tally.fromXML,\nConfig/Result IO)" as XMLIO
+}
+
+database "File System" as FS
+
+CLIUser --> CLI
+APICaller --> API
+
+CLI --> API
+API --> Orchestrator
+
+Orchestrator --> Filters
+Orchestrator --> Methods
+Orchestrator --> Decorators
+Orchestrator --> Tie
+
+Filters --> Tally
+Methods --> Result
+Decorators --> Result
+
+API --> Tally
+API --> Props
+
+CLI --> XMLIO
+API --> XMLIO
+XMLIO --> Tally
+XMLIO --> Result
+XMLIO --> Props
+XMLIO --> FS
+
+note right of Methods
+  Methods process a protected view of Tally
+  and may raise SeatAllocationException on failure.
+end note
+
+@enduml

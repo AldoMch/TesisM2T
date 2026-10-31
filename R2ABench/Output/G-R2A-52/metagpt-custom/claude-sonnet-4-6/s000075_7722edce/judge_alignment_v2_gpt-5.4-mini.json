@@ -1,0 +1,338 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::EditorSPA\\n(TypeScript / React SPA)",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::ControlsSlice",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::DisplaysSlice\\n(key, available, resolution_x,\\nresolution_y, display_data,\\nrotation)",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::ElementsSlice",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::GaugesSlice",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::LayoutsSlice",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::ReduxMiddleware\\n(thunks / HTTP dispatch)",
+        "External Systems::Human User\\n(Browser)"
+      ],
+      "gt_nodes": [
+        "Statlord::Browser Editor\\nLayout authoring"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::DisplayAPI\\n(key, available, resolution,\\ncurrent_layout, display_data,\\nrotation)"
+      ],
+      "gt_nodes": [
+        "Statlord::Server::Display Resource\\nresolution and state"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::GaugeAPI\\n(key, value)"
+      ],
+      "gt_nodes": [
+        "Statlord::Server::Gauge Resource\\nkey, value"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::LayoutAPI\\n(key, data, display_positions)"
+      ],
+      "gt_nodes": [
+        "Statlord::Server::Layout Resource\\ndata and display positions"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Persistence Layer::PostgreSQLDatabase\\n(Gauge | Display | Layout)\\n<<database>>"
+      ],
+      "gt_nodes": [
+        "Statlord::Server::PostgreSQL\\npersistent models"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::DjangoServer\\n(manage.py runserver)",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::StaticAssetHost\\n(Django static file serving\\ncapability)"
+      ],
+      "gt_nodes": [
+        "Statlord::Server::Python / Django API"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "External Systems::HeadlessBrowser\\n(automated rendering)"
+      ],
+      "gt_nodes": [
+        "Statlord::Viewer Instances\\nheadless browsers"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Statlord::Displays\\nOLED, e-paper, LCD, browser"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::External Systems"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "Build Toolchain\\n(Node.js / npm)\\n[image-build-time only]::npm install + npm run build\\n→ produces /static/ assets",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Container Image\\n(baked static assets)::Built SPA Assets\\n(HTML / JS / CSS)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::EditorSPA\\n(TypeScript / React SPA)",
+      "reference_nodes": [
+        "Statlord::Browser Editor\\nLayout authoring"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::ControlsSlice",
+      "reference_nodes": [
+        "Statlord::Browser Editor\\nLayout authoring"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::DisplaysSlice\\n(key, available, resolution_x,\\nresolution_y, display_data,\\nrotation)",
+      "reference_nodes": [
+        "Statlord::Server::Display Resource\\nresolution and state"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::ElementsSlice",
+      "reference_nodes": [
+        "Statlord::Browser Editor\\nLayout authoring"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::GaugesSlice",
+      "reference_nodes": [
+        "Statlord::Server::Gauge Resource\\nkey, value"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::LayoutsSlice",
+      "reference_nodes": [
+        "Statlord::Server::Layout Resource\\ndata and display positions"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::ReduxMiddleware\\n(thunks / HTTP dispatch)",
+      "reference_nodes": [
+        "Statlord::Browser Editor\\nLayout authoring",
+        "Statlord::Server::Python / Django API"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Persistence Layer::PostgreSQLDatabase\\n(Gauge | Display | Layout)\\n<<database>>",
+      "reference_nodes": [
+        "Statlord::Server::PostgreSQL\\npersistent models"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::DjangoServer\\n(manage.py runserver)",
+      "reference_nodes": [
+        "Statlord::Server::Python / Django API"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::DisplayAPI\\n(key, available, resolution,\\ncurrent_layout, display_data,\\nrotation)",
+      "reference_nodes": [
+        "Statlord::Server::Display Resource\\nresolution and state"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::GaugeAPI\\n(key, value)",
+      "reference_nodes": [
+        "Statlord::Server::Gauge Resource\\nkey, value"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::LayoutAPI\\n(key, data, display_positions)",
+      "reference_nodes": [
+        "Statlord::Server::Layout Resource\\ndata and display positions"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::StaticAssetHost\\n(Django static file serving\\ncapability)",
+      "reference_nodes": [
+        "Statlord::Server::Python / Django API"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime\\n(Docker / Python 3.7 base)::Viewer / Rendering Layer::ViewerRenderer\\n(B&W pixel output\\nat display resolution)",
+      "reference_nodes": [
+        "Statlord::Viewer Instances\\nheadless browsers"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::API Clients",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::HeadlessBrowser\\n(automated rendering)",
+      "reference_nodes": [
+        "Statlord::Viewer Instances\\nheadless browsers"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Human User\\n(Browser)",
+      "reference_nodes": [
+        "Statlord::Browser Editor\\nLayout authoring"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Build Toolchain\\n(Node.js / npm)\\n[image-build-time only]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Container Image\\n(baked static assets)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Container Runtime\\n(Docker / Python 3.7 base)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::External Systems",
+      "reference_nodes": []
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::EditorSPA\\n(TypeScript / React SPA)",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::ControlsSlice",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::ElementsSlice",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::GaugesSlice",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::Redux Store::LayoutsSlice",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Client / Editor Layer::ReduxMiddleware\\n(thunks / HTTP dispatch)",
+        "External Systems::Human User\\n(Browser)"
+      ],
+      "gt_node": "Statlord::Browser Editor\\nLayout authoring"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Statlord::Displays\\nOLED, e-paper, LCD, browser"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::DisplayAPI\\n(key, available, resolution,\\ncurrent_layout, display_data,\\nrotation)"
+      ],
+      "gt_node": "Statlord::Server::Display Resource\\nresolution and state"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::GaugeAPI\\n(key, value)"
+      ],
+      "gt_node": "Statlord::Server::Gauge Resource\\nkey, value"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::REST API Resources::LayoutAPI\\n(key, data, display_positions)"
+      ],
+      "gt_node": "Statlord::Server::Layout Resource\\ndata and display positions"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Persistence Layer::PostgreSQLDatabase\\n(Gauge | Display | Layout)\\n<<database>>"
+      ],
+      "gt_node": "Statlord::Server::PostgreSQL\\npersistent models"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::DjangoServer\\n(manage.py runserver)",
+        "Container Runtime\\n(Docker / Python 3.7 base)::Server / API Layer::StaticAssetHost\\n(Django static file serving\\ncapability)"
+      ],
+      "gt_node": "Statlord::Server::Python / Django API"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime\\n(Docker / Python 3.7 base)::Viewer / Rendering Layer::ViewerRenderer\\n(B&W pixel output\\nat display resolution)",
+        "External Systems::HeadlessBrowser\\n(automated rendering)"
+      ],
+      "gt_node": "Statlord::Viewer Instances\\nheadless browsers"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4737,
+      "completion_tokens": 812,
+      "total_tokens": 5549,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Build Toolchain\\n(Node.js / npm)\\n[image-build-time only]::npm install + npm run build\\n→ produces /static/ assets",
+    "Container Image\\n(baked static assets)::Built SPA Assets\\n(HTML / JS / CSS)",
+    "Container Runtime\\n(Docker / Python 3.7 base)::Viewer / Rendering Layer::ViewerRenderer\\n(B&W pixel output\\nat display resolution)",
+    "External Systems::API Clients",
+    "Global::Build Toolchain\\n(Node.js / npm)\\n[image-build-time only]",
+    "Global::Container Image\\n(baked static assets)",
+    "Global::Container Runtime\\n(Docker / Python 3.7 base)"
+  ],
+  "_provenance": {
+    "fingerprint": "643e51f0545dc7edaaca9fcf7675c79f5fd203f3480f7ec4189f39e55036ef4e",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

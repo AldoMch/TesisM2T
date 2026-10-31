@@ -1,0 +1,102 @@
+@startuml
+title Prediction Cards System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam monochrome true
+
+actor "Prediction Participant" as Participant
+actor "Service Operator" as Operator
+actor "Integration/Test Operator" as TestOperator
+
+package "Prediction Cards System" {
+
+  package "Frontend Application" {
+    component "Wallet-Connected Frontend\nPrediction API / Context Provider" as Frontend <<React>>
+    component "Prediction Creation UI" as CreationUI
+    component "Prediction Viewing UI" as ViewingUI
+    component "Outcome NFT Operations UI\nfund, rent, withdraw, claim" as OpsUI
+  }
+
+  package "Backend Services" {
+    component "Prediction-Processing Service" as PredictionProcessing <<scheduled>>
+    component "Oracle Service" as OracleService <<Quarkus, scheduled>>
+  }
+
+  package "Aeternity Blockchain" {
+    component "PredictionCards Smart Contract" as Contract <<Sophia>>
+    component "AENS Name Resolution\ncontract location" as AENS
+    component "Aeternity Wallet + SDK Client" as WalletSDK
+  }
+
+  package "External Systems" {
+    component "External Price Provider" as PriceProvider
+    component "Prediction Media Storage\nIPFS-compatible" as MediaStorage
+  }
+
+  package "Local Contract Integration-Test Environment" {
+    component "Aeternity Test Node" as TestNode
+    component "Compiler Service" as TestCompiler
+    component "Index / Debug Endpoint" as TestIndex
+    component "Test Proxy / CORS Configuration\nGET, POST, OPTIONS\nContent-Type, Cache-Control,\nContent-Range, Range" as TestProxy
+  }
+}
+
+Participant --> Frontend : uses wallet-connected UI
+Operator --> OracleService : configures/runs
+Operator --> PredictionProcessing : configures/runs
+TestOperator --> TestProxy : performs browser-style tests
+
+CreationUI --> Frontend
+ViewingUI --> Frontend
+OpsUI --> Frontend
+
+Frontend --> WalletSDK : wallet-mediated contract calls
+Frontend --> AENS : resolve deployed contract name
+Frontend --> Contract : create/read/fund/rent/withdraw/claim
+Frontend --> MediaStorage : load outcome NFT media
+
+WalletSDK --> Contract : submit Aeternity transactions
+
+PredictionProcessing --> AENS : locate contract
+PredictionProcessing --> Contract : initiate oracle query for closed predictions\ncomplete result processing
+
+OracleService --> AENS : locate contract
+OracleService --> Contract : check pending oracle queries\nsubmit oracle result response\nmaintain oracle registration/validity
+OracleService --> PriceProvider : obtain external price data
+
+Contract --> AENS : contract location mechanism
+
+TestProxy --> TestNode : local integration access
+TestProxy --> TestCompiler : local integration access
+TestProxy --> TestIndex : local integration access
+TestProxy --> Contract : local contract testing
+
+note right of Frontend
+  Provides prediction operation capabilities
+  to child components through provider/context.
+  Converts prediction time inputs to
+  millisecond-level timestamps before submission.
+end note
+
+note bottom of OracleService
+  Mandatory runtime configuration:
+  keys, node/compiler connection,
+  network, scheduling periods,
+  oracle fees, validity-management.
+end note
+
+note bottom of Contract
+  Maintains prediction, outcome NFT,
+  fund/rental/withdrawal/reward state.
+  Determines winning outcome and opens
+  reward claiming after oracle response.
+end note
+
+note bottom of TestProxy
+  CORS/proxy configuration is limited to the
+  local contract integration-test environment.
+end note
+
+@enduml

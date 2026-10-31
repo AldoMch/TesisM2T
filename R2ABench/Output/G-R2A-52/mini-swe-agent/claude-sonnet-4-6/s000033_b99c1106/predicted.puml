@@ -1,0 +1,89 @@
+@startuml
+title Airflow Spark Docker Integration - Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<external>> LightGray
+  BackgroundColor<<store>> LightYellow
+  BackgroundColor<<service>> LightBlue
+}
+
+actor "Data Engineer" as DE
+actor "Notebook User" as NU
+actor "Platform Engineer" as PE
+
+rectangle "Docker Compose Environment (format 3.7)" {
+
+  rectangle "Orchestration Layer" {
+    component "Airflow Webserver\n(docker-airflow-spark:latest)\nPort: 8282\nLocalExecutor mode" as AW <<service>>
+    component "Airflow Scheduler\n(docker-airflow-spark:latest)" as AS <<service>>
+    component "SparkSubmitOperator\n(spark_default connection)" as SSO
+    AW --> AS : triggers DAGs
+    AS --> SSO : executes Spark tasks
+  }
+
+  rectangle "Metadata Store Layer" {
+    database "PostgreSQL 9.6\n(Airflow metadata)\nPort: 5432" as PG <<store>>
+  }
+
+  rectangle "Spark Cluster Layer" {
+    component "Spark Master\n(bitnami/spark:latest)\nSPARK_MODE=master\nWeb UI: 8181\nCluster: 7077" as SM <<service>>
+    component "Spark Worker 1\n(bitnami/spark:latest)\nSPARK_MODE=worker" as SW1 <<service>>
+    component "Spark Worker 2\n(bitnami/spark:latest)\nSPARK_MODE=worker" as SW2 <<service>>
+    component "Spark Worker 3\n(bitnami/spark:latest)\nSPARK_MODE=worker" as SW3 <<service>>
+    SM --> SW1 : coordinates workloads\nspark://spark:7077
+    SM --> SW2 : coordinates workloads
+    SM --> SW3 : coordinates workloads
+  }
+
+  rectangle "Interactive Development Layer" {
+    component "Jupyter / PySpark\n(jupyter/pyspark-notebook)\nPort: 8888\nSpark UI: 4040-4080" as JP <<service>>
+  }
+
+  rectangle "Shared Volumes Layer" {
+    folder "DAG Files\n(mounted)" as DAGS <<store>>
+    folder "Spark App Files\n(mounted)" as APPS <<store>>
+    folder "Notebooks\n(mounted)" as NOTEBOOKS <<store>>
+    folder "Input Data Files\n(mounted)" as DATA <<store>>
+  }
+
+}
+
+' Compose network connections
+AW --> PG : stores metadata\n(AIRFLOW__CORE__SQL_ALCHEMY_CONN)
+AS --> PG : reads/writes metadata
+SSO --> SM : submits Spark jobs\nspark://spark:7077
+
+JP --> SM : submits interactive jobs
+
+' Shared volume access
+AW ..> DAGS : mounts DAG files
+AW ..> APPS : mounts Spark apps
+AW ..> DATA : mounts input data
+JP ..> NOTEBOOKS : mounts notebooks
+JP ..> DATA : mounts input data
+SM ..> APPS : accesses Spark apps
+SW1 ..> DATA : accesses data
+SW2 ..> DATA : accesses data
+SW3 ..> DATA : accesses data
+
+' User interactions
+DE --> AW : manages DAGs & monitors\n(Port 8282)
+DE --> SM : inspects jobs\n(Port 8181)
+NU --> JP : interactive PySpark\n(Port 8888)
+PE --> AW : builds/operates image
+PE -[hidden]-> SM
+
+note right of SM
+  Spark 2.4.5 / Hadoop 2.6
+  RPC auth/encryption disabled
+  (local dev environment)
+end note
+
+note bottom of SSO
+  Uses spark_default connection
+  spark://spark:7077
+  Requires pyspark in Airflow env
+end note
+
+@enduml

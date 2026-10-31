@@ -1,0 +1,75 @@
+@startuml
+title Smart Recipe System - Architecture Diagram
+
+' ==================== Clients ====================
+package "Client / Presentation Tier" {
+  component "Mobile App Interface\n(Android / iOS)" as App <<foreground>> {
+    component "Login Screen\n(user/admin identity,\naccount, password,\nverification code)" as UILogin
+    component "User Main Screen\n(search box, health center,\ncommunity entry, camera entry)" as UIMain
+    component "Photo Recognition Screen\n(capture/upload, crop,\ncancel, submit)" as UIPhoto
+    component "Recipe Display Screen" as UIRecipe
+    component "Health Center /\nNutrition Analysis Screen" as UIHealth
+    component "Community Sharing Screen\n(view, publish, like, comment)" as UICommunity
+    component "Recommendation Screen" as UIRecommend
+    component "Administrator Screen\n(review, add recipe,\nupload dataset)" as UIAdmin
+  }
+}
+
+' ==================== Backend ====================
+package "Backend Service Layer" {
+  component "Control Layer\n(REST/Ajax endpoints,\nrequest routing, auth)" as Control <<Spring Boot>>
+  component "Business Layer\n(business logic orchestration)" as Business <<Spring Boot>>
+  component "Service Layer\n(domain services)" as Service <<Spring Boot>>
+  component "Data Access Layer\n(DAO / repositories)" as DAO <<Spring Boot>>
+
+  package "Flask Inference Service" {
+    component "Model Inference Service\n(image matrix vector input,\nrecipe calculation)" as Flask <<Flask>>
+  }
+}
+
+' ==================== Data ====================
+database "MySQL\n(user info, recipes,\nnutrition, health,\ncommunity data)" as MySQL <<structured data>>
+database "Redis\n(cache)" as Redis <<cache>>
+
+' ==================== External ====================
+cloud "Image Recognition Model" as Model <<external>>
+cloud "Map Service\n(merchant locations)" as Map <<external>>
+
+' ==================== Relationships ====================
+App --> Control : "Ajax interaction /\ndirect interaction"
+
+Control --> Business
+Business --> Service
+Service --> DAO
+
+DAO --> MySQL : "persist /\nquery"
+Service --> Redis : "cache read/write"
+Business --> Flask : "invoke inference"
+
+Flask --> Model : "model inference\n(matrix vectors)"
+Service --> Map : "geolocation lookup"
+
+UILogin -[hidden]-> UIMain
+UIAdmin -[hidden]-> UIRecommend
+
+' Capability annotations
+note right of Business
+  Capabilities:
+  - Personal information & login
+  - Photo-based recipe recognition
+  - Text-based recipe search
+  - Health analysis (nutrition,
+    advice, diet plan, check-in)
+  - Community sharing & review
+  - Intelligent recommendation
+  - Administrator management
+end note
+
+note bottom of MySQL
+  Persistent data is retained
+  across non-hardware fault restarts (NFR-005).
+  Image + recipe uploads are
+  atomic (NFR-010).
+end note
+
+@enduml

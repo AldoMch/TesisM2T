@@ -1,0 +1,529 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Fragmentation",
+        "UCX::UCP Protocols\\nHigh Level API::Message Passing API\\nTag Matching, Rendezvous"
+      ],
+      "predicted_nodes": [
+        "Send State-Machine Layer::SendStateMachine\\n(flow-control gate, direct-access\\nvs. packet-buffer mode,\\nrndv-rts / rndv-cts / rndv-data\\ncontrol-field population)\\n(FR-005, FR-006, FR-007, FR-008)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Drivers and Kernels::RDMA Verbs Driver",
+        "UCX::UCT Hardware Transports\\nLow Level API::RDMA Verbs Transport\\nInfiniBand, ROCE, OPA"
+      ],
+      "predicted_nodes": [
+        "Transport Integration Layer::VerbsProvider\\n(optional sub-component;\\nenabled at build time)\\n(NFR-001, NFR-002)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Drivers and Kernels::OS Kernel\\nMemory Hooks",
+        "UCX::UCT Hardware Transports\\nLow Level API::Intra-node Host Memory\\nSYSV, POSIX, KNEM, CMA, XPMEM"
+      ],
+      "predicted_nodes": [
+        "Send State-Machine Layer::PinnedUserData\\n(user buffer pinned\\nfor zero-copy DMA)\\n(DR-002, DR-003, FR-006)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Send State-Machine Layer::DataDescriptor\\n(payload descriptor;\\nsource of data for packing\\nor direct-access binding)\\n(DR-003, FR-006, FR-007)"
+      ],
+      "gt_nodes": [
+        "UCX::UCS Services\\nCommon Utilities::Memory Management"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Send State-Machine Layer::FlowControlState\\n(flow-restricted /\\nflow-enabled condition)\\n(FR-005, DR-005)"
+      ],
+      "gt_nodes": [
+        "UCX::UCS Services\\nCommon Utilities::Utilities"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Cross-Transport Multi-Rail",
+        "UCX::UCP Protocols\\nHigh Level API::Transport Selection"
+      ],
+      "predicted_nodes": [
+        "Transport Integration Layer::CH4NetworkModuleIntegration\\n(CH4 network-module binding;\\nselects OFI/libfabric or UCX)\\n(Section 2)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Programming Models and Frameworks::MPI\\nMPICH, Open-MPI",
+        "UCX::UCT Hardware Transports\\nLow Level API::Ethernet Transport\\nTCP/IP Sockets"
+      ],
+      "predicted_nodes": [
+        "Transport Integration Layer::EmbeddedLibfabricModule\\n(embedded Libfabric CH4 backend)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Build & Verification Layer::BuildEnvironmentVariables\\n(CFLAGS, LDFLAGS,\\nLD_LIBRARY_PATH)\\n(NFR-003)",
+      "reference_nodes": [
+        "UCX::UCS Services\\nCommon Utilities::Utilities"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Build & Verification Layer::EmbeddedHwlocTestRunner\\n./run-embedded-tests.sh <tarball>\\n(configure → make → make check\\n→ clean → distclean)\\n[exits 0 on success, nonzero on failure]\\n(FR-001, C-002)",
+      "reference_nodes": [
+        "Drivers and Kernels::Cray Driver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Build & Verification Layer::ManualHwlocBuildWorkflow\\nhwloc-tree/ rename path\\n(autogen.sh → configure → make)\\n(FR-002, C-003)",
+      "reference_nodes": [
+        "Drivers and Kernels::OS Kernel\\nHost Memory"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Communication Subsystem Layer::CommunicationSubsystemManager\\n(init, finalize, progress,\\nblocking-progress,\\nconnection establishment)\\n(FR-003)",
+      "reference_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Software Protocols"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Communication Subsystem Layer::OneToManyTransferHandler\\n(scatter-style\\none-to-many transfer)\\n(FR-004)",
+      "reference_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Cross-Transport Multi-Rail"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Sources & OS Infrastructure::Autotools Toolchain::autogen.sh",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Sources & OS Infrastructure::Autotools Toolchain::configure",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Sources & OS Infrastructure::Autotools Toolchain::make / make check",
+      "reference_nodes": [
+        "Drivers and Kernels::Cray Driver",
+        "Drivers and Kernels::OS Kernel\\nHost Memory"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Sources & OS Infrastructure::Linux Verbs Infrastructure::Matching Verbs Headers\\n(build-time)",
+      "reference_nodes": [
+        "Drivers and Kernels::RDMA Verbs Driver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Sources & OS Infrastructure::Linux Verbs Infrastructure::libibverbs\\n(>= 1.1.8)",
+      "reference_nodes": [
+        "Drivers and Kernels::RDMA Verbs Driver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Sources & OS Infrastructure::Linux Verbs Infrastructure::librdmacm\\n(>= 1.0.16)",
+      "reference_nodes": [
+        "Drivers and Kernels::RDMA Verbs Driver"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Sources & OS Infrastructure::OFI/libfabric\\n(system-level instance)",
+      "reference_nodes": [
+        "UCX::UCT Hardware Transports\\nLow Level API::Ethernet Transport\\nTCP/IP Sockets"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Sources & OS Infrastructure::UCX\\n(alternative CH4 backend)",
+      "reference_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Transport Selection"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Sources & OS Infrastructure::hwloc Distribution Tarball\\n(FR-001, FR-002)",
+      "reference_nodes": [
+        "Drivers and Kernels::Cray Driver",
+        "Drivers and Kernels::OS Kernel\\nHost Memory"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::External Sources & OS Infrastructure",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Send State-Machine Layer::DataDescriptor\\n(payload descriptor;\\nsource of data for packing\\nor direct-access binding)\\n(DR-003, FR-006, FR-007)",
+      "reference_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Fragmentation",
+        "UCX::UCS Services\\nCommon Utilities::Memory Management"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Send State-Machine Layer::FlowControlState\\n(flow-restricted /\\nflow-enabled condition)\\n(FR-005, DR-005)",
+      "reference_nodes": [
+        "UCX::UCS Services\\nCommon Utilities::Utilities",
+        "UCX::UCT Hardware Transports\\nLow Level API::RC"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Send State-Machine Layer::NetworkDevice\\n(hardware send endpoint;\\nreceives posted send\\ndescriptors from send path)\\n(DR-002, Section 3)",
+      "reference_nodes": [
+        "UCX::UCT Hardware Transports\\nLow Level API::RDMA Verbs Transport\\nInfiniBand, ROCE, OPA"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Send State-Machine Layer::NetworkSendDescriptor\\n(posted-send descriptor;\\nassociated with PinnedUserData\\nor PacketBuffer at post time)\\n(DR-002, DR-003)",
+      "reference_nodes": [
+        "UCX::UCT Hardware Transports\\nLow Level API::RDMA Verbs Transport\\nInfiniBand, ROCE, OPA"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Send State-Machine Layer::PacketBuffer\\n(envelope + rendezvous\\ncontrol terms: LIBA(OD),\\ntwo LIBAs, one LIBA)\\n(DR-001, DR-004)",
+      "reference_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Fragmentation",
+        "UCX::UCP Protocols\\nHigh Level API::Message Passing API\\nTag Matching, Rendezvous"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Send State-Machine Layer::PinnedUserData\\n(user buffer pinned\\nfor zero-copy DMA)\\n(DR-002, DR-003, FR-006)",
+      "reference_nodes": [
+        "Drivers and Kernels::OS Kernel\\nHost Memory",
+        "Drivers and Kernels::OS Kernel\\nMemory Hooks",
+        "UCX::UCT Hardware Transports\\nLow Level API::Intra-node Host Memory\\nSYSV, POSIX, KNEM, CMA, XPMEM"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Send State-Machine Layer::SendStateMachine\\n(flow-control gate, direct-access\\nvs. packet-buffer mode,\\nrndv-rts / rndv-cts / rndv-data\\ncontrol-field population)\\n(FR-005, FR-006, FR-007, FR-008)",
+      "reference_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Message Passing API\\nTag Matching, Rendezvous",
+        "UCX::UCP Protocols\\nHigh Level API::Software Protocols"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Transport Integration Layer::CH4NetworkModuleIntegration\\n(CH4 network-module binding;\\nselects OFI/libfabric or UCX)\\n(Section 2)",
+      "reference_nodes": [
+        "UCX::UCP Protocols\\nHigh Level API::Transport Selection",
+        "UCX::UCT Hardware Transports\\nLow Level API::Ethernet Transport\\nTCP/IP Sockets"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Transport Integration Layer::EmbeddedLibfabricModule\\n(embedded Libfabric CH4 backend)",
+      "reference_nodes": [
+        "Programming Models and Frameworks::MPI\\nMPICH, Open-MPI",
+        "UCX::UCT Hardware Transports\\nLow Level API::Ethernet Transport\\nTCP/IP Sockets"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Transport Integration Layer::VerbsProvider\\n(optional sub-component;\\nenabled at build time)\\n(NFR-001, NFR-002)",
+      "reference_nodes": [
+        "Drivers and Kernels::RDMA Verbs Driver",
+        "UCX::UCT Hardware Transports\\nLow Level API::RDMA Verbs Transport\\nInfiniBand, ROCE, OPA"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Build & Verification Layer::EmbeddedHwlocTestRunner\\n./run-embedded-tests.sh <tarball>\\n(configure → make → make check\\n→ clean → distclean)\\n[exits 0 on success, nonzero on failure]\\n(FR-001, C-002)"
+      ],
+      "gt_node": "Drivers and Kernels::Cray Driver"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Sources & OS Infrastructure::Autotools Toolchain::make / make check"
+      ],
+      "gt_node": "Drivers and Kernels::OS Kernel\\nEthernet"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Build & Verification Layer::ManualHwlocBuildWorkflow\\nhwloc-tree/ rename path\\n(autogen.sh → configure → make)\\n(FR-002, C-003)",
+        "Send State-Machine Layer::PinnedUserData\\n(user buffer pinned\\nfor zero-copy DMA)\\n(DR-002, DR-003, FR-006)"
+      ],
+      "gt_node": "Drivers and Kernels::OS Kernel\\nHost Memory"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Send State-Machine Layer::PinnedUserData\\n(user buffer pinned\\nfor zero-copy DMA)\\n(DR-002, DR-003, FR-006)"
+      ],
+      "gt_node": "Drivers and Kernels::OS Kernel\\nMemory Hooks"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Transport Integration Layer::VerbsProvider\\n(optional sub-component;\\nenabled at build time)\\n(NFR-001, NFR-002)"
+      ],
+      "gt_node": "Drivers and Kernels::RDMA Verbs Driver"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Drivers and Kernels::ROCm / CUDA"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Applications\\nHPC, AI, ML, Big Data"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Hardware"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Programming Models and Frameworks::AI / ML Frameworks\\nTensorFlow, Burst Buffer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Transport Integration Layer::EmbeddedLibfabricModule\\n(embedded Libfabric CH4 backend)"
+      ],
+      "gt_node": "Programming Models and Frameworks::MPI\\nMPICH, Open-MPI"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Programming Models and Frameworks::PGAS / SHMEM\\nOpenSHMEM, UPC, CAF, X10, Chapel"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Programming Models and Frameworks::Task Runtimes\\nParsec, OCR, Legion"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Send State-Machine Layer::FlowControlState\\n(flow-restricted /\\nflow-enabled condition)\\n(FR-005, DR-005)"
+      ],
+      "gt_node": "UCX::UCM Memory Services::Memory Hooks"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Communication Subsystem Layer::OneToManyTransferHandler\\n(scatter-style\\none-to-many transfer)\\n(FR-004)",
+        "Transport Integration Layer::CH4NetworkModuleIntegration\\n(CH4 network-module binding;\\nselects OFI/libfabric or UCX)\\n(Section 2)"
+      ],
+      "gt_node": "UCX::UCP Protocols\\nHigh Level API::Cross-Transport Multi-Rail"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Send State-Machine Layer::PacketBuffer\\n(envelope + rendezvous\\ncontrol terms: LIBA(OD),\\ntwo LIBAs, one LIBA)\\n(DR-001, DR-004)"
+      ],
+      "gt_node": "UCX::UCP Protocols\\nHigh Level API::Fragmentation"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCP Protocols\\nHigh Level API::I/O API\\nStream"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Send State-Machine Layer::SendStateMachine\\n(flow-control gate, direct-access\\nvs. packet-buffer mode,\\nrndv-rts / rndv-cts / rndv-data\\ncontrol-field population)\\n(FR-005, FR-006, FR-007, FR-008)"
+      ],
+      "gt_node": "UCX::UCP Protocols\\nHigh Level API::Message Passing API\\nTag Matching, Rendezvous"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCP Protocols\\nHigh Level API::PGAS API\\nRMAs, Atomics"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Communication Subsystem Layer::CommunicationSubsystemManager\\n(init, finalize, progress,\\nblocking-progress,\\nconnection establishment)\\n(FR-003)",
+        "Send State-Machine Layer::SendStateMachine\\n(flow-control gate, direct-access\\nvs. packet-buffer mode,\\nrndv-rts / rndv-cts / rndv-data\\ncontrol-field population)\\n(FR-005, FR-006, FR-007, FR-008)"
+      ],
+      "gt_node": "UCX::UCP Protocols\\nHigh Level API::Software Protocols"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCP Protocols\\nHigh Level API::Task Based API\\nActive Messages"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Sources & OS Infrastructure::UCX\\n(alternative CH4 backend)",
+        "Transport Integration Layer::CH4NetworkModuleIntegration\\n(CH4 network-module binding;\\nselects OFI/libfabric or UCX)\\n(Section 2)"
+      ],
+      "gt_node": "UCX::UCP Protocols\\nHigh Level API::Transport Selection"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCS Services\\nCommon Utilities::Data Structures"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Send State-Machine Layer::DataDescriptor\\n(payload descriptor;\\nsource of data for packing\\nor direct-access binding)\\n(DR-003, FR-006, FR-007)"
+      ],
+      "gt_node": "UCX::UCS Services\\nCommon Utilities::Memory Management"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Build & Verification Layer::BuildEnvironmentVariables\\n(CFLAGS, LDFLAGS,\\nLD_LIBRARY_PATH)\\n(NFR-003)",
+        "Send State-Machine Layer::FlowControlState\\n(flow-restricted /\\nflow-enabled condition)\\n(FR-005, DR-005)"
+      ],
+      "gt_node": "UCX::UCS Services\\nCommon Utilities::Utilities"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCT Hardware Transports\\nLow Level API::DCT"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Sources & OS Infrastructure::OFI/libfabric\\n(system-level instance)",
+        "Transport Integration Layer::EmbeddedLibfabricModule\\n(embedded Libfabric CH4 backend)"
+      ],
+      "gt_node": "UCX::UCT Hardware Transports\\nLow Level API::Ethernet Transport\\nTCP/IP Sockets"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCT Hardware Transports\\nLow Level API::GPU Transport\\nNVIDIA CUDA, AMD ROCm"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCT Hardware Transports\\nLow Level API::Gemini / Aries Transport\\nGNI"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Send State-Machine Layer::PinnedUserData\\n(user buffer pinned\\nfor zero-copy DMA)\\n(DR-002, DR-003, FR-006)"
+      ],
+      "gt_node": "UCX::UCT Hardware Transports\\nLow Level API::Intra-node Host Memory\\nSYSV, POSIX, KNEM, CMA, XPMEM"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCT Hardware Transports\\nLow Level API::RC"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Send State-Machine Layer::NetworkDevice\\n(hardware send endpoint;\\nreceives posted send\\ndescriptors from send path)\\n(DR-002, Section 3)",
+        "Send State-Machine Layer::NetworkSendDescriptor\\n(posted-send descriptor;\\nassociated with PinnedUserData\\nor PacketBuffer at post time)\\n(DR-002, DR-003)",
+        "Transport Integration Layer::VerbsProvider\\n(optional sub-component;\\nenabled at build time)\\n(NFR-001, NFR-002)"
+      ],
+      "gt_node": "UCX::UCT Hardware Transports\\nLow Level API::RDMA Verbs Transport\\nInfiniBand, ROCE, OPA"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "UCX::UCT Hardware Transports\\nLow Level API::UD"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 6204,
+      "completion_tokens": 1386,
+      "total_tokens": 7590,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Drivers and Kernels::Cray Driver",
+    "Drivers and Kernels::OS Kernel\\nEthernet",
+    "Drivers and Kernels::OS Kernel\\nHost Memory",
+    "Drivers and Kernels::ROCm / CUDA",
+    "Global::Applications\\nHPC, AI, ML, Big Data",
+    "Global::Hardware",
+    "Programming Models and Frameworks::AI / ML Frameworks\\nTensorFlow, Burst Buffer",
+    "Programming Models and Frameworks::PGAS / SHMEM\\nOpenSHMEM, UPC, CAF, X10, Chapel",
+    "Programming Models and Frameworks::Task Runtimes\\nParsec, OCR, Legion",
+    "UCX::UCM Memory Services::Memory Hooks",
+    "UCX::UCP Protocols\\nHigh Level API::I/O API\\nStream",
+    "UCX::UCP Protocols\\nHigh Level API::PGAS API\\nRMAs, Atomics",
+    "UCX::UCP Protocols\\nHigh Level API::Software Protocols",
+    "UCX::UCP Protocols\\nHigh Level API::Task Based API\\nActive Messages",
+    "UCX::UCS Services\\nCommon Utilities::Data Structures",
+    "UCX::UCT Hardware Transports\\nLow Level API::DCT",
+    "UCX::UCT Hardware Transports\\nLow Level API::GPU Transport\\nNVIDIA CUDA, AMD ROCm",
+    "UCX::UCT Hardware Transports\\nLow Level API::Gemini / Aries Transport\\nGNI",
+    "UCX::UCT Hardware Transports\\nLow Level API::RC",
+    "UCX::UCT Hardware Transports\\nLow Level API::UD"
+  ],
+  "unmatched_predicted_nodes": [
+    "Build & Verification Layer::BuildEnvironmentVariables\\n(CFLAGS, LDFLAGS,\\nLD_LIBRARY_PATH)\\n(NFR-003)",
+    "Build & Verification Layer::EmbeddedHwlocTestRunner\\n./run-embedded-tests.sh <tarball>\\n(configure → make → make check\\n→ clean → distclean)\\n[exits 0 on success, nonzero on failure]\\n(FR-001, C-002)",
+    "Build & Verification Layer::ManualHwlocBuildWorkflow\\nhwloc-tree/ rename path\\n(autogen.sh → configure → make)\\n(FR-002, C-003)",
+    "Communication Subsystem Layer::CommunicationSubsystemManager\\n(init, finalize, progress,\\nblocking-progress,\\nconnection establishment)\\n(FR-003)",
+    "Communication Subsystem Layer::OneToManyTransferHandler\\n(scatter-style\\none-to-many transfer)\\n(FR-004)",
+    "External Sources & OS Infrastructure::Autotools Toolchain::autogen.sh",
+    "External Sources & OS Infrastructure::Autotools Toolchain::configure",
+    "External Sources & OS Infrastructure::Autotools Toolchain::make / make check",
+    "External Sources & OS Infrastructure::Linux Verbs Infrastructure::Matching Verbs Headers\\n(build-time)",
+    "External Sources & OS Infrastructure::Linux Verbs Infrastructure::libibverbs\\n(>= 1.1.8)",
+    "External Sources & OS Infrastructure::Linux Verbs Infrastructure::librdmacm\\n(>= 1.0.16)",
+    "External Sources & OS Infrastructure::OFI/libfabric\\n(system-level instance)",
+    "External Sources & OS Infrastructure::UCX\\n(alternative CH4 backend)",
+    "External Sources & OS Infrastructure::hwloc Distribution Tarball\\n(FR-001, FR-002)",
+    "Global::External Sources & OS Infrastructure",
+    "Send State-Machine Layer::NetworkDevice\\n(hardware send endpoint;\\nreceives posted send\\ndescriptors from send path)\\n(DR-002, Section 3)",
+    "Send State-Machine Layer::NetworkSendDescriptor\\n(posted-send descriptor;\\nassociated with PinnedUserData\\nor PacketBuffer at post time)\\n(DR-002, DR-003)",
+    "Send State-Machine Layer::PacketBuffer\\n(envelope + rendezvous\\ncontrol terms: LIBA(OD),\\ntwo LIBAs, one LIBA)\\n(DR-001, DR-004)"
+  ],
+  "_provenance": {
+    "fingerprint": "1f2f93f553d8af385bd306b5ca378fe9f5f763948666d39439ea0d9a84a005fd",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

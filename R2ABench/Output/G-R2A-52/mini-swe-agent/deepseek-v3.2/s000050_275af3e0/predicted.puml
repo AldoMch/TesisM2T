@@ -1,0 +1,150 @@
+@startuml
+!define LAYER_COLOR #DDDDDD
+!define COMPONENT_COLOR #F0F0F0
+!define DATABASE_COLOR #E6F3FF
+!define EXTERNAL_COLOR #FFE6E6
+
+skinparam component {
+  BackgroundColor COMPONENT_COLOR
+  BorderColor #333333
+  FontColor #000000
+  FontSize 13
+}
+
+skinparam node {
+  BackgroundColor COMPONENT_COLOR
+  BorderColor #333333
+  FontColor #000000
+  FontSize 13
+}
+
+skinparam database {
+  BackgroundColor DATABASE_COLOR
+  BorderColor #333333
+  FontColor #000000
+  FontSize 13
+}
+
+skinparam rectangle {
+  BackgroundColor LAYER_COLOR
+  BorderColor #333333
+  FontColor #000000
+  FontSize 14
+}
+
+' Main architecture layers
+rectangle "Host System" {
+  rectangle "hAFL2 Fuzzing Platform" {
+    component "Test Runner" as test_runner
+    component "Linux Fuzzing Workflow" as linux_workflow
+    component "Windows Fuzzing Workflow" as windows_workflow
+    component "kAFL-Fuzzer" as kafl_fuzzer
+    component "Fuzzing Controller" as fuzzing_controller
+  }
+  
+  database "Target Binaries" as target_binaries
+  database "Shared Libraries" as shared_libs
+  database "Mutation Payloads" as mutation_payloads
+  database "Effector Maps" as effector_maps
+}
+
+' Virtualization layer
+rectangle "Virtualization Layer" {
+  component "Hypervisor" as hypervisor
+  
+  rectangle "Linux Guest VM" as linux_guest {
+    component "Embedded Forkserver" as forkserver
+    component "Linux Target Binary" as linux_target
+    database "initrd Image" as initrd
+  }
+  
+  rectangle "Windows Child Partition VM" as child_partition {
+    component "Harness Driver" as harness_driver
+    component "packet_sender.exe" as packet_sender
+    component "loader.exe" as loader
+    component "Crash Monitor" as crash_monitor_child
+  }
+  
+  rectangle "Windows Root Partition VM" as root_partition {
+    component "VMSwitch Target" as vmswitch_target
+    component "Crash Monitor" as crash_monitor_root
+  }
+}
+
+' External systems
+rectangle "External Systems" {
+  component "Command Line Interface" as cli
+  component "Build Tools" as build_tools
+  component "Visual Studio" as visual_studio
+  component "VM Management" as vm_management
+}
+
+' Layer connections
+test_runner -down-> kafl_fuzzer : "executes"
+linux_workflow -down-> initrd : "creates"
+linux_workflow -down-> forkserver : "interfaces with"
+windows_workflow -down-> child_partition : "manages"
+fuzzing_controller -down-> windows_workflow : "coordinates"
+fuzzing_controller -down-> linux_workflow : "coordinates"
+
+' Data flows
+target_binaries -right-> linux_workflow : "packages"
+shared_libs -right-> linux_workflow : "copies"
+mutation_payloads -right-> kafl_fuzzer : "processes"
+effector_maps -right-> kafl_fuzzer : "uses"
+
+' Virtualization flows
+hypervisor -down-> linux_guest : "hosts"
+hypervisor -down-> child_partition : "hosts"
+hypervisor -down-> root_partition : "hosts"
+
+' Guest internal flows
+initrd -down-> linux_target : "contains"
+forkserver -down-> linux_target : "maps I/O"
+loader -down-> packet_sender : "loads/executes"
+packet_sender -down-> harness_driver : "triggers IOCTL"
+harness_driver -right-> vmswitch_target : "sends payloads\nvia netvsc/VMBus"
+crash_monitor_child -right-> crash_monitor_root : "monitors"
+crash_monitor_root -up-> fuzzing_controller : "reports crashes"
+
+' External interfaces
+cli -down-> test_runner : "invokes"
+cli -down-> linux_workflow : "invokes"
+cli -down-> windows_workflow : "invokes"
+build_tools -down-> windows_workflow : "compiles binaries"
+visual_studio -down-> windows_workflow : "compiles drivers"
+vm_management -down-> windows_workflow : "configures VMs"
+
+' Key dependencies
+kafl_fuzzer ..> mutation_payloads : "operates on"
+kafl_fuzzer ..> effector_maps : "optional"
+linux_workflow ..> target_binaries : "requires"
+linux_workflow ..> shared_libs : "requires"
+windows_workflow ..> build_tools : "depends on"
+windows_workflow ..> visual_studio : "depends on"
+windows_workflow ..> vm_management : "depends on"
+harness_driver ..> vmswitch_target : "targets"
+
+note right of hypervisor
+  Hyper-V virtualization stack
+  with kAFL-based fuzzing workflows
+end note
+
+note bottom of windows_workflow
+  Windows-build-specific
+  offset configuration
+end note
+
+note left of linux_guest
+  Embedded forkserver maps
+  kAFL hypercalls to
+  AFL-style guest I/O
+end note
+
+note right of child_partition
+  Child partition VM must have
+  DSE disabled and be powered off
+  for configuration
+end note
+
+@enduml

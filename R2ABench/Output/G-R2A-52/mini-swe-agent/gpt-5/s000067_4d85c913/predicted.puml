@@ -1,0 +1,49 @@
+@startuml
+skinparam componentStyle rectangle
+
+title TraceLeft Architecture
+
+package "Userspace" {
+  component "CLI\n(Trace Command)" as CLI
+  component "TraceLeft Library" as Library
+  component "Probe Loader" as Loader
+  component "Userspace Tracer & Dispatcher" as Tracer
+  component "Handler Generator" as Generator
+  artifact "Event Configuration Metadata\n(Proto/JSON)" as EventConfig
+  artifact "Generated Handler Source Code" as GenCode
+  artifact "Event Registration\n{ProgramID, Pids, ELFPath}" as EventReg
+}
+
+package "Kernel Space (eBPF)" {
+  component "kprobe/kretprobe Hooks" as Hooks
+  component "Main eBPF Program" as MainProg
+  component "Handler eBPF Programs" as HandlerProgs
+  database "Handler Maps\n(handle_NAME_progs,\nhandle_NAME_progs_ret)" as HandlerMaps
+  component "Perf-Based Event Channel" as PerfChannel
+}
+
+package "External Dependencies" {
+  component "gobpf Integration" as Gobpf
+}
+
+CLI --> Library : invoke commands
+CLI --> EventReg : parse inputs
+EventReg --> Loader : register handlers
+
+Library --> Loader : install probes & load handlers
+Library ..> Gobpf : eBPF API usage
+Loader ..> Gobpf : load/attach programs
+
+Loader --> MainProg : load & attach
+Loader --> HandlerProgs : load default & process-specific handlers
+Loader --> HandlerMaps : update maps by process context
+Hooks --> MainProg : trigger on function call
+MainProg --> HandlerMaps : select handler
+MainProg --> HandlerProgs : invoke selected handler
+HandlerProgs --> PerfChannel : emit events (common header)
+PerfChannel --> Tracer : deliver events
+
+Generator --> EventConfig : read configuration
+Generator --> GenCode : generate handler source
+GenCode --> Loader : provide handlers for loading
+@enduml

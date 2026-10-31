@@ -1,0 +1,96 @@
+@startuml
+title hAFL2 - Hypervisor Fuzzing System Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontSize 13
+
+actor "Fuzzing Operator" as operator
+
+package "hAFL2 Fuzzing Platform" {
+
+    package "Test & Control Layer" {
+        [Standalone Test Runner\n(test.py)] as testRunner
+        [kAFL-Fuzzer\n(pytest test suite)] as kaflFuzzer
+        [Launch Scripts\n(bash)] as launchScripts
+    }
+
+    package "Linux Userspace Fuzzing Workflow" {
+        [initrd Builder\n(target + shared libs)] as initrdBuilder
+        [Embedded Forkserver\n(kAFL hypercall mapper)] as forkserver
+        database "initrd Image\n(target binary + libs)" as initrdImage
+    }
+
+    package "Windows Hyper-V Fuzzing Workflow" {
+        package "Child Partition VM" {
+            [Child Partition Harness\n(fuzzing driver)] as childHarness
+            [loader.exe\n(snapshot creator)] as loader
+            [packet_sender.exe\n(IOCTL trigger)] as packetSender
+        }
+
+        package "Root Partition VM" {
+            [VMSwitch\n(vmswitch.sys)] as vmswitch
+            [Crash Monitor Driver\n(crash-monitoring)] as crashMonitor
+            [Hyper-V Networking Path\n(netvsc / VMBus)] as hypervNetwork
+        }
+    }
+
+    [Crash Monitoring Feedback Handler] as crashHandler
+}
+
+package "Host Environment" {
+    [Host Shared Libraries] as hostLibs
+    [kAFL Hypervisor\n(kAFL-based)] as kaflHypervisor
+}
+
+package "Build Toolchain" {
+    [compile.sh\n(bash script)] as compileScript
+    [Visual Studio\n(Windows driver build)] as visualStudio
+}
+
+' Test and control relationships
+operator --> testRunner : invoke test.py
+operator --> launchScripts : run fuzzing workflow
+operator --> childHarness : configure Hyper-V fuzzing
+
+testRunner --> kaflFuzzer : execute test suites\n(random, deterministic, havoc)
+
+' Linux userspace workflow
+launchScripts --> initrdBuilder : package target
+hostLibs --> initrdBuilder : copy shared libraries
+initrdBuilder --> initrdImage : produce initrd
+initrdImage --> forkserver : launch target in guest
+forkserver --> kaflHypervisor : map kAFL hypercalls\nto AFL-style I/O
+
+' Windows Hyper-V workflow
+loader --> packetSender : create snapshot,\nload & execute
+packetSender --> childHarness : trigger packet-sending IOCTL
+childHarness --> hypervNetwork : send fuzzing payloads\n(VMBus / netvsc)
+hypervNetwork --> vmswitch : target root partition\nnetworking path
+vmswitch --> crashMonitor : crash event
+crashMonitor --> crashHandler : crash status / monitoring output
+crashHandler --> kaflFuzzer : feedback to fuzzing controller
+
+' Build toolchain
+compileScript --> packetSender : compile Windows binaries
+compileScript --> loader : compile Windows binaries
+visualStudio --> childHarness : compile harness driver
+visualStudio --> crashMonitor : compile crash-monitoring driver
+
+' Hypervisor relationship
+kaflHypervisor --> childHarness : guest VM hosting
+kaflHypervisor --> vmswitch : root partition VM hosting
+
+note top of forkserver
+  Translates kAFL hypercalls
+  into AFL-style guest I/O
+  (coverage feedback, fuzzing iterations)
+end note
+
+note right of crashMonitor
+  Must be compiled with
+  Visual Studio; DSE must
+  be disabled on child partition
+end note
+
+@enduml

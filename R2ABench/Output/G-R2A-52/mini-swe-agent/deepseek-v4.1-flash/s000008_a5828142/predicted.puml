@@ -1,0 +1,112 @@
+@startuml
+title Bunny Code - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' =========================================================
+' Client / Presentation Layer
+' =========================================================
+package "Client / Presentation Layer (Browser)" {
+  component "Vue Web Frontend\n(UI-001)" as FE
+  component "Login / Auth UI\n(UI-001)" as FE_LOGIN
+  component "Workspace Code Editor\n(UI-002)" as FE_EDITOR
+  component "Battle View\n(UI-003)" as FE_BATTLE
+  component "Playback View\n(UI-004)" as FE_PLAYBACK
+}
+
+' =========================================================
+' Edge / Delivery Layer
+' =========================================================
+package "Edge / Delivery Layer" {
+  component "Nginx Reverse Proxy\n(C-011)" as NGINX
+  component "CDN / URL Distribution\n(FR-018, NFR-007)" as CDN
+  component "Automated Deployment Scripts\n(NFR-008, C-011)" as DEPLOY
+}
+
+' =========================================================
+' Application / Backend Layer
+' =========================================================
+package "Application Layer - Node.js / Express + Socket.IO (C-001)" {
+  component "REST API Gateway / Router\n(COM-001, API-001..008)" as API
+
+  component "Auth Service\nJWT register/login/user detail\n(FR-001..003, NFR-003)" as AUTH
+  component "Project & Version Service\n(FR-004, FR-005)" as PROJECT
+  component "Code Execution Service\n(FR-006, NFR-005)" as EXEC
+  component "Coding-Process Record & Playback Service\n(FR-007, NFR-006)" as PLAYBACK
+  component "File & Archive Service\nUpload + metadata + URLs\n(FR-017, FR-018, DR-015)" as FILES
+
+  component "Workspace Socket Handler\nAuthorization, edit state, occupation,\nleave & disconnect cleanup\n(FR-008..010, API-009)" as WS_SOCK
+  component "Battle Socket Handler\nInvitation, acceptance, readiness,\ncode sync, judging, outcome, leave\n(FR-011..016, API-010)" as BATTLE_SOCK
+
+  component "Redis Access / Readiness Guard\n(NFR-002, C-005, C-006, C-007)" as REDIS_GUARD
+}
+
+' =========================================================
+' Data / Persistence Layer
+' =========================================================
+package "Data / Persistence Layer" {
+  database "MySQL\nUsers, Projects, Versions,\nProblems, Battles\n(C-003, DR-001, DR-004, DR-005, DR-013)" as MYSQL
+  database "InfluxDB\nTime-series coding-process records\n(C-004, DR-009)" as INFLUX
+  database "Redis Cache\nWorkspace socket mapping (DR-008)\nBattle invitations & state\n(DR-010, DR-011, DR-012)" as REDIS
+  component "Object Storage (S3-compatible)\nCode, battle, user, static, archive files\n(C-010, DR-015)" as OBJSTORE
+}
+
+' =========================================================
+' Execution / Sandbox Layer (External)
+' =========================================================
+package "Execution Sandbox (External)" {
+  component "Docker-based Code Sandbox\nCompile / Execute\n(C-009, NFR-005)\nReturns status, output, errors (DR-014)" as SANDBOX
+}
+
+' =========================================================
+' Relationships
+' =========================================================
+FE --> FE_LOGIN
+FE --> FE_EDITOR
+FE --> FE_BATTLE
+FE --> FE_PLAYBACK
+
+FE_LOGIN --> NGINX : HTTPS REST
+FE_EDITOR --> NGINX : REST + Socket.IO
+FE_BATTLE --> NGINX : REST + Socket.IO
+FE_PLAYBACK --> NGINX : HTTPS REST
+
+NGINX --> API : reverse proxy REST (COM-001)
+NGINX --> WS_SOCK : reverse proxy Socket.IO (COM-002)
+NGINX --> BATTLE_SOCK : reverse proxy Socket.IO (COM-002)
+NGINX --> CDN : static / archive requests
+
+API --> AUTH
+API --> PROJECT
+API --> EXEC
+API --> PLAYBACK
+API --> FILES
+
+WS_SOCK --> AUTH : validate user context
+WS_SOCK --> PROJECT : authorize project/version
+WS_SOCK --> REDIS_GUARD : workspace mapping & state
+BATTLE_SOCK --> AUTH : validate user context
+BATTLE_SOCK --> REDIS_GUARD : invitations & battle state
+BATTLE_SOCK --> EXEC : compile & judge
+
+AUTH --> MYSQL : user account data (DR-001, DR-002)
+PROJECT --> MYSQL : project & version data (DR-004, DR-005)
+BATTLE_SOCK --> MYSQL : battle records & outcomes (DR-013)
+PLAYBACK --> INFLUX : read/write process records (DR-009)
+PLAYBACK --> FILES : playback assets
+EXEC --> SANDBOX : submit code (COM-005)
+SANDBOX --> EXEC : execution result (DR-014)
+FILES --> OBJSTORE : upload files (COM-006)
+OBJSTORE --> CDN : serve distributable URLs (DR-015)
+CDN --> FE : deliver assets & archives (FR-018)
+
+REDIS_GUARD --> REDIS : readiness check + cache ops (COM-003)
+
+DEPLOY ..> NGINX : provision
+DEPLOY ..> API : provision
+DEPLOY ..> REDIS : configure host/port/user/pwd (C-007)
+DEPLOY ..> MYSQL : provision
+DEPLOY ..> INFLUX : provision
+
+@enduml

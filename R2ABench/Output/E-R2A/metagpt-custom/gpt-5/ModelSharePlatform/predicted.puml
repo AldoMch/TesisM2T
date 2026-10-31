@@ -1,0 +1,105 @@
+@startuml
+
+package "Presentation (Web UI)" {
+  component "Web UI" as WebUI
+  component "I18n Module" as I18n
+}
+
+package "Application / API" {
+  component "API Controllers" as API
+  component "Auth & Access Control" as Auth
+}
+
+package "Domain Services" {
+  component "Account Service" as AccountSvc
+  component "Q&A Service" as QASvc
+  component "Blog Service" as BlogSvc
+  component "Comment Service" as CommentSvc
+  component "Model Management Service" as ModelSvc
+  component "Dataset Management Service" as DatasetSvc
+  component "Follow Service" as FollowSvc
+  component "Purchase Service" as PurchaseSvc
+  component "Recommendation Service" as RecoSvc
+  component "Online Invocation Service" as InvokeSvc
+  component "Admin Governance Service" as AdminSvc
+}
+
+package "Data Access" {
+  component "Data Repositories" as Repos
+}
+
+package "Integration / Infrastructure" {
+  component "Email Adapter" as EmailAd
+  component "File Storage Adapter" as FileAd
+  component "Payment Adapter" as PayAd
+  component "Model Execution Adapter" as ExecAd
+}
+
+package "External Systems" {
+  database "MySQL" as MySQL
+  cloud "SMTP Email Service" as SMTP
+  cloud "Payment Gateway" as PayGW
+  cloud "Object Storage / File Server" as ObjStore
+  cloud "Model Execution Runtime / Compute Service" as Runtime
+}
+
+' Presentation -> Application and I18n
+WebUI --> API
+WebUI --> I18n
+
+' Application -> Auth and Domain Services
+API --> Auth
+API --> AccountSvc
+API --> QASvc
+API --> BlogSvc
+API --> CommentSvc
+API --> ModelSvc
+API --> DatasetSvc
+API --> FollowSvc
+API --> PurchaseSvc
+API --> RecoSvc
+API --> InvokeSvc
+API --> AdminSvc
+
+' Auth -> Data Access
+Auth --> Repos
+
+' Domain Services -> Data Access
+AccountSvc --> Repos
+QASvc --> Repos
+BlogSvc --> Repos
+CommentSvc --> Repos
+ModelSvc --> Repos
+DatasetSvc --> Repos
+FollowSvc --> Repos
+PurchaseSvc --> Repos
+RecoSvc --> Repos
+InvokeSvc --> Repos
+AdminSvc --> Repos
+
+' Data Access -> External DB
+Repos --> MySQL
+
+' Integration adapters to external systems
+EmailAd --> SMTP
+FileAd --> ObjStore
+PayAd --> PayGW
+ExecAd --> Runtime
+
+' Domain Services -> Integration adapters
+AccountSvc --> EmailAd
+ModelSvc --> FileAd
+DatasetSvc --> FileAd
+PurchaseSvc --> PayAd
+InvokeSvc --> ExecAd
+InvokeSvc --> FileAd
+
+' Admin governance acting on domains (moderation/review)
+AdminSvc --> AccountSvc
+AdminSvc --> QASvc
+AdminSvc --> BlogSvc
+AdminSvc --> CommentSvc
+AdminSvc --> ModelSvc
+AdminSvc --> DatasetSvc
+
+@enduml

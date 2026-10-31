@@ -1,0 +1,121 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+skinparam node {
+  BackgroundColor #EAF7EA
+  BorderColor #27AE60
+  FontColor #1A1A1A
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+  FontColor #1A1A1A
+}
+skinparam cloud {
+  BackgroundColor #F5EEF8
+  BorderColor #8E44AD
+  FontColor #1A1A1A
+}
+skinparam rectangle {
+  BackgroundColor #FDEDEC
+  BorderColor #C0392B
+  FontColor #1A1A1A
+}
+skinparam arrow {
+  Color #555555
+  FontColor #333333
+  FontSize 10
+}
+skinparam defaultFontSize 11
+
+title Help With COVID — System Architecture
+
+actor "End User\n(Text / Call Channel)" as UserChannel
+actor "Authenticated\nApplication User" as AuthUser
+actor "Deployment /\nConfig Operator" as Operator
+
+cloud "Environment Variables\n[FIREBASE_AUTH_DOMAIN\nFIREBASE_DATABASE_URL\nFIREBASE_PROJECT_ID\nFIREBASE_PUBLIC_API_KEY]" as EnvVars
+
+node "Frontend — Next.js Application" {
+
+  component "Frontend Form\n(Help-Task Entry)\n[UI-001]" as FrontendForm
+
+  component "Session Handler\n[FR-001, FR-002]" as SessionHandler
+
+  component "Firebase Runtime\nConfiguration Loader\n[FR-008, NFR-003]" as FirebaseConfig
+
+  component "Run Mode Manager\n(both / frontend-only /\nbackend-only)\n[FR-009, CON-006]" as RunModeManager
+}
+
+node "Next.js API Routes — Backend Server" {
+
+  component "Session Middleware\n(server-side session support)\n[SI-004, CON-004, FR-006]" as SessionMiddleware
+
+  component "Login API Handler\nPOST /api/login\n[SI-001, FR-003, FR-004,\nFR-005, FR-006, FR-007]" as LoginAPI
+
+  component "Logout API Handler\nPOST /api/logout\n[SI-002, FR-002]" as LogoutAPI
+}
+
+node "Middleware Layer\n(Task Request Processing)" {
+
+  component "Task Request Router\n[FR-010, CI-003, NFR-004]" as TaskRouter
+
+  component "Address-to-Neighborhood\nProcessor\n[FR-011, DR-007]" as AddressProcessor
+
+  component "Service-Area\nDecision Engine\n[FR-011, DR-008]" as ServiceAreaDecision
+}
+
+node "Backend — Firebase Functions\n(Custom APIs)" {
+
+  component "OnFleet Task\nCreation Handler\n[FR-012, SI-005, DR-009]" as OnFleetHandler
+}
+
+cloud "Firebase Authentication\n(Token Issuance &\nAdmin Verification)\n[SI-003, FR-005]" as FirebaseAuth
+
+cloud "OnFleet\n(Task Management System)\n[FR-012]" as OnFleet
+
+database "Server-Side Session Store\n[FR-006, DR-004]" as SessionStore
+
+rectangle "Build Configuration\n(CSS, Sass, PNG, JPG,\nGIF, SVG, Fonts)\n[CON-005]" as BuildConfig
+
+AuthUser --> SessionHandler : user object\n[DR-001]
+AuthUser --> FrontendForm : submits help\ntask request
+
+UserChannel --> TaskRouter : help-task request\n[UI-002, FR-010]
+
+Operator --> EnvVars : provides\nconfiguration
+
+EnvVars --> FirebaseConfig : loaded at\nstartup [CON-001]
+FirebaseConfig --> SessionHandler : Firebase config\nvalues [DR-005]
+
+SessionHandler --> LoginAPI : POST /api/login\nJSON {token}\nsame-origin\n[FR-001, CI-001, DI-001]
+SessionHandler --> LogoutAPI : POST /api/logout\nsame-origin\n[FR-002, CI-002]
+SessionHandler --> FirebaseAuth : getIdToken()\n[DR-002]
+
+SessionMiddleware --> LoginAPI : wraps handler\nprovides session obj\n[CON-004]
+SessionMiddleware --> SessionStore : read/write session\n[FR-006]
+
+LoginAPI --> FirebaseAuth : verifyIdToken(token)\n[FR-005, SI-003]
+LoginAPI --> SessionStore : store decodedToken\n+ original token\n[FR-006, DR-004]
+LoginAPI --> SessionHandler : HTTP 200 + JSON\ndecoded token data\n[FR-007]
+
+FrontendForm --> TaskRouter : task request data\n[CI-003, DR-006]
+
+TaskRouter --> AddressProcessor : address data\n[DR-006, DR-007]
+AddressProcessor --> ServiceAreaDecision : neighborhood /\nrouting result [DR-007]
+ServiceAreaDecision --> OnFleetHandler : eligible request\n+ task data\n[CI-004, DR-009]
+
+OnFleetHandler --> OnFleet : create task\n[FR-012, SI-005]
+
+RunModeManager --> FrontendForm : serves frontend\n[FR-009]
+RunModeManager --> OnFleetHandler : starts backend\n[FR-009]
+
+BuildConfig --> FrontendForm : static assets\n[CON-005]
+
+@enduml

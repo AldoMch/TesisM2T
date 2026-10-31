@@ -1,0 +1,66 @@
+@startuml
+
+package "Presentation Layer" {
+    component "User Interface Component" as UI
+    cloud "Client Web Browsers" as Browser
+}
+
+package "Application Layer" {
+    component "User Management Service" as UserService
+    component "Artwork Management Service" as ArtworkService
+    component "Content Interaction Service" as ContentService
+    component "Administration Service" as AdminService
+    component "Notification Service" as NotificationService
+    component "Query & Sorting Component" as QuerySorting
+}
+
+package "Algorithm Layer" {
+    component "Recommendation Engine" as Recommender
+    component "Browsing History Component" as BrowsingHistory
+}
+
+package "Data Layer" {
+    database "User & Relationship Data" as UserDB
+    database "Artwork & Review Data" as ArtworkDB
+    database "Content & History Data" as ContentDB
+    database "System Logs" as LogDB
+}
+
+' Key Dependencies
+UI --> UserService : "authenticate users\nmanage profiles"
+UI --> ArtworkService : "display/upload/search\nartworks"
+UI --> ContentService : "favorites/comments\nfollow relationships"
+UI --> AdminService : "access admin functions"
+UI --> Recommender : "request recommendations"
+UI --> QuerySorting : "submit queries\napply filters"
+
+UserService --> UserDB : "store/retrieve\nuser & relationship data"
+ArtworkService --> ArtworkDB : "persist/retrieve\nartwork & review data"
+ContentService --> ContentDB : "store/retrieve\nfavorites/comments/history"
+AdminService --> ArtworkDB : "access review queue\nupdate review status"
+AdminService --> ContentDB : "view/delete\ncomments & replies"
+Recommender --> ArtworkDB : "access artwork data\nfor recommendations"
+Recommender --> ContentDB : "access user signals\n& history"
+BrowsingHistory --> ContentDB : "record/retrieve\nbrowsing history"
+QuerySorting --> ArtworkDB : "query & filter\nartwork data"
+NotificationService --> UserService : "send verification\n& alerts"
+
+' Internal Application Dependencies
+ArtworkService --> QuerySorting : "delegate queries"
+ContentService --> BrowsingHistory : "record user activity"
+ContentService --> NotificationService : "trigger event notifications"
+UserService --> NotificationService : "trigger account notifications"
+AdminService --> ContentService : "manage content moderation"
+Recommender --> BrowsingHistory : "utilize history data"
+
+' External Access
+Browser --> UI : "access web app"
+
+' Logging Dependencies
+UserService --> LogDB : "log user actions"
+ArtworkService --> LogDB : "log artwork operations"
+ContentService --> LogDB : "log content interactions"
+AdminService --> LogDB : "log admin activities"
+Recommender --> LogDB : "log recommendation events"
+
+@enduml

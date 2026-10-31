@@ -1,0 +1,112 @@
+@startuml
+!define LAYER1 #LightBlue
+!define LAYER2 #LightGreen
+!define LAYER3 #LightYellow
+!define LAYER4 #LightPink
+!define EXTERNAL #LightGray
+!define DATA #LightCyan
+
+title Core Flight System (cFS) Bundle Architecture
+
+package "External Systems" <<External>> {
+  [GitHub Actions CI/CD] <<CI Platform>> as CI
+  [Operator Console] <<User Interface>> as Operator
+  [Network Interface] <<Network>> as Network
+}
+
+package "Build & CI Layer" <<Layer>> {
+  [Build System] <<Make>> as Build
+  [CI Workflows] <<GitHub Actions>> as CIWorkflows
+  [Format Checker] <<Validation>> as FormatCheck
+  [Changelog Generator] <<Documentation>> as ChangelogGen
+}
+
+package "Core Flight System" <<Layer>> {
+  [cFS Framework] <<Framework>> as cFS
+  [cFE Core] <<Core>> as cFE
+  [OSAL] <<OS Abstraction>> as OSAL
+  [PSP] <<Platform Support>> as PSP
+  [Framework Applications] <<Applications>> as Apps
+}
+
+package "Tools & Utilities" <<Layer>> {
+  [cmdUtil] <<Command Utility>> as cmdUtil
+  [Telemetry Interface] <<Telemetry>> as Telemetry
+  [SIL/ECI] <<Simulation>> as SIL
+  [CCDD] <<Database>> as CCDD
+  [Perfutils-java] <<Performance>> as Perfutils
+  [gen_sch_tbl] <<Scheduler>> as SchedulerGen
+}
+
+package "Data & Configuration" <<Layer>> {
+  [Makefile.sample] <<Build Config>> as Makefile
+  [sample_defs] <<Definitions>> as Defs
+  [Git Submodules] <<Source Code>> as Submodules
+  [Telemetry Data] <<Data Stream>> as TelemetryData
+  [Command Counters] <<Metrics>> as Counters
+}
+
+' Relationships
+CI --> CIWorkflows : triggers
+CIWorkflows --> Build : executes
+CIWorkflows --> FormatCheck : runs
+CIWorkflows --> ChangelogGen : generates
+
+Operator --> cmdUtil : uses
+Operator --> Telemetry : configures IP
+Operator --> Network : connects via
+
+cmdUtil --> cFS : sends commands
+Telemetry --> cFS : receives telemetry
+Network --> cFS : network communication
+
+Build --> Makefile : uses
+Build --> Defs : uses
+Build --> Submodules : includes
+
+cFS --> cFE : contains
+cFS --> OSAL : depends on
+cFS --> PSP : depends on
+cFS --> Apps : contains
+
+cFS --> TelemetryData : produces
+cFS --> Counters : maintains
+
+SIL --> cFS : simulates
+CCDD --> cFS : database interface
+Perfutils --> cFS : performance monitoring
+SchedulerGen --> cFS : schedule generation
+
+' CI Workflow relationships
+CIWorkflows --> "Reusable Workflows" : composes via workflow_call
+FormatCheck --> "push/pull_request/workflow_call" : triggers on
+
+' Build variants
+Build --> "debug variant" : supports
+Build --> "release variant" : supports
+
+' Test dependencies
+"Functional Test" --> cFS : tests
+"Functional Test" --> cmdUtil : requires
+"Functional Test" --> "core-cpu1" : executes
+
+note right of cFS
+  Core Flight System bundle
+  including cFE, OSAL, PSP,
+  framework applications,
+  tools, and related components
+end note
+
+note right of CIWorkflows
+  GitHub Actions workflows
+  with reusable architecture
+  and workflow_call composition
+end note
+
+note right of Telemetry
+  Supports telemetry enablement
+  to operator-entered IP address
+  including 127.0.0.1 for local
+end note
+
+@enduml

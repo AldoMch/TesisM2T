@@ -1,0 +1,189 @@
+@startuml
+title PromptHub System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' Actors / Clients
+' ============================================================
+package "Client Tier" {
+  actor "Visitor" as Visitor
+  actor "Registered User\n(AI Artwork Creator / Viewer)" as User
+  actor "Administrator" as Admin
+
+  component "Web Browser\n(Chrome 110+, Safari 15.3+, Firefox 119+)" as Browser
+}
+
+Visitor --> Browser
+User --> Browser
+Admin --> Browser
+
+' ============================================================
+' Front-end Module
+' ============================================================
+package "Front-end Module\n[HTML / CSS / JavaScript / Vue / JQuery]" as FE {
+  component "Home & Artwork List UI\n(browse, search, sort, filter,\nrecommendation entries)" as FE_Home
+  component "Account UI\n(register, login, logout, password\nchange/recovery, avatar, username)" as FE_Account
+  component "Artwork Detail UI\n(image, Prompt, model, tags,\ncomments, replies)" as FE_Detail
+  component "Upload & Edit UI\n(image, Prompt, model, category,\nextra info, review flow entry)" as FE_Upload
+  component "Favorite Management UI\n(public/private categories,\nview, query, cancel, rename)" as FE_Fav
+  component "User Center UI\n(home page, follows, fans,\nhistory, artwork list)" as FE_UserCenter
+  component "Notification UI\n(unread list, mark read, delete)" as FE_Notify
+  component "Administrator UI\n(users, artworks, review,\ncomments, replies)" as FE_Admin
+}
+
+Browser --> FE_Home
+Browser --> FE_Account
+Browser --> FE_Detail
+Browser --> FE_Upload
+Browser --> FE_Fav
+Browser --> FE_UserCenter
+Browser --> FE_Notify
+Browser --> FE_Admin
+
+' ============================================================
+' Back-end Module
+' ============================================================
+package "Back-end Module\n[Python / Java / Django]" as BE {
+
+  component "Security & Communication Layer\n(HTTPS, authentication,\nCORS, XSS/SQL-injection protection,\ninput revalidation)" as BE_Security
+
+  package "Business Services" {
+    component "User & Auth Service\n(registration, login/logout,\npassword, avatar, username)" as S_User
+    component "Profile & Relationship Service\n(personal/other home pages,\nfollow, unfollow, fans, history)" as S_Social
+    component "Artwork Service\n(upload, edit, delete, query,\nsort, filter, detail)" as S_Artwork
+    component "Review Service\n(review queue, progress,\napprove / reject)" as S_Review
+    component "Favorite Service\n(favorites, categories,\nvisibility, query)" as S_Fav
+    component "Comment & Reply Service\n(add, view, delete comments/replies)" as S_Comment
+    component "Notification Service\n(event listener, unread count,\nmark read, delete)" as S_Notify
+    component "Admin Service\n(user/artwork lists, review,\ncomment/reply management)" as S_Admin
+  }
+
+  component "Event Dispatcher\n(comment, reply, review-progress events)" as BE_Events
+  component "Logging & Fault Localization\n(backup logs, error timestamps)" as BE_Log
+}
+
+FE_Home --> BE_Security
+FE_Account --> BE_Security
+FE_Detail --> BE_Security
+FE_Upload --> BE_Security
+FE_Fav --> BE_Security
+FE_UserCenter --> BE_Security
+FE_Notify --> BE_Security
+FE_Admin --> BE_Security
+
+BE_Security --> S_User
+BE_Security --> S_Social
+BE_Security --> S_Artwork
+BE_Security --> S_Review
+BE_Security --> S_Fav
+BE_Security --> S_Comment
+BE_Security --> S_Notify
+BE_Security --> S_Admin
+
+S_Comment --> BE_Events
+S_Artwork --> BE_Events
+S_Review --> BE_Events
+BE_Events --> S_Notify
+
+S_Review --> S_Artwork
+S_Fav --> S_Artwork
+S_Social --> S_User
+S_Admin --> S_User
+S_Admin --> S_Artwork
+S_Admin --> S_Comment
+
+S_User --> BE_Log
+S_Artwork --> BE_Log
+S_Review --> BE_Log
+S_Notify --> BE_Log
+
+' ============================================================
+' Algorithm Support Module
+' ============================================================
+package "Algorithm Support Module\n[Python / PyTorch / TensorFlow]" as ALGO {
+  component "Popular Recommendation\n(rank recent artworks by\npopularity)" as ALGO_Popular
+  component "Personalized Recommendation\n(signals: visits, likes,\nfavorites, follows, history)" as ALGO_Personal
+  component "Recommendation Preference Manager\n(enable / disable personalized)" as ALGO_Pref
+}
+
+S_Artwork --> ALGO_Popular
+S_Social --> ALGO_Personal
+S_Fav --> ALGO_Personal
+ALGO_Popular --> S_Artwork : recommended list
+ALGO_Personal --> S_Artwork : recommended list
+ALGO_Pref --> ALGO_Personal
+
+' ============================================================
+' Data Persistence Tier
+' ============================================================
+database "Data Persistence Tier\n[SQLite -> optional MySQL migration]" as DB {
+  component "User Account Data\n(DR-001)" as D_User
+  component "Administrator Account Data\n(DR-002)" as D_Admin
+  component "AI Artwork Data\n(Prompt, model, category, tags) (DR-003)" as D_Artwork
+  component "Review Record Data\n(DR-004)" as D_Review
+  component "Query / Sorting Conditions\n(DR-005)" as D_Query
+  component "Comment Data\n(DR-006)" as D_Comment
+  component "Reply Data\n(DR-007)" as D_Reply
+  component "Favorite Data\n(DR-008)" as D_Fav
+  component "Favorite Category Data\n(DR-009)" as D_FavCat
+  component "Follow Relationship Data\n(DR-010)" as D_Follow
+  component "Browsing History Data\n(DR-011)" as D_History
+  component "Recommendation Signals\n& Preferences (DR-012)" as D_Signals
+  component "Notification Data\n(DR-013)" as D_Notify
+  component "Log Data\n(DR-014)" as D_Log
+  component "Encrypted Sensitive Data\n(DR-015)" as D_Sensitive
+}
+
+S_User --> D_User
+S_User --> D_Sensitive
+S_Admin --> D_Admin
+S_Artwork --> D_Artwork
+S_Artwork --> D_Query
+S_Review --> D_Review
+S_Comment --> D_Comment
+S_Comment --> D_Reply
+S_Fav --> D_Fav
+S_Fav --> D_FavCat
+S_Social --> D_Follow
+S_Social --> D_History
+S_Notify --> D_Notify
+BE_Log --> D_Log
+ALGO_Personal --> D_Signals
+ALGO_Pref --> D_Signals
+
+' ============================================================
+' Runtime / Deployment Environment
+' ============================================================
+node "Docker Runtime Environment 20.10.17\nServer: Ubuntu 22.0.4\n(i5-10600K+, GTX 2060+, 32GB+)" as DOCKER {
+  component "Backend Container" as C_BE
+  component "Database Container" as C_DB
+  component "Algorithm Container" as C_ALGO
+  component "Auto-Restart & Monitoring\n(restart on error, email alert,\ndisk usage < 80% threshold)" as C_OPS
+  component "Offsite Disaster Recovery\nBackup" as C_Backup
+}
+
+BE ..> C_BE : deployed in
+DB ..> C_DB : deployed in
+ALGO ..> C_ALGO : deployed in
+C_BE --> C_OPS
+C_DB --> C_Backup
+
+' ============================================================
+' External Services
+' ============================================================
+cloud "Email Service\n(verification codes, alerts)" as Email
+S_User --> Email : send code
+C_OPS --> Email : developer alert
+
+note right of BE_Security
+  Communication: secure HTTP requests,
+  authenticated user operations,
+  firewall + cross-origin access control.
+  API paths and data-exchange formats
+  are design details not fixed by the SRS.
+end note
+
+@enduml

@@ -1,0 +1,90 @@
+@startuml
+title hAFL2 - kAFL-based Hypervisor Fuzzing System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "hAFL2 Fuzzing Platform" {
+
+  package "Test Workflow (Python 3 / pytest)" {
+    component "Standalone Test Runner\ntest.py" as TestRunner
+    component "Random Test Suite" as RandomTests
+    component "Deterministic Test Suite\n(mutation payloads + effector maps)" as DetTests
+    component "Havoc Test Suite" as HavocTests
+  }
+
+  package "Linux Userspace Fuzzing Workflow (bash)" {
+    component "Userspace Launch Scripts" as LaunchScripts
+    component "initrd Builder" as InitrdBuilder
+    component "Shared Library Collector\n(host .so copy)" as LibCollector
+    component "Embedded Forkserver\n(kAFL hypercall -> AFL-style I/O)" as Forkserver
+  }
+
+  package "Windows Hyper-V Fuzzing Workflow" {
+    component "packet_sender.exe\n(triggers packet-sending IOCTL)" as PacketSender
+    component "loader.exe\n(fuzzing snapshot / load / execute)" as Loader
+    component "Harness Driver\n(Visual Studio build)" as HarnessDriver
+    component "Crash-Monitoring Driver\n(Visual Studio build)" as CrashMonitor
+    component "Windows Build Offset Config" as WinOffset
+  }
+
+  package "Mutation Engine" {
+    component "Deterministic Bitflip Mutator" as Bitflip
+    component "Payload Restoration\n(restore original on exit)" as Restore
+  }
+
+}
+
+package "Virtualization Environment" {
+  component "Child Partition VM" as ChildVM
+  component "Root Partition VM" as RootVM
+  component "VMSwitch\n(vmswitch.sys Hyper-V path)" as VMSwitch
+  component "netvsc / VMBus Channels" as Netvsc
+}
+
+package "Interfaces / Data" {
+  component "CLI" as CLI
+  component "initrd\n(target binary + shared libs)" as Initrd
+  component "Fuzzing Payload" as FuzzPayload
+  component "Crash Result" as CrashResult
+}
+
+' ---- User / CLI access ----
+CLI ..> TestRunner : invoke
+CLI ..> LaunchScripts : invoke
+
+' ---- Test workflow ----
+TestRunner --> RandomTests
+TestRunner --> DetTests
+TestRunner --> HavocTests
+DetTests --> Bitflip
+DetTests --> Restore
+
+' ---- Linux workflow ----
+LaunchScripts --> InitrdBuilder
+InitrdBuilder --> Initrd
+LibCollector --> Initrd : copy required libs
+LaunchScripts --> Forkserver
+Initrd --> Forkserver : launch target
+Forkserver ..> Initrd : guest I/O
+
+' ---- Windows helper binaries ----
+Loader --> PacketSender : load & execute
+Loader --> WinOffset
+HarnessDriver --> WinOffset : build-specific offset
+
+' ---- Hyper-V fuzzing path ----
+HarnessDriver --> ChildVM : runs in
+ChildVM --> Netvsc : send payload
+Netvsc --> RootVM
+RootVM --> VMSwitch : fuzz target path
+FuzzPayload --> HarnessDriver : payload
+PacketSender --> HarnessDriver
+
+' ---- Crash monitoring feedback ----
+RootVM --> CrashMonitor
+CrashMonitor --> CrashResult
+CrashResult --> TestRunner : feedback to hAFL2
+CrashResult --> HarnessDriver
+
+@enduml

@@ -1,0 +1,107 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title Escape Application - Layered Architecture
+
+package "Presentation Layer" <<Layer>> {
+  component "Web Browser Client" <<Component>> {
+    component "React Application" <<Component>> {
+      component "Authentication Views" <<Component>> {
+        component "Sign-up View" <<Component>>
+        component "Sign-in View" <<Component>>
+      }
+      component "Shared Credential Handler" <<Component>>
+      component "Content Retrieval Client" <<Component>>
+      component "Scene Renderer" <<Component>> {
+        component "A-Frame Components" <<Component>>
+        component "aframe-react Components" <<Component>>
+      }
+      component "Error Display" <<Component>>
+    }
+    component "React-Router" <<Component>>
+    component "jQuery" <<Component>>
+  }
+}
+
+package "Application Layer" <<Layer>> {
+  component "Node.js Web Server" <<Component>> {
+    component "Express HTTP Router" <<Component>>
+    component "User Controller" <<Component>>
+    component "Authentication Service" <<Component>> {
+      component "bcrypt-nodejs Password Verifier" <<Component>>
+    }
+    component "Content Service" <<Component>>
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "User Model Interface" <<Component>>
+  component "Cache Service" <<Component>> {
+    component "Redis-style Cache" <<Datastore>>
+  }
+  component "Database" <<Component>> {
+    component "MariaDB Database" <<Datastore>> {
+      component "Users Table" <<Datastore>>
+      component "Likes Table" <<Datastore>>
+      component "Photos Table" <<Datastore>>
+      component "Comments Table" <<Datastore>>
+    }
+  }
+}
+
+package "External Systems" <<External>> {
+  component "Image Storage Service" <<External>> {
+    component "AWS S3-style Storage" <<External>>
+  }
+  component "Content Source API" <<External>>
+}
+
+'Web Browser Client' --> "Node.js Web Server" : HTTP/HTTPS\n(Authentication, Content)
+'Authentication Views' --> 'Shared Credential Handler' : Credential Input
+'Shared Credential Handler' --> 'User Controller' : JSON POST\n(Credentials)
+'Content Retrieval Client' --> 'Content Service' : Async Requests\n(Paragraph Content)
+'Scene Renderer' --> 'Image Storage Service' : Image Assets
+'User Controller' --> 'User Model Interface' : CRUD Operations
+'User Model Interface' --> 'Database' : Persistence Operations
+'Authentication Service' --> 'bcrypt-nodejs Password Verifier' : Password Comparison
+'bcrypt-nodejs Password Verifier' --> 'Database' : Password Verification
+'Content Service' --> 'Content Source API' : External Content Fetch
+'Node.js Web Server' --> 'Cache Service' : Caching Operations
+'Cache Service' --> 'Redis-style Cache' : Cache Storage/Retrieval
+'Database' --> 'MariaDB Database' : SQL Operations
+'User Controller' --> 'Cache Service' : User Data Caching
+
+note right of "Web Browser Client"
+  Technologies: React, React-Router,
+  jQuery, A-Frame, aframe-react
+  Scene Components: Lobby, SF, Louvre,
+  Berlin, Milan, Rome, Hack, Camera,
+  Sky, Plane, TextPlane
+end note
+
+note right of "Node.js Web Server"
+  Express-style routing
+  User controller layer
+  Authentication processing
+  Content service layer
+end note
+
+note right of "Database"
+  Relational database
+  Stores: users, likes, photos, comments
+  Application interaction data
+end note
+
+@enduml

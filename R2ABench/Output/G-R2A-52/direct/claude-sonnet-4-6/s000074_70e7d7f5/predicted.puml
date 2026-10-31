@@ -1,0 +1,172 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2C7BB6
+  FontColor #1A1A2E
+}
+skinparam component {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontColor #1A1A2E
+}
+skinparam package {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #1A1A2E
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontColor #1A1A2E
+}
+skinparam rectangle {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #37474F
+  FontColor #37474F
+}
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+skinparam linetype ortho
+
+title Tengine Lite — System Architecture Diagram
+
+node "User / Developer Environment" as UserEnv {
+  component "C API Integrator\n(Native Application)" as CAPIUser
+  component "C++ API User\n(C++ Application)" as CppAPIUser
+  component "Python API User\n(Python Application)" as PyAPIUser
+  component "Example User\n(Classification, Detection,\nSegmentation, Pose, OCR, etc.)" as ExampleUser
+  component "Tool User\n(Model Conversion)" as ToolUser
+}
+
+node "Tengine Lite Core Library" as TengineCore {
+
+  package "API Surface Layer" as APILayer {
+    component "C API\n(Original Tengine-Compatible)" as CAPI
+    component "C++ API\nDocumentation Entry Point" as CppAPI
+    component "Python API\nDocumentation Entry Point" as PyAPI
+  }
+
+  package "Core Modules" as CoreModules {
+
+    component "Scheduler Module\n- Schedule & Execute NNIR\n- Computation Graph Management\n- Hardware Resource Scheduling\n- Model Serializer Coordination" as Scheduler
+
+    component "Operator Module\n- NN Operator Registration\n- NN Operator Initialization" as OperatorModule
+
+    component "Serializer Module\n- Binary tmfile Decoding\n- Serialized Model Parameter Output" as Serializer
+
+    component "Device Module\n- NN Operators Backend\n- Hardware Abstraction" as DeviceModule
+  }
+
+  package "Example Applications" as ExampleApps {
+    component "Classification\n(MobileNet v1)" as ExClassify
+    component "Object Detection\n(SSD, YoloV3, YoloV4-tiny,\nYoloV5s, NanoDet, EfficientDet,\nRetinaFace)" as ExDetect
+    component "Segmentation\n(Yolact, U-Net)" as ExSegment
+    component "Pose Estimation\n(OpenPose, HRNet)" as ExPose
+    component "Landmark Detection\n(Facial Landmark)" as ExLandmark
+    component "Character Recognition\n(CRNN Chinese OCR)" as ExOCR
+  }
+}
+
+node "Model Conversion Tooling" as ConversionTools {
+  component "Linux Pre-compiled\nConversion Tool\n[Linux Only]" as LinuxTool
+  node "Web Browser\n(WebAssembly Support Required)" as Browser {
+    component "Online Converter\n(WebAssembly-based)\n[Local Browser Execution,\nNo Data Uploaded]" as WasmConverter
+  }
+}
+
+node "Build System" as BuildSystem {
+  component "CMake-based\nCross-platform Build\n[C-001 / NFR-001]" as CMakeBuild
+}
+
+database "Local Asset Store\n(Project Root Folder)" as LocalAssets {
+  component "Model Files\n(.tmfile binary / other formats)" as ModelFiles
+  component "Image Files\n(Input for Examples)" as ImageFiles
+  component "Converted Model Artifacts" as ConvertedModels
+}
+
+' --- User to API connections ---
+CAPIUser --> CAPI : uses (C API)
+CppAPIUser --> CppAPI : consults (C++ API docs)
+PyAPIUser --> PyAPI : consults (Python API docs)
+ExampleUser --> ExClassify : runs
+ExampleUser --> ExDetect : runs
+ExampleUser --> ExSegment : runs
+ExampleUser --> ExPose : runs
+ExampleUser --> ExLandmark : runs
+ExampleUser --> ExOCR : runs
+ToolUser --> LinuxTool : uses (Linux)
+ToolUser --> WasmConverter : uses (Browser)
+
+' --- API to Core ---
+CAPI --> Scheduler : dispatches inference requests
+CppAPI --> Scheduler : dispatches inference requests
+PyAPI --> Scheduler : dispatches inference requests
+
+' --- Examples to API ---
+ExClassify --> CAPI : invokes via C API (FR-002)
+ExDetect --> CAPI : invokes via C API
+ExSegment --> CAPI : invokes via C API
+ExPose --> CAPI : invokes via C API
+ExLandmark --> CAPI : invokes via C API
+ExOCR --> CAPI : invokes via C API
+
+' --- Core module interactions ---
+Scheduler --> OperatorModule : registers & initializes operators
+Scheduler --> Serializer : decodes tmfile model data
+Scheduler --> DeviceModule : dispatches to backend
+
+' --- Serializer data flow ---
+Serializer --> ModelFiles : reads binary tmfile input
+Serializer ..> Scheduler : returns serialized model parameters
+
+' --- Example asset dependencies ---
+ExClassify --> LocalAssets : loads local images & models (C-004)
+ExDetect --> LocalAssets : loads local images & models
+ExSegment --> LocalAssets : loads local images & models
+ExPose --> LocalAssets : loads local images & models
+ExLandmark --> LocalAssets : loads local images & models
+ExOCR --> LocalAssets : loads local images & models
+
+' --- Conversion tool data flow ---
+LinuxTool --> ModelFiles : reads model input
+LinuxTool --> ConvertedModels : writes converted artifact (C-002)
+WasmConverter --> ModelFiles : reads model input (local in browser)
+WasmConverter --> ConvertedModels : writes converted artifact (C-003)
+
+' --- Build system ---
+CMakeBuild --> TengineCore : builds (cross-platform, NFR-001)
+CMakeBuild --> ExampleApps : builds
+CMakeBuild --> ConversionTools : builds
+
+note bottom of Serializer
+  FR-006, DR-003, DR-004:
+  Decodes binary tmfile format
+  into serialized model parameters
+end note
+
+note bottom of WasmConverter
+  NFR-003, FR-008, C-003:
+  Executes entirely in browser.
+  No private data uploaded.
+end note
+
+note right of CMakeBuild
+  C-001, NFR-001:
+  CMake-based build for
+  cross-platform support
+end note
+
+note right of OperatorModule
+  FR-009:
+  Registers & initializes
+  NN Operators
+end note
+
+@enduml

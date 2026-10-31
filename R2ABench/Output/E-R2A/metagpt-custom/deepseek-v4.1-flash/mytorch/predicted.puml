@@ -1,0 +1,130 @@
+@startuml
+package "Visual Front-End Layer" {
+  component "Main Interface" as Main
+  component "Configuration Interface" as Config
+  component "Training Interface" as Train
+  component "Inference Interface" as Infer
+  component "Guidance and Help" as Help
+  component "Real-time Visualization/Feedback" as VizFeedback
+}
+
+package "Back-End Service Layer" {
+  interface "Business Service Interface" as BusinessAPI
+  component "System Back End" as Backend
+  component "Model Configuration Service" as ModelConfigService
+  component "Model Initialization Service" as ModelInit
+  component "Training Service" as TrainingSvc
+  component "Inference Service / Inferencer" as InferenceSvc
+  component "Model Management Service" as ModelMgmt
+  component "Training State Manager" as TrainingStateMgr
+  component "Monitoring, Fault Handling and Resource Metrics" as Monitoring
+  component "Security and Privacy" as SecurityPrivacy
+}
+
+package "MyTorch/NNE Framework Layer" {
+  component "MyTorch/NNE Framework Extension" as FrameworkExt
+  component "Data Loader / Data Loading Component" as DataLoader
+  component "Data Preprocessing Component" as DataPreprocessing
+  component "Data Augmentation Component" as DataAugmentation
+  component "Dataset Splitting Component" as DatasetSplitting
+  component "Model Loader" as ModelLoader
+  component "Training Engine" as TrainingEngine
+  component "GPU Acceleration Component" as GPUAccel
+  component "GPU Resource Manager / Auto-detection & Configuration" as GPUResourceMgr
+  component "Weight Initialization Component" as WeightInit
+  component "Classic Models Component" as ClassicModels
+  component "Preset Datasets Component" as PresetDatasets
+}
+
+package "Persistence Layer" {
+  database "SQLite Database" as SQLite
+  component "Model Repository" as ModelRepo
+  component "Dataset Repository" as DatasetRepo
+  component "Backup and Recovery Component" as BackupRecovery
+  component "Logging and History Component" as LoggingHistory
+}
+
+package "External Systems" {
+  node "GPU Hardware / API" as GPU
+  cloud "Public Datasets (CIFAR, ImageNet, COCO, Fashion-MNIST, IMDB, Penn Treebank, SVHN, EMNIST)" as Datasets
+  node "Python 3.8.x / requirements.txt" as Python
+  node "Existing NNE Framework Code" as NNE
+}
+
+' Front-end to back-end
+Main ..> BusinessAPI
+Config ..> BusinessAPI
+Train ..> BusinessAPI : start/stop training
+Infer ..> BusinessAPI
+VizFeedback ..> BusinessAPI : real-time metrics/feedback
+
+' Business API realization
+Backend ..|> BusinessAPI
+
+' Back-end orchestration
+Backend --> ModelConfigService : manages configuration
+Backend --> ModelInit
+Backend --> TrainingSvc
+Backend --> InferenceSvc
+Backend --> ModelMgmt
+Backend --> TrainingStateMgr : manages training state/termination
+Backend --> Monitoring : collects metrics/faults
+
+' Back-end to framework and persistence
+Backend --> FrameworkExt : calls MyTorch/NNE
+Backend --> DatasetRepo : persists/retrieves training datasets
+
+' Service layer dependencies
+ModelInit --> ModelConfigService : gets model configuration
+ModelInit --> WeightInit : selects initialization
+ModelInit --> FrameworkExt : initializes model
+
+TrainingSvc --> DataLoader : data loading
+TrainingSvc --> TrainingEngine : train/evaluate
+TrainingSvc --> TrainingStateMgr : termination/state
+TrainingSvc --> ModelMgmt : saves trained model/eval results
+TrainingSvc --> LoggingHistory : saves training logs/history
+
+InferenceSvc --> ModelLoader : loads model by address and calls forward()
+InferenceSvc --> DataLoader : uses data loader
+InferenceSvc --> LoggingHistory : saves inference logs
+
+ModelMgmt --> ModelRepo : manages models
+
+' Framework internal dependencies
+DataLoader --> DataPreprocessing : preprocesses data
+DataLoader --> DataAugmentation : augments data
+DataLoader --> DatasetSplitting : splits dataset
+DataLoader --> PresetDatasets : loads preset datasets
+DataLoader --> Datasets : downloads/loads data
+DataLoader --> FrameworkExt
+
+ModelLoader --> FrameworkExt
+ModelLoader --> ClassicModels : loads classic models
+TrainingEngine --> FrameworkExt
+TrainingEngine --> GPUAccel : matrix ops
+GPUAccel --> GPUResourceMgr : uses GPU resource management
+GPUResourceMgr --> GPU : detects/configures GPU
+GPUAccel --> Python : runs in Python runtime
+ClassicModels --> FrameworkExt : adds to NNE API
+ClassicModels --> NNE : extends existing code
+FrameworkExt --> NNE : enhances existing NNE code
+PresetDatasets --> Datasets : download links
+WeightInit --> FrameworkExt : initializes weights
+
+' Persistence dependencies
+ModelRepo --> SQLite : stores model metadata/artifacts
+DatasetRepo --> SQLite : stores dataset metadata/paths
+LoggingHistory --> SQLite : persists logs/history
+BackupRecovery --> SQLite : backup/recovery
+
+' Cross-cutting concerns
+Monitoring --> TrainingSvc : monitors training
+Monitoring --> InferenceSvc : monitors inference
+Monitoring --> GPUResourceMgr : monitors GPU/memory
+Monitoring --> LoggingHistory : reports faults
+SecurityPrivacy --> SQLite : protects data
+SecurityPrivacy --> Backend : secures user/model data
+SecurityPrivacy --> FrameworkExt : secures models
+
+@enduml

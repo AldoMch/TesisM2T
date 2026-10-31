@@ -1,0 +1,75 @@
+@startuml
+title kubescape/host-scanner - System Architecture (SRS-derived)
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+component "HTTP Client / E2E Tests" as Client
+
+cloud "Kubernetes Cluster" as K8s {
+  node "Kubernetes Node" as Node {
+    frame "Host OS" as HostOS {
+      folder "/etc" as etc
+      folder "/run" as run
+      folder "/var/lib" as varlib
+      folder "/etc/cni" as etc_cni
+      folder "/var/lib/cni" as varlib_cni
+    }
+
+    node "DaemonSet Pod: host-scanner" as Pod {
+      component "host-scanner HTTP Service" as API
+      component "Request Router" as Router
+      component "CNI Directory Resolver" as CNIResolver
+      component "JSON Sanitizer\n(encryption provider secret removal)" as Sanitizer
+    }
+
+    component "Kubelet" as Kubelet
+    component "Container Runtime\n(containerd / CRI-O)" as Runtime
+  }
+}
+
+Client -down-> API : HTTP GET/Response\n(404 for unknown paths e.g. /doesnotexist)
+API --> Router
+Router --> Sanitizer : sanitize control-plane JSON
+Router --> CNIResolver : resolve CNI config dir
+
+CNIResolver ..> Runtime : runtime type
+CNIResolver ..> Kubelet : kubelet config hints
+CNIResolver ..> etc : read configuration files
+CNIResolver ..> run : runtime state
+CNIResolver ..> varlib : runtime data
+CNIResolver ..> etc_cni : default CNI dir\n(kubelet/containerd defaults)
+CNIResolver ..> varlib_cni : explicit CLI arg\n/ runtime-specific location
+
+file "Control-plane JSON Input" as json_in
+file "Sanitized JSON Output" as json_out
+json_in --> Sanitizer
+Sanitizer --> json_out
+
+note right of API
+- Exposes HTTP endpoints
+- Returns 404 for unknown e.g. /doesnotexist
+- Standard HTTP semantics
+end note
+
+note right of CNIResolver
+Resolves CNI configuration directory from:
+- runtime type
+- defaults
+- configuration-file content
+- CLI --cni-dir argument
+Expected results by scenario:
+- /etc/cni/ (kubelet/containerd defaults)
+- /var/lib/cni/ (explicit arg)
+- config-derived subpaths
+end note
+
+note right of Sanitizer
+Removes encryption provider configuration secrets
+from control-plane JSON before output.
+end note
+
+component "Provider-specific E2E Tests" as E2E
+E2E .. Client : Go build tags\n//go:build <provider>\nselect expectations
+
+@enduml

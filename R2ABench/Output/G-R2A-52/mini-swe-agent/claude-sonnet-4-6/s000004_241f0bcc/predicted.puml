@@ -1,0 +1,88 @@
+@startuml
+title EMBC ESS Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> LightGray
+  BorderColor<<layer>> Black
+}
+
+actor "Browser User\n(Role-based)" as User
+actor "Developer" as Dev
+actor "DB Administrator" as DBA
+
+rectangle "Web Browser" {
+  rectangle "Angular ClientApp" {
+    component "Role-based Router\n(Landing & Route Guards)" as Router
+    component "Auth / Session Handler\n(Login, Logout, Session-Expired)" as Auth
+    component "HTTP Interceptor\n(Watchdog Timer, 401 Handler)" as Interceptor
+    component "NgRx Store\n(Client-side State / Cache)" as NgRx
+    component "Controlled-List Loader\n(App Initialization)" as CLLoader
+    component "Evacuee Service Wrapper" as EvacSvc
+    component "Incident-Task Service Wrapper" as IncidentSvc
+    component "Organization Service Wrapper" as OrgSvc
+    component "Referral Service Wrapper" as ReferralSvc
+    component "Registration Service Wrapper\n(incl. PDF Collection)" as RegSvc
+    component "Notification Service\n(Queue & Notifier)" as NotifSvc
+    component "Redirect Guard" as RedirectGuard
+    component "Module Diagnostic\n(Double-load Alert)" as ModDiag
+  }
+}
+
+rectangle ".NET Core WebAPI Server" {
+  component "API Controllers" as Controllers
+  component "Domain Services" as DomainSvc
+  component "Development API Bypass\n(Dev Env Only)" as DevBypass
+  rectangle "Data Access Layer" {
+    component "Entity Framework / DbContext" as EF
+  }
+}
+
+database "MS SQL Database" as MSSQL {
+  component "Persistent Database Entities" as DBEntities
+  component "Repository SQL Scripts\n(Data Maintenance)" as SQLScripts
+}
+
+cloud "SiteMinder\n(Auth / Access Control)" as SiteMinder
+
+User --> Router : navigates
+User --> Auth : login / logout
+Router --> Auth : route guard checks
+Auth --> Interceptor : session control
+Interceptor --> Controllers : HTTP requests (via Proxy in Dev)
+EvacSvc --> Interceptor
+IncidentSvc --> Interceptor
+OrgSvc --> Interceptor
+ReferralSvc --> Interceptor
+RegSvc --> Interceptor
+CLLoader --> NgRx : loads controlled-list data
+EvacSvc --> NgRx : reads/writes shared state
+IncidentSvc --> NgRx : reads/writes shared state
+NotifSvc --> NgRx : queues notifications
+Router --> RedirectGuard : external URL routing
+Controllers --> DomainSvc : business logic
+DomainSvc --> EF : data access
+EF --> DBEntities : ORM mapping
+DBA --> SQLScripts : executes scripts
+SQLScripts --> MSSQL : data maintenance
+SiteMinder --> Auth : authentication context
+Dev --> DevBypass : role-paired tokens (dev only)
+DevBypass --> Controllers : dev access
+
+note right of NgRx
+  Single immutable state,
+  actions, reducers (NgRx pattern)
+end note
+
+note right of SQLScripts
+  Requires DB backup before execution.
+  Uses target-filter variables
+  and transaction structure.
+end note
+
+note bottom of DevBypass
+  Backend-only, enabled
+  in designated dev environments only.
+end note
+
+@enduml

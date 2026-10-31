@@ -1,0 +1,138 @@
+@startuml
+
+package "Repository / Source Layer" {
+  component "cFS Bundle Repository" as Repo
+  component "Git Submodules" as Submods
+  Repo --> Submods : includes
+
+  component "Related Interfaces/Tools Catalog" as Catalog
+}
+
+package "Build & Install Layer" {
+  component "Make Assets\n(Makefile.sample, sample_defs)" as MakeAssets
+  component "Make Build Orchestrator\n(make prep/install)" as MakeOrch
+  component "Build Variants Support\n(debug/release)" as Variants
+  component "Build Artifacts" as Artifacts
+
+  MakeOrch --> MakeAssets : uses (C-002)
+  MakeOrch --> Variants : selects
+  MakeOrch --> Artifacts : produces
+  MakeOrch --> Repo : builds from source
+}
+
+package "Runtime Execution Layer" {
+  component "core-cpu1 Executable" as CoreCPU1
+  component "Telemetry Enablement Mechanism" as TelemetryEnable
+
+  CoreCPU1 --> Artifacts : depends on artifacts
+  CoreCPU1 --> TelemetryEnable : configures telemetry
+}
+
+package "Host Interaction Layer" {
+  component "cmdUtil" as CmdUtil
+  component "Telemetry Walkthrough" as TeleWalk
+  interface "Operator-entered IP" as OpIP
+  interface "Visible Telemetry" as VisTele
+}
+
+package "CI / Automation Layer" {
+  component "Changelog Generation Workflow" as ChangelogWF
+  component "Duplicate-Check Workflow" as DupCheckWF
+  component "Format Checker Workflow" as FormatWF
+  component "Static Analysis Workflow" as StaticWF
+  component "Reusable Workflow Definitions" as ReusableWF
+  component "Build CI Job" as BuildCI
+  component "Run CI Job" as RunCI
+  component "Functional-Test CI Job" as FuncTest
+  component "Changelog Artifact" as ChangelogArtifact
+
+  interface "Manual trigger" as ManualTrig
+  interface "push" as PushEvt
+  interface "pull_request" as PREvt
+  interface "workflow_call" as WorkflowCall
+  interface "15-minute timeout" as Timeout15
+}
+
+cloud "GitHub Actions" as GHA {
+  node "ubuntu-latest runner" as UbuntuLatest
+  node "ubuntu-18.04 runner" as Ubuntu1804
+}
+
+package "External Systems" {
+  component "SIL" as SIL
+  component "ECI" as ECI
+  component "cFS_IO_LIB" as CFSIOLIB
+  component "cFS_LIB" as CFSLIB
+  component "CCDD" as CCDD
+  component "Perfutils-java" as Perfutils
+  component "gen_sch_tbl" as GenSchTbl
+  component "CodeQL" as CodeQL
+}
+
+/' Cross-layer dependencies '/
+
+' Repository catalog references related tools
+Catalog --> SIL
+Catalog --> ECI
+Catalog --> CFSIOLIB
+Catalog --> CFSLIB
+Catalog --> CCDD
+Catalog --> Perfutils
+Catalog --> GenSchTbl
+
+' Build workflows and sources
+FuncTest --> Repo : checkout with submodules (C-001)
+FormatWF --> Repo : validates formatting
+
+' Build orchestration and variants
+FuncTest --> MakeOrch : invokes build
+FuncTest --> Variants : selects build type
+
+' Additional CI build and run interactions
+BuildCI --> Repo : checkout with submodules
+BuildCI --> MakeOrch : invokes build
+BuildCI --> Variants : selects build type
+BuildCI --> Artifacts : produces
+
+RunCI --> Artifacts : uses build artifacts
+RunCI --> CoreCPU1 : starts/uses (run)
+
+' Runtime and host interaction
+CmdUtil --> CoreCPU1 : sends commands (FR-003)
+OpIP --> TelemetryEnable : operator enters IP (FR-004)
+TeleWalk --> TelemetryEnable : relies on enabled telemetry (FR-005)
+TeleWalk --> CmdUtil : walkthrough uses cmdUtil
+CoreCPU1 --> VisTele : outputs telemetry (FR-004, DR-001)
+TelemetryEnable --> VisTele : enables visibility (FR-004, DR-001)
+
+' CI triggers and constraints
+ManualTrig --> ChangelogWF : triggers (FR-006)
+PushEvt --> FormatWF : triggers (NFR-004)
+PREvt --> FormatWF : triggers (NFR-004)
+WorkflowCall --> FormatWF : reusable (NFR-004)
+WorkflowCall --> ReusableWF : invoked via (NFR-005)
+WorkflowCall --> StaticWF : reusable (static analysis)
+FuncTest --> Timeout15 : constrained by (NFR-003)
+
+' CI runner environments
+ChangelogWF --> UbuntuLatest : runs on (NFR-001)
+DupCheckWF --> UbuntuLatest : runs on (NFR-001)
+FormatWF --> Ubuntu1804 : runs on (NFR-001)
+BuildCI --> Ubuntu1804 : runs on (NFR-001)
+RunCI --> Ubuntu1804 : runs on (NFR-001)
+FuncTest --> Ubuntu1804 : runs on (NFR-001)
+
+' Reusable workflows and external analyzers
+ReusableWF --> CodeQL : integrates
+
+' Duplicate-check repository usage
+DupCheckWF --> Repo : checks duplicates
+
+' Functional test dependencies on tools/runtime
+FuncTest --> CmdUtil : uses (C-003, FR-003)
+FuncTest --> CoreCPU1 : starts/uses (FR-002)
+
+' Changelog artifact upload
+ChangelogWF --> ChangelogArtifact : uploads (FR-006)
+
+@enduml

@@ -1,0 +1,79 @@
+@startuml
+!theme plain
+skinparam rectangle {
+    borderColor #333333
+    borderWidth 1
+    backgroundColor #ffffff
+    roundCorner 10
+}
+
+skinparam arrow {
+    Color #333333
+    FontSize 10
+}
+
+skinparam note {
+    BackgroundColor #ffffcc
+    BorderColor #333333
+}
+
+title HypnoLog Server Architecture
+
+rectangle "Logging Producer\n(Any Language)" as producer {
+    rectangle "HTTP Client" as http_client
+}
+
+rectangle "HypnoLog Server" as server {
+    rectangle "Node.js/Express App" as express_app {
+        rectangle "/logger/in Endpoint" as logger_in
+        rectangle "/logger/status Endpoint" as logger_status
+        rectangle "JSON Body Parser" as json_parser
+    }
+    
+    rectangle "Socket.IO Server" as socketio_server
+    
+    rectangle "Static File Server" as static_server {
+        rectangle "Web UI Assets\n(/client.html)" as web_ui
+    }
+}
+
+rectangle "Browser Client" as browser {
+    rectangle "Socket.IO Client" as socketio_client
+    rectangle "Schema Validator\n(Ajv)" as ajv_validator
+    rectangle "Window Manager" as window_manager {
+        rectangle "Visualizer Dispatcher" as viz_dispatcher
+        rectangle "Registered Windows" as windows
+    }
+    rectangle "Visualizer Modules" as visualizers
+}
+
+producer -down-> logger_in : "1. HTTP POST\napplication/json"
+logger_in -down-> json_parser : "2. Parse JSON"
+json_parser -down-> socketio_server : "3. Forward Object"
+socketio_server -down-> socketio_client : "4. Socket.IO Notification"
+socketio_client -down-> ajv_validator : "5. Validate Schema"
+ajv_validator -down-> window_manager : "6. Valid Object\nor HypnoLog-error"
+window_manager -down-> viz_dispatcher : "7. Dispatch to Windows"
+viz_dispatcher -down-> visualizers : "8. Select Visualizer\n(canDisplay)"
+visualizers -up-> viz_dispatcher : "9. Render DOM Element\n(display)"
+viz_dispatcher -right-> windows : "10. Display in Window"
+
+server -right-> static_server : "Serve Web UI"
+static_server -right-> browser : "Load UI Assets"
+
+note right of server
+    Default Port: 7000
+    CLI Startup Supported
+end note
+
+note right of browser
+    Extensible Visualizers
+    Tag/Name Display Support
+end note
+
+note bottom of viz_dispatcher
+    First-match Selection
+    canDisplay()/display() Contract
+end note
+
+@enduml

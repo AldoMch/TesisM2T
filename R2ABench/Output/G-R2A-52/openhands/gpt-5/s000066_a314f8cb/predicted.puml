@@ -1,0 +1,50 @@
+@startuml
+title Earth Defender - System Architecture (SRS-derived)
+
+skinparam componentStyle rectangle
+
+package "Client Side" {
+  node "Browser Client\n(Three.js)" as Browser {
+    component "Game UI" as GameUI
+    component "Room Manager\n(create/join room)" as RoomMgr
+    component "WebSocket Client\n(JSON [event,data])" as WSClient
+    component "Heartbeat Timer\n60s ping -> pong" as Heartbeat
+  }
+}
+
+cloud "DNS / Load Balancer" as DNS
+
+node "Web Server\n(HTTP)" as WebServer {
+  component "Static Assets\nHTML/CSS/JS/Images" as StaticAssets
+}
+
+node "Game Server Cluster\n(Erlang/OTP)" as Cluster {
+  node "Master Node" as Master {
+    component "Session Manager\nRooms & Players" as SessionMgr
+    component "WebSocket Endpoint" as WSEndpoint
+    component "Server List Service" as ServerListSvc
+  }
+  node "Replica Node(s)" as Replica {
+    component "Replica Runtime\n(fault tolerance)" as ReplicaRuntime
+  }
+}
+
+Browser -[#blue]-> DNS : Resolve web server address
+Browser -[#blue]-> WebServer : HTTP GET static assets
+Browser -[#green]-> Master : WebSocket over HTTP
+Master -[#green]--> Browser : Messages [action,data?]\n(game_reconnect, room_players_number,\nservers_list, servers_list_redirect,\nserver_error, pong)
+Browser -[#green]--> Master : Messages [event,data]\n(ping every 60s, application events)
+
+Master -[#brown].. Replica : Fault-tolerant deployment (replica)
+
+note right of Browser
+- Initiates server connections (no P2P)
+- On close: reconnect; send [room_id, player_id, index]
+- On servers_list_redirect: update list and disconnect
+end note
+
+note bottom of Cluster
+Protocols: HTTP + WebSocket\nTechnologies: Erlang/OTP (server), Three.js (client)
+end note
+
+@enduml

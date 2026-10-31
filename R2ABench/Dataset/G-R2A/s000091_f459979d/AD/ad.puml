@@ -1,0 +1,61 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "LwM2M Blockchain Platform" as Platform {
+    rectangle "External Applications\nusing LwM2M" as ExternalApps
+    rectangle "Secure API\nAuthenticated HTTP endpoints" as SecureApi
+    rectangle "LwM2M Server\nLeshan server component" as Lwm2mServer
+    rectangle "LwM2M Client\nDevice 1" as Lwm2mClientOne
+    rectangle "LwM2M Client\nDevice 2" as Lwm2mClientTwo
+    rectangle "LwM2M Bootstrap Server" as BootstrapServer
+    rectangle "Management Web UI" as ManagementUi
+    cloud "Blockchain Network\nEthereum / Web3j" as BlockchainNetwork
+    database "BootstrapStore\nSmart Contract" as BootstrapStore
+}
+
+ExternalApps <--> SecureApi : access LwM2M client data\nclient management
+SecureApi --> Lwm2mServer : protected operations
+ExternalApps --> ManagementUi : critical events
+
+ManagementUi --> SecureApi : register LwM2M clients\nmanage users
+ManagementUi --> BlockchainNetwork : access control\ncritical events
+
+Lwm2mServer <--> Lwm2mClientOne : LwM2M secure connection
+Lwm2mServer <--> Lwm2mClientTwo : LwM2M secure connection
+Lwm2mClientTwo <--> BootstrapServer : LwM2M client bootstrapping
+
+Lwm2mServer <--> BlockchainNetwork : external application\nreliable access control
+BootstrapServer <--> BlockchainNetwork : bootstrapping\nreliable information
+
+BlockchainNetwork --> BootstrapStore : getAllClients
+BlockchainNetwork --> BootstrapStore : addClient
+BlockchainNetwork --> BootstrapStore : getClient
+SecureApi --> BlockchainNetwork : Web3j HTTP service
+BootstrapServer --> SecureApi : LwM2M node JSON\nbootstrap data
+@enduml

@@ -1,0 +1,71 @@
+@startuml
+title TokenCard Contracts - System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+
+actor "Owner\n(EOA)" as Owner
+actor "Controller" as Controller
+actor "Integrator/Developer" as Dev
+
+component "ENS\n(Ethereum Name Service)" as ENS
+component "Ethereum Network" as Ethereum
+
+package "Consumer Wallet System" {
+  component "Consumer Contract Wallet\n(ETH & ERC20 custody)" as Wallet
+  component "Token Whitelist\n(rate, loadable, burnable)" as Whitelist
+  component "Controller Contract\n(adminCount, controllerCount)" as ControllerContract
+  component "Oracle / Rate Provider" as Oracle
+  component "TKN Holder Contract" as TKNHolder
+}
+
+component "Gas Tank\n(ETH on Owner Address)" as GasTank
+
+package "Generated Go Bindings" {
+  component "Contract Binding" as Binding
+  component "Call\n(read-only)" as Call
+  component "Transact\n(paid)" as Transact
+  component "Transfer\n(paid)" as Transfer
+}
+
+Dev --> Binding : uses
+
+Owner --> Wallet : owns / controls
+Owner --> GasTank : funds gas ETH
+Controller --> ControllerContract : operates
+
+Wallet --> ENS : resolves addresses
+Wallet --> Whitelist : token rules
+Wallet --> Oracle : exchange rates
+Wallet --> ControllerContract : control / confirmation
+Wallet --> TKNHolder : burn eligibility
+
+Binding --> Call
+Binding --> Transact
+Binding --> Transfer
+
+Binding --> ControllerContract : adminCount/controllerCount,\nTransact, Transfer
+Binding --> Wallet : calls
+Binding --> Whitelist : queries
+Binding --> Ethereum : interacts
+
+ENS --> Ethereum : resolution
+Wallet --> Ethereum : contract calls
+Whitelist --> Ethereum : on-chain data
+ControllerContract --> Ethereum : on-chain data
+Oracle --> Ethereum : rate data
+
+note right of GasTank
+  FR-005 / NFR-002:
+  Gas-payment ETH is outside
+  the Consumer Contract Wallet
+  and its security protections.
+end note
+
+note bottom of Whitelist
+  FR-003 / DR-005:
+  exchange rate, loadable,
+  burnable attributes.
+end note
+
+@enduml

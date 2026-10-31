@@ -1,0 +1,116 @@
+{
+  "candidate": {
+    "sample_id": "s000007_6883c7be",
+    "repository_name": "lvyahui8/http-proxy",
+    "image_url": "https://github.com/lvyahui8/http-proxy/blob/master/api_platform_architecture.jpg",
+    "source_ref": "9d52311370524ee84ac9df5ca1cf5c9bfb1fbc5b",
+    "total_score": 93,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 5309,
+    "document_count": 15,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "readme",
+      "test"
+    ],
+    "covered_categories": [
+      "api_io",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 2,
+      "user_scenario": 8,
+      "api_io": 66,
+      "deployment": 6,
+      "non_functional": 3
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 12,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 93
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "test-server/src/test/java/org/lyh/http/proxy/TestServerMainTest.java",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05573770491803279,
+      "text": "package org.lyh.http.proxy; import org.glassfish.grizzly.http.server.HttpServer; import com.sun.jersey.core.header.MediaTypes; import com.sun.jersey.api.client.Client; import com.sun.jersey.api.client.WebResource; import junit.framework.TestCase; public class TestServerMainTest extends TestCase { private HttpServer httpServer; private WebResource r; public TestServerMainTest(String testName) { super(testName); } @Override protected void setUp() throws Exception { super.setUp(); //start the Grizzly2 web container httpServer = TestServerMain.startServer(); // create the client Client c = Client.create(); r = c.resource(TestServerMain.BASE_URI); } @Override protected void tearDown() throws E..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "test-client/src/main/java/org/lyh/http/proxy/client/TestClientApp.java",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05233436920967013,
+      "text": "Exception { final int nThread = 50, nRequestInThread = 1000; final AtomicInteger cnt = new AtomicInteger(0); final ExecutorService executorService = Executors.newFixedThreadPool(nThread); final CountDownLatch threadLatch = new CountDownLatch(nThread * nRequestInThread); long startTime = System.currentTimeMillis(); for (int i = 0 ; i completableFuture = asyncHttpClient.prepareGet(TEST_URL).execute().toCompletableFuture(); completableFuture.exceptionally(e -> { logger.error(\"request exception\",e); return null; }).thenApply(response -> { if(response != null && response.hasResponseStatus() && response.getStatusCode() == 200){ cnt.incrementAndGet(); //logger.info(response.getResponseBody()); }..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "proxy-server/src/main/java/org/lyh/http/proxy/core/ProxyToServerInboundHandler.java",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.055122950819672126,
+      "text": "dler(ChannelHandlerContext client2ProxyCtx, FullHttpRequest request) { this.client2ProxyCtx = client2ProxyCtx; this.request = request; this.responseFilters = new ArrayList<>(); } @Override public void channelActive(ChannelHandlerContext ctx) throws Exception { if(logger.isDebugEnabled()){ logger.debug(\"uri: {}\",request.uri()); logger.debug(\"modified request headers: {}\",request.headers()); logger.debug(\"modified request body: {}\",request.content().toString(Charset.defaultCharset())); } /* * 与服务端的连接channel以建立并初始化完成，可以发送请求，此时， * 消息将沿着客户端的出站链移动，直到送达真正的服务端 * */ ChannelFuture future = ctx.channel().writeAndFlush(request.retain()); /* * 这行Listener代码也可以在ProxyToServerOutboundHandler@write中的promis..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "test-client/src/main/java/org/lyh/http/proxy/client/TestClientApp.java",
+      "doc_type": "test",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05320308950477056,
+      "text": "&& response.hasResponseStatus() && response.getStatusCode() == 200){ cnt.incrementAndGet(); // logger.info(response.getResponseBody()); } else { logger.error(\"request failed. repsonse : {}\",response); } } finally { threadLatch.countDown(); } } },executorService); } }); } threadLatch.await(); System.out.println(String.format(\"total request : %d, success request : %d, cost time %d ms\", nThread * nRequestInThread,cnt.get(),System.currentTimeMillis() - startTime)); executorService.shutdown(); asyncHttpClient.close(); } }"
+    },
+    {
+      "evidence_id": "E005",
+      "path": "test-server/src/main/java/org/lyh/http/proxy/TestResource.java",
+      "doc_type": "test",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.055314648334214706,
+      "text": "/// throw new WebApplicationException(\"Error while uploading file. Please try again !!\"); e.printStackTrace(); } Map data = new HashMap<>(); data.put(\"filepath\",fileName); return data; } @GET @Path(\"/download\") @Produces(MediaType.APPLICATION_OCTET_STREAM) public Object download(){ File file = new File(hostsfile); if(file.exists()){ Response.ResponseBuilder responseBuilder = Response.ok(file); responseBuilder.header(\"Content-Disposition\", String.format(\"attachment; filename=\\\"%s\\\"\", file.getName())); return responseBuilder.build(); } return null; } }"
+    },
+    {
+      "evidence_id": "E006",
+      "path": "test-server/src/main/java/org/lyh/http/proxy/Answer.java",
+      "doc_type": "test",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05526176626123744,
+      "text": "package org.lyh.http.proxy; /** * @author lvyahui (lvyahui8@gmail.com,lvyahui8@126.com) * @since 2018/4/12 21:17 */ public class Answer { private Integer code; private String msg; private Object data; public Integer getCode() { return code; } public void setCode(Integer code) { this.code = code; } public String getMsg() { return msg; } public void setMsg(String msg) { this.msg = msg; } public Object getData() { return data; } public void setData(Object data) { this.data = data; } }"
+    }
+  ]
+}

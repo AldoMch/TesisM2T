@@ -1,0 +1,26 @@
+@startuml
+component "Backend Service & NNE Extension Layer" as compbackendservice
+component "Dataset & Preprocessing Pipeline" as compdatasetmanager
+component "GPU Acceleration & Hardware Abstraction" as compgpuacceleration
+component "Inference Execution Engine" as compinferenceengine
+component "Model Registry & Initializer" as compmodelregistry
+component "Runtime Monitor & Fault Handler" as compmonitoringfaulthandler
+component "SQLite Persistence & Backup Manager" as comppersistencemanager
+component "Security & Data Protection Guard" as compsecurityprivacy
+component "Training & Evaluation Engine" as comptrainingengine
+component "Visual Front-End Interface" as compvisualfrontend
+compbackendservice --> compdatasetmanager : Invokes dataset loading, preprocessing, and batch pipeline creation.
+compbackendservice --> compinferenceengine : Dispatches inference workflows and receives forward prediction outputs or failure reports.
+compbackendservice --> compmodelregistry : Requests model template retrieval, structure instantiation, and parameter initialization.
+compbackendservice --> comppersistencemanager : Reads and writes model configurations, dataset metadata, and backup snapshots.
+compbackendservice --> comptrainingengine : Triggers training jobs, sends termination signals, and queries training status.
+compinferenceengine --> compgpuacceleration : Leverages accelerated forward-pass computation on available GPU hardware.
+compinferenceengine --> comppersistencemanager : Stores inference execution records and access logs.
+compmonitoringfaulthandler --> compgpuacceleration : Tracks GPU health, memory utilization, and hardware-level failures.
+compmonitoringfaulthandler --> comptrainingengine : Monitors training execution states and captures runtime exceptions.
+compmonitoringfaulthandler --> compvisualfrontend : Sends troubleshooting guidelines, runtime alerts, and error summaries to the UI.
+compsecurityprivacy --> comppersistencemanager : Applies integrity verification and encryption mechanisms to persisted models and database records.
+comptrainingengine --> compgpuacceleration : Offloads matrix calculations and tensor optimizations to detected GPU resources.
+comptrainingengine --> comppersistencemanager : Saves trained weights, checkpoints, metrics, and execution history.
+compvisualfrontend --> compbackendservice : Transfers user configuration, execution commands, and visualization data requests via REST/WebSocket APIs.
+@enduml

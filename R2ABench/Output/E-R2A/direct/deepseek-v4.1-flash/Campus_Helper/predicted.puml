@@ -1,0 +1,160 @@
+@startuml
+title Campus Helper Platform — Four-Layer System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam nodesep 10
+skinparam ranksep 25
+skinparam defaultFontSize 11
+
+actor "Guest" as GUEST
+actor "Registered User\n(Customer / Seller)" as USER
+actor "Administrator" as ADMIN
+
+cloud "WeChat Mini Program Runtime Platform\n(WeChat 8.0+, Mini Program framework)\n[AD-001, C-001, C-003]" as WX
+
+package "Presentation Layer — WeChat Mini Program Client\n(Android 5.0+, 4GB+ RAM, 64GB+ disk) [C-002]" {
+
+  component "Homepage / Popular Products UI\n[FR-001]" as P1
+  component "Product Category UI\n[FR-002]" as P2
+  component "Product Detail UI\n[FR-001, FR-002]" as P3
+  component "Order UI\ncreate / remark / confirm / cancel\n[FR-003 .. FR-006]" as P4
+  component "Personal Center UI\nfavorites / my orders\n[FR-007, FR-008]" as P5
+  component "Admin Product Management UI\n[FR-009 .. FR-012]" as P6
+  component "Admin Order Management UI\n[FR-013 .. FR-015]" as P7
+  component "Admin User Management UI\n[FR-016 .. FR-018]" as P8
+  component "UI Style, Help, Navigation & Wizard\n[NFR-009 .. NFR-012]" as P9
+}
+
+package "Business Layer" {
+
+  component "Product Browse Service\n[FR-001, FR-002]" as B1
+  component "Order Service\n[FR-003 .. FR-006]" as B2
+  component "Personal Center Service\n[FR-007, FR-008]" as B3
+  component "Product Management Service\n[FR-009 .. FR-012]" as B4
+  component "Order Management Service\n[FR-013 .. FR-015]" as B5
+  component "User Management Service\n[FR-016 .. FR-018]" as B6
+  component "Authentication & Permission Control\n[NFR-003, AD-004]" as B7
+  component "Input Validation & Anti-Injection\n[NFR-002, NFR-013]" as B8
+  component "Privacy & Data Review Service\n[NFR-004, DR-008]" as B9
+  component "Administrator Log Service\n[DR-006]" as B10
+  component "Monitoring, Metrics & QPS Collector\n[NFR-019]" as B11
+  component "Fault Recovery, Rollback & caseStudy\n[NFR-017, NFR-018, NFR-020]" as B12
+}
+
+package "Data Layer" {
+
+  component "User & Permission Repository" as D1
+  component "Product Repository" as D2
+  component "Tag & Category Repository" as D3
+  component "Order Repository" as D4
+  component "Favorite Repository" as D5
+  component "Administrator Log Repository" as D6
+  component "Monitoring Data Collector" as D7
+}
+
+package "Data Entity Layer (Database)" {
+
+  database "User / Role / Permission\n[DR-001]" as E1
+  database "Product (takeout pickup / express pickup / second-hand)\n[DR-002]" as E2
+  database "Tag / Category / Search Conditions\n[DR-003]" as E3
+  database "Order / Remark / Status / Address / Contact\n[DR-004]" as E4
+  database "Favorite Relationship\n[DR-005]" as E5
+  database "Administrator Operation Log\n[DR-006]" as E6
+  database "Fault, Server & Middleware Monitoring Data\n[DR-007]" as E7
+}
+
+' ---------- Actors / runtime ----------
+GUEST -down-> P1
+GUEST -down-> P2
+WX -down-> P1
+
+USER -down-> P1
+USER -down-> P2
+USER -down-> P3
+USER -down-> P4
+USER -down-> P5
+
+ADMIN -down-> P6
+ADMIN -down-> P7
+ADMIN -down-> P8
+
+P1 -down-> P3
+P2 -down-> P3
+P3 -down-> P4
+
+' ---------- Presentation -> Business ----------
+P1 -down-> B1
+P2 -down-> B1
+P3 -down-> B1
+P4 -down-> B2
+P5 -down-> B3
+P6 -down-> B4
+P7 -down-> B5
+P8 -down-> B6
+
+P4 -down-> B7
+P5 -down-> B7
+P6 -down-> B7
+P7 -down-> B7
+P8 -down-> B7
+
+' ---------- Business internal / cross-cutting ----------
+B1 -down-> B8
+B2 -down-> B8
+B4 -down-> B8
+B6 -down-> B8
+
+B1 -down-> B9
+B2 -down-> B9
+B6 -down-> B9
+
+B4 -down-> B10
+B5 -down-> B10
+B6 -down-> B10
+
+B1 -down-> B11
+B2 -down-> B11
+B3 -down-> B11
+B4 -down-> B11
+
+B7 -down-> B12
+B11 -down-> B12
+
+' ---------- Business -> Data Layer ----------
+B1 -down-> D2
+B1 -down-> D3
+B2 -down-> D4
+B2 -down-> D2
+B3 -down-> D5
+B3 -down-> D4
+B4 -down-> D2
+B4 -down-> D1
+B5 -down-> D4
+B6 -down-> D1
+B7 -down-> D1
+B9 -down-> D1
+B10 -down-> D6
+B11 -down-> D7
+
+' ---------- Data Layer -> Data Entity Layer ----------
+D1 -down-> E1
+D2 -down-> E2
+D3 -down-> E3
+D4 -down-> E4
+D5 -down-> E5
+D6 -down-> E6
+D7 -down-> E7
+
+note right of E7
+  Constraints & quality targets
+  C-004 four-layer division maintained
+  NFR-005 500–3000 concurrent requests
+  NFR-006 <=1.5s normal / <=4s peak (95%)
+  NFR-008 10,000 users, <=100k rows per table,
+  <=100GB DB, >=20GB disk
+  NFR-016 upgrade interfaces preserved
+end note
+
+@enduml

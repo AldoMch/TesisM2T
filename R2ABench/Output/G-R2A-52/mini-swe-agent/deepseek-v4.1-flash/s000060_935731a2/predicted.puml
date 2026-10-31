@@ -1,0 +1,83 @@
+@startuml
+title lowes/auditor - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' Layer 1: Client / Consumer Layer (JVM applications)
+' ============================================================
+package "Client / Consumer Layer" {
+  [Integrating JVM Application] as App
+  [Downstream Event Consumer] as Consumer
+}
+
+' ============================================================
+' Layer 2: Auditing Library Layer (lowes/auditor, Kotlin/JVM)
+' ============================================================
+package "Auditing Library Layer (auditor client library)" {
+  [Auditing API\n(audit(oldObject, newObject, config))] as API
+  [Event Configuration\nAuditorEventConfig] as Config
+  [Object State Comparison\n(Diff Engine)] as Diff
+  [Element Filtering\n(AuditEventElementFilter)] as Filter
+  [AuditEvent Builder\n(UPDATED / CREATED / DELETED)] as Builder
+  [Event Publisher Abstraction\n(EventPublisher)] as PubAbst
+  [Logging Abstraction\n(LogProvider)] as LogAbst
+}
+
+' ============================================================
+' Layer 3: Infrastructure / Integration Layer
+' ============================================================
+package "Infrastructure / Integration Layer" {
+  [Default Kafka Event Publisher] as KafkaPub
+  [Logging Implementation] as LogImpl
+  [JSON Payload Serializer] as Ser
+}
+
+' ============================================================
+' Layer 4: External Systems
+' ============================================================
+package "External Systems" {
+  [Kafka Cluster / Topic\n(default event stream)] as Kafka
+  [Downstream Persistence Service\n(out of SRS scope)] as DBPersist
+}
+
+' ============================================================
+' Dependencies
+' ============================================================
+App --> API : provides oldObject, newObject, config
+App ..> Config : supplies configuration
+Consumer ..> Kafka : consumes serialized events
+
+API --> Config : reads applicationName, eventSource,\neventSubType, metadata, filters.element
+API --> Diff : invokes comparison
+Diff --> Filter : applies element inclusion rules
+Filter --> Builder : supplies filtered elements
+Diff --> Builder : supplies detected changes
+Config --> Builder : populates event metadata
+
+Builder --> PubAbst : publish(AuditEvent)
+Builder --> LogAbst : log audit activity
+Builder --> Ser : serializes elements (name, updatedValue,\npreviousValue, metadata.fqdn)
+
+PubAbst <|.. KafkaPub : default implementation
+LogAbst <|.. LogImpl : implementation
+KafkaPub --> Ser : serializes AuditEvent to JSON
+KafkaPub --> Kafka : sends serialized event to topic
+
+Kafka --> Consumer : event stream
+Consumer --> DBPersist : persists AuditEvent
+
+note right of API
+  JVM 11 library component.
+  Integration points are abstract
+  (EventPublisher, LogProvider,
+  AuditEventElementFilter).
+end note
+
+note bottom of KafkaPub
+  Published payload is a JSON string
+  deserializable into AuditEvent.
+end note
+
+@enduml

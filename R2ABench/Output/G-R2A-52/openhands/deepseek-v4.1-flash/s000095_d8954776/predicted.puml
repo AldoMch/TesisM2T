@@ -1,0 +1,122 @@
+@startuml
+title GPSLogger - System Architecture
+
+skinparam componentStyle rectangle
+
+' --- Actors / Users ---
+actor "End User" as User
+actor "Developer" as Dev
+
+' --- Presentation Layer ---
+package "Presentation Layer" {
+  component "Main Activity" as MainActivity
+  component "Fragments\n(location event consumers)" as Fragments
+}
+
+' --- Application / Domain Layer ---
+package "Application & Domain Layer" {
+  component "Event Bus" as EventBus
+  component "GPS Logging Service" as LoggingService
+  component "Location Listeners" as LocationListeners
+  component "Session / Application Settings" as Settings
+}
+
+' --- Logging ---
+package "Log Output Layer" {
+  component "Logger Manager" as LoggerManager
+  component "GPX Logger" as GpxLogger
+  component "KML Logger" as KmlLogger
+  component "Text File Logger" as TextLogger
+}
+
+' --- Upload / Integration Layer ---
+package "Upload & Integration Layer" {
+  component "Uploader / Upload Jobs" as Uploader
+  component "OpenStreetMap Integration" as OSM
+  component "Dropbox Integration" as Dropbox
+  component "OpenGTS Uploader" as OpenGTS
+  component "GPRMC Encoder" as Gprmc
+}
+
+' --- Platform ---
+package "Android Platform" {
+  component "Android SDK" as AndroidSDK
+  component "Google Play Services" as PlayServices
+  component "Location Providers\n(GPS / Network)" as Providers
+}
+
+' --- Build-time configuration ---
+package "Build & Configuration" {
+  component "Gradle Properties\n(GPSLOGGER_OSM_* / GPSLOGGER_DROPBOX_*)" as GradleProps
+  component "Gradle Build / Import" as GradleBuild
+  component "local.properties (sdk.dir)" as LocalProps
+}
+
+' --- External Services ---
+cloud "External Services" {
+  component "OpenStreetMap Service" as ExtOSM
+  component "Dropbox Service" as ExtDropbox
+  component "OpenGTS Server\n(UDP endpoint)" as ExtOpenGTS
+}
+
+' --- Relationships: user and developer ---
+User --> MainActivity : configures & operates
+User --> Fragments : views
+Dev --> GradleBuild : builds / imports
+
+' --- Presentation to event bus ---
+MainActivity --> Settings : reads/writes config
+MainActivity --> EventBus : subscribes / publishes
+EventBus --> Fragments : publishes location events
+Fragments --> EventBus : consume location events
+
+' --- Platform acquisition ---
+Providers --> LocationListeners : location updates
+AndroidSDK --> PlayServices
+PlayServices ..> LoggingService : supported feature
+LocationListeners --> LoggingService : delivers locations
+
+' --- Core service behavior ---
+LoggingService --> Settings : reads user configuration
+LoggingService --> EventBus : publishes obtained location (FR-001)
+LoggingService --> LoggerManager : routes valid locations
+LoggingService --> Uploader : triggers uploads
+
+' --- Logging outputs ---
+LoggerManager --> GpxLogger : writes GPX
+LoggerManager --> KmlLogger : writes KML
+LoggerManager --> TextLogger : writes text file
+
+' --- OpenGTS pipeline ---
+LoggingService --> Gprmc : serializable location
+Gprmc --> OpenGTS : GPRMC string
+Settings --> OpenGTS : server, port, comm method,\ndevice id, optional path
+OpenGTS --> ExtOpenGTS : UDP datagram
+
+' --- Other integrations ---
+Uploader --> OSM : upload tracks
+Uploader --> Dropbox : upload logs
+OSM --> ExtOSM : HTTPS API
+Dropbox --> ExtDropbox : HTTPS API
+
+' --- Build-time credential injection ---
+GradleProps --> GradleBuild : OSM/Dropbox credentials
+LocalProps --> GradleBuild : sdk.dir
+GradleBuild --> OSM : inject generated config
+GradleBuild --> Dropbox : inject generated config
+GradleBuild ..> AndroidSDK : configures
+
+' --- Compatibility notes ---
+note right of PlayServices
+  NFR-001 / NFR-002: requires Android
+  emulator API 17+ or phone 2.2+
+  with Play Services installed (C-003)
+end note
+
+note bottom of OpenGTS
+  FR-005 / FR-006: requires server, port,
+  comm method, device id; path optional (C-004);
+  UDP transmission with GPRMC payload
+end note
+
+@enduml

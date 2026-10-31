@@ -1,0 +1,163 @@
+@startuml
+title PN Infra Cognito, API Gateway, and VPC Endpoint - System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 150
+
+actor "Infrastructure Operator" as Operator
+actor "API Client" as ApiClient
+
+package "Installation & Orchestration" {
+  component "CloudFormation Templates\n(YAML, 2010-09-09)" as CFTemplates
+  folder "Installation Inputs\n- AWS profiles\n- Environment name\n- DNS/domain\n- API keys\n- Account IDs\n- Certificate IDs\n- Stage name\n- VPC/Subnets/VPC CIDR\n- NLB ARN\n- SQS regional service name\n- Token validity units" as InstallInputs
+  Operator --> CFTemplates : Deploy stacks\nvia AWS CLI profiles
+  InstallInputs --> CFTemplates
+}
+
+node "Cognito Account" as AccCog {
+  component "Cognito Stack" as CognitoStack
+  component "Cognito User Pool" as UserPool
+  component "User Pool Client\n(read/write attributes: custom:Role, email)" as UserPoolClient
+  component "Identity Pool\n(AllowUnauthenticated = true)" as IdentityPool
+  component "IAM Role (Authenticated)" as AuthRole
+  component "IAM Role (Unauthenticated)\nAssumeRoleWithWebIdentity\nPrincipal: cognito-identity.amazonaws.com\nConditions: amr=unauthenticated, aud=IdentityPoolId" as UnauthRole
+  component "Identity Pool Role Attachment" as RoleAttach
+
+  CognitoStack --> UserPool
+  CognitoStack --> UserPoolClient
+  CognitoStack --> IdentityPool
+  CognitoStack --> AuthRole
+  CognitoStack --> UnauthRole
+  CognitoStack --> RoleAttach
+
+  UserPoolClient --> UserPool : Provider link
+  IdentityPool --> UserPoolClient : Cognito Provider\n(UserPoolId, ClientId, ProviderName)
+  RoleAttach --> IdentityPool
+  RoleAttach --> AuthRole : map authenticated
+  RoleAttach --> UnauthRole : map unauthenticated
+
+  note bottom of CognitoStack
+  DR-001/FR-002/NFR-003:
+   - Token validity unit parameters
+     Access/ID/Refresh tokens:
+     [days|hours|minutes|seconds]
+  DR-003/FR-003:
+   - User attributes include
+     custom:Role and email
+  end note
+
+  note right of UnauthRole
+  FR-006/NFR-004:
+   Trust policy:
+    - Action: sts:AssumeRoleWithWebIdentity
+    - Principal: cognito-identity.amazonaws.com
+    - Condition:
+       amr = unauthenticated
+       aud = IdentityPoolId
+   Attached policy limited to unauth actions
+  end note
+}
+
+node "API Gateway Account" as AccApi {
+  component "API Gateway Stack" as ApiGwStack
+  component "Amazon API Gateway\n(REST API)" as ApiGw
+  component "Cognito Authorizer\n(type: COGNITO_USER_POOLS)" as Authorizer
+  component "Method: GET /whoami\n(WhoAmI)" as WhoAmI
+  component "Method: ANY /ecs\n(ECS Proxy)" as EcsMethod
+  component "Integration: VPC Link\n-> NLB (input ARN)" as VpcLink
+  component "Deployment & Stage\n(Output: CallbackURL)" as Deployment
+
+  package "Networking (VPC)" {
+    component "VPC\n(VpcId, VpcCidr)" as VPC
+    component "Subnets\n(configured list)" as Subnets
+    component "Security Group\nIngress: TCP 0-65535\nSource: VpcCidr" as Sg
+    component "Interface VPC Endpoint\nService: com.amazonaws.<region>.sqs\nPrivate DNS: true" as SqsEndpoint
+  }
+
+  queue "Amazon SQS (Regional Service)" as SQS
+  component "Network Load Balancer\n(provided input)" as NLB
+
+  ApiGwStack --> ApiGw
+  ApiGwStack --> Authorizer
+  ApiGwStack --> WhoAmI
+  ApiGwStack --> EcsMethod
+  ApiGwStack --> VpcLink
+  ApiGwStack --> Deployment
+
+  WhoAmI --> Authorizer : Requires Cognito auth
+  EcsMethod --> Authorizer : Requires Cognito auth
+  Authorizer --> ApiGw : Attached as authorizer
+
+  ApiGw -down-> Deployment : StageName
+  Deployment ..> ApiClient : Output: CallbackURL\n(API endpoint)
+
+  ApiClient --> ApiGw : Invoke methods
+
+  EcsMethod --> VpcLink : Integration request\nforwards header:\n x-pagopa-pn-cx-role
+  VpcLink --> NLB
+
+  SqsEndpoint -[#blue]-> SQS : Private connectivity
+
+  VPC --> Subnets
+  SqsEndpoint --> VPC
+  SqsEndpoint --> Subnets
+  SqsEndpoint --> Sg
+  Sg -down-> VPC : Ingress source = VpcCidr
+
+  note right of WhoAmI
+  FR-010/CI-001:
+   - Method response declares header:
+     x-pagopa-pn-cx-role (optional)
+   - Integration response maps from
+     Cognito claim: custom:Role
+   - Status: 200
+  end note
+
+  note bottom of EcsMethod
+  FR-011/CI-002:
+   Integration request header:
+    x-pagopa-pn-cx-role
+   value <- Cognito authorizer claim custom:Role
+   Integration via VPC Link to NLB
+  end note
+
+  note bottom of SqsEndpoint
+  FR-013/FR-014/NFR-001/NFR-002/DR-006:
+   - Type: Interface
+   - Private DNS: enabled
+   - VPC: VpcId
+   - Subnets: configured list
+   - Security group ingress:
+     TCP 0-65535 from VpcCidr
+   - Service name: regional SQS
+  end note
+}
+
+' Cross-account orchestration and parameters
+CFTemplates --> CognitoStack
+CFTemplates --> ApiGwStack
+CFTemplates ..> AccApi : Parameters:\n- StageName\n- NLB ARN\n- VpcId/Subnets/Sg/VpcCidr\n- SQS regional service name
+CFTemplates ..> AccCog : Parameters:\n- AuthName\n- CognitoUserPoolName\n- Token validity units
+
+UserPool ..> Authorizer : Provide User Pool ARN
+note on link #gray
+FR-009/CON-003:
+ API Gateway stack accepts
+ Cognito User Pool ARN from the
+ Cognito account to configure
+ Cognito user-pool authorizer
+end note
+
+Deployment ..> WhoAmI : depends on method
+Deployment ..> EcsMethod : depends on method
+
+legend right
+CI-001/FR-010: WhoAmI declares optional role header and maps from claim custom:Role
+CI-002/FR-011: ECS integration forwards role claim header to backend
+FR-012: CallbackURL output published for API endpoint
+FR-013/FR-014/NFR-001/002: SQS interface endpoint with private DNS and SG restricted to VpcCidr
+NFR-003: Token validity units constrained to [days|hours|minutes|seconds]
+endlegend
+
+@enduml

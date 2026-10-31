@@ -1,0 +1,49 @@
+@startuml
+title Soundzone System Architecture
+
+' ================
+' DEPLOYMENT NODES
+' ================
+node "Client Device" {
+  package "Frontend Layer" {
+    component "React Frontend" as react_frontend
+    component "Redux Store" as redux_store
+    component "Waveform Player" as waveform_player
+    component "Form Validator" as form_validator
+  }
+}
+
+node "Server Environment" {
+  package "Backend Layer" {
+    component "Express Backend" as express_backend
+    component "Auth Service" as auth_service
+    component "Feed Service" as feed_service
+  }
+  
+  package "Data Layer" {
+    database "PostgreSQL Database" as postgres_db
+    component "Cloudinary API" as cloudinary_api
+  }
+}
+
+' ================
+' COMPONENT DEPENDENCIES
+' ================
+react_frontend --> redux_store : "State Management"
+react_frontend --> express_backend : "API Calls"
+react_frontend --> cloudinary_api : "Direct Media Uploads"
+react_frontend --> waveform_player : "Playback Control"
+react_frontend --> form_validator : "Input Validation"
+
+express_backend --> postgres_db : "Data Persistence"
+express_backend --> cloudinary_api : "Media Metadata Management"
+express_backend --> auth_service : "User Authentication"
+express_backend --> feed_service : "Feed Generation"
+
+feed_service --> postgres_db : "Retrieve Follows & Posts"
+
+postgres_db --> cloudinary_api : "Store/Fetch Media References"
+
+auth_service --> postgres_db : "User Data Storage"
+
+@enduml

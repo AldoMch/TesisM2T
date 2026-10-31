@@ -1,0 +1,151 @@
+@startuml
+skinparam nodesep 10
+skinparam ranksep 30
+skinparam componentStyle rectangle
+skinparam backgroundColor White
+skinparam shadowing false
+
+' Define layers
+rectangle "Browser Clients" as browsers {
+  component "Web Browser\n(Vue 3.3 Frontend)" as vue_frontend
+}
+
+rectangle "External Systems" as external {
+  component "Academic Databases\n(APIs & Crawlers)" as academic_dbs
+  component "Public Academic Resources" as public_resources
+}
+
+' Main system boundary
+rectangle "Zhiyan Tongjie\nAcademic Achievement Sharing Platform" as platform {
+  
+  ' Application Layer
+  rectangle "Application Layer" as app_layer {
+    component "Account Management" as account_mgmt
+    component "Literature Retrieval &\nRecommendations" as literature_retrieval
+    component "Achievement &\nInstitution Management" as achievement_mgmt
+    component "Academic Interaction &\nCollaboration" as academic_interaction
+    component "Administration\nConsole" as admin_console
+    
+    ' Application layer connections
+    account_mgmt -- literature_retrieval
+    account_mgmt -- achievement_mgmt
+    account_mgmt -- academic_interaction
+    achievement_mgmt -- academic_interaction
+    admin_console -- achievement_mgmt
+    admin_console -- account_mgmt
+  }
+  
+  ' Support Layer (Shared Services)
+  rectangle "Support Layer" as support_layer {
+    component "Semantic Processing\nService" as semantic_service
+    component "Profiling &\nPersonalization Service" as profiling_service
+    component "Authorization &\nSecurity Service" as auth_service
+    component "Academic Analysis\nService" as analysis_service
+    
+    ' Support layer connections
+    semantic_service -- profiling_service
+    profiling_service -- analysis_service
+  }
+  
+  ' Infrastructure Layer
+  rectangle "Infrastructure Layer" as infra_layer {
+    component "Computing &\nProcessing Engine" as computing_engine
+    component "Data Acquisition &\nSynchronization" as data_acquisition
+    database "Structured Storage\n(MySQL 8.0 Cluster)" as mysql_db
+    component "Unstructured Storage\n& Content Repository" as unstructured_storage
+    component "Backup &\nRecovery System" as backup_system
+    
+    ' Infrastructure connections
+    data_acquisition -- mysql_db
+    data_acquisition -- unstructured_storage
+    mysql_db -- backup_system
+    unstructured_storage -- backup_system
+    computing_engine -- mysql_db
+    computing_engine -- unstructured_storage
+  }
+  
+  ' Layer-to-layer connections
+  app_layer -- support_layer : "uses services"
+  support_layer -- infra_layer : "uses infrastructure"
+  
+  ' Application components to support services
+  literature_retrieval -- semantic_service : "semantic queries"
+  literature_retrieval -- profiling_service : "personalization"
+  achievement_mgmt -- auth_service : "authorization"
+  admin_console -- analysis_service : "reports"
+  academic_interaction -- auth_service : "access control"
+  
+  ' Support services to infrastructure
+  semantic_service -- computing_engine : "processing"
+  analysis_service -- computing_engine : "analysis"
+  auth_service -- mysql_db : "user/store\npermissions"
+  profiling_service -- mysql_db : "preferences"
+  
+  ' Data acquisition connections
+  data_acquisition -- academic_dbs : "crawls/APIs"
+}
+
+' External connections
+vue_frontend -- platform : "HTTP/HTTPS\nWeb Interface"
+academic_dbs -- data_acquisition : "daily sync\n& collection"
+public_resources -- data_acquisition : "data sources"
+
+' User groups
+actor "Visitor" as visitor
+actor "Registered User" as registered_user
+actor "Certified Scholar" as scholar
+actor "Institution Admin" as inst_admin
+actor "Expert Reviewer" as expert
+actor "System Admin" as sys_admin
+
+' User connections to frontend
+visitor --> vue_frontend
+registered_user --> vue_frontend
+scholar --> vue_frontend
+inst_admin --> vue_frontend
+expert --> vue_frontend
+sys_admin --> vue_frontend
+
+' User role access to application components
+registered_user ..> account_mgmt : "account\noperations"
+scholar ..> achievement_mgmt : "claim\nachievements"
+inst_admin ..> achievement_mgmt : "institution\nmanagement"
+expert ..> admin_console : "dispute\nreview"
+sys_admin ..> admin_console : "system\nadministration"
+
+' Data flow annotations
+note right of data_acquisition
+  Daily incremental sync
+  Data normalization
+  Deduplication
+end note
+
+note right of auth_service
+  Role-based access control
+  Institution scope enforcement
+  Delayed disclosure checks
+end note
+
+note right of backup_system
+  Daily full backups
+  Hourly incremental backups
+  30-day retention
+end note
+
+' Platform constraints note
+note bottom of platform
+  Backend: Python + Django 4.2 LTS
+  Frontend: Vue 3.3
+  Database: MySQL 8.0 Cluster
+  Three-layer architecture
+end note
+
+' Legend
+legend right
+  | Layer | Responsibility |
+  | Application | User-facing business logic |
+  | Support | Shared academic services |
+  | Infrastructure | Computing, storage, backup |
+end legend
+
+@enduml

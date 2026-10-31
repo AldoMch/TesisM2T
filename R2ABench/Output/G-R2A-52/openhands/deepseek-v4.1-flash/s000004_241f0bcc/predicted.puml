@@ -1,0 +1,152 @@
+@startuml
+title EMBC ESS - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName SansSerif
+
+' ============================================================
+' Users
+' ============================================================
+actor "Role-based\nFront-end User" as User
+actor "Developer" as Dev
+actor "System Integrator\n/ Operator" as Operator
+actor "Database Operator\n/ Administrator" as DBOp
+
+' ============================================================
+' Presentation Layer - Angular ClientApp (Web Browser)
+' ============================================================
+package "Presentation Layer - Angular ClientApp (Web Browser)" {
+
+  package "Angular Router" as Router {
+    component "Role-based Landing\nRouting [FR-001]" as LandingRoute
+    component "Login & Route-Role\nGuard [FR-002]" as AuthGuard
+    component "Redirect Guard\n(External URL) [FR-008]" as RedirectGuard
+  }
+
+  package "HTTP Interceptor Layer [FR-003, FR-004]" as Interceptor {
+    component "Unauthorized-Response\nHandler (401) [FR-003]" as UnauthorizedHandler
+    component "Watchdog Timer\nReset [FR-004]" as Watchdog
+  }
+
+  package "NgRx Client Store [DR-001, NFR-003]" as NgRx {
+    component "Immutable Shared State\n(actions / reducers)" as StoreState
+    component "Controlled-list Data\nCache [FR-005, DR-002]" as ControlledData
+  }
+
+  component "Controlled-list Loader\n(init-time) [FR-005, CON-006]" as ControlledLoader
+  component "Page Components\n(Landing / Session-Expired /\nLogin / Notifier Display)" as Pages
+  component "Notification\nQueue Service [FR-007, DR-004]" as NotificationQueue
+  component "Notifier\nComponent [FR-007]" as Notifier
+  component "Cookie Service\n(get / set) [3.2]" as CookieService
+  component "Module Import\nDiagnostic [FR-009]" as ModuleDiagnostic
+
+  package "Front-end Service Wrappers [FR-006, DR-003]" {
+    component "Evacuee Service\n(Read)" as EvacueeSvc
+    component "Incident-task Service\n(Create / Read / Update)" as IncidentSvc
+    component "Organization Service\n(Create / Read / Update)" as OrgSvc
+    component "Referral Service\n(Create / Read / Update / Delete)" as ReferralSvc
+    component "Registration Service\n(Create / Read / Update)" as RegistrationSvc
+    component "Registration PDF\nCollection [FR-010, DR-005]" as RegistrationPdf
+    component "Controlled-list\nWrapper" as ControlledSvc
+  }
+
+  component "Local Dev Proxy\nConfig + Role-paired SM_TOKEN\n[CON-002, DR-008]" as DevProxy
+}
+
+' ============================================================
+' Backend Layer - .NET Core WebAPI Server
+' ============================================================
+package "Backend Layer - .NET Core WebAPI Server" {
+
+  component "Backend API\n(HTTP Endpoints)" as Api
+  component "Controllers" as Controllers
+  component "C# Domain Classes" as DomainClasses
+  component "Domain Services" as DomainServices
+  component "Entity Framework /\nDbContext" as DbContext
+  component "Development Back Door\n(Dev environments only)\n[NFR-001, CON-003]" as DevBackDoor
+}
+
+' ============================================================
+' Data Layer
+' ============================================================
+package "Data Layer" {
+  database "MS SQL Database\n(Persistent Entities, e.g.\nVolunteer.Active) [DR-006, CON-004]" as MsSql
+  component "Repository SQL\nMaintenance Scripts\n[FR-011, DR-007, CON-005]" as SqlScripts
+}
+
+' ============================================================
+' External / Cross-cutting
+' ============================================================
+cloud "SiteMinder\nAuthentication / Access Control\n[CON-003]" as SiteMinder
+
+' ============================================================
+' Relationships - Users
+' ============================================================
+User --> Router
+Dev --> DevProxy
+Operator --> DevProxy
+DBOp --> SqlScripts
+
+' ============================================================
+' Relationships - Front-end internal
+' ============================================================
+Router --> Pages
+AuthGuard --> SiteMinder
+Pages --> UnauthorizedHandler : HTTP requests
+Pages --> Watchdog : HTTP activity
+UnauthorizedHandler --> Pages : logout + show\nsession-expired [NFR-004]
+UnauthorizedHandler --> NgRx
+Watchdog --> NgRx
+ControlledLoader --> ControlledSvc
+ControlledLoader --> ControlledData
+ControlledSvc --> ControlledData
+NgRx --> StoreState
+NgRx --> ControlledData
+Pages --> NgRx
+Pages --> NotificationQueue
+NotificationQueue --> Notifier
+Notifier --> Pages : display notification
+Pages --> CookieService
+ModuleDiagnostic --> Dev : double-load alert
+Pages --> EvacueeSvc
+Pages --> IncidentSvc
+Pages --> OrgSvc
+Pages --> ReferralSvc
+Pages --> RegistrationSvc
+RegistrationSvc --> RegistrationPdf
+LandingRoute --> Pages
+RedirectGuard --> Pages
+
+' ============================================================
+' Relationships - Front-end to Backend (HTTP)
+' ============================================================
+Interceptor --> DevProxy
+DevProxy --> Api : HTTP (local dev,\nrole-paired tokens)
+EvacueeSvc --> Api : HTTP
+IncidentSvc --> Api : HTTP
+OrgSvc --> Api : HTTP
+ReferralSvc --> Api : HTTP
+RegistrationSvc --> Api : HTTP
+Api --> SiteMinder : respects auth context\n[CON-003]
+
+' ============================================================
+' Relationships - Backend internal
+' ============================================================
+Api --> Controllers
+Controllers --> DomainClasses
+Controllers --> DomainServices
+DevBackDoor --> Api
+DevBackDoor --> DomainServices
+DomainServices --> DomainClasses
+DomainServices --> DbContext
+
+' ============================================================
+' Relationships - Data layer
+' ============================================================
+DbContext --> MsSql
+SqlScripts --> MsSql : transaction-scoped,\nfiltered by target variable
+SqlScripts ..> MsSql : backup required\nbefore execution [CON-005]
+
+@enduml

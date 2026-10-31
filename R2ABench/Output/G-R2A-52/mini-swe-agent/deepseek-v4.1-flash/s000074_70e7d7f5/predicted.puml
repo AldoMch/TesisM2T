@@ -1,0 +1,98 @@
+@startuml TengineLite_Architecture
+title Tengine Lite - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ================= User Access Layer =================
+package "User Access Layer" {
+  [Example Applications\n(classification, detection,\nsegmentation, pose, OCR)] as EXAMPLES
+  [Online Model Converter UI\n(browser-based)] as WEBCONVERTER_UI
+  [Tool Users CLI] as TOOLCLI
+}
+
+' ================= API Layer =================
+package "API Layer" {
+  [C API\n(Tengine-compatible)] as CAPI
+  [C++ API] as CPPAPI
+  [Python API] as PYAPI
+  [Serializer Interface] as SERIF
+}
+
+' ================= Core Engine Layer =================
+package "Core Engine Layer" {
+  [Scheduler\n(NNIR execution,\ncomputation graph,\nresource management)] as SCHEDULER
+  [Operator Module\n(NN Operator registration\n& initialization)] as OPERATOR
+  [Device Module\n(NN Operators backend)] as DEVICE
+  [Serializer Module\n(binary tmfile decoder)] as SERIALIZER
+}
+
+' ================= Model Conversion Layer =================
+package "Model Conversion Layer" {
+  [Linux Pre-compiled\nConversion Tool] as LINUXCONV
+  [WebAssembly Online\nConverter] as WASMCONV
+}
+
+' ================= Data Layer =================
+package "Data Layer" {
+  database "Local Model Files" as MODELFILES
+  database "Local Image Files" as IMAGEFILES
+  database "Binary tmfile Models" as TMFILE
+  database "Serialized Model\nParameters" as SERIALIZED
+  database "Converted Model\nArtifacts" as CONVERTED
+}
+
+' ================= Build / Deployment Infrastructure =================
+package "Build & Deployment" {
+  [CMake Cross-platform\nBuild System] as CMAKE
+  [Web Browser\n(WebAssembly Runtime)] as BROWSER
+  [Linux Environment] as LINUXENV
+}
+
+' ================= Relationships =================
+EXAMPLES --> CAPI
+WEBCONVERTER_UI --> WASMCONV
+TOOLCLI --> LINUXCONV
+
+CAPI --> SCHEDULER
+CPPAPI --> SCHEDULER
+PYAPI --> SCHEDULER
+SERIF --> SERIALIZER
+
+SCHEDULER --> OPERATOR
+SCHEDULER --> DEVICE
+SCHEDULER --> SERIALIZER
+
+OPERATOR --> DEVICE
+
+LINUXCONV --> SERIALIZER
+WASMCONV --> SERIALIZER
+
+EXAMPLES --> MODELFILES
+EXAMPLES --> IMAGEFILES
+SERIALIZER --> TMFILE
+SERIALIZER --> SERIALIZED
+LINUXCONV --> CONVERTED
+WASMCONV --> CONVERTED
+TMFILE --> CONVERTED
+
+CMAKE ..> CAPI
+CMAKE ..> CPPAPI
+CMAKE ..> PYAPI
+CMAKE ..> SCHEDULER
+BROWSER ..> WASMCONV
+LINUXENV ..> LINUXCONV
+
+note right of SERIALIZER
+  Decodes binary tmfile
+  into serialized model params
+end note
+
+note bottom of WASMCONV
+  Converts models locally in the
+  browser via WebAssembly;
+  no private data uploaded
+end note
+
+@enduml

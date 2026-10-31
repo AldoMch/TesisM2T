@@ -1,0 +1,413 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "Global::Candidates\\nand seats",
+        "Global::Candidates\\nand votes"
+      ],
+      "predicted_nodes": [
+        "Data & Model Layer::Candidate / Vote Entries"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Data & Model Layer::Result / Decorated Result"
+      ],
+      "gt_nodes": [
+        "Global::Result"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Data & Model Layer::Tally\\n(candidates + vote counts,\\npotential votes, protected view)"
+      ],
+      "gt_nodes": [
+        "Global::Tally"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Data & Model Layer::Properties\\n(method & processor parameters)",
+        "Application Layer::Processor Configuration\\n(properties, method, tally, filters,\\ntie-break rules, decorators)"
+      ],
+      "gt_nodes": [
+        "Seat Allocation Configuration::Parameters"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Seat Allocation Configuration::ResultDecorators",
+        "Seat Allocation Processor::Decorate"
+      ],
+      "predicted_nodes": [
+        "Application Layer::Result Decoration Chain\\n(post-allocation decoration)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application Layer::Allocation Method Contract\\n(protected tally view + properties -> Result)",
+        "Allocation Method Layer::Majority Methods\\n(simple, qualified, absolute)",
+        "Allocation Method Layer::Equal Proportions\\n(Huntington-Hill)",
+        "Allocation Method Layer::Highest Averages\\n(D'Hondt, Sainte-Lague/Webster,\\nImperiali, Danish;\\ndivisor-sequence driven)",
+        "Allocation Method Layer::Largest Remainder\\n(Hare, Droop, Imperiali)",
+        "Allocation Method Layer::Ranked Method\\n(by votes)"
+      ],
+      "gt_nodes": [
+        "Seat Allocation Configuration::Seat Allocation\\nMethod"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Seat Allocation Configuration::TallyFilters",
+        "Seat Allocation Processor::Filter"
+      ],
+      "predicted_nodes": [
+        "Application Layer::Tally Filter Chain\\n(pre-allocation transformations)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application Layer::Tie-Breaking Resolver"
+      ],
+      "gt_nodes": [
+        "Seat Allocation Configuration::TieBreaker"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Application Layer::Seat Allocation Processor\\n(configured workflow orchestration)",
+        "Interface Layer::Caller-Facing Allocation API\\n(entry point: tally + method + properties -> Result)"
+      ],
+      "gt_nodes": [
+        "Seat Allocation Processor::Process"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Allocation Method Layer::Equal Proportions\\n(Huntington-Hill)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Seat Allocation\\nMethod"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Allocation Method Layer::Highest Averages\\n(D'Hondt, Sainte-Lague/Webster,\\nImperiali, Danish;\\ndivisor-sequence driven)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Seat Allocation\\nMethod"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Allocation Method Layer::Largest Remainder\\n(Hare, Droop, Imperiali)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Seat Allocation\\nMethod"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Allocation Method Layer::Majority Methods\\n(simple, qualified, absolute)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Seat Allocation\\nMethod"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Allocation Method Layer::Ranked Method\\n(by votes)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Seat Allocation\\nMethod"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Allocation Method Contract\\n(protected tally view + properties -> Result)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Seat Allocation\\nMethod"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Allocation Method Registry\\n(method lookup / availability listing)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Seat Allocation\\nMethod"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Processor Configuration\\n(properties, method, tally, filters,\\ntie-break rules, decorators)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Parameters",
+        "Seat Allocation Configuration::Seat Allocation\\nMethod",
+        "Seat Allocation Configuration::TallyFilters",
+        "Seat Allocation Configuration::TieBreaker",
+        "Seat Allocation Processor::Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Result Decoration Chain\\n(post-allocation decoration)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::ResultDecorators",
+        "Seat Allocation Processor::Decorate"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Seat Allocation Processor\\n(configured workflow orchestration)",
+      "reference_nodes": [
+        "Seat Allocation Processor::Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Tally Filter Chain\\n(pre-allocation transformations)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::TallyFilters",
+        "Seat Allocation Processor::Filter"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::Tie-Breaking Resolver",
+      "reference_nodes": [
+        "Seat Allocation Configuration::TieBreaker",
+        "Seat Allocation Processor::Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Model Layer::Candidate / Vote Entries",
+      "reference_nodes": [
+        "Global::Candidates\\nand seats",
+        "Global::Candidates\\nand votes",
+        "Global::Tally"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Model Layer::Properties\\n(method & processor parameters)",
+      "reference_nodes": [
+        "Seat Allocation Configuration::Parameters"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Model Layer::Result / Decorated Result",
+      "reference_nodes": [
+        "Global::Result",
+        "Seat Allocation Configuration::ResultDecorators"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Model Layer::SeatAllocationException\\n(error signalling)",
+      "reference_nodes": [
+        "Seat Allocation Processor::Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Model Layer::Tally\\n(candidates + vote counts,\\npotential votes, protected view)",
+      "reference_nodes": [
+        "Global::Tally",
+        "Global::Candidates\\nand seats",
+        "Global::Candidates\\nand votes"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Data & Model Layer::XML Tally / Config I/O\\n(Tally.fromXML, XML result output)",
+      "reference_nodes": [
+        "Global::Tally"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Environment::Command-line Shell",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Environment::Java Runtime\\nEnvironment (JRE)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Environment::Local File System\\n(XML / Tally / Config / Result files)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Application Developer\\n(Java API user)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Operator / Analyst\\n(CLI user)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Interface Layer::Caller-Facing Allocation API\\n(entry point: tally + method + properties -> Result)",
+      "reference_nodes": [
+        "Seat Allocation Processor::Process",
+        "Global::Result",
+        "Seat Allocation Configuration::Parameters"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Interface Layer::Command-Line Launcher\\n(list methods/filters/decorators,\\ninputs, method selection, outputs)",
+      "reference_nodes": [
+        "Seat Allocation Processor::Process"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data & Model Layer::Candidate / Vote Entries"
+      ],
+      "gt_node": "Global::Candidates\\nand seats"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data & Model Layer::Candidate / Vote Entries"
+      ],
+      "gt_node": "Global::Candidates\\nand votes"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data & Model Layer::Result / Decorated Result"
+      ],
+      "gt_node": "Global::Result"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data & Model Layer::Tally\\n(candidates + vote counts,\\npotential votes, protected view)",
+        "Data & Model Layer::XML Tally / Config I/O\\n(Tally.fromXML, XML result output)"
+      ],
+      "gt_node": "Global::Tally"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Data & Model Layer::Properties\\n(method & processor parameters)",
+        "Application Layer::Processor Configuration\\n(properties, method, tally, filters,\\ntie-break rules, decorators)"
+      ],
+      "gt_node": "Seat Allocation Configuration::Parameters"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer::Result Decoration Chain\\n(post-allocation decoration)"
+      ],
+      "gt_node": "Seat Allocation Configuration::ResultDecorators"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer::Allocation Method Contract\\n(protected tally view + properties -> Result)",
+        "Allocation Method Layer::Majority Methods\\n(simple, qualified, absolute)",
+        "Allocation Method Layer::Equal Proportions\\n(Huntington-Hill)",
+        "Allocation Method Layer::Highest Averages\\n(D'Hondt, Sainte-Lague/Webster,\\nImperiali, Danish;\\ndivisor-sequence driven)",
+        "Allocation Method Layer::Largest Remainder\\n(Hare, Droop, Imperiali)",
+        "Allocation Method Layer::Ranked Method\\n(by votes)"
+      ],
+      "gt_node": "Seat Allocation Configuration::Seat Allocation\\nMethod"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer::Tally Filter Chain\\n(pre-allocation transformations)"
+      ],
+      "gt_node": "Seat Allocation Configuration::TallyFilters"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer::Tie-Breaking Resolver"
+      ],
+      "gt_node": "Seat Allocation Configuration::TieBreaker"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer::Result Decoration Chain\\n(post-allocation decoration)"
+      ],
+      "gt_node": "Seat Allocation Processor::Decorate"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer::Tally Filter Chain\\n(pre-allocation transformations)"
+      ],
+      "gt_node": "Seat Allocation Processor::Filter"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer::Seat Allocation Processor\\n(configured workflow orchestration)",
+        "Interface Layer::Caller-Facing Allocation API\\n(entry point: tally + method + properties -> Result)"
+      ],
+      "gt_node": "Seat Allocation Processor::Process"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5137,
+      "completion_tokens": 1055,
+      "total_tokens": 6192,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Application Layer::Allocation Method Registry\\n(method lookup / availability listing)",
+    "Data & Model Layer::SeatAllocationException\\n(error signalling)",
+    "Data & Model Layer::XML Tally / Config I/O\\n(Tally.fromXML, XML result output)",
+    "External Environment::Command-line Shell",
+    "External Environment::Java Runtime\\nEnvironment (JRE)",
+    "External Environment::Local File System\\n(XML / Tally / Config / Result files)",
+    "Global::Application Developer\\n(Java API user)",
+    "Global::Operator / Analyst\\n(CLI user)",
+    "Interface Layer::Command-Line Launcher\\n(list methods/filters/decorators,\\ninputs, method selection, outputs)"
+  ],
+  "_provenance": {
+    "fingerprint": "65ceca4a1b8b6cce4b072ad001bc242c1d04c5f3635ec2cb40d5278b86798ba9",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

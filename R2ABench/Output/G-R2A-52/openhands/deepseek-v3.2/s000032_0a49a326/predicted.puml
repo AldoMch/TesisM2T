@@ -1,0 +1,108 @@
+@startuml
+title Activiti 7 Platform Architecture from SRS
+
+skinparam component {
+  BackgroundColor<<Actor>> LightYellow
+  BackgroundColor<<Service>> LightBlue
+  BackgroundColor<<Infra>> LightGreen
+  BackgroundColor<<API>> LightGray
+  ArrowColor Black
+  BorderColor Black
+}
+
+' ====== ACTORS ======
+actor "Authenticated User" as AuthUser <<Actor>>
+actor "Task API User\n(ROLE_ACTIVITI_USER)" as TaskUser <<Actor>>
+actor "Human Participant" as HumanUser <<Actor>>
+actor "Cluster Operator" as Operator <<Actor>>
+actor "Developer/Integrator" as Developer <<Actor>>
+
+' ====== EXTERNAL COMPONENTS ======
+component "Keycloak\n(SSO/Identity Provider)" as Keycloak <<Service>> {
+  component "Token Service" as TokenService
+}
+
+' ====== GATEWAY LAYER ======
+component "API Gateway" as Gateway <<Infra>> {
+  component "Request Router" as Router
+  component "Token Validator" as TokenValidator
+}
+
+' ====== RUNTIME SERVICES ======
+package "Runtime Services" <<Service>> {
+  component "Example Runtime Bundle" as RuntimeBundle <<Service>> {
+    component "ProcessRuntime API" as ProcessRuntime <<API>>
+    component "TaskRuntime API" as TaskRuntime <<API>>
+    component "Process Definitions" as ProcDefs
+    component "Process Instances" as ProcInstances
+  }
+  
+  component "Audit Service" as AuditService <<Service>>
+  component "Query Service" as QueryService <<Service>>
+  
+  component "Notification Service" as NotificationService <<Service>> #LightGray
+  component "Cloud Connectors" as CloudConnectors <<Service>> #LightGray
+}
+
+' ====== KUBERNETES INFRASTRUCTURE ======
+package "Kubernetes/GKE Infrastructure" <<Infra>> {
+  component "NGINX Ingress Controller" as IngressController <<Infra>>
+  component "Kubernetes Cluster" as K8sCluster <<Infra>>
+  
+  component "Deployment Descriptors" as DeployDescriptors <<Infra>> {
+    component "Input Rate Config" as InputRate
+    component "Replica Count Config" as ReplicaCount
+  }
+  
+  component "Registry/Config Maps" as ConfigMaps <<Infra>>
+}
+
+' ====== RELATIONSHIPS ======
+
+' Authentication flow
+AuthUser --> Keycloak : "1. Obtain token"
+Keycloak --> AuthUser : "2. Authentication token"
+AuthUser --> Gateway : "3. Request with token"
+TaskUser --> Keycloak : "Obtain token with\nROLE_ACTIVITI_USER"
+
+' Gateway routing
+Gateway --> RuntimeBundle : "4. Route authenticated requests"
+TokenValidator --> Keycloak : "Validate token"
+
+' Process and Task operations
+ProcessRuntime --> ProcDefs : "Access definitions"
+ProcessRuntime --> ProcInstances : "Start/manage instances\n(SimpleProcess)"
+TaskRuntime --> ProcInstances : "Human task interaction"
+
+' Service interactions
+RuntimeBundle --> AuditService : "Generate audit events"
+RuntimeBundle --> QueryService : "Provide process execution info"
+AuditService --> QueryService : "Query audit data"
+
+' External access via Ingress
+Operator --> IngressController : "Configure ingress routes"
+IngressController --> Gateway : "Route external traffic"
+IngressController --> RuntimeBundle : "Direct access to\nselected services"
+
+' Scalability configuration
+Developer --> DeployDescriptors : "Configure input rate\nand replica counts"
+DeployDescriptors --> K8sCluster : "Apply scaling parameters"
+
+' Human participant interaction
+HumanUser --> TaskRuntime : "Participate in tasks"
+
+' Background components (architectural context)
+NotificationService -[hidden]d-> RuntimeBundle
+CloudConnectors -[hidden]d-> RuntimeBundle
+ConfigMaps -[hidden]d-> K8sCluster
+
+' Legend
+note right of ConfigMaps
+<color:blue>**Legend**</color>
+<color:LightYellow>Actor</color> - External users/operators
+<color:LightBlue>Service</color> - Functional components
+<color:LightGreen>Infrastructure</color> - Platform infrastructure
+<color:LightGray>Background/API</color> - Architectural context
+end note
+
+@enduml

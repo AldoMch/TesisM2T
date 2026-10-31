@@ -1,0 +1,90 @@
+@startuml
+
+package "Client Layer" {
+  node "Native Mobile Applications" as MobileApps
+  node "Administrative Web Application" as AdminWeb
+}
+
+package "Infrastructure/Operations Layer" {
+  cloud "GCP Load Balancing" as LB
+  node "Container Runtime on GCP" as Container {
+    package "Access/Gateway Layer" {
+      component "Gateway/BFF" as BFF
+    }
+    package "Service Layer" {
+      component "Authentication API" as AuthAPI
+      component "User Management Service" as UserSvc
+      component "Book Management Service" as BookSvc
+      component "EC Site Service" as ECSvc
+      component "Support/Information Service" as SupportSvc
+      component "Administration Service" as AdminSvc
+      component "Notification Service" as NotifSvc
+    }
+  }
+  node "GCE VM Operations" as GCE
+  cloud "GKE Cluster Access API" as GKEAccess
+}
+
+package "Data Layer" {
+  database "MySQL" as MySQL
+  node "NoSQL Storage" as NoSQL
+  node "Object Storage" as ObjStore
+  cloud "Firebase Authentication" as Firebase
+}
+
+package "Integration Layer" {
+  cloud "Book-search API" as BookAPI
+  cloud "Stripe" as Stripe
+  cloud "Push Notification Provider" as Push
+  cloud "Email Notification Provider" as Email
+  cloud "Let's Encrypt" as LE
+}
+
+package "API Contract Layer" {
+  interface "Protocol Buffers API Definitions" as Proto
+}
+
+MobileApps --> LB
+AdminWeb --> LB
+
+LB --> BFF
+
+BFF --> AuthAPI
+BFF --> UserSvc
+BFF --> BookSvc
+BFF --> ECSvc
+BFF --> SupportSvc
+BFF --> AdminSvc
+BFF --> NotifSvc
+
+AuthAPI --> Firebase
+
+UserSvc --> MySQL
+
+BookSvc --> MySQL
+BookSvc --> BookAPI
+BookSvc --> ObjStore
+
+ECSvc --> MySQL
+ECSvc --> Stripe
+ECSvc --> NotifSvc
+
+SupportSvc --> NotifSvc
+
+NotifSvc --> Push
+NotifSvc --> Email
+NotifSvc --> NoSQL
+
+GCE --> LE
+GCE --> GKEAccess
+
+BFF --> Proto
+AuthAPI --> Proto
+UserSvc --> Proto
+BookSvc --> Proto
+ECSvc --> Proto
+SupportSvc --> Proto
+AdminSvc --> Proto
+NotifSvc --> Proto
+
+@enduml

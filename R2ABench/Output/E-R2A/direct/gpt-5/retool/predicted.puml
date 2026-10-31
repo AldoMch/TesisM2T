@@ -1,0 +1,82 @@
+@startuml
+title ReTool System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+rectangle "Client (Windows 10 64-bit)\nChrome >=81\nVue.js SPA" as Client {
+  component "ReTool Web UI\n(Vue.js)" as WebUI
+}
+
+node "Local Computer\nMicroservices Host (Flask)" as LocalHost {
+  component "API Gateway\n(Request Routing, Auth Enforcement)" as Gateway
+  component "User Management Service\n- Registration/Login/Logout\n- Passwords, Profiles\n- System Roles & RBAC" as UserSvc
+  component "Project Management Service\n- Projects CRUD\n- Members & Roles\n- Baselines" as ProjSvc
+  component "Requirements Management Service\n- Items CRUD & Tree\n- Move Positions\n- Import (Word)\n- Forward Tracing" as ReqSvc
+  component "Log Collector\n(Persistent Logs)" as LogCollector
+}
+
+node "Algorithm Server\nAmazon Linux 2 (EC2 t2.xlarge)" as AlgoServer {
+  component "Algorithm Service\n(NLP, PyTorch, Word2vec)\n- Itemization\n- Structuring\n- Common Identification\n- Conflict Detection\n- Association Analysis" as AlgoSvc
+  component "File Storage\n(Uploads: Word Documents)" as FileStore
+}
+
+database "MongoDB\nCRUD Operations" as MongoDB
+
+node "Offsite Disaster Recovery" as DR {
+  component "Backup Copies (3x)\nPeriodic Backup" as Backup
+}
+
+WebUI -[#blue]-> Gateway : Secure Web APIs (Network)
+Gateway -[#blue]-> UserSvc : route /user
+Gateway -[#blue]-> ProjSvc : route /project
+Gateway -[#blue]-> ReqSvc : route /requirements
+
+ReqSvc -[#blue]-> AlgoSvc : Analysis Requests\n(Itemization, Structuring, Common, Conflict, Association)
+ReqSvc -[#gray]-> FileStore : Store Uploads (Word Docs)
+AlgoSvc -[#blue]-> ReqSvc : Analysis Results
+
+UserSvc -[#brown]-> MongoDB : Users, Roles, Permissions
+ProjSvc -[#brown]-> MongoDB : Projects, Members, Roles, Baselines
+ReqSvc -[#brown]-> MongoDB : Requirements, Tree, Forward Tracing, Analysis Results
+LogCollector -[#brown]-> MongoDB : Logs
+
+MongoDB -[#darkgreen]-> Backup : Periodic Backup (Offsite DR)
+
+note top of WebUI
+- Authentication UI (register, login, logout)
+- User management (admins)
+- Project list, info, members, baselines
+- Requirements management (tree, create, import, modify, delete, move)
+- Requirement analysis (structuring, common, conflict, association)
+- Forward tracing (code, tests, personnel)
+end note
+
+note right of Gateway
+Microservice architecture (Flask)
+- Auth enforcement (NFR-010)
+- Rate limiting / peak control (C-005)
+- Secure network interfaces (NFR-015)
+end note
+
+note right of AlgoSvc
+Runs on high-performance server (C-007, AD-003)
+Uses NLP, PyTorch, Word2vec
+end note
+
+note bottom of MongoDB
+- Periodic backup & offsite DR (NFR-009)
+- Privacy & personalized info protection (NFR-011, DR-016)
+- Injection protection via validation (NFR-013)
+end note
+
+note bottom of LocalHost
+Gateway, user/project/requirements services deployed locally (C-006)
+end note
+
+note bottom of Client
+Front-end/back-end separation (C-002)
+Client hardware/software constraints (C-009..C-011)
+end note
+
+@enduml

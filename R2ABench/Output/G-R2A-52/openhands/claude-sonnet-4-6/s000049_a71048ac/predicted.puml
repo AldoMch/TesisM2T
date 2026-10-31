@@ -1,0 +1,85 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #888888
+}
+skinparam database {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+}
+skinparam file {
+  BackgroundColor #EEFFEE
+  BorderColor #336633
+}
+skinparam cloud {
+  BackgroundColor #FFF8EE
+  BorderColor #CC8800
+}
+
+title NLP4L (attic-nlp4l) System Architecture
+
+actor "Lucene Ecosystem User" as LU
+actor "ML Workflow User" as MLU
+actor "Scala Interactive User" as SIU
+actor "Schema Configuration User" as SCU
+
+package "NLP4L Application (Scala)" {
+
+  rectangle "Scala Interactive Interface\n[FR-004]" as SII
+
+  rectangle "Lucene Index Processor\n[FR-001, FR-002a]" as LIP
+  rectangle "Search Engine\n[FR-002b]" as SE
+  rectangle "Document Vector Creator\n[FR-003]" as DVC
+  rectangle "Schema Loader & Validator\n[FR-006]" as SLV
+  rectangle "Chart Display (Experimental)\n[FR-005]" as CD
+
+  rectangle "Schema Model\n[DR-007, DR-008]" as SM
+
+}
+
+database "Lucene Index\n[DR-001, DR-002]" as LI
+file "Schema Configuration\n(resource / file path)\n[DR-005, DR-006]" as SC
+file "LIBSVM Output File\n[DR-003]" as LIBSVM
+cloud "External ML Tools\n(e.g. Spark, Mahout)" as ML
+
+LU --> SII
+MLU --> SII
+SIU --> SII
+SCU --> SC
+
+SII --> LIP
+SII --> SE
+SII --> DVC
+SII --> CD
+SII --> SLV
+
+LIP --> LI : read document data\n& analyzer-normalized terms
+SE --> LI : query / filter / sort
+DVC --> LI : read term vectors
+
+SLV --> SC : load & parse schema
+SLV --> SM : populate
+
+SM --> LIP : field & analyzer config
+SM --> SE : field & analyzer config
+SM --> DVC : field & analyzer config
+
+DVC --> LIBSVM : write document vectors
+LIBSVM --> ML : LIBSVM format interchange
+
+note bottom of CD
+  Experimental capability.
+  Accepts word count data
+  and renders a chart.
+end note
+
+note right of SLV
+  Validates: schema root object,\ndefault analyzer,\nfield definitions,\noptional custom analyzers.
+  Emits invalid schema error
+  when any required element
+  is absent.
+end note
+
+@enduml

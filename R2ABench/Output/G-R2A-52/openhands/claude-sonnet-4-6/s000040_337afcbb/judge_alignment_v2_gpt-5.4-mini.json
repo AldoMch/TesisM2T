@@ -1,0 +1,408 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ],
+      "predicted_nodes": [
+        "Internal Network::PlugIt Proxy",
+        "Internal Network::PlugIt Proxy::Proxy API Endpoint\\n(API_URL)",
+        "Internal Network::PlugIt Proxy::Proxy Data Store",
+        "PlugIt API Client::Client Initializer\\n(main endpoint URL)",
+        "PlugIt API Client::Email Sending",
+        "PlugIt API Client::Forum Topics",
+        "PlugIt API Client::Organization Info",
+        "PlugIt API Client::Project Members",
+        "PlugIt API Client::Subscription Tags",
+        "PlugIt API Client::User Info",
+        "Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)::Auto-Response\\nFilter\\n(x-auto-response-suppress,\\nAuto-Submitted, precedence)",
+        "Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)::Inbound Email\\nParser",
+        "Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)::Mail Handler",
+        "Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)::Routing Token\\nValidator\\n(SHA-512 [30:42])"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Internal Network::PlugIt Service 1",
+        "Internal Network::PlugIt Service 2",
+        "Internal Network::PlugIt Service 3"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Internal Network::PlugIt Service A"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Internal Network::DB 1",
+        "Internal Network::DB 2",
+        "Internal Network::DB 3"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Internal Network::PlugIt Service A::Service Database A\\n(MySQL / SQLite)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Schema Management::Alembic Migration\\nUpgrade Files\\n(versioned)"
+      ],
+      "gt_nodes": [
+        "Internal Network::DB_Proxy"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Global::Internet"
+      ],
+      "predicted_nodes": [
+        "Global::External User / System",
+        "Global::Internal Network",
+        "Global::Mail System\\n(Inbound Email)",
+        "Global::Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Global::External User / System",
+      "reference_nodes": [
+        "Global::Internet"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Internal Network",
+      "reference_nodes": [
+        "Internal Network::DB 1",
+        "Internal Network::DB 2",
+        "Internal Network::DB 3",
+        "Internal Network::DB_Proxy",
+        "Internal Network::PlugIt Proxy",
+        "Internal Network::PlugIt Service 1",
+        "Internal Network::PlugIt Service 2",
+        "Internal Network::PlugIt Service 3"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Mail System\\n(Inbound Email)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::PlugIt API Client",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Schema Management",
+      "reference_nodes": [
+        "Internal Network::DB_Proxy"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Proxy",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Proxy::Proxy API Endpoint\\n(API_URL)",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Proxy::Proxy Data Store",
+      "reference_nodes": [
+        "Internal Network::DB_Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service A",
+      "reference_nodes": [
+        "Internal Network::PlugIt Service 1",
+        "Internal Network::PlugIt Service 2",
+        "Internal Network::PlugIt Service 3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service A::Local / Private\\nConfig A\\n(SQLALCHEMY_URL, secrets)",
+      "reference_nodes": [
+        "Internal Network::PlugIt Service 1"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service A::Project Config A\\n(API_URL, DEBUG,\\nPI_BASE_URL,\\nPI_ALLOWED_NETWORKS)",
+      "reference_nodes": [
+        "Internal Network::PlugIt Service 1"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service A::Service Database A\\n(MySQL / SQLite)",
+      "reference_nodes": [
+        "Internal Network::DB 1",
+        "Internal Network::DB 2",
+        "Internal Network::DB 3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service A::Service Logic A",
+      "reference_nodes": [
+        "Internal Network::PlugIt Service 1"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service B",
+      "reference_nodes": [
+        "Internal Network::PlugIt Service 2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service B::Local / Private\\nConfig B",
+      "reference_nodes": [
+        "Internal Network::PlugIt Service 2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service B::Project Config B",
+      "reference_nodes": [
+        "Internal Network::PlugIt Service 2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service B::Service Database B\\n(MySQL / SQLite)",
+      "reference_nodes": [
+        "Internal Network::DB 2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Internal Network::PlugIt Service B::Service Logic B",
+      "reference_nodes": [
+        "Internal Network::PlugIt Service 2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "PlugIt API Client::Client Initializer\\n(main endpoint URL)",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "PlugIt API Client::Email Sending",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "PlugIt API Client::Forum Topics",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "PlugIt API Client::Organization Info",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "PlugIt API Client::Project Members",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "PlugIt API Client::Subscription Tags",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "PlugIt API Client::User Info",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Schema Management::Alembic Migration\\nUpgrade Files\\n(versioned)",
+      "reference_nodes": [
+        "Internal Network::DB_Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)::Auto-Response\\nFilter\\n(x-auto-response-suppress,\\nAuto-Submitted, precedence)",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)::Inbound Email\\nParser",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)::Mail Handler",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Standalone Proxy Mail Workflow\\n(Example / Standalone Scope)::Routing Token\\nValidator\\n(SHA-512 [30:42])",
+      "reference_nodes": [
+        "Internal Network::PlugIt Proxy"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Internet"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Internal Network"
+      ],
+      "gt_node": "Internal Network::DB 1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Internal Network"
+      ],
+      "gt_node": "Internal Network::DB 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Internal Network"
+      ],
+      "gt_node": "Internal Network::DB 3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Schema Management",
+        "Internal Network::PlugIt Proxy::Proxy Data Store",
+        "Schema Management::Alembic Migration\\nUpgrade Files\\n(versioned)"
+      ],
+      "gt_node": "Internal Network::DB_Proxy"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::PlugIt Proxy",
+        "Internal Network::PlugIt Proxy::Proxy API Endpoint\\n(API_URL)"
+      ],
+      "gt_node": "Internal Network::PlugIt Proxy"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::PlugIt Service A",
+        "Internal Network::PlugIt Service A::Local / Private\\nConfig A\\n(SQLALCHEMY_URL, secrets)",
+        "Internal Network::PlugIt Service A::Project Config A\\n(API_URL, DEBUG,\\nPI_BASE_URL,\\nPI_ALLOWED_NETWORKS)",
+        "Internal Network::PlugIt Service A::Service Database A\\n(MySQL / SQLite)",
+        "Internal Network::PlugIt Service A::Service Logic A"
+      ],
+      "gt_node": "Internal Network::PlugIt Service 1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::PlugIt Service A",
+        "Internal Network::PlugIt Service B",
+        "Internal Network::PlugIt Service B::Local / Private\\nConfig B",
+        "Internal Network::PlugIt Service B::Project Config B",
+        "Internal Network::PlugIt Service B::Service Database B\\n(MySQL / SQLite)",
+        "Internal Network::PlugIt Service B::Service Logic B"
+      ],
+      "gt_node": "Internal Network::PlugIt Service 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Internal Network::PlugIt Service A"
+      ],
+      "gt_node": "Internal Network::PlugIt Service 3"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5677,
+      "completion_tokens": 1099,
+      "total_tokens": 6776,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Global::PlugIt API Client",
+    "Global::Schema Management",
+    "Internal Network::PlugIt Service A::Local / Private\\nConfig A\\n(SQLALCHEMY_URL, secrets)",
+    "Internal Network::PlugIt Service A::Project Config A\\n(API_URL, DEBUG,\\nPI_BASE_URL,\\nPI_ALLOWED_NETWORKS)",
+    "Internal Network::PlugIt Service A::Service Logic A",
+    "Internal Network::PlugIt Service B",
+    "Internal Network::PlugIt Service B::Local / Private\\nConfig B",
+    "Internal Network::PlugIt Service B::Project Config B",
+    "Internal Network::PlugIt Service B::Service Database B\\n(MySQL / SQLite)",
+    "Internal Network::PlugIt Service B::Service Logic B"
+  ],
+  "_provenance": {
+    "fingerprint": "2b6538edaed867e6b895fc8604d382ae044986c955dfa92b5f7890e70e78d911",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

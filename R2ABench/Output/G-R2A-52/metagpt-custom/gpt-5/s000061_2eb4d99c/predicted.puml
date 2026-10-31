@@ -1,0 +1,78 @@
+@startuml
+title AWS IoT Device Simulator - Layered Component/Deployment Diagram
+
+package "Presentation Layer" {
+  component "Web Management Console" as WebConsole
+}
+
+package "Identity and Access Layer" {
+  cloud "Identity Provider\n(e.g., Cognito/OIDC)" as IdP
+}
+
+package "API Layer" {
+  component "REST API (Amazon API Gateway)\n- Endpoint Type: REGIONAL\n- Stage: prod\n- Methods: GET, POST, PUT, DELETE, OPTIONS\n- CORS: AllowedHeaders = Content-Type, Authorization, X-Requested-With, X-Amz-Date, X-Api-Key, X-Amz-Security-Token; Preflight: 200\n- Request Validation\n- Access Logs: JSON, INFO\n- Tracing: Enabled" as ApiGateway
+  interface "REST Endpoints (prod)" as ApiInterface
+  ApiGateway - ApiInterface
+}
+
+package "Application/Service Layer" {
+  component "API Lambda Handlers\n(AWS Lambda)" as ApiLambdas
+}
+
+package "Orchestration Layer" {
+  component "Orchestrator\n(AWS Step Functions)" as Orchestrator
+}
+
+package "Simulation Layer" {
+  component "Route Loader\n(AWS Lambda)\n- Reads route JSON from S3 (ROUTE_BUCKET)\n- Key: routeInfo.routeName or route-{id}.json\n- UTF-8 JSON parse; assemble route-state; propagate S3 errors" as RouteLoader
+  component "Device Simulator\n(AWS Lambda)" as DeviceSimulator
+  component "IoT Publisher\n(AWS Lambda)" as IoTPublisher
+  cloud "AWS IoT" as AWSIoT
+}
+
+package "Data Layer" {
+  database "Route Bucket (Amazon S3)\nROUTE_BUCKET: JSON route payloads" as RouteBucket
+  database "Amazon DynamoDB" as DynamoDB
+}
+
+package "Provisioning/Deployment Layer" {
+  component "Custom-Resource Processor\n(AWS Lambda)\n- Constructs CloudFormation response body\n- Inputs: Stack Name, Solution ID, Solution Version" as CRProcessor
+  cloud "AWS CloudFormation\n(Custom Resources)" as CFN
+}
+
+package "Observability Layer" {
+  cloud "Amazon CloudWatch Logs\n(Access Logs)" as AccessLogs
+  cloud "AWS X-Ray" as XRay
+}
+
+/' Core Dependencies '/
+WebConsole --> ApiInterface
+WebConsole --> IdP
+
+ApiInterface <- ApiGateway
+ApiGateway --> ApiLambdas
+ApiGateway --> IdP
+ApiGateway --> AccessLogs
+ApiGateway --> XRay
+
+ApiLambdas --> DynamoDB
+ApiLambdas --> XRay
+
+RouteLoader --> RouteBucket
+RouteLoader --> XRay
+
+DeviceSimulator --> RouteLoader
+DeviceSimulator --> IoTPublisher
+DeviceSimulator --> DynamoDB
+DeviceSimulator --> XRay
+
+IoTPublisher --> AWSIoT
+IoTPublisher --> XRay
+
+Orchestrator --> DeviceSimulator
+
+CFN --> CRProcessor
+CRProcessor --> CFN
+CRProcessor --> XRay
+
+@enduml

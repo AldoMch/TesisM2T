@@ -1,0 +1,87 @@
+@startuml
+
+package "Proxy/Forwarding Layer" {
+  component "HTTP Proxy" as HTTPProxy
+  component "FullHttpRequest (URI, headers, body)" as FullHttpRequest
+  component "Upstream Server Channel" as UpstreamServerChannel
+}
+
+package "Test Server Layer" {
+  component "Test Server" as TestServer
+  component "GET /download Endpoint" as DownloadEndpoint
+}
+
+package "File Handling Layer" {
+  component "File-Handling Handler" as FileHandlingHandler
+}
+
+package "Test Client/Workload Layer" {
+  component "Test Client Workflow" as TestClientWorkflow
+  component "Concurrent Workload Generator" as ConcurrentWorkloadGenerator
+  component "Executor Service Shutdown" as ExecutorServiceShutdown
+  component "Async HTTP Client Close" as AsyncHTTPClientClose
+}
+
+package "Data/Response Layer" {
+  component "Structured Response Object" as StructuredResponseObject
+  component "File-Handling Map Payload" as FileHandlingMapPayload
+  component "HTTP Response Status" as HTTPResponseStatus
+  component "Binary File Payload" as BinaryFilePayload
+  component "application/octet-stream Media Type" as OctetStreamMediaType
+  component "Content-Disposition Attachment Metadata" as ContentDispositionAttachmentMetadata
+}
+
+package "Observability Layer" {
+  component "Debug Logging" as DebugLogging
+}
+
+package "Build/Runtime Layer" {
+  component "Maven Multi-Module Build" as MavenMultiModuleBuild
+  component "Java Compilation Targets" as JavaCompilationTargets
+  component "Jersey Server/Client Library" as JerseyServerClientLibrary
+}
+
+node "Java Runtime Environment" as JavaRuntimeEnvironment
+node "Maven Multi-Module Build Environment" as MavenBuildEnvironment
+node "Grizzly/Jersey HTTP Server Environment" as GrizzlyJerseyHTTPServerEnvironment
+node "Asynchronous HTTP Client Environment" as AsyncHTTPClientEnvironment
+
+cloud "Upstream Server" as UpstreamServer
+cloud "HTTP Client" as HTTPClient
+database "Local Filesystem" as LocalFilesystem
+
+HTTPClient --> HTTPProxy : inbound HTTP GET request (FullHttpRequest)
+HTTPProxy --> FullHttpRequest : retains URI, headers, body
+HTTPProxy --> DebugLogging : debug URI, headers, body
+HTTPProxy --> UpstreamServerChannel : forwards retained FullHttpRequest [upstream channel active/writable]
+UpstreamServerChannel --> UpstreamServer : forwards FullHttpRequest upstream
+
+TestServer --> DownloadEndpoint : exposes
+DownloadEndpoint --> LocalFilesystem : checks target file
+TestServer --> FileHandlingHandler : file-handling endpoints
+FileHandlingHandler --> FileHandlingMapPayload : returns filepath map
+TestServer --> GrizzlyJerseyHTTPServerEnvironment : uses Grizzly/Jersey stack
+TestServer --> JerseyServerClientLibrary : compatible dependency baseline
+
+TestClientWorkflow --> TestServer : issues GET /download
+TestClientWorkflow --> DownloadEndpoint : GET /download
+ConcurrentWorkloadGenerator --> TestClientWorkflow : fixed thread pool async GETs
+TestClientWorkflow --> AsyncHTTPClientEnvironment : asynchronous client
+TestClientWorkflow --> HTTPClient : issues HTTP GET requests
+TestClientWorkflow --> HTTPResponseStatus : counts HTTP 200
+ConcurrentWorkloadGenerator --> ExecutorServiceShutdown : shuts down executor service after workload
+TestClientWorkflow --> AsyncHTTPClientClose : closes async HTTP client after workload
+
+DownloadEndpoint --> BinaryFilePayload : returns for existing target file
+DownloadEndpoint --> OctetStreamMediaType : sets application/octet-stream
+DownloadEndpoint --> ContentDispositionAttachmentMetadata : includes attachment metadata
+DownloadEndpoint --> HTTPResponseStatus : HTTP 200 for existing file
+DownloadEndpoint --> HTTPClient : returns binary file response + metadata
+HTTPClient --> TestClientWorkflow : delivers HTTP response
+DownloadEndpoint ..> HTTPResponseStatus : error response when target file missing (no Binary File Payload, no Content-Disposition Attachment Metadata)
+
+MavenMultiModuleBuild --> JavaCompilationTargets : declares targets
+MavenMultiModuleBuild --> MavenBuildEnvironment : builds in
+JavaCompilationTargets ..> JavaRuntimeEnvironment : <<compatibility constraint>> Java 1.8 / 1.7
+
+@enduml

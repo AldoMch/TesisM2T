@@ -1,0 +1,19 @@
+@startuml
+component "API Gateway and Security Guard" as apigateway
+component "Case Management and Reporting Service" as casereportingservice
+component "Primary Database" as centraldatastore
+component "Epidemiological Algorithm Engine" as epidemiologicalanalyticsengine
+component "Geographic Visualization Service" as gisvisualizationservice
+component "Itinerary and Location Assistance Service" as itineraryservice
+component "Web Application Frontend" as webfrontend
+apigateway --> casereportingservice : gRPC
+apigateway --> epidemiologicalanalyticsengine : gRPC
+apigateway --> gisvisualizationservice : HTTPS
+apigateway --> itineraryservice : gRPC
+casereportingservice --> centraldatastore : DatabaseClient
+epidemiologicalanalyticsengine --> centraldatastore : DatabaseClient
+epidemiologicalanalyticsengine --> gisvisualizationservice : InternalRPC
+itineraryservice --> centraldatastore : DatabaseClient
+itineraryservice --> gisvisualizationservice : InternalRPC
+webfrontend --> apigateway : HTTPS/WSS
+@enduml

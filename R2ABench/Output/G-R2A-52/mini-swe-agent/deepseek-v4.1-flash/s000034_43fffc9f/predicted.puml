@@ -1,0 +1,155 @@
+@startuml
+title torc_py Task-Based Parallelism Library - Layered Component Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' External Actors / Systems
+' =========================================================
+package "External Actors & Systems" {
+  actor "Python Application\nDeveloper" as DEV
+  actor "HPC / MPI User" as HPC
+
+  component "Python Runtime" as PYRT <<external>>
+  component "MPI Runtime / mpi4py" as MPI <<external>>
+  component "mpirun Launcher\n(env var passing)" as MPIRUN <<external>>
+  component "Optional Libs\nnumpy / cma / h5py / pillow" as OPTLIB <<external>>
+  component "termcolor" as TERMCOLOR <<external>>
+  component "Shared-Memory &\nDistributed-Memory Platform\n(cluster nodes)" as PLATFORM <<external>>
+}
+
+' =========================================================
+' Application Layer
+' =========================================================
+package "Application Layer (Example Workloads)" {
+  component "Master-Worker\nApplication" as APP_MW
+  component "SPMD Application" as APP_SPMD
+  component "Numerical Optimization\nExample" as APP_OPT
+  component "Image Preprocessing\nExample" as APP_IMG
+  component "Test Suite" as APP_TEST
+}
+
+' =========================================================
+' Public Python API Layer (import torc)
+' =========================================================
+package "Public Python API Layer (package: torc)" {
+  component "Task Submission API\nsubmit(f,*args,qid,callback)" as API_SUBMIT
+  component "Wait & Completion API\nwait() / as_completed()" as API_WAIT
+  component "Parallel Map API\nmap(f,*seq,chunksize)" as API_MAP
+  component "Task Descriptor API\ninput() / result()" as API_DESC
+  component "Callback API\ncallback(task)" as API_CB
+  component "SPMD API\nspmd(f,*args)" as API_SPMD
+  component "Lifecycle API\nstart / init / launch / shutdown" as API_LIFE
+  component "Stealing Control API\nenable_stealing / disable_stealing" as API_STEAL
+  component "Runtime Query API\nworker_id / num_workers / node_id / num_nodes" as API_QUERY
+  component "Timing API\ngettime()" as API_TIME
+}
+
+' =========================================================
+' Runtime / Core Tasking Layer
+' =========================================================
+package "Runtime Core Layer (per MPI process)" {
+  component "Runtime Manager\n(init / launch / shutdown)" as CORE_LIFE
+  component "Task Scheduler &\nDispatcher" as CORE_SCHED
+  component "Cyclic / Directed\nAssignment Logic (qid)" as CORE_ASSIGN
+  component "Worker Thread Pool\n(TORC_WORKERS)" as CORE_WORKERS
+  component "Callback Handler\n(runs on spawning rank)" as CORE_CB
+  component "Result Aggregation &\nFuture Manager" as CORE_RESULT
+  component "Task Stealing\nCoordinator (TORC_STEALING)" as CORE_STEAL
+  component "SPMD Execution\nController" as CORE_SPMD
+  component "Internal MPI\nCommunication Layer\n(transparent to users)" as CORE_MPI
+  component "Configuration Handler\n(TORC_WORKERS / STEALING /\nYIELDTIME env vars)" as CORE_CONF
+}
+
+' =========================================================
+' Data / Storage Layer
+' =========================================================
+package "Data Layer" {
+  database "Local Worker Queues\n(queue per worker thread)" as DS_QUEUES
+  database "Task Descriptor Store\n(input + result values)" as DS_DESC
+  database "Remote Worker Queues\n(steal source)" as DS_REMOTE
+  database "Image Dataset\n(label-named subfolders)" as DS_IMAGES
+  database "HDF5 Output File" as DS_HDF5
+}
+
+' =========================================================
+' Dependencies: Actors -> API
+' =========================================================
+DEV --> API_SUBMIT
+DEV --> API_MAP
+DEV --> API_LIFE
+HPC --> API_SPMD
+HPC --> API_QUERY
+
+' Application layer -> API
+APP_MW --> API_SUBMIT
+APP_MW --> API_WAIT
+APP_SPMD --> API_SPMD
+APP_OPT --> API_MAP
+APP_IMG --> API_MAP
+APP_IMG --> API_DESC
+APP_TEST --> API_QUERY
+APP_TEST --> API_TIME
+
+' API -> Runtime Core
+API_SUBMIT --> CORE_SCHED
+API_WAIT --> CORE_RESULT
+API_MAP --> CORE_SCHED
+API_DESC --> CORE_RESULT
+API_CB --> CORE_CB
+API_SPMD --> CORE_SPMD
+API_LIFE --> CORE_LIFE
+API_STEAL --> CORE_STEAL
+API_QUERY --> CORE_CONF
+API_TIME --> CORE_LIFE
+
+' Runtime Core internal
+CORE_LIFE --> CORE_CONF
+CORE_CONF --> CORE_WORKERS
+CORE_CONF --> CORE_STEAL
+CORE_SCHED --> CORE_ASSIGN
+CORE_ASSIGN --> DS_QUEUES
+CORE_WORKERS --> DS_QUEUES
+CORE_WORKERS --> CORE_RESULT
+CORE_RESULT --> DS_DESC
+CORE_RESULT --> CORE_CB
+CORE_RESULT --> CORE_MPI
+CORE_STEAL --> DS_QUEUES
+CORE_STEAL --> DS_REMOTE
+CORE_STEAL --> CORE_MPI
+CORE_SPMD --> CORE_MPI
+CORE_SCHED --> CORE_MPI
+
+' Runtime Core -> External
+CORE_MPI --> MPI
+CORE_LIFE --> PYRT
+CORE_WORKERS --> PLATFORM
+MPI --> PLATFORM
+MPIRUN --> MPI
+
+' Data / Example execution flows
+APP_IMG --> DS_IMAGES
+APP_IMG --> DS_HDF5
+DS_HDF5 --> OPTLIB
+OPTLIB --> PYRT
+TERMCOLOR --> PYRT
+
+' =========================================================
+' Notes on key constraints
+' =========================================================
+note right of CORE_CONF
+  TORC_WORKERS      -> worker threads per MPI process (default 1)
+  TORC_STEALING     -> inter-process stealing (default False)
+  TORC_SERVER_YIELDTIME / TORC_WORKER_YIELDTIME -> idle yield
+  Callback examples may require 1 worker thread per process
+end note
+
+note bottom of CORE_MPI
+  Internal MPI details are hidden from normal
+  task-submission users; application-level MPI
+  routines remain usable via SPMD execution.
+end note
+
+@enduml

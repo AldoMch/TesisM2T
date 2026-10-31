@@ -1,0 +1,494 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::API & Compute::Amazon API Gateway\\n(REST / execute-api · AWS Sig v4 · JSON)"
+      ],
+      "gt_nodes": [
+        "Global::API Gateway"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::Authentication & Security::Amazon Cognito\\n(User Auth)"
+      ],
+      "gt_nodes": [
+        "Global::Cognito"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::Hosting::Amazon S3\\n(Static Website Hosting)"
+      ],
+      "gt_nodes": [
+        "Global::S3"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Frontend (HTML / CSS / Bootstrap / jQuery)::Web Application UI\\n(Fixtures · Standings · Live Scores\\nPredictions · Chatbot · Reminders)",
+        "Global::User\\n(Web Browser)"
+      ],
+      "gt_nodes": [
+        "Global::User"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Live Score Pipeline::DynamoDB\\nLive Scores",
+        "Standing Service::DynamoDB\\nStandings"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::Data Storage & Search::Amazon DynamoDB\\n(Match Results · Statistics · Fixtures)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Live Score Pipeline::Elasticsearch",
+        "Standing Service::Elasticsearch"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::Data Storage & Search::Amazon Elasticsearch\\n(Match Data Search & Retrieval)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Notification Service::SNS",
+        "Notification Service::SQS"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::Notification Service::Amazon SNS\\n(SMS Delivery)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::Prediction Service::Amazon SageMaker\\n(ML Match Outcome Predictions\\nHome Win · Draw · Away Win)"
+      ],
+      "gt_nodes": [
+        "Prediction Service::SageMaker"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Live Score Pipeline::EC2::Kafka",
+        "Live Score Pipeline::EC2::M4"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::Streaming Infrastructure (EC2)::Apache Kafka\\n(Live Score Event Broker)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Fixtures Service::fixtures\\nLambda",
+        "Live Score Pipeline::live_score\\nLambda",
+        "Standing Service::standing\\nLambda"
+      ],
+      "predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Football Info Handler\\n(Fixtures · Standings · Results · Live Scores)"
+      ],
+      "is_boundary_correct": false,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Prediction Handler\\n(SageMaker Integration)"
+      ],
+      "gt_nodes": [
+        "Prediction Service::prediction\\nLambda"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Chatbot / Conversation Handler\\n(Intent Resolution · Screening Recommendations)"
+      ],
+      "gt_nodes": [
+        "Recommendation Service::recommendation\\nLambda"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "AWS Cloud::Notification Service::Amazon SQS\\n(Reminder Request Queue)"
+      ],
+      "gt_nodes": [
+        "Fixtures Service::SQS"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)",
+      "reference_nodes": [
+        "Live Score Pipeline::live_score\\nLambda",
+        "Prediction Service::prediction\\nLambda",
+        "Recommendation Service::recommendation\\nLambda",
+        "Standing Service::standing\\nLambda"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Chatbot / Conversation Handler\\n(Intent Resolution · Screening Recommendations)",
+      "reference_nodes": [
+        "Recommendation Service::Lex",
+        "Recommendation Service::recommendation\\nLambda",
+        "Global::API Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Football Info Handler\\n(Fixtures · Standings · Results · Live Scores)",
+      "reference_nodes": [
+        "Fixtures Service::fixtures\\nLambda",
+        "Live Score Pipeline::live_score\\nLambda",
+        "Standing Service::standing\\nLambda",
+        "Standing Service::DynamoDB\\nStandings",
+        "Live Score Pipeline::DynamoDB\\nLive Scores"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Prediction Handler\\n(SageMaker Integration)",
+      "reference_nodes": [
+        "Prediction Service::SageMaker",
+        "Prediction Service::prediction\\nLambda"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Reminder Handler\\n(Reminder Queue Dispatch)",
+      "reference_nodes": [
+        "Notification Service::SQS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::API & Compute::Amazon API Gateway\\n(REST / execute-api · AWS Sig v4 · JSON)",
+      "reference_nodes": [
+        "Global::API Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Authentication & Security::AWS IAM\\n(Access Control)",
+      "reference_nodes": [
+        "Global::Cognito"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Authentication & Security::Amazon Cognito\\n(User Auth)",
+      "reference_nodes": [
+        "Global::Cognito"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Data Storage & Search::Amazon DynamoDB\\n(Match Results · Statistics · Fixtures)",
+      "reference_nodes": [
+        "Live Score Pipeline::DynamoDB\\nLive Scores",
+        "Standing Service::DynamoDB\\nStandings"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Data Storage & Search::Amazon Elasticsearch\\n(Match Data Search & Retrieval)",
+      "reference_nodes": [
+        "Live Score Pipeline::Elasticsearch",
+        "Standing Service::Elasticsearch"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Hosting::Amazon S3\\n(Static Website Hosting)",
+      "reference_nodes": [
+        "Global::S3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Notification Service::Amazon SNS\\n(SMS Delivery)",
+      "reference_nodes": [
+        "Notification Service::SNS",
+        "Notification Service::SQS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Notification Service::Amazon SQS\\n(Reminder Request Queue)",
+      "reference_nodes": [
+        "Notification Service::SQS",
+        "Fixtures Service::SQS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Prediction Service::Amazon SageMaker\\n(ML Match Outcome Predictions\\nHome Win · Draw · Away Win)",
+      "reference_nodes": [
+        "Prediction Service::SageMaker",
+        "Prediction Service::DynamoDB\\nPredictions"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Streaming Infrastructure (EC2)::Apache Avro\\n(Streaming Payload Encoding)",
+      "reference_nodes": [
+        "Live Score Pipeline::EC2::Kafka",
+        "Live Score Pipeline::EC2::M4"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Cloud::Streaming Infrastructure (EC2)::Apache Kafka\\n(Live Score Event Broker)",
+      "reference_nodes": [
+        "Live Score Pipeline::EC2::Kafka",
+        "Live Score Pipeline::EC2",
+        "Live Score Pipeline::EC2::M4"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Frontend (HTML / CSS / Bootstrap / jQuery)::Web Application UI\\n(Fixtures · Standings · Live Scores\\nPredictions · Chatbot · Reminders)",
+      "reference_nodes": [
+        "Global::User",
+        "Fixtures Service::fixtures\\nLambda",
+        "Standing Service::standing\\nLambda",
+        "Recommendation Service::Lex"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::User\\n(Web Browser)",
+      "reference_nodes": [
+        "Global::User"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Notification Service::Amazon SQS\\n(Reminder Request Queue)"
+      ],
+      "gt_node": "Fixtures Service::SQS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Football Info Handler\\n(Fixtures · Standings · Results · Live Scores)"
+      ],
+      "gt_node": "Fixtures Service::fixtures\\nLambda"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::API & Compute::Amazon API Gateway\\n(REST / execute-api · AWS Sig v4 · JSON)"
+      ],
+      "gt_node": "Global::API Gateway"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Authentication & Security::Amazon Cognito\\n(User Auth)"
+      ],
+      "gt_node": "Global::Cognito"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Hosting::Amazon S3\\n(Static Website Hosting)"
+      ],
+      "gt_node": "Global::S3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Frontend (HTML / CSS / Bootstrap / jQuery)::Web Application UI\\n(Fixtures · Standings · Live Scores\\nPredictions · Chatbot · Reminders)",
+        "Global::User\\n(Web Browser)"
+      ],
+      "gt_node": "Global::User"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Data Storage & Search::Amazon DynamoDB\\n(Match Results · Statistics · Fixtures)"
+      ],
+      "gt_node": "Live Score Pipeline::DynamoDB\\nLive Scores"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Streaming Infrastructure (EC2)::Apache Kafka\\n(Live Score Event Broker)"
+      ],
+      "gt_node": "Live Score Pipeline::EC2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Streaming Infrastructure (EC2)::Apache Kafka\\n(Live Score Event Broker)"
+      ],
+      "gt_node": "Live Score Pipeline::EC2::Kafka"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Streaming Infrastructure (EC2)::Apache Kafka\\n(Live Score Event Broker)"
+      ],
+      "gt_node": "Live Score Pipeline::EC2::M4"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Live Score Pipeline::EC2::foot app"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Data Storage & Search::Amazon Elasticsearch\\n(Match Data Search & Retrieval)"
+      ],
+      "gt_node": "Live Score Pipeline::Elasticsearch"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Football Info Handler\\n(Fixtures · Standings · Results · Live Scores)"
+      ],
+      "gt_node": "Live Score Pipeline::live_score\\nLambda"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Notification Service::Amazon SNS\\n(SMS Delivery)"
+      ],
+      "gt_node": "Notification Service::SNS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Notification Service::Amazon SQS\\n(Reminder Request Queue)"
+      ],
+      "gt_node": "Notification Service::SQS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Prediction Service::Amazon SageMaker\\n(ML Match Outcome Predictions\\nHome Win · Draw · Away Win)"
+      ],
+      "gt_node": "Prediction Service::DynamoDB\\nPredictions"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Data Storage & Search::Amazon Elasticsearch\\n(Match Data Search & Retrieval)"
+      ],
+      "gt_node": "Prediction Service::Elasticsearch"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Prediction Service::Amazon SageMaker\\n(ML Match Outcome Predictions\\nHome Win · Draw · Away Win)"
+      ],
+      "gt_node": "Prediction Service::SageMaker"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Prediction Handler\\n(SageMaker Integration)"
+      ],
+      "gt_node": "Prediction Service::prediction\\nLambda"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Chatbot / Conversation Handler\\n(Intent Resolution · Screening Recommendations)"
+      ],
+      "gt_node": "Recommendation Service::Lex"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Chatbot / Conversation Handler\\n(Intent Resolution · Screening Recommendations)"
+      ],
+      "gt_node": "Recommendation Service::recommendation\\nLambda"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Data Storage & Search::Amazon DynamoDB\\n(Match Results · Statistics · Fixtures)"
+      ],
+      "gt_node": "Standing Service::DynamoDB\\nStandings"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::Data Storage & Search::Amazon Elasticsearch\\n(Match Data Search & Retrieval)"
+      ],
+      "gt_node": "Standing Service::Elasticsearch"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Football Info Handler\\n(Fixtures · Standings · Results · Live Scores)"
+      ],
+      "gt_node": "Standing Service::standing\\nLambda"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5943,
+      "completion_tokens": 1228,
+      "total_tokens": 7171,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Live Score Pipeline::EC2",
+    "Live Score Pipeline::EC2::foot app",
+    "Prediction Service::DynamoDB\\nPredictions",
+    "Prediction Service::Elasticsearch",
+    "Recommendation Service::Lex"
+  ],
+  "unmatched_predicted_nodes": [
+    "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)",
+    "AWS Cloud::API & Compute::AWS Lambda\\n(Python / Node)::Reminder Handler\\n(Reminder Queue Dispatch)",
+    "AWS Cloud::Authentication & Security::AWS IAM\\n(Access Control)",
+    "AWS Cloud::Streaming Infrastructure (EC2)::Apache Avro\\n(Streaming Payload Encoding)"
+  ],
+  "_provenance": {
+    "fingerprint": "a4f4f95a2a72c25a56acdb2e797f8258e9f80113e9ee460fd9c0d5c94415c174",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

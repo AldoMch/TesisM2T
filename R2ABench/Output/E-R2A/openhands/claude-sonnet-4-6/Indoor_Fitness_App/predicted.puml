@@ -1,0 +1,123 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultTextAlignment center
+skinparam component {
+    BackgroundColor #D6EAF8
+    BorderColor #2471A3
+    FontColor #1A252F
+}
+skinparam package {
+    BackgroundColor #EBF5FB
+    BorderColor #2471A3
+    FontColor #1A252F
+}
+skinparam database {
+    BackgroundColor #D5F5E3
+    BorderColor #1E8449
+}
+skinparam actor {
+    BackgroundColor #FDEBD0
+    BorderColor #CA6F1E
+}
+skinparam arrow {
+    Color #2C3E50
+}
+
+title Indoor Fitness App - System Architecture
+
+actor "Amateur Exerciser /\nProfessional User" as User
+actor "Administrator" as Admin
+
+package "Mobile App (Android / iOS)" {
+
+    package "UI Layer" {
+        component "Main Interface\n(Today's Plan Preview)" as MainUI
+        component "Exercise Interface\n(Camera Feed · Pose Display\nEvaluation · Timer)" as ExerciseUI
+        component "Professional Report\nInterface" as ReportUI
+        component "Exercise History\nInterface (Calendar)" as HistoryUI
+        component "Personal Interface\n(Profile & Preferences)" as PersonalUI
+        component "Casting Operation\nInterface" as CastUI
+    }
+
+    package "On-Device Processing" {
+        component "Camera Capture\nModule\n(≥30 fps)" as Camera
+        component "Pose Estimation\nEngine\n(≥20 fps · ≥95% accuracy)" as PoseEngine
+        component "Posture Evaluation\nModule\n(skeleton comparison · scoring)" as PostureEval
+        component "Exercise State\nMonitor\n(start / end / completion)" as StateMonitor
+        component "Auth & Permission\nModule\n(SQL-injection protection)" as AuthModule
+    }
+
+    package "Screen Casting (LAN)" {
+        component "LAN Device\nDiscovery" as LANDiscovery
+        component "Casting Client\n(video stream · commands)" as CastClient
+    }
+}
+
+package "Server Side" {
+
+    package "Business Services" {
+        component "User Management\n& Auth Service" as UserMgmt
+        component "Training Plan\nRecommendation Engine\n(response ≤1 s)" as PlanEngine
+        component "Material Collection\n& Processing Service" as MaterialService
+        component "Report Generation\nService\n(generation ≤3 s)" as ReportService
+        component "Poster Generation\nService" as PosterService
+    }
+
+    package "Data Layer" {
+        component "Standard Video &\nMovement Repository" as StdMovement
+        database "SQL Data Store\n(user data · plans\nhistory · reports)" as DB
+    }
+}
+
+package "Android Casting Target\n(Same LAN)" {
+    component "Casting Server\n(command latency ≤50 ms)" as CastServer
+    component "Exercise Display\n(video latency ≤100 ms)" as CastDisplay
+}
+
+User --> MainUI
+User --> ExerciseUI
+User --> ReportUI
+User --> HistoryUI
+User --> PersonalUI
+User --> CastUI
+Admin --> UserMgmt
+
+MainUI --> AuthModule : verify session
+AuthModule --> UserMgmt : authenticate / authorize
+UserMgmt --> DB : read/write user records
+
+MainUI --> DB : fetch today's plan
+
+ExerciseUI --> Camera : start capture
+Camera --> PoseEngine : raw video stream
+StdMovement --> PoseEngine : standard skeleton data
+PoseEngine --> PostureEval : skeleton extraction (real-time)
+PostureEval --> ExerciseUI : similarity score · stick diagram · evaluation
+PoseEngine --> ExerciseUI : posture stick diagram overlay
+
+StateMonitor --> ExerciseUI : exercise start/end · completion degree
+ExerciseUI --> StateMonitor : real-time exercise data
+
+StateMonitor --> PlanEngine : training result / exercise state
+PlanEngine --> ExerciseUI : recommended / adjusted plan
+PlanEngine --> DB : read/write training plans
+
+PostureEval --> MaterialService : evaluation results · posture data
+StateMonitor --> MaterialService : state data · completion metrics
+MaterialService --> ReportService : aggregated training materials
+MaterialService --> PosterService : images · text · statistics
+ReportService --> ReportUI : professional report (charts & text)
+PosterService --> ReportUI : training summary poster
+
+HistoryUI --> DB : read exercise history / monthly overview
+PersonalUI --> DB : read/write profile · preferences
+
+CastUI --> LANDiscovery : initiate device search
+LANDiscovery --> CastClient : discovered Android device
+CastClient --> ExerciseUI : capture exercise interface stream
+CastClient --> CastServer : real-time video stream (≤100 ms)
+CastServer --> CastDisplay : render on target device
+CastServer --> CastClient : control commands (response ≤50 ms)
+
+@enduml

@@ -1,0 +1,122 @@
+{
+  "candidate": {
+    "sample_id": "s000036_b0b48363",
+    "repository_name": "SimonLdj/hypnolog-server",
+    "image_url": "https://github.com/SimonLdj/hypnolog-server/blob/master/doc/images/hypnolog-architecture.png",
+    "source_ref": "11dc566c7f0136215b032fec7d49ca9ef1bc74b9",
+    "total_score": 96,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 4124,
+    "document_count": 14,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "config",
+      "docs",
+      "readme",
+      "requirements_like",
+      "schema_model"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 43,
+      "user_scenario": 21,
+      "api_io": 52,
+      "deployment": 72,
+      "constraints": 22,
+      "non_functional": 2
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 96
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "doc/TODO.md",
+      "doc_type": "docs",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05405395751128829,
+      "text": "HypnoLog Server TODO List ================================ ## TOP - Easy Visualizers adding and managing - write readme about how to add Visualizers ## MORE ### Server API / Guidelines: - Consider adding tags and variable name as part of the API - Add session opening message (given name, api version, some other data as application name...) (multi-session debug?) - document about query - write some guidelines for how language-library should behave, for example what to do when server is off (provide alternative method), what to do when error occurred, when to stop logging, etc. ### Visualizers: - handle visualizers run time errors (fall back to next visualizer, report to user) - Don't block..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "doc/HypnoLog-documentation.md",
+      "doc_type": "docs",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.051999389499389495,
+      "text": "HypnoLog Documentation ============================ *HypnoLog* aims to be the single tool for visualizing all you data from any platform. This is done by the following described architecture. # Architecture Logging with HypnoLog done by sending HTTP requests to HypnoLog, therefor it is possible to log from any language/technology/environment as log as it possible to send HTTP request from it. Second step is to view the logged data, this is done by accessing the web UI using the browser. The browser is simple receiving the data from the same HypnoLog server. In the most simple scenario all 3 parts (logging code, HypnoLog server, browser) can run on the same machine. # Visualization Archite..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "doc/api-doc.md",
+      "doc_type": "docs",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053739754098360654,
+      "text": "HypnoLog Server API ================================== To log some data, simply send HTTP POST request to HypnoLog Server at with content such as this: Sending HTTP request can be done from any language that has HTTP library, this means HypnoLog can be used almost in any language. cURL example: Note, header should be set. For more logging options see examples below, or read this schema. ### Examples Logging simple number: Logging simple string: Logging array of numbers: Logging complex object: *(Experimental)* Logging with tags: *(Experimental)* Logging with variable name:"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053299272022974686,
+      "text": "ding HTTP POST request with JSON message. See server API. Develop your own and contribute! ## War stories (as continue to \"Why do I need this?\") : - Debugging image processing algorithm written in C# with Emgu CV, running as a service on Windows machine. Without HypnoLog: looking at huge arrays of numbers with Visual Studio DataTip tool, or messy console output. With HypnoLog: viewing color histograms, output image at any step and any other data as graphs. - Debugging Localization algorithm running on a remote robot with real time laser sensors, written in Java on Linux. Without HypnoLog: wasting time writing Java code to draw images of the map, saving each snapshot as a file, deal with f..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "doc/hypnolog-data-obejct-schema.json",
+      "doc_type": "schema_model",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05547329455314648,
+      "text": "{ \"$schema\": \" \"title\": \"HypnoLog Data Object\", \"description\": \"A Data which is logged using HypnoLog. HypnoLog server should receive this Object via HTTP API\", \"type\" : \"object\", \"properties\" : { \"data\" : { \"description\": \"The data which is logged\", }, \"type\" : { \"description\": \"Type of the data\", \"type\": \"string\" }, }, \"required\": [\"data\", \"type\"], }"
+    },
+    {
+      "evidence_id": "E006",
+      "path": "public/javascripts/client.js",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05338447091832694,
+      "text": "Object via HTTP API\", \"type\" : \"object\", \"properties\" : { \"data\" : { \"description\": \"The data which is logged\", }, \"type\" : { \"description\": \"Type of the data\", \"type\": \"string\" }, }, \"required\": [\"data\", \"type\"], } // TODO: make suer we using Ajv with draft-06 if needed, // \"To use Ajv with draft-06 schemas you need to explicitly add the meta-schema to the validator instance\" var ajv = new Ajv(); // Create validation function to validate data coming from the server hypnologObjValidator = ajv.compile(schema); } initialize(); // Connect to servers websocket function connect(){ var url = new URL(window.location.href); // creating a new websocket var socket = io.connect(url.origin); socket.o..."
+    }
+  ]
+}

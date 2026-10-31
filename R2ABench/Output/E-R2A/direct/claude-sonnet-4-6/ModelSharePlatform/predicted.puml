@@ -1,0 +1,175 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam component {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+  FontColor #000000
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontColor #000000
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #000000
+}
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+  FontColor #000000
+}
+skinparam arrow {
+  Color #555555
+}
+skinparam defaultFontSize 12
+
+title Deep Learning Model Sharing Platform — System Architecture
+
+actor "General User" as GU
+actor "Administrator" as ADMIN
+actor "Unregistered User" as UU
+
+cloud "Client Layer\n(Modern Browsers — IE Not Supported)" as CLIENT {
+  component "Vue + TypeScript\nFrontend SPA" as VUE {
+    component "Account UI\n(Register / Login / Password Recovery\nProfile / Logout)" as UI_ACCOUNT
+    component "Q&A Community UI\n(Questions / Answers\nPublish / Modify / Delete)" as UI_QA
+    component "Blog UI\n(Articles / Comments\nPublish / Modify / Delete)" as UI_BLOG
+    component "Model UI\n(Upload / Download / Purchase\nOnline Invocation / Recommendation)" as UI_MODEL
+    component "Dataset UI\n(Upload / Download\nModify / Delete)" as UI_DATASET
+    component "Follow UI\n(Follow / Unfollow\nUser Profiles)" as UI_FOLLOW
+    component "Admin UI\n(Account Cancellation\nIllegal Content Deletion)" as UI_ADMIN
+    component "Multilingual UI\n(Chinese / English)" as UI_I18N
+  }
+}
+
+node "Application Server Layer\n(Spring Boot)" as APPSERVER {
+
+  rectangle "API Gateway / Security Filter\n(Auth, Session, Injection Prevention)" as GATEWAY
+
+  rectangle "Account Service\n(FR-001 to FR-005)\n- Registration & Validation\n- Login & Session\n- Password Recovery (Email)\n- Profile Management\n- Logout" as SVC_ACCOUNT
+
+  rectangle "Q&A Community Service\n(FR-006 to FR-011)\n- Publish / Modify / Delete Questions\n- Publish / Modify / Delete Answers\n- Save Prompt & Exception Feedback" as SVC_QA
+
+  rectangle "Blog Service\n(FR-012 to FR-017)\n- Publish / Modify / Delete Articles\n- Publish / Modify / Delete Comments\n- Comment Validation & Refresh" as SVC_BLOG
+
+  rectangle "Model Management Service\n(FR-018 to FR-024)\n- Upload & Review Entry\n- Download (Purchased)\n- Modify / Delete Uploaded Models\n- Online Invocation\n- Purchase & Payment\n- Recommendation Engine" as SVC_MODEL
+
+  rectangle "Dataset Management Service\n(FR-025 to FR-028)\n- Upload & Naming Validation\n- Free Download\n- Delete / Modify Datasets" as SVC_DATASET
+
+  rectangle "Follow Service\n(FR-029 to FR-030)\n- Follow / Unfollow Users\n- Follow List Management\n- Abbreviated User Profile" as SVC_FOLLOW
+
+  rectangle "Administrator Service\n(FR-031 to FR-032)\n- Cancel User Accounts\n- Delete Illegal Content\n(Questions / Answers / Blogs /\nComments / Models / Datasets)" as SVC_ADMIN
+
+  rectangle "Recommendation Engine\n(NFR-015, DR-009)\n- Browsing History Analysis\n- Registration Info Analysis\n- Traditional + Intelligent Algorithms\n- Model Pool Generation" as REC_ENGINE
+
+  rectangle "Email / Notification Service\n(FR-003)\n- Verification Code Email\n- Password Recovery" as SVC_EMAIL
+
+  rectangle "Security Module\n(NFR-001, NFR-002, NFR-003)\n- Injection Attack Prevention\n- User Authentication\n- Role-Based Access Control\n- Admin Function Restriction" as SEC_MODULE
+}
+
+node "Storage Layer" as STORAGE {
+  database "MySQL Database\n(Primary Relational Store)" as MYSQL {
+    component "User Account Data\n(DR-001)\nRegistration, Login State,\nEmail, Password, Role" as DB_USER
+    component "Q&A Data\n(DR-002, DR-003)\nQuestions & Answers" as DB_QA
+    component "Blog Data\n(DR-004, DR-005)\nArticles & Comments" as DB_BLOG
+    component "Model Data\n(DR-006)\nBasic Info, Files, Review State,\nSale Flag, Price, Purchases" as DB_MODEL
+    component "Dataset Data\n(DR-007)\nName, Path, File, Owner" as DB_DATASET
+    component "Follow Relationship Data\n(DR-008)\nFollow Lists" as DB_FOLLOW
+    component "Recommendation Data\n(DR-009)\nBrowsing History,\nRegistration Info" as DB_REC
+    component "Admin Governance Data\n(DR-010)\nDeleted Content Records" as DB_ADMIN
+  }
+
+  database "File / Object Storage\n(Model Files & Dataset Files)" as FILESTORAGE
+}
+
+node "Infrastructure Layer" as INFRA {
+  component "x86-64 / ARM CPU\n≥4 GB RAM / ≥30 GB Disk\n(C-002, C-003, C-004)" as HW
+  component "Runtime Environment\n(Java / Node Build)" as RUNTIME
+  component "Maintenance Window\n01:00–04:00\n(NFR-008)" as MAINT
+  component "Fault Recovery\n< 1 Hour Recovery\n(NFR-011)" as FAULT
+}
+
+' --- Client to Gateway ---
+UU --> VUE : Browse / Register
+GU --> VUE : All User Functions
+ADMIN --> VUE : Admin Functions
+
+VUE --> GATEWAY : HTTPS Requests
+
+' --- Gateway to Services ---
+GATEWAY --> SVC_ACCOUNT
+GATEWAY --> SVC_QA
+GATEWAY --> SVC_BLOG
+GATEWAY --> SVC_MODEL
+GATEWAY --> SVC_DATASET
+GATEWAY --> SVC_FOLLOW
+GATEWAY --> SVC_ADMIN
+GATEWAY --> SEC_MODULE
+
+' --- Service Dependencies ---
+SVC_MODEL --> REC_ENGINE : Trigger Recommendation
+SVC_MODEL --> FILESTORAGE : Upload / Download Model Files
+SVC_DATASET --> FILESTORAGE : Upload / Download Dataset Files
+SVC_ACCOUNT --> SVC_EMAIL : Send Recovery Email
+SVC_MODEL --> SVC_DATASET : Online Invocation (Dataset Input)
+
+SEC_MODULE --> GATEWAY : Enforce Policies
+
+' --- Services to DB ---
+SVC_ACCOUNT --> DB_USER
+SVC_QA --> DB_QA
+SVC_BLOG --> DB_BLOG
+SVC_MODEL --> DB_MODEL
+SVC_DATASET --> DB_DATASET
+SVC_FOLLOW --> DB_FOLLOW
+REC_ENGINE --> DB_REC
+SVC_ADMIN --> DB_ADMIN
+SVC_ADMIN --> DB_USER
+SVC_ADMIN --> DB_QA
+SVC_ADMIN --> DB_BLOG
+SVC_ADMIN --> DB_MODEL
+SVC_ADMIN --> DB_DATASET
+
+' --- Storage to Infra ---
+MYSQL --> INFRA
+FILESTORAGE --> INFRA
+APPSERVER --> INFRA
+
+' --- UI components to Vue ---
+UI_ACCOUNT -[hidden]- UI_QA
+UI_QA -[hidden]- UI_BLOG
+UI_BLOG -[hidden]- UI_MODEL
+UI_MODEL -[hidden]- UI_DATASET
+UI_DATASET -[hidden]- UI_FOLLOW
+UI_FOLLOW -[hidden]- UI_ADMIN
+UI_ADMIN -[hidden]- UI_I18N
+
+note right of SEC_MODULE
+  NFR-001: Prevent malicious operations
+  NFR-002: Block injection attacks
+  NFR-003: Secure authentication & admin control
+end note
+
+note right of MYSQL
+  NFR-004: Server/front-end data consistency
+  within 3-second interval
+  NFR-009: Supports >10,000 users
+end note
+
+note bottom of APPSERVER
+  NFR-010: 1,000 requests/sec throughput
+  NFR-007: MTTF > 1 year
+  NFR-014: Extensible via OO/abstraction/modules
+  C-001: Spring Boot, Vue, TypeScript, MySQL, SQL
+end note
+
+@enduml

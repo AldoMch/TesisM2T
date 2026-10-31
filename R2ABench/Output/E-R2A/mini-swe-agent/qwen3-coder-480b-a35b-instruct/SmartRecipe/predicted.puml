@@ -1,0 +1,98 @@
+@startuml
+skinparam componentStyle rectangle
+
+title Smart Recipe System - Component Architecture
+
+folder "Mobile Application" {
+  [User Interface] as ui
+  [Photo Recognition Module] as photo
+  [Text Search Module] as search
+  [Health Analysis Module] as health
+  [Community Sharing Module] as community
+  [Recommendation Module] as recommend
+  [User Management Module] as usermgmt
+}
+
+folder "Backend Services" {
+  folder "Spring Boot Framework" {
+    [API Gateway] as gateway
+    [Business Logic Layer] as business
+    [Controller Layer] as controller
+    [Service Layer] as service
+    [Data Access Layer] as dao
+  }
+
+  folder "Flask Framework" {
+    [Model Inference Service] as inference
+  }
+
+  database "MySQL Database" {
+    [User Data] as userdata
+    [Recipe Data] as recipedata
+    [Health Data] as healthdata
+    [Community Data] as communitydata
+    [Recommendation Data] as recommenddata
+  }
+
+  [Redis Cache] as cache
+}
+
+folder "External Systems" {
+  [AI/ML Models] as mlmodels
+}
+
+ui --> photo : uses
+ui --> search : uses
+ui --> health : uses
+ui --> community : uses
+ui --> recommend : uses
+ui --> usermgmt : uses
+
+photo --> gateway : API calls
+search --> gateway : API calls
+health --> gateway : API calls
+community --> gateway : API calls
+recommend --> gateway : API calls
+usermgmt --> gateway : API calls
+
+gateway --> controller : routes requests
+controller --> business : processes
+business --> service : delegates
+service --> dao : data operations
+dao --> userdata : manages
+dao --> recipedata : manages
+dao --> healthdata : manages
+dao --> communitydata : manages
+dao --> recommenddata : manages
+
+dao --> cache : caches data
+cache --> userdata : syncs with
+cache --> recipedata : syncs with
+
+inference <-- service : provides ML services
+mlmodels --> inference : supplies models
+
+userdata --> inference : provides training data
+recipedata --> inference : provides training data
+
+note right of inference
+  Flask-based model inference
+  for photo recognition
+end note
+
+note right of business
+  Spring Boot main
+  business logic
+end note
+
+note top of cache
+  Redis for
+  performance
+end note
+
+legend
+  Smart Recipe System Architecture
+  Mobile app with modular components
+  communicating with backend services
+end legend
+@enduml

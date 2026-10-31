@@ -1,0 +1,161 @@
+@startuml veinmind-tools Architecture
+allowmixing
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #F0F4FF
+skinparam nodeBackgroundColor #FFF8E7
+skinparam databaseBackgroundColor #E8F5E9
+skinparam cloudBackgroundColor #FCE4EC
+skinparam defaultFontSize 12
+skinparam arrowColor #444444
+skinparam packageBorderColor #7986CB
+skinparam nodeBorderColor #F9A825
+skinparam componentBorderColor #546E7A
+
+' ─────────────────────────────────────────────
+' LAYER 1 – CLI / Entrypoint Layer
+' ─────────────────────────────────────────────
+package "CLI / Entrypoint Layer" <<Layer>> {
+    component [ScanImageCommand\nscan-image] as ScanImageCmd
+    component [ScanContainerCommand\nscan-container] as ScanContainerCmd
+    component [ScanIaCCommand\nscan-iac] as ScanIaCCmd
+    artifact "run.sh\n(parallel container startup script)" as RunSh
+    note right of RunSh
+        Invoked as: ./run.sh scan-host image
+        Triggers local image scanning flow (FR-003, CLI-004, CON-003)
+    end note
+}
+
+' ─────────────────────────────────────────────
+' LAYER 2 – Plugin / Tool Layer
+' ─────────────────────────────────────────────
+package "Plugin / Tool Layer" <<Layer>> {
+    component [IaCScanTool\npolicy loader + scanner] as IaCScanTool
+    note right of IaCScanTool
+        FR-007 pipeline:
+        1. Load policy libraries
+        2. Scan IaC files
+        3. Merge duplicated result groups
+        4. Build alert detail objects
+    end note
+
+    component [PythonPlugin\nscan.py] as PythonPlugin
+    artifact "entrypoint.sh\n(/tool/entrypoint.sh)" as EntrypointSh
+    note right of EntrypointSh
+        CON-006: Container entrypoint
+        Delegates to: python scan.py $* (FR-006)
+    end note
+
+    artifact "requirements.txt" as ReqsTxt
+    note right of ReqsTxt
+        CON-005 / NFR-003:
+        Dependencies installed at build time
+        FROM veinmind/python3.6:1.3.1-stretch
+    end note
+}
+
+' ─────────────────────────────────────────────
+' LAYER 3 – Authorization Routing Layer
+' ─────────────────────────────────────────────
+package "Authorization Routing Layer" <<Layer>> {
+    component [DockerAuthRouter\nmethod + URI matching] as DockerAuthRouter
+    note right of DockerAuthRouter
+        FR-004: matches method + URI patterns
+        FR-005 / DAT-IF-003: returns NoneDockerPlugin
+        as explicit fallback action when no route matches
+    end note
+}
+
+' ─────────────────────────────────────────────
+' LAYER 4 – Reporting / Data Layer
+' ─────────────────────────────────────────────
+package "Reporting / Data Layer" <<Layer>> {
+    component [MaliciousFileReportModel\nMaliciousFileInfo\nReportData / ReportImage\nReportLayer] as MaliciousFileModel
+    component [IaCReportModel\nrule metadata\nfile-location details\nalert-detail composite] as IaCReportModel
+}
+
+' ─────────────────────────────────────────────
+' LAYER 5 – Execution / Infrastructure Layer
+' ─────────────────────────────────────────────
+package "Execution / Infrastructure Layer" <<Layer>> {
+    component [VeinmindRunner\ncontainerized runner\nparallel execution host] as Runner
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+package "Container Runtimes" <<External>> {
+    component [Docker] as Docker
+    component [Containerd] as Containerd
+}
+
+package "Image Registries" <<External>> {
+    component [DockerHub] as DockerHub
+    component [Docker Registry] as DockerRegistry
+    component [Harbor] as Harbor
+}
+
+package "External SDK" <<External>> {
+    component [veinmind-sdk\nlibveinmind] as VeinmindSDK
+}
+
+package "Policy Libraries" <<External>> {
+    component [PolicyLibrary\nexternal policy store] as PolicyLib
+}
+
+' ─────────────────────────────────────────────
+' CLI → Scanning Pipeline
+' ─────────────────────────────────────────────
+
+' run.sh → Runner + Docker (startup deps)
+RunSh --> Runner              : requires runner image (DEP-002, CON-003)
+RunSh --> Docker              : requires Docker runtime (CON-001)
+
+' run.sh scan-host image → local image scanning flow (FR-003, DE-003)
+RunSh --> ScanImageCmd        : scan-host image sub-command\ntriggers local image scanning flow (FR-003)
+
+' ScanImageCmd / ScanContainerCmd → external SDK
+ScanImageCmd     --> VeinmindSDK  : uses libveinmind image handle (API-001, CON-004)
+ScanContainerCmd --> VeinmindSDK  : uses libveinmind container handle (API-001, CON-004)
+
+' ScanImageCmd → report model (via SDK, no direct CLI ownership per SRS)
+ScanImageCmd     --> MaliciousFileModel : scan result stored in report model (DR-001-DR-004)
+
+' ─────────────────────────────────────────────
+' IaC Pipeline (FR-007)
+' ─────────────────────────────────────────────
+ScanIaCCmd   --> IaCScanTool      : invokes IaC scan pipeline (FR-007)
+IaCScanTool  --> VeinmindSDK      : uses libveinmind scan context (CON-004, API-001)
+IaCScanTool  --> PolicyLib        : loads policy libraries (FR-007 step 1, DE-005)
+IaCScanTool  --> IaCReportModel   : merges duplicate groups,\nbuilds alert detail objects (FR-007 steps 3-4)
+IaCScanTool  --> VeinmindSDK      : publishes report event via SDK (API-003)
+
+' ─────────────────────────────────────────────
+' Python Plugin
+' ─────────────────────────────────────────────
+EntrypointSh --> PythonPlugin     : invokes python scan.py $* (FR-006, CON-006)
+PythonPlugin --> VeinmindSDK      : uses veinmind-sdk directly (CON-004, API-001, DE-002)
+ReqsTxt      --> PythonPlugin     : build-time dependency install (CON-005, NFR-003)
+
+' ─────────────────────────────────────────────
+' Authorization Routing (FR-004, FR-005)
+' ─────────────────────────────────────────────
+DockerAuthRouter --> VeinmindSDK  : uses SDK plugin mechanism (API-001)
+
+' ─────────────────────────────────────────────
+' Runner uses Docker runtime
+' ─────────────────────────────────────────────
+Runner --> Docker                 : containerized execution
+
+' ─────────────────────────────────────────────
+' Runtime compatibility (NFR-002)
+' ─────────────────────────────────────────────
+Docker     ..> DockerHub      : compatibility target (NFR-002)
+Docker     ..> DockerRegistry : compatibility target (NFR-002)
+Docker     ..> Harbor         : compatibility target (NFR-002)
+Containerd ..> DockerHub      : compatibility target (NFR-002)
+Containerd ..> DockerRegistry : compatibility target (NFR-002)
+Containerd ..> Harbor         : compatibility target (NFR-002)
+
+@enduml

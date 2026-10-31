@@ -1,0 +1,91 @@
+@startuml
+package "CLI Layer" {
+  component "cadctl" as cadctl
+  component "CHGM Workflow (FR-002)" as chgmWorkflow
+  component "Anomaly Detection & Communication Logic (FR-003)" as anomalyDetectionLogic
+  component "Support Status Handler (FR-004)" as supportStatusHandler
+  component "Alert Silencing/Escalation Handler (FR-004)" as alertHandling
+  component "Follow-up Event Handler (FR-004)" as followUpHandler
+}
+
+package "Integration Layer" {
+  component "Integration Library" as integrationLibrary
+}
+
+package "Execution/Orchestration Layer" {
+  component "Direct Skip-Webhook Execution Path (FR-008)" as skipWebhookPath
+  component "payload JSON (FR-008/DR-001)" as payloadJson
+  component "event.data.id (DR-002)" as eventDataId
+}
+
+node "configuration-anomaly-detection Namespace (C-005)" as cadNamespace {
+  component "Tekton EventListener" as eventListener
+  component "Tekton Trigger" as trigger
+  component "Tekton PipelineRun (v1beta1) (C-004/FR-007)" as pipelineRun
+  component "cad-checks-pipeline" as cadChecksPipeline
+}
+
+package "Deployment/Template Layer" {
+  component "Deployment Assets" as deploymentAssets
+  component "YAML Manifests / Deployment Artifacts" as yamlManifests
+  component "Template Update Utility" as templateUpdateUtility
+}
+
+node "Container Runtime/Build Layer" {
+  component "Container Runtime Image" as containerRuntimeImage
+  component "UBI Minimal Runtime Base Image (NFR-001/C-003)" as ubiMinimalBaseImage
+  component "Image Metadata Labels (NFR-003)" as imageMetadataLabels
+  component "Build Configuration (Go 1.17)" as buildConfiguration
+}
+
+cloud "PagerDuty" as pagerDuty
+cloud "AWS" as aws
+cloud "OCM" as ocm
+cloud "External Alert Webhook Source" as externalAlertWebhookSource
+cloud "Cluster Owner (FR-003)" as clusterOwner
+cloud "Related Operations Systems" as relatedOperationsSystems
+
+cadctl --> integrationLibrary
+cadctl --> chgmWorkflow : includes/executes
+cadctl --> anomalyDetectionLogic : includes
+chgmWorkflow --> anomalyDetectionLogic : performs anomaly detection and communication
+cadctl --> supportStatusHandler : invokes support-status handling
+cadctl --> alertHandling : invokes alert silencing/escalation
+cadctl --> followUpHandler : invokes follow-up event handling
+
+integrationLibrary --> pagerDuty
+integrationLibrary --> aws
+integrationLibrary --> ocm
+
+anomalyDetectionLogic --> clusterOwner : communicates anomaly findings
+supportStatusHandler --> clusterOwner : support-status handling
+alertHandling --> pagerDuty : silences/escalates alerts
+followUpHandler --> relatedOperationsSystems : handles follow-up events
+
+externalAlertWebhookSource --> eventListener : webhook event
+externalAlertWebhookSource --> payloadJson : provides payload JSON
+payloadJson --> skipWebhookPath : direct-execution input
+eventDataId --> skipWebhookPath : identifies event (event.data.id)
+skipWebhookPath --> pipelineRun : starts direct PipelineRun
+
+eventListener --> trigger
+trigger --> pipelineRun
+
+pipelineRun --> cadChecksPipeline : references (v1beta1, FR-007)
+cadChecksPipeline --> containerRuntimeImage : executes CAD checks using
+containerRuntimeImage --> cadctl : includes /bin/cadctl
+
+deploymentAssets --> yamlManifests : contains
+yamlManifests --> eventListener : defines/deploys
+yamlManifests --> trigger : defines/deploys
+yamlManifests --> pipelineRun : defines/deploys
+yamlManifests --> cadChecksPipeline : defines/deploys
+yamlManifests --> cadNamespace : deploys to
+
+templateUpdateUtility --> deploymentAssets : updates
+
+ubiMinimalBaseImage --> containerRuntimeImage : base image for
+containerRuntimeImage --> imageMetadataLabels : includes
+buildConfiguration --> containerRuntimeImage : builds
+
+@enduml

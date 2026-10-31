@@ -1,0 +1,279 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Client Layer::Browser Client\\n(Three.js)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Delivery Layer::DNS / Load Balancer"
+      ],
+      "gt_nodes": [
+        "Global::DNS"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Delivery Layer::Web Server\\n(Static Assets)",
+        "Delivery Layer::Web Server\\n(Static Assets)::HTML/CSS/JS/Images"
+      ],
+      "gt_nodes": [
+        "Static Web Tier::Web Server\\nGame assets, HTML, CSS, JS"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "gt_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang",
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang"
+      ],
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Server Layer::Game Server Master\\n(Erlang/OTP)"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Server Layer::Replica Node\\n(Erlang/OTP)",
+        "Server Layer::Replica Node\\n(Erlang/OTP)::Failover / Replica"
+      ],
+      "gt_nodes": [
+        "Global::Erlang / OTP Game Server Cluster"
+      ],
+      "match_type": "1:N"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer::Browser Client\\n(Three.js)",
+      "reference_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer::Browser Client\\n(Three.js)::Game UI\\n3D Renderer",
+      "reference_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer::Browser Client\\n(Three.js)::Reconnect Handler\\n(ping/pong, game_reconnect)",
+      "reference_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer::Browser Client\\n(Three.js)::WebSocket Client\\n(JSON [event,data])",
+      "reference_nodes": [
+        "Browser Clients::Client Browser\\nPlayer 1",
+        "Browser Clients::Client Browser\\nPlayer 2",
+        "Browser Clients::Client Browser\\nPlayer 3"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Delivery Layer::DNS / Load Balancer",
+      "reference_nodes": [
+        "Global::DNS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Delivery Layer::Web Server\\n(Static Assets)",
+      "reference_nodes": [
+        "Static Web Tier::Web Server\\nGame assets, HTML, CSS, JS"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Delivery Layer::Web Server\\n(Static Assets)::HTML/CSS/JS/Images",
+      "reference_nodes": [
+        "Static Web Tier::Web Server\\nGame assets, HTML, CSS, JS"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Player",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer::Game Server Master\\n(Erlang/OTP)",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang",
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer::Game Server Master\\n(Erlang/OTP)::Room Manager\\n(Create/Join Rooms)",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang",
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer::Game Server Master\\n(Erlang/OTP)::Server List Service\\n(servers_list, redirect)",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer::Game Server Master\\n(Erlang/OTP)::WS Endpoint\\n(Session/Conn Handling)",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Master\\nErlang",
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer::Replica Node\\n(Erlang/OTP)",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang",
+        "Global::Erlang / OTP Game Server Cluster"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Server Layer::Replica Node\\n(Erlang/OTP)::Failover / Replica",
+      "reference_nodes": [
+        "Erlang / OTP Game Server Cluster::Server Slave\\nErlang",
+        "Global::Erlang / OTP Game Server Cluster"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Client Layer::Browser Client\\n(Three.js)",
+        "Client Layer::Browser Client\\n(Three.js)::Game UI\\n3D Renderer",
+        "Client Layer::Browser Client\\n(Three.js)::Reconnect Handler\\n(ping/pong, game_reconnect)",
+        "Client Layer::Browser Client\\n(Three.js)::WebSocket Client\\n(JSON [event,data])"
+      ],
+      "gt_node": "Browser Clients::Client Browser\\nPlayer 1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Client Layer::Browser Client\\n(Three.js)",
+        "Client Layer::Browser Client\\n(Three.js)::Game UI\\n3D Renderer",
+        "Client Layer::Browser Client\\n(Three.js)::Reconnect Handler\\n(ping/pong, game_reconnect)",
+        "Client Layer::Browser Client\\n(Three.js)::WebSocket Client\\n(JSON [event,data])"
+      ],
+      "gt_node": "Browser Clients::Client Browser\\nPlayer 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Client Layer::Browser Client\\n(Three.js)",
+        "Client Layer::Browser Client\\n(Three.js)::Game UI\\n3D Renderer",
+        "Client Layer::Browser Client\\n(Three.js)::Reconnect Handler\\n(ping/pong, game_reconnect)",
+        "Client Layer::Browser Client\\n(Three.js)::WebSocket Client\\n(JSON [event,data])"
+      ],
+      "gt_node": "Browser Clients::Client Browser\\nPlayer 3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Server Layer::Game Server Master\\n(Erlang/OTP)",
+        "Server Layer::Game Server Master\\n(Erlang/OTP)::Room Manager\\n(Create/Join Rooms)",
+        "Server Layer::Game Server Master\\n(Erlang/OTP)::Server List Service\\n(servers_list, redirect)",
+        "Server Layer::Game Server Master\\n(Erlang/OTP)::WS Endpoint\\n(Session/Conn Handling)"
+      ],
+      "gt_node": "Erlang / OTP Game Server Cluster::Server Master\\nErlang"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Server Layer::Game Server Master\\n(Erlang/OTP)",
+        "Server Layer::Game Server Master\\n(Erlang/OTP)::Room Manager\\n(Create/Join Rooms)",
+        "Server Layer::Game Server Master\\n(Erlang/OTP)::WS Endpoint\\n(Session/Conn Handling)",
+        "Server Layer::Replica Node\\n(Erlang/OTP)",
+        "Server Layer::Replica Node\\n(Erlang/OTP)::Failover / Replica"
+      ],
+      "gt_node": "Erlang / OTP Game Server Cluster::Server Slave\\nErlang"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Delivery Layer::DNS / Load Balancer"
+      ],
+      "gt_node": "Global::DNS"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Server Layer::Game Server Master\\n(Erlang/OTP)",
+        "Server Layer::Replica Node\\n(Erlang/OTP)",
+        "Server Layer::Replica Node\\n(Erlang/OTP)::Failover / Replica"
+      ],
+      "gt_node": "Global::Erlang / OTP Game Server Cluster"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Delivery Layer::Web Server\\n(Static Assets)",
+        "Delivery Layer::Web Server\\n(Static Assets)::HTML/CSS/JS/Images"
+      ],
+      "gt_node": "Static Web Tier::Web Server\\nGame assets, HTML, CSS, JS"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4372,
+      "completion_tokens": 662,
+      "total_tokens": 5034,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 3840
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Client Layer::Browser Client\\n(Three.js)::Game UI\\n3D Renderer",
+    "Client Layer::Browser Client\\n(Three.js)::Reconnect Handler\\n(ping/pong, game_reconnect)",
+    "Client Layer::Browser Client\\n(Three.js)::WebSocket Client\\n(JSON [event,data])",
+    "Global::Player",
+    "Server Layer::Game Server Master\\n(Erlang/OTP)::Room Manager\\n(Create/Join Rooms)",
+    "Server Layer::Game Server Master\\n(Erlang/OTP)::Server List Service\\n(servers_list, redirect)",
+    "Server Layer::Game Server Master\\n(Erlang/OTP)::WS Endpoint\\n(Session/Conn Handling)"
+  ],
+  "_provenance": {
+    "fingerprint": "496eddc7e0d93871511e3f7b6ae2af80819188cd43744f00d9b4b3db7c99fd3b",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

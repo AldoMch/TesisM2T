@@ -1,0 +1,71 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #666666
+}
+skinparam database {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+}
+skinparam actor {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+skinparam cloud {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam node {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+skinparam arrow {
+  Color #444444
+}
+
+actor "Owner\n(Externally Owned Address)" as Owner
+actor "Controller\n(Service Addresses)" as Controller
+actor "Integrator / Developer" as Integrator
+
+node "Ethereum Network" {
+
+  rectangle "Gas Tank\n(Gas-Payment ETH on Owner Address)" as GasTank
+
+  rectangle "Consumer Contract Wallet\n\n  - Holds user ETH\n  - Holds ERC20 tokens\n  - Resolves contracts via ENS" as Wallet
+
+  cloud "ENS\n(Ethereum Name Service)" as ENS
+
+  rectangle "Controller Contract\n\n  - adminCount : uint256\n  - controllerCount : uint256\n  - Transact(method, params)\n  - Transfer()" as ControllerContract
+
+  rectangle "Token Whitelist\n\n  - Token exchange rates\n  - Loadability flag\n  - Burnability flag" as TokenWhitelist
+
+  rectangle "Oracle / Rate Provider\n\n  - Exchange-rate data\n    for wallet token operations" as Oracle
+
+  rectangle "TKN Holder Contract\n\n  - Burns eligible tokens\n    (per whitelist burnability)" as TKNHolder
+
+}
+
+rectangle "Go Contract Bindings\n\n  - Call()      [read-only]\n  - Transact()  [paid]\n  - Transfer()  [paid default]" as GoBindings
+
+Owner --> Wallet : owns / controls
+Owner --> GasTank : holds gas-payment ETH\n(outside wallet, unprotected)
+
+Controller --> ControllerContract : control /\nconfirmation operations
+
+Integrator --> GoBindings : invokes
+
+GoBindings --> ControllerContract : Call / Transact / Transfer
+GoBindings --> Wallet : Call / Transact / Transfer
+
+Wallet --> ENS : resolves supporting\ncontract addresses
+ENS --> ControllerContract : resolves
+ENS --> TokenWhitelist : resolves
+ENS --> Oracle : resolves
+
+Wallet --> TokenWhitelist : apply token rules\n(rate / loadability / burnability)
+Wallet --> Oracle : obtain exchange-rate data
+
+TokenWhitelist --> TKNHolder : burnability data\nused by TKN Holder
+
+@enduml

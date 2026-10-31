@@ -1,0 +1,99 @@
+@startuml
+title Home Recipes - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ============================================================
+' Actors
+' ============================================================
+actor "End User" as EndUser
+actor "API Consumer / Tester" as ApiConsumer
+actor "Developer" as Developer
+actor "Operator" as Operator
+
+' ============================================================
+' Client Layer
+' ============================================================
+package "Client Layer" as ClientLayer {
+    component "Home Recipes Client\n(Flutter / Dart)" as FlutterClient
+    component "Android" as Android
+    component "iOS" as iOS
+    component "Web" as Web
+    component "macOS" as macOS
+    component "Dart Generated Client Code\n(from .proto)" as DartGenerated
+}
+
+' ============================================================
+' Shared Contract
+' ============================================================
+package "Shared Service Contract" as ContractLayer {
+    component "Protocol Buffers Contract\n(.proto service & message definitions)" as ProtoContract
+}
+
+' ============================================================
+' Backend Layer
+' ============================================================
+package "Backend Layer" as BackendLayer {
+    component "gRPC-Gateway Middleware\n(HTTP -> gRPC translation)" as Gateway
+    component "addRecipe endpoint" as EPAdd
+    component "ListAllRecipes endpoint" as EPList
+    component "ListAllIngredientsAtHome endpoint" as EPHome
+    component "GetAllIngredientsForRecipe endpoint" as EPRecipeIng
+    component "Go gRPC Server\n(generated from .proto)" as GrpcServer
+    component "Recipe Service" as RecipeSvc
+    component "Ingredient Service" as IngredientSvc
+}
+
+' ============================================================
+' Deployment Layer
+' ============================================================
+package "Deployment Layer" as DeployLayer {
+    component "Docker Image / Container\n(server packaging)" as Docker
+    component "Local Kubernetes Deployment\n(manifests)" as LocalK8s
+    component "Azure Kubernetes Service (AKS)\nDeployment" as AKS
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+EndUser --> FlutterClient : uses
+Developer --> DartGenerated : generates / integrates
+Developer --> GrpcServer : implements
+Developer --> Gateway : generates / implements
+Operator --> Docker : builds & runs
+Operator --> LocalK8s : deploys
+Operator --> AKS : deploys
+
+FlutterClient --> Android
+FlutterClient --> iOS
+FlutterClient --> Web
+FlutterClient --> macOS
+FlutterClient --> DartGenerated : uses
+DartGenerated --> GrpcServer : gRPC calls\n(Protocol Buffers)
+
+ProtoContract ..> DartGenerated : generates
+ProtoContract ..> GrpcServer : generates
+ProtoContract ..> Gateway : generates
+
+ApiConsumer --> Gateway : HTTP requests\n(curl / HTTP client)
+
+Gateway --> EPAdd
+Gateway --> EPList
+Gateway --> EPHome
+Gateway --> EPRecipeIng
+Gateway --> GrpcServer : gRPC service calls
+
+EPAdd --> GrpcServer
+EPList --> GrpcServer
+EPHome --> GrpcServer
+EPRecipeIng --> GrpcServer
+
+GrpcServer --> RecipeSvc : handles recipe ops
+GrpcServer --> IngredientSvc : handles ingredient ops
+
+Docker --> GrpcServer : packages
+LocalK8s --> GrpcServer : orchestrates
+AKS --> GrpcServer : orchestrates
+
+@enduml

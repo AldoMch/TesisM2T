@@ -1,0 +1,164 @@
+@startuml ClearML_Agent_Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam package {
+  BorderColor #555555
+  BackgroundColor #F0F4FF
+  FontStyle bold
+}
+
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #DDEEFF
+  FontColor #003366
+}
+
+skinparam node {
+  BorderColor #336699
+  BackgroundColor #EEF6EE
+  FontColor #003366
+}
+
+skinparam database {
+  BorderColor #996633
+  BackgroundColor #FFF5E0
+}
+
+skinparam cloud {
+  BorderColor #996699
+  BackgroundColor #F5EEF8
+}
+
+' ─────────────────────────────────────────
+' External Systems
+' ─────────────────────────────────────────
+
+cloud "ClearML Server / Backend" as ClearMLServer {
+  component "Experiment Management\n& Entity Storage" as ExperimentMgmt
+  component "ClearML Execution Queue" as ExecQueue
+  component "Telemetry & Event\nEndpoints" as TelemetryEndpoints
+}
+
+node "Kubernetes Cluster" as K8sCluster {
+  component "Kubernetes Jobs\n& Pods" as K8sJobs
+}
+
+node "Docker Daemon\n(via mapped socket)" as DockerDaemon {
+  component "Sibling Docker\nContainers" as SiblingContainers
+}
+
+' ─────────────────────────────────────────
+' YAML Template Artifact (M-001)
+' ─────────────────────────────────────────
+
+artifact "K8s Job YAML\nTemplate" as YAMLTemplate
+
+' ─────────────────────────────────────────
+' ClearML Agent Runtime
+' ─────────────────────────────────────────
+
+node "ClearML Agent Runtime" as AgentRuntime {
+
+  ' ── Orchestration / Integration Layer ──
+  package "Orchestration / Integration Layer" as OrchLayer {
+    component "KubernetesGlue\n[Pulls jobs from queue;\nprepares K8s job manifests\nfrom YAML template]" as KubernetesGlue
+
+    component "ServicePodManager\n[Long-lasting service pod;\nmanages sibling Docker\ncontainers via Docker socket]" as ServicePodManager
+  }
+
+  ' ── Execution Layer ──
+  package "Execution Layer" as ExecLayer {
+    component "ExperimentExecutor\n[Installs experiment env\ninside pod; starts and\nmonitors experiment process]" as ExperimentExecutor
+  }
+
+  ' ── Worker Telemetry Layer ──
+  package "Worker Telemetry Layer" as TelemetryLayer {
+    component "WorkerTelemetryReporter\n[Periodic worker status\nreports; default 2s interval]" as TelemetryReporter
+
+    component "ConnectivityPinger\n[Periodic connectivity\npings; default 30s interval]" as ConnectivityPinger
+
+    component "LoggingManager\n[stdout/stderr logging;\nlog_stdout default=true]" as LoggingManager
+
+    component "MemoryReporter\n[Process/subprocess scope\n(default) OR entire-machine\nscope when report_global_mem_used\nis enabled]" as MemoryReporter
+  }
+
+  ' ── Backend Client Layer ──
+  package "Backend Client Layer" as BackendLayer {
+    component "BackendServiceClient\n[Session-based service actions:\ncreate, get, get_by_id,\nget_all / get_all_ex -> TableResponse;\nmaps to structured entities]" as BackendServiceClient
+
+    component "EventsServiceInterface\n[v2.5 versioned request/response;\nmulti-task scalar metrics\nhistogram queries;\niter / iso_time / timestamp axes]" as EventsServiceInterface
+
+    component "ModelsServiceInterface\n[v2.4 versioned request/response;\nmodel deletion (model, force);\nnullable model metadata objects]" as ModelsServiceInterface
+  }
+
+  ' ── Configuration Layer ──
+  package "Configuration Layer" as ConfigLayer {
+    component "WorkerConfiguration\n[report_period_sec,\nping_period_sec,\nlog_stdout,\nreport_global_mem_used]" as WorkerConfiguration
+  }
+
+}
+
+' ─────────────────────────────────────────
+' Notes
+' ─────────────────────────────────────────
+
+note bottom of ServicePodManager
+  C-005: Docker-socket mapping is
+  planned to be replaced by Podman
+  in a future release.
+end note
+
+note right of MemoryReporter
+  NFR-002: Scope switches between
+  process/subprocess (default) and
+  entire-machine when
+  report_global_mem_used = true
+end note
+
+' ─────────────────────────────────────────
+' Internal Dependencies
+' ─────────────────────────────────────────
+
+' YAML Template -> KubernetesGlue (M-001)
+YAMLTemplate        -down->  KubernetesGlue          : "provides K8s job\nmanifest template"
+
+' Execution -> Telemetry
+ExperimentExecutor  -right-> LoggingManager          : "routes stdout/stderr\nfrom experiment process"
+ExperimentExecutor  -down->  MemoryReporter          : "reports process/subprocess\nmemory usage"
+
+' Telemetry -> Backend (all routed via BackendServiceClient per D-004)
+TelemetryReporter   -down->  BackendServiceClient    : "transmits periodic\nworker status reports"
+ConnectivityPinger  -down->  BackendServiceClient    : "issues periodic\nconnectivity pings"
+MemoryReporter      -down->  BackendServiceClient    : "transmits memory\nusage metrics"
+
+' Telemetry -> Config
+TelemetryReporter   -right-> WorkerConfiguration     : "reads report_period_sec\nand report_global_mem_used"
+ConnectivityPinger  -right-> WorkerConfiguration     : "reads ping_period_sec"
+LoggingManager      -right-> WorkerConfiguration     : "reads log_stdout"
+MemoryReporter      -right-> WorkerConfiguration     : "reads report_global_mem_used\nto select reporting scope"
+
+' Backend Client -> Service Interfaces
+BackendServiceClient -down-> EventsServiceInterface  : "delegates events-domain\nhistogram queries"
+BackendServiceClient -down-> ModelsServiceInterface  : "delegates models-domain\ndelete and metadata requests"
+
+' ─────────────────────────────────────────
+' External System Dependencies
+' ─────────────────────────────────────────
+
+' Queue consumption: ExecQueue feeds KubernetesGlue (D-003 fix)
+ExecQueue           -down->  KubernetesGlue          : "delivers pending\nexperiment jobs"
+
+' BackendServiceClient -> ClearML Server (single path for all backend comms, D-004 fix)
+BackendServiceClient -up->  TelemetryEndpoints       : "all session-based\nservice API requests\n(telemetry, pings, status)"
+BackendServiceClient -up->  ExperimentMgmt           : "entity CRUD\noperations"
+
+' KubernetesGlue -> Kubernetes (D-001 fix: removed duplicate queue arrow; D-002 fix: removed direct Glue->Executor arrow)
+KubernetesGlue      -right-> K8sJobs                : "creates K8s job\nmanifests from template"
+
+' ServicePod -> Docker Daemon
+ServicePodManager   -right-> SiblingContainers       : "manages sibling containers\nvia mapped Docker socket"
+
+@enduml

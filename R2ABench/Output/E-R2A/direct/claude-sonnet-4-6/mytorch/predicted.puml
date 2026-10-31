@@ -1,0 +1,148 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #222222
+}
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #336699
+  FontStyle bold
+}
+skinparam node {
+  BackgroundColor #FFF8E1
+  BorderColor #B8860B
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam arrow {
+  Color #444444
+  FontColor #444444
+}
+
+title MyTorch Visual Deep Learning System — Architecture Diagram
+
+actor "Deep Learning Beginner\n/ User" as User
+
+package "Frontend (Visual UI)" {
+  component [Main Interface] as UI_Main
+  component [Configuration Interface\n(Model Config / Params)] as UI_Config
+  component [Training Interface\n(Real-time Loss / Accuracy)] as UI_Train
+  component [Inference Interface\n(Inference Results)] as UI_Infer
+  component [Guidance & Help\n(Steps / Prompts / Docs)] as UI_Help
+}
+
+package "Backend (Service Layer)" {
+  component [Model Initialization\nService] as BE_Init
+  component [Model Training\nService] as BE_Train
+  component [Model Inference\nService] as BE_Infer
+  component [Model Management\nService] as BE_Manage
+  component [Data Loading\nService\n(Preset / Augmentation\n/ Split / Preprocessing)] as BE_Data
+  component [Monitoring & Fault\nHandling Service\n(Gradient Explosion / OOM\n/ GPU Errors)] as BE_Monitor
+  component [Backup & Recovery\nService] as BE_Backup
+}
+
+package "MyTorch / NNE Framework" {
+  component [Model Definition\nAPI\n(ResNet / VGG / Transformer)] as FW_Model
+  component [Weight Initialization\nModule\n(He / Lecun / Xavier)] as FW_Init
+  component [Training Engine\n(forward / backward\n/ optimizer / loss)] as FW_Engine
+  component [Inferencer\n(forward() / model loader\n/ data loader)] as FW_Infer
+  component [Data Loader\n(Preset Datasets\n/ CIFAR / ImageNet\n/ COCO / MNIST\n/ IMDB / SVHN\n/ EMNIST)] as FW_Data
+  component [GPU Acceleration\nModule\n(Matrix Ops / Async\nCPU-GPU / Resource Mgmt\n/ Error Handling)] as FW_GPU
+}
+
+node "Hardware / OS Layer" {
+  component [GPU Device\n(Multi-core Compute\n/ GPU Memory)] as HW_GPU
+  component [CPU / Host Memory] as HW_CPU
+}
+
+database "SQLite Local Database" {
+  component [Model Store] as DB_Model
+  component [Dataset Store] as DB_Dataset
+  component [Training Logs] as DB_TrainLog
+  component [Inference Logs] as DB_InferLog
+  component [Error & Fault Records] as DB_Error
+  component [Backup Files] as DB_Backup
+}
+
+' User to Frontend
+User --> UI_Main : navigates
+UI_Main --> UI_Config : enter config
+UI_Main --> UI_Train : enter training
+UI_Main --> UI_Infer : enter inference
+UI_Main --> UI_Help : view help
+
+' Frontend to Backend
+UI_Config --> BE_Init : submit model config\n& weight init params
+UI_Config --> BE_Data : define data loading\nconfig
+UI_Train --> BE_Train : start / terminate training
+UI_Train --> BE_Monitor : real-time metrics\nsubscription
+UI_Infer --> BE_Infer : submit inference request
+UI_Main --> BE_Manage : model management ops
+
+' Backend to MyTorch/NNE Framework
+BE_Init --> FW_Model : create model structure
+BE_Init --> FW_Init : apply weight init method
+BE_Train --> FW_Engine : execute training loop
+BE_Data --> FW_Data : load & preprocess dataset
+BE_Infer --> FW_Infer : create inferencer &\nrun forward()
+BE_Monitor --> FW_Engine : monitor training state\n(loss / accuracy / speed)
+BE_Monitor --> FW_GPU : monitor GPU utilization\n/ memory usage
+BE_Manage --> DB_Model : query / update models
+
+' Framework internal
+FW_Engine --> FW_GPU : delegate matrix ops\nto GPU acceleration
+FW_Infer --> FW_GPU : GPU-accelerated inference
+FW_Data --> DB_Dataset : read preset datasets
+FW_Model --> FW_Init : initialize weights
+
+' GPU Module to Hardware
+FW_GPU --> HW_GPU : copy data to GPU memory\n/ invoke multi-core compute
+FW_GPU --> HW_CPU : copy results back to host
+HW_GPU --> HW_CPU : async result return
+
+' Backend to Database
+BE_Train --> DB_TrainLog : persist training logs\n& evaluation results
+BE_Train --> DB_Model : save trained model
+BE_Infer --> DB_InferLog : persist inference logs\n& results
+BE_Monitor --> DB_Error : record fault & error info
+BE_Data --> DB_Dataset : register dataset config
+BE_Backup --> DB_Backup : auto backup SQLite DB
+BE_Backup --> DB_Model : restore on exception
+
+' Backup service triggers
+BE_Monitor --> BE_Backup : trigger backup on\nDB exception
+
+' NFR annotations as notes
+note right of FW_GPU
+  NFR: GPU ops compatible
+  with original NNE framework.
+  Predefined error handling for
+  OOM / compatibility / runtime errors.
+end note
+
+note right of DB_Backup
+  FR-021 / NFR-014:
+  Auto backup; auto or manual
+  recovery on exception.
+end note
+
+note bottom of FW_Engine
+  NFR-001: float precision >= numpy.float32
+  NFR-004: max response < 3s, avg < 2.5s
+  NFR-011/013: detect gradient explosion,
+  trigger auto-termination strategy
+end note
+
+note bottom of UI_Config
+  NFR-003: UI max response < 1s, avg < 0.75s
+  NFR-007/008/009/010: intuitive, consistent,
+  real-time feedback, step guidance
+end note
+
+@enduml

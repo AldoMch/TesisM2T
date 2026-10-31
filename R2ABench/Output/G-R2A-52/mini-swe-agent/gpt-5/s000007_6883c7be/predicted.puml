@@ -1,0 +1,73 @@
+@startuml
+title Java HTTP Proxy with Test Server/Client - Architecture (Layered Component Diagram)
+left to right direction
+skinparam componentStyle rectangle
+
+package "Client Layer" {
+  component "Test Client" as TestClient
+  component "Async HTTP Client" as AsyncClient
+  component "Executor Service\n(Fixed Thread Pool)" as Executor
+}
+
+package "Proxy Layer" {
+  component "HTTP Proxy" as Proxy
+  component "Upstream Channel Handler\n(Netty-style)" as ChannelHandler
+  component "Debug Logger" as Logger
+}
+
+package "Server Layer (Grizzly/Jersey)" {
+  component "Test Server" as TestServer
+  component "GET /download\n(File Download Endpoint)" as DownloadEndpoint
+  component "File Upload Handler\n(returns {filepath: name})" as UploadHandler
+  component "Response Model\n{code:Int, msg:String, data:Object}" as ResponseModel
+}
+
+package "External Systems" {
+  component "Upstream Server" as Upstream <<external>>
+}
+
+package "Data Stores" {
+  database "Local Filesystem" as FS
+}
+
+' Client composition and usage '
+TestClient --> AsyncClient : issues async GET requests
+TestClient --> Executor : schedules workload\n(50 threads x 1000 requests)
+
+' Proxy internals and behavior '
+Proxy --> ChannelHandler : forwards retained FullHttpRequest
+Proxy ..> Logger : debug logs URI/headers/body
+ChannelHandler --> Upstream : writeAndFlush after channel active
+
+' Test paths to server '
+TestClient --> TestServer : HTTP GET/Upload
+TestServer --> ResponseModel : uses response structure
+
+' File handling '
+DownloadEndpoint --> FS : read file if exists
+UploadHandler --> FS : store/resolve uploaded file
+
+' Endpoint composition in server '
+TestServer o-- DownloadEndpoint
+TestServer o-- UploadHandler
+
+' Layer-to-layer client to proxy '
+AsyncClient ..> Proxy : optional client->proxy tests
+
+' Notes '
+note right of Executor
+- Fixed thread pool
+- Releases resources after run
+end note
+
+note bottom of DownloadEndpoint
+- Returns application/octet-stream when file exists
+- Sets Content-Disposition with filename
+- No attachment when file missing
+end note
+
+note right of Proxy
+Forwards requests without modifying headers/body
+end note
+
+@enduml

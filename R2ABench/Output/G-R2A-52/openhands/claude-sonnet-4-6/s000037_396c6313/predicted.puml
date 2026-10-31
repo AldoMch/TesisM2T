@@ -1,0 +1,151 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam defaultFontSize 12
+skinparam linetype ortho
+
+actor "Security Operator" as SecOp
+actor "Plugin Developer" as PluginDev
+actor "Deployment Operator" as DeployOp
+actor "Integrator" as Integrator
+
+package "veinmind-tools" {
+
+    package "CLI Layer" {
+        component "scan-image" as ScanImage <<CLI Command>>
+        component "scan-container" as ScanContainer <<CLI Command>>
+        component "scan-iac" as ScanIaC <<CLI Command>>
+    }
+
+    package "Quick-Start Workflow" {
+        component "run.sh\n(Parallel-Container Startup Script)" as RunSh <<Startup Script>>
+        note right of RunSh
+            ./run.sh scan-host image
+        end note
+    }
+
+    package "Scanning Tools" {
+        component "Image Scanning Tool" as ImageTool
+        component "Container Scanning Tool" as ContainerTool
+
+        package "IaC Scanning Tool" {
+            component "Policy Library Loader" as PolicyLoader
+            component "IaC Scanner" as IaCScannerComp
+            component "Result Merger" as ResultMerger
+            component "Alert Detail Builder" as AlertBuilder
+            component "Report Event Publisher" as ReportPublisher
+        }
+    }
+
+    package "Docker Authorization Routing" {
+        component "Authorization Router" as AuthRouter
+        component "Route Pattern Matcher" as RouteMatcher
+        component "NoneDockerPlugin\n(Fallback Action)" as NoneDockerPlugin
+    }
+
+    package "Plugin Examples" {
+        package "Python Plugin Example" {
+            component "entrypoint.sh" as Entrypoint <<Container Entrypoint>>
+            component "scan.py" as ScanPy <<Python Script>>
+            note right of Entrypoint
+                Base image:
+                veinmind/python3.6:1.3.1-stretch
+                Deps from requirements.txt
+            end note
+        }
+    }
+
+    package "Report Data Structures" {
+        package "Malicious-File Report" {
+            component "MaliciousFileInfo\n[Engine, ImageID, LayerID,\nRelativePath, FileName,\nFileSize, FileMd5, FileSha256,\nFileCreated, Description]" as MaliciousFileInfo <<Data Object>>
+            component "ReportData\n[ScanImageCount, MaliciousFileCount,\nScanSpendTime, ScanStartTime,\nScanFileCount, ScanImageResult]" as ReportData <<Data Object>>
+            component "ReportImage\n[ImageName, ImageID,\nMaliciousFileCount, ScanFileCount,\nImageCreatedAt, MaliciousFileInfos, Layers]" as ReportImage <<Data Object>>
+            component "ReportLayer\n[ImageID, LayerID, MaliciousFileInfos]" as ReportLayer <<Data Object>>
+        }
+
+        package "IaC Report" {
+            component "IaC Rule Metadata\n[Id, Name, Description,\nReference, Severity, Solution, Type]" as IaCRuleMeta <<Data Object>>
+            component "IaC File-Location Detail\n[StartLine, EndLine,\nFilePath, Original]" as IaCFileDetail <<Data Object>>
+            component "IaC Alert Detail\n[Rule Metadata +\nFile-Location Detail]" as IaCAlertDetail <<Data Object>>
+        }
+
+        component "Docker Plugin Action Result" as DockerPluginAction <<Data Object>>
+    }
+}
+
+package "SDK / Library Layer" {
+    component "veinmind-sdk / libveinmind" as SDK
+}
+
+package "Runner Infrastructure" {
+    component "veinmind-runner\n(Runner Image)" as Runner
+}
+
+package "Container Runtimes" {
+    component "Docker" as DockerRT
+    component "Containerd" as ContainerdRT
+}
+
+package "Image Registries" {
+    component "DockerHub" as DockerHub
+    component "Docker Registry" as DockerRegistry
+    component "Harbor" as Harbor
+}
+
+SecOp --> ScanImage : invokes
+SecOp --> ScanContainer : invokes
+SecOp --> ScanIaC : invokes
+SecOp --> RunSh : executes
+
+PluginDev --> ScanPy : implements
+PluginDev --> SDK : uses
+
+DeployOp --> Runner : prepares
+DeployOp --> RunSh : prepares
+DeployOp --> Entrypoint : configures
+
+Integrator --> AuthRouter : integrates
+Integrator --> ReportPublisher : consumes
+
+ScanImage --> ImageTool : delegates to
+ScanContainer --> ContainerTool : delegates to
+ScanIaC --> PolicyLoader : triggers
+
+RunSh --> Runner : starts containers via
+Runner --> ScanImage : executes
+Runner --> ScanContainer : executes
+
+ImageTool --> SDK : uses
+ContainerTool --> SDK : uses
+PolicyLoader --> IaCScannerComp : loads policy for
+IaCScannerComp --> ResultMerger : produces results to
+ResultMerger --> AlertBuilder : feeds merged results to
+AlertBuilder --> IaCAlertDetail : builds
+AlertBuilder --> ReportPublisher : sends alert to
+IaCAlertDetail --> IaCRuleMeta : contains
+IaCAlertDetail --> IaCFileDetail : contains
+
+AuthRouter --> RouteMatcher : delegates matching to
+RouteMatcher --> DockerPluginAction : returns on match
+RouteMatcher --> NoneDockerPlugin : returns when no match
+
+Entrypoint --> ScanPy : invokes with args
+
+ImageTool --> ReportData : produces
+ReportData --> ReportImage : contains
+ReportImage --> ReportLayer : contains
+ReportImage --> MaliciousFileInfo : contains
+ReportLayer --> MaliciousFileInfo : contains
+
+ImageTool --> DockerRT : scans via
+ImageTool --> ContainerdRT : scans via
+ImageTool --> DockerHub : scans images from
+ImageTool --> DockerRegistry : scans images from
+ImageTool --> Harbor : scans images from
+
+ContainerTool --> DockerRT : scans via
+ContainerTool --> ContainerdRT : scans via
+
+ScanPy --> SDK : uses
+
+@enduml

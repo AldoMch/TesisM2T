@@ -1,0 +1,78 @@
+@startuml
+' JSeats Component/Deployment Diagram
+
+' Define nodes for deployment context
+node "Java Runtime Environment" as jre
+node "Command Line Shell Environment" as shell
+
+' Define packages for architectural layers
+package "API Layer" {
+  component "SeatAllocator"
+  component "TallyFilter"
+  component "ResultDecorator"
+}
+
+package "Core Processing Layer" {
+  component "Processor"
+  component "Configuration"
+}
+
+package "Method Implementation Layer" {
+  component "MajorityMethod"
+  component "RankedMethod"
+  component "EqualProportionsMethod"
+  component "LargestRemainderMethod"
+  component "HighestAveragesMethod"
+}
+
+package "CLI Layer" {
+  component "CommandLineInterface"
+}
+
+package "Data Layer" {
+  component "Tally"
+  component "Result"
+  component "Properties"
+}
+
+' Define dependencies between components
+SeatAllocator --> Processor : delegates processing
+Processor --> TallyFilter : applies filters
+Processor --> MajorityMethod : executes allocation
+Processor --> RankedMethod : executes allocation
+Processor --> EqualProportionsMethod : executes allocation
+Processor --> LargestRemainderMethod : executes allocation
+Processor --> HighestAveragesMethod : executes allocation
+Processor --> ResultDecorator : decorates results
+Processor --> Configuration : uses config
+Configuration --> Properties : includes properties
+Configuration --> TallyFilter : includes filters
+Configuration --> ResultDecorator : includes decorators
+CommandLineInterface --> SeatAllocator : uses API
+CommandLineInterface --> TallyFilter : configures filters
+CommandLineInterface --> ResultDecorator : configures decorators
+MajorityMethod --> Tally : reads tally data
+RankedMethod --> Tally : reads tally data
+EqualProportionsMethod --> Tally : reads tally data
+LargestRemainderMethod --> Tally : reads tally data
+HighestAveragesMethod --> Tally : reads tally data
+Tally --> Result : produces results
+Properties --> MajorityMethod : provides method props
+Properties --> RankedMethod : provides method props
+Properties --> EqualProportionsMethod : provides method props
+Properties --> LargestRemainderMethod : provides method props
+Properties --> HighestAveragesMethod : provides method props
+
+' External system connections
+CommandLineInterface --> shell : runs in
+SeatAllocator --> jre : executes on
+Processor --> jre : runs on
+MajorityMethod --> jre : executes on
+RankedMethod --> jre : executes on
+EqualProportionsMethod --> jre : executes on
+LargestRemainderMethod --> jre : executes on
+HighestAveragesMethod --> jre : executes on
+Tally ..> Properties : loads from XML
+Properties ..> Tally : loads from XML
+
+@enduml

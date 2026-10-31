@@ -1,0 +1,46 @@
+@startuml
+' Layered architecture diagram for macpro-appian-connector
+
+title macpro-appian-connector Architecture
+
+skinparam componentStyle rectangle
+
+package "AWS Environment" {
+  [EventBridge] as awsEventBridge
+  [SNS Topic] as snsTopic
+  [Connector Service] as connectorService
+  [Stage Listing Service] as stageListingService
+}
+
+package "GitHub Environment" {
+  [GitHub Actions] as githubActions
+  [GitHub API] as githubAPI
+}
+
+package "Local Environment" {
+  [Terminal Interface] as terminalInterface
+}
+
+terminalInterface --> stageListingService : triggers
+terminalInterface --> connectorService : configures
+
+stageListingService --> awsEventBridge : observes events
+awsEventBridge --> snsTopic : routes events
+snsTopic --> connectorService : notifies
+
+connectorService --> githubActions : collects metrics
+githubAPI --> githubActions : provides data
+
+note right of awsEventBridge
+  Event routing with filtering
+end note
+
+note right of snsTopic
+  Manual subscription management
+end note
+
+note bottom of githubAPI
+  Paginated data retrieval
+end note
+
+@enduml

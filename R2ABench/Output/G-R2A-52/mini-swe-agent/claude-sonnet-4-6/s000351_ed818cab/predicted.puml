@@ -1,0 +1,100 @@
+@startuml
+title Kangrand - Pollard's Kangaroo Interval ECDLP Solver Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #888888
+}
+skinparam database {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+}
+skinparam cloud {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+}
+
+actor "Local Operator" as LocalOp
+actor "Distributed Operator" as DistOp
+actor "Offline Analyst" as Analyst
+
+package "Kangrand CLI Application" {
+
+  package "CLI Layer" {
+    component "Command-Line Interface\n(-w, -wi, -i, -ws, -d, -gpu...)" as CLI
+  }
+
+  package "Core Solver Layer" {
+    component "Input File Parser\n(ASCII / Hex / Public Key)" as Parser
+    component "Kangaroo Engine\n(Tame & Wild Herds, SECP256K1)" as KangarooEngine
+    component "Distinguished Point Filter" as DPFilter
+    component "In-Memory Hash Table\n(Collision Detection)" as HashTable
+    component "Collision Detector\n(Key Recovery)" as CollisionDetector
+  }
+
+  package "Work File Management Layer" {
+    component "Work File Writer\n(-w, -wi, -ws, wsplit)" as WorkWriter
+    component "Work File Reader\n(-i, --info)" as WorkReader
+    component "Offline Merger\n(merge workflow)" as Merger
+  }
+
+  package "Distributed Execution Layer" {
+    component "Distributed Server\n(wsplit-enabled, config file)" as DistServer
+    component "Distributed Client\n(CPU/GPU compute)" as DistClient
+  }
+}
+
+database "Input ASCII File\n(hex values, public keys)" as InputFile
+database "Work File\n(search state)" as WorkFile
+database "Work File w/ Kangaroo State\n(-ws)" as WorkFileKS
+database "Split/Prefixed Backup Files\n(wsplit)" as SplitFiles
+database "Master Work File / Hash Table\n(merged)" as MasterWork
+database "Result File\n(solved key)" as ResultFile
+database "Server Config File" as ServerConfig
+
+cloud "SECP256K1\nElliptic Curve\nArithmetic" as SECP256K1
+
+LocalOp --> CLI
+DistOp --> CLI
+Analyst --> CLI
+
+CLI --> Parser : input file
+CLI --> KangarooEngine : start/resume solve
+CLI --> WorkWriter : save options
+CLI --> WorkReader : info / resume
+CLI --> Merger : merge offline
+CLI --> DistServer : start server
+CLI --> DistClient : start client
+
+Parser --> InputFile : reads
+Parser --> KangarooEngine : parsed problem instance
+
+KangarooEngine --> SECP256K1 : elliptic curve ops
+KangarooEngine --> DPFilter : walk points
+DPFilter --> HashTable : distinguished points only
+HashTable --> CollisionDetector : collision check
+CollisionDetector --> ResultFile : solved key
+
+KangarooEngine --> WorkWriter : periodic state
+WorkWriter --> WorkFile : saves state
+WorkWriter --> WorkFileKS : saves w/ kangaroo state (-ws)
+WorkWriter --> SplitFiles : wsplit prefixed backups
+
+WorkReader --> WorkFile : reads for resume/info
+WorkReader --> KangarooEngine : resumed state
+
+Merger --> WorkFile : reads multiple
+Merger --> SplitFiles : reads split files
+Merger --> MasterWork : consolidated output
+Merger --> ResultFile : merge-discovered result
+
+DistServer --> ServerConfig : reads config
+DistServer --> WorkWriter : periodic server work files
+DistServer --> HashTable : aggregated points
+DistServer --> ResultFile : distributed result
+
+DistClient --> KangarooEngine : GPU/CPU computation
+DistClient --> DistServer : sends distinguished points
+
+@enduml

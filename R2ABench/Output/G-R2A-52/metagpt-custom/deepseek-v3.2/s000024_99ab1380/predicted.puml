@@ -1,0 +1,87 @@
+@startuml
+
+package "Configuration Layer" {
+    component "Variable Manager" as VM
+    database "terraform.tfvars" as TFVARS
+    component "Label Prefix Handler" as LPH
+    component "Port Configurator" as PC
+    component "Plugin Manager" as PM
+}
+
+package "Orchestration Layer" {
+    component "Terraform Orchestrator" as TO
+    component "Terraform Workflow" as TW
+}
+
+package "Infrastructure Layer" {
+    component "OCI Provider" as OCI
+    component "Network Module" as NM
+    component "Jenkins Instance Module" as JIM
+    component "Load Balancer Module" as LBM
+    component "NAT Gateway Module" as NGM
+    component "Existing Network Objects" as ENO
+}
+
+package "Application Layer" {
+    component "Jenkins Master Config" as JMC
+    component "Jenkins Slave Config" as JSC
+    component "Base64 Encoder" as B64
+}
+
+cloud "Oracle Cloud Infrastructure (OCI)" as OCI_EXT {
+    database "Tenancy / Compartment" as TC
+    database "VCN / Networking" as VCN
+    database "Compute API" as COMP
+    database "Load Balancer API" as LB_API
+}
+
+node "External Tools" as EXT {
+    component "Terraform CLI" as TF
+    component "SSH Client/Server" as SSH_EXT
+}
+
+' Configuration Layer Dependencies
+VM --> TFVARS : "Generates"
+VM --> LPH : "Provides label_prefix"
+VM --> PC : "Provides port config"
+VM --> PM : "Provides plugin config"
+
+' Orchestration Layer Dependencies
+TO --> TW : "Manages"
+TW --> TF : "Executes init/plan/apply"
+TO --> VM : "Reads configuration"
+TO --> OCI : "Uses provider"
+
+' Infrastructure Layer Dependencies
+OCI --> OCI_EXT : "Authenticates & calls APIs"
+NM --> OCI : "Creates network resources"
+JIM --> NM : "Depends on subnet config"
+JIM --> OCI : "Creates compute instances"
+LBM --> NM : "Attaches to subnets"
+LBM --> OCI_EXT : "Uses LB_API"
+NGM --> NM : "Provides NAT for private subnets"
+ENO --> NM : "References existing objects"
+
+' Application Layer Dependencies
+JMC --> JIM : "Configures master instances"
+JSC --> JIM : "Configures slave instances"
+B64 --> JIM : "Encodes cloud-init data"
+JMC --> PC : "Uses port configuration"
+JSC --> PC : "Uses port configuration"
+JMC --> PM : "Installs plugins"
+JSC --> PM : "Installs plugins"
+
+' External Interfaces
+VM --> EXT : "Accepts JSON input"
+VM --> EXT : "Accepts Terraform variables"
+JIM --> SSH_EXT : "Uses SSH keys"
+JIM --> B64 : "Processes user data"
+
+' Layer Grouping Note
+note right of TO
+    Layers represent logical
+    separation of concerns in
+    the Terraform deployment workflow.
+end note
+
+@enduml

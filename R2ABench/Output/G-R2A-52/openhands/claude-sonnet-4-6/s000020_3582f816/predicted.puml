@@ -1,0 +1,99 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  ArrowColor #336699
+}
+skinparam node {
+  BackgroundColor #FFFDE7
+  BorderColor #F9A825
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam actor {
+  BackgroundColor #FFF3E0
+  BorderColor #E65100
+}
+
+actor "Administrator" as Admin
+actor "Developer / Deployer" as Dev
+actor "MyEMS Component" as MEMSComp
+actor "Third-Party Application" as ThirdParty
+
+node "Browser Environment" as BrowserEnv {
+  component "MyEMS Admin Application" as AdminApp {
+    component "Client-Side Router" as Router {
+      component "/user Route\n(MENU.USERSETTING.USER)" as UserRoute
+      component "/contact Route\n(MENU.SETTINGS.CONTACT)" as ContactRoute
+    }
+    component "Lazy-Loaded Modules" as LazyModules {
+      component "User Settings Modules\n(services, controllers,\nlogin services, UI libs)" as UserMods
+      component "Contact Settings Modules" as ContactMods
+      component "Tariff Settings Modules" as TariffMods
+      component "Category Settings Modules" as CategoryMods
+    }
+    component "API Base Path Resolver\n({protocol}//{hostname}:{port}/api/)" as BasePathResolver
+  }
+}
+
+node "Deployment Environment" as DeployEnv {
+  component "Reverse Proxy\n(e.g., Nginx)" as ReverseProxy
+
+  node "API Service Runtime\n(Python Environment)" as APIRuntime {
+    component "MyEMS REST API Service" as RESTAPI {
+      component "REST Framework Support" as RESTFramework
+      component "CORS Support" as CORS
+      component "WSGI Execution" as WSGI
+      component "Spreadsheet / Image Handler" as SpreadsheetImage
+      component "MySQL Connector" as MySQLConnector
+    }
+    component "Python Dependency Set" as PythonDeps
+  }
+
+  database "MySQL Database" as MySQLDB
+
+  node "Docker Installation" as DockerSetup {
+    component "Docker-Based Setup\n(API Runtime Container)" as DockerContainer
+  }
+}
+
+rectangle "Development Quick-Run" as DevRun {
+  component "Linux Quick-Run" as LinuxRun
+  component "Windows Quick-Run" as WinRun
+}
+
+Admin --> AdminApp : navigates settings
+Dev --> DevRun : executes
+Dev --> DockerSetup : sets up
+
+AdminApp --> BasePathResolver : computes API base path
+UserRoute --> UserMods : lazy-loads
+ContactRoute --> ContactMods : lazy-loads
+Router --> TariffMods : lazy-loads (tariff route)
+Router --> CategoryMods : lazy-loads (category route)
+
+BasePathResolver --> ReverseProxy : HTTP/HTTPS\n/api/ requests
+
+ReverseProxy --> RESTAPI : forwards /api/ traffic
+
+MEMSComp --> RESTAPI : RESTful API calls
+ThirdParty --> RESTAPI : RESTful API calls
+
+RESTAPI --> MySQLDB : database connectivity
+MySQLConnector --> MySQLDB : MySQL connection
+
+DockerContainer --> APIRuntime : prepares runtime
+PythonDeps --> APIRuntime : required packages\n(REST, CORS, WSGI,\nspreadsheet, image,\nMySQL connector)
+
+DevRun --> APIRuntime : starts API service\n(development mode)
+
+@enduml

@@ -1,0 +1,169 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  ArrowColor #336699
+}
+
+skinparam node {
+  BackgroundColor #EEF5EE
+  BorderColor #4A7A4A
+}
+
+skinparam package {
+  BackgroundColor #FFFFF0
+  BorderColor #999900
+}
+
+skinparam rectangle {
+  BackgroundColor #F0F0FF
+  BorderColor #5555AA
+}
+
+title JSeats - Electoral Seat Allocation System Architecture
+
+actor "Java Developer\n(API User)" as JavaDev
+actor "CLI Operator\n(Analyst)" as CLIUser
+
+node "JSeats System (Java)" {
+
+  package "Command-Line Launcher" as CLI {
+    component "CLI Argument Parser" as ArgParser
+    component "Method/Filter/Decorator\nListing" as Listing
+    component "File I/O Handler\n(XML Tally, Config,\nResult files)" as FileIO
+    component "CLI Output Writer\n(Result, Tally, Config)" as CLIOutput
+  }
+
+  package "Caller-Facing Allocation API" as CallerAPI {
+    component "Allocation Entry Point\n(FR-001A)" as EntryPoint
+    component "Tally Builder\n(FR-002)" as TallyBuilder
+    component "Processor Configuration\n(DR-007)" as ProcConfig
+    component "Configured Processor\nWorkflow (FR-011)" as ProcWorkflow
+  }
+
+  package "Data Model" as DataModel {
+    component "Tally\n(DR-001)" as Tally
+    component "Candidate\n(DR-002)" as Candidate
+    component "Protected Tally View\n(C-002)" as ProtectedTally
+    component "Properties\n(DR-003)" as Properties
+    component "Result\n(DR-004)" as Result
+    component "SeatAllocationException\n(FR-009, NFR-003)" as SAException
+  }
+
+  package "Tally Loading" as TallyLoad {
+    component "Tally.fromXML()\n(FR-008, DR-006)" as TallyFromXML
+  }
+
+  package "Pre-Processing" as PreProc {
+    component "Tally Filter Interface\n(FR-011, NFR-001)" as TallyFilterIface
+    component "Tally Filter Implementations" as TallyFilterImpl
+    component "Tie-Breaking Rules\n(FR-011)" as TieBreaking
+  }
+
+  package "Allocation Method Engine" as AllocationEngine {
+    component "Allocation Method Contract\n(FR-001B)" as MethodContract
+
+    package "Majority Methods (FR-003)" as MajorityMethods {
+      component "Simple Majority" as SimpleMaj
+      component "Qualified Majority" as QualMaj
+      component "Absolute Majority\n(FR-005, DR-005)" as AbsMaj
+    }
+
+    package "Ranked Methods (FR-003)" as RankedMethods {
+      component "Ranked by Votes" as RankedByVotes
+    }
+
+    package "Equal Proportions (FR-003)" as EqualProp {
+      component "Huntington-Hill" as HH
+    }
+
+    package "Largest Remainder Methods (FR-003)" as LRM {
+      component "Hare" as Hare
+      component "Droop" as Droop
+      component "Imperiali (LR)" as ImperialiLR
+    }
+
+    package "Highest Averages Methods (FR-003, FR-006)" as HAM {
+      component "D'Hondt" as DHondt
+      component "Sainte-Lague/Webster\n(user-provided first divisor)" as SL
+      component "Imperiali (HA)" as ImperialiHA
+      component "Danish" as Danish
+      component "Divisor Sequence\nEngine (NFR-001)" as DivisorEngine
+    }
+  }
+
+  package "Post-Processing" as PostProc {
+    component "Result Decorator Interface\n(FR-007, NFR-002)" as DecoratorIface
+    component "Result Decorator\nImplementations" as DecoratorImpl
+  }
+}
+
+JavaDev --> EntryPoint : submits Tally,\nMethod, Config
+JavaDev --> TallyBuilder : builds Tally\nwith Candidates
+CLIUser --> ArgParser : CLI args\n(Name:Votes, method,\nproperties, file paths)
+
+ArgParser --> Listing : --list methods/\nfilters/decorators
+ArgParser --> FileIO : reads XML Tally,\nConfig files
+ArgParser --> EntryPoint : invokes allocation
+ArgParser --> CLIOutput : triggers output
+
+FileIO --> TallyFromXML : XML tally input
+FileIO --> ProcConfig : XML config input
+CLIOutput --> Result : writes Result/\nConfig/Tally output
+
+TallyFromXML --> Tally : loads Tally from XML
+TallyBuilder --> Candidate : adds candidates\nwith vote counts
+TallyBuilder --> Tally : populates Tally
+
+EntryPoint --> ProcConfig : accepts configuration
+EntryPoint --> ProcWorkflow : delegates processing
+ProcConfig --> Properties : method & processor\nparameters
+ProcConfig --> TallyFilterIface : configured filters
+ProcConfig --> TieBreaking : tie-breaking rules
+ProcConfig --> DecoratorIface : configured decorators
+
+ProcWorkflow --> TallyFilterIface : 1. filter tally\n(pre-processing)
+TallyFilterIface --> TallyFilterImpl : executes filters
+TallyFilterImpl --> Tally : transforms tally data
+
+ProcWorkflow --> MethodContract : 2. invoke allocation\nmethod
+MethodContract --> ProtectedTally : provides immutable\ntally view (C-002)
+MethodContract --> Properties : provides method\nproperties
+
+MethodContract --> SimpleMaj
+MethodContract --> QualMaj
+MethodContract --> AbsMaj
+AbsMaj --> QualMaj : delegates with\ncomputed minimumVotes\n((potentialVotes/2)+1)
+MethodContract --> RankedByVotes
+MethodContract --> HH
+MethodContract --> Hare
+MethodContract --> Droop
+MethodContract --> ImperialiLR
+MethodContract --> DHondt
+MethodContract --> SL
+MethodContract --> ImperialiHA
+MethodContract --> Danish
+
+DHondt --> DivisorEngine : variant divisor\nsequence
+SL --> DivisorEngine : variant divisor\nsequence
+ImperialiHA --> DivisorEngine : variant divisor\nsequence
+Danish --> DivisorEngine : variant divisor\nsequence
+
+MethodContract --> Result : returns Result
+MethodContract --> SAException : throws on failure\n(NFR-003)
+
+ProcWorkflow --> DecoratorIface : 3. decorate result\n(post-processing)
+DecoratorIface --> DecoratorImpl : executes decorators
+DecoratorImpl --> Result : transforms to\ndecorated Result
+
+ProcWorkflow --> Result : returns final Result
+EntryPoint --> SAException : surfaces allocation\nfailures (FR-009)
+
+@enduml

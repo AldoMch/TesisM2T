@@ -1,0 +1,84 @@
+@startuml
+
+' Define layers using packages
+package "Presentation Layer" {
+    component "Front End" as frontend
+    note right of frontend: Provides main, configuration,\ntraining, and inference interfaces\nwith real-time visualization (FR-022)
+}
+
+package "Application/Service Layer" {
+    component "Back End" as backend
+    component "Model Manager" as modelmanager
+    component "Monitoring Service" as monitoringservice
+    
+    note right of backend: Orchestrates business logic,\nprovides service interfaces\nwith error handling (FR-015, NFR-013)
+    note right of modelmanager: Manages model lifecycle,\nsaving trained models and results
+    note right of monitoringservice: Monitors training/inference\nexceptions (NFR-011) and\nresource usage (NFR-012)
+}
+
+package "Framework Layer" {
+    component "MyTorch/NNE Framework" as framework
+    component "Training Engine" as trainingengine
+    component "Inferencer" as inferencer
+    component "Data Loader" as dataloader
+    component "Weight Initializer" as weightinitializer
+    component "Classic Models Library" as classicmodels
+    
+    note right of framework: Core deep learning framework\nextended with GPU acceleration\nand GPU compatibility (FR-014)
+    note right of trainingengine: Executes model training,\nhandles evaluation and termination
+    note right of inferencer: Loads models and executes\nforward() for inference
+    note right of dataloader: Loads preset datasets,\napplies preprocessing/augmentation\nwith download capabilities (FR-002, FR-003)
+    note right of weightinitializer: Provides weight initialization\nmethods (He, Lecun, Xavier) (FR-016)
+    note right of classicmodels: Integrated classic models\n(ResNet, VGG, Transformer) (FR-017)
+}
+
+package "Data Access Layer" {
+    database "SQLite Database" as sqldb
+    component "Backup/Recovery" as backuprecovery
+    
+    note right of sqldb: Persists models, datasets,\ntraining/inference logs
+    note right of backuprecovery: Automatic backup and\nrecovery mechanism (FR-021)
+}
+
+package "Infrastructure Layer" {
+    component "GPU Accelerator" as gpuaccel
+    node "GPU Hardware & Drivers" as gpuhardware
+    
+    note right of gpuaccel: Provides GPU-accelerated matrix ops,\nautomatic resource detection (FR-012)\nwith easy-to-use APIs (FR-013)
+    note right of gpuhardware: Physical GPU and software drivers
+}
+
+' Key dependencies
+frontend --> backend : "requests model operations\nreceives visual feedback"
+backend --> framework : "executes core DL functions"
+backend --> sqldb : "persists/retrieves results,\nmodels, logs, config"
+backend --> modelmanager : "manages model operations"
+backend --> dataloader : "requests data loading operations"
+backend --> gpuaccel : "accesses GPU APIs"
+backend --> monitoringservice : "reports status and errors"
+
+modelmanager --> sqldb : "stores/retrieves models\nand evaluation results"
+modelmanager --> classicmodels : "accesses pre-built models"
+
+framework --> gpuaccel : "accesses low-level GPU APIs\nfor acceleration"
+framework --> weightinitializer : "uses initialization methods"
+
+trainingengine --> gpuaccel : "utilizes GPU resources\nfor matrix computations"
+trainingengine --> framework : "uses framework capabilities"
+trainingengine --> dataloader : "loads training datasets"
+trainingengine --> weightinitializer : "initializes model weights"
+
+inferencer --> dataloader : "loads datasets for inference"
+inferencer --> framework : "uses framework capabilities"
+inferencer --> modelmanager : "loads models for inference"
+
+dataloader --> sqldb : "stores/retrieves datasets"
+
+monitoringservice --> sqldb : "logs monitoring data"
+monitoringservice --> gpuaccel : "monitors GPU resources"
+
+backuprecovery --> sqldb : "performs backup and recovery"
+
+gpuaccel --> gpuhardware : "requires GPU hardware\nand drivers"
+
+@enduml

@@ -1,0 +1,89 @@
+@startuml
+title Nobel Laureates Autocomplete Web App - System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 220
+
+' Client
+node "Web Browser" as Browser {
+  component "Search UI\n- Input field (FR-001)\n- Suggestions list" as UI
+}
+
+' Deployment/Server
+cloud "Heroku (Deployment Env)\nNFR-004" as Heroku {
+  node "Node.js Server (CommonJS)\nC-001, NFR-003\nStarted via Node.js start script" as Server {
+    component "HTTP Router\nFR-004, C-004" as Router
+    component "Home Page Handler\nFR-003" as Home
+    component "Static Asset Server\nFR-005" as StaticSrv
+    component "Content-Type Mapper\nFR-006, NFR-002\nhtml, css, js, jpg, ico" as MimeMap
+    component "Not-Found Handler (404)\nFR-007" as NotFound
+    component "Autocomplete/Search Module\nFR-002, FR-009" as Search
+    component "Value Extraction\nFR-008" as Extract
+  }
+
+  folder "public/ (Static Assets)\nC-002, C-003" as Public {
+    artifact "index.html" as indexHtml
+    artifact "*.css" as css
+    artifact "*.js" as js
+    artifact "*.jpg" as jpg
+    artifact "favicon.ico" as ico
+  }
+
+  artifact "data/laureates.json\nDR-001, DR-002" as LaureatesData
+}
+
+' Client ↔ Server communication
+Browser --> Router : HTTP requests\nGET /, /...search..., /assets...
+Router --> Browser : HTTP responses\nHTML, JSON array, static assets, 404
+
+' Routing decisions
+Router --> Home : Route GET /
+Router --> Search : Route URL contains \"search\"\n(FR-004, C-004)
+Router --> StaticSrv : Route other paths\n(non-home, non-search)
+
+' Home page handling
+Home --> indexHtml : Read home page (A-001)\nHTML
+Home --> NotFound : On read failure (FR-007)
+
+' Static asset handling
+StaticSrv --> Public : Read static files\nhtml, css, js, jpg, ico (DR-005)
+StaticSrv --> MimeMap : Map extension → Content-Type\nNFR-002
+StaticSrv --> NotFound : On missing file or read failure (FR-007)
+
+' Search/autocomplete processing
+Search --> LaureatesData : Load local JSON data (A-002)
+Search --> Extract : Extract field values\n(e.g., firstname) (DR-003)
+Extract --> LaureatesData : Operate on object-based data
+
+' UI interaction path
+UI -[#blue]-> Browser : User types query\n(FR-001)
+Browser -[#blue]-> Router : Initiate search request
+
+' Notes for key behaviors
+note right of Router
+- Simple substring match on URL for "search"
+- Delegates to Autocomplete module (FR-004, C-004)
+end note
+
+note right of Search
+Autocomplete behavior (FR-002, FR-009):
+- Prefix-match on laureate names
+- Limit results to at most 10
+- Returns array of names
+end note
+
+note right of MimeMap
+Explicit media types (NFR-002):
+- text/html, text/css
+- application/javascript
+- image/jpg, image/x-icon
+end note
+
+note bottom of Server
+Modular responsibilities (NFR-003):
+- Router, handlers (home/static/404)
+- Search algorithm, value extraction
+- Content-Type mapping, data access
+end note
+@enduml

@@ -1,0 +1,106 @@
+@startuml
+title NLP4L (attic-nlp4l) - Layered Component Architecture
+
+' =========================================================
+' Presentation / Interaction Layer
+' =========================================================
+package "Presentation / Interaction Layer" {
+  [Scala Interactive Console] as ScalaConsole
+  [Chart Display UI\n(Experimental)] as ChartUI
+}
+
+' =========================================================
+' Application / Service Layer
+' =========================================================
+package "Application / Service Layer" {
+  [Schema Loader & Validator] as SchemaLoader
+  [Document Index Processor] as DocProcessor
+  [Term Data Access Service] as TermService
+  [Search Service] as SearchService
+  [Document Vector Generator] as VectorGen
+  [Word Count Analyzer] as WordCount
+  [LIBSVM Exporter] as LibsvmExporter
+}
+
+' =========================================================
+' Domain / Model Layer
+' =========================================================
+package "Domain / Model Layer" {
+  [Schema Model\n(root, default analyzer,\nfield types, field defs,\ncustom analyzers)] as SchemaModel
+  [Document Vector Model] as VectorModel
+  [Document / Term Model] as DocTermModel
+}
+
+' =========================================================
+' Data Access / Integration Layer
+' =========================================================
+package "Data Access / Integration Layer" {
+  [Lucene Index Access\n(Lucene 5.2.0 API)] as LuceneAccess
+  [Analyzer Access\n(normalized term data)] as AnalyzerAccess
+  [Configuration Reader\n(resource / file path)] as ConfigReader
+  [LIBSVM File Writer] as LibsvmWriter
+}
+
+' =========================================================
+' Data Stores / External Systems
+' =========================================================
+database "Lucene Index\n(document + term data)" as LuceneIndex
+file "Schema Configuration\n(resource / file path)" as SchemaConfig
+file "LIBSVM Output File" as LibsvmFile
+file "Word Count Data" as WordCountData
+cloud "External ML Tools\n(Spark / Mahout)" as MLTools
+
+' ---------- Presentation -> Application ----------
+ScalaConsole --> SchemaLoader : load schema
+ScalaConsole --> DocProcessor : process index
+ScalaConsole --> TermService : access terms
+ScalaConsole --> SearchService : search
+ScalaConsole --> VectorGen : generate vectors
+ScalaConsole --> WordCount : compute word counts
+ChartUI --> WordCount : visualize
+
+' ---------- Application -> Domain ----------
+SchemaLoader --> SchemaModel : build / validate
+DocProcessor --> DocTermModel : produce
+TermService --> DocTermModel : read
+SearchService --> DocTermModel : return results
+VectorGen --> VectorModel : create
+WordCount --> DocTermModel : aggregate
+
+' ---------- Application -> Data Access ----------
+SchemaLoader --> ConfigReader : read configuration
+DocProcessor --> LuceneAccess : read documents
+TermService --> AnalyzerAccess : read normalized terms
+SearchService --> LuceneAccess : query index
+VectorGen --> LibsvmExporter : export vectors
+LibsvmExporter --> LibsvmWriter : write
+
+' ---------- Data Access -> Stores / External ----------
+ConfigReader --> SchemaConfig : load
+LuceneAccess --> LuceneIndex : read
+AnalyzerAccess --> LuceneIndex : read
+LibsvmWriter --> LibsvmFile : write
+WordCount --> WordCountData : input
+LibsvmFile --> MLTools : consume
+
+' ---------- Domain dependency ----------
+VectorModel --> SchemaModel : uses field/analyzer config
+
+' ---------- Notes on constraints ----------
+note right of SchemaModel
+  Root object must be named "schema".
+  Requires default analyzer and
+  non-empty field definitions (C-005, C-006).
+end note
+
+note bottom of ChartUI
+  Experimental capability; compatibility
+  not guaranteed (NFR-004, C-004).
+end note
+
+note bottom of LuceneAccess
+  Compatible with Apache Lucene 5.2.0
+  ecosystem dependencies (NFR-001, C-002).
+end note
+
+@enduml

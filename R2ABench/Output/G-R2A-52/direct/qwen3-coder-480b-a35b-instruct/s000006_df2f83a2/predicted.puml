@@ -1,0 +1,77 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "YAML Configuration" as yaml_config
+
+RECTANGLE "Simulator Builder" as builder {
+  +Build simulator from YAML
+  +Integrate MuJoCo XML
+  +Initialize components
+}
+
+RECTANGLE "MuJoCo XML Integration Layer" as xml_layer {
+  +Biomechanical model XML
+  +Interaction task XML
+  +Standalone MuJoCo XML
+}
+
+RECTANGLE "Biomechanical Model Modules" as bio_models {
+  +Muscle actuation
+  +Control value application
+}
+
+RECTANGLE "Perception Modules" as perception {
+  +Egocentric vision
+  +Proprioception
+}
+
+RECTANGLE "Interaction Task Modules" as tasks {
+  +Task environments
+  +Reward functions
+}
+
+RECTANGLE "Reinforcement Learning Workflow" as rl_workflow {
+  +Train user models
+  +Control policies
+}
+
+RECTANGLE "Gym-Compatible Simulator" as gym_sim {
+  +OpenAI Gym interface
+  +Action/observation spaces
+}
+
+RECTANGLE "Simulator Packaging" as packaging {
+  +Standalone packages
+  +Self-contained deployment
+}
+
+RECTANGLE "Evaluation Runner" as evaluator {
+  +Load from run folder
+  +Checkpoint management
+  +Action logging
+}
+
+RECTANGLE "Run Folder Artifacts" as run_folder {
+  +Configuration files
+  +Model checkpoints
+  +Evaluation outputs
+}
+
+yaml_config --> builder : Provides configuration
+builder --> xml_layer : Integrates XML components
+xml_layer --> bio_models : Uses biomechanical XML
+xml_layer --> tasks : Uses task environment XML
+builder --> bio_models : Initializes models
+builder --> perception : Initializes perception
+builder --> tasks : Initializes tasks
+bio_models --> gym_sim : Provides action interface
+perception --> gym_sim : Provides observation interface
+tasks --> gym_sim : Defines environment
+builder --> packaging : Packages simulator
+packaging --> gym_sim : Produces standalone package
+rl_workflow --> gym_sim : Trains using interface
+gym_sim --> evaluator : Used for evaluation
+evaluator --> run_folder : Loads artifacts
+run_folder --> evaluator : Provides checkpoints
+evaluator --> run_folder : Writes evaluation output
+@enduml

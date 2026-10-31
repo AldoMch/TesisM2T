@@ -1,0 +1,149 @@
+@startuml
+title psmpi (ParaStation) - Embedded hwloc Verification, Communication & Libfabric Verbs Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ===================== Actors =====================
+actor "Test Engineer" as testEng
+actor "Build / Deployment\nEngineer" as buildEng
+actor "Communication\nMaintainer" as maint
+
+' ===================== Layer 1: Interfaces / Tooling =====================
+package "Interfaces & Tooling" {
+  [CLI: run-embedded-tests.sh <tarball>] as runTests
+  [Manual autotools workflow\n(autogen.sh / configure / make)] as autotools
+  [Build Env Config\n(CFLAGS / LDFLAGS / LD_LIBRARY_PATH)] as buildEnv
+}
+
+' ===================== Layer 2: Build & Verification =====================
+package "Build & Verification Services" {
+  [Embedded hwloc Verification Workflow\n(F-001) configure-make-makecheck-clean] as hwlocVerify
+  [Manual hwloc-tree/ Verification\n(F-002)] as manualVerify
+  [Embedded Test Suite\n(manual, not make check)] as testSuite
+}
+
+' ===================== Deployment / Build =====================
+node "Build Environment (Linux)" as buildNode {
+  artifact "hwloc Distribution Tarball" as hwlocTarball
+  artifact "Embedded Libfabric Module" as libfabricMod
+}
+
+' ===================== Layer 3: Communication Subsystem =====================
+package "Communication Subsystem" {
+  [Initialization / Finalization\n(F-003)] as initTerm
+  [Progress Engine\n(progress + blocking progress)] as progress
+  [Connection Establishment\n(F-003)] as connEst
+  [One-to-Many Scatter Transfer\n(F-004)] as oneToMany
+  [Send State Machine\n(F-005..F-008)] as sendSM
+
+  package "Send State Machine Detail" {
+    [Flow-Control Check\n(defer send when restricted)] as flowCheck
+    [Direct-Access Send\n(pinned user data binding)] as directAccess
+    [Packet-Buffer Packing\n(from data descriptor)] as packer
+    [Rendezvous Control-Field Handling\n(rts/cts/rndv-data)] as rndv
+  }
+
+  [CH4 Network Module Integration] as ch4
+}
+
+' ===================== Layer 4: Transport / Providers =====================
+package "Transport & Provider Layer" {
+  [Embedded Libfabric Verbs Provider\n(optional, build-time)] as verbsProv
+  [OFI / libfabric Transport] as ofi
+  [UCX Transport] as ucx
+}
+
+' ===================== Data Stores / Data Items =====================
+database "Data Stores & Structures" as dataStores {
+  [Packet Buffer\n(control info + packed payload)] as packetBuf
+  [Network Send Descriptor] as sendDesc
+  [User Data / Data Descriptor\n(DD)] as userData
+  [Flow-Control State\n(restricted / enabled)] as flowState
+  [Rendezvous Control Fields\n(envelope, LIBA(OD), LIBA x2)] as rndvFields
+}
+
+' ===================== External Systems =====================
+cloud "External Systems" {
+  [Linux Verbs API] as linuxVerbs
+  [libibverbs >= 1.1.8\n(control & data transfer)] as libibverbs
+  [librdmacm >= 1.0.16\n(communication management)] as librdmacm
+  [Network Device] as netDev
+}
+
+' ===================== Actor relations =====================
+testEng --> runTests
+buildEng --> autotools
+buildEng --> buildEnv
+maint --> sendSM
+maint --> initTerm
+maint --> oneToMany
+
+' ===================== Interface -> Services =====================
+runTests --> hwlocVerify
+autotools --> manualVerify
+buildEnv --> autotools
+
+' ===================== Verification -> Build artifacts =====================
+hwlocVerify --> hwlocTarball
+hwlocVerify --> testSuite
+manualVerify --> hwlocTarball
+testSuite --> libfabricMod
+
+' ===================== Communication subsystem internal =====================
+initTerm --> progress
+connEst --> progress
+progress --> oneToMany
+oneToMany --> sendSM
+sendSM --> flowCheck
+flowCheck --> directAccess
+flowCheck --> packer
+sendSM --> rndv
+sendSM --> ch4
+
+' ===================== Data dependencies =====================
+flowCheck --> flowState
+directAccess --> sendDesc
+directAccess --> userData
+packer --> packetBuf
+packer --> userData
+rndv --> packetBuf
+rndv --> rndvFields
+sendSM --> sendDesc
+sendDesc --> packetBuf
+
+' ===================== Provider / transport dependencies =====================
+ch4 --> ofi
+ch4 --> ucx
+libfabricMod --> verbsProv
+verbsProv --> linuxVerbs
+linuxVerbs --> libibverbs
+linuxVerbs --> librdmacm
+verbsProv --> netDev
+sendDesc --> netDev
+
+' ===================== Build dependency constraints =====================
+libibverbs -[hidden]-> librdmacm
+
+note right of verbsProv
+  C-004 / C-005:
+  Verbs provider uses Linux Verbs API.
+  Requires libibverbs >= 1.1.8 and
+  librdmacm >= 1.0.16 with matching headers.
+  Locations supplied via CFLAGS/LDFLAGS/LD_LIBRARY_PATH (NFR-003).
+end note
+
+note bottom of hwlocVerify
+  C-001 / C-002 / NFR-004:
+  Embedded hwloc verification is manual,
+  preferred entry point run-embedded-tests.sh <tarball>,
+  and is NOT part of `make check`.
+end note
+
+note bottom of sendSM
+  NFR-005: Design-note behaviors are documented
+  responsibilities, not confirmed public APIs.
+end note
+
+@enduml

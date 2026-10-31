@@ -1,0 +1,124 @@
+@startuml ReTool_Architecture
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam rectangle {
+  BackgroundColor #F8F9FA
+  BorderColor #6C757D
+}
+skinparam component {
+  BackgroundColor #E7F1FF
+  BorderColor #1B6EC2
+}
+skinparam database {
+  BackgroundColor #FFF3CD
+  BorderColor #B8860B
+}
+skinparam node {
+  BackgroundColor #F1F3F5
+  BorderColor #495057
+}
+
+title ReTool - System Architecture (Front-end / Back-end Separated Microservices)
+
+' ---------- Actors ----------
+actor "System User" as SysUser
+actor "Project Manager" as PM
+actor "Project Leader" as PL
+actor "Ordinary Project Member" as Member
+actor "System Administrator" as Admin
+
+' ---------- Client Tier ----------
+node "Client Environment\nWindows 10 64-bit / Chrome 81+\nCore i7-6700HQ, >= 8 GB RAM" as ClientEnv {
+  component "ReTool Web UI\n(Vue.js SPA)\n- Auth / User Mgmt UI\n- Project & Member UI\n- Baseline UI\n- Requirement Tree & Tracing UI\n- Requirement Analysis UI" as WebUI
+}
+
+' ---------- Back-end Tier (Local Computer) ----------
+node "Local Computer - Microservice Host" as LocalHost {
+  component "API Gateway\n(routing, access limit,\nrequest admission control)" as Gateway
+
+  component "User Management Service\n(Flask)" as UserSvc
+  component "Project Management Service\n(Flask)" as ProjSvc
+  component "Requirements Management Service\n(Flask)" as ReqSvc
+}
+
+' ---------- Algorithm Tier (Remote Server) ----------
+node "Algorithm Server\nEC2 t2.xlarge, 4 vCPU, 16 GB RAM\nAmazon Linux 2" as AlgoServer {
+  component "Algorithm Service\n(Flask)" as AlgoSvc
+  component "NLP Tooling &\nHeuristic Rule Engine" as NLP
+  component "PyTorch Runtime" as Torch
+  component "Word2vec Model" as W2V
+}
+
+' ---------- Data Tier ----------
+database "MongoDB\n(CRUD operations)" as Mongo
+
+' ---------- User access ----------
+SysUser --> WebUI
+PM --> WebUI
+PL --> WebUI
+Member --> WebUI
+Admin --> WebUI
+
+' ---------- Client to Back-end ----------
+WebUI --> Gateway : HTTPS / secured Web interfaces\n(front-end/back-end separation)
+
+' ---------- Gateway to services ----------
+Gateway --> UserSvc
+Gateway --> ProjSvc
+Gateway --> ReqSvc
+Gateway --> AlgoSvc : network call
+
+' ---------- Service interactions ----------
+ReqSvc --> AlgoSvc : itemization / structuring /\ncommon-req / conflict / association requests
+ProjSvc ..> ReqSvc : baseline archiving of\nrequirement items
+
+' ---------- Algorithm internals ----------
+AlgoSvc --> NLP
+AlgoSvc --> Torch
+Torch --> W2V
+
+' ---------- Persistence ----------
+UserSvc --> Mongo : CRUD\n(user accounts, roles,\npermissions, logs)
+ProjSvc --> Mongo : CRUD\n(projects, members,\nproject roles, baselines)
+ReqSvc --> Mongo : CRUD\n(requirement items, tree,\nstructuring / common / conflict /\nassociation results, tracing)
+AlgoSvc ..> Mongo : persist / retrieve\nanalysis artifacts
+
+' ---------- Cross-cutting notes ----------
+note right of Gateway
+  **Constraints**
+  - Gateway, user, project and
+    requirements services run locally (C-006).
+  - Algorithm service runs on a
+    performance server (C-007 / AD-003).
+  - Simultaneous access is limited;
+    excess processes are blocked (C-005).
+end note
+
+note bottom of Mongo
+  **Data Requirements**
+  DR-001..DR-016: user account, roles/permissions,
+  project, member relationship, project role,
+  baseline node, requirement item, Word document,
+  item tree, structuring result, common requirement,
+  conflict result, association result, tracing info,
+  logs, privacy/personalized data.
+  Periodic backup with three-copy offsite DR (NFR-009).
+end note
+
+note bottom of WebUI
+  **Security / Privacy**
+  NFR-010..NFR-016: Web security for login,
+  illegal-input & malicious-behavior detection,
+  injection prevention, front-end code protection,
+  access control for privacy and personalized data.
+end note
+
+note top of LocalHost
+  **Network Dependency**
+  AD-001 / C-008: all functions depend on network
+  connectivity; without network no requirement
+  can be realized.
+end note
+
+@enduml

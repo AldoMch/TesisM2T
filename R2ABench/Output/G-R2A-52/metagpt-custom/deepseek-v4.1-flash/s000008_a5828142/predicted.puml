@@ -1,0 +1,114 @@
+@startuml
+
+package "Frontend/Presentation Layer" {
+  component "Vue Frontend" as VueFrontend
+  component "Workspace Editor" as WorkspaceEditor
+  component "Battle View" as BattleView
+  component "Playback View" as PlaybackView
+}
+
+package "Backend/API Layer" {
+  component "Node.js/Express Backend" as Backend {
+    component "Authentication API" as AuthAPI
+    component "JWT Authentication Handler" as JWTAuthFunc
+    component "Invalid JWT Rejection Handler" as InvalidJWTRejection
+    component "Project API" as ProjectAPI
+    component "Version API" as VersionAPI
+    component "Code Execution API" as CodeExecAPI
+    component "Playback API" as PlaybackAPI
+    component "File Upload API" as FileUploadAPI
+  }
+}
+
+package "Real-Time Socket Layer" {
+  component "Socket Workspace API" as SocketWorkspaceAPI
+  component "Socket Battle API" as SocketBattleAPI
+  component "Workspace Authorization/Status Handler" as WorkspaceAuthHandler
+  component "Workspace Collaboration Lifecycle Handler" as WorkspaceCollabLifecycleHandler
+  component "Battle Lifecycle Handler" as BattleLifecycleHandler
+}
+
+package "Data Persistence Layer" {
+  database "MySQL" as MySQLDB
+  database "InfluxDB Time-Series Store" as InfluxDB
+  component "Coding-Process Recorder" as Recorder
+}
+
+package "Cache/Coordination Layer" {
+  database "Redis" as Redis
+}
+
+package "Sandbox Execution Layer" {
+  node "Docker-Based Sandbox" as Sandbox
+}
+
+package "Storage/Distribution Layer" {
+  cloud "S3-Compatible Object Storage" as S3
+  cloud "CloudFront-Style Distribution/CDN" as CDN
+}
+
+package "Deployment/Infrastructure Layer" {
+  node "Nginx Reverse Proxy" as Nginx
+  node "Automated Deployment Flow" as Deployment
+}
+
+package "External Systems" {
+  interface "JWT Token Signing/Validation Mechanism" as JWTMechanism
+}
+
+WorkspaceEditor --> VueFrontend
+BattleView --> VueFrontend
+PlaybackView --> VueFrontend
+
+VueFrontend --> Backend : REST HTTP
+VueFrontend --> SocketWorkspaceAPI : Socket.IO
+VueFrontend --> SocketBattleAPI : Socket.IO
+
+AuthAPI --> JWTAuthFunc : validate bearer token
+JWTAuthFunc --> JWTMechanism : sign/validate
+JWTAuthFunc --> InvalidJWTRejection : empty/malformed token
+InvalidJWTRejection --> AuthAPI : 401 Unauthorized
+
+SocketWorkspaceAPI --> JWTAuthFunc : authenticated context
+SocketBattleAPI --> JWTAuthFunc : authenticated context
+
+ProjectAPI --> MySQLDB : projects
+VersionAPI --> MySQLDB : versions/files
+AuthAPI --> MySQLDB : user accounts/registration/login
+FileUploadAPI --> MySQLDB : file metadata
+BattleLifecycleHandler --> MySQLDB : battle records
+Recorder --> MySQLDB : project/version metadata
+PlaybackAPI --> InfluxDB : playback records
+Recorder --> InfluxDB : coding-process records
+
+CodeExecAPI --> Sandbox : isolated execution
+CodeExecAPI --> Recorder : coding-process events
+FileUploadAPI --> S3 : upload files/archives
+CDN --> S3 : origin fetch
+VueFrontend --> CDN : load static assets
+
+SocketWorkspaceAPI --> WorkspaceAuthHandler : authorization/status
+WorkspaceAuthHandler --> Redis : socket/version mapping
+SocketWorkspaceAPI --> WorkspaceCollabLifecycleHandler : editing state/occupation/leave/disconnect
+WorkspaceCollabLifecycleHandler --> Redis : collaboration lifecycle state
+SocketWorkspaceAPI --> Redis : live workspace coordination
+SocketBattleAPI --> BattleLifecycleHandler : battle lifecycle
+SocketBattleAPI --> Redis : battle state/cache
+BattleLifecycleHandler --> Redis : invitations/isolated execution/watched state
+WorkspaceAuthHandler --> Redis : Redis readiness
+BattleLifecycleHandler --> Redis : Redis readiness
+
+Nginx --> VueFrontend : serve/proxy frontend
+Nginx --> Backend : reverse proxy
+
+Deployment --> VueFrontend
+Deployment --> Backend
+Deployment --> Nginx
+Deployment --> Redis
+Deployment --> MySQLDB
+Deployment --> InfluxDB
+Deployment --> Sandbox
+Deployment --> S3
+Deployment --> CDN
+
+@enduml

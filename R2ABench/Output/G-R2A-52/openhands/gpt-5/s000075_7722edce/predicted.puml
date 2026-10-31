@@ -1,0 +1,73 @@
+@startuml
+' statlord Architecture (commit 2677633e86fa623224308bf35c4a3153c95c0030)
+' System architecture component diagram
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+actor "Operator" as Operator
+actor "API Client" as APIClient
+
+node "Browser" as Browser {
+  component "Editor SPA (React/TypeScript)" as Editor {
+    component "Redux Store" as ReduxStore
+    component "Controls Slice" as Controls
+    component "Elements Slice" as Elements
+    component "Layouts Slice" as LayoutsSlice
+    component "Gauges Slice" as GaugesSlice
+    component "Displays Slice" as DisplaysSlice
+    component "Canvas Editing\nRender/Delete Ops" as CanvasOps
+  }
+  component "Viewer (Browser Route)" as ViewerClient
+}
+
+node "Server (Python/Django)" as Server {
+  component "REST API" as API
+  component "Viewer Renderer" as Viewer
+  artifact "Static Assets" as StaticAssets
+}
+
+database "PostgreSQL (dev)" as DB
+
+package "Data Resources" as Resources {
+  component "Gauge\n{ key, value }" as Gauge
+  component "Layout\n{ key, data, display_positions }" as Layout
+  component "Display\n{ key, available, resolution_x, resolution_y,\n  current_layout?, display_data, rotation }" as Display
+}
+
+' Relationships
+Operator --> Editor : use editor
+APIClient --> API : post gauge data /\nregister displays /\nmanage layouts
+
+Editor --> API : CRUD Gauges / Displays / Layouts
+Editor --> ViewerClient : preview per-display view
+ViewerClient --> Viewer : request rendered pixels
+API --> DB : persist entities
+Viewer --> DB : read display + layout data
+Server -down- StaticAssets : serves
+Browser --> StaticAssets : fetch editor bundle
+
+' Entity usage
+API --> Gauge
+API --> Layout
+API --> Display
+Display --> Layout : current_layout (nullable)
+
+' Display devices
+node "Display Device(s)\n(OLED / e-paper / LCD)" as DisplayHW
+DisplayHW --> ViewerClient : fetch rendered view\nby display key
+
+note right of Display
+- current_layout references Layout
+- set to null if Layout deleted
+end note
+
+note top of Editor
+SPA built with Node.js/npm and served as static assets.\nRedux manages controls, elements, layouts, gauges, displays.
+end note
+
+note bottom of Server
+Dev-grade container: Python 3.7 base.\nrun: ./manage.py runserver
+end note
+
+@enduml

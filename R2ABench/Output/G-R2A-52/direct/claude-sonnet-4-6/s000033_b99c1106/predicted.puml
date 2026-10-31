@@ -1,0 +1,188 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A1A
+}
+
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #2C3E50
+  FontColor #1A1A1A
+}
+
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #D4AC0D
+  FontColor #1A1A1A
+}
+
+skinparam actor {
+  BackgroundColor #FADBD8
+  BorderColor #C0392B
+  FontColor #1A1A1A
+}
+
+skinparam rectangle {
+  BackgroundColor #EAF7FB
+  BorderColor #117A8B
+  FontColor #1A1A1A
+}
+
+skinparam arrow {
+  Color #2C3E50
+  FontColor #2C3E50
+  FontSize 10
+}
+
+title Airflow Spark Docker Integration — System Architecture
+
+actor "Data Engineer" as DataEngineer
+actor "Platform Engineer" as PlatformEngineer
+actor "Notebook User" as NotebookUser
+
+rectangle "Host Machine" as Host {
+
+  rectangle "Docker Compose Network (format 3.7)" as DockerNetwork {
+
+    node "postgres\n[postgres:9.6]\nPort: 5432" as Postgres {
+      database "Airflow Metadata DB\n(DAG runs, tasks,\nscheduler state)" as AirflowDB
+    }
+
+    node "airflow-webserver\n[docker-airflow-spark:latest]\nLocalExecutor | Port: 8282" as Airflow {
+      component "Airflow Webserver\n& Scheduler" as AirflowCore
+      component "SparkSubmitOperator\n(spark_default → spark://spark:7077)" as SparkSubmitOp
+      component "PySpark Runtime\n(pyspark installed)\nPinned deps:\ncelery==4.1.1\nkombu==4.2.0\ntornado==5.1.1\nwerkzeug==0.16.0\nSQLAlchemy==1.3.15" as AirflowPySpark
+      component "DAG Definitions\n(loaded from mount)" as DAGDefs
+    }
+
+    node "spark (master)\n[bitnami/spark:latest]\nhostname: spark\nSPARK_MODE=master\nUI Port: 8181 → 8080\nCluster Port: 7077" as SparkMaster {
+      component "Spark Standalone Master\nEndpoint: spark://spark:7077" as SparkMasterCore
+      component "Spark Master Web UI\n(application visibility)" as SparkMasterUI
+      component "Bundled Spark 2.4.5\n(Hadoop 2.6)\n./bin/pyspark\n./bin/run-example\nMASTER var support\nlibsvm ML examples" as BundledSpark
+    }
+
+    node "spark-worker-1\n[bitnami/spark:latest]\nSPARK_MODE=worker" as Worker1 {
+      component "Spark Worker 1\n→ spark://spark:7077" as W1Core
+    }
+
+    node "spark-worker-2\n[bitnami/spark:latest]\nSPARK_MODE=worker" as Worker2 {
+      component "Spark Worker 2\n→ spark://spark:7077" as W2Core
+    }
+
+    node "spark-worker-3\n[bitnami/spark:latest]\nSPARK_MODE=worker" as Worker3 {
+      component "Spark Worker 3\n→ spark://spark:7077" as W3Core
+    }
+
+    node "spark-worker-N\n[bitnami/spark:latest]\nSPARK_MODE=worker\n(extensible pattern)" as WorkerN {
+      component "Spark Worker N\n→ spark://spark:7077" as WNCoreComp
+    }
+
+    node "jupyter-spark\n[jupyter/pyspark-notebook]\nPorts: 8888, 4040-4080" as Jupyter {
+      component "Jupyter Notebook Server\n(PySpark enabled)" as JupyterCore
+      component "Spark App UI\n(Ports 4040-4080)" as SparkAppUI
+    }
+
+    rectangle "Shared Volume Mounts" as SharedMounts {
+      component "/dags\n(DAG definition files)" as MountDAGs
+      component "/spark-apps\n(Spark application files)" as MountApps
+      component "/data\n(Input data files)" as MountData
+      component "/notebooks\n(Notebook files)" as MountNotebooks
+    }
+  }
+
+  rectangle "Host Port Mappings" as PortMap {
+    component "5432 → Postgres" as P5432
+    component "8282 → Airflow UI" as P8282
+    component "8181 → Spark Master UI" as P8181
+    component "7077 → Spark Cluster" as P7077
+    component "8888 → Jupyter" as P8888
+    component "4040-4080 → Spark App UIs" as P4040
+  }
+}
+
+' Actor to service access
+DataEngineer --> P8282 : Airflow Web UI\n(DAGs, logs)
+DataEngineer --> P8181 : Spark Master UI\n(job visibility)
+DataEngineer --> P8888 : Jupyter Notebook
+NotebookUser --> P8888 : Interactive PySpark
+PlatformEngineer --> DockerNetwork : Build & Operate\nDocker Compose
+
+' Host port to service
+P8282 --> Airflow
+P8181 --> SparkMaster
+P5432 --> Postgres
+P7077 --> SparkMaster
+P8888 --> Jupyter
+P4040 --> SparkAppUI
+
+' Airflow internal
+AirflowCore --> DAGDefs : loads
+AirflowCore --> SparkSubmitOp : executes
+AirflowCore --> AirflowPySpark : uses
+SparkSubmitOp --> AirflowPySpark : spark-submit via pyspark
+
+' Airflow to Postgres
+AirflowCore --> AirflowDB : metadata persistence\n(CI-001)
+
+' Airflow to Spark Master
+SparkSubmitOp --> SparkMasterCore : submit job\nspark://spark:7077\n(spark_default connection)
+
+' Spark Master to Workers
+SparkMasterCore --> W1Core : dispatch workload
+SparkMasterCore --> W2Core : dispatch workload
+SparkMasterCore --> W3Core : dispatch workload
+SparkMasterCore --> WNCoreComp : dispatch workload (scalable)
+
+W1Core --> SparkMasterCore : register
+W2Core --> SparkMasterCore : register
+W3Core --> SparkMasterCore : register
+WNCoreComp --> SparkMasterCore : register
+
+' Jupyter to Spark
+JupyterCore --> SparkMasterCore : interactive PySpark\nworkloads (optional)
+
+' Shared mounts to services
+MountDAGs --> AirflowCore : DAG files
+MountDAGs --> SparkMasterCore : (accessible)
+MountApps --> AirflowCore : Spark app files
+MountApps --> SparkMasterCore : Spark app files
+MountData --> AirflowCore : input data
+MountData --> SparkMasterCore : input data
+MountData --> JupyterCore : input data
+MountNotebooks --> JupyterCore : notebook files
+
+' Observability
+AirflowCore ..> DataEngineer : Task logs\n(Spark job results)
+SparkMasterUI ..> DataEngineer : Application state\n(job visibility)
+
+note top of Airflow
+  Security Note (NFR-006):
+  RPC auth, encryption, SSL
+  disabled — local dev only
+end note
+
+note right of WorkerN
+  NFR-004: Additional workers
+  follow same config pattern
+  (master URL, memory, cores,
+  mounts)
+end note
+
+note bottom of BundledSpark
+  Inherited capabilities (Low priority):
+  ./bin/pyspark shell
+  ./bin/run-example (SparkPi etc.)
+  MASTER env var target selection
+  libsvm dataset support (ML examples)
+  Spark 2.4.5 / Hadoop 2.6
+end note
+
+@enduml

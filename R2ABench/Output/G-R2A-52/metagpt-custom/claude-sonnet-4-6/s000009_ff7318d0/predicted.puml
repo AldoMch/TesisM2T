@@ -1,0 +1,167 @@
+@startuml Foot365_Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.5
+
+skinparam package {
+  BackgroundColor #EEF4FB
+  BorderColor #2E6DA4
+  FontColor #1A3C5E
+  FontStyle bold
+  FontSize 13
+}
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #2E6DA4
+  FontColor #1A3C5E
+}
+
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #388E3C
+  FontColor #1B5E20
+}
+
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+  FontColor #4A148C
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL USER
+' ─────────────────────────────────────────────
+actor "End User\n(Browser)" as User
+
+' ─────────────────────────────────────────────
+' LAYER 1 – PRESENTATION
+' ─────────────────────────────────────────────
+package "Presentation Layer" as PL {
+  component [WebFrontend\n(HTML / CSS / Bootstrap / jQuery)] as WebFrontend
+  database "StaticHostingBucket\n(Amazon S3)" as S3Bucket
+}
+
+' ─────────────────────────────────────────────
+' LAYER 2 – API GATEWAY
+' ─────────────────────────────────────────────
+package "API Gateway Layer" as AGL {
+  component [APIGateway\n(Amazon API Gateway\nAWS Sig V4 · JSON)] as APIGateway
+}
+
+' ─────────────────────────────────────────────
+' LAYER 3 – AUTHENTICATION & SECURITY
+' ─────────────────────────────────────────────
+package "Authentication & Security Layer" as ASL {
+  component [CognitoUserPool\n(Amazon Cognito)] as Cognito
+  component [IAMPolicies\n(AWS IAM)] as IAM
+}
+
+' ─────────────────────────────────────────────
+' LAYER 4 – APPLICATION / BACKEND
+' ─────────────────────────────────────────────
+package "Application / Backend Layer" as ABL {
+  component [BackendLambda\n(Python / Node.js\nData · Reminders · Recommendations)] as BackendLambda
+  component [ChatbotHandler\n(Python / Node.js\nIntent Handler)] as ChatbotHandler
+  component [SQSConsumerLambda\n(Python / Node.js\nReminder Dispatcher)] as SQSConsumer
+}
+
+' ─────────────────────────────────────────────
+' LAYER 5 – DATA STORAGE & SEARCH
+' ─────────────────────────────────────────────
+package "Data Storage & Search Layer" as DSL {
+  database "DynamoDB\n(Match Results · Fixtures · Stats)" as DynamoDB
+  database "Elasticsearch\n(Amazon Elasticsearch Service\nSearch & Retrieval)" as Elasticsearch
+}
+
+' ─────────────────────────────────────────────
+' LAYER 6 – PREDICTION
+' ─────────────────────────────────────────────
+package "Prediction Layer" as PREDL {
+  component [SageMakerEndpoint\n(Amazon SageMaker\nML Match Outcome Model)] as SageMaker
+}
+
+' ─────────────────────────────────────────────
+' LAYER 7 – NOTIFICATION
+' ─────────────────────────────────────────────
+package "Notification Layer" as NL {
+  component [SQSQueue\n(Amazon SQS\nReminder Request Buffer)] as SQS
+  component [SNSService\n(Amazon SNS\nSMS Delivery)] as SNS
+}
+
+' ─────────────────────────────────────────────
+' LAYER 8 – STREAMING (package, consistent with component style)
+' ─────────────────────────────────────────────
+package "Streaming Layer\n(Amazon EC2)" as StreamingLayer {
+  component [KafkaCluster\n(Apache Kafka with Apache Avro\nLive Score Event Ingestion)] as Kafka
+}
+
+' ─────────────────────────────────────────────
+' RELATIONSHIPS – PRESENTATION
+' ─────────────────────────────────────────────
+User --> WebFrontend : "interacts via browser"
+S3Bucket --> WebFrontend : "serves static assets"
+WebFrontend --> APIGateway : "HTTP · AWS Sig V4 · JSON"
+
+' ─────────────────────────────────────────────
+' RELATIONSHIPS – AUTH & SECURITY
+' Fixed D-002: APIGateway validates tokens against Cognito (not reverse)
+' ─────────────────────────────────────────────
+APIGateway --> Cognito : "validates Cognito\ntoken (authoriser)"
+
+IAM ..> BackendLambda : "governs permissions"
+IAM ..> ChatbotHandler : "governs permissions"
+IAM ..> SQSConsumer : "governs permissions"
+IAM ..> SageMaker : "governs permissions"
+IAM ..> SQS : "governs permissions"
+IAM ..> SNS : "governs permissions"
+IAM ..> DynamoDB : "governs permissions"
+IAM ..> Elasticsearch : "governs permissions"
+IAM ..> Kafka : "governs permissions"
+
+' ─────────────────────────────────────────────
+' RELATIONSHIPS – API GATEWAY → BACKEND
+' Added M-001: distinct recommendation endpoint route shown as named label
+' ─────────────────────────────────────────────
+APIGateway --> BackendLambda : "triggers Lambda\n(data / reminder / recommendation endpoint)"
+APIGateway --> ChatbotHandler : "triggers Lambda\n(chatbot / intent)"
+
+' ─────────────────────────────────────────────
+' RELATIONSHIPS – BACKEND → DATA / ML / NOTIFY
+' ─────────────────────────────────────────────
+BackendLambda --> DynamoDB : "read / write\nmatch data"
+BackendLambda --> Elasticsearch : "search &\nretrieval queries"
+BackendLambda --> SageMaker : "invoke prediction\nendpoint"
+BackendLambda --> SQS : "enqueue reminder\nrequests"
+
+' ─────────────────────────────────────────────
+' Fixed M-005 / D-004: ChatbotHandler connected to data sources
+' ─────────────────────────────────────────────
+ChatbotHandler --> DynamoDB : "query fixture &\nmatch result data"
+ChatbotHandler --> Elasticsearch : "search venue &\nscreening-location data"
+
+' ─────────────────────────────────────────────
+' Fixed D-005: SQSConsumerLambda polls SQS and dispatches via SNS
+' ─────────────────────────────────────────────
+SQS --> SQSConsumer : "polls queued\nreminder requests"
+SQSConsumer --> SNS : "dispatch SMS\nreminder via SNS"
+
+' ─────────────────────────────────────────────
+' RELATIONSHIPS – DATA STORE LINKAGE
+' ─────────────────────────────────────────────
+DynamoDB --> Elasticsearch : "streams / syncs\nmatch data"
+
+' ─────────────────────────────────────────────
+' Fixed D-003: Streaming layer connected to producers and consumers
+' BackendLambda consumes live scores from Kafka (FR-001, FR-008)
+' ─────────────────────────────────────────────
+WebFrontend --> Kafka : "live score events\n(producer feed)"
+Kafka --> DynamoDB : "persists live\nscore updates"
+Kafka --> BackendLambda : "live score events\n(consumer – FR-001)"
+
+@enduml

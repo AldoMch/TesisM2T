@@ -1,0 +1,86 @@
+@startuml
+title Deep Learning Model Sharing Platform - Layered Architecture
+
+package "Presentation Layer" {
+  [Web Browser - Vue.js Frontend]
+  note right of [Web Browser - Vue.js Frontend]
+    TypeScript UI
+    Modern browsers only
+    No IE support
+  end note
+}
+
+package "Application Layer" {
+  [API Gateway - Spring Boot]
+  [User Service]
+  [Community Service]
+  [Model Service]
+  [Dataset Service]
+  [Payment Service]
+  [Admin Service]
+}
+
+package "Data Layer" {
+  database "MySQL Database" {
+    [User Accounts]
+    [Q&A Data]
+    [Blog Data]
+    [Model Metadata]
+    [Dataset Metadata]
+    [Follow Relationships]
+    [Transaction Records]
+  }
+
+  [File Storage]
+}
+
+package "External Systems" {
+  [Email Service - SMTP]
+  [Payment Gateway - Third-party]
+}
+
+[Web Browser - Vue.js Frontend] --> [API Gateway - Spring Boot] : HTTP/HTTPS
+[API Gateway - Spring Boot] --> [User Service] : API calls
+[API Gateway - Spring Boot] --> [Community Service] : API calls
+[API Gateway - Spring Boot] --> [Model Service] : API calls
+[API Gateway - Spring Boot] --> [Dataset Service] : API calls
+[API Gateway - Spring Boot] --> [Payment Service] : API calls
+[API Gateway - Spring Boot] --> [Admin Service] : API calls
+
+[User Service] --> [MySQL Database] : CRUD operations
+[Community Service] --> [MySQL Database] : CRUD operations
+[Model Service] --> [MySQL Database] : CRUD operations
+[Dataset Service] --> [MySQL Database] : CRUD operations
+[Payment Service] --> [MySQL Database] : CRUD operations
+[Admin Service] --> [MySQL Database] : CRUD operations
+
+[Model Service] --> [File Storage] : File upload/download
+[Dataset Service] --> [File Storage] : File upload/download
+
+[User Service] --> [Email Service - SMTP] : Password reset emails
+[Payment Service] --> [Payment Gateway - Third-party] : Payment processing
+
+note top of [API Gateway - Spring Boot]
+  Supports multilingual interface
+  (Chinese/English switching)
+end note
+
+note right of [Model Service]
+  Intelligent recommendation algorithms
+  Online model invocation
+end note
+
+note left of [MySQL Database]
+  Spring Boot backend
+  MySQL persistence
+  Supports 1,000 req/sec
+  Stores data for 10,000+ users
+end note
+
+note right of [File Storage]
+  30GB+ storage
+  Model binaries
+  Dataset files
+end note
+
+@enduml

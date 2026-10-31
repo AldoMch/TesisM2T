@@ -1,0 +1,108 @@
+@startuml
+title MyTorch System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+package "Visual Front End" as FE {
+  component "Main UI" as FE_MAIN
+  component "Configuration UI" as FE_CFG
+  component "Training UI" as FE_TRAIN
+  component "Inference UI" as FE_INFER
+  component "Help & Guidance" as FE_HELP
+}
+
+package "System Back End" as BE {
+  component "API Gateway" as BE_GATE
+  component "Model Config Service" as BE_CFG
+  component "Data Loader Service" as BE_DATA
+  component "Training Orchestrator" as BE_TRAIN
+  component "Inference Service" as BE_INFER
+  component "Model Registry" as BE_REG
+  component "Monitoring & Logging" as BE_MON
+  component "Fault Handler" as BE_FAULT
+  component "GPU Resource Manager" as BE_GPU
+  component "Backup & Recovery" as BE_BAK
+}
+
+package "MyTorch / NNE Framework" as CORE {
+  component "NN Modules" as CORE_NN
+  component "Loss Functions" as CORE_LOSS
+  component "Optimizers" as CORE_OPT
+  component "Schedulers" as CORE_SCH
+  component "Weight Initialization" as CORE_INIT
+  component "Classic Models" as CORE_MODELS
+}
+
+node "GPU Accelerator" as GPU
+folder "Preset Datasets" as DATASETS
+database "SQLite Local DB" as DB
+
+' Front-end to back-end flows
+FE_MAIN --> BE_GATE : navigate to features
+FE_CFG  --> BE_GATE : configure models
+FE_TRAIN --> BE_GATE : start/monitor training
+FE_INFER --> BE_GATE : run inference
+FE_HELP ..> FE_MAIN : tips / guidance
+
+' API gateway routes to domain services
+BE_GATE --> BE_CFG
+BE_GATE --> BE_TRAIN
+BE_GATE --> BE_INFER
+BE_GATE --> BE_REG
+
+' Back-end internals and integrations
+BE_CFG --> CORE_INIT : select/init weights
+BE_CFG --> BE_REG : save configuration
+
+BE_DATA --> DATASETS : download/load/split/augment
+
+BE_TRAIN --> BE_DATA : request training data
+BE_TRAIN --> CORE_NN : build model
+BE_TRAIN --> CORE_LOSS
+BE_TRAIN --> CORE_OPT
+BE_TRAIN --> CORE_SCH
+BE_TRAIN --> CORE_MODELS : use preset models
+BE_TRAIN --> BE_GPU : request GPU resources
+BE_TRAIN --> BE_MON : emit metrics/logs
+BE_TRAIN --> BE_FAULT : report/runtime exceptions
+BE_TRAIN --> BE_REG : register trained model
+BE_TRAIN --> DB : persist model + evaluation
+
+BE_INFER --> BE_REG : load model by address
+BE_INFER --> BE_DATA : prepare inference dataset
+BE_INFER --> CORE_NN : forward() inference
+BE_INFER --> BE_MON : emit metrics/logs
+BE_INFER --> BE_FAULT : handle errors
+
+BE_GPU --> GPU : GPU APIs / kernels
+
+BE_MON --> DB : persist logs/history
+BE_BAK --> DB : backup / recover
+BE_REG --> DB : metadata, model artifacts
+
+' Feedback to UI for real-time visualization
+BE_MON --> FE_TRAIN : training progress, loss/accuracy
+BE_MON --> FE_INFER : inference results/metrics
+
+' Framework relationships
+CORE_INIT --> CORE_NN
+CORE_MODELS --> CORE_NN
+
+' Notes for key qualities and constraints
+note right of GPU
+GPU-accelerated matrix ops (add/mul/scalar/mean/extremum/elementwise)
+Auto-detect/configure resources; compatibility with existing framework.
+end note
+
+note right of BE_MON
+Monitor GPU utilization, memory, training speed; detect faults
+(e.g., gradient explosion, OOM); timestamps at second precision.
+end note
+
+note bottom of DB
+Persist: models, datasets, training logs, inference logs, history.
+Automatic backup and recovery (SQLite local storage).
+end note
+
+@enduml

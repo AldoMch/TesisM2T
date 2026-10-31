@@ -1,0 +1,148 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+title Archifiltre-docs: Settings, Export, and Hash Processing Architecture
+
+package "Presentation Layer" <<Layer>> {
+  [User Interface] <<Component>>
+  note right of [User Interface]
+    Electron desktop application
+    Triggers export and hash workflows
+  end note
+}
+
+package "Application Layer" <<Layer>> {
+  [Settings Controller] <<Component>>
+  note right of [Settings Controller]
+    Sanitizes persisted settings
+    Applies defaults for empty/invalid values
+  end note
+  
+  [Export Controller] <<Component>>
+  note right of [Export Controller]
+    Coordinates export workflows
+    Manages background worker invocation
+  end note
+  
+  [Hash Controller] <<Component>>
+  note right of [Hash Controller]
+    Manages batch hash computation
+    Coordinates debug file writing
+  end note
+}
+
+package "Service Layer" <<Layer>> {
+  [Settings Sanitization Service] <<Component>>
+  note right of [Settings Sanitization Service]
+    Normalizes settings with defaults:
+    - isTrackingEnabled: true
+    - isMonitoringEnabled: true
+    - language: "en"
+  end note
+  
+  [Export Worker Manager] <<Component>>
+  note right of [Export Worker Manager]
+    Manages background workers/child processes
+    Provides Observable/stream interfaces
+  end note
+  
+  [Hash Computation Service] <<Component>>
+  note right of [Hash Computation Service]
+    Processes file paths in batches
+    Aggregates results into hash maps
+  end note
+}
+
+package "Data Layer" <<Layer>> {
+  [User Settings Store] <<Datastore>>
+  note right of [User Settings Store]
+    Persisted user preferences
+    Data model: isTrackingEnabled,
+    isMonitoringEnabled, language
+  end note
+  
+  [Application User Data Directory] <<Datastore>>
+  note right of [Application User Data Directory]
+    Runtime-provided user data path
+    Stores hash debug files
+  end note
+}
+
+package "External Systems" <<Layer>> {
+  [Translation Module] <<External>>
+  note right of [Translation Module]
+    Provides current language value
+    Used in export worker inputs
+  end note
+  
+  [Electron Runtime] <<External>>
+  note right of [Electron Runtime]
+    Provides app.getPath("userData")
+    Desktop application runtime services
+  end note
+  
+  [File System] <<External>>
+  note right of [File System]
+    File paths for hash computation
+    Export output file storage
+  end note
+}
+
+' Dependencies and relationships
+[User Interface] --> [Settings Controller] : "settings updates"
+[User Interface] --> [Export Controller] : "export triggers"
+[User Interface] --> [Hash Controller] : "hash computation requests"
+
+[Settings Controller] --> [Settings Sanitization Service] : "delegates sanitization"
+[Export Controller] --> [Export Worker Manager] : "invokes workers"
+[Hash Controller] --> [Hash Computation Service] : "delegates computation"
+
+[Settings Sanitization Service] --> [User Settings Store] : "reads/writes settings"
+[Hash Computation Service] --> [Application User Data Directory] : "writes debug files"
+[Hash Computation Service] --> [File System] : "reads file paths"
+
+[Export Worker Manager] --> [Translation Module] : "includes language parameter"
+[Export Worker Manager] --> [File System] : "writes export files"
+
+[Application User Data Directory] ..> [Electron Runtime] : "depends on"
+[Export Worker Manager] ..> [Electron Runtime] : "uses runtime services"
+
+' Export workflow details
+package "Export Types" <<Component>> {
+  [Tree CSV Export] <<Component>>
+  [RESIP Export] <<Component>>
+  [CSV Export] <<Component>>
+  [Excel Export] <<Component>>
+}
+
+[Export Worker Manager] --> [Tree CSV Export] : "generates"
+[Export Worker Manager] --> [RESIP Export] : "generates"
+[Export Worker Manager] --> [CSV Export] : "generates"
+[Export Worker Manager] --> [Excel Export] : "generates"
+
+note bottom of [Export Worker Manager]
+  All exports use background workers
+  with Observable/stream interfaces
+  Include language parameter from
+  Translation Module
+end note
+
+note bottom of [Hash Computation Service]
+  Batch processing for scalability
+  Creates hash-result-debug and
+  hash-error-debug files
+end note
+
+@enduml

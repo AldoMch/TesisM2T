@@ -1,0 +1,124 @@
+@startuml
+
+skinparam rectangle {
+  RoundCorner 8
+}
+skinparam component {
+  BackgroundColor<<ui>> #DDEEFF
+  BackgroundColor<<service>> #DFFFD6
+  BackgroundColor<<ai>> #FFF3CC
+  BackgroundColor<<data>> #FFE0E0
+  BackgroundColor<<engine>> #EDE0FF
+  BackgroundColor<<infra>> #F0F0F0
+}
+
+title EasyLaTex System Architecture
+
+rectangle "Client Layer" as ClientLayer {
+  component "Web Browser\n(Chrome / Firefox / Safari / Edge)" as Browser <<ui>>
+  component "Upload UI\n(Drag-and-Drop / File Selection)" as UploadUI <<ui>>
+  component "LaTeX Editor\n(Post-Recognition Editing)" as LaTeXEditor <<ui>>
+  component "Rendering Preview\n(Real-Time Preview)" as RenderPreview <<ui>>
+  component "Version Tree UI\n(Navigation / Branches / Comments)" as VersionUI <<ui>>
+  component "Project & Group UI\n(Workspace / Collaboration)" as ProjectUI <<ui>>
+}
+
+rectangle "Web Server Layer" as WebServerLayer {
+  component "Web Server\n(Nginx / Apache)" as WebServer <<infra>>
+}
+
+rectangle "Application Layer" as AppLayer {
+  component "REST API Gateway" as APIGateway <<service>>
+
+  rectangle "User Management" as UserMgmt {
+    component "Registration &\nLogin Service" as AuthService <<service>>
+    component "Password Recovery\nService" as PwdService <<service>>
+    component "Authentication &\nPermission Control" as PermService <<service>>
+  }
+
+  rectangle "File Processing" as FileProc {
+    component "File Upload\nService" as UploadService <<service>>
+    component "PDF Parser" as PDFParser <<service>>
+    component "CSV / Excel\nParser" as CSVParser <<service>>
+    component "Image Input\nHandler" as ImageHandler <<service>>
+    component "Handwritten Input\nHandler" as HandwrittenHandler <<service>>
+  }
+
+  rectangle "AI Recognition" as AIRec {
+    component "OCR Engine\n(Formula / Table Recognition)" as OCREngine <<ai>>
+    component "Deep Learning\nModel" as DLModel <<ai>>
+  }
+
+  rectangle "LaTeX Processing" as LaTeXProc {
+    component "LaTeX Generation\nService" as LaTeXGen <<service>>
+    component "LaTeX Rendering\nService" as LaTeXRender <<service>>
+    component "Export Service\n(PDF / LaTeX Source / PNG / JPEG)" as ExportService <<service>>
+  }
+
+  rectangle "Project & Collaboration" as ProjCollab {
+    component "Project Management\nService" as ProjectService <<service>>
+    component "Group & Collaboration\nService" as GroupService <<service>>
+    component "Version Control\nService" as VersionService <<service>>
+    component "Comments\nService" as CommentsService <<service>>
+  }
+}
+
+rectangle "Data Layer" as DataLayer {
+  component "Relational Database\n(MySQL 8.0 / PostgreSQL 12)" as RDBMS <<data>>
+  component "File Storage\n(Uploaded Files & Artifacts)" as FileStorage <<data>>
+}
+
+rectangle "Engine Layer" as EngineLayer {
+  component "LaTeX Engine\n(TeX Live / MiKTeX)" as LaTeXEngine <<engine>>
+}
+
+Browser --> WebServer : HTTPS
+WebServer --> APIGateway : HTTP/REST
+
+UploadUI ..> Browser
+LaTeXEditor ..> Browser
+RenderPreview ..> Browser
+VersionUI ..> Browser
+ProjectUI ..> Browser
+
+APIGateway --> AuthService
+APIGateway --> PwdService
+APIGateway --> PermService
+APIGateway --> UploadService
+APIGateway --> ProjectService
+APIGateway --> GroupService
+APIGateway --> VersionService
+APIGateway --> CommentsService
+APIGateway --> LaTeXGen
+APIGateway --> LaTeXRender
+APIGateway --> ExportService
+
+UploadService --> PDFParser
+UploadService --> CSVParser
+UploadService --> ImageHandler
+UploadService --> HandwrittenHandler
+
+PDFParser --> OCREngine
+ImageHandler --> OCREngine
+HandwrittenHandler --> OCREngine
+OCREngine --> DLModel
+DLModel --> LaTeXGen
+CSVParser --> LaTeXGen
+
+LaTeXGen --> LaTeXRender
+LaTeXRender --> LaTeXEngine
+ExportService --> LaTeXEngine
+
+AuthService --> RDBMS
+PwdService --> RDBMS
+PermService --> RDBMS
+ProjectService --> RDBMS
+GroupService --> RDBMS
+VersionService --> RDBMS
+CommentsService --> RDBMS
+LaTeXGen --> RDBMS
+UploadService --> FileStorage
+ExportService --> FileStorage
+VersionService --> FileStorage
+
+@enduml

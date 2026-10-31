@@ -1,0 +1,166 @@
+@startuml
+
+package "Presentation" {
+  component "Vue SPA"
+}
+
+node "Reverse Proxy" {
+  component "Nginx Reverse Proxy"
+}
+
+node "Backend (Node.js/Express)" {
+  package "REST API" {
+    component "Authentication API Controller"
+    component "Project API Controller"
+    component "Version API Controller"
+    component "Code Execution API Controller"
+    component "Playback API Controller"
+    component "File Upload API Controller"
+  }
+
+  package "Realtime Sockets (Socket.IO)" {
+    component "Workspace Socket Gateway"
+    component "Battle Socket Gateway"
+  }
+
+  package "Business/Domain Services" {
+    component "JWT Auth Service"
+    component "Project Service"
+    component "Version Service"
+    component "Workspace Authorization Service"
+    component "Workspace Coordination Service"
+    component "Code Execution Orchestrator"
+    component "Coding Process Recorder"
+    component "Playback Query Service"
+    component "Battle Invitation Service"
+    component "Battle Acceptance Coordinator"
+    component "Battle Orchestrator"
+    component "File Storage Service"
+    component "Distribution URL Service"
+  }
+
+  package "Persistence & Cache Clients" {
+    component "MySQL Access"
+    component "InfluxDB Client"
+    component "Redis Client"
+  }
+
+  package "Execution Sandbox (Adapter)" {
+    component "Docker Sandbox Adapter"
+  }
+
+  package "Storage & Distribution (Adapters)" {
+    component "Object Storage Adapter"
+    component "CDN/Distribution Adapter"
+  }
+}
+
+package "External Systems" {
+  database "MySQL"
+  database "InfluxDB"
+  database "Redis"
+  node "Docker Sandbox Pool"
+  cloud "S3-compatible Object Storage"
+  cloud "CDN/Distribution"
+}
+
+node "Deployment & Operations" {
+  component "Deployment Automation"
+}
+
+' Presentation -> Reverse Proxy
+"Vue SPA" --> "Nginx Reverse Proxy" : HTTP/S + WebSocket
+' Frontend fetches distributed assets
+"Vue SPA" --> "CDN/Distribution"
+
+' Reverse Proxy -> REST API controllers
+"Nginx Reverse Proxy" --> "Authentication API Controller"
+"Nginx Reverse Proxy" --> "Project API Controller"
+"Nginx Reverse Proxy" --> "Version API Controller"
+"Nginx Reverse Proxy" --> "Code Execution API Controller"
+"Nginx Reverse Proxy" --> "Playback API Controller"
+"Nginx Reverse Proxy" --> "File Upload API Controller"
+
+' Reverse Proxy -> Realtime Sockets gateways
+"Nginx Reverse Proxy" --> "Workspace Socket Gateway"
+"Nginx Reverse Proxy" --> "Battle Socket Gateway"
+
+' REST API controllers -> Services
+"Authentication API Controller" --> "JWT Auth Service"
+"Project API Controller" --> "Project Service"
+"Version API Controller" --> "Version Service"
+"Code Execution API Controller" --> "Code Execution Orchestrator"
+"Playback API Controller" --> "Playback Query Service"
+"File Upload API Controller" --> "File Storage Service"
+
+' Protected controllers/gateways enforce auth via JWT
+"Project API Controller" --> "JWT Auth Service"
+"Version API Controller" --> "JWT Auth Service"
+"Code Execution API Controller" --> "JWT Auth Service"
+"Playback API Controller" --> "JWT Auth Service"
+"File Upload API Controller" --> "JWT Auth Service"
+"Workspace Socket Gateway" --> "JWT Auth Service"
+"Battle Socket Gateway" --> "JWT Auth Service"
+
+' Socket gateways -> Services
+"Workspace Socket Gateway" --> "Workspace Authorization Service"
+"Workspace Socket Gateway" --> "Workspace Coordination Service"
+"Battle Socket Gateway" --> "Battle Invitation Service"
+"Battle Socket Gateway" --> "Battle Acceptance Coordinator"
+' In-battle routing to orchestrator
+"Battle Socket Gateway" --> "Battle Orchestrator"
+
+' Business services -> Coordinators/Orchestrators/Clients
+"Workspace Authorization Service" --> "Redis Client"
+"Workspace Authorization Service" --> "MySQL Access"
+"Workspace Coordination Service" --> "Redis Client"
+' Edit events trigger coding-process recording
+"Workspace Coordination Service" --> "Coding Process Recorder"
+
+"Battle Invitation Service" --> "Redis Client"
+
+"Battle Acceptance Coordinator" --> "Redis Client"
+"Battle Acceptance Coordinator" --> "Battle Orchestrator"
+
+"Battle Orchestrator" --> "Code Execution Orchestrator"
+"Battle Orchestrator" --> "MySQL Access"
+"Battle Orchestrator" --> "Redis Client"
+' Optional: orchestrator uploads results/artifacts
+"Battle Orchestrator" --> "File Storage Service"
+
+"Coding Process Recorder" --> "InfluxDB Client"
+"Playback Query Service" --> "InfluxDB Client"
+
+"Project Service" --> "MySQL Access"
+"Version Service" --> "MySQL Access"
+
+"Code Execution Orchestrator" --> "Docker Sandbox Adapter"
+
+"File Storage Service" --> "Object Storage Adapter"
+"File Storage Service" --> "Distribution URL Service"
+"Distribution URL Service" --> "CDN/Distribution Adapter"
+
+' Auth persistence in relational DB
+"JWT Auth Service" --> "MySQL Access"
+
+' Adapters/Clients -> External Systems
+"MySQL Access" --> "MySQL"
+"InfluxDB Client" --> "InfluxDB"
+"Redis Client" --> "Redis"
+
+"Docker Sandbox Adapter" --> "Docker Sandbox Pool"
+
+"Object Storage Adapter" --> "S3-compatible Object Storage"
+"CDN/Distribution Adapter" --> "CDN/Distribution"
+
+' Deployment automation -> all deployed components and systems
+"Deployment Automation" --> "Nginx Reverse Proxy"
+"Deployment Automation" --> "Backend (Node.js/Express)"
+"Deployment Automation" --> "MySQL"
+"Deployment Automation" --> "InfluxDB"
+"Deployment Automation" --> "Redis"
+"Deployment Automation" --> "Docker Sandbox Pool"
+"Deployment Automation" --> "S3-compatible Object Storage"
+"Deployment Automation" --> "CDN/Distribution"
+
+@enduml

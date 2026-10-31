@@ -1,0 +1,114 @@
+@startuml
+title POCD Persistent Object Consistency Detection - Architecture
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam wrapWidth 200
+
+package "User Interface Layer" {
+  component "Web Browser" as Browser
+  component "SPA Web UI\n(Front-end App)" as UI
+  Browser --> UI
+}
+
+package "Business Logic Layer" {
+  component "API Gateway / Controllers" as API
+  component "Auth & RBAC Service" as Auth
+  component "File Management Service" as FileSvc
+  component "Parsing Service" as ParseSvc
+  component "MDJ Parser" as MdjParser
+  component "DB Parser (JDBC/MySQL)" as DbParser
+  component "Matching Service" as MatchSvc
+  component "Detection Engine" as DetectSvc
+  component "Repair Engine" as RepairSvc
+  component "Rule & Exception Config Service" as ConfigSvc
+  component "Report Service" as ReportSvc
+  component "History Service" as HistorySvc
+  component "Help & Cases Service" as HelpSvc
+  component "Async Job Worker" as Worker
+  component "Logging Service" as Logging
+}
+
+package "Data Access Layer" {
+  database "Application Database\n(users, parsing models, matches, reports, history, config, exceptions)" as AppDB
+  component "File/Object Storage\n(.mdj, schema scripts, exports)" as FileStore
+  component "Message Queue / Task Queue" as MQ
+  database "Operation Log Store" as LogDB
+}
+
+package "External Resources" {
+  component "Third-party App" as ThirdParty
+  artifact "StarUML MDJ Files" as MDJFile
+  artifact "MySQL Schema/Script" as SchemaScript
+  database "Target MySQL Database" as TargetDB
+}
+
+' Front-end/back-end boundary
+UI --> API : HTTPS / JSON
+note on link: SSL enforced
+ThirdParty --> API : HTTPS / JSON
+note on link: SSL enforced
+
+' Authentication and access control
+API --> Auth
+Auth --> AppDB : users, sessions, roles
+
+' File management and samples/help
+API --> FileSvc
+FileSvc --> FileStore : upload/download
+API --> HelpSvc
+HelpSvc --> FileStore : sample files, help docs
+
+' Configuration and history
+API --> ConfigSvc
+ConfigSvc --> AppDB : rules, exceptions
+API --> HistorySvc
+HistorySvc --> AppDB : detection history
+
+' Reporting
+API --> ReportSvc
+ReportSvc --> AppDB : reports metadata
+ReportSvc --> FileStore : exported reports
+
+' Parsing
+API --> ParseSvc
+ParseSvc --> MdjParser
+ParseSvc --> DbParser
+MdjParser --> FileStore : read .mdj
+DbParser --> SchemaScript : parse script
+DbParser --> TargetDB : JDBC
+ParseSvc --> AppDB : store parsing models
+
+' Matching and detection
+API --> MatchSvc
+MatchSvc --> AppDB : read models / write matches
+API --> DetectSvc
+DetectSvc --> AppDB : read models+matches / write results
+
+' Repair
+API --> RepairSvc
+RepairSvc --> FileStore : write repaired class diagram
+RepairSvc --> TargetDB : JDBC execute repairs
+RepairSvc --> AppDB : write repair results
+
+' Asynchronous processing
+API --> MQ : enqueue long-running tasks
+Worker --> MQ : consume
+Worker --> ParseSvc
+Worker --> MatchSvc
+Worker --> DetectSvc
+Worker --> RepairSvc
+
+' Logging
+API --> Logging
+ParseSvc --> Logging
+DetectSvc --> Logging
+RepairSvc --> Logging
+Logging --> LogDB
+
+' JSON conversion
+note right of ParseSvc
+  Converts parsing results to JSON via Jackson
+  and exchanges internal data in JSON
+end note
+
+@enduml

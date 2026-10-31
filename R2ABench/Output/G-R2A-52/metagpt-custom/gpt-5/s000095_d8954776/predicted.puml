@@ -1,0 +1,105 @@
+@startuml
+
+node "Android Device" {
+  package "Presentation / UI" {
+    component "Fragments/MainActivity" as UI
+  }
+
+  package "Application / Service" {
+    component "GPSLoggingService" as GPSService
+    component "LocationListeners" as LocationListeners
+  }
+
+  package "Eventing" {
+    component "EventBus" as EventBus
+    component "SerializableLocation" as SerializableLocation
+  }
+
+  package "Data / Logging" {
+    component "GPXLogger" as GPXLogger
+    component "KMLLogger" as KMLLogger
+    component "TextFileLogger" as TextFileLogger
+  }
+
+  package "Integration / Networking" {
+    component "GPRMCEncoder" as GPRMCEncoder
+    component "OpenGTSConfigBuilder" as GTSConfigBuilder
+    component "OpenGTSSenderUDP" as GTSSenderUDP
+    component "UploadJob" as UploadJob
+  }
+
+  package "Configuration / Build" {
+    component "Settings/SessionConfig" as Settings
+  }
+
+  package "Platform" {
+    component "Android SDK" as AndroidSDK
+    component "Google Play Services" as GooglePlayServices
+    node "Android File System" as AndroidFS
+  }
+}
+
+node "Build Environment" {
+  package "Configuration / Build" {
+    component "CredentialsInjector" as CredentialsInjector
+    component "Gradle Properties" as GradleProps
+    component "local.properties (sdk.dir)" as LocalProps
+  }
+}
+
+node "Development Environment" {
+  component "Android SDK Build Tools 19.0.3" as BuildTools1903
+  component "Android Support Repository/Library" as SupportRepo
+  component "Google Repository" as GoogleRepo
+}
+
+node "External Systems" {
+  cloud "OpenStreetMap" as OSM
+  cloud "Dropbox" as Dropbox
+  cloud "OpenGTS (UDP Endpoint)" as OpenGTS
+}
+
+' Core dependencies
+GPSService --> LocationListeners
+LocationListeners --> EventBus
+UI --> EventBus
+
+GPSService --> GPXLogger
+GPSService --> KMLLogger
+GPSService --> TextFileLogger
+GPSService --> Settings
+
+' Configuration and encoders
+GPRMCEncoder --> SerializableLocation
+GTSSenderUDP --> GTSConfigBuilder
+GTSSenderUDP --> GPRMCEncoder
+Settings --> GTSConfigBuilder
+
+UploadJob --> Settings
+CredentialsInjector --> Settings
+CredentialsInjector --> GradleProps
+
+' Platform and external interactions
+LocationListeners --> AndroidSDK
+LocationListeners --> GooglePlayServices
+
+GPXLogger --> AndroidFS
+KMLLogger --> AndroidFS
+TextFileLogger --> AndroidFS
+
+GTSSenderUDP --> OpenGTS
+
+' Explicit service publishing and SerializableLocation production
+GPSService --> EventBus
+GPSService --> SerializableLocation
+
+' Build SDK location and dev constraints
+LocalProps --> AndroidSDK : sdk.dir
+AndroidSDK ..> BuildTools1903
+AndroidSDK ..> SupportRepo
+AndroidSDK ..> GoogleRepo
+
+' Optional orchestration
+GPSService --> GTSSenderUDP
+
+@enduml

@@ -1,0 +1,62 @@
+@startuml
+skinparam componentStyle rectangle
+
+actor "API Clients" as Clients
+
+package "API Layer" {
+  component "Turing API Server" as API
+  component "Authorization Middleware" as AuthMW
+  component "OpenAPI Request Validation" as ValidationMW
+  component "OpenAPI 3.0.3 Spec" as OpenAPISpec
+  component "Router Handlers" as RouterHandlers
+  component "Ensembler Handlers" as EnsemblerHandlers
+  component "Jaeger Tracing Client" as JaegerClient
+}
+
+package "Service Layer" {
+  component "Router Deployment Manager" as RouterMgr
+}
+
+package "Integration Layer" {
+  component "Kubernetes API Client" as K8sClient
+  component "PyFuncEnsembler Image Build Flow" as ImageBuild
+}
+
+node "Kubernetes Cluster" as K8s {
+  component "Turing Router Deployments" as RouterDeployments
+  component "PyFuncEnsembler Webservice" as PyFuncService
+}
+
+cloud "MLflow Model Registry" as MLflow
+cloud "Jaeger" as Jaeger
+
+Clients --> API : HTTP/JSON
+API --> AuthMW
+API --> ValidationMW
+ValidationMW --> OpenAPISpec
+API --> RouterHandlers
+API --> EnsemblerHandlers
+API --> JaegerClient
+JaegerClient --> Jaeger
+
+RouterHandlers --> RouterMgr
+RouterMgr --> K8sClient
+K8sClient --> K8s : Create/Update/Delete Deployments
+RouterDeployments -[#blue]-> PyFuncService : HTTP calls to ensemblers
+
+ImageBuild --> MLflow : Download model artifacts
+ImageBuild ..> PyFuncService : Build local Docker image
+
+note right of RouterDeployments
+- User container default port: 8080
+- Router protocol: HTTP_JSON or UPI_V1
+end note
+
+note bottom of AuthMW
+Mounted when authorization config enabled
+end note
+
+note bottom of ValidationMW
+Mounted when OpenAPI validation enabled
+end note
+@enduml

@@ -1,0 +1,133 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+title Home Recipes Full-Stack Application Architecture
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+' ========== LAYERS ==========
+package "Client Layer" <<Layer>> {
+  component "Flutter/Dart Client" <<Component>> {
+    [Multi-platform App]
+    [Generated Dart Client Code]
+  }
+  note right of "Flutter/Dart Client"
+    Runs on:
+    - Android
+    - iOS
+    - Web
+    - macOS
+  end note
+}
+
+package "API Gateway Layer" <<Layer>> {
+  component "gRPC-Gateway Middleware" <<Component>> {
+    [HTTP Endpoints]
+    [gRPC Translation]
+  }
+  note right of "gRPC-Gateway Middleware"
+    Exposes:
+    - Add Recipe
+    - List Recipes
+    - Home Ingredients
+    - Recipe Ingredients
+  end note
+}
+
+package "Service Layer" <<Layer>> {
+  component "Go gRPC Server" <<Component>> {
+    [Recipe Service]
+    [Ingredient Service]
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "Recipe Data" <<Datastore>> as recipe_data
+  component "Ingredient Data" <<Datastore>> as ingredient_data
+}
+
+package "Infrastructure Layer" <<Layer>> {
+  component "Docker Runtime" <<Component>> as docker
+  component "Kubernetes Cluster" <<Component>> as k8s
+  component "Azure Kubernetes Service" <<Component>> as aks
+}
+
+package "Shared Contracts" <<Layer>> {
+  component "Protocol Buffers Contract" <<Component>> as proto_contract {
+    [.proto Definitions]
+  }
+  note right of proto_contract
+    Shared service contract for:
+    - Client generation
+    - Server generation
+    - Gateway generation
+  end note
+}
+
+' ========== EXTERNAL SYSTEMS ==========
+component "End Users" <<External>> as users
+component "API Consumers/Testers" <<External>> as api_users
+component "Developers" <<External>> as developers
+component "Operators" <<External>> as operators
+
+' ========== DEPENDENCIES ==========
+users --> "Flutter/Dart Client" : Uses
+api_users --> "gRPC-Gateway Middleware" : HTTP Calls
+developers --> proto_contract : Defines/Updates
+operators --> docker : Builds/Runs
+operators --> k8s : Deploys
+operators --> aks : Deploys
+
+' ========== INTERNAL CONNECTIONS ==========
+"Flutter/Dart Client" --> proto_contract : Generates Code From
+"Flutter/Dart Client" --> "Go gRPC Server" : gRPC Calls
+
+"gRPC-Gateway Middleware" --> proto_contract : Generates Code From
+"gRPC-Gateway Middleware" --> "Go gRPC Server" : Translates HTTP to gRPC
+
+"Go gRPC Server" --> proto_contract : Generates Code From
+"Go gRPC Server" --> recipe_data : Manages
+"Go gRPC Server" --> ingredient_data : Manages
+
+' ========== DEPLOYMENT OPTIONS ==========
+"Go gRPC Server" --> docker : Containerized In
+"Go gRPC Server" --> k8s : Deployed In
+"Go gRPC Server" --> aks : Deployed In
+
+docker --> k8s : Can be deployed to
+docker --> aks : Can be deployed to
+
+' ========== DATA FLOWS ==========
+note top of "Flutter/Dart Client"
+  <b>Data Operations:</b>
+  - Recipe CRUD
+  - Ingredient queries
+end note
+
+note top of "gRPC-Gateway Middleware"
+  <b>HTTP Endpoints:</b>
+  - /add-recipe
+  - /list-recipes
+  - /home-ingredients
+  - /recipe-ingredients
+end note
+
+note top of "Go gRPC Server"
+  <b>Service Operations:</b>
+  - AddRecipe
+  - ListAllRecipes (streaming)
+  - GetHomeIngredients
+  - GetRecipeIngredients
+end note
+
+@enduml

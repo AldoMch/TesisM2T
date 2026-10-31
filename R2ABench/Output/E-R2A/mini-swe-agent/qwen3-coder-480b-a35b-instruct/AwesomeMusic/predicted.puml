@@ -1,0 +1,79 @@
+@startuml
+!define RECTANGLE class
+!define COMPONENT rectangle
+!define DATABASE rectangle
+!define QUEUE rectangle
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+
+title AwesomeMusic System Architecture
+
+' Presentation Layer
+package "Presentation Layer" {
+  [Web Frontend] as frontend #LightBlue
+}
+
+' Application Layer
+package "Application Layer" {
+  [Web Backend] as backend #LightGreen
+  [Algorithm Service] as algorithm #LightYellow
+  [Scheduling Module] as scheduler #LightPink
+}
+
+' Data Layer
+package "Data Layer" {
+  [Database] as database #LightGray
+  [Message Queue] as mq #LightCoral
+  [File Storage] as filestore #LightSalmon
+}
+
+' External Systems
+package "External Systems" {
+  [RabbitMQ] as rabbitmq
+  [etcd] as etcd
+  [Hadoop] as hadoop
+  [Nginx] as nginx
+}
+
+' Relationships
+frontend --> backend : HTTP/TCP
+backend --> database : CRUD
+backend --> mq : Task Queuing
+backend --> filestore : File I/O
+algorithm --> database : Model/Data Access
+algorithm --> filestore : Score/Music Files
+scheduler --> mq : Schedule Tasks
+mq --> algorithm : Trigger Generation
+rabbitmq ..> mq : Implementation
+etcd ..> backend : Configuration
+hadoop ..> algorithm : Big Data Processing
+nginx ..> frontend : Reverse Proxy
+
+' User interaction
+actor "User" as user
+user --> frontend : Interacts
+
+note right of algorithm
+  AI Music Generation
+  - MIDI to ABC conversion
+  - Track seed extraction
+  - Score generation
+  - Model training
+end note
+
+note right of scheduler
+  Daily Tasks:
+  - Training
+  - Classification
+  - Recommendations
+end note
+
+note bottom of mq
+  Task Types:
+  - Generation Tasks
+  - Training Tasks
+  - Classification Tasks
+end note
+
+@enduml

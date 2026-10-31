@@ -1,0 +1,217 @@
+@startuml AwesomeMusic_Architecture_Refined
+
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam componentBackgroundColor #FFFFFF
+skinparam nodeBackgroundColor #FFF8E1
+skinparam databaseBackgroundColor #E8F5E9
+skinparam cloudBackgroundColor #E3F2FD
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam arrowColor #455A64
+skinparam packageBorderColor #7986CB
+skinparam componentBorderColor #90A4AE
+skinparam nodeBorderColor #FFB300
+
+' =============================================
+' PRESENTATION LAYER
+' =============================================
+package "Presentation Layer" as PL #EEF2FF {
+    component [WebFrontend\n(HTML/CSS/JS/Bootstrap)] as WebFrontend
+}
+
+' =============================================
+' GATEWAY LAYER
+' =============================================
+package "Gateway Layer" as GL #FCE4EC {
+    node "Nginx 1.19.8\n(Reverse Proxy / Load Balancer)" as NginxGateway {
+        component [HTTPS Termination\n& Traffic Distribution] as NginxCore
+    }
+}
+
+' =============================================
+' APPLICATION LAYER
+' =============================================
+package "Application Layer" as AL #E8F5E9 {
+    node "Backend API Server Cluster\n(Golang / Gin)" as BackendCluster {
+        component [BackendAPIServer\n(REST Interfaces)] as BackendAPIServer
+        component [UserAccountManager\n(Registration / Login / Auth)] as UserAccountManager
+        component [ScoreContentManager\n(Score CRUD / Search / Download)] as ScoreContentManager
+        component [RecommendationManager\n(Assemble Recommendation Lists)] as RecommendationManager
+        component [HotChartUpdater\n(Attention & Popularity Charts)] as HotChartUpdater
+    }
+}
+
+' =============================================
+' SCHEDULING LAYER
+' =============================================
+package "Scheduling Layer" as SL #FFF3E0 {
+    node "Scheduling Module\n(Task Coordinator)" as SchedulingModule {
+        component [TaskSerializer\n(Serialize Task Metadata)] as TaskSerializer
+        component [TaskPoller\n(Poll Status / Retry / Log Errors)] as TaskPoller
+        component [TimeTrigger\n(Daily 02:00 Cron)] as TimeTrigger
+        component [UserTrigger\n(On-Demand Submission)] as UserTrigger
+    }
+}
+
+' =============================================
+' ALGORITHM LAYER
+' =============================================
+package "Algorithm Layer" as ALG #F3E5F5 {
+    node "Algorithm Service\n(ML Orchestrator)" as AlgorithmService {
+        component [ScoreGenerationEngine\n(GPT-2 / MIDI↔ABC)] as ScoreGenerationEngine
+        component [ModelTrainingEngine\n(GPT-2 Fine-Tuning / Daily)] as ModelTrainingEngine
+        component [ScoreClassificationEngine\n(LSTM Classification / Daily)] as ScoreClassificationEngine
+        component [RecommendationEngine\n(Cosine Similarity / LSTM)] as RecommendationEngine
+    }
+}
+
+' =============================================
+' INFRASTRUCTURE / DATA LAYER
+' =============================================
+package "Infrastructure / Data Layer" as IDL #ECEFF1 {
+    database "PersistentDataStore\n(3-Replica)\nUsers | Scores | Favorites |\nFollows | Labels | Representations |\nTask Metadata | Hot Charts | Logs" as PersistentDataStore
+
+    node "Apache Hadoop 3.2.2\n(Distributed File Storage)" as HadoopStorage {
+        component [MIDI Files\n(≤4 min)] as HadoopMidi
+        component [ABC Score Files] as HadoopABC
+        component [GPT-2 Model Parameters] as HadoopModels
+        component [LSTM Score Representations\n(Binary Vectors)] as HadoopLSTM
+    }
+
+    node "RabbitMQ 3.8.14\n(Message Broker)" as RabbitMQ {
+        component [Task Queue\n(Training / Classification /\nRecommendation / Generation)] as TaskQueue
+    }
+
+    node "etcd 3.4.15\n(Distributed Coordination)" as etcd {
+        component [Distributed Lock\n& Coordination Store] as etcdCore
+    }
+}
+
+' =============================================
+' EXTERNAL SYSTEMS
+' =============================================
+cloud "External Clients" as ExtClients #E3F2FD {
+    component [MIDI-Capable Player\n(External Client-Side)] as ExtMidi
+}
+
+' =============================================
+' ARROWS — PRESENTATION → GATEWAY
+' =============================================
+WebFrontend -down-> NginxGateway : HTTPS Requests
+
+' =============================================
+' ARROWS — GATEWAY → APPLICATION
+' =============================================
+NginxGateway -down-> BackendAPIServer : Proxy & Load Balance\n(≥2000 QPS)
+
+' =============================================
+' ARROWS — APPLICATION RESPONSE TO FRONTEND
+' =============================================
+BackendAPIServer -up-> NginxGateway : Response / File Delivery\n(MIDI Download ≤3000ms, NFR-008)
+
+' =============================================
+' ARROWS — APPLICATION INTERNAL COMPOSITION
+' =============================================
+BackendAPIServer -down-> UserAccountManager : delegates auth
+BackendAPIServer -down-> ScoreContentManager : delegates score ops
+BackendAPIServer -down-> RecommendationManager : delegates recommendations
+BackendAPIServer -down-> HotChartUpdater : delegates chart updates
+
+' =============================================
+' ARROWS — APPLICATION → SCHEDULING
+' =============================================
+BackendAPIServer -down-> SchedulingModule : Trigger Generation Task\n(User-Submitted / FR-017)
+
+' =============================================
+' ARROWS — APPLICATION → INFRASTRUCTURE
+' =============================================
+BackendAPIServer -down-> PersistentDataStore : Read / Write\n(Users, Scores, Tasks, Charts)
+BackendAPIServer -right-> HadoopStorage : Store / Retrieve\n(MIDI Files, ABC Score Files)
+
+' =============================================
+' ARROWS — SCHEDULING INTERNAL
+' =============================================
+TimeTrigger -right-> TaskSerializer : fire at 02:00 daily\n(Training / Classification /\nRecommendation — FR-016)
+UserTrigger -right-> TaskSerializer : fire on submission\n(Generation — FR-017)
+
+' =============================================
+' ARROWS — SCHEDULING → INFRASTRUCTURE
+' =============================================
+SchedulingModule -down-> RabbitMQ : Push Task Metadata\nto Queue
+SchedulingModule -right-> etcd : Distributed Coordination\n(Avoid Duplicate Firing)
+SchedulingModule -down-> PersistentDataStore : Write Task Status\n& Error Logs\n(FR-016 / FR-017 / DR-015)
+
+' =============================================
+' ARROWS — SCHEDULING → ALGORITHM (offline daily batch — FR-016)
+' =============================================
+SchedulingModule -down-> AlgorithmService : Trigger Offline Daily Batch\n(Training / Classification /\nRecommendation — FR-016)
+
+' =============================================
+' ARROWS — TASK POLLER
+' =============================================
+TaskPoller -down-> RabbitMQ : Poll Status / Retry\non Failure
+
+' =============================================
+' ARROWS — RABBITMQ → ALGORITHM
+' =============================================
+RabbitMQ -down-> AlgorithmService : Consume Generation Tasks\n(User-Triggered / FR-017)\n& Publish Status
+
+' =============================================
+' ARROWS — ALGORITHM → INFRASTRUCTURE
+' =============================================
+AlgorithmService -down-> HadoopStorage : Read MIDI/ABC Sources\nWrite Model Params &\nGenerated Scores
+ScoreClassificationEngine -down-> HadoopLSTM : Write LSTM Score\nRepresentations (DR-012)
+RecommendationEngine -down-> HadoopLSTM : Read LSTM Score\nRepresentations (DR-012)
+AlgorithmService -down-> PersistentDataStore : Read Playlists / Score Lists\nWrite Labels / Recommendation Lists /\nExceptions / Representations
+
+' =============================================
+' ARROWS — ALGORITHM → APPLICATION (Callbacks)
+' =============================================
+AlgorithmService -up-> BackendAPIServer : Exception Notifications\n(Conversion Failure / FR-013 / FR-014)
+
+' =============================================
+' ARROWS — ALGORITHM → SCHEDULING (FR-012 Exception Path)
+' =============================================
+ModelTrainingEngine -up-> SchedulingModule : Exception Notification\n(MIDI Conversion Failure / FR-012)
+
+' =============================================
+' ARROWS — PRESENTATION MISC
+' =============================================
+WebFrontend -right-> ExtMidi : Download MIDI File\n& Play Externally (FR-011)
+
+' =============================================
+' NOTES
+' =============================================
+note bottom of PersistentDataStore
+  3-replica deployment required.
+  Stores: task status, error logs,
+  user data, scores, charts,
+  labels, and representations.
+end note
+
+note bottom of SchedulingModule
+  Handles both time-triggered (02:00 daily)
+  and user-triggered generation workflows.
+  Logs errors and retries on failure.
+  Writes all task status and logs to
+  PersistentDataStore (DR-015).
+end note
+
+note right of AlgorithmService
+  Online: ScoreGenerationEngine (FR-017)
+  Offline (daily, FR-016):
+    ModelTrainingEngine
+    ScoreClassificationEngine
+    RecommendationEngine
+  FR-012: ModelTrainingEngine notifies
+  SchedulingModule on MIDI conversion failure.
+end note
+
+note right of HadoopLSTM
+  DR-012: LSTM score representations
+  persisted to Hadoop for use by
+  RecommendationEngine.
+end note
+
+@enduml

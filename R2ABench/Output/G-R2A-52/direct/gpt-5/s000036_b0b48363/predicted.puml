@@ -1,0 +1,117 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultFontName Monospaced
+skinparam wrapWidth 300
+
+title HypnoLog Server Architecture
+
+cloud "External Logging Producers" {
+  component "Any Language/Env\nHTTP Client" as Producer
+  note right of Producer
+    Sends JSON logs over HTTP:
+    - POST /logger/in
+    - Content-Type: application/json
+  end note
+}
+
+node "Server Host" {
+  node "Node.js Runtime" {
+    component "Node HTTP Server\nPort 7000 (default)\n(override via CLI arg)" as HTTPServer
+    component "Express App" as Express
+    component "JSON Body Parser\n(limit 50mb)" as BodyParser
+    component "Logging Router\nmounted at /logger" as LoggingRouter
+    component "Socket.IO Server\n(event: 'notification')" as SIOServer
+    component "Static File Server\n(public/, /client.html)" as StaticServer
+  }
+}
+
+node "Browser Client" {
+  component "Client UI\n(client.html)" as ClientUI
+  component "Socket.IO Client" as SIOClient
+  component "Message Processor" as MsgProcessor
+  component "Ajv Validator" as Ajv
+  component "Received-Data List" as DataStore
+  component "Window Dispatcher" as WindowDispatcher
+  component "Default Window" as DefaultWindow
+  component "Visualizer Dispatcher\n(first canDisplay match)" as VisualizerDispatcher
+  component "Visualizers[]\n(canDisplay(obj), display(obj, cb))" as Visualizers
+}
+
+' Flow: Ingestion and forwarding
+Producer --> HTTPServer : HTTP POST /logger/in\n(JSON HypnoLog Data Object)
+HTTPServer --> Express
+Express --> BodyParser : Parse JSON
+BodyParser --> LoggingRouter : Forward parsed body
+LoggingRouter --> SIOServer : Emit 'notification' with received object
+LoggingRouter --> HTTPServer : HTTP 200 response
+
+note right of LoggingRouter
+  Endpoints:
+  - POST /logger/in
+  - GET /logger/status (HTTP 200)
+  Server forwards parsed body; no server-side schema rejection.
+end note
+
+note right of SIOServer
+  - Attached to the same HTTP server as Express
+  - Maintains connected display clients
+  - Same-origin Socket.IO communication
+end note
+
+' Flow: Static UI delivery
+ClientUI <-- StaticServer : GET /client.html and assets
+StaticServer <-- HTTPServer
+HTTPServer <-- Express
+
+' Flow: Real-time delivery to browser
+SIOClient --> SIOServer : Socket.IO connect\n(same origin)
+SIOServer --> SIOClient : 'notification' events\n(HypnoLog Data Object)
+
+' Browser-side processing pipeline
+SIOClient --> MsgProcessor : Deliver received object
+MsgProcessor --> Ajv : Validate against schema\n(required: data, type)
+Ajv --> MsgProcessor : Valid / Invalid result
+MsgProcessor --> DataStore : Store valid or wrapped object
+MsgProcessor --> WindowDispatcher : Dispatch for display
+WindowDispatcher --> DefaultWindow
+DefaultWindow --> VisualizerDispatcher : Request DOM for object
+VisualizerDispatcher --> Visualizers : Evaluate canDisplay(obj)\nSelect first match and call display
+Visualizers --> DefaultWindow : DOM element
+DefaultWindow --> ClientUI : Append to UI
+
+note right of MsgProcessor
+  - On validation failure:
+    Wrap into HypnoLog-error object
+    (includes original message and validator details)
+  - On success:
+    Forward original object
+end note
+
+note right of VisualizerDispatcher
+  - Visualizers loaded from configuration
+  - First canDisplay(obj) match wins
+  - Tolerates visualizer loading failures
+end note
+
+note right of DefaultWindow
+  - Applies tag-based filtering and CSS classes when tags are present
+  - Displays variable name prefix when 'name' is present
+end note
+
+' Data model note
+rectangle "HypnoLog Data Object" as HDO #DDFFDD
+note right of HDO
+  JSON object:
+  - Required: data, type (string)
+  - Optional: tags[], name
+  Invalid incoming -> wrapped as 'HypnoLog-error'
+end note
+
+Producer .. HDO
+MsgProcessor .. HDO
+
+' Scope note
+note bottom
+  Scope: No persistence, retention, deletion, authentication, authorization, or privacy controls specified.
+end note
+@enduml

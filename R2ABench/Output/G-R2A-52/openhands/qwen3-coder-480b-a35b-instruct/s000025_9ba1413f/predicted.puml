@@ -1,0 +1,91 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam noteFontSize 10
+
+title System Architecture - COVID Help Session and Task Workflow
+
+' Main system boundary
+rectangle "System Boundary" as system_boundary {
+  ' Frontend components
+  rectangle "Frontend" as frontend {
+    [Next.js Application] as nextjs
+    [Firebase Session Handler] as session_handler
+    [Help Request Form] as help_form
+  }
+  
+  ' Middleware components
+  rectangle "Middleware Layer" as middleware {
+    [Session Middleware] as session_middleware
+    [Address Processing] as address_processing
+    [Service Area Check] as service_area_check
+  }
+  
+  ' Backend components
+  rectangle "Backend" as backend {
+    [Firebase Functions] as firebase_functions
+    [Login API\n(POST /api/login)] as login_api
+    [Logout API\n(POST /api/logout)] as logout_api
+    [OnFleet Task Handler] as onfleet_handler
+  }
+}
+
+' External systems
+[Authenticated User] as user
+[End User Channels\n(Text/Call)] as user_channels
+[Firebase Authentication] as firebase_auth
+[OnFleet System] as onfleet_system
+[Environment Variables] as env_vars
+
+' Relationships
+user --> session_handler : provides user object
+session_handler --> login_api : sends login request\n(POST /api/login)
+session_handler --> logout_api : sends logout request\n(POST /api/logout)
+login_api --> session_middleware : wrapped by
+logout_api --> session_middleware : wrapped by
+session_middleware --> session_handler : provides session object
+
+login_api --> firebase_auth : verifies ID token
+firebase_auth --> login_api : returns verified token
+
+help_form --> address_processing : submits task request
+user_channels --> address_processing : submits task request
+address_processing --> service_area_check : processes address
+service_area_check --> onfleet_handler : eligible requests
+onfleet_handler --> onfleet_system : creates tasks
+
+env_vars --> nextjs : provides Firebase config
+env_vars --> firebase_functions : provides Firebase config
+
+' Notes
+note right of session_handler
+  Handles login/logout
+  based on user presence
+end note
+
+note right of login_api
+  Validates request body
+  Extracts token
+  Verifies Firebase ID token
+  Stores auth data in session
+end note
+
+note right of address_processing
+  Processes address info
+  Determines neighborhood
+end note
+
+note right of service_area_check
+  Determines if request
+  is in service area
+end note
+
+note right of onfleet_handler
+  Creates tasks in
+  OnFleet system
+end note
+
+@enduml

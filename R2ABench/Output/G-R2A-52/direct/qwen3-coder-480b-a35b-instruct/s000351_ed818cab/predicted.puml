@@ -1,0 +1,51 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "User" as user
+RECTANGLE "CLI Parser" as cli_parser
+RECTANGLE "Input Handler" as input_handler
+RECTANGLE "ECDLP Solver Engine" as solver_engine
+RECTANGLE "Work File Manager" as work_file_manager
+RECTANGLE "Distributed Server" as dist_server
+RECTANGLE "Distributed Client" as dist_client
+RECTANGLE "Offline Merger" as offline_merger
+RECTANGLE "GPU Accelerator" as gpu_accelerator
+
+user --> cli_parser : invokes
+cli_parser --> input_handler : parses args\nroutes commands
+input_handler --> solver_engine : configures
+input_handler --> work_file_manager : manages files
+work_file_manager --> solver_engine : loads/stores state
+solver_engine --> gpu_accelerator : offloads computation
+dist_client --> dist_server : connects & computes
+dist_server --> work_file_manager : outputs work files
+offline_merger --> work_file_manager : reads work files
+offline_merger <-- work_file_manager : merges states
+
+note right of solver_engine
+  Pollard's Kangaroo Algorithm
+  Tame and Wild Herds
+  Distinguished Points Method
+end note
+
+note right of dist_server
+  No Authentication
+  Manual Network Management Required
+end note
+
+note right of work_file_manager
+  Supports Resume
+  Supports Merge
+  Stores Kangaroo State
+end note
+
+note right of offline_merger
+  Combines Work Files
+  Detects Solutions
+end note
+
+note bottom of gpu_accelerator
+  Optional GPU Support
+end note
+
+@enduml

@@ -1,0 +1,107 @@
+@startuml
+skinparam componentStyle rectangle
+
+title psmpi SRS - Architecture Overview (s000072_b56aad92)
+
+package "Build & Verification" {
+  component "Embedded Hwloc Verification\n(run-embedded-tests.sh)" as HwlocEmbed
+  component "Manual Embedded Verification\n(autogen/configure/make)" as HwlocManual
+  component "Autotools Build" as Autotools
+  component "Distribution Tarball" as Tarball
+
+  HwlocEmbed --> Autotools
+  HwlocEmbed -left-> Tarball
+  HwlocManual --> Autotools
+
+  note right of HwlocEmbed
+    Preferred entry: ./run-embedded-tests.sh <tarball>
+    Manual process is not part of 'make check'
+  end note
+
+  note bottom of HwlocManual
+    Alternative workflow requires top-level folder renamed to 'hwloc-tree/'
+  end note
+}
+
+package "Communication Subsystem" {
+  component "Lifecycle Manager\n(init, finalize)" as Lifecycle
+  component "Progress Manager\n(progress, blocking)" as Progress
+  component "Connection Manager\n(connection establishment)" as Conn
+  component "One-to-Many Transfer\n(scatter-style)" as Scatter
+
+  component "Send State Machine" as SendSM
+  component "Flow Control State" as FlowState <<state>>
+  component "Direct Access Sender" as DirectAccess
+  component "Packet Buffer Packer" as Packer
+  component "Rendezvous Handler\n(rndv-rts/cts/data)" as Rendezvous
+
+  component "Packet Buffer" as PacketBuffer <<data>>
+  component "Network Send Descriptor" as SendDesc <<descriptor>>
+  component "Pinned User Data" as PinnedData <<data>>
+  component "DD (Data Descriptor)" as DD <<data>>
+  component "Envelope" as Envelope <<control>>
+  component "LIBA" as LIBA <<control>>
+  component "OD" as OD <<control>>
+
+  Lifecycle -down-> Progress
+  Lifecycle -down-> Conn
+  Lifecycle -down-> Scatter
+
+  SendSM --> FlowState : check flow
+  SendSM --> DirectAccess
+  SendSM --> Packer
+  SendSM --> Rendezvous
+  SendSM --> SendDesc : prepare descriptor
+
+  DirectAccess --> SendDesc : bind pinned data
+  DirectAccess --> PinnedData
+
+  Packer --> PacketBuffer : pack payload
+  Packer --> DD
+
+  Rendezvous --> PacketBuffer : populate control fields
+  Rendezvous ..> Envelope
+  Rendezvous ..> LIBA
+  Rendezvous ..> OD
+
+  note right of FlowState
+    Defer send while flow restricted
+  end note
+}
+
+package "Network & Transport" {
+  component "CH4 Integration" as CH4
+  component "OFI / Libfabric" as OFI
+  component "UCX" as UCX
+  component "Libfabric Verbs Provider" as Verbs <<optional>>
+  component "Linux Verbs API" as VerbsAPI
+  component "libibverbs >= 1.1.8" as Libibverbs
+  component "librdmacm >= 1.0.16" as Librdmacm
+  component "Network Device" as NetDev
+}
+
+' Integration relationships
+Progress ..> CH4 : progress/callbacks
+Conn ..> CH4 : connections
+Scatter ..> CH4 : one-to-many
+
+CH4 --> OFI
+CH4 --> UCX
+
+SendDesc --> OFI : post send
+OFI --> NetDev
+
+OFI ..> Verbs : optional provider
+Verbs --> VerbsAPI
+VerbsAPI --> Libibverbs
+VerbsAPI --> Librdmacm
+Libibverbs --> NetDev
+Librdmacm --> NetDev
+
+note bottom
+  When Libfabric verbs provider is enabled:
+   - requires libibverbs >= 1.1.8 and librdmacm >= 1.0.16
+   - non-default paths via CFLAGS, LDFLAGS, LD_LIBRARY_PATH
+end note
+
+@enduml

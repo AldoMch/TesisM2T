@@ -1,0 +1,117 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam componentFontSize 13
+skinparam componentFontStyle bold
+skinparam arrowFontSize 12
+skinparam arrowFontStyle normal
+title QAPM Android Component System Architecture
+
+package "Android Runtime Environment" {
+  component "Android Context" as Context
+  component "HandlerThread" as HandlerThread
+  component "Main Looper" as MainLooper
+  component "Network Connectivity" as Network
+  note right of Network: Checks network state\nbefore upload processing
+}
+
+package "Background Scheduling System" {
+  component "Work Handler Manager" as WorkHandlerManager {
+    component "Background Handler Thread" as BgHandlerThread
+    component "Work Handler" as WorkHandler
+    component "Main Thread Handler" as MainThreadHandler
+  }
+  
+  note right of WorkHandlerManager: FR-001, FR-002, FR-010\nProvides asynchronous work dispatch\nvia HandlerThread looper
+}
+
+package "Upload Processing System" {
+  component "Upload Scheduler" as UploadScheduler
+  component "Network Gate" as NetworkGate
+  component "Storage Popper" as StoragePopper
+  component "Upload Directory Scanner" as DirScanner
+  component "File Content Reader" as FileReader
+  component "Context Parameter Extractor" as ContextExtractor
+  
+  note bottom of UploadScheduler: FR-003, FR-004\nGated by network connectivity\nForced send pops storage first
+}
+
+package "Data Sending System" {
+  component "Parameter Combiner" as ParamCombiner
+  component "Data Sender" as DataSender
+  component "Sender Callback Handler" as CallbackHandler
+  
+  note left of DataSender: FR-006\nSubmits bParam/cParam pair\nto configured sender
+  note right of CallbackHandler: FR-007\nDeletes files on success\nLogs failures
+}
+
+package "Local Storage" {
+  component "Upload Directory" as UploadDir
+  component "Upload Files" as UploadFiles
+  database "Pending Storage" as PendingStorage
+  
+  note right of UploadFiles: DR-003, DR-004, DR-005\nEnumerated and read\nas bParam strings
+}
+
+package "Apache HttpClient Instrumentation" {
+  component "Response Handler Wrapper" as ResponseHandlerWrapper
+  component "Transaction State Manager" as TransactionState
+  component "Entity Wrapper" as EntityWrapper
+  component "Counting Input Stream" as CountingStream
+  
+  note left of ResponseHandlerWrapper: FR-008\nInspects/instruments\ntransaction state
+  note right of EntityWrapper: FR-009, NFR-003\nWraps HttpEntity\nProvides cached counting stream
+}
+
+package "External Interfaces" {
+  component "QAPM Configuration Manager" as ConfigManager
+  component "Apache HttpClient" as ApacheClient
+  interface "Sender Interface" as SenderInterface
+  interface "ResponseHandler Interface" as ResponseHandlerInterface
+  interface "HttpEntity Interface" as HttpEntityInterface
+}
+
+'== Data Flow =='
+
+Context --> ContextExtractor : provides context\nfor cParam derivation
+Network --> NetworkGate : connectivity status
+NetworkGate --> UploadScheduler : allows/disallows processing
+UploadScheduler --> StoragePopper : triggers on forced send
+StoragePopper --> PendingStorage : pops stored data
+UploadScheduler --> DirScanner : initiates file scanning
+DirScanner --> UploadDir : enumerates upload files
+UploadDir --> UploadFiles : provides file paths
+UploadFiles --> FileReader : file content
+FileReader --> ParamCombiner : bParam string
+ContextExtractor --> ParamCombiner : cParam string
+ParamCombiner --> DataSender : bParam/cParam pair
+DataSender --> SenderInterface : submits to sender
+SenderInterface --> CallbackHandler : success/failure callbacks
+CallbackHandler --> UploadFiles : deletes on success
+
+'== Scheduling Flow =='
+
+WorkHandlerManager --> WorkHandler : creates handler
+HandlerThread --> BgHandlerThread : provides looper
+MainLooper --> MainThreadHandler : provides looper
+WorkHandler --> UploadScheduler : posts upload work
+WorkHandler --> DataSender : posts sending work
+MainThreadHandler --> WorkHandlerManager : main-thread dispatch
+
+'== Instrumentation Flow =='
+
+ApacheClient --> ResponseHandlerWrapper : wraps ResponseHandler
+ResponseHandlerWrapper --> TransactionState : inspects/instruments
+TransactionState --> ResponseHandlerWrapper : maintains state
+ResponseHandlerWrapper --> ResponseHandlerInterface : delegates handling
+ApacheClient --> EntityWrapper : wraps HttpEntity
+EntityWrapper --> CountingStream : provides getContent()
+CountingStream --> HttpEntityInterface : delegates read operations
+EntityWrapper --> HttpEntityInterface : delegates writeTo()
+
+'== Configuration =='
+
+ConfigManager --> DataSender : provides sender configuration
+ConfigManager --> WorkHandlerManager : handler configuration
+
+@enduml

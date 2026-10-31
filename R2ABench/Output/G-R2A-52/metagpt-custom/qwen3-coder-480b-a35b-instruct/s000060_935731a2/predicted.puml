@@ -1,0 +1,37 @@
+@startuml
+' Deployment Node for the overall system boundary
+node "JVM Application" {
+    component "AuditorAPI"
+
+    component "AuditEventGenerator"
+    
+    component "AuditEventElementFilter"
+    
+    component "MetadataHandler"
+
+    component "EventPublisher"
+
+    component "KafkaEventPublisher"
+}
+
+' External Systems
+cloud "External Systems" {
+    database "Kafka"
+}
+
+' Dependencies between components
+AuditorAPI --> AuditEventGenerator : generates events
+AuditorAPI --> AuditEventElementFilter : applies element filter
+AuditorAPI --> MetadataHandler : handles metadata
+AuditorAPI --> EventPublisher : publishes events
+
+AuditEventGenerator --> AuditEventElementFilter : uses filter
+AuditEventGenerator --> MetadataHandler : populates metadata
+AuditEventGenerator --> EventPublisher : sends event
+
+KafkaEventPublisher ..|> EventPublisher : implements
+
+' External system interaction
+KafkaEventPublisher --> Kafka : sends events
+
+@enduml

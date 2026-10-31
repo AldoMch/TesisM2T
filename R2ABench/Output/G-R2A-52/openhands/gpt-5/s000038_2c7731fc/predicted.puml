@@ -1,0 +1,109 @@
+@startuml
+title IceFireDB Decentralized Database Infrastructure (SRS-derived Architecture)
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+
+' External Clients
+component "Redis-backed Application" as App
+component "Redis Pub/Sub Application" as PubApp
+
+package "IceFireDB" {
+  package "Redis Proxy" as RedisProxy {
+    [Command Processor] as cmdProc
+    [Command Support Catalog\n(String/Set/List/Hash/ZSet/Stream + control)] as cmdCatalog
+    [Sync Coordinator] as syncCoord
+    [Cluster Router] as clusterRouter
+    [Storage Forwarder] as storageFwd
+    [Redis Agent] as redisAgent
+  }
+
+  package "PubSub" as PubSub {
+    [Pub/Sub API] as psApi
+    [Message Router] as psRouter
+    [P2P Transport] as p2pTransport
+  }
+
+  package "Internal SQL Result Handling\n(SQLite-related path)" as SQLPath {
+    [MySQL-protocol Result Parser\n(fields/rows/warnings/status)] as sqlParser
+  }
+}
+
+' Infrastructure
+cloud "P2P Network" as P2PNet
+node "Kademlia DHT" as Kad
+node "libp2p/IPFS-style Routing" as Lp2p
+
+database "Redis Standalone" as RedisStd
+node "Redis Cluster" as RedisCluster
+
+' NAT/private networks
+rectangle "NAT / Private Network" as NATBoundary {
+  node "PubSub Node A" as NodeA
+  node "PubSub Node B" as NodeB
+}
+
+' Connections - Redis Proxy
+App --> cmdProc : Redis commands
+cmdProc --> cmdCatalog
+cmdProc --> syncCoord : supported instructions
+cmdProc --> storageFwd : writes/reads
+syncCoord <--> redisAgent : instruction sync
+cmdProc --> clusterRouter : clustered mode
+clusterRouter --> storageFwd
+storageFwd --> RedisStd
+storageFwd --> RedisCluster
+
+' Connections - PubSub
+PubApp --> psApi : publish/subscribe
+psApi --> psRouter
+psRouter --> p2pTransport
+p2pTransport --> P2PNet
+
+' P2P integration and discovery/routing
+p2pTransport --> Kad
+p2pTransport --> Lp2p
+NodeA --> P2PNet
+NodeB --> P2PNet
+psRouter <--> NodeA : message dissemination
+psRouter <--> NodeB
+
+' Optional interplay (agent messaging over P2P)
+syncCoord .. p2pTransport
+
+' Internal-only scope
+cmdProc ..> sqlParser : internal result parsing (scope-limited)
+
+' Notes reflecting key SRS requirements
+note top of RedisProxy
+- Supports Redis standalone and cluster (FR-001)
+- Synchronizes instructions across agents (FR-002)
+- Forwards writes to storage (FR-003)
+- Decentralized data sync (FR-004)
+- Command categories: String/Set/List/Hash/ZSet/Stream + control (FR-011)
+end note
+
+note top of PubSub
+- Redis-compatible Pub/Sub semantics (FR-005, FR-006)
+- Multi-node operation (FR-007)
+- NAT/private-network communication (FR-008)
+- Peer discovery & routing via Kademlia DHT + libp2p (FR-009)
+end note
+
+note bottom of clusterRouter
+Cluster-aware behavior for Redis Cluster (FR-010, NFR-003)
+end note
+
+note right of SQLPath
+Internal-only MySQL-protocol result handling (DR-006..DR-008, C-006)
+end note
+
+legend left
+SRS coverage (selected):
+- FR-001..FR-011
+- NFR-001..NFR-004
+- DR-001..DR-008
+- C-003, C-006
+end legend
+
+@enduml

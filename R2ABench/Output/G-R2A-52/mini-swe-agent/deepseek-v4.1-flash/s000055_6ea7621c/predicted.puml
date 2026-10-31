@@ -1,0 +1,73 @@
+@startuml
+title Nobel Prize Laureates Autocomplete - Layered Architecture
+
+skinparam componentStyle rectangle
+
+' ===== Client / Presentation Layer =====
+package "Client Layer (Web Browser)" {
+  [Search Input UI] as UI_INPUT
+  [Suggestions / List Output] as UI_OUTPUT
+  [Frontend Request Helper] as UI_HELPER
+  [Static Asset Consumer] as UI_ASSETS
+}
+
+' ===== Server / Application Layer =====
+package "Server Layer (Node.js / CommonJS)" {
+  [HTTP Server] as HTTP_SERVER
+  [Router (URL substring 'search' matching)] as ROUTER
+  [Request Handler] as HANDLER
+  [Content-Type Mapper] as CTYPE
+  [Static File Server] as STATIC_SERVER
+  [Not-Found Handler (404 HTML)] as NOTFOUND
+}
+
+' ===== Search / Domain Layer =====
+package "Search / Algorithm Layer" {
+  [Autocomplete / Search-Hint Algorithm] as AUTOCOMPLETE
+  [Field Value Extractor] as EXTRACTOR
+}
+
+' ===== Data Layer =====
+package "Data Layer" {
+  database "Local Laureate Data (JSON)" as LAUREATE_DATA
+  storage "Public Static Assets (html/css/js/jpg/ico)" as PUBLIC_ASSETS
+}
+
+' ===== External / Infrastructure Layer =====
+package "External / Infrastructure" {
+  [Heroku Platform] as HEROKU
+  [Node.js Start Script / Runtime] as NODE
+  [Operating System Filesystem] as FS
+}
+
+' ===== Client interactions =====
+UI_INPUT --> UI_HELPER : capture input event value
+UI_HELPER --> HTTP_SERVER : HTTP request
+UI_OUTPUT --> HTTP_SERVER : HTTP request
+UI_ASSETS --> HTTP_SERVER : HTTP request for assets
+HTTP_SERVER --> UI_HELPER : HTML/CSS/JS/image responses
+HTTP_SERVER --> UI_OUTPUT : suggestion responses
+
+' ===== Server routing & handling =====
+HTTP_SERVER --> ROUTER : dispatch incoming request
+ROUTER --> AUTOCOMPLETE : route if URL contains 'search'
+ROUTER --> HANDLER : route home page / other requests
+HANDLER --> STATIC_SERVER : serve non-home, non-search assets
+HANDLER --> NOTFOUND : invoke on file read failure
+STATIC_SERVER --> CTYPE : determine response media type
+STATIC_SERVER --> PUBLIC_ASSETS : read asset
+HANDLER --> PUBLIC_ASSETS : read home page
+
+' ===== Search / domain interactions =====
+AUTOCOMPLETE --> EXTRACTOR : extract field values (e.g. firstname)
+AUTOCOMPLETE --> LAUREATE_DATA : read local laureate names
+EXTRACTOR --> LAUREATE_DATA : read object-based laureate data
+AUTOCOMPLETE --> CTYPE : JSON result response
+
+' ===== Infrastructure =====
+NODE --> HTTP_SERVER : start runtime
+HEROKU --> NODE : deploy & run start script
+STATIC_SERVER --> FS : filesystem reads
+HANDLER --> FS : filesystem reads
+
+@enduml

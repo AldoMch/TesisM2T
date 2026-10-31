@@ -1,0 +1,79 @@
+@startuml
+
+package "Workload Generation Layer" {
+  component "TestClientWorkflow" as TestClientWorkflow
+  component "FixedThreadPoolExecutor" as FixedThreadPoolExecutor
+  component "AsyncHttpClientAdapter" as AsyncHttpClientAdapter
+}
+
+package "Proxy Forwarding Layer" {
+  component "HTTPProxyForwarder" as HTTPProxyForwarder
+}
+
+package "HTTP Server Layer" {
+  component "TestServerBootstrap" as TestServerBootstrap
+  component "DownloadEndpoint" as DownloadEndpoint
+  component "UploadHandler" as UploadHandler
+}
+
+package "File System Access Layer" {
+  component "FilesystemAdapter" as FilesystemAdapter
+}
+
+package "Transport/Channel Layer" {
+  component "UpstreamChannelContext" as UpstreamChannelContext
+  interface "HTTP" as HTTP
+}
+
+package "Shared Data Model Layer" {
+  component "StructuredResponseObject" as StructuredResponseObject
+  component "FileHandlingMapPayload" as FileHandlingMapPayload
+}
+
+package "Build/Runtime Layer" {
+  component "GrizzlyJerseyServerStack" as GrizzlyJerseyServerStack
+  component "BuildConfigModules" as BuildConfigModules
+}
+
+cloud "Upstream Server" as UpstreamServer
+cloud "Asynchronous HTTP Client Environment" as AsyncClientEnv
+database "Local Filesystem" as LocalFilesystem
+node "Java Runtime Environment" as JavaRuntime
+cloud "Maven Multi-module Build Environment" as MavenEnv
+
+' Key dependencies
+HTTPProxyForwarder --> UpstreamChannelContext : forwards retained request\nafter activation
+TestClientWorkflow --> TestServerBootstrap : discovers/uses base URI only
+DownloadEndpoint --> FilesystemAdapter : check existence + stream file
+UploadHandler --> FileHandlingMapPayload : returns map payload
+TestClientWorkflow --> FixedThreadPoolExecutor : concurrency 50 x 1000
+TestClientWorkflow --> AsyncHttpClientAdapter : performs async GET\nuses status codes
+TestServerBootstrap --> GrizzlyJerseyServerStack : runs on
+BuildConfigModules --> JavaRuntime : Java 1.8/1.7 targets
+BuildConfigModules --> MavenEnv : multi-module build
+FilesystemAdapter --> LocalFilesystem : read + exists checks
+AsyncHttpClientAdapter --> AsyncClientEnv : execution environment
+UpstreamChannelContext --> UpstreamServer : upstream forwarding
+
+' Hosting/composition of endpoints by the test server
+TestServerBootstrap --> DownloadEndpoint : hosts endpoint
+TestServerBootstrap --> UploadHandler : hosts endpoint
+
+' Structured responses usage
+UploadHandler --> StructuredResponseObject : returns structured response
+DownloadEndpoint --> StructuredResponseObject : returns structured response
+
+' Client-to-proxy and client-to-server routing
+AsyncHttpClientAdapter --> HTTPProxyForwarder : HTTP requests to proxy
+AsyncHttpClientAdapter --> TestServerBootstrap : HTTP requests to endpoints
+
+' Transport usage (HTTP request/response over channel)
+TestClientWorkflow --> HTTP : issues HTTP requests
+AsyncHttpClientAdapter --> HTTP : HTTP exchange
+HTTPProxyForwarder --> HTTP : forwards HTTP
+TestServerBootstrap --> HTTP : exposes endpoints
+DownloadEndpoint --> HTTP : GET /download
+UploadHandler --> HTTP : upload handling
+UpstreamServer --> HTTP : upstream HTTP server
+
+@enduml

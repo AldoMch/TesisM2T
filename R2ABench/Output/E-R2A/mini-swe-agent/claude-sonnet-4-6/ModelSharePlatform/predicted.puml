@@ -1,0 +1,58 @@
+@startuml
+skinparam componentStyle rectangle
+
+title Deep Learning Model Sharing Platform - Layered Architecture
+
+rectangle "Presentation Layer" {
+  rectangle "Vue TypeScript SPA" as SPA {
+    component [Account UI] as AccUI
+    component [QA Community UI] as QAUI
+    component [Blog UI] as BlogUI
+    component [Model UI] as ModelUI
+    component [Dataset UI] as DataUI
+    component [Follow UI] as FollowUI
+    component [Admin UI] as AdminUI
+  }
+}
+
+rectangle "Application Layer Spring Boot" as AppLayer {
+  component [Account Service] as AccSvc
+  component [QA Service] as QASvc
+  component [Blog Service] as BlogSvc
+  component [Model Service] as ModelSvc
+  component [Dataset Service] as DataSvc
+  component [Follow Service] as FollowSvc
+  component [Admin Service] as AdminSvc
+  component [Recommendation Service] as RecSvc
+}
+
+rectangle "Data Layer" as DataLayer {
+  database "MySQL Database" as DB
+  storage "File Object Storage" as FileStore
+}
+
+rectangle "External Systems" as ExtSys {
+  component [Email Verification Service] as EmailSvc
+  component [Payment Gateway] as PaySvc
+  component [Model Inference Engine] as InferSvc
+}
+
+SPA --> AppLayer : REST API over HTTPS
+
+AccSvc --> DB
+QASvc --> DB
+BlogSvc --> DB
+ModelSvc --> DB
+ModelSvc --> FileStore
+DataSvc --> DB
+DataSvc --> FileStore
+FollowSvc --> DB
+AdminSvc --> DB
+RecSvc --> DB
+
+AccSvc --> EmailSvc : Email Verification
+ModelSvc --> PaySvc : Payment Processing
+ModelSvc --> InferSvc : Online Invocation
+RecSvc --> ModelSvc : Model Recommendations
+
+@enduml

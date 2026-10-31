@@ -1,0 +1,113 @@
+@startuml
+title Soundzone — System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam ArrowColor #4A4A4A
+
+actor "End User" as User
+actor "Maintainer / Operator" as Ops
+
+package "Client — Browser (React / Redux)" as Client {
+
+  component "React UI Shell\n(pages, routing, components)" as UI
+
+  component "Upload UI\n(sound + image / cover)" as UploadUI
+  component "Follow / Feed UI" as FollowUI
+  component "Form UI\n(validation + error handling)" as FormUI
+  component "Waveform Navigation UI\n(click-to-scrub)" as WaveUI
+  component "Centralized Playback Manager\n(single current playback)" as PlayMgr
+
+  component "Redux Store\n(state + actions + reducers)" as Redux
+
+  component "API Client\n(fetch-based HTTP, API base URL)" as ApiClient
+  component "Cloudinary Upload Client\n(Cloudinary URL + upload preset)" as CldClient
+
+  component "Frontend Runtime Configuration\n(API base URL, Cloudinary URL,\nCloudinary upload preset)" as EnvCfg
+}
+
+component "Cloudinary\n(hosted audio + image assets)" as Cloudinary
+
+package "Server — Node / Express" as Server {
+
+  component "Express Application\n(HTTP routing + middleware)" as Express
+
+  component "User / Auth API\n(register, login, user info)" as UserAPI
+  component "Follow API\n(follow / unfollow)" as FollowAPI
+  component "Feed API\n(following feed, user sounds)" as FeedAPI
+  component "Sound API\n(create, detail, delete)" as SoundAPI
+
+  component "Persistence Layer\n(records + media URL references)" as DAL
+}
+
+database "PostgreSQL\nusers, sounds, follow relationships,\nCloudinary media URL references" as PG
+
+' ---------- User and operator interactions ----------
+User --> UI : interacts
+Ops --> EnvCfg : configures environment values
+
+' ---------- Frontend composition ----------
+UI --> Redux
+UI --> UploadUI
+UI --> FollowUI
+UI --> FormUI
+UI --> WaveUI
+UI --> PlayMgr
+
+UploadUI --> Redux
+FollowUI --> Redux
+FormUI --> Redux
+
+WaveUI --> PlayMgr : scrub position input
+PlayMgr --> Redux : playback state
+
+EnvCfg --> ApiClient : API base URL
+EnvCfg --> CldClient : Cloudinary URL + preset
+
+Redux --> ApiClient : request actions
+Redux --> PlayMgr : playback actions
+
+' ---------- Direct media upload path ----------
+UploadUI --> CldClient : audio / image asset
+CldClient --> Cloudinary : HTTP direct media upload
+Cloudinary --> CldClient : hosted media URL
+
+' ---------- Frontend to backend path ----------
+ApiClient --> Express : HTTP fetch requests\n(sounds, users, follows, feed)
+Express --> UserAPI
+Express --> FollowAPI
+Express --> FeedAPI
+Express --> SoundAPI
+
+' ---------- Backend persistence path ----------
+UserAPI --> DAL
+FollowAPI --> DAL
+FeedAPI --> DAL
+SoundAPI --> DAL : stores sound data +\nCloudinary media URLs
+
+DAL --> PG : SQL persistence /\nretrieval
+
+note right of Cloudinary
+  NFR-003 / C-004 / A-001
+  Media binaries live in Cloudinary;
+  only hosted URL references are
+  persisted in PostgreSQL.
+end note
+
+note bottom of Client
+  C-006 / FR-008: frontend uploads media
+  directly to Cloudinary first, then the
+  backend persists application data and
+  the returned media URL.
+end note
+
+note right of PlayMgr
+  FR-005 / FR-006 / NFR-001 / NFR-002:
+  one managed current playback item that
+  survives page navigation and component
+  switching without unintended reset.
+end note
+
+@enduml

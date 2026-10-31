@@ -1,0 +1,111 @@
+@startuml
+title Escape Application - System Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #F5F5F5
+skinparam defaultFontSize 14
+
+' ========== COMPONENTS ==========
+package "Web Client" {
+  component "React Application" as react_app {
+    component "Authentication Views" as auth_views
+    component "Scene Rendering" as scene_rendering
+    component "Shared Credential Handler" as cred_handler
+  }
+  
+  component "React Router" as react_router
+  component "jQuery" as jquery
+  component "A-Frame" as aframe
+  component "aframe-react" as aframe_react
+  
+  auth_views ..> cred_handler : uses
+  scene_rendering ..> aframe : uses
+  scene_rendering ..> aframe_react : uses
+  react_app ..> react_router : uses
+  react_app ..> jquery : uses
+}
+
+package "Web Server" {
+  component "Node.js" as nodejs {
+    component "Express HTTP Server" as express
+    component "User Controller" as user_controller
+    component "User Model" as user_model
+  }
+  
+  express ..> user_controller : routes to
+  user_controller ..> user_model : interacts with
+}
+
+package "External Services" {
+  component "Image Storage Service\n(AWS S3-style)" as image_storage
+  component "Cache\n(Redis-style)" as cache
+  component "Database\n(MariaDB-style)" as database {
+    component "Users Table" as users_table
+    component "Likes Table" as likes_table
+    component "Photos Table" as photos_table
+    component "Comments Table" as comments_table
+  }
+}
+
+' ========== COMMUNICATION FLOWS ==========
+react_app --> express : "1. HTTP Requests\n(Authentication, Content)"
+express --> user_controller : "2. Route Requests"
+user_controller --> user_model : "3. User Operations"
+user_model --> database : "4. Data Persistence"
+user_controller --> cache : "5. Cache Operations"
+express --> image_storage : "6. Image Storage/Retrieval"
+
+' ========== DATA FLOWS ==========
+react_app --> react_app : "Credential State\n(Shared between auth views)"
+auth_views --> cred_handler : "Email/Password Input"
+cred_handler --> express : "JSON POST Credentials"
+user_controller --> database : "User CRUD Operations"
+database --> user_controller : "User Query Results"
+express --> react_app : "Authentication Response\nContent Data\nError Indicators"
+
+' ========== SCENE COMPONENTS ==========
+package "Scene Components" {
+  component "Lobby" as lobby
+  component "SF" as sf
+  component "Louvre" as louvre
+  component "Berlin" as berlin
+  component "Milan" as milan
+  component "Rome" as rome
+  component "Hack" as hack
+  component "Camera" as camera
+  component "Sky" as sky
+  component "Plane" as plane
+  component "TextPlane" as textplane
+}
+
+scene_rendering --> lobby : includes
+scene_rendering --> sf : includes
+scene_rendering --> louvre : includes
+scene_rendering --> berlin : includes
+scene_rendering --> milan : includes
+scene_rendering --> rome : includes
+scene_rendering --> hack : includes
+scene_rendering --> camera : includes
+scene_rendering --> sky : includes
+scene_rendering --> plane : includes
+scene_rendering --> textplane : includes
+
+' ========== SECURITY COMPONENTS ==========
+component "bcrypt-nodejs" as bcrypt
+user_controller --> bcrypt : "Password Verification"
+database --> bcrypt : "Stored Password\nComparison"
+
+' ========== CONTENT FLOW ==========
+react_app --> express : "7. Title-based Content Requests"
+express --> react_app : "8. Sequential Paragraph Results\nOR Error Indicators"
+
+' ========== LEGEND ==========
+legend right
+  <b>Communication Types:</b>
+  | HTTP Requests |
+  | Data Flow |
+  | Component Usage |
+  | Security Operations |
+endlegend
+
+@enduml

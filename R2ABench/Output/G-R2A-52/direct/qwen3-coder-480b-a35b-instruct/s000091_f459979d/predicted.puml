@@ -1,0 +1,59 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Authenticated API Client" as api_client
+RECTANGLE "Backend Integration Service" as backend_service
+RECTANGLE "LwM2M Service Component" as lwm2m_component
+
+package "Spring-Based Backend" {
+    RECTANGLE "User Management Controller" as user_controller
+    RECTANGLE "User Service" as user_service
+    RECTANGLE "JWT Utility" as jwt_utility
+}
+
+package "Blockchain Integration" {
+    RECTANGLE "Ethereum Connector (Web3j)" as web3j_connector
+    RECTANGLE "Smart Contract Interface" as contract_interface
+    RECTANGLE "Client/Bootstrap Storage" as blockchain_storage
+}
+
+package "LwM2M Handling" {
+    RECTANGLE "Node Parser" as node_parser
+    RECTANGLE "LwM2M Model Types" as lwm2m_model
+}
+
+api_client --> user_controller : HTTP Requests\n(Authorization Header)
+user_controller --> jwt_utility : Validate Token
+user_controller --> user_service : Delegate Operations
+user_service --> backend_service : Internal Calls
+
+backend_service --> web3j_connector : Connect via HTTP
+web3j_connector --> contract_interface : Interact with Contracts
+contract_interface --> blockchain_storage : Store/Retrieve Data
+
+lwm2m_component --> node_parser : Provide JSON Payloads
+node_parser --> lwm2m_model : Map to Typed Structures
+
+note right of user_controller
+    Handles FR-001, FR-002
+    Enforces NFR-001
+end note
+
+note right of web3j_connector
+    Implements C-002
+    Supports FR-003, FR-004, FR-005
+    Enforces NFR-002, NFR-004
+end note
+
+note right of node_parser
+    Implements FR-006
+    Enforces NFR-003
+end note
+
+note top of contract_interface
+    Manages client/bootstrap data
+    Encodes/decodes 32-byte ASCII
+    Enforces C-005
+end note
+
+@enduml

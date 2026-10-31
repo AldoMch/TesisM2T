@@ -1,0 +1,97 @@
+@startuml
+title HypnoLog Server - Architecture Diagram
+
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<layer>> #E8F4FD
+  BorderColor<<layer>> #2980B9
+}
+
+actor "Logging Producer\n(Any Language)" as Producer
+actor "Visualization User" as VisUser
+
+node "HypnoLog Server (Node.js / Express)" {
+  package "HTTP Layer" {
+    [Express HTTP Server\n(Port 7000)] as ExpressServer
+    [JSON Body Parser\n(50mb limit)] as BodyParser
+    [Static File Server\n(/public)] as StaticServer
+  }
+
+  package "Routing Layer" {
+    [Logger Route\nPOST /logger/in\nGET /logger/status] as LoggerRoute
+    [Web UI Route\n/client.html] as WebUIRoute
+  }
+
+  package "Real-time Delivery Layer" {
+    [Socket.IO Server] as SocketIOServer
+    [Connected Client Registry] as ClientRegistry
+  }
+
+  package "Startup / CLI" {
+    [bin/www Entry Point\n(npm start / CLI aliases)] as StartupEntry
+  }
+}
+
+node "Browser Client" {
+  package "Connection Layer" {
+    [Socket.IO Client] as SocketIOClient
+  }
+
+  package "Validation Layer" {
+    [Ajv Schema Validator\n(HypnoLog Data Object)] as AjvValidator
+    [Error Wrapper\n(HypnoLog-error)] as ErrorWrapper
+  }
+
+  package "State & Dispatch Layer" {
+    [Received Data Store\n(client-side list)] as DataStore
+    [Window Dispatcher] as WindowDispatcher
+  }
+
+  package "UI Rendering Layer" {
+    [Display Window(s)] as DisplayWindow
+    [Visualizer Registry\n(canDisplay / display)] as VisualizerRegistry
+    [Tag & Name Display\nHandler] as TagNameHandler
+  }
+}
+
+package "Visualizer Plugins" {
+  [Default Visualizers] as DefaultViz
+  [User Config Visualizers] as UserViz
+}
+
+database "Visualizer Configuration\n(default + user config)" as VizConfig
+
+Producer -down-> ExpressServer : HTTP POST /logger/in\n(JSON payload)
+VisUser -down-> ExpressServer : HTTP GET /client.html
+
+ExpressServer -down-> BodyParser
+ExpressServer -down-> LoggerRoute
+ExpressServer -down-> WebUIRoute
+ExpressServer -down-> SocketIOServer : attaches to HTTP server
+
+BodyParser -right-> LoggerRoute : parsed JSON body
+
+LoggerRoute -down-> SocketIOServer : emit notification event
+
+SocketIOServer -down-> ClientRegistry : manage connections
+SocketIOServer -right-> SocketIOClient : Socket.IO notification event
+
+StartupEntry -right-> ExpressServer : starts server
+
+SocketIOClient -down-> AjvValidator : validate received message
+AjvValidator -down-> ErrorWrapper : on validation failure
+AjvValidator -down-> DataStore : on valid message
+ErrorWrapper -down-> DataStore : HypnoLog-error object
+
+DataStore -down-> WindowDispatcher : dispatch to all windows
+WindowDispatcher -down-> DisplayWindow : display(logObject)
+DisplayWindow -down-> VisualizerRegistry : find first canDisplay match
+VisualizerRegistry -down-> TagNameHandler : handle tags / name field
+
+VizConfig -up-> VisualizerRegistry : load visualizers
+DefaultViz -up-> VizConfig
+UserViz -up-> VizConfig
+
+StaticServer -right-> WebUIRoute : serve /public assets
+
+@enduml

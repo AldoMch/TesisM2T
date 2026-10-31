@@ -1,0 +1,112 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  ArrowColor #333333
+  FontColor #333333
+}
+
+title System Architecture: Help With COVID Session and Task Workflow
+
+package "External Systems" {
+  [Firebase Authentication] as FIREBASE_AUTH
+  [OnFleet Task Handling] as ONFLEET
+  [End-User Channels\n(Text/Call)] as CHANNELS
+}
+
+package "Frontend" {
+  [Next.js Application] as NEXTJS_APP
+  [Firebase Session Handler] as SESSION_HANDLER
+  [Frontend Form] as FRONTEND_FORM
+}
+
+package "Middleware" {
+  [Session Middleware] as SESSION_MIDDLEWARE
+  [Task Request Middleware] as TASK_MIDDLEWARE
+  [Address-to-Neighborhood Handler] as ADDRESS_HANDLER
+  [Service-Area Check] as SERVICE_AREA_CHECK
+}
+
+package "Backend" {
+  [Firebase Functions\n(Custom APIs)] as FIREBASE_FUNCS
+  [Login API Handler] as LOGIN_API
+  [Logout API Handler] as LOGOUT_API
+  [Backend Task Handler] as BACKEND_TASK_HANDLER
+}
+
+package "Configuration" {
+  [Environment Variables] as ENV_VARS
+  [Firebase Runtime Config] as FIREBASE_CONFIG
+}
+
+' External System Connections
+FIREBASE_AUTH --> SESSION_HANDLER : Provides ID Token
+CHANNELS --> TASK_MIDDLEWARE : Submit Task Requests
+ONFLEET <-- BACKEND_TASK_HANDLER : Create Tasks
+
+' Frontend Internal Connections
+NEXTJS_APP --> SESSION_HANDLER : Passes User Object
+NEXTJS_APP --> FRONTEND_FORM : Renders Form
+FRONTEND_FORM --> TASK_MIDDLEWARE : Submit Task Requests
+
+' Session Flow
+SESSION_HANDLER --> LOGIN_API : POST /api/login\n{ token }
+SESSION_HANDLER --> LOGOUT_API : POST /api/logout
+LOGIN_API --> SESSION_MIDDLEWARE : Wrapped by\nSession Support
+SESSION_MIDDLEWARE --> FIREBASE_AUTH : Verify ID Token
+SESSION_MIDDLEWARE --> LOGIN_API : Provides Session Object
+
+' Task Workflow
+TASK_MIDDLEWARE --> ADDRESS_HANDLER : Process Address
+ADDRESS_HANDLER --> SERVICE_AREA_CHECK : Determine Neighborhood
+SERVICE_AREA_CHECK --> TASK_MIDDLEWARE : Operated-Area Decision
+TASK_MIDDLEWARE --> BACKEND_TASK_HANDLER : Eligible Requests
+
+' Backend Internal Connections
+FIREBASE_FUNCS --> LOGIN_API : Hosts API
+FIREBASE_FUNCS --> LOGOUT_API : Hosts API
+FIREBASE_FUNCS --> BACKEND_TASK_HANDLER : Hosts Handler
+
+' Configuration Flow
+ENV_VARS --> FIREBASE_CONFIG : Loads Values
+FIREBASE_CONFIG --> NEXTJS_APP : Provides Config
+FIREBASE_CONFIG --> FIREBASE_FUNCS : Provides Config
+FIREBASE_CONFIG --> SESSION_MIDDLEWARE : Provides Config
+
+' Notes
+note top of SESSION_HANDLER
+  FR-001: Calls user.getIdToken()
+  FR-002: Sends logout when user absent
+  NFR-002: Same-origin credentials
+end note
+
+note right of LOGIN_API
+  FR-003: Validates request body
+  FR-004: Extracts token
+  FR-005: Verifies Firebase token
+  FR-006: Stores auth data in session
+  FR-007: Returns success response
+  NFR-001: JSON content type
+end note
+
+note bottom of TASK_MIDDLEWARE
+  FR-010: Accepts requests from channels/form
+  FR-011: Processes address/service-area
+  NFR-004: Modular separation
+end note
+
+note left of BACKEND_TASK_HANDLER
+  FR-012: Creates OnFleet tasks
+  for eligible requests
+end note
+
+note left of ENV_VARS
+  FR-008: Exposes Firebase config
+  NFR-003: Externalized configuration
+  CON-001: Provided in project setup
+end note
+
+@enduml

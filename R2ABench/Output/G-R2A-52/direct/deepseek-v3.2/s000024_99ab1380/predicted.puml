@@ -1,0 +1,118 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+}
+
+title OCI Jenkins Terraform Deployment System Architecture
+
+package "Deployment Operator Environment" {
+  [Deployment Operator] as Operator
+  [Terraform CLI] as TerraformCLI
+  [SSH Key Material] as SSHKeys
+  [Terraform Variable Files] as VarFiles
+  [JSON Input Files] as JSONFiles
+}
+
+package "Oracle Cloud Infrastructure (OCI)" {
+  [OCI Tenancy] as Tenancy
+  [OCI Compartment] as Compartment
+  [OCI Identity & Access Mgmt] as IAM
+  [OCI Region] as Region
+
+  package "Networking (VCN)" as VCN {
+    [Public Subnet] as PubSubnet
+    [Private Subnet(s)] as PrivSubnet
+    [Route Tables] as Routes
+    [Security Lists] as SecLists
+    [DHCP Options] as DHCP
+    [NAT Gateway] as NAT
+    [Load Balancer] as LoadBalancer
+    [Bastion Host] as Bastion
+  }
+
+  package "Compute" {
+    [Jenkins Master Instance] as JenkinsMaster
+    [Jenkins Slave Instances] as JenkinsSlaves
+  }
+}
+
+package "Configuration & Data" {
+  [OCI Credentials\n(tenancy_ocid, user_ocid,\n fingerprint, private_key_path)] as OCICreds
+  [SSH Access Config\n(ssh_authorized_keys,\n ssh_private_key)] as SSHConfig
+  [Jenkins Cluster Config\n(label_prefix, version,\n password, ports, plugins)] as JenkinsClusterConfig
+  [Master Config\n(ad, subnet_id, shape,\n image_id, user_data)] as MasterConfig
+  [Slave Config\n(count, ads, subnet_ids,\n shape, image_id, user_data)] as SlaveConfig
+  [Bastion Config\n(host, user, private_key)] as BastionConfig
+  [Cloud-Init Data\n(base64 encoded)] as CloudInit
+}
+
+' User/Operator Interactions
+Operator --> VarFiles : "Updates"
+Operator --> TerraformCLI : "Executes Commands\n(init, plan, apply)"
+Operator --> SSHKeys : "Provides"
+
+' Configuration Flow
+VarFiles --> OCICreds : "Supplies"
+VarFiles --> SSHConfig : "Supplies"
+VarFiles --> JenkinsClusterConfig : "Supplies"
+VarFiles --> MasterConfig : "Supplies"
+VarFiles --> SlaveConfig : "Supplies"
+VarFiles --> BastionConfig : "Supplies (Private Network)"
+JSONFiles --> VarFiles : "Example/Test Inputs"
+
+' Terraform Execution Flow
+TerraformCLI --> Tenancy : "Authenticates via\nOCI Credentials"
+TerraformCLI --> Compartment : "Targets Deployment"
+TerraformCLI --> IAM : "Uses Permissions"
+TerraformCLI --> Region : "Deploys to"
+
+' Infrastructure Provisioning
+TerraformCLI --> VCN : "Uses/References Existing"
+TerraformCLI --> PubSubnet : "Deploys Master to"
+TerraformCLI --> PrivSubnet : "Deploys Slaves to"
+TerraformCLI --> JenkinsMaster : "Creates"
+TerraformCLI --> JenkinsSlaves : "Creates (slave_count)"
+
+' Instance Configuration
+JenkinsMaster --> SSHConfig : "Applies Authorized Key"
+JenkinsSlaves --> SSHConfig : "Applies Authorized Key"
+JenkinsMaster --> CloudInit : "Executes (master_user_data)"
+JenkinsSlaves --> CloudInit : "Executes (slave_user_data)"
+JenkinsMaster --> MasterConfig : "Configured via"
+JenkinsSlaves --> SlaveConfig : "Configured via"
+
+' Networking & Communication
+JenkinsMaster --> PubSubnet : "VNIC Attached"
+JenkinsSlaves --> PrivSubnet : "VNIC Attached"
+PrivSubnet --> NAT : "Outbound via"
+Bastion --> PrivSubnet : "Access Mediation"
+LoadBalancer --> PubSubnet : "Frontend"
+LoadBalancer --> JenkinsMaster : "Proxies (Optional)"
+JenkinsMaster --> JenkinsSlaves : "JNLP Communication\n(jnlp_port)"
+
+' Security & Access
+Routes --> VCN : "Controls Traffic"
+SecLists --> VCN : "Defines Rules"
+DHCP --> VCN : "Provides Config"
+Bastion --> BastionConfig : "Configured via"
+Operator --> Bastion : "SSH Access via Bastion"
+
+note right of PrivSubnet
+  Private Network Prerequisites:
+  - NAT Gateway for outbound
+  - Bastion Host for access
+  - Load Balancer (if public access needed)
+end note
+
+note left of TerraformCLI
+  Deployment Sequence:
+  1. terraform init
+  2. terraform plan
+  3. terraform apply
+end note
+
+@enduml

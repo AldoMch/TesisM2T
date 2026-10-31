@@ -1,0 +1,95 @@
+@startuml
+title Self-Driving Car System Architecture - Component/Deployment Diagram
+
+' === Deployment Nodes ===
+node "Udacity Capstone Simulator" as simulator
+node "Docker Container Environment" as docker {
+    node "ROS Environment" as ros {
+        package "Perception Layer" as perception {
+            component "TrafficLightDetector" as tld
+        }
+
+        package "Planning Layer" as planning {
+            component "WaypointLoader" as wpl
+            component "WaypointUpdater" as wpu
+        }
+
+        package "Control Layer" as control {
+            component "WaypointFollower" as wpf
+            component "DBWController" as dbw
+        }
+
+        component "StyxLaunch" as styx_launch
+        component "SiteLaunch" as site_launch
+    }
+}
+
+database "RecordedTrainingBagPlayback" as bagplayback
+
+' === ROS Core ===
+folder "ROS Core" {
+    [roscore] as roscore
+}
+
+' === Topics ===
+artifact "/current_pose" as current_pose_topic
+artifact "/vehicle/commands" as vehicle_commands_topic
+artifact "/base_waypoints" as base_waypoints_topic
+artifact "/final_waypoints" as final_waypoints_topic
+artifact "/traffic_waypoint" as traffic_waypoint_topic
+artifact "/image_color" as image_color_topic
+artifact "/vehicle/dbw_enabled" as dbw_enabled_topic
+artifact "/twist_cmd" as twist_cmd_topic
+
+' === Connections ===
+' Launch files
+styx_launch --> tld : launch config
+styx_launch --> wpl : launch config
+styx_launch --> wpu : launch config
+styx_launch --> wpf : launch config
+styx_launch --> dbw : launch config
+
+site_launch --> tld : launch config
+site_launch --> wpl : launch config
+site_launch --> wpu : launch config
+site_launch --> wpf : launch config
+site_launch --> dbw : launch config
+
+' Perception to Planning
+tld --> traffic_waypoint_topic : publish
+traffic_waypoint_topic --> wpu : subscribe
+
+' Planning internal connections
+wpl --> base_waypoints_topic : publish
+base_waypoints_topic --> wpu : subscribe
+base_waypoints_topic --> wpf : subscribe
+
+wpu --> final_waypoints_topic : publish
+final_waypoints_topic --> wpf : subscribe
+
+' Control layer connections
+wpf --> twist_cmd_topic : publish
+twist_cmd_topic --> dbw : subscribe
+
+dbw --> vehicle_commands_topic : publish
+vehicle_commands_topic --> wpf : subscribe
+
+' Pose feedback
+wpf --> current_pose_topic : publish
+current_pose_topic --> wpu : subscribe
+current_pose_topic --> wpf : subscribe
+
+' Simulator connections via topics
+simulator --> image_color_topic : publish
+image_color_topic --> tld : subscribe
+
+simulator --> dbw_enabled_topic : publish
+dbw_enabled_topic --> dbw : subscribe
+
+' ROS core connections
+ros --> roscore : uses
+
+' Data playback
+bagplayback --> image_color_topic : publish
+
+@enduml

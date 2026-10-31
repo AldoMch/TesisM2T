@@ -1,0 +1,241 @@
+{
+  "requirements": [
+    {
+      "id": "AwesomeMusic-R001",
+      "description": "The system shall support user account registration and login with identity validation, duplicate-account checks, and failure feedback."
+    },
+    {
+      "id": "AwesomeMusic-R002",
+      "description": "The system shall support favoriting and unfavoriting scores, following and unfollowing users, and favoriting models and managing personal model lists, and shall persist the corresponding favorite and follow records."
+    },
+    {
+      "id": "AwesomeMusic-R003",
+      "description": "The system shall support web-based score generation from a selected model and source music, and support uploading generated scores for persistent storage."
+    },
+    {
+      "id": "AwesomeMusic-R004",
+      "description": "The system shall support score search by song name, hot-chart browsing, and score download as content discovery and retrieval functions."
+    },
+    {
+      "id": "AwesomeMusic-R005",
+      "description": "The system shall support retrieving personalized recommendation lists based on user favorites, follows, and similarity information, with random fallback when no playlist exists."
+    },
+    {
+      "id": "AwesomeMusic-R006",
+      "description": "The algorithm service shall support daily training and update of per-user generation models from user playlists, including midi-to-abc preprocessing, model-parameter persistence, and exception notification to the scheduler when midi conversion fails."
+    },
+    {
+      "id": "AwesomeMusic-R007",
+      "description": "The algorithm module shall generate a MIDI score from a seed score through conversion, track-seed extraction, and generation, retry failed conversion, and notify the backend to restore model parameters after two failed attempts."
+    },
+    {
+      "id": "AwesomeMusic-R008",
+      "description": "The algorithm service shall support classifying all scores using generated score representations, persisting classification labels, and notifying the backend when midi conversion fails."
+    },
+    {
+      "id": "AwesomeMusic-R009",
+      "description": "The system shall update score hot charts and user hot charts based on attention and popularity rules."
+    },
+    {
+      "id": "AwesomeMusic-R008",
+      "description": "The algorithm service shall support classifying all scores using generated score representations, persisting classification labels, and notifying the backend when midi conversion fails."
+    },
+    {
+      "id": "AwesomeMusic-R010",
+      "description": "The scheduling module shall orchestrate daily and user-triggered tasks through queue submission, status polling, logging, and retry handling for training, classification, recommendation, and generation jobs."
+    },
+    {
+      "id": "AwesomeMusic-R014",
+      "description": "The system shall use replicated storage and remain usable during partial failures."
+    },
+    {
+      "id": "AwesomeMusic-R015",
+      "description": "The system shall present simple, beginner-friendly interactions with instructions, prompts, and guidance."
+    }
+  ],
+  "components": [
+    {
+      "id": "CMP_FRONTEND_UI",
+      "name": "Web Presentation Module",
+      "layer": "presentation",
+      "responsibility": "Provide beginner-friendly user interface, interaction guidance, prompts, score generation controls, search/browse catalog, and account access.",
+      "tracesTo": [
+        "AwesomeMusic-R003",
+        "AwesomeMusic-R004",
+        "AwesomeMusic-R015"
+      ]
+    },
+    {
+      "id": "CMP_USER_AUTH_SVC",
+      "name": "User and Social Management Service",
+      "layer": "business",
+      "responsibility": "Manage user accounts, validation, authentication, favorites, follows, and personal model listings.",
+      "tracesTo": [
+        "AwesomeMusic-R001",
+        "AwesomeMusic-R002"
+      ]
+    },
+    {
+      "id": "CMP_SCORE_SVC",
+      "name": "Score Catalog Service",
+      "layer": "business",
+      "responsibility": "Handle score search, retrieval, download, generated score upload, and parameter state restoration notifications.",
+      "tracesTo": [
+        "AwesomeMusic-R002",
+        "AwesomeMusic-R003",
+        "AwesomeMusic-R004",
+        "AwesomeMusic-R007"
+      ]
+    },
+    {
+      "id": "CMP_RANKING_SVC",
+      "name": "Hot-Chart and Popularity Service",
+      "layer": "business",
+      "responsibility": "Compute and update score and user hot charts according to popularity rules and attention metrics.",
+      "tracesTo": [
+        "AwesomeMusic-R004",
+        "AwesomeMusic-R009"
+      ]
+    },
+    {
+      "id": "CMP_RECOMMENDATION_SVC",
+      "name": "Personalized Recommendation Service",
+      "layer": "business",
+      "responsibility": "Generate personalized score recommendations using user history, follows, and similarity info with random fallback.",
+      "tracesTo": [
+        "AwesomeMusic-R005"
+      ]
+    },
+    {
+      "id": "CMP_SCHEDULER_SVC",
+      "name": "Task Scheduling and Orchestration Service",
+      "layer": "orchestration",
+      "responsibility": "Orchestrate scheduled and user-triggered jobs via task queues, handle polling, retries, logs, and failure notifications.",
+      "tracesTo": [
+        "AwesomeMusic-R006",
+        "AwesomeMusic-R007",
+        "AwesomeMusic-R008",
+        "AwesomeMusic-R010"
+      ]
+    },
+    {
+      "id": "CMP_ALGO_TRAIN_SVC",
+      "name": "Model Training Algorithm Service",
+      "layer": "algorithm",
+      "responsibility": "Preprocess playlists (MIDI-to-ABC), train per-user generation models, persist model parameters, and report conversion exceptions.",
+      "tracesTo": [
+        "AwesomeMusic-R006"
+      ]
+    },
+    {
+      "id": "CMP_ALGO_GEN_SVC",
+      "name": "Score Generation Algorithm Service",
+      "layer": "algorithm",
+      "responsibility": "Generate MIDI scores from seed scores via conversion and track-seed extraction, manage conversion retries, and trigger parameter restoration.",
+      "tracesTo": [
+        "AwesomeMusic-R003",
+        "AwesomeMusic-R007"
+      ]
+    },
+    {
+      "id": "CMP_ALGO_CLASS_SVC",
+      "name": "Score Classification Algorithm Service",
+      "layer": "algorithm",
+      "responsibility": "Classify scores using score representations, persist labels, and notify backend/scheduler on midi conversion failures.",
+      "tracesTo": [
+        "AwesomeMusic-R008"
+      ]
+    },
+    {
+      "id": "CMP_REPLICATED_STORAGE",
+      "name": "Replicated Data and Storage Layer",
+      "layer": "data",
+      "responsibility": "Persist user records, scores, model parameters, labels, and social graphs across replicated nodes to endure partial failures.",
+      "tracesTo": [
+        "AwesomeMusic-R001",
+        "AwesomeMusic-R002",
+        "AwesomeMusic-R003",
+        "AwesomeMusic-R006",
+        "AwesomeMusic-R008",
+        "AwesomeMusic-R014"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "source": "CMP_FRONTEND_UI",
+      "target": "CMP_USER_AUTH_SVC",
+      "type": "https_api"
+    },
+    {
+      "source": "CMP_FRONTEND_UI",
+      "target": "CMP_SCORE_SVC",
+      "type": "https_api"
+    },
+    {
+      "source": "CMP_FRONTEND_UI",
+      "target": "CMP_RANKING_SVC",
+      "type": "https_api"
+    },
+    {
+      "source": "CMP_FRONTEND_UI",
+      "target": "CMP_RECOMMENDATION_SVC",
+      "type": "https_api"
+    },
+    {
+      "source": "CMP_SCORE_SVC",
+      "target": "CMP_SCHEDULER_SVC",
+      "type": "async_task_submission"
+    },
+    {
+      "source": "CMP_SCHEDULER_SVC",
+      "target": "CMP_ALGO_TRAIN_SVC",
+      "type": "job_dispatch_and_polling"
+    },
+    {
+      "source": "CMP_SCHEDULER_SVC",
+      "target": "CMP_ALGO_GEN_SVC",
+      "type": "job_dispatch_and_polling"
+    },
+    {
+      "source": "CMP_SCHEDULER_SVC",
+      "target": "CMP_ALGO_CLASS_SVC",
+      "type": "job_dispatch_and_polling"
+    },
+    {
+      "source": "CMP_ALGO_GEN_SVC",
+      "target": "CMP_SCORE_SVC",
+      "type": "status_callback"
+    },
+    {
+      "source": "CMP_USER_AUTH_SVC",
+      "target": "CMP_REPLICATED_STORAGE",
+      "type": "database_persistence"
+    },
+    {
+      "source": "CMP_SCORE_SVC",
+      "target": "CMP_REPLICATED_STORAGE",
+      "type": "database_persistence"
+    },
+    {
+      "source": "CMP_RANKING_SVC",
+      "target": "CMP_REPLICATED_STORAGE",
+      "type": "database_persistence"
+    },
+    {
+      "source": "CMP_RECOMMENDATION_SVC",
+      "target": "CMP_REPLICATED_STORAGE",
+      "type": "database_query"
+    },
+    {
+      "source": "CMP_ALGO_TRAIN_SVC",
+      "target": "CMP_REPLICATED_STORAGE",
+      "type": "model_artifact_persistence"
+    },
+    {
+      "source": "CMP_ALGO_CLASS_SVC",
+      "target": "CMP_REPLICATED_STORAGE",
+      "type": "metadata_persistence"
+    }
+  ]
+}

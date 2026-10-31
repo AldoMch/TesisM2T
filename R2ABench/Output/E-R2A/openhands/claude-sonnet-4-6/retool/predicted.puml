@@ -1,0 +1,79 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor White
+skinparam defaultFontName Arial
+skinparam node {
+  BackgroundColor LightYellow
+  BorderColor DarkGoldenRod
+}
+skinparam component {
+  BackgroundColor LightBlue
+  BorderColor Navy
+}
+skinparam database {
+  BackgroundColor LightGreen
+  BorderColor DarkGreen
+}
+
+title ReTool System Architecture
+
+node "Client\n(Windows 10 64-bit, Chrome 81+)" as clientNode {
+  [Vue.js Frontend] as frontend
+}
+
+node "Local Computer" as localNode {
+  [API Gateway] as gateway
+
+  component "User Management Service\n(Flask)" as userSvc {
+    [User Registration & Login]
+    [Password Management]
+    [User Role Management]
+    [User List & Admin Functions]
+  }
+
+  component "Project Management Service\n(Flask)" as projectSvc {
+    [Project CRUD]
+    [Project Member Management]
+    [Project Role Management]
+    [Baseline Node Management]
+  }
+
+  component "Requirements Management Service\n(Flask)" as reqSvc {
+    [Requirement Item CRUD]
+    [Requirement Item Tree]
+    [Word Document Import]
+    [Forward Tracing]
+    [Requirement Analysis Entry]
+  }
+
+  database "MongoDB" as mongodb {
+    [Users & Roles]
+    [Projects & Members]
+    [Requirement Items & Tree]
+    [Baselines & Tracing]
+    [Analysis Results]
+    [Logs]
+  }
+}
+
+node "Server\n(EC2 t2.xlarge, Amazon Linux 2)" as serverNode {
+  component "Algorithm Service\n(Flask + NLP + PyTorch + Word2vec)" as algoSvc {
+    [Requirement Itemization]
+    [Requirement Structuring]
+    [Common Requirement Identification]
+    [Conflict Detection]
+    [Association Analysis]
+  }
+}
+
+frontend -down-> gateway : HTTP / Network
+gateway -down-> userSvc
+gateway -down-> projectSvc
+gateway -down-> reqSvc
+reqSvc -right-> algoSvc : Network
+userSvc -down-> mongodb : CRUD
+projectSvc -down-> mongodb : CRUD
+reqSvc -down-> mongodb : CRUD
+algoSvc -down-> mongodb : CRUD
+
+@enduml

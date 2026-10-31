@@ -1,0 +1,141 @@
+@startuml
+' Configuration Anomaly Detection (CAD) System Architecture
+' Generated from Software Requirements Specification
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #F5F5F5
+skinparam defaultFontName Arial
+skinparam defaultFontSize 11
+
+title Configuration Anomaly Detection (CAD) System Architecture
+
+' === External Systems ===
+rectangle "External Alert System" as external_alert #FFE4B5 {
+}
+
+rectangle "PagerDuty" as pagerduty #FFCCCC {
+}
+
+rectangle "AWS" as aws #CCFFCC {
+}
+
+rectangle "OCM" as ocm #CCCCFF {
+}
+
+' === User Interfaces ===
+rectangle "CLI (cadctl)" as cli #FFE4B5 {
+}
+
+rectangle "Deployment Engineer" as deployment_engineer #E6E6FA {
+}
+
+rectangle "SRE/Operations User" as sre_user #E6E6FA {
+}
+
+rectangle "Developer/Contributor" as developer #E6E6FA {
+}
+
+' === Core CAD Components ===
+package "CAD System" {
+  
+  component "CAD Container Runtime" as cad_container #D3D3D3 {
+    component "/bin/cadctl" as cadctl_binary #FFE4B5
+    note right of cadctl_binary: Container image\nUBI minimal base\nGo 1.17 builder
+  }
+  
+  component "Integration Library" as integration_lib #D8BFD8 {
+    component "PagerDuty Integration" as pd_integration #FFCCCC
+    component "AWS Integration" as aws_integration #CCFFCC
+    component "OCM Integration" as ocm_integration #CCCCFF
+  }
+  
+  component "Template Update Utility" as template_util #E6E6FA {
+  }
+  
+  component "CHGM Workflow Engine" as chgm_engine #FFE4B5 {
+    note right: Cluster Has Gone Missing\nanomaly detection\nand communication
+  }
+  
+  component "Mitigation & Disposition Handler" as mitigation_handler #FFE4B5 {
+    note right: Support-status handling\nalert silencing/escalation\nfollow-up event handling
+  }
+}
+
+' === Tekton Execution Environment ===
+package "Tekton Execution Environment" {
+  component "Tekton EventListener" as event_listener #ADD8E6 {
+    note right: Receives alert webhooks\ntriggers pipeline execution
+  }
+  
+  component "Tekton Trigger" as tekton_trigger #ADD8E6 {
+  }
+  
+  component "Tekton PipelineRun" as pipeline_run #ADD8E6 {
+    note right: Executes CAD checks\nconfiguration-anomaly-detection namespace\ncad-checks-pipeline
+  }
+  
+  database "PipelineRun Manifest" as pipeline_manifest #D3D3D3 {
+    note right: YAML manifest\nJSON payload parameter\nevent.data.id field
+  }
+}
+
+' === Data Formats ===
+rectangle "JSON Payload" as json_payload #E6E6FA {
+  note right: Contains event.data.id\nDirect execution input
+}
+
+rectangle "YAML Manifests" as yaml_manifests #E6E6FA {
+  note right: Deployment assets\nDirect-execution assets
+}
+
+rectangle "Alert Webhook Payload" as alert_payload #E6E6FA {
+  note right: Standard event-driven\npath input
+}
+
+' === Relationships ===
+' User interactions
+sre_user --> cli : "invokes"
+deployment_engineer --> pipeline_manifest : "creates"
+developer --> template_util : "updates"
+
+' CLI interactions
+cli --> cadctl_binary : "executes"
+cadctl_binary --> integration_lib : "uses"
+cadctl_binary --> chgm_engine : "executes"
+cadctl_binary --> mitigation_handler : "triggers"
+
+' Integration connections
+pd_integration --> pagerduty : "communicates with"
+aws_integration --> aws : "communicates with"
+ocm_integration --> ocm : "communicates with"
+
+' Standard execution path
+external_alert --> alert_payload : "sends"
+alert_payload --> event_listener : "triggers"
+event_listener --> tekton_trigger : "activates"
+tekton_trigger --> pipeline_run : "creates"
+pipeline_run --> cad_container : "executes"
+
+' Skip-webhook execution path
+deployment_engineer --> pipeline_manifest : "creates"
+pipeline_manifest --> json_payload : "contains"
+pipeline_manifest --> pipeline_run : "defines"
+
+' Container relationships
+cad_container --> chgm_engine : "contains"
+cad_container --> mitigation_handler : "contains"
+cad_container --> integration_lib : "contains"
+
+' Template utility
+template_util --> yaml_manifests : "updates"
+
+' === Legend ===
+legend right
+  <color:#ADD8E6>Tekton Components</color>
+  <color:#FFE4B5>CAD Core Components</color>
+  <color:#D8BFD8>Integration Components</color>
+  <color:#E6E6FA>Data/User Components</color>
+  <color:#FFCCCC>External Systems</color>
+endlegend
+
+@enduml

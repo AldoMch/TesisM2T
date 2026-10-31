@@ -1,0 +1,137 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadow false
+left to right direction
+
+title torc_py Task-Based Parallelism Library - System Architecture
+
+actor "Python Application Developer" as Dev
+actor "HPC / MPI User" as HPC
+actor "Tester" as Tester
+
+rectangle "Application and Example Layer" {
+  component "Python Application" as App
+  component "Master-Worker Example" as ExMW
+  component "SPMD Switch Example" as ExSPMD
+  component "Numerical Optimization Example" as ExOpt
+  component "Image Preprocessing Example" as ExImg
+}
+
+rectangle "torc Python Package (import torc)" {
+  component "Public Tasking API" as API
+  component "Submission and Map Controller" as SubmitMap
+  component "Wait and Completion Iterator" as WaitComp
+  component "Task Descriptor / Future" as Future
+  component "Callback Dispatcher" as Callback
+  component "SPMD Runtime" as SPMD
+  component "Lifecycle Manager" as Lifecycle
+  component "Runtime Query Service" as Query
+  component "Configuration Reader" as Config
+}
+
+rectangle "Execution Runtime" {
+  component "Task Scheduler" as Scheduler
+  component "Worker Queue Manager" as QueueMgr
+  component "Worker Thread Pool" as WorkerPool
+  component "Task Stealing Manager" as Stealing
+  component "MPI Coordinator / Server" as MPIServer
+  component "MPI Communication Layer" as MPIComm
+  component "Timing Service" as Timer
+}
+
+database "Worker Queues" as Queues
+database "Task Input / Result Store" as TaskStore
+database "HDF5 Output File" as HDF5
+
+cloud "MPI Runtime / mpi4py" as MPIRuntime
+cloud "Python Runtime / Threading" as PyRuntime
+cloud "Environment Variables" as Env
+cloud "Optional Example Packages" as OptPkgs
+
+Dev --> API
+HPC --> API
+Tester --> API
+App --> API
+ExMW --> API
+ExSPMD --> API
+ExOpt --> API
+ExImg --> API
+
+API --> SubmitMap
+API --> WaitComp
+API --> Future
+API --> Callback
+API --> SPMD
+API --> Lifecycle
+API --> Query
+API --> Config
+
+SubmitMap --> Scheduler : submit task
+SubmitMap --> Future : create descriptor
+WaitComp --> Scheduler : wait for tasks
+WaitComp --> Future : retrieve result
+Callback --> Future : completed descriptor
+Callback --> Scheduler : schedule callback
+SPMD --> MPIServer : execute on all ranks
+SPMD --> MPIComm : application MPI routines
+Lifecycle --> Scheduler : init / launch / shutdown
+Query --> Scheduler : worker and node queries
+Config --> Env : read TORC_* settings
+Config --> Scheduler : apply runtime configuration
+
+Scheduler --> QueueMgr : enqueue / dequeue
+Scheduler --> WorkerPool : dispatch tasks
+Scheduler --> MPIServer : coordinate ranks
+QueueMgr --> Queues : manage task entries
+QueueMgr --> Stealing : empty local queue
+Stealing --> MPIComm : steal request / response
+Stealing --> QueueMgr : retrieve stolen task
+WorkerPool --> Future : execute function
+WorkerPool --> TaskStore : input / result values
+WorkerPool --> MPIServer : return task results
+WorkerPool --> Timer : timing
+MPIServer --> MPIComm : internal MPI messages
+MPIComm --> MPIRuntime
+MPIServer --> MPIRuntime
+Future --> TaskStore : input() / result()
+TaskStore --> Queues : task entries
+ExImg --> HDF5 : write preprocessed data
+ExImg --> OptPkgs : numpy / pillow / h5py
+ExOpt --> OptPkgs : numpy / cma
+App --> PyRuntime
+
+note right of API
+  API-001 submit
+  API-002 wait
+  API-003 task.input()
+  API-004 task.result()
+  API-005 map
+  API-006 as_completed
+  API-007 callback
+  API-008 start
+  API-009 init
+  API-010 launch
+  API-011 shutdown
+  API-012 spmd
+  API-013 enable/disable_stealing
+  API-014 gettime
+  API-015 worker_id/num_workers
+  API-016 node_id/num_nodes
+end note
+
+note bottom of Config
+  TORC_WORKERS, TORC_STEALING,
+  TORC_SERVER_YIELDTIME,
+  TORC_WORKER_YIELDTIME
+end note
+
+note bottom of Stealing
+  FR-008, NFR-004, CI-003, DR-005
+end note
+
+note bottom of Scheduler
+  FR-001, FR-002, FR-004, FR-005,
+  FR-006, FR-010, FR-011
+end note
+
+@enduml

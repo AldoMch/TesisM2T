@@ -1,0 +1,30 @@
+@startuml
+component "Audit Logging & Monitoring Service" as COMPAUDIT
+component "Identity & Access Management Service" as COMPAUTH
+component "Consistency Detection Engine" as COMPDETECTOR
+component "Design Artifact Storage & File Manager" as COMPFILE
+component "API Gateway & Security Proxy" as COMPGATEWAY
+component "Help Center & Sample Data Service" as COMPHELP
+component "Asynchronous Message Broker & Task Dispatcher" as COMPJOBBROKER
+component "Model Alignment & Mapping Service" as COMPMAPPER
+component "Multi-Format Parsing Engine" as COMPPARSER
+component "Repair Recommendation Service" as COMPREPAIRADVISOR
+component "Repair Execution & Orchestration Engine" as COMPREPAIREXEC
+component "History & Report Management Service" as COMPREPORT
+component "Rule & Exclusion Configuration Service" as COMPRULE
+COMPDETECTOR --> COMPMAPPER : Database/RPC
+COMPDETECTOR --> COMPREPAIRADVISOR : REST/RPC
+COMPDETECTOR --> COMPREPORT : REST/Event
+COMPDETECTOR --> COMPRULE : REST/RPC
+COMPFILE --> COMPPARSER : REST/RPC
+COMPGATEWAY --> COMPAUDIT : Asynchronous Event Stream
+COMPGATEWAY --> COMPAUTH : gRPC/HTTPS
+COMPGATEWAY --> COMPFILE : HTTPS/REST
+COMPGATEWAY --> COMPHELP : HTTPS/REST
+COMPGATEWAY --> COMPJOBBROKER : AMQP/Message Queue
+COMPGATEWAY --> COMPRULE : HTTPS/REST
+COMPJOBBROKER --> COMPDETECTOR : Message Queue Consumer
+COMPJOBBROKER --> COMPREPAIREXEC : Message Queue Consumer
+COMPPARSER --> COMPMAPPER : gRPC
+COMPREPAIREXEC --> COMPREPORT : REST/Event
+@enduml

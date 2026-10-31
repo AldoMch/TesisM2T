@@ -1,0 +1,121 @@
+@startuml
+title veinmind-tools Layered Component/Deployment Diagram
+
+package "CLI / Interface Layer" {
+  component "scan-image command" as ScanImage
+  component "scan-container command" as ScanContainer
+  component "scan-iac command" as ScanIac
+}
+
+package "Runner / Execution Layer" {
+  component "Parallel-container startup script:\nscan-host image" as QuickStartImage
+  component "Parallel-container startup script:\nscan-host container" as QuickStartContainer
+  component "Parallel-container startup script:\nscan-host iac" as QuickStartIac
+  component "veinmind-runner" as Runner
+}
+
+package "Scanning / Application Logic Layer" {
+  component "Image scanning logic" as ImageScanLogic
+  component "Container scanning logic" as ContainerScanLogic
+  component "IaC scanning tool" as IacScanTool
+  component "IaC input" as IacInput
+  database "Policy libraries" as PolicyLibs
+}
+
+package "SDK / Integration Layer" {
+  component "SDK-backed tool/plugin commands" as SdkCommands
+}
+
+package "Authorization Routing Layer" {
+  component "Docker authorization routing component" as DockerAuthRouting
+  component "Docker plugin action result model" as DockerPluginActionResult
+  component "Authorization request method" as AuthRequestMethod
+  component "Authorization request URI" as AuthRequestUri
+  database "Configured route patterns" as RoutePatterns
+}
+
+package "Reporting / Data Layer" {
+  component "Report event client" as ReportEventClient
+  database "MaliciousFileInfo" as MaliciousFileInfo
+  database "ReportData" as ReportData
+  database "ReportImage" as ReportImage
+  database "ReportLayer" as ReportLayer
+  database "IaC rule metadata" as IacRuleMetadata
+  database "IaC file-location detail" as IacFileLocationDetail
+  database "IaC alert detail" as IacAlertDetail
+}
+
+package "Plugin / Packaging Layer" {
+  package "Python example package" as PythonExamplePkg {
+    component "/tool/entrypoint.sh" as PyEntrypoint
+    component "python scan.py" as PyScan
+    component "requirements.txt dependency install" as PyRequirements
+  }
+}
+
+cloud "External Systems" {
+  component "Docker" as Docker
+  component "Containerd (compatibility)" as Containerd
+  component "DockerHub" as DockerHub
+  component "Docker Registry" as DockerRegistry
+  component "Harbor" as Harbor
+  component "veinmind-sdk / libveinmind" as VeinmindSdk
+  component "veinmind/python3.6:1.3.1-stretch base image" as BaseImage
+}
+
+QuickStartImage --> Runner : starts runner for image tool
+QuickStartContainer --> Runner : starts runner for container tool
+QuickStartIac --> Runner : starts runner for IaC tool
+
+Runner --> ScanImage : dispatches documented image tool
+Runner --> ScanContainer : dispatches documented container tool
+Runner --> ScanIac : dispatches documented IaC tool
+Runner --> Docker : accesses local Docker daemon for scan
+
+ScanImage --> ImageScanLogic : runs
+ScanContainer --> ContainerScanLogic : runs
+ScanIac --> IacScanTool : runs
+IacInput --> IacScanTool : triggers IaC scan
+
+ImageScanLogic --> SdkCommands : uses SDK integration
+ContainerScanLogic --> SdkCommands : uses SDK integration
+IacScanTool --> SdkCommands : uses SDK-backed integration
+
+IacScanTool --> PolicyLibs : loads policies
+IacScanTool --> ReportEventClient : publishes report event
+IacScanTool --> IacRuleMetadata : loads/evaluates rule metadata
+IacScanTool --> IacFileLocationDetail : builds file-location detail
+IacScanTool --> IacAlertDetail : builds alert detail
+
+ImageScanLogic --> MaliciousFileInfo : preserves findings
+ImageScanLogic --> ReportData : builds report data
+ImageScanLogic --> ReportImage : includes image report
+ImageScanLogic --> ReportLayer : includes layer report
+ContainerScanLogic --> MaliciousFileInfo : preserves findings
+ContainerScanLogic --> ReportData : builds report data
+ContainerScanLogic --> ReportImage : includes image report
+ContainerScanLogic --> ReportLayer : includes layer report
+
+DockerAuthRouting --> RoutePatterns : matches against configured route patterns
+AuthRequestMethod --> DockerAuthRouting : method input
+AuthRequestUri --> DockerAuthRouting : URI input
+Docker --> AuthRequestMethod : sends method
+Docker --> AuthRequestUri : sends URI
+Docker --> DockerAuthRouting : authorization requests
+DockerAuthRouting --> DockerPluginActionResult : returns plugin action result
+DockerAuthRouting --> DockerPluginActionResult : returns NoneDockerPlugin fallback when no route matches
+
+PythonExamplePkg --> BaseImage : builds from
+PythonExamplePkg --> SdkCommands : implements SDK-backed scanner/command mapping
+PyEntrypoint --> PyScan : invokes python scan.py
+PyRequirements --> PyScan : installs dependencies
+
+ImageScanLogic --> DockerHub : scans images from
+ImageScanLogic --> DockerRegistry : scans images from
+ImageScanLogic --> Harbor : scans images from
+ImageScanLogic --> Docker : scans local images
+ContainerScanLogic --> Docker : scans running containers
+
+SdkCommands --> VeinmindSdk : integrates with
+
+@enduml

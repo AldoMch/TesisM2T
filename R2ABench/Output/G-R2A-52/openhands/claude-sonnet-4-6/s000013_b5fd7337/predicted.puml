@@ -1,0 +1,78 @@
+@startuml
+
+skinparam rectangle {
+    BackgroundColor<<external>> LightYellow
+    BorderColor<<external>> DarkOrange
+    BackgroundColor<<container>> LightBlue
+    BorderColor<<container>> DarkBlue
+}
+
+skinparam actor {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+}
+
+actor "End User" as EndUser
+actor "Data Inspector\n/ Operator" as Operator
+
+rectangle "Docker Application Network" {
+
+    rectangle "Frontend Container\n(React)" <<container>> as Frontend
+
+    rectangle "Backend Container\n(FastAPI)" <<container>> as Backend
+
+    rectangle "Elasticsearch Container" <<container>> as Elasticsearch
+
+    rectangle "Kibana Container" <<container>> as Kibana
+
+}
+
+rectangle "Genius API\n(External)" <<external>> as GeniusAPI
+
+EndUser --> Frontend : Browser access\n(HTTP)
+Operator --> Kibana : Data inspection\n(Browser)
+
+Frontend --> Backend : Song lookup requests\n(API-001)
+
+Backend --> Elasticsearch : Query / store\nsong & mood data\n(API-002)
+
+Backend --> GeniusAPI : Search missing songs\n(API-003, COM-003)
+
+Kibana --> Elasticsearch : Stored data inspection\n(API-004)
+
+note right of Frontend
+  UI-001: Browser-accessible
+  song mood lookup frontend
+  C-001: React
+  FR-001
+end note
+
+note right of Backend
+  C-002: FastAPI
+  FR-002: Retrieve mood for known songs
+  FR-003: Search via Genius API
+  FR-004: Store song-mood associations
+  FR-005: Fast retrieval
+end note
+
+note right of Elasticsearch
+  C-003: Authoritative store
+  DR-001: Song records
+  DR-002: Artist metadata
+  DR-003: Mood associations
+  NFR-004
+end note
+
+note right of Kibana
+  UI-002: Auxiliary data UI
+  C-004: Elasticsearch inspection
+  FR-006
+end note
+
+note bottom of GeniusAPI
+  C-007: External dependency
+  not an internal container service
+  DR-005: Returns song search results
+end note
+
+@enduml

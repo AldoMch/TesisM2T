@@ -1,0 +1,143 @@
+@startuml
+title LabHire - System Architecture (derived from SRS)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam monochrome true
+skinparam defaultFontName Arial
+
+actor "Student User" as Student
+actor "Enterprise-Certified\nStudent User" as EntStudent
+actor "Mentor User" as Mentor
+actor "Administrator" as Admin
+
+package "Client Layer" {
+  [Mobile App / WeChat] as MobileClient
+  [Desktop Web Browser] as WebClient
+  [Student Portal UI] as StudentUI
+  [Mentor Portal UI] as MentorUI
+  [Admin Console UI] as AdminUI
+}
+
+Student --> MobileClient
+EntStudent --> MobileClient
+Mentor --> WebClient
+Admin --> WebClient
+MobileClient --> StudentUI
+WebClient --> StudentUI
+WebClient --> MentorUI
+WebClient --> AdminUI
+
+package "API Gateway / Backend Entry" {
+  [API Gateway & Auth Filter] as APIGateway
+  [Security & Access Control] as Security
+}
+
+StudentUI --> APIGateway
+MentorUI --> APIGateway
+AdminUI --> APIGateway
+APIGateway --> Security
+
+package "Application Services" {
+  [Authentication & Certification] as AuthSvc
+  [User & Profile Service] as UserSvc
+  [Resume & File Service] as ResumeSvc
+  [Project Service] as ProjectSvc
+  [Recommendation Service] as RecSvc
+  [Application & Mutual Evaluation] as AppEvalSvc
+  [Community Service] as CommunitySvc
+  [Chat Service] as ChatSvc
+  [Notification Service] as NotifySvc
+  [Review & Risk Control] as ReviewSvc
+  [Admin Management] as AdminSvc
+}
+
+APIGateway --> AuthSvc
+APIGateway --> UserSvc
+APIGateway --> ResumeSvc
+APIGateway --> ProjectSvc
+APIGateway --> AppEvalSvc
+APIGateway --> CommunitySvc
+APIGateway --> ChatSvc
+APIGateway --> NotifySvc
+APIGateway --> ReviewSvc
+APIGateway --> AdminSvc
+
+Security --> AuthSvc
+Security --> UserSvc
+Security --> ChatSvc
+Security --> ReviewSvc
+
+ProjectSvc --> RecSvc : recommendations
+RecSvc --> UserSvc : interest/skill/behavior tags
+RecSvc --> ProjectSvc : candidate projects
+UserSvc --> AuthSvc : identity/role
+AuthSvc --> ReviewSvc : certification review
+ResumeSvc --> UserSvc : profile linkage
+AppEvalSvc --> ProjectSvc : project status
+AppEvalSvc --> NotifySvc : application/evaluation events
+CommunitySvc --> NotifySvc : comment/reply events
+CommunitySvc --> ReviewSvc : content review criteria
+ChatSvc --> NotifySvc : chat reminders
+AdminSvc --> ReviewSvc : manual review actions
+AdminSvc --> CommunitySvc : delete posts/comments
+AdminSvc --> AuthSvc : certification qualification
+
+package "Data Layer" {
+  database "Primary Database\n(users, projects, posts,\ncomments, favorites,\napplications, reviews)" as DB
+  database "File / Object Storage\n(resume PDFs <= 10 MB)" as FileStorage
+  database "Audit & Risk-Control Logs" as AuditLog
+  database "Search Index / Cache" as SearchIndex
+}
+
+AuthSvc --> DB
+UserSvc --> DB
+ProjectSvc --> DB
+AppEvalSvc --> DB
+CommunitySvc --> DB
+AdminSvc --> DB
+ReviewSvc --> DB
+ReviewSvc --> AuditLog
+ResumeSvc --> FileStorage
+ProjectSvc --> SearchIndex
+UserSvc --> SearchIndex
+CommunitySvc --> SearchIndex
+
+package "External / Communication Interfaces" {
+  [University Email Service] as UniEmail
+  [Enterprise Email Service] as EntEmail
+  [Email Push Provider] as EmailPush
+  [SMS / Verification Code Provider] as SMS
+  [In-Site Message Channel] as InSiteMsg
+}
+
+AuthSvc --> UniEmail : campus email verification
+AuthSvc --> EntEmail : enterprise email verification
+AuthSvc --> SMS : optional verification code
+NotifySvc --> EmailPush
+NotifySvc --> InSiteMsg
+ReviewSvc --> EmailPush : review feedback
+ReviewSvc --> InSiteMsg : review feedback
+
+note right of Security
+  Security & Access Control:
+  - role-based permissions
+  - login/registration and chat encryption
+  - IP/user rate limits, CAPTCHA
+  - abnormal behavior detection
+end note
+
+note bottom of ReviewSvc
+  Review & Risk Control:
+  - automatic required-field validation
+  - manual review within 72h
+  - post/comment review & deletion
+  - risk-control logs and audit alerts
+end note
+
+note bottom of ChatSvc
+  Encrypted mentor-applicant chat
+end note
+
+@enduml

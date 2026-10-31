@@ -1,0 +1,79 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+package "NLP4L (Scala)" as NLP4L {
+  component "Scala API" as API
+
+  package "Schema Management" as SM {
+    component "Schema Loader" as SL
+    component "Schema Parser & Validator" as SPV
+    component "Analyzer Registry" as AR
+  }
+
+  package "Index Processing" as IP {
+    component "Document Processor" as DP
+    component "Term Data Accessor" as TDA
+    component "Search Service" as SS
+  }
+
+  package "Vectorization & Export" as VE {
+    component "Vector Builder" as VB
+    component "LIBSVM Exporter" as LSE
+  }
+
+  package "Visualization (Experimental)" as VIS {
+    component "Chart Display" as CD
+  }
+}
+
+' External systems and artifacts
+database "Lucene Index" as LI
+folder "Schema Resource/File" as SR
+artifact "LIBSVM Vector File" as LVF
+file "Word Count Data" as WCD
+component "Machine Learning Tools" as MLT
+
+' Interactions
+API --> SL : load(schema source)
+SL --> SR : read
+SL --> SPV : parsed content
+SPV --> AR : analyzer/fields config
+
+API --> DP : process corpus
+API --> SS : search
+API --> VB : generate vectors
+
+DP --> LI : read
+TDA --> LI : read term data
+SS --> LI : query
+VB --> LI : read
+VB --> AR : use analyzers/config
+VB --> LSE : vectors
+LSE --> LVF : write
+
+MLT --> LVF : consume
+
+WCD --> CD : visualize
+
+' Optional path: derive word counts from term data
+TDA ..> WCD : derive (optional)
+
+' Notes
+note right of SPV
+Validates:
+- root 'schema'
+- default analyzer
+- field definitions
+Errors when missing or source unavailable
+end note
+
+note bottom of CD
+Experimental feature; stability not guaranteed
+end note
+
+note top of LI
+Compatibility target: Lucene 5.2.0
+end note
+
+@enduml

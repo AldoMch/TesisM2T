@@ -1,0 +1,147 @@
+@startuml
+skinparam rectangle {
+    BackgroundColor<<actor>> LightYellow
+    BackgroundColor<<service>> LightBlue
+    BackgroundColor<<storage>> LightGreen
+    BackgroundColor<<volume>> WhiteSmoke
+    BorderColor DarkGray
+    RoundCorner 10
+}
+skinparam component {
+    BackgroundColor LightBlue
+    BorderColor DarkBlue
+}
+skinparam node {
+    BackgroundColor LightCyan
+    BorderColor DarkCyan
+}
+skinparam database {
+    BackgroundColor LightGreen
+    BorderColor DarkGreen
+}
+skinparam cloud {
+    BackgroundColor LightYellow
+    BorderColor Orange
+}
+skinparam arrow {
+    Color DarkGray
+    FontSize 10
+}
+skinparam defaultTextAlignment center
+
+actor "Data Engineer" as DE
+
+rectangle "Host Machine" {
+
+    rectangle "Docker Compose Network (format 3.7)" as DC {
+
+        rectangle "Shared Volumes" as SV {
+            rectangle "DAG Files" as DAG_VOL <<volume>>
+            rectangle "Spark App Files" as APP_VOL <<volume>>
+            rectangle "Input Data Files" as DATA_VOL <<volume>>
+            rectangle "Notebook Files" as NB_VOL <<volume>>
+        }
+
+        node "postgres\n(postgres:9.6)" as POSTGRES {
+            database "Airflow\nMetadata DB" as PGDB
+        }
+
+        node "airflow-webserver\n(docker-airflow-spark:latest)" as AIRFLOW {
+            component "Airflow Webserver\n& Scheduler\n(LocalExecutor)" as AW
+            component "SparkSubmitOperator\n(spark_default conn)" as SSO
+            component "PySpark\n(pyspark dependency)" as PYSPK_AF
+        }
+
+        node "spark\n(bitnami/spark:latest)\nhostname: spark" as SPARK_MASTER {
+            component "Spark Master\n(SPARK_MODE=master)" as SM
+        }
+
+        node "spark-worker-1\n(bitnami/spark:latest)" as SW1 {
+            component "Spark Worker 1\n(SPARK_MODE=worker)" as SWC1
+        }
+
+        node "spark-worker-2\n(bitnami/spark:latest)" as SW2 {
+            component "Spark Worker 2\n(SPARK_MODE=worker)" as SWC2
+        }
+
+        node "spark-worker-3\n(bitnami/spark:latest)" as SW3 {
+            component "Spark Worker 3\n(SPARK_MODE=worker)" as SWC3
+        }
+
+        node "jupyter-spark\n(jupyter/pyspark-notebook)" as JUPYTER {
+            component "Jupyter Notebook\n& PySpark" as JNB
+        }
+    }
+
+    rectangle "Host Port Mappings" as PORTS {
+        rectangle ":5432" as P5432 <<service>>
+        rectangle ":8282" as P8282 <<service>>
+        rectangle ":8181" as P8181 <<service>>
+        rectangle ":7077" as P7077 <<service>>
+        rectangle ":8888" as P8888 <<service>>
+        rectangle ":4040-4080" as P4040 <<service>>
+    }
+}
+
+DE --> P8282 : Airflow Web UI
+DE --> P8181 : Spark Master UI
+DE --> P8888 : Jupyter Notebook
+DE --> P5432 : Postgres (admin)
+
+P8282 --> AIRFLOW
+P8181 --> SPARK_MASTER
+P8888 --> JUPYTER
+P5432 --> POSTGRES
+P7077 --> SPARK_MASTER : cluster submission
+P4040 --> JUPYTER : Spark App UIs
+
+AIRFLOW --> POSTGRES : metadata (CI-001)\nAirflow depends on Postgres
+SSO --> SM : spark://spark:7077\n(CI-002, spark_default)
+
+SM --> SWC1 : dispatch workloads (CI-003)
+SM --> SWC2 : dispatch workloads (CI-003)
+SM --> SWC3 : dispatch workloads (CI-003)
+
+JNB --> SM : interactive PySpark\n(spark://spark:7077)
+
+AIRFLOW ..> DAG_VOL : mounts DAG dir
+AIRFLOW ..> APP_VOL : mounts Spark app dir
+AIRFLOW ..> DATA_VOL : mounts input data dir
+
+SPARK_MASTER ..> APP_VOL : mounts Spark app dir
+SPARK_MASTER ..> DATA_VOL : mounts input data dir
+SW1 ..> APP_VOL : mounts Spark app dir
+SW2 ..> APP_VOL : mounts Spark app dir
+SW3 ..> APP_VOL : mounts Spark app dir
+
+JUPYTER ..> NB_VOL : mounts notebook dir
+JUPYTER ..> DATA_VOL : mounts input data dir
+
+note right of AIRFLOW
+  Image: docker-airflow-spark:latest
+  Port: 8282
+  Executor: LocalExecutor
+  Deps: pyspark, celery==4.1.1,
+  kombu==4.2.0, tornado==5.1.1,
+  werkzeug==0.16.0, SQLAlchemy==1.3.15
+end note
+
+note right of SPARK_MASTER
+  Spark 2.4.5 / Hadoop 2.6
+  Web UI: 8181 (host) -> 8080
+  Cluster: 7077
+  Bundled: ./bin/pyspark,
+  ./bin/run-example
+end note
+
+note bottom of SV
+  Shared mounts provide consistent paths
+  for DAGs, Spark apps, notebooks,
+  and input data across services (FR-008)
+end note
+
+note bottom of SW3
+  Scalable: additional workers
+  follow same config pattern (NFR-004)
+end note
+@enduml

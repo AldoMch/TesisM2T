@@ -1,0 +1,59 @@
+@startuml
+
+node "Java Backend" {
+
+  package "API Layer" {
+    component "UserController"
+  }
+
+  package "Security Layer" {
+    component "JwtUtility"
+  }
+
+  package "Application Services Layer" {
+    component "UserService"
+    component "ClientSecurityRetrievalService"
+    component "BootstrapService"
+  }
+
+  package "Blockchain Integration Layer" {
+    component "ClientBootstrapContractAdapter"
+    component "Web3jEthereumClient"
+  }
+
+  package "LwM2M Processing Layer" {
+    component "LwM2MNodeDeserializer"
+  }
+
+  package "Utilities Layer" {
+    component "Encoding32ByteCodec"
+  }
+}
+
+node "Authenticated API Client" as apiClient
+
+cloud "Ethereum-compatible Node" as ethNode {
+  component "Client/Bootstrap Smart Contract" as smartContract
+}
+
+component "Web3j Library" as web3jLib
+component "Leshan/LwM2M Model Library" as leshanLib
+
+apiClient --> "UserController" : HTTP requests
+
+"UserController" --> "JwtUtility" : validate token (isValidToken(auth, 1))
+"UserController" --> "UserService" : user retrieval/creation
+
+"ClientSecurityRetrievalService" --> "ClientBootstrapContractAdapter" : retrieve client/security
+"ClientSecurityRetrievalService" --> "Encoding32ByteCodec" : decode fixed 32-byte ASCII fields (single/all)
+
+"BootstrapService" --> "Encoding32ByteCodec" : encode/decode 32-byte ASCII
+"BootstrapService" --> "ClientBootstrapContractAdapter" : add/get client by endpoint
+
+"ClientBootstrapContractAdapter" --> "Web3jEthereumClient" : contract operations via Web3j
+"Web3jEthereumClient" --> web3jLib : Web3j dependency
+"Web3jEthereumClient" --> ethNode : HTTP (JSON-RPC)
+
+"LwM2MNodeDeserializer" --> leshanLib : typed node model/validation
+
+@enduml

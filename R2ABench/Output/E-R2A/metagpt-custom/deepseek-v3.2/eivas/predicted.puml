@@ -1,0 +1,88 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+left to right direction
+
+' ========== EXTERNAL SYSTEMS ==========
+cloud "Map Service Provider" as map_service
+cloud "Climate Data Service" as climate_service
+
+' ========== PRESENTATION LAYER ==========
+package "Presentation Layer" {
+    component "Case Reporting UI" as reporting_ui
+    component "Case Management UI" as case_ui
+    component "Individual Case Analysis UI" as individual_analysis_ui
+    component "Outbreak Overview Dashboard" as outbreak_dashboard
+}
+
+' ========== APPLICATION/BUSINESS LOGIC LAYER ==========
+package "Application/Business Logic Layer" {
+    component "Case Processing Service" as case_processor
+    component "Investigation Prompt Service" as prompt_service
+    component "Visual Confirmation Service" as visual_confirmation
+}
+
+' ========== ANALYTICS LAYER ==========
+package "Analytics Layer" {
+    component "Case Itinerary Analyzer" as itinerary_analyzer
+    component "Relationship Graph Generator" as relationship_generator
+    component "Statistical Chart Generator" as chart_generator
+    component "Geospatial Analyzer" as geospatial_analyzer
+}
+
+' ========== DATA ACCESS LAYER ==========
+package "Data Access Layer" {
+    component "Case Repository" as case_repo
+    component "Security Gateway" as security_gateway
+}
+
+' ========== DATA STORAGE LAYER ==========
+package "Data Storage Layer" {
+    database "Encrypted Case Database" as encrypted_db
+}
+
+' ========== DEPENDENCIES ==========
+' Presentation Layer -> Application Layer
+reporting_ui --> case_processor : submits case data
+case_ui --> case_processor : queries cases
+individual_analysis_ui --> case_processor : requests case analysis
+outbreak_dashboard --> case_processor : requests outbreak data
+
+' Application Layer -> Analytics Layer
+case_processor --> itinerary_analyzer : analyzes itineraries
+case_processor --> relationship_generator : generates relationship graphs
+case_processor --> chart_generator : creates statistical charts
+case_processor --> geospatial_analyzer : performs spatial analysis
+prompt_service --> geospatial_analyzer : requests location analysis
+visual_confirmation --> geospatial_analyzer : validates addresses
+
+' Application Layer -> Data Access Layer
+case_processor --> security_gateway : accesses case data
+prompt_service --> security_gateway : queries location data
+visual_confirmation --> security_gateway : retrieves address data
+
+' Analytics Layer -> Data Access Layer
+itinerary_analyzer --> security_gateway : retrieves itinerary data
+relationship_generator --> security_gateway : queries associations
+chart_generator --> security_gateway : accesses statistical data
+geospatial_analyzer --> security_gateway : retrieves location data
+
+' Analytics Layer -> Presentation Layer
+itinerary_analyzer --> individual_analysis_ui : displays itineraries
+relationship_generator --> individual_analysis_ui : shows relationship graphs
+chart_generator --> outbreak_dashboard : provides statistical charts
+geospatial_analyzer --> outbreak_dashboard : supplies geospatial visualizations
+
+' Analytics Layer -> External Systems
+geospatial_analyzer --> map_service : requests map data
+chart_generator --> climate_service : fetches climate data
+
+' Data Access Layer -> Data Storage Layer
+security_gateway --> encrypted_db : encrypted CRUD operations
+
+' Application Layer -> Presentation Layer
+prompt_service --> reporting_ui : provides investigation prompts
+visual_confirmation --> reporting_ui : offers map-based confirmation
+
+@enduml

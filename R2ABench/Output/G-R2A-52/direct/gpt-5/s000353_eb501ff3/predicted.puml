@@ -1,0 +1,71 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+actor "API Client" as Client
+actor "Platform Operator" as Operator
+
+package "Turing" {
+  component "API Server" as APIServer {
+    [HTTP Handlers\n(OpenAPI 3.0.3)] as Handlers
+    [Authorization Middleware] as AuthMW
+    [Request Validation\n(OpenAPI)] as ValMW
+    [Router Deployer] as Deployer
+  }
+}
+
+cloud "Kubernetes Cluster" as K8s {
+  [Kubernetes API] as K8sAPI
+  node "Router Deployment(s)" as RouterDepl {
+    [Turing Router] as Router
+  }
+  node "PyFuncEnsembler Service" as EnsemblerSvc
+}
+
+cloud "Jaeger" as Jaeger
+database "MLflow Model Registry" as MLflow
+component "Local Image Build\n(PyFuncEnsembler)" as ImageBuild
+
+Client --> Handlers : HTTP/JSON\nRouters & Ensemblers APIs
+Handlers -down-> AuthMW : Authorization checks\n(if enabled)
+Handlers -down-> ValMW : Request validation\n(if enabled)
+Deployer --> K8sAPI : Create/Update/Delete\nRouter Deployments (FR-007)
+
+Router --> EnsemblerSvc : HTTP\nEnsembler requests (FR-006)
+Router ..> Jaeger : Tracing spans\n(if enabled/sampled) (NFR-002)
+
+ImageBuild --> MLflow : Download model\nartifacts (C-003)
+ImageBuild ..> EnsemblerSvc : Builds local Docker image\nfor runtime (FR-006)
+
+Operator --> K8sAPI : Cluster operations\n(as needed)
+
+note right of Handlers
+- Endpoints:
+  - GET /projects/{project_id}/routers (FR-001)
+  - Ensembler CRUD (FR-002..FR-005)
+- JSON responses for Ensembler operations (DR-002, DR-008, DR-009)
+- Path params: project_id, ensembler_id (DR-004, DR-005)
+end note
+
+note right of APIServer
+- API constrained to OpenAPI-defined endpoints and schemas; OpenAPI 3.0.3 (C-001, NFR-004)
+- Middleware mounting controlled by configuration (NFR-001)
+end note
+
+note right of K8sAPI
+- Uses Kubernetes interfaces for router deployments (FR-007)
+- Constraint: Kubernetes environment required (C-002)
+end note
+
+note right of Router
+- Default port 8080; override via ports.containerPort (NFR-003, C-004)
+- Router protocol: HTTP_JSON or UPI_V1 (DR-007)
+- Timeout pattern: ^[0-9]+(ms|s|m|h)$ (DR-006)
+- Jaeger tracing integrated; sampling controls traces (NFR-002)
+end note
+
+note right of EnsemblerSvc
+- Exposes user-defined ensemblers as a webservice (FR-006)
+- Docker-based runtime; image built from MLflow artifacts (C-003)
+end note
+@enduml

@@ -1,0 +1,86 @@
+@startuml
+!define RECTANGLE class
+
+title Campus Helper Platform - System Architecture
+
+' Presentation Layer
+package "Presentation Layer" {
+    RECTANGLE "WeChat Mini Program Client" as client
+}
+
+' Business Layer
+package "Business Layer" {
+    RECTANGLE "Product Browsing Service" as productService
+    RECTANGLE "Order Management Service" as orderService
+    RECTANGLE "User Management Service" as userService
+    RECTANGLE "Admin Management Service" as adminService
+    RECTANGLE "Authentication & Authorization" as authModule
+    RECTANGLE "Input Validation & Security" as securityModule
+}
+
+' Data Layer
+package "Data Layer" {
+    RECTANGLE "Database Interface" as dbInterface
+    RECTANGLE "Data Access Objects" as daoLayer
+}
+
+' Data Entity Layer (Database)
+package "Data Entity Layer" {
+    RECTANGLE "Users Table" as usersDB
+    RECTANGLE "Products Table" as productsDB
+    RECTANGLE "Orders Table" as ordersDB
+    RECTANGLE "Favorites Table" as favoritesDB
+    RECTANGLE "Tags/Categories Table" as tagsDB
+    RECTANGLE "Admin Logs Table" as logsDB
+    RECTANGLE "Monitoring Metrics Storage" as metricsDB
+}
+
+' Relationships
+client --> productService : uses
+client --> orderService : uses
+client --> userService : uses
+client --> adminService : uses
+
+productService --> dbInterface : queries
+orderService --> dbInterface : reads/writes
+userService --> dbInterface : reads/writes
+adminService --> dbInterface : reads/writes
+
+authModule --> userService : validates
+securityModule --> productService : filters
+securityModule --> orderService : filters
+securityModule --> adminService : filters
+
+dbInterface --> daoLayer : interacts
+daoLayer --> usersDB : manages
+daoLayer --> productsDB : manages
+daoLayer --> ordersDB : manages
+daoLayer --> favoritesDB : manages
+daoLayer --> tagsDB : manages
+daoLayer --> logsDB : manages
+daoLayer --> metricsDB : stores
+
+note right of client
+  WeChat Mini Program Runtime
+  Requires WeChat 8.0+
+  Android 5.0+, 4GB+ RAM
+end note
+
+note top of adminService
+  Admin functions require
+  authenticated administrator
+end note
+
+note bottom of securityModule
+  Input validation
+  SQL injection prevention
+  Malicious behavior detection
+end note
+
+note right of metricsDB
+  Performance monitoring
+  Error tracking
+  Resource usage metrics
+end note
+
+@enduml

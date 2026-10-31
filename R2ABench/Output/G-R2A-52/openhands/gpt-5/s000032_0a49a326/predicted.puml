@@ -1,0 +1,71 @@
+@startuml
+title Activiti 7 Guide Examples — Architecture Overview
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+rectangle "Authenticated User" as AU
+rectangle "Task API User\n(ROLE_ACTIVITI_USER)" as TU
+rectangle "Human Participant" as HP
+rectangle "Developer/Integrator" as DEV
+rectangle "Cluster Operator" as OP
+
+cloud "Keycloak\n(Identity Provider)" as KC
+cloud "Public IP / External Access" as PUB
+
+rectangle "Kubernetes / GKE Cluster" as K8s {
+  component "NGINX Ingress Controller" as IN
+  component "Example Runtime Bundle\n(Spring Boot + Spring Security)" as RB
+  component "ProcessRuntime API" as PR
+  component "TaskRuntime API" as TR
+  component "Audit Service" as AUD
+  component "Query Service" as QRY
+  component "Notification Service" as NOTIF
+  component "Cloud Connectors" as CC
+  component "Deployment Descriptors\n+ Config Maps\n(input rate, replicas)" as DD
+}
+
+AU --> KC : Obtain token
+TU --> KC : Obtain token
+
+AU --> PUB : User endpoints (with token)
+TU --> PUB : Task operations (with token)
+DEV --> PUB : List definitions / Start SimpleProcess (with token)
+OP --> IN : Configure routes\nand public IP
+
+PUB --> IN : External requests
+IN --> RB : Routed traffic
+
+RB -down- PR
+RB -down- TR
+
+note right of TR
+Requires logged-in user with
+ACTIVITI_USER / ROLE_ACTIVITI_USER
+end note
+
+RB --> AUD : Emit/display audit events\nfor just-started instance
+RB --> QRY : Expose process execution info
+
+TU --> TR : TaskRuntime interaction
+HP --> TR : Human task participation
+DEV --> PR : ProcessRuntime interaction
+
+note right of RB
+Security, users, groups, and roles
+via Spring Security in Spring Boot.
+end note
+
+DD -down-> RB : Configure replicas / input rate
+DD -down-> QRY
+DD -down-> AUD
+DD -down-> NOTIF
+DD -down-> CC
+
+note bottom of K8s
+Background components: Notification Service, Cloud Connectors.
+They remain background unless requirements assign behavior.
+end note
+
+@enduml

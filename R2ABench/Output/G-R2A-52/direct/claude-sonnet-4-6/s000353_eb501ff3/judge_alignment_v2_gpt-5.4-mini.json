@@ -1,0 +1,308 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Turing API Service::HTTP Middleware Layer::Authorization\\nMiddleware\\n(when auth config enabled)"
+      ],
+      "gt_nodes": [
+        "Global::Authorization Service"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "PyFuncEnsembler Runtime::Docker Image Builder\\n(local image build\\nfrom MLflow artifacts)",
+        "PyFuncEnsembler Runtime::PyFuncEnsembler\\nWebservice\\n(user-defined ensembler\\nruntime, port 8080 default)"
+      ],
+      "gt_nodes": [
+        "Global::Machine Learning Platform\\nMLP API Server"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Turing API Service::Cluster Management::Jaeger Tracing Client\\n(request tracing,\\nsampling-based)"
+      ],
+      "gt_nodes": [
+        "Global::Monitoring and Alerting Service"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Turing API Service::HTTP API Handlers (OpenAPI 3.0.3)::Router API Handler\\nGET /projects/{project_id}/routers"
+      ],
+      "gt_nodes": [
+        "Global::Router Endpoints"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "Kubernetes Cluster::Kubernetes API\\n(create/update/delete\\ndeployment resources)"
+      ],
+      "gt_nodes": [
+        "Kubernetes Cluster::Istio"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "Kubernetes Cluster::Turing Router\\nDeployment\\n(containerPort: 8080 default,\\noverridden via ports.containerPort)"
+      ],
+      "gt_nodes": [
+        "Kubernetes Cluster::Knative Controller"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Turing API Service::Service Layer::Router Service\\n(project-scoped resource mgmt)"
+      ],
+      "gt_nodes": [
+        "Turing System::Database\\nPersistent storage for Router objects"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Turing API Service::HTTP API Handlers (OpenAPI 3.0.3)::Ensembler API Handler\\nGET/POST/PUT/DELETE\\n/projects/{project_id}/ensemblers/{ensembler_id}"
+      ],
+      "gt_nodes": [
+        "Turing System::Turing API Server\\nHTTP REST API to configure Routers"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": false,
+      "predicted_node": "API Clients / External Users::API Client\\n(Routers & Ensemblers)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Clients / External Users::Ensembler User\\n(PyFuncEnsembler)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "API Clients / External Users::Platform Operator\\n(K8s Deployments)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::Jaeger Tracing Backend\\n(distributed tracing)",
+      "reference_nodes": [
+        "Global::Monitoring and Alerting Service"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::MLflow Model Registry\\n(model artifact source\\nfor PyFuncEnsembler builds)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Kubernetes Cluster::Kubernetes API\\n(create/update/delete\\ndeployment resources)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Kubernetes Cluster::Turing Router\\nDeployment\\n(containerPort: 8080 default,\\noverridden via ports.containerPort)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "PyFuncEnsembler Runtime::Docker Image Builder\\n(local image build\\nfrom MLflow artifacts)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "PyFuncEnsembler Runtime::PyFuncEnsembler\\nWebservice\\n(user-defined ensembler\\nruntime, port 8080 default)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Turing API Service::Cluster Management::Jaeger Tracing Client\\n(request tracing,\\nsampling-based)",
+      "reference_nodes": [
+        "Global::Monitoring and Alerting Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Turing API Service::Cluster Management::Router Deployment Manager\\n(create/update/delete\\nrouter deployments)",
+      "reference_nodes": [
+        "Kubernetes Cluster::Istio",
+        "Kubernetes Cluster::Knative Controller"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Turing API Service::HTTP API Handlers (OpenAPI 3.0.3)::Ensembler API Handler\\nGET/POST/PUT/DELETE\\n/projects/{project_id}/ensemblers/{ensembler_id}",
+      "reference_nodes": [
+        "Turing System::Turing API Server\\nHTTP REST API to configure Routers"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Turing API Service::HTTP API Handlers (OpenAPI 3.0.3)::Router API Handler\\nGET /projects/{project_id}/routers",
+      "reference_nodes": [
+        "Global::Router Endpoints"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Turing API Service::HTTP Middleware Layer::Authorization\\nMiddleware\\n(when auth config enabled)",
+      "reference_nodes": [
+        "Global::Authorization Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Turing API Service::HTTP Middleware Layer::OpenAPI Request\\nValidation Middleware\\n(when validation config enabled)\\nOpenAPI 3.0.3",
+      "reference_nodes": [
+        "Global::Authorization Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Turing API Service::Service Layer::Ensembler Service\\n(create/retrieve/update/delete)\\nReturns JSON: Ensembler, EnsemblerId",
+      "reference_nodes": [
+        "Global::Experimentation Service"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Turing API Service::Service Layer::Router Service\\n(project-scoped resource mgmt)",
+      "reference_nodes": [
+        "Turing System::Database\\nPersistent storage for Router objects",
+        "Turing System::Turing API Server\\nHTTP REST API to configure Routers"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Turing API Service::HTTP Middleware Layer::Authorization\\nMiddleware\\n(when auth config enabled)"
+      ],
+      "gt_node": "Global::Authorization Service"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Experimentation Service"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Machine Learning Platform\\nMLP API Server"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Turing API Service::Cluster Management::Jaeger Tracing Client\\n(request tracing,\\nsampling-based)"
+      ],
+      "gt_node": "Global::Monitoring and Alerting Service"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Router Clients"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Turing API Service::HTTP API Handlers (OpenAPI 3.0.3)::Router API Handler\\nGET /projects/{project_id}/routers"
+      ],
+      "gt_node": "Global::Router Endpoints"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Secret Store"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::Turing User"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Kubernetes Cluster::Istio"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Kubernetes Cluster::Knative Controller"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Turing API Service::Service Layer::Router Service\\n(project-scoped resource mgmt)"
+      ],
+      "gt_node": "Turing System::Database\\nPersistent storage for Router objects"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Turing API Service::HTTP API Handlers (OpenAPI 3.0.3)::Ensembler API Handler\\nGET/POST/PUT/DELETE\\n/projects/{project_id}/ensemblers/{ensembler_id}"
+      ],
+      "gt_node": "Turing System::Turing API Server\\nHTTP REST API to configure Routers"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Turing System::Turing UI\\nWeb interface to configure Routers"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 4558,
+      "completion_tokens": 732,
+      "total_tokens": 5290,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Global::Experimentation Service",
+    "Global::Router Clients",
+    "Global::Secret Store",
+    "Global::Turing User",
+    "Turing System::Turing UI\\nWeb interface to configure Routers"
+  ],
+  "unmatched_predicted_nodes": [
+    "API Clients / External Users::API Client\\n(Routers & Ensemblers)",
+    "API Clients / External Users::Ensembler User\\n(PyFuncEnsembler)",
+    "API Clients / External Users::Platform Operator\\n(K8s Deployments)",
+    "External Systems::Jaeger Tracing Backend\\n(distributed tracing)",
+    "External Systems::MLflow Model Registry\\n(model artifact source\\nfor PyFuncEnsembler builds)",
+    "Turing API Service::Cluster Management::Router Deployment Manager\\n(create/update/delete\\nrouter deployments)",
+    "Turing API Service::HTTP Middleware Layer::OpenAPI Request\\nValidation Middleware\\n(when validation config enabled)\\nOpenAPI 3.0.3",
+    "Turing API Service::Service Layer::Ensembler Service\\n(create/retrieve/update/delete)\\nReturns JSON: Ensembler, EnsemblerId"
+  ],
+  "_provenance": {
+    "fingerprint": "05d962c6e972458ee9444e9ae7e08712a82efc3449d26c276174d5b121ddecf6",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

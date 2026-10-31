@@ -1,0 +1,68 @@
+@startuml
+
+' Deployment Nodes
+node "Oracle Cloud Infrastructure (OCI)" {
+  database "OCI Tenancy" as oci_tenancy
+  database "Compartments" as oci_compartments
+  database "VCN & Subnets" as oci_networking
+  database "Compute Instances" as oci_compute
+}
+
+cloud "External Systems" {
+  component "Terraform CLI" as terraform_cli
+}
+
+' Configuration Layer
+package "Configuration Management" {
+  component "Terraform Variables" as terraform_variables
+  component "SSH Key Manager" as ssh_key_manager
+}
+
+' Orchestration Layer
+package "Orchestration" {
+  component "Terraform Executor" as terraform_executor
+}
+
+' Infrastructure Layer
+package "Infrastructure Components" {
+  component "OCI Provider" as oci_provider
+  component "Bastion Host" as bastion_host
+  component "Load Balancer" as load_balancer
+}
+
+' Application Layer
+package "Jenkins Deployment" {
+  component "Jenkins Master" as jenkins_master
+  component "Jenkins Slaves" as jenkins_slaves
+  component "Cloud Init Processor" as cloud_init_processor
+}
+
+' Dependencies - Configuration
+terraform_cli --> terraform_variables : uses for configuration
+terraform_cli --> ssh_key_manager : retrieves SSH keys
+terraform_variables --> terraform_executor : provides parameters
+ssh_key_manager --> terraform_executor : injects SSH keys
+
+' Dependencies - Orchestration to Infrastructure
+terraform_executor --> oci_provider : invokes OCI resources
+terraform_executor --> bastion_host : provisions if required
+terraform_executor --> load_balancer : configures for cluster
+terraform_executor --> cloud_init_processor : passes user data
+
+' Dependencies - Jenkins Provisioning
+terraform_executor --> jenkins_master : deploys master node
+terraform_executor --> jenkins_slaves : deploys slave nodes
+jenkins_master --> jenkins_slaves : JNLP communication
+cloud_init_processor --> oci_compute : applies initialization
+ssh_key_manager --> oci_compute : injects authorized keys
+
+' Dependencies - Network & Resource Mapping
+oci_provider --> oci_tenancy : manages tenancy
+oci_provider --> oci_compartments : manages compartments
+oci_provider --> oci_networking : sets up VCN/subnets
+bastion_host --> oci_networking : attached to public subnet
+load_balancer --> oci_networking : configured in VCN
+oci_compute --> oci_compartments : launched within
+oci_compute --> bastion_host : accesses via bastion (private subnet)
+
+@enduml

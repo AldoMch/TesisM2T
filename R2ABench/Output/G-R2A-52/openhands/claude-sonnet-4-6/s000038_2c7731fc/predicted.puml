@@ -1,0 +1,99 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #888888
+}
+skinparam package {
+  BackgroundColor #EEF5FF
+  BorderColor #4477AA
+}
+skinparam database {
+  BackgroundColor #FFF8EE
+  BorderColor #CC8800
+}
+skinparam node {
+  BackgroundColor #EEFFEE
+  BorderColor #228822
+}
+skinparam cloud {
+  BackgroundColor #F5F0FF
+  BorderColor #7744CC
+}
+skinparam actor {
+  BackgroundColor #FFFFFF
+}
+skinparam ArrowColor #555555
+
+actor "Redis Application\nIntegrator" as RedisApp
+actor "Redis PubSub\nApplication Client" as PubSubClient
+actor "SQL Protocol\nDeveloper" as SQLClient
+
+package "IceFireDB-Redis-Proxy" {
+  component "Redis Proxy\n(Middleware)" as RedisProxy
+  component "Redis Command\nProcessor\n(String, Set, List,\nHash, Sorted Set,\nStream, Control)" as CmdProcessor
+  component "Instruction\nSynchronizer" as InstrSync
+
+  package "Redis Agent Network" {
+    component "Redis Agent 1" as Agent1
+    component "Redis Agent 2" as Agent2
+    component "Redis Agent N" as AgentN
+  }
+}
+
+package "Redis Storage Backend" {
+  database "Redis Standalone" as RedisStandalone
+  database "Redis Cluster\n(Cluster-Aware\nProxy Routing)" as RedisCluster
+}
+
+package "IceFireDB-PubSub" {
+  component "PubSub Node 1" as PubSubNode1
+  component "PubSub Node 2" as PubSubNode2
+  component "PubSub Node N\n(NAT / Private\nNetwork)" as PubSubNodeN
+  component "Redis PubSub\nProtocol Adapter" as PubSubAdapter
+}
+
+cloud "P2P Decentralized Network\n(Kademlia DHT /\nlibp2p / IPFS-style\nPeer Discovery & Routing)" as P2PNetwork
+
+package "IceFireDB-SQLite\n(Internal)" {
+  component "SQL/MySQL Result\nHandler\n(Field Metadata, Rows,\nWarnings, Status)" as SQLHandler
+}
+
+RedisApp --> RedisProxy : Redis commands /\ninstructions
+RedisApp --> PubSubAdapter : Redis PubSub\noperations (publish /\nsubscribe)
+PubSubClient --> PubSubAdapter : Redis-style\npublish / subscribe
+SQLClient --> SQLHandler : MySQL-protocol\nresult packets
+
+RedisProxy --> CmdProcessor : parse & route\nRedis commands
+CmdProcessor --> InstrSync : synchronized\ninstructions
+InstrSync --> Agent1 : sync instruction
+InstrSync --> Agent2 : sync instruction
+InstrSync --> AgentN : sync instruction
+
+Agent1 --> RedisStandalone : write data
+Agent1 --> RedisCluster : write data
+Agent2 --> RedisStandalone : write data
+Agent2 --> RedisCluster : write data
+AgentN --> RedisStandalone : write data
+AgentN --> RedisCluster : write data
+
+RedisProxy --> RedisStandalone : forward writes\n(standalone mode)
+RedisProxy --> RedisCluster : forward writes\n(cluster mode)
+
+PubSubAdapter --> PubSubNode1 : publish / subscribe\nmessages
+PubSubAdapter --> PubSubNode2 : publish / subscribe\nmessages
+PubSubAdapter --> PubSubNodeN : publish / subscribe\nmessages
+
+PubSubNode1 --> P2PNetwork : peer discovery\n& routing
+PubSubNode2 --> P2PNetwork : peer discovery\n& routing
+PubSubNodeN --> P2PNetwork : peer discovery\n& routing (NAT\ntraversal)
+
+P2PNetwork --> PubSubNode1 : routed Pub/Sub\nmessages
+P2PNetwork --> PubSubNode2 : routed Pub/Sub\nmessages
+P2PNetwork --> PubSubNodeN : routed Pub/Sub\nmessages
+
+Agent1 -[dashed]-> P2PNetwork : decentralized\nagent network
+Agent2 -[dashed]-> P2PNetwork : decentralized\nagent network
+AgentN -[dashed]-> P2PNetwork : decentralized\nagent network
+
+@enduml

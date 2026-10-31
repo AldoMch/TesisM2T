@@ -1,0 +1,115 @@
+@startuml
+package "Terminal/Operations Layer" {
+  component "listRunningStages Command" as ListRunningStages
+  component "Onboarding & AWS Credential Setup Procedure" as OnboardingProcedure
+  component "Branch Name Input" as BranchNameInput
+}
+
+package "Connector Configuration Layer" {
+  component "Connector Configuration Handler" as ConnectorConfig
+  component "Connector Management Library" as ConnectorMgmt
+  component "cluster & service values" as ClusterService
+  component "defined connector set" as ConnectorDefs
+  component "Connector Put Operation" as ConnectorPut
+  component "Connector Delete Operation" as ConnectorDelete
+  component "Connector Restart Operation" as ConnectorRestart
+  component "Empty Deletion Set Handling" as EmptyDeletionSet
+}
+
+package "Event Routing and Notification Layer" {
+  component "AWS Event Routing" as EventRouting
+  component "SNS Notification Topic" as SnsTopic
+  component "Manual SNS Subscription Administration" as SnsAdmin
+  component "SNS Topic Invocation Authorization" as SnsTopicAuth
+}
+
+package "AWS Integration Layer" {
+  component "AWS CLI Credential Setup" as AwsCredSetup
+  component "AWS CLI" as AwsCli
+  cloud "AWS Account & Region" as AwsAccountRegion
+  cloud "AWS EventBridge / Event Routing" as AwsEventBridge
+  cloud "AWS SNS" as AwsSns
+}
+
+package "Metrics and Reporting Layer" {
+  component "Deployment Metrics Calculation" as DeployMetrics
+  component "PR Metrics Calculation" as PrMetrics
+  component "deploy.yml Workflow Run Filter" as DeployYmlFilter
+  component "Closed PR / Base-Branch Filter" as ClosedPrBaseBranchFilter
+}
+
+package "GitHub Integration Layer" {
+  component "GitHub API Pagination Integration" as GitHubPagination
+  node "GitHub Actions" as GitHubActions
+  node "GitHub Actions API" as GitHubActionsApi
+  node "GitHub Pull Requests API" as GitHubPrApi
+  node "GitHub API (paginated metrics access)" as GitHubApi
+}
+
+package "Data/Output Layer" {
+  component "runningStages Output" as RunningStagesOut
+  component "failedRuns / passedRuns Output" as DeployMetricsOut
+  component "averageTimeToMerge Output" as PrMetricsOut
+  component "deploy.yml workflow run records with conclusion" as DeployWorkflowRunRecords
+  component "pull request records with created_at / merged_at" as PrRecords
+  component "event pattern definitions" as EventPatternDefs
+}
+
+node "Terminal-based Local Environment" as TerminalEnv
+node "Appian" as Appian
+node "CMS BigMAC" as BigMAC
+node "Manually Maintained SNS Subscription Targets" as SnsTargets
+
+TerminalEnv --> OnboardingProcedure
+TerminalEnv --> ListRunningStages
+TerminalEnv --> BranchNameInput
+OnboardingProcedure --> AwsCredSetup
+ListRunningStages --> AwsCredSetup
+ListRunningStages --> AwsAccountRegion
+ListRunningStages --> RunningStagesOut
+AwsCredSetup --> AwsCli
+AwsCli --> AwsAccountRegion
+
+ConnectorConfig --> ConnectorMgmt
+ConnectorConfig --> ClusterService
+ConnectorConfig --> ConnectorDefs
+ConnectorMgmt --> ClusterService : target cluster/service
+ConnectorMgmt --> ConnectorDefs : defined connector set
+ConnectorMgmt --> ConnectorPut : invokes put
+ConnectorMgmt --> ConnectorDelete : invokes delete
+ConnectorMgmt --> ConnectorRestart : invokes restart
+ConnectorDelete --> EmptyDeletionSet : handles empty deletion set
+
+EventRouting --> EventPatternDefs
+EventRouting --> SnsTopic : invokes
+EventRouting --> SnsTopicAuth : requires authorization
+SnsTopicAuth --> SnsTopic : authorizes invocation
+SnsTopic --> SnsAdmin
+SnsTopic --> SnsTargets
+AwsEventBridge --> EventRouting
+AwsSns --> SnsTopic
+
+DeployMetrics --> BranchNameInput : uses branch name
+DeployMetrics --> DeployYmlFilter : applies deploy.yml filter
+DeployMetrics --> GitHubActionsApi
+DeployMetrics --> DeployWorkflowRunRecords
+DeployMetrics --> DeployMetricsOut
+DeployMetrics --> GitHubPagination
+DeployYmlFilter --> DeployWorkflowRunRecords : filters workflow runs
+
+PrMetrics --> BranchNameInput : uses branch name
+PrMetrics --> ClosedPrBaseBranchFilter : applies closed PR / base-branch filter
+PrMetrics --> GitHubPrApi
+PrMetrics --> PrRecords
+PrMetrics --> PrMetricsOut
+PrMetrics --> GitHubPagination
+ClosedPrBaseBranchFilter --> PrRecords : filters closed PRs by base branch
+
+GitHubActionsApi --> GitHubPagination
+GitHubPrApi --> GitHubPagination
+GitHubActionsApi --> DeployWorkflowRunRecords
+GitHubPrApi --> PrRecords
+GitHubPagination --> GitHubApi
+
+Appian --> BigMAC : data transfer
+@enduml

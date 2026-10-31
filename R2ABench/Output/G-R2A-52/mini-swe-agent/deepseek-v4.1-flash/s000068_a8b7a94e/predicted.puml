@@ -1,0 +1,158 @@
+@startuml
+title cFS Bundle (s000068_a8b7a94e) - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam linetype ortho
+
+' ============================================================
+' External Systems / Actors
+' ============================================================
+package "External Actors" <<Rectangle>> {
+  actor "Developer / Build User" as BUILD_USER
+  actor "Functional Tester" as TESTER
+  actor "Telemetry / Ground-Test Operator" as OPERATOR
+  actor "CI Maintainer / Workflow Operator" as CI_MAINTAINER
+}
+
+package "External Systems" <<Rectangle>> {
+  component "GitHub Actions Runner\n(ubuntu-latest)" as RUNNER_LATEST
+  component "GitHub Actions Runner\n(ubuntu-18.04)" as RUNNER_1804
+  component "Git Repository\n(with submodules)" as GIT_REPO
+  component "GitHub Labels\n& Issues/PR Metadata" as GITHUB_LABELS
+  component "Artifact Storage\n(Changelog Artifact)" as ARTIFACT_STORE
+}
+
+' ============================================================
+' CI / CD Layer
+' ============================================================
+package "CI/CD Layer (GitHub Actions Reusable Workflow Architecture)" <<Rectangle>> {
+
+  package "Bundle Workflows" <<Rectangle>> {
+    component "Build Workflow\n(prep / install, debug|release)" as WF_BUILD
+    component "Run & Functional-Test Workflow\n(core-cpu1, 15-min timeout)" as WF_FUNTEST
+    component "Changelog Workflow\n(manual trigger)" as WF_CHANGELOG
+    component "Duplicate-Check Workflow" as WF_DUPCHECK
+  }
+
+  package "Reusable Workflows (workflow_call)" <<Rectangle>> {
+    component "Format-Checker Workflow\n(push / pull_request / workflow_call)" as WF_FORMAT
+    component "Static Analysis Workflow" as WF_STATIC
+    component "CodeQL Workflow" as WF_CODEQL
+    component "cFS / Submodule Reuse Path" as WF_REUSE
+  }
+}
+
+' ============================================================
+' Host-Side Tooling Layer
+' ============================================================
+package "Host-Side Tooling Layer" <<Rectangle>> {
+  component "cmdUtil\n(Command Injection: --pktid, --cmdcode,\n--endian, typed payloads)" as CMDUTIL
+  component "cFS_IO_LIB\n(I/O Library)" as CFS_IO_LIB
+  component "cFS_LIB\n(Core Library)" as CFS_LIB
+  component "SIL" as SIL
+  component "ECI" as ECI
+  component "CCDD" as CCDD
+  component "Perfutils-java" as PERFUTILS
+  component "gen_sch_tbl\n(Scheduler Table Generator)" as GEN_SCH_TBL
+}
+
+' ============================================================
+' Build Layer
+' ============================================================
+package "Build & Installation Layer" <<Rectangle>> {
+  component "Make Build System\n(Makefile.sample -> Makefile)" as MAKE
+  component "Build Configuration\n(sample_defs, debug/release)" as BUILD_CFG
+  component "Build Preparation\n(make prep)" as MAKE_PREP
+  component "Build Installation\n(make install)" as MAKE_INSTALL
+}
+
+' ============================================================
+' cFS Runtime Layer
+' ============================================================
+package "cFS Runtime Layer (Target)" <<Rectangle>> {
+  component "core-cpu1\n(Runnable cFS Target Process)" as CORE_CPU1
+  component "cFE\n(Core Flight Executive)" as CFE
+  component "OSAL\n(Operating System Abstraction Layer)" as OSAL
+  component "PSP\n(Platform Support Package)" as PSP
+  component "Framework Applications" as FW_APPS
+
+  package "Telemetry Subsystem" <<Rectangle>> {
+    component "Telemetry Output\n(IP-addressed, incl. 127.0.0.1)" as TELEMETRY
+    component "Command Counters" as CMD_COUNTERS
+  }
+}
+
+' ============================================================
+' Data Stores
+' ============================================================
+database "Telemetry Data\n(DR-001)" as DS_TELEMETRY
+database "Changelog Content\n(Closed issues, Breaking changes,\nEnhancements, Bugs, Deprecated,\nRemoved, Security fixes)" as DS_CHANGELOG
+
+' ============================================================
+' Relationships
+' ============================================================
+
+' Actors to layers
+BUILD_USER --> MAKE
+TESTER --> CMDUTIL
+TESTER --> WF_FUNTEST
+OPERATOR --> TELEMETRY
+CI_MAINTAINER --> WF_CHANGELOG
+CI_MAINTAINER --> WF_BUILD
+
+' CI infrastructure
+WF_BUILD --> RUNNER_1804
+WF_FUNTEST --> RUNNER_1804
+WF_FORMAT --> RUNNER_1804
+WF_CHANGELOG --> RUNNER_LATEST
+WF_DUPCHECK --> RUNNER_LATEST
+WF_STATIC --> RUNNER_LATEST
+WF_CODEQL --> RUNNER_LATEST
+WF_BUILD --> GIT_REPO
+WF_FORMAT --> GIT_REPO
+WF_REUSE --> GIT_REPO
+WF_CHANGELOG --> GITHUB_LABELS
+WF_CHANGELOG --> ARTIFACT_STORE
+WF_CHANGELOG --> DS_CHANGELOG
+
+' Reusable workflow composition
+WF_BUILD ..> WF_FORMAT : workflow_call
+WF_FUNTEST ..> WF_FORMAT : workflow_call
+WF_REUSE ..> WF_STATIC : workflow_call
+WF_REUSE ..> WF_CODEQL : workflow_call
+
+' CI uses build + host tooling + runtime
+WF_BUILD --> MAKE
+WF_FUNTEST --> CORE_CPU1
+WF_FUNTEST --> CMDUTIL
+
+' Build layer
+MAKE --> MAKE_PREP
+MAKE --> MAKE_INSTALL
+MAKE --> BUILD_CFG
+BUILD_CFG --> CORE_CPU1 : installs
+
+' Host tooling to runtime
+CMDUTIL --> CORE_CPU1 : command packets
+CMDUTIL --> CFS_IO_LIB
+CMDUTIL --> CFS_LIB
+CFS_IO_LIB --> CFS_LIB
+SIL --> CFS_LIB
+ECI --> CFS_LIB
+CCDD --> CFS_LIB
+PERFUTILS ..> CFE
+GEN_SCH_TBL ..> FW_APPS
+
+' Runtime internals
+CORE_CPU1 --> CFE
+CFE --> OSAL
+CFE --> PSP
+CFE --> FW_APPS
+FW_APPS --> CMD_COUNTERS
+CORE_CPU1 --> TELEMETRY
+CMD_COUNTERS --> TELEMETRY
+TELEMETRY --> DS_TELEMETRY : observed data
+
+@enduml

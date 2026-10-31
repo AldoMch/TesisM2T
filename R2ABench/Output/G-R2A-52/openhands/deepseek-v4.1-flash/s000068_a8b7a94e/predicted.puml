@@ -1,0 +1,85 @@
+@startuml
+title cFS Bundle - System Architecture (SRS s000068_a8b7a94e)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Build User /\nDeveloper" as Dev
+actor "Functional Tester" as Tester
+actor "Telemetry /\nGround-Test Operator" as Operator
+actor "CI Maintainer /\nWorkflow Operator" as Maintainer
+
+package "GitHub Actions CI" {
+
+  node "Runner: ubuntu-latest" as RunnerLatest {
+    component "Changelog Workflow" as WFChangelog {
+      note right: Manual trigger\nGenerates categorized changelog artifact
+    }
+    component "Duplicate-Check Job" as WFDuplicate
+  }
+
+  node "Runner: ubuntu-18.04" as Runner1804 {
+    component "Build Workflow" as WFBuild
+    component "Run / Functional-Test Workflow" as WFFunctional {
+      note right: 15-minute timeout ceiling (NFR-003)
+    }
+    component "Format-Checker Workflow" as WFFormat
+  }
+
+  package "Reusable Workflows (workflow_call)" as Reusable {
+    component "Format Check" as RWFormat
+    component "Static Analysis" as RWStatic
+    component "CodeQL" as RWCodeQL
+  }
+
+  artifact "Changelog Artifact" as ChangelogArtifact
+}
+
+package "cFS Build Environment" {
+
+  artifact "Makefile.sample" as MakefileSample
+  artifact "sample_defs" as SampleDefs
+  component "Build Preparation\n(make prep)" as MakePrep
+  component "Installation\n(make install)" as MakeInstall
+  artifact "Build Artifacts\n(debug | release)" as BuildArtifacts
+
+  MakefileSample --> MakePrep
+  SampleDefs --> MakePrep
+  MakePrep --> MakeInstall
+  MakeInstall --> BuildArtifacts
+}
+
+package "cFS Runtime (Functional Testing)" {
+  component "core-cpu1\n(running cFS target)" as CoreCpu1
+  component "Host Command Utility\n(cmdUtil)" as CmdUtil {
+    note right: Flags: --pktid, --cmdcode,\n--endian, --uint32
+  }
+  component "Telemetry Service" as Telemetry
+
+  CmdUtil --> CoreCpu1 : command packets
+  CoreCpu1 --> Telemetry : telemetry data
+}
+
+Dev --> WFBuild : triggers build
+Tester --> WFFunctional : starts functional test
+Maintainer --> WFChangelog : manual trigger
+Maintainer --> WFFormat : push / pull_request
+
+WFBuild --> MakefileSample : checks out submodules
+WFBuild --> MakePrep
+WFBuild --> MakeInstall
+MakeInstall --> BuildArtifacts
+
+WFFunctional --> CoreCpu1 : executes (debug/release)
+WFFunctional --> CmdUtil : invokes host command submission
+WFChangelog --> ChangelogArtifact : uploads
+WFChangelog --> WFDuplicate
+
+WFFormat ..> RWFormat : workflow_call
+WFBuild ..> RWStatic : workflow_call
+WFBuild ..> RWCodeQL : workflow_call
+
+Operator --> Telemetry : enables telemetry to\nconfigured IP (incl. 127.0.0.1)
+Operator --> CmdUtil : sends no-op commands\n(observes counter increments)
+
+@enduml

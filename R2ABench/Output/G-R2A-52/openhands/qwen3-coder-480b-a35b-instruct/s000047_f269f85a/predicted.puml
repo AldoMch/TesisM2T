@@ -1,0 +1,94 @@
+@startuml
+!theme plain
+skinparam rectangle {
+    borderColor #333333
+    borderWidth 1
+    shadowing false
+}
+skinparam arrow {
+    Color #333333
+}
+skinparam note {
+    BorderColor #333333
+}
+skinparam component {
+    BorderColor #333333
+}
+
+title Archifiltre-Docs System Architecture
+
+package "Electron Desktop Application" {
+    rectangle "Main Process" as main
+    rectangle "Renderer Process" as renderer
+    
+    package "Controller Layer" {
+        rectangle "Settings Controller" as settingsCtrl
+        rectangle "Export Controller" as exportCtrl
+        rectangle "Hash Controller" as hashCtrl
+    }
+    
+    package "Worker Layer" {
+        rectangle "Tree CSV Worker" as treeWorker
+        rectangle "RESIP Export Worker" as resipWorker
+        rectangle "CSV Export Worker" as csvWorker
+        rectangle "Excel Export Worker" as excelWorker
+        rectangle "Hash Computation Worker" as hashWorker
+    }
+    
+    rectangle "Translation Module" as translation
+    rectangle "User Data Storage" as userData
+}
+
+settingsCtrl -down-> renderer : Sanitize Settings
+exportCtrl -down-> treeWorker : Trigger Tree CSV Export
+exportCtrl -down-> resipWorker : Trigger RESIP Export
+exportCtrl -down-> csvWorker : Trigger CSV Export
+exportCtrl -down-> excelWorker : Trigger Excel Export
+hashCtrl -down-> hashWorker : Trigger Hash Computation
+
+treeWorker -right-> translation : Get Language
+resipWorker -right-> translation : Get Language
+csvWorker -right-> translation : Get Language
+excelWorker -right-> translation : Get Language
+
+hashWorker -down-> userData : Write Debug Files
+hashWorker -up-> hashCtrl : Return Hash Results
+
+treeWorker -up-> exportCtrl : Return Tree CSV
+resipWorker -up-> exportCtrl : Return RESIP Export
+csvWorker -up-> exportCtrl : Return CSV Export
+excelWorker -up-> exportCtrl : Return Excel Export
+
+note right of settingsCtrl
+    FR-001: Sanitize empty settings
+    FR-002: Sanitize invalid settings
+    NFR-003: Reliable settings handling
+end note
+
+note right of exportCtrl
+    FR-003: Async tree CSV export
+    FR-004: Include language in worker input
+    FR-005: Async RESIP export
+    FR-006: Generate CSV export
+    FR-007: Generate Excel export
+    NFR-001: Async background processing
+end note
+
+note right of hashCtrl
+    FR-008: Batch hash computation
+    FR-009: Write hash debug outputs
+    NFR-002: Batch processing
+    NFR-004: Portable debug storage
+end note
+
+note top of translation
+    Provides current language
+    for export workers
+end note
+
+note bottom of userData
+    Stores hash debug files
+    in application user data dir
+end note
+
+@enduml

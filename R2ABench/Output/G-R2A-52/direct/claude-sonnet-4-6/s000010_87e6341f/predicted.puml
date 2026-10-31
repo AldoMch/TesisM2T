@@ -1,0 +1,169 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+skinparam arrow {
+  Color #333333
+  FontSize 11
+}
+
+title Home Recipes - System Architecture Diagram
+
+together {
+  node "Client Platforms" as ClientPlatforms {
+    component "Flutter/Dart\nHome Recipes Client" as FlutterClient {
+      component "Android" as Android
+      component "iOS" as iOS
+      component "Web" as Web
+      component "macOS" as macOS
+    }
+    component "Generated Dart\nProtoBuf Client Code" as DartGenCode
+  }
+}
+
+rectangle "Protocol Buffers Contract\n(.proto definitions)" as ProtoContract {
+  component "Service Definitions\n(Recipe & Ingredient)" as ServiceDefs
+  component "Message Definitions\n(Recipe, Ingredient,\nRequest/Response)" as MessageDefs
+}
+
+rectangle "Code Generation Toolchain" as CodeGen {
+  component "protoc\n(Proto Compiler)" as Protoc
+  component "protoc-gen-dart\n(Dart Plugin)" as ProtocDart
+  component "protoc-gen-go\n(Go Plugin)" as ProtocGo
+  component "protoc-gen-grpc-gateway\n(Gateway Plugin)" as ProtocGateway
+}
+
+node "Backend Server Stack" as BackendStack {
+  component "gRPC-Gateway\nMiddleware" as GRPCGateway {
+    component "addRecipe\nHTTP Endpoint" as AddRecipeHTTP
+    component "ListAllRecipes\nHTTP Endpoint" as ListRecipesHTTP
+    component "ListAllIngredientsAtHome\nHTTP Endpoint" as ListIngredientsHTTP
+    component "GetAllIngredientsForRecipe\nHTTP Endpoint" as GetRecipeIngredientsHTTP
+  }
+  component "Go gRPC Server" as GoGRPCServer {
+    component "Recipe Service" as RecipeService
+    component "Ingredient Service" as IngredientService
+  }
+  component "Generated Go\ngRPC Server Code" as GoGenCode
+}
+
+actor "End User" as EndUser
+actor "API Consumer / Tester" as APIConsumer
+actor "Developer" as Developer
+actor "Operator" as Operator
+
+node "Docker Runtime" as DockerRuntime {
+  component "Server Docker\nContainer Image" as DockerImage
+}
+
+node "Local Kubernetes Cluster" as LocalK8s {
+  component "Kubernetes\nDeployment Manifests" as K8sManifests
+  component "Server Stack\nDeployment (Local)" as LocalK8sDeploy
+}
+
+cloud "Azure Kubernetes Service (AKS)" as AKS {
+  component "AKS Deployment\nManifests" as AKSManifests
+  component "Server Stack\nDeployment (AKS)" as AKSDeploy
+}
+
+EndUser --> FlutterClient : uses
+APIConsumer --> GRPCGateway : HTTP requests\n(curl / HTTP client)
+Developer --> ProtoContract : defines & maintains
+Developer --> CodeGen : invokes code generation
+Operator --> DockerRuntime : builds & runs image
+Operator --> LocalK8s : applies manifests
+Operator --> AKS : applies AKS manifests
+
+ProtoContract --> Protoc : input to compiler
+Protoc --> ProtocDart : generates
+Protoc --> ProtocGo : generates
+Protoc --> ProtocGateway : generates
+
+ProtocDart --> DartGenCode : produces
+ProtocGo --> GoGenCode : produces
+ProtocGateway --> GRPCGateway : produces gateway code
+
+DartGenCode --> FlutterClient : integrated into
+GoGenCode --> GoGRPCServer : implemented by
+
+FlutterClient --> GoGRPCServer : gRPC over\nProtoBuf (COM-001)
+
+GRPCGateway --> GoGRPCServer : translates HTTP\nto gRPC calls\n(COM-003)
+
+AddRecipeHTTP --> RecipeService : addRecipe RPC
+ListRecipesHTTP --> RecipeService : ListAllRecipes RPC\n(server-streaming)
+ListIngredientsHTTP --> IngredientService : ListAllIngredientsAtHome RPC
+GetRecipeIngredientsHTTP --> IngredientService : GetAllIngredientsForRecipe RPC
+
+DockerImage --> GoGRPCServer : packages & runs
+DockerImage --> GRPCGateway : packages & runs
+
+LocalK8sManifests --> LocalK8sDeploy : configures
+LocalK8sDeploy --> GoGRPCServer : deploys
+LocalK8sDeploy --> GRPCGateway : deploys
+
+AKSManifests --> AKSDeploy : configures
+AKSDeploy --> GoGRPCServer : deploys to AKS
+AKSDeploy --> GRPCGateway : deploys to AKS
+
+note right of ProtoContract
+  Shared service contract:
+  - API-001: .proto files
+  - DR-001: maintained as source of truth
+  - NFR-002: contract-driven interfaces
+end note
+
+note right of GRPCGateway
+  HTTP Endpoints (API-005 to API-008):
+  - POST addRecipe → success indicator
+  - GET ListAllRecipes → streaming preserved
+  - POST ListAllIngredientsAtHome
+  - POST GetAllIngredientsForRecipe
+end note
+
+note bottom of DockerRuntime
+  FR-004 / NFR-003 / C-005:
+  Server image built and run locally
+end note
+
+note bottom of LocalK8s
+  FR-005 / NFR-004 / C-006:
+  Local Kubernetes deployment
+end note
+
+note bottom of AKS
+  FR-006 / NFR-004 / C-007:
+  Azure Kubernetes Service deployment
+end note
+
+@enduml

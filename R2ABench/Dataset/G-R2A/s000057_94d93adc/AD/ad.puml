@@ -1,0 +1,46 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+database "PostgreSQL Database\n- stores users and sounds\n- stores Cloudinary URL references" as PostgreSql
+
+rectangle "Express Server\n- fetches data with Sequelize\n- serves React frontend\n- handles backend API requests" as ExpressServer
+
+rectangle "React Frontend\n- Redux state management\n- uploads images and audio\n- controls and visualizes playback" as ReactFrontend
+
+cloud "Cloudinary\n- stores audio files\n- stores images\n- returns file URLs" as Cloudinary
+
+ExpressServer --> PostgreSql : query user, sound, and URL data
+PostgreSql --> ExpressServer : query results
+ExpressServer --> ReactFrontend : backend serves data to frontend
+ReactFrontend --> ExpressServer : fetch calls for user and sound data
+ReactFrontend --> Cloudinary : audio and image files
+Cloudinary --> ReactFrontend : URLs leading to files
+ReactFrontend --> ExpressServer : Cloudinary URLs to persist
+ExpressServer --> PostgreSql : store URL references
+@enduml

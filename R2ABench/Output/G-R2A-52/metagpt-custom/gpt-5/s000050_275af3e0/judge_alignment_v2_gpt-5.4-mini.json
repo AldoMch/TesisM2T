@@ -1,0 +1,356 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::kAFL Hypervisor/Fuzzer Framework"
+      ],
+      "gt_nodes": [
+        "Global::KVM (L0)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::hAFL2 Controller/Orchestrator",
+        "Orchestration & Test::Standalone Test Runner",
+        "Orchestration & Test::kAFL-Fuzzer Test Suites"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::hAFL2"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Hyper-V Child Partition VM"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::Child Partition Harness",
+        "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::Harness Driver(s)"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Hyper-V Root Partition VM"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Hyper-V Root Partition VM::Crash Monitoring & Feedback::Root Partition Crash Monitor"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Windows VMSwitch"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "Global::VMBus/netvsc channels"
+      ],
+      "gt_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Build & Configuration Tooling::Offset Configuration Source",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Build & Configuration Tooling::Windows Build Artifacts",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Build & Configuration Tooling::Windows Build Script",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Host Filesystem/Shared Libraries",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Hyper-V Child Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Hyper-V Root Partition VM",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Python 3 runtime",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::VMBus/netvsc channels",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Visual Studio Toolchain",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Windows VMSwitch",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::bash environment",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::hAFL2 Controller/Orchestrator",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::kAFL Hypervisor/Fuzzer Framework",
+      "reference_nodes": [
+        "Global::KVM (L0)"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::kAFL hypercalls",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::pytest",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Guest I/O & Forkserver::Embedded Forkserver",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::Child Partition Harness",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::Harness Driver(s)",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::loader.exe",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::packet_sender.exe",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Hyper-V Root Partition VM::Crash Monitoring & Feedback::Root Partition Crash Monitor",
+      "reference_nodes": [
+        "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Linux Userspace Fuzzing::Initrd Packager",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Linux Userspace Fuzzing::Linux Launch Scripts",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Linux Userspace Fuzzing::Shared Library Resolver",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Orchestration & Test::Standalone Test Runner",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Orchestration & Test::kAFL-Fuzzer Test Suites",
+      "reference_nodes": [
+        "KVM (L0)::hAFL2"
+      ]
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::kAFL Hypervisor/Fuzzer Framework"
+      ],
+      "gt_node": "Global::KVM (L0)"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::VMBus/netvsc channels"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Hyper-V Child Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::Child Partition Harness",
+        "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::Harness Driver(s)",
+        "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::loader.exe",
+        "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::packet_sender.exe"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Child Partition\\nGuest VM (L2)::harness.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Hyper-V Root Partition VM"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Hyper-V Root Partition VM::Crash Monitoring & Feedback::Root Partition Crash Monitor"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::CrashMonitoring.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Windows VMSwitch"
+      ],
+      "gt_node": "KVM (L0)::Hyper-V (L1) - Host::Root Partition\\nHost OS (L2)::vmswitch.sys"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::hAFL2 Controller/Orchestrator",
+        "Orchestration & Test::Standalone Test Runner",
+        "Orchestration & Test::kAFL-Fuzzer Test Suites"
+      ],
+      "gt_node": "KVM (L0)::hAFL2"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5048,
+      "completion_tokens": 839,
+      "total_tokens": 5887,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Build & Configuration Tooling::Offset Configuration Source",
+    "Build & Configuration Tooling::Windows Build Artifacts",
+    "Build & Configuration Tooling::Windows Build Script",
+    "Global::Host Filesystem/Shared Libraries",
+    "Global::Python 3 runtime",
+    "Global::Visual Studio Toolchain",
+    "Global::bash environment",
+    "Global::kAFL hypercalls",
+    "Global::pytest",
+    "Guest I/O & Forkserver::Embedded Forkserver",
+    "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::loader.exe",
+    "Hyper-V Child Partition VM::Windows Hyper-V Fuzzing::packet_sender.exe",
+    "Linux Userspace Fuzzing::Initrd Packager",
+    "Linux Userspace Fuzzing::Linux Launch Scripts",
+    "Linux Userspace Fuzzing::Shared Library Resolver"
+  ],
+  "_provenance": {
+    "fingerprint": "a36a74859543bba4a5a94cb39d102397562333ce9baaef903ab8b79739fcd8d6",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

@@ -1,0 +1,116 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam component {
+  BackgroundColor #EEF2FF
+  BorderColor #4A5568
+  FontColor #1A202C
+}
+skinparam package {
+  BackgroundColor #F7FAFC
+  BorderColor #718096
+}
+skinparam database {
+  BackgroundColor #FFF5F5
+  BorderColor #C53030
+}
+skinparam arrow {
+  Color #2D3748
+  FontColor #2D3748
+}
+
+title User-in-the-box Simulator Framework — Architecture Diagram
+
+' ── External inputs ────────────────────────────────────────────
+file "YAML Configuration File" as YAMLConfig
+
+' ── Core Framework ─────────────────────────────────────────────
+package "User-in-the-box Framework" {
+
+  package "Simulator Builder" as BuilderPkg {
+    component "Simulator Builder" as Builder
+    component "MuJoCo XML\nIntegration Layer" as XMLIntegration
+  }
+
+  package "Biomechanical Model Modules" as BioModelPkg {
+    component "Biomechanical\nModel Module" as BioModel
+    note right of BioModel
+      MuJoCo XML definitions
+      Control values in [0,1]
+      Action inputs in [-1,1]
+    end note
+  }
+
+  package "Perception Modules" as PerceptionPkg {
+    component "Egocentric\nVision Module" as VisionModule
+    component "Proprioception\nModule" as PropModule
+    component "Perception Base\nClass (Modality)" as PerceptionBase
+    VisionModule -up-|> PerceptionBase
+    PropModule -up-|> PerceptionBase
+  }
+
+  package "Interaction Task Modules" as TaskPkg {
+    component "Interaction Task\nModule" as InteractionTask
+    note right of InteractionTask
+      MuJoCo XML definitions
+      HCI task environment
+    end note
+  }
+
+  package "Standalone Simulator Package" as SimPkg {
+    component "Gym-compatible\nSimulator" as GymSimulator
+    interface "OpenAI Gym\nInterface" as GymInterface
+    GymSimulator -down- GymInterface
+  }
+
+  package "Reinforcement Learning\nTraining Workflow" as RLPkg {
+    component "RL Training\nRunner" as RLTrainer
+  }
+
+  package "Evaluation Workflow" as EvalPkg {
+    component "Evaluation\nRunner" as EvalRunner
+  }
+}
+
+' ── File System Artifacts ──────────────────────────────────────
+package "Run Folder (File System)" as RunFolderPkg {
+  folder "checkpoints/" as CheckpointDir
+  folder "evaluate/" as EvaluateDir
+  database "Model Checkpoint\nArtifacts" as Checkpoints
+  database "Training Run\nArtifacts" as TrainingArtifacts
+  database "Action Log" as ActionLog
+  database "Evaluation Outputs" as EvalOutputs
+
+  CheckpointDir --> Checkpoints
+  EvaluateDir --> ActionLog
+  EvaluateDir --> EvalOutputs
+}
+
+' ── Build Flow ─────────────────────────────────────────────────
+YAMLConfig --> Builder : simulator configuration
+Builder --> XMLIntegration : integrate MuJoCo XML
+BioModel --> XMLIntegration : biomechanical XML
+InteractionTask --> XMLIntegration : task environment XML
+XMLIntegration --> Builder : standalone MuJoCo XML
+
+Builder --> BioModel : initialize wrapper
+Builder --> InteractionTask : initialize wrapper
+PerceptionBase --> Builder : initialize perception wrapper
+
+Builder --> GymSimulator : produce simulator package
+
+' ── Training Flow ──────────────────────────────────────────────
+YAMLConfig --> RLTrainer : training configuration
+GymInterface --> RLTrainer : Gym-compatible interface
+RLTrainer --> TrainingArtifacts : write training run artifacts
+RLTrainer --> Checkpoints : write model checkpoints
+
+' ── Evaluation Flow ────────────────────────────────────────────
+CheckpointDir --> EvalRunner : load checkpoint
+GymSimulator --> EvalRunner : load simulator
+EvalRunner --> EvaluateDir : create if absent
+EvalRunner --> ActionLog : write (if logging enabled)
+EvalRunner --> EvalOutputs : write evaluation outputs
+
+@enduml

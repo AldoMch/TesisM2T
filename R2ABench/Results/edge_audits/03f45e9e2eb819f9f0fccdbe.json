@@ -1,0 +1,251 @@
+{
+  "metric_version": "l1-hierarchy-offline-v1",
+  "alignment_sha256": "54f34d498eeaa426e8bed3c31eac0c37d8a5ce8f73a840226a3274f6f6c2b79d",
+  "group_index_note": "zero-based index in the unchanged matched_pairs cache",
+  "reference_edges_sha256": "a65bc301bf00360cd8888f243e63fdcc28c718e604158f7e24356bbc8dc62d93",
+  "predicted_edges_sha256": "5dab9561f8f428851c45061530f153852339012f895154f8c5cf4694d079a0cd",
+  "precision": 0.2222222222222222,
+  "recall": 0.5,
+  "f1": 0.30769230769230765,
+  "reference_edges": [
+    [
+      "Global::Browser",
+      "Your GCP project::Compute Engine::websocketd"
+    ],
+    [
+      "Your GCP project::Compute Engine::pulltop",
+      "Your GCP project::Compute Engine::websocketd"
+    ],
+    [
+      "Your GCP project::Compute Engine::pulltop",
+      "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+    ],
+    [
+      "Your GCP project::Compute Engine::websocketd",
+      "Global::Browser"
+    ]
+  ],
+  "predicted_edges": [
+    [
+      "Global::Web Client\\n(Browser / WebSocket)",
+      "Google Kubernetes Engine::LoadBalancer Service\\nTCP port 80 -> targetPort 8080\\n[SI-005 / FR-005 / CI-002 / NFR-004]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]",
+      "Google Cloud Platform::Pub/Sub Topic\\nprojects/<project-id>/topics/<topic-name>\\n[SI-001 / DI-001 / DR-003]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::Recent-Message Cache\\nup to last 10 messages\\n[DI-003 / FR-008 / NFR-003]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::websocketd\\nlistens on :8080\\n[CI-003 / FR-002]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::exec.sh\\ncontainer entrypoint\\n[CON-006 / FR-002]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::Recent-Message Cache\\nup to last 10 messages\\n[DI-003 / FR-008 / NFR-003]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::websocketd\\nlistens on :8080\\n[CI-003 / FR-002]"
+    ],
+    [
+      "Google Kubernetes Engine::HorizontalPodAutoscaler\\nmin 1 / max 2 / CPU 80%\\n[SI-006 / FR-009 / NFR-001]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]"
+    ],
+    [
+      "Google Kubernetes Engine::Kubernetes ConfigMap\\nitem: topic = <topic-id>\\n[SI-003 / DR-001]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]"
+    ],
+    [
+      "Google Kubernetes Engine::LoadBalancer Service\\nTCP port 80 -> targetPort 8080\\n[SI-005 / FR-005 / CI-002 / NFR-004]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]"
+    ]
+  ],
+  "covered_reference_edges": [
+    [
+      "Your GCP project::Compute Engine::pulltop",
+      "Your GCP project::Compute Engine::websocketd"
+    ],
+    [
+      "Your GCP project::Compute Engine::pulltop",
+      "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+    ]
+  ],
+  "supported_predicted_edges": [
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]",
+      "Google Cloud Platform::Pub/Sub Topic\\nprojects/<project-id>/topics/<topic-name>\\n[SI-001 / DI-001 / DR-003]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::websocketd\\nlistens on :8080\\n[CI-003 / FR-002]"
+    ]
+  ],
+  "unmatched_reference_edges": [
+    [
+      "Global::Browser",
+      "Your GCP project::Compute Engine::websocketd"
+    ],
+    [
+      "Your GCP project::Compute Engine::websocketd",
+      "Global::Browser"
+    ]
+  ],
+  "unmatched_predicted_edges": [
+    [
+      "Global::Web Client\\n(Browser / WebSocket)",
+      "Google Kubernetes Engine::LoadBalancer Service\\nTCP port 80 -> targetPort 8080\\n[SI-005 / FR-005 / CI-002 / NFR-004]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::Recent-Message Cache\\nup to last 10 messages\\n[DI-003 / FR-008 / NFR-003]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::websocketd\\nlistens on :8080\\n[CI-003 / FR-002]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::exec.sh\\ncontainer entrypoint\\n[CON-006 / FR-002]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::Recent-Message Cache\\nup to last 10 messages\\n[DI-003 / FR-008 / NFR-003]"
+    ],
+    [
+      "Google Kubernetes Engine::HorizontalPodAutoscaler\\nmin 1 / max 2 / CPU 80%\\n[SI-006 / FR-009 / NFR-001]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]"
+    ],
+    [
+      "Google Kubernetes Engine::Kubernetes ConfigMap\\nitem: topic = <topic-id>\\n[SI-003 / DR-001]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]"
+    ],
+    [
+      "Google Kubernetes Engine::LoadBalancer Service\\nTCP port 80 -> targetPort 8080\\n[SI-005 / FR-005 / CI-002 / NFR-004]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]"
+    ]
+  ],
+  "internal_reference_edges": [],
+  "internal_predicted_edges": [],
+  "reference_witnesses": [
+    {
+      "edge_index": 1,
+      "counterpart_index": 5,
+      "source_group": 2,
+      "target_group": 3
+    },
+    {
+      "edge_index": 2,
+      "counterpart_index": 1,
+      "source_group": 2,
+      "target_group": 4
+    }
+  ],
+  "predicted_witnesses": [
+    {
+      "edge_index": 1,
+      "counterpart_index": 2,
+      "source_group": 2,
+      "target_group": 4
+    },
+    {
+      "edge_index": 5,
+      "counterpart_index": 1,
+      "source_group": 2,
+      "target_group": 3
+    }
+  ],
+  "reference_endpoint_anchors": {
+    "Global::Browser": [
+      0
+    ],
+    "Global::Your GCP project": [
+      1,
+      2,
+      3
+    ],
+    "Global::pubsub-public-data project": [
+      4
+    ],
+    "Your GCP project::Compute Engine": [
+      1,
+      2,
+      3
+    ],
+    "Your GCP project::Compute Engine::pulltop": [
+      2
+    ],
+    "Your GCP project::Compute Engine::websocketd": [
+      3
+    ],
+    "pubsub-public-data project::Cloud Pub/Sub\\ntopic": [
+      4
+    ]
+  },
+  "predicted_endpoint_anchors": {
+    "Global::Google Cloud Platform": [
+      4
+    ],
+    "Global::Google Kubernetes Engine": [
+      1,
+      2,
+      3
+    ],
+    "Global::Web Client\\n(Browser / WebSocket)": [
+      0
+    ],
+    "Google Cloud Platform::Pub/Sub Topic\\nprojects/<project-id>/topics/<topic-name>\\n[SI-001 / DI-001 / DR-003]": [
+      4
+    ],
+    "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]": [
+      1,
+      2,
+      3
+    ],
+    "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]": [
+      1,
+      2,
+      3
+    ],
+    "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::Recent-Message Cache\\nup to last 10 messages\\n[DI-003 / FR-008 / NFR-003]": [],
+    "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::exec.sh\\ncontainer entrypoint\\n[CON-006 / FR-002]": [],
+    "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]": [
+      2
+    ],
+    "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::websocketd\\nlistens on :8080\\n[CI-003 / FR-002]": [
+      3
+    ],
+    "Google Kubernetes Engine::HorizontalPodAutoscaler\\nmin 1 / max 2 / CPU 80%\\n[SI-006 / FR-009 / NFR-001]": [],
+    "Google Kubernetes Engine::Kubernetes ConfigMap\\nitem: topic = <topic-id>\\n[SI-003 / DR-001]": [],
+    "Google Kubernetes Engine::LoadBalancer Service\\nTCP port 80 -> targetPort 8080\\n[SI-005 / FR-005 / CI-002 / NFR-004]": []
+  },
+  "reference_unanchored_edges": [],
+  "predicted_unanchored_edges": [
+    [
+      "Global::Web Client\\n(Browser / WebSocket)",
+      "Google Kubernetes Engine::LoadBalancer Service\\nTCP port 80 -> targetPort 8080\\n[SI-005 / FR-005 / CI-002 / NFR-004]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::Recent-Message Cache\\nup to last 10 messages\\n[DI-003 / FR-008 / NFR-003]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::websocketd\\nlistens on :8080\\n[CI-003 / FR-002]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::exec.sh\\ncontainer entrypoint\\n[CON-006 / FR-002]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]"
+    ],
+    [
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::pulltop (Node.js)\\npulls topic, writes output stream\\n[SI-002 / DR-007]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]::Recent-Message Cache\\nup to last 10 messages\\n[DI-003 / FR-008 / NFR-003]"
+    ],
+    [
+      "Google Kubernetes Engine::HorizontalPodAutoscaler\\nmin 1 / max 2 / CPU 80%\\n[SI-006 / FR-009 / NFR-001]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]"
+    ],
+    [
+      "Google Kubernetes Engine::Kubernetes ConfigMap\\nitem: topic = <topic-id>\\n[SI-003 / DR-001]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]"
+    ],
+    [
+      "Google Kubernetes Engine::LoadBalancer Service\\nTCP port 80 -> targetPort 8080\\n[SI-005 / FR-005 / CI-002 / NFR-004]",
+      "Google Kubernetes Engine::Adapter Deployment\\n(one configured topic per instance)\\n[FR-003 / DR-006]::Adapter Pod :8080\\n[FR-007 / NFR-002]"
+    ]
+  ]
+}

@@ -1,0 +1,101 @@
+@startuml
+hide stereotype
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+title DeepCode System Architecture
+
+node "Browser Client (HTML5)\nVue 3 SPA (TS, Vuex, Router, Ant Design Vue,\nCodeMirror, ECharts, Axios)" as Browser
+cloud "DNS" as DNS
+cloud "CDN (Static Assets & Public Objects)" as CDN
+node "Nginx Reverse Proxy\n- HTTPS termination\n- Routes /api -> Backend" as Nginx
+
+Browser --> DNS : Domain resolution
+Browser --> CDN : HTTPS GET static JS/CSS/Images
+Browser --> Nginx : HTTPS REST API
+
+frame "Intranet / Kubernetes Cluster (Ubuntu 22.04 LTS, Docker, Firewall-restricted)" {
+  node "DeepCode Backend\nSpring Boot 3.1.2 (WebFlux)\nJDK 21, Lombok, Swagger" as Backend {
+    package "Presentation Layer" {
+      component "REST Controllers\nSwagger UI / OpenAPI (dev)" as REST
+    }
+    package "Proxy Layer" {
+      component "Security Filters / Interceptors\n- Enforce HTTPS\n- JWT/OAuth2 Authentication\n- Permission checks\n- Validation & Rate limiting" as Filters
+    }
+    package "Business Layer" {
+      component "User Service" as UserSvc
+      component "Problem Service" as ProbSvc
+      component "Solution Service" as SolSvc
+      component "Forum Service" as ForumSvc
+      component "Admin Service" as AdminSvc
+      component "AI Assistant Adapter\n(LangChain4j)" as AISvc
+      component "Judging Adapter\n(HTTP client, queue-aware)" as JudgeAdapter
+      component "Notification Service\n(SMTP Email)" as NotifSvc
+    }
+    package "Access Layer" {
+      component "Repositories (MyBatis-Plus)\nTransactions & Rollback" as Repo
+      component "Cache Access" as CacheAccess
+      component "Object Storage Access\n(S3 API)" as ObjAccess
+    }
+  }
+
+  database "MySQL 5.7.44\n(Business Data, FK constraints, Indexes)" as MySQL
+  node "Redis 7.4.6\n(High-frequency cache / tokens / sessions)" as Redis
+  node "MinIO\n(Object Storage: images, test cases, files)" as MinIO
+
+  Nginx --> Backend : HTTP (intranet)
+  Backend --> MySQL : JDBC
+  Backend --> Redis : Cache / Token storage
+  Backend --> MinIO : S3 API (upload/download)
+}
+
+' External/Supporting Services
+cloud "LLM Service\n(Provider TBD)" as LLM
+cloud "SMTP Provider" as SMTP
+
+frame "Judging Service" {
+  node "JudgeHost\n- HTTP API\n- Scheduler & Queue\n- Thread Pool\n- Returns 'busy' when queue full" as JudgeHost
+  node "JudgeCore\n- Compile & Execute\n- Docker Sandbox (resource limits)\n- seccomp syscall filters" as JudgeCore
+  JudgeHost --> JudgeCore : Execute job (compile/run)
+}
+
+Backend --> LLM : LangChain4j API (recommend/analysis/explanation/review)
+Backend --> SMTP : SMTP (email)
+Backend --> JudgeHost : HTTP (submit code, poll results)
+JudgeHost --> MinIO : Download test case files (S3 API)
+
+' Observability
+frame "Observability" {
+  node "Prometheus\n(Metrics scraping)" as Prom
+  node "Grafana\n(Dashboards)" as Graf
+  node "Alerting\n(PagerDuty / DingTalk)" as Alert
+}
+
+Prom --> Backend : JVM / HTTP metrics
+Prom --> JudgeHost : Service metrics
+Prom --> MySQL : DB exporter
+Prom --> Redis : Redis exporter
+Prom --> Nginx : Nginx exporter
+Graf --> Prom : Queries / Visualization
+Prom --> Alert : Threshold-based alerts\n(CPU/Mem >80%, error rate >1%, DB latency >15s)
+
+' CI/CD & Deployment
+frame "CI/CD & Deployment" {
+  node "GitLab CI/CD\n(Build/Test/Pipeline)" as GitLab
+  node "Private Docker Registry" as Registry
+  node "Kubernetes\n(Deploy/Scale/Rollback)" as K8s
+  node "Backup Job\n(Daily DB backup)" as Backup
+  cloud "Offsite Backup Storage" as Offsite
+}
+
+GitLab --> Registry : Push images
+Registry --> K8s : Pull images
+GitLab --> K8s : Deploy via pipelines
+K8s --> Backend : Pods/Services management
+Backup --> MySQL : Logical dump / snapshot
+Backup --> Offsite : Encrypted backup copies (daily)
+
+' Static object distribution path
+MinIO --> CDN : Public objects via CDN
+
+@enduml

@@ -1,0 +1,219 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+skinparam cloud {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+}
+skinparam arrow {
+  Color #444444
+}
+skinparam defaultFontSize 12
+
+title POCD – Persistent Object Consistency Detection\nSystem Architecture Diagram
+
+'============================================================
+' EXTERNAL ACTORS / INPUT SOURCES
+'============================================================
+actor "Technical User /\nClass Diagram Manager" as TechUser
+actor "Unauthenticated User" as AnonUser
+actor "New / Beginner User" as NewUser
+actor "Third-Party Application" as ThirdParty
+
+cloud "StarUML\n(.mdj files)" as StarUML
+cloud "MySQL Database\n(Design File / Script /\nJDBC Connection)" as MySQLSrc
+
+'============================================================
+' FRONT-END LAYER (User Interface Layer)
+'============================================================
+node "User Interface Layer\n(Front-End – Browser SPA)" as UILayer {
+
+  rectangle "Account & Auth UI\n(FR-001, FR-002)" as AuthUI
+  rectangle "File Management UI\n(FR-003, FR-004,\nFR-005, FR-006)" as FileUI
+  rectangle "Detection Config UI\n(FR-007, FR-008)" as ConfigUI
+  rectangle "Detection Result UI\n(FR-017 ~ FR-023)" as DetectUI
+  rectangle "Repair Suggestion &\nRepair Result UI\n(FR-024 ~ FR-027)" as RepairUI
+  rectangle "Detection Record &\nReport Export UI\n(FR-009, FR-010)" as ReportUI
+  rectangle "Help & Case UI\n(FR-011, FR-012)" as HelpUI
+}
+
+'============================================================
+' BACK-END LAYER (Business Logic Layer)
+'============================================================
+node "Business Logic Layer\n(Back-End Application Server)" as BLLayer {
+
+  rectangle "Account & Auth Service\n(Registration, Login,\nRole-Based Access Control)\n[NFR-008]" as AuthSvc
+
+  rectangle "File Management Service\n(Upload, Download,\nModify, Delete)" as FileSvc
+
+  rectangle "Detection Config Service\n(Detection Rules,\nException Config)" as ConfigSvc
+
+  rectangle "Parsing Module" as ParseMod {
+    rectangle "MDJ Class Diagram Parser\n(Classes, Interfaces,\nEnums, Attributes,\nRelationships)\n[FR-013, C-003]" as MDJParser
+    rectangle "Database Parser\n(Tables, Fields, PKs,\nFKs, Triggers, Types)\n[FR-014, FR-015, C-004]" as DBParser
+    rectangle "JSON Converter\n(Jackson / JSON)\n[C-006, C-007]" as JSONConv
+  }
+
+  rectangle "Matching Engine\n(Entity-Entity, Attribute-Attribute,\nRelationship-Relationship\nBipartite Graph + Similarity)\n[FR-016]" as MatchEngine
+
+  rectangle "Inconsistency Detection Engine\n[FR-017 ~ FR-023]" as DetectEngine {
+    rectangle "Field & Type Detector\n(FR-017, FR-018)" as FieldDet
+    rectangle "Attribute/Column &\nClass/Table Detector\n(FR-019, FR-020)" as AttrDet
+    rectangle "Relationship Detector\n(Multiplicity, Type,\nMissing/Extra)\n(FR-021, FR-022, FR-023)" as RelDet
+  }
+
+  rectangle "Repair Service\n[FR-024 ~ FR-027]" as RepairSvc {
+    rectangle "Class Diagram\nRepair Suggestion &\nAuto-Repair\n(FR-024, FR-025)" as CDRepair
+    rectangle "Database\nRepair Suggestion &\nAuto-Repair\n(FR-026, FR-027)" as DBRepair
+  }
+
+  rectangle "Report & History Service\n(Export, Historical Records)\n[FR-009, FR-010]" as ReportSvc
+
+  rectangle "Help & Case Service\n(Manuals, FAQs,\nSample Files)\n[FR-011, FR-012]" as HelpSvc
+
+  rectangle "Async Task Manager\n(Background Detection Jobs)\n[NFR-004]" as AsyncMgr
+
+  rectangle "Operation Log Service\n[NFR-010, DR-013]" as LogSvc
+
+  rectangle "Open API Gateway\n[NFR-012, FR-012]" as OpenAPI
+}
+
+'============================================================
+' DATA ACCESS LAYER
+'============================================================
+node "Data Access Layer" as DALayer {
+
+  database "User Account Store\n[DR-001]" as UserDB
+  database "File Store\n(MDJ Files, DB Design Files)\n[DR-002, DR-003]" as FileDB
+  database "Parsing Model Store\n(CD Model, DB Model)\n[DR-004, DR-005]" as ParseDB
+  database "Detection Config Store\n(Rules, Exceptions)\n[DR-006, DR-007]" as ConfigDB
+  database "Matching & Detection\nResults Store\n[DR-008, DR-009]" as ResultDB
+  database "Repair Data Store\n(Suggestions, Results)\n[DR-010]" as RepairDB
+  database "History & Logs Store\n(Detection Records,\nModification Records,\nOperation Logs)\n[DR-011, DR-013]" as HistoryDB
+  database "Help & Case Store\n(Manuals, FAQs,\nSample Files)\n[DR-012]" as HelpDB
+}
+
+'============================================================
+' EXTERNAL CONNECTORS
+'============================================================
+node "External Connectors" as ExtConn {
+  rectangle "JDBC Database Connector\n[C-005]" as JDBCConn
+}
+
+'============================================================
+' SSL / SECURITY BOUNDARY
+'============================================================
+rectangle "SSL/TLS Encryption Boundary\n[NFR-007, C-008]" as SSLBoundary
+
+'============================================================
+' CONNECTIONS – USERS TO UI
+'============================================================
+TechUser --> AuthUI
+TechUser --> FileUI
+TechUser --> ConfigUI
+TechUser --> DetectUI
+TechUser --> RepairUI
+TechUser --> ReportUI
+
+AnonUser --> AuthUI
+AnonUser --> DetectUI
+AnonUser --> HelpUI
+
+NewUser --> HelpUI
+
+ThirdParty --> OpenAPI
+
+'============================================================
+' CONNECTIONS – UI TO BACK-END (through SSL boundary)
+'============================================================
+UILayer --> SSLBoundary
+SSLBoundary --> BLLayer
+
+AuthUI --> AuthSvc
+FileUI --> FileSvc
+ConfigUI --> ConfigSvc
+DetectUI --> DetectEngine
+RepairUI --> RepairSvc
+ReportUI --> ReportSvc
+HelpUI --> HelpSvc
+
+'============================================================
+' CONNECTIONS – INTERNAL BACK-END SERVICES
+'============================================================
+FileSvc --> ParseMod : "Trigger parsing on upload"
+MDJParser --> JSONConv
+DBParser --> JSONConv
+JSONConv --> MatchEngine : "Parsed JSON models"
+MatchEngine --> DetectEngine : "Matching results"
+DetectEngine --> RepairSvc : "Inconsistency report"
+DetectEngine --> ReportSvc : "Detection results"
+RepairSvc --> ReportSvc : "Repair results"
+AsyncMgr --> DetectEngine : "Async job dispatch"
+AsyncMgr --> RepairSvc : "Async job dispatch"
+AuthSvc --> LogSvc
+FileSvc --> LogSvc
+DetectEngine --> LogSvc
+RepairSvc --> LogSvc
+OpenAPI --> AuthSvc
+OpenAPI --> DetectEngine
+OpenAPI --> ReportSvc
+
+'============================================================
+' CONNECTIONS – BACK-END TO DATA ACCESS LAYER
+'============================================================
+AuthSvc --> UserDB
+FileSvc --> FileDB
+ParseMod --> ParseDB
+ConfigSvc --> ConfigDB
+MatchEngine --> ResultDB
+DetectEngine --> ResultDB
+RepairSvc --> RepairDB
+ReportSvc --> HistoryDB
+LogSvc --> HistoryDB
+HelpSvc --> HelpDB
+
+'============================================================
+' CONNECTIONS – EXTERNAL FILE INPUTS
+'============================================================
+StarUML --> FileSvc : ".mdj upload"
+MySQLSrc --> FileSvc : "DB file / script upload"
+MySQLSrc --> JDBCConn : "Direct DB connection"
+
+'============================================================
+' CONNECTIONS – JDBC CONNECTOR
+'============================================================
+JDBCConn --> DBParser : "Raw DB metadata"
+DBParser --> JSONConv
+
+'============================================================
+' LEGEND
+'============================================================
+legend right
+  |= Symbol |= Meaning |
+  | node | Deployment node / Layer |
+  | rectangle | Service or Module |
+  | database | Persistent Data Store |
+  | cloud | External System |
+  | actor | Human User Role |
+  | --> | Data / Control Flow |
+endlegend
+
+@enduml

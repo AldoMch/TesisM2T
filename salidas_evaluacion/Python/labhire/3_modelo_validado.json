@@ -1,0 +1,233 @@
+{
+  "requirements": [
+    {
+      "id": "labhire-R001",
+      "description": "The system shall provide personalized research internship project discovery, including recommendation, project detail viewing, rule-based search, and project favorites."
+    },
+    {
+      "id": "labhire-R002",
+      "description": "The system shall support the lifecycle of publishing, managing, applying to, and mutually evaluating research internship projects, including mentor-side applicant chat."
+    },
+    {
+      "id": "labhire-R003",
+      "description": "The system shall support user registration and login with university-email verification, enterprise certification with enterprise-email verification, and administrator login without an administrator self-registration entry; enterprise certification shall gate internship referral post publication permission."
+    },
+    {
+      "id": "labhire-R004",
+      "description": "The system shall support user personal information completion, student resume upload and permission-controlled viewing, mentor search and favorites, and authorized information display during two-way selection."
+    },
+    {
+      "id": "labhire-R005",
+      "description": "The system shall support community post display, publication, modification, deletion, comments, favorites, and popularity sorting, and shall distinguish ordinary posts from internship referral posts so that only enterprise-certified students can publish referral posts."
+    },
+    {
+      "id": "labhire-R006",
+      "description": "The system shall generate reminders for project and user-interaction events through in-site notifications, email push, or equivalent mechanisms, and maintain mentor-applicant chat and notification records."
+    },
+    {
+      "id": "labhire-R007",
+      "description": "The system shall support administrator review workflows for identity and enterprise certification, including automatic field validation, manual approval or rejection, state tracking, feedback, resubmission, and deletion of violating posts and comments."
+    },
+    {
+      "id": "labhire-R008",
+      "description": "The system shall enforce access permissions, encrypt login, registration, and chat data, restrict abnormal login and operation behavior, and provide risk-control logs and behavior audits."
+    }
+  ],
+  "components": [
+    {
+      "id": "comp-api-gateway",
+      "name": "API Gateway & Access Controller",
+      "description": "Enforces edge routing, rate limiting, token verification, and unified access control policies across all services.",
+      "tracesTo": [
+        "labhire-R003",
+        "labhire-R008"
+      ]
+    },
+    {
+      "id": "comp-auth-service",
+      "name": "Authentication & Identity Service",
+      "description": "Handles registration, login, university/enterprise email validation tokens, credential encryption, and session lifecycle.",
+      "tracesTo": [
+        "labhire-R003",
+        "labhire-R008"
+      ]
+    },
+    {
+      "id": "comp-user-profile-service",
+      "name": "User Profile & Document Service",
+      "description": "Manages student/mentor profiles, resume upload with secure access permissions, and mentor discovery/favorites.",
+      "tracesTo": [
+        "labhire-R003",
+        "labhire-R004"
+      ]
+    },
+    {
+      "id": "comp-project-discovery-service",
+      "name": "Project Search & Recommendation Engine",
+      "description": "Provides rule-based filtering, keyword search, favorite tracking, and personalized recommendation algorithms for projects.",
+      "tracesTo": [
+        "labhire-R001"
+      ]
+    },
+    {
+      "id": "comp-project-lifecycle-service",
+      "name": "Project Lifecycle & Application Manager",
+      "description": "Coordinates project publication, applicant evaluation, application state machine, and two-way selection records.",
+      "tracesTo": [
+        "labhire-R002",
+        "labhire-R004"
+      ]
+    },
+    {
+      "id": "comp-chat-service",
+      "name": "Encrypted Messaging & Chat Service",
+      "description": "Manages end-to-end encrypted mentor-applicant conversations, chat history persistence, and event triggers.",
+      "tracesTo": [
+        "labhire-R002",
+        "labhire-R006",
+        "labhire-R008"
+      ]
+    },
+    {
+      "id": "comp-community-service",
+      "name": "Community & Referral Post Service",
+      "description": "Manages forum posts, comments, popularity ranking, and validates enterprise certification for referral publishing.",
+      "tracesTo": [
+        "labhire-R003",
+        "labhire-R005"
+      ]
+    },
+    {
+      "id": "comp-notification-service",
+      "name": "Notification & Event Dispatcher",
+      "description": "Processes system events, dispatches in-app notifications and email alerts, and tracks delivery history.",
+      "tracesTo": [
+        "labhire-R006"
+      ]
+    },
+    {
+      "id": "comp-admin-audit-service",
+      "name": "Admin Moderation & Risk Audit Service",
+      "description": "Manages enterprise certification reviews, content moderation, risk-control tracking, and security audit logs.",
+      "tracesTo": [
+        "labhire-R003",
+        "labhire-R007",
+        "labhire-R008"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn-gw-auth",
+      "source": "comp-api-gateway",
+      "target": "comp-auth-service",
+      "type": "HTTPS/REST",
+      "description": "Routes authentication, registration, and token validation requests."
+    },
+    {
+      "id": "conn-gw-user",
+      "source": "comp-api-gateway",
+      "target": "comp-user-profile-service",
+      "type": "HTTPS/REST",
+      "description": "Routes profile and resume management requests."
+    },
+    {
+      "id": "conn-gw-discovery",
+      "source": "comp-api-gateway",
+      "target": "comp-project-discovery-service",
+      "type": "HTTPS/REST",
+      "description": "Routes project search and recommendation requests."
+    },
+    {
+      "id": "conn-gw-project",
+      "source": "comp-api-gateway",
+      "target": "comp-project-lifecycle-service",
+      "type": "HTTPS/REST",
+      "description": "Routes project publishing, application, and evaluation requests."
+    },
+    {
+      "id": "conn-gw-chat",
+      "source": "comp-api-gateway",
+      "target": "comp-chat-service",
+      "type": "WSS/HTTPS",
+      "description": "Routes real-time chat connections and history retrieval."
+    },
+    {
+      "id": "conn-gw-community",
+      "source": "comp-api-gateway",
+      "target": "comp-community-service",
+      "type": "HTTPS/REST",
+      "description": "Routes post, comment, and referral actions."
+    },
+    {
+      "id": "conn-gw-admin",
+      "source": "comp-api-gateway",
+      "target": "comp-admin-audit-service",
+      "type": "HTTPS/REST",
+      "description": "Routes administrative review and moderation operations."
+    },
+    {
+      "id": "conn-project-to-user",
+      "source": "comp-project-lifecycle-service",
+      "target": "comp-user-profile-service",
+      "type": "gRPC",
+      "description": "Retrieves applicant profile and verifies resume access permissions."
+    },
+    {
+      "id": "conn-project-to-chat",
+      "source": "comp-project-lifecycle-service",
+      "target": "comp-chat-service",
+      "type": "gRPC",
+      "description": "Initiates chat sessions between mentors and applicants upon application events."
+    },
+    {
+      "id": "conn-project-to-discovery",
+      "source": "comp-project-lifecycle-service",
+      "target": "comp-project-discovery-service",
+      "type": "Event/Async",
+      "description": "Syncs project status changes to discovery and recommendation indices."
+    },
+    {
+      "id": "conn-community-to-auth",
+      "source": "comp-community-service",
+      "target": "comp-auth-service",
+      "type": "gRPC",
+      "description": "Verifies user enterprise certification status before allowing referral post publication."
+    },
+    {
+      "id": "conn-chat-to-notification",
+      "source": "comp-chat-service",
+      "target": "comp-notification-service",
+      "type": "Event/Async",
+      "description": "Triggers notification dispatch for unread messages."
+    },
+    {
+      "id": "conn-project-to-notification",
+      "source": "comp-project-lifecycle-service",
+      "target": "comp-notification-service",
+      "type": "Event/Async",
+      "description": "Triggers notifications for application status updates and evaluations."
+    },
+    {
+      "id": "conn-admin-to-community",
+      "source": "comp-admin-audit-service",
+      "target": "comp-community-service",
+      "type": "gRPC",
+      "description": "Executes post and comment deletions based on moderation decisions."
+    },
+    {
+      "id": "conn-admin-to-auth",
+      "source": "comp-admin-audit-service",
+      "target": "comp-auth-service",
+      "type": "gRPC",
+      "description": "Updates user enterprise certification statuses upon review approval or rejection."
+    },
+    {
+      "id": "conn-services-to-audit",
+      "source": "comp-api-gateway",
+      "target": "comp-admin-audit-service",
+      "type": "Event/Async",
+      "description": "Streams access logs and anomalous operation events for risk control and behavior auditing."
+    }
+  ]
+}

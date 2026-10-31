@@ -1,0 +1,102 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #F0F8FF
+!define EXTERNAL_COLOR #FFF0F0
+!define DATASTORE_COLOR #F0FFF0
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<Datastore>> DATASTORE_COLOR
+  BorderColor #333333
+  ArrowColor #333333
+}
+
+title Squatm3gator - Domain Typosquatting Assessment System
+
+package "Presentation Layer" <<Layer>> {
+  component "Web UI" <<Component>> {
+    [Main Page]
+    [WebSocket Client]
+  }
+}
+
+package "Application Layer" <<Layer>> {
+  component "HTTP API Server" <<Component>> {
+    [Request Handler]
+    [Session Manager]
+    [Job Publisher]
+  }
+  
+  component "WebSocket Server" <<Component>> {
+    [Session-based Channel]
+    [Result Streamer]
+  }
+}
+
+package "Processing Layer" <<Layer>> {
+  component "Background Consumer" <<Component>> {
+    [Job Listener]
+    [Command Builder]
+    [Result Reporter]
+  }
+  
+  component "Domain Generation Engine" <<Component>> {
+    [squatm3 CLI Wrapper]
+  }
+}
+
+package "External Systems" <<Layer>> {
+  component "GoDaddy API" <<External>> {
+    [Domain Availability Service]
+  }
+}
+
+package "Data Layer" <<Layer>> {
+  component "Redis Message Queue" <<Datastore>> {
+    [Job Channel]
+    [Report Channel]
+  }
+}
+
+' User interactions
+"Web UI" --> "HTTP API Server" : HTTP GET / (session creation)
+"Web UI" --> "WebSocket Server" : WebSocket connection
+"Web UI" --> "HTTP API Server" : API requests (domain, attack codes, flags)
+
+' Internal application flow
+"HTTP API Server" --> "Redis Message Queue" : Publishes jobs (session key as job ID)
+"HTTP API Server" --> "Background Consumer" : Starts consumer thread (in-process)
+
+' Job processing flow
+"Background Consumer" --> "Redis Message Queue" : Listens for jobs
+"Background Consumer" --> "Domain Generation Engine" : Invokes squatm3 subprocess
+"Background Consumer" --> "Redis Message Queue" : Publishes results/reports
+
+' Result delivery flow
+"Redis Message Queue" --> "WebSocket Server" : Receives reports
+"WebSocket Server" --> "Web UI" : Streams results to matching session
+
+' Optional GoDaddy integration
+"Domain Generation Engine" --> "GoDaddy API" : Domain availability checks (optional)
+"HTTP API Server" --> "GoDaddy API" : Configuration-based integration
+
+' Dependencies
+note right of "Domain Generation Engine"
+  Third-party squatm3 CLI engine
+  invoked as subprocess
+end note
+
+note right of "GoDaddy API"
+  Optional integration
+  Requires API key/secret
+  sso-key authorization
+end note
+
+note right of "Redis Message Queue"
+  Job and report communication
+  Session-based correlation
+end note
+
+@enduml

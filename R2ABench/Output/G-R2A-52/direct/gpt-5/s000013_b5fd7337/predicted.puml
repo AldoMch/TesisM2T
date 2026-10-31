@@ -1,0 +1,84 @@
+@startuml
+title Containerized Song Mood Web Application - System Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 220
+skinparam defaultTextAlignment left
+
+actor "End User" as user
+actor "Operator" as operator
+actor "Data Inspector" as inspector
+
+cloud "Genius API\n(External Dependency)" as genius
+
+node "Docker Host" as docker {
+  node "Docker Network\n(Internal service communication - COM-002)" as dnet {
+    node "frontend\nReact SPA\n(Container: frontend)" as fe
+    node "backend\nFastAPI API\n(Container: backend)" as be
+    database "Elasticsearch\n(Container: elasticsearch)" as es
+    node "Kibana\n(Container: kibana)" as kb
+  }
+}
+
+' External interactions
+user --> fe : Browser HTTPS\nSong mood lookup UI (COM-001, UI-001, FR-001)
+operator --> kb : Browser Access\nData inspection UI (UI-002, FR-006)
+inspector --> kb : Browser Access\nData inspection UI (UI-002, FR-006)
+
+' Service-to-service interactions
+fe --> be : REST/JSON API\nSong lookup requests (API-001)
+be --> es : HTTP(S) REST\nQuery/Index songs & moods (API-002,\nFR-002, FR-004, FR-005)
+kb --> es : HTTP(S)\nData inspection (API-004, FR-006)
+be --> genius : HTTPS\nSearch missing songs (API-003, FR-003, COM-003)
+
+' Notes for responsibilities and constraints
+note right of fe
+Provides browser-accessible UI for song mood lookup.
+- Renders React SPA (FR-001, C-001)
+- Communicates with backend (API-001)
+end note
+
+note right of be
+Handles song lookup and storage workflows (C-002):
+- Retrieves mood for known songs from Elasticsearch (FR-002)
+- Stores song-mood associations (FR-004)
+- Supports fast retrieval for later requests (FR-005)
+- Searches missing songs via Genius API (FR-003)
+Dependencies:
+- Elasticsearch availability (Assumption/Dependency)
+- Genius API availability (Assumption/Dependency)
+end note
+
+note right of es
+Authoritative store for song and mood data (NFR-004, C-003).
+Data formats handled:
+- Song record (DEF-001, DR-001)
+- Artist metadata (DEF-002, DR-002) when used
+- Mood association (DEF-003, DR-003)
+Retrieval efficiency for later requests (NFR-002).
+end note
+
+note right of kb
+Auxiliary data UI for inspecting stored Elasticsearch data (FR-006, C-004, UI-002).
+Depends on Elasticsearch availability.
+end note
+
+note right of genius
+External dependency (C-005, C-007):
+- Invoked when requested song is missing from storage (FR-003)
+- Returns song search results (DEF-004)
+Not an internal container service.
+end note
+
+note top of dnet
+Multi-tier Dockerized deployment (NFR-001, C-006):
+- Separate container services: frontend (React), backend (FastAPI),
+  Elasticsearch, Kibana
+Internal service communication over Docker network (COM-002).
+end note
+
+note "Project dataset scope: English songs only; no runtime language rejection specified (DR-004, C-008).\nNo runtime classifier/model server assumed unless added separately (C-009)." as scopeNote
+scopeNote .. be
+
+@enduml

@@ -1,0 +1,137 @@
+@startuml
+title User-in-the-box Simulator Framework - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ============================================================
+' User classes / actors
+' ============================================================
+actor "Simulator Builder" as Builder
+actor "Module Developer" as Developer
+actor "Training User" as Trainer
+actor "Evaluator" as Evaluator
+
+' ============================================================
+' External formats and inputs
+' ============================================================
+package "Configuration & Model Inputs" {
+  component "YAML Simulator\nConfiguration" as YAML
+  component "MuJoCo XML\nDefinitions" as MJCF
+}
+
+' ============================================================
+' Core framework
+' ============================================================
+package "User-in-the-box Framework" {
+
+  component "Simulator Builder\n(YAML -> Simulator)" as SimBuilder
+
+  package "MuJoCo XML Integration Layer" {
+    component "Biomechanical Model\nXML Integration" as BioXML
+    component "Interaction Task\nXML Integration" as TaskXML
+    component "Standalone\nMuJoCo XML" as MergedXML
+  }
+
+  package "Biomechanical Model Modules" {
+    component "Biomechanical Model\n(MuJoCo body + actuation)" as BioModel
+    component "Action Input Range\n[-1, 1]" as ActionIn
+    component "Actuator Control Range\n[0, 1]" as CtrlOut
+  }
+
+  package "Perception Modules (by modality)" {
+    component "Perception Base\nModule Contract" as PerceptionBase
+    component "Egocentric Vision" as Vision
+    component "Proprioception" as Proprio
+  }
+
+  package "Interaction Task Modules" {
+    component "Task Base\nModule Contract" as TaskBase
+    component "Interaction Task\nMuJoCo Environment" as Task
+  }
+
+  component "Standalone Gym-compatible\nSimulator Package" as GymSim
+}
+
+' ============================================================
+' Workflows
+' ============================================================
+package "Reinforcement-Learning Training Workflow" {
+  component "RL Trainer" as RL
+}
+
+package "Evaluation Workflow" {
+  component "Evaluation Runner" as EvalRunner
+  component "Checkpoint Loader" as CheckpointLoader
+  component "Action Logger" as ActionLog
+}
+
+' ============================================================
+' Run-folder artifacts
+' ============================================================
+folder "Run Folder" as RunFolder {
+  component "checkpoints/\n(model checkpoints, latest)" as CkptDir
+  component "evaluate/\n(evaluation outputs)" as EvalDir
+  component "Action Log File" as LogFile
+  component "Training Run Output" as TrainOut
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+Builder --> YAML : provides
+Developer --> BioModel : extends
+Developer --> Vision : extends
+Developer --> Task : extends
+
+YAML --> SimBuilder : build definition
+MJCF --> BioXML : biomechanical XML
+MJCF --> TaskXML : task XML
+
+SimBuilder --> BioXML
+SimBuilder --> TaskXML
+BioXML --> MergedXML : first integrate biomechanical XML
+TaskXML --> MergedXML : into task environment XML (FR-001)
+SimBuilder --> BioModel : initialize model
+SimBuilder --> Task : initialize task
+SimBuilder --> Vision : initialize perception wrapper
+MergedXML --> GymSim : wrapped as environment
+
+BioModel --> ActionIn : accepts actions
+ActionIn --> CtrlOut : maps [-1,1] to [0,1]
+CtrlOut --> Task : applies controls
+
+Vision ..|> PerceptionBase : implements
+Proprio ..|> PerceptionBase : implements
+Task ..|> TaskBase : implements
+
+SimBuilder --> GymSim : produces (FR-004)
+
+Trainer --> YAML : training config
+Trainer --> RL
+RL --> GymSim : builds & trains (FR-006)
+RL --> CkptDir : produces checkpoints
+RL --> TrainOut : produces output
+
+Evaluator --> EvalRunner : run folder + params
+RunFolder --> EvalRunner : load run folder (FR-005)
+EvalRunner --> GymSim : load simulator
+EvalRunner --> CheckpointLoader
+CheckpointLoader --> CkptDir : load specified / latest
+EvalRunner --> EvalDir : ensure exists
+EvalRunner --> ActionLog : when logging enabled
+ActionLog --> LogFile : write action log (FR-007)
+EvalRunner --> EvalDir : write logs / recordings
+
+note bottom of GymSim
+  Implements OpenAI Gym interface (FR-002, NFR-001, C-003)
+  Self-contained standalone package (FR-004, NFR-003)
+  Action inputs [-1,1]; controls [0,1] (DR-003/004, C-005/006)
+end note
+
+note bottom of PerceptionBase
+  Modality-based organization and base-class
+  inheritance contract for extensions (C-004, DR-007)
+end note
+
+@enduml

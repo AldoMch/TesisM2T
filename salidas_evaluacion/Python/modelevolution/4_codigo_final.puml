@@ -1,0 +1,21 @@
+@startuml
+component "Algorithm Support & Model Processing Module" as compalgorithmsupport
+component "API Gateway & Security Enforcer" as compapigateway
+component "User & Identity Management Service" as compauthuserservice
+component "Encrypted Model Artifact Storage" as compencryptedstorage
+component "Evolution & Topology Graph Service" as compevolutionservice
+component "Model Management Service" as compmodelservice
+component "MySQL Database" as compmysqldb
+component "Neo4j Graph Database" as compneo4jdb
+component "Web Front-End Module" as compwebfrontend
+compapigateway --> compauthuserservice : Internal gRPC/REST
+compapigateway --> compevolutionservice : Internal gRPC/REST
+compapigateway --> compmodelservice : Internal gRPC/REST
+compauthuserservice --> compmysqldb : SQL Driver (Encrypted)
+compevolutionservice --> compmodelservice : Internal RPC
+compevolutionservice --> compneo4jdb : Bolt Protocol (Encrypted)
+compmodelservice --> compalgorithmsupport : Internal RPC
+compmodelservice --> compencryptedstorage : Secure Blob Storage API
+compmodelservice --> compmysqldb : SQL Driver (Encrypted)
+compwebfrontend --> compapigateway : HTTPS/TLS
+@enduml

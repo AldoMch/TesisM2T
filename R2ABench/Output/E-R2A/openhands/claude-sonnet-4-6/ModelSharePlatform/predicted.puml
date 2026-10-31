@@ -1,0 +1,155 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam rectangle {
+  BackgroundColor #FAFAFA
+  BorderColor #888888
+}
+skinparam package {
+  BackgroundColor #EEF5FF
+  BorderColor #3366CC
+}
+skinparam database {
+  BackgroundColor #FFF8E1
+  BorderColor #F9A825
+}
+skinparam cloud {
+  BackgroundColor #F3E5F5
+  BorderColor #7B1FA2
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam arrow {
+  Color #444444
+}
+
+title Deep Learning Model Sharing Platform - System Architecture
+
+actor "General User" as GU
+actor "Administrator" as Admin
+
+node "Client Layer\n(Modern Browser)" as ClientLayer {
+  package "Vue + TypeScript SPA" as VueSPA {
+    [Account UI\n(Register / Login / Profile / Logout)] as AccountUI
+    [Q&A Community UI\n(Questions / Answers)] as QaUI
+    [Blog UI\n(Articles / Comments)] as BlogUI
+    [Model UI\n(Upload / Browse / Invoke / Purchase\n/ Recommendation Pool)] as ModelUI
+    [Dataset UI\n(Upload / Download / Manage)] as DatasetUI
+    [Follow UI\n(Follow / Unfollow / Follow List)] as FollowUI
+    [Admin UI\n(Account Cancellation / Content Deletion)] as AdminUI
+    [i18n Module\n(Chinese / English)] as I18n
+  }
+}
+
+node "Application Layer\n(Spring Boot)" as AppLayer {
+  package "API Gateway / Security Filter" as GW {
+    [Authentication & Authorization\n(Session / Token Validation)] as AuthFilter
+    [Input Validation &\nInjection Prevention] as InputFilter
+  }
+
+  package "Business Services" as Services {
+    [Account Service\n(FR-001 to FR-005)] as AccountSvc
+    [Q&A Service\n(FR-006 to FR-011)] as QaSvc
+    [Blog Service\n(FR-012 to FR-017)] as BlogSvc
+    [Model Service\n(FR-018 to FR-024)] as ModelSvc
+    [Dataset Service\n(FR-025 to FR-028)] as DatasetSvc
+    [Follow Service\n(FR-029 to FR-030)] as FollowSvc
+    [Admin Service\n(FR-031 to FR-032)] as AdminSvc
+    [Recommendation Service\n(FR-023 / NFR-015)] as RecommendSvc
+    [Payment Service\n(FR-024)] as PaymentSvc
+    [Model Invocation Service\n(FR-022)] as InvokeSvc
+    [Review Workflow\n(FR-018)] as ReviewSvc
+    [Notification Service\n(Email / Alerts)] as NotifySvc
+  }
+}
+
+node "Data Layer" as DataLayer {
+  database "MySQL Database" as MySQL {
+    [User Account Data\n(DR-001)] as UserDB
+    [Q&A Data\n(DR-002 / DR-003)] as QaDB
+    [Blog & Comment Data\n(DR-004 / DR-005)] as BlogDB
+    [Model Data\n(DR-006)] as ModelDB
+    [Dataset Metadata\n(DR-007)] as DatasetMetaDB
+    [Follow Relationship Data\n(DR-008)] as FollowDB
+    [Recommendation Data\n(DR-009)] as RecommendDB
+    [Admin Governance Data\n(DR-010)] as AdminDB
+  }
+
+  storage "File Storage" as FileStore {
+    [Model Files] as ModelFiles
+    [Dataset Files] as DatasetFiles
+  }
+}
+
+cloud "External Services" as ExtSvcs {
+  [Email Service\n(Password Recovery / Notifications)] as EmailSvc
+  [Payment Gateway\n(Model Purchase)] as PayGW
+}
+
+GU --> AccountUI
+GU --> QaUI
+GU --> BlogUI
+GU --> ModelUI
+GU --> DatasetUI
+GU --> FollowUI
+Admin --> AdminUI
+Admin --> AccountUI
+
+AccountUI --> AuthFilter : HTTPS
+QaUI --> AuthFilter : HTTPS
+BlogUI --> AuthFilter : HTTPS
+ModelUI --> AuthFilter : HTTPS
+DatasetUI --> AuthFilter : HTTPS
+FollowUI --> AuthFilter : HTTPS
+AdminUI --> AuthFilter : HTTPS
+
+AuthFilter --> InputFilter
+InputFilter --> AccountSvc
+InputFilter --> QaSvc
+InputFilter --> BlogSvc
+InputFilter --> ModelSvc
+InputFilter --> DatasetSvc
+InputFilter --> FollowSvc
+InputFilter --> AdminSvc
+InputFilter --> RecommendSvc
+InputFilter --> PaymentSvc
+InputFilter --> InvokeSvc
+
+AccountSvc --> UserDB
+AccountSvc --> NotifySvc
+
+QaSvc --> QaDB
+
+BlogSvc --> BlogDB
+
+ModelSvc --> ModelDB
+ModelSvc --> ModelFiles
+ModelSvc --> ReviewSvc
+ModelSvc --> InvokeSvc
+ModelSvc --> RecommendSvc
+
+DatasetSvc --> DatasetMetaDB
+DatasetSvc --> DatasetFiles
+
+FollowSvc --> FollowDB
+
+AdminSvc --> UserDB
+AdminSvc --> QaDB
+AdminSvc --> BlogDB
+AdminSvc --> ModelDB
+AdminSvc --> DatasetMetaDB
+AdminSvc --> AdminDB
+
+RecommendSvc --> RecommendDB
+RecommendSvc --> UserDB
+
+PaymentSvc --> PayGW
+PaymentSvc --> ModelDB
+
+InvokeSvc --> ModelFiles
+InvokeSvc --> DatasetFiles
+
+NotifySvc --> EmailSvc
+
+@enduml

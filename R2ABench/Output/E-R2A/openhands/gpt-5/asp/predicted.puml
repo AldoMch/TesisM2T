@@ -1,0 +1,124 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment left
+skinparam dpi 150
+
+package "Users" {
+  [Visitor <<user>>] as u_visitor
+  [Registered User <<user>>] as u_reg
+  [Certified Scholar <<user>>] as u_scholar
+  [Institution Administrator <<user>>] as u_inst_admin
+  [Expert Reviewer <<user>>] as u_expert
+  [System Administrator <<user>>] as u_sysadmin
+}
+
+node "Browser (Chrome/Edge/Firefox)\nVue 3.3 SPA" as browser
+
+node "Application Backend\nPython Django 4.2 LTS" as backend {
+  component "REST API" as cmp_api
+  component "Account & Auth\n(Session Mgmt)" as cmp_auth
+  component "Scholar Certification" as cmp_cert
+  component "Scholar Portal" as cmp_portal
+  component "Literature Retrieval\n(Search, Multi-turn, Multilingual)" as cmp_search
+  component "Filters & Ranking" as cmp_rank
+  component "Recommendations\n(Personalized, Cross-disciplinary)" as cmp_reco
+  component "Achievements\n(Classification, Claims, Disputes)" as cmp_ach
+  component "Institutions\n(Applications, Hierarchy)" as cmp_inst
+  component "Academic Interaction\n(Comments, Q&A, PM, Follow,\nAnnotations, Report Sharing)" as cmp_interact
+  component "Administration\n(Moderation, Access, Disputes, Structures)" as cmp_admin
+}
+
+package "Support Services (Shared)" as support {
+  component "Semantic Processing\n(Spelling, Term Mapping, Translation Assist)" as svc_sem
+  component "Profiling & Personalization" as svc_profile
+  component "Authorization & Policy\n(Roles, Institution Scope,\nVisibility, Delayed Disclosure)" as svc_authz
+  component "Analysis Engine\n(Hotspots, Influence Profiles)" as svc_analysis
+  component "Misconduct Detection\n(Plagiarism, Blacklist)" as svc_misconduct
+}
+
+package "Infrastructure" as infra {
+  node "Acquisition & ETL" as etl {
+     component "External Data Acquisition\n(Crawlers, APIs)" as cmp_acq
+     component "Normalization & Deduplication" as cmp_norm
+     component "Daily Incremental Sync\n(Scheduler, Retry)" as cmp_sync
+  }
+  database "MySQL 8.0 Cluster\n(Structured Persistence)" as db
+  folder "Object Storage\n(Unstructured Content)" as obj
+  folder "Backup & Restore\n(Daily Full, Hourly Incremental,\n30-day Retention, AES-256)" as backup
+  cloud "External Academic Databases" as ext_db
+}
+
+u_visitor --> browser
+u_reg --> browser
+u_scholar --> browser
+u_inst_admin --> browser
+u_expert --> browser
+u_sysadmin --> browser
+
+browser --> cmp_api
+cmp_api --> cmp_auth
+cmp_api --> cmp_cert
+cmp_api --> cmp_portal
+cmp_api --> cmp_search
+cmp_api --> cmp_rank
+cmp_api --> cmp_reco
+cmp_api --> cmp_ach
+cmp_api --> cmp_inst
+cmp_api --> cmp_interact
+cmp_api --> cmp_admin
+
+cmp_search --> svc_sem
+cmp_reco --> svc_profile
+cmp_portal --> svc_profile
+cmp_admin --> svc_authz
+cmp_auth --> svc_authz
+cmp_interact --> svc_authz
+cmp_ach --> svc_authz
+cmp_inst --> svc_authz
+cmp_admin --> svc_analysis
+cmp_search --> svc_analysis
+cmp_interact --> svc_misconduct
+
+cmp_auth --> db
+cmp_portal --> db
+cmp_search --> db
+cmp_rank --> db
+cmp_reco --> db
+cmp_ach --> db
+cmp_inst --> db
+cmp_interact --> db
+cmp_admin --> db
+svc_profile --> db
+svc_authz --> db
+svc_analysis --> db
+svc_misconduct --> db
+
+cmp_ach --> obj
+cmp_portal --> obj
+cmp_interact --> obj
+svc_analysis --> obj
+
+ext_db --> cmp_acq
+cmp_acq --> cmp_norm
+cmp_norm --> db
+cmp_norm --> obj
+cmp_sync --> cmp_acq
+cmp_sync --> cmp_norm
+
+backup ..> db : protect & restore
+backup ..> obj : protect & restore
+
+note right of browser
+  Authenticated HTTPS
+  Multilingual input & display
+end note
+
+note right of svc_authz
+  Enforces roles, institution scope,\n  unpublished authorization, delayed disclosure
+end note
+
+note bottom of infra
+  Performance targets, capacity, reliability,\n  encryption at rest, recoverability
+end note
+
+@enduml

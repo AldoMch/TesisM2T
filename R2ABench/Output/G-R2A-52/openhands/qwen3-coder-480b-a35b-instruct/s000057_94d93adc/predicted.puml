@@ -1,0 +1,59 @@
+@startuml
+!theme plain
+skinparam linetype ortho
+
+' Main system boundary
+rectangle "Soundzone System" {
+  rectangle "React/Redux Frontend" as frontend {
+    rectangle "User Interface" as ui
+    rectangle "Redux Store" as redux
+  }
+  
+  rectangle "Node/Express Backend" as backend {
+    rectangle "API Layer" as api
+    rectangle "Business Logic" as business
+  }
+  
+  rectangle "PostgreSQL Database" as database
+  rectangle "Cloudinary Media Storage" as cloudinary
+}
+
+' External user
+actor "End User" as user
+
+' Connections
+user --> ui : interacts with
+ui --> redux : dispatches actions
+redux --> api : HTTP requests
+api --> business : processes requests
+business --> database : queries/stores data
+business --> cloudinary : references media
+ui --> cloudinary : direct uploads
+
+' Configuration
+cloudinary .up.> frontend : configuration
+api .up.> frontend : base URL config
+
+note right of frontend
+  Frontend Configuration:
+  - API Base URL
+  - Cloudinary URL
+  - Cloudinary Upload Preset
+end note
+
+note right of cloudinary
+  Media Assets:
+  - Audio files
+  - Images
+  - Returns hosted URLs
+end note
+
+note right of database
+  Application Data:
+  - User records
+  - Sound records
+  - Follow relationships
+  - Media URL references
+end note
+
+@enduml

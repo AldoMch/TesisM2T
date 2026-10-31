@@ -1,0 +1,63 @@
+@startuml
+
+package "Kubernetes Integration Layer" {
+  component "Execution Queue Consumer" as ExecQueueConsumer
+  component "Kubernetes Glue Job Preparer" as K8sGluePreparer
+  component "Service Pod Runner" as ServicePodRunner
+}
+
+package "Execution Runtime Layer" {
+  component "Sibling Docker Container Manager" as SiblingDockerMgr
+  component "In-Pod Experiment Manager" as InPodExperimentMgr
+}
+
+package "Telemetry & Logging Layer" {
+  component "Worker Telemetry Reporter" as WorkerTelemetry
+  component "Server Connectivity Pinger" as ConnectivityPinger
+  component "Logging Manager" as LoggingMgr
+}
+
+package "Backend Services Layer" {
+  component "Backend Service Client" as BackendClient
+  component "Events Service Interface\n(v2.5)" as EventsSvc
+  component "Models Service Interface\n(v2.4)" as ModelsSvc
+  component "Session Handler" as SessionHandler
+}
+
+package "Configuration Layer" {
+  component "Configuration Manager\n(report_period_sec, ping_period_sec,\nlog_stdout, report_global_mem_used)" as ConfigMgr
+}
+
+cloud "ClearML Server/Backend" as ClearMLServer
+database "ClearML Execution Queue" as ClearMLQueue
+node "Kubernetes Cluster" as K8sCluster
+node "Docker Daemon\n(mapped socket)" as DockerDaemon
+file "Kubernetes YAML Template" as K8sYamlTemplate
+
+' Key Dependencies and Interactions
+ExecQueueConsumer --> K8sGluePreparer
+ExecQueueConsumer --> ClearMLQueue
+K8sGluePreparer --> K8sCluster
+K8sGluePreparer --> K8sYamlTemplate
+
+ServicePodRunner --> SiblingDockerMgr
+ServicePodRunner --> K8sCluster
+SiblingDockerMgr --> DockerDaemon
+
+InPodExperimentMgr --> LoggingMgr
+
+WorkerTelemetry --> ConfigMgr
+ConnectivityPinger --> ConfigMgr
+LoggingMgr --> ConfigMgr
+
+BackendClient --> SessionHandler
+BackendClient --> EventsSvc
+BackendClient --> ModelsSvc
+
+ExecQueueConsumer --> BackendClient
+WorkerTelemetry --> BackendClient
+ConnectivityPinger --> BackendClient
+
+BackendClient --> ClearMLServer
+
+@enduml

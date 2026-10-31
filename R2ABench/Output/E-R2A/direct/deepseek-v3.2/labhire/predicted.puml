@@ -1,0 +1,200 @@
+@startuml
+!define RECTANGLE class
+skinparam class {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+skinparam component {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+skinparam node {
+    BackgroundColor White
+    BorderColor Black
+}
+skinparam database {
+    BackgroundColor White
+    BorderColor Black
+}
+skinparam rectangle {
+    BackgroundColor White
+    BorderColor Black
+}
+
+title LabHire System Architecture
+
+rectangle "External Users" as Users {
+  [Student User]
+  [Enterprise-Certified Student User]
+  [Mentor User]
+  [Administrator]
+}
+
+rectangle "External Services" as ExtServices {
+  [Email Service]
+  [SMS Service (Optional)]
+}
+
+package "Client Applications" {
+  [Web Browser Client]
+  [Mobile App Client]
+}
+
+node "Load Balancer / Gateway" as Gateway {
+}
+
+cloud "LabHire Application Server" as AppServer {
+  package "Presentation Layer" {
+    [Web Controllers]
+    [API Gateway / REST Endpoints]
+  }
+
+  package "Application Services Layer" {
+    [User Management Service]
+    [Project Service]
+    [Community Service]
+    [Recommendation Service]
+    [Notification Service]
+    [Chat Service]
+    [Review & Audit Service]
+  }
+
+  package "Business Logic Layer" {
+    [Authentication & Authorization]
+    [Project Lifecycle Management]
+    [Community Post Management]
+    [Recommendation Engine]
+    [Review Workflow Engine]
+    [Risk Control & Logging]
+  }
+
+  package "Integration Layer" {
+    [Email Integration]
+    [File Storage Integration]
+    [Data Encryption Module]
+  }
+}
+
+database "LabHire Database" as MainDB {
+  folder "Core Data" {
+    [User Accounts & Profiles]
+    [Research Internship Projects]
+    [Applications & Favorites]
+    [Community Posts & Comments]
+    [Chat & Notifications]
+    [Mutual Evaluations]
+    [Review Records]
+    [Audit Logs]
+  }
+}
+
+' User Connections
+[Student User] --> [Web Browser Client]
+[Student User] --> [Mobile App Client]
+[Enterprise-Certified Student User] --> [Web Browser Client]
+[Enterprise-Certified Student User] --> [Mobile App Client]
+[Mentor User] --> [Web Browser Client]
+[Mentor User] --> [Mobile App Client]
+[Administrator] --> [Web Browser Client]
+
+' Client to Gateway
+[Web Browser Client] --> Gateway
+[Mobile App Client] --> Gateway
+
+' Gateway to Application Server
+Gateway --> [Web Controllers]
+Gateway --> [API Gateway / REST Endpoints]
+
+' Presentation Layer to Application Services
+[Web Controllers] --> [User Management Service]
+[Web Controllers] --> [Project Service]
+[Web Controllers] --> [Community Service]
+[Web Controllers] --> [Review & Audit Service]
+[API Gateway / REST Endpoints] --> [User Management Service]
+[API Gateway / REST Endpoints] --> [Project Service]
+[API Gateway / REST Endpoints] --> [Community Service]
+[API Gateway / REST Endpoints] --> [Recommendation Service]
+[API Gateway / REST Endpoints] --> [Notification Service]
+[API Gateway / REST Endpoints] --> [Chat Service]
+[API Gateway / REST Endpoints] --> [Review & Audit Service]
+
+' Application Services to Business Logic
+[User Management Service] --> [Authentication & Authorization]
+[Project Service] --> [Project Lifecycle Management]
+[Community Service] --> [Community Post Management]
+[Recommendation Service] --> [Recommendation Engine]
+[Notification Service] --> [Project Lifecycle Management]
+[Notification Service] --> [Community Post Management]
+[Chat Service] --> [Authentication & Authorization]
+[Review & Audit Service] --> [Review Workflow Engine]
+[Review & Audit Service] --> [Risk Control & Logging]
+
+' Business Logic to Integration & Data
+[Authentication & Authorization] --> [Data Encryption Module]
+[Project Lifecycle Management] --> [User Accounts & Profiles]
+[Project Lifecycle Management] --> [Research Internship Projects]
+[Project Lifecycle Management] --> [Applications & Favorites]
+[Project Lifecycle Management] --> [Mutual Evaluations]
+[Community Post Management] --> [Community Posts & Comments]
+[Community Post Management] --> [Applications & Favorites]
+[Recommendation Engine] --> [User Accounts & Profiles]
+[Recommendation Engine] --> [Research Internship Projects]
+[Recommendation Engine] --> [Applications & Favorites]
+[Review Workflow Engine] --> [User Accounts & Profiles]
+[Review Workflow Engine] --> [Community Posts & Comments]
+[Review Workflow Engine] --> [Review Records]
+[Risk Control & Logging] --> [Audit Logs]
+
+' Integration Layer to External Services
+[Email Integration] --> [Email Service]
+[Email Integration] ..> [SMS Service (Optional)] : optional
+[Data Encryption Module] --> [Chat & Notifications]
+
+' Application Services to Integration Layer
+[User Management Service] --> [Email Integration]
+[Notification Service] --> [Email Integration]
+[Notification Service] --> [Chat & Notifications]
+[Chat Service] --> [Data Encryption Module]
+[Chat Service] --> [Chat & Notifications]
+
+' File Handling
+[User Management Service] --> [File Storage Integration]
+[Project Lifecycle Management] ..> [File Storage Integration] : resume files
+
+' Database Connections
+[User Accounts & Profiles] <.. [User Management Service]
+[Research Internship Projects] <.. [Project Service]
+[Applications & Favorites] <.. [Project Service]
+[Applications & Favorites] <.. [Community Service]
+[Community Posts & Comments] <.. [Community Service]
+[Chat & Notifications] <.. [Notification Service]
+[Chat & Notifications] <.. [Chat Service]
+[Mutual Evaluations] <.. [Project Service]
+[Review Records] <.. [Review & Audit Service]
+[Audit Logs] <.. [Risk Control & Logging]
+
+note right of [Recommendation Engine]
+  Uses collaborative filtering,
+  tag matching, and cold-start rules.
+end note
+
+note right of [Review Workflow Engine]
+  Handles identity & enterprise
+  certification, post/comment review.
+  Enforces 72-hour SLA.
+end note
+
+note left of [Data Encryption Module]
+  Encrypts login, registration,
+  and chat data.
+end note
+
+note bottom of MainDB
+  Stores all core entities:
+  Users, Projects, Applications,
+  Posts, Comments, Reviews, Logs.
+end note
+
+@enduml

@@ -1,0 +1,52 @@
+@startuml
+skinparam componentStyle rectangle
+
+actor Learner
+actor Contributor
+actor Administrator as Admin
+
+package Presentation {
+  [WebClient] as WebClient
+}
+
+package Application {
+  [Backend] as Backend
+  [AuthModule] as AuthModule
+  [ModelService] as ModelSvc
+  [UserService] as UserSvc
+}
+
+package Algorithm {
+  [AnalysisEngine] as Algo
+}
+
+package Data {
+  database MySQL
+  database Neo4jDB
+}
+
+package External {
+  [IdentityProvider] as IdP
+  [PythonLibs] as PyLibs
+  [TLS] as TLS
+}
+
+Learner --> WebClient
+Contributor --> WebClient
+Admin --> WebClient
+
+WebClient --> Backend
+Backend --> AuthModule
+Backend --> ModelSvc
+Backend --> UserSvc
+Backend --> IdP
+Backend --> MySQL
+Backend --> Neo4jDB
+ModelSvc --> Neo4jDB
+ModelSvc --> MySQL
+Backend --> Algo
+Algo --> PyLibs
+WebClient ..> TLS
+Backend ..> TLS
+
+@enduml

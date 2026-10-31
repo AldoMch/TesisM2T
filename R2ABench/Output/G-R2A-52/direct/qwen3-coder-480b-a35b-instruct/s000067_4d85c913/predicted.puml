@@ -1,0 +1,97 @@
+@startuml
+!define RECTANGLE class
+
+title TraceLeft System Architecture
+
+skinparam componentStyle rectangle
+
+package "TraceLeft Framework" {
+  [CLI Entry Point] as cli
+  [Trace Command Handler] as trace_cmd
+  [Probe Installer] as probe_installer
+  [Event Generator] as event_gen
+  [Handler Loader] as handler_loader
+  [Configuration Reader] as config_reader
+  [eBPF Runtime] as ebpf_runtime
+  [Kernel Probes (kprobe/kretprobe)] as kernel_probes
+  [Handler Programs] as handler_progs
+  [Handler Maps] as handler_maps
+  [Perf Event Channel] as perf_channel
+  [Userspace Tracer] as userspace_tracer
+}
+
+cli --> trace_cmd : invokes
+trace_cmd --> probe_installer : triggers
+trace_cmd --> config_reader : reads
+config_reader --> event_gen : provides metadata
+event_gen --> handler_progs : generates source
+handler_loader --> handler_progs : loads
+handler_loader --> handler_maps : updates
+probe_installer --> kernel_probes : attaches
+kernel_probes --> handler_maps : lookup
+handler_maps --> handler_progs : selects
+handler_progs --> perf_channel : emits events
+perf_channel --> userspace_tracer : delivers events
+userspace_tracer --> trace_cmd : reports
+
+note right of cli
+  FR-001: CLI entry point
+  FR-002: Trace command
+end note
+
+note right of probe_installer
+  FR-003: Probe installation
+  FR-006: Handler loading
+  FR-007: No-op for missing handler
+end note
+
+note right of event_gen
+  FR-005: Config-driven handler generation
+  FR-008: Event delivery format
+end note
+
+note right of kernel_probes
+  NFR-001: Linux platform targeting
+  C-002: Kernel capability constraint
+end note
+
+note right of handler_maps
+  FR-009: Handler naming scheme
+  C-004: Handler naming constraint
+end note
+
+note right of handler_progs
+  DR-001: Common event section
+  DR-002: Perf event channel
+end note
+
+note right of config_reader
+  DR-003: Event argument metadata
+  DR-004: CLI registration structure
+end note
+
+note right of userspace_tracer
+  NFR-002: Event interoperability
+end note
+
+package "External Dependencies" {
+  [Linux Kernel] as linux_kernel
+  [gobpf Library] as gobpf
+}
+
+linux_kernel --> kernel_probes : provides eBPF/kprobe support
+gobpf --> ebpf_runtime : enables eBPF integration
+ebpf_runtime --> handler_loader : supports loading
+ebpf_runtime --> probe_installer : supports installation
+
+note right of linux_kernel
+  C-001: Platform constraint
+  NFR-001: Tested on v4.11+
+end note
+
+note right of gobpf
+  C-003: Technology constraint
+  NFR-003: Technology compatibility
+end note
+
+@enduml

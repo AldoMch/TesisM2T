@@ -1,0 +1,85 @@
+@startuml
+
+skinparam componentStyle rectangle
+
+' Layers
+package "Frontend Layer" {
+  [Web Client] as web
+  [Mobile App] as mobile
+  [Admin Panel] as admin
+}
+
+package "Application Layer" {
+  [User Service] as user_service
+  [Project Service] as project_service
+  [Community Service] as community_service
+  [Authentication Service] as auth_service
+  [Notification Service] as notification_service
+  [Recommendation Engine] as recommendation_engine
+  [Admin Service] as admin_service
+  [File Service] as file_service
+}
+
+package "Data Layer" {
+  [Database] as db
+  [Cache] as cache
+  [File Storage] as file_storage
+}
+
+package "External Services" {
+  [Email Service] as email
+  [SMS Service] as sms
+  [Verification Service] as verification
+}
+
+' Relationships
+web --> user_service : uses
+web --> project_service : uses
+web --> community_service : uses
+web --> auth_service : authenticates
+mobile --> user_service : uses
+mobile --> project_service : uses
+mobile --> community_service : uses
+mobile --> auth_service : authenticates
+admin --> admin_service : manages
+
+user_service --> db : reads/writes
+project_service --> db : reads/writes
+community_service --> db : reads/writes
+auth_service --> db : reads/writes
+notification_service --> db : reads/writes
+recommendation_engine --> db : reads
+admin_service --> db : reads/writes
+file_service --> db : reads/writes
+
+user_service --> cache : caching
+project_service --> cache : caching
+community_service --> cache : caching
+auth_service --> cache : caching
+
+file_service --> file_storage : stores/retrieves
+
+notification_service --> email : sends
+notification_service --> sms : sends
+auth_service --> verification : validates
+admin_service --> email : sends
+
+recommendation_engine --> project_service : analyzes
+recommendation_engine --> user_service : analyzes
+
+' User classes
+actor "Student" as student
+actor "Mentor" as mentor
+actor "Enterprise Student" as enterprise_student
+actor "Administrator" as administrator
+
+student --> web : uses
+student --> mobile : uses
+mentor --> web : uses
+mentor --> mobile : uses
+enterprise_student --> web : uses
+enterprise_student --> mobile : uses
+administrator --> admin : uses
+
+@enduml
+

@@ -1,0 +1,140 @@
+@startuml ITAS_Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #EEF4FB
+  BorderColor #2C6EAB
+  FontStyle bold
+}
+skinparam package {
+  BackgroundColor #F5F5F5
+  BorderColor #888888
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #2255AA
+}
+skinparam database {
+  BackgroundColor #FFF5CC
+  BorderColor #CC9900
+}
+skinparam cloud {
+  BackgroundColor #E8F8E8
+  BorderColor #339933
+}
+
+' ─────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────
+cloud "External Systems" {
+  component [GPT API\n/ Third-Party LLM] as GPT_API
+  component [BERT Model Runtime] as BERT_Runtime
+}
+
+' ─────────────────────────────────────────
+' TENCENT CLOUD HOST (outer node, avoids
+' package-inside-cloud nesting issue S-001)
+' ─────────────────────────────────────────
+node "Tencent Cloud\n(Docker Container Host)" {
+
+  ' ─────────────────────────────────────────
+  ' LAYER 1 – PRESENTATION
+  ' ─────────────────────────────────────────
+  package "Presentation Layer" {
+    component [VueFrontend\n(Vue 3 SPA)\n- vue-router\n- Pinia\n- Axios\n- Ant Design Vue] as VueFrontend
+  }
+
+  ' ─────────────────────────────────────────
+  ' LAYER 2 – GATEWAY + SECURITY
+  ' ─────────────────────────────────────────
+  package "Gateway and Security Layer" {
+    component [NginxProxy\n(Reverse Proxy /\nLoad Balancer /\nStatic Asset Server)] as NginxProxy
+    component [SpringGateway\n(Spring Cloud Gateway\n+ Spring Security\nAuth / Authz Filter Chain)] as SpringGateway
+  }
+
+  ' ─────────────────────────────────────────
+  ' LAYER 3 – APPLICATION / MICROSERVICE
+  ' ─────────────────────────────────────────
+  package "Application / Microservice Layer" {
+    component [UserService\n(Spring Boot)\n- Registration\n- Login / Logout\n- User Management\n- Annotator Mgmt\n(FR-003, FR-004)] as UserService
+    component [AnnotationService\n(Spring Boot)\n- Project Mgmt\n- Task Mgmt\n- Mark CRUD\n- Preset Mgmt\n- Result Export\n(API-001, FR-005)] as AnnotationService
+    component [MiningService\n(Spring Boot)\n- Doc Upload\n- Model Selection\n- Extraction Orchestration\n(API-002)] as MiningService
+  }
+
+  ' ─────────────────────────────────────────
+  ' LAYER 4 – ASYNCHRONOUS PROCESSING
+  ' ─────────────────────────────────────────
+  package "Asynchronous Processing Layer" {
+    component [RabbitMQ\n(Message Broker)] as RabbitMQ
+    component [FormatConversionWorker\n(Consumer)\n- PDF / HTML / TXT\nConversion] as FormatConversionWorker
+  }
+
+  ' ─────────────────────────────────────────
+  ' LAYER 5 – ML / MODEL INTEGRATION
+  ' ─────────────────────────────────────────
+  package "ML / Model Integration Layer" {
+    component [BERTModelAdapter\n- Paragraph Localization\n- Paragraph-level Extraction] as BERTModelAdapter
+    component [GPTModelAdapter\n- Entity Recognition\n- Entity Annotation\n- Few-shot Extraction] as GPTModelAdapter
+  }
+
+  ' ─────────────────────────────────────────
+  ' LAYER 6 – DATA + STORAGE
+  ' ─────────────────────────────────────────
+  package "Data and Storage Layer" {
+    database "MySQLRepository\n(Mybatis Plus)\n- Users / Roles\n- Projects / Tasks\n- Annotations\n- Presets\n- Doc Index" as MySQLRepository
+    component [MinioStorageClient\n(Object Storage)\n- PDF / HTML / TXT\nBucket Management] as MinioStorageClient
+    database "RedisCache\n(Session +\nFrequent Query\nCaching)" as RedisCache
+  }
+
+}
+
+' ─────────────────────────────────────────
+' DEPENDENCY ARROWS
+' ─────────────────────────────────────────
+
+' Nginx serves the Vue SPA static assets and
+' also forwards API calls to the gateway
+NginxProxy         --> VueFrontend         : Serve static SPA assets
+VueFrontend        --> NginxProxy          : HTTP/HTTPS API requests
+
+' Gateway layer
+NginxProxy         --> SpringGateway       : Forward API calls
+SpringGateway      --> UserService         : Route auth/user API
+SpringGateway      --> AnnotationService   : Route annotation API (API-001)
+SpringGateway      --> MiningService       : Route mining API (API-002)
+
+' User Service dependencies
+UserService        --> MySQLRepository     : Read/Write user records
+UserService        --> RedisCache          : Cache session tokens
+
+' Annotation Service dependencies
+AnnotationService  --> MySQLRepository     : Read/Write structured records\n+ preset definitions (FR-005, DR-010)
+AnnotationService  --> MinioStorageClient  : Store / retrieve documents\n(FR-008, FR-009)
+AnnotationService  --> RedisCache          : Cache session + queries
+AnnotationService  --> RabbitMQ            : Publish conversion messages\n(FR-018, AD-004)
+AnnotationService  --> BERTModelAdapter    : Invoke paragraph localization\n(FR-021, C-007)
+AnnotationService  --> GPTModelAdapter     : Invoke entity annotation\n(FR-020, FR-022)
+
+' Mining Service dependencies
+MiningService      --> MySQLRepository     : Persist metadata + results
+MiningService      --> MinioStorageClient  : Upload / retrieve documents
+MiningService      --> RedisCache          : Cache queries
+MiningService      --> RabbitMQ            : Publish conversion messages\n(AD-004, COM-004)
+MiningService      --> BERTModelAdapter    : Invoke paragraph extraction\n(FR-021)
+MiningService      --> GPTModelAdapter     : Invoke entity extraction\n(FR-020, FR-022)
+
+' Annotation and Mining share results via MySQLRepository (AD-001, DIO-003)
+' No direct AnnotationService -> MiningService runtime call
+
+' Async processing
+RabbitMQ           --> FormatConversionWorker : Deliver conversion messages
+FormatConversionWorker --> MinioStorageClient : Read original file for conversion\nthen store converted output\n(DIF-001, DR-005)
+FormatConversionWorker --> MySQLRepository    : Update PDF/HTML/TXT ID references\n(DIF-001, DR-005)
+
+' ML adapters -> External
+BERTModelAdapter   --> BERT_Runtime        : Model inference call
+GPTModelAdapter    --> GPT_API             : External LLM API call\n(AD-002, API-003)
+
+@enduml

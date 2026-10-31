@@ -1,0 +1,72 @@
+@startuml
+
+package "Client Layer" {
+  component "Website Client\n(React/TypeScript)" as Website
+  component "Browser Extension Client\n(Chrome)" as Extension
+}
+
+component "API Client\n(HTTP/JSON)" as ApiClient
+
+package "Backend API Tier" {
+  component "Backend API Server\n(Node.js/LoopBack)" as Backend
+  interface "User REST API" as UserREST
+  interface "Ping REST API" as PingREST
+  component "User API Endpoints\nPOST /users, GET /users, PATCH /users, GET /users/{id}" as UserAPI
+  component "Ping Endpoint\nGET /ping" as PingEndpoint
+  component "Filter Criteria\noptional filter parameter for GET /users (DR-006)" as FilterCriteria
+  component "Where Criteria\noptional where parameter for PATCH /users (DR-007)" as WhereCriteria
+  component "Partial User Update Body\n(DR-005)" as PartialUserUpdate
+  component "UserRepository" as UserRepo
+  component "LoopBack REST/Repository Components" as LoopBack
+  component "HTTP Request Context" as HttpContext
+  component "User Relation Loader\nincludes relations for GET /users/{id}" as RelationLoader
+}
+
+package "Data Model Layer" {
+  component "User Model\nid, ip, creationDate, purchaseIds, username, region" as UserModel
+  component "NewUser Schema\nUser creation input (id excluded)" as NewUser
+  component "InventoryItem Model\nid, stats, totalScore, category, details, comments, name, associatedStores" as InventoryItem
+  component "PingResponse Object\ngreeting, date, url, headers" as PingResponse
+  component "Model Definitions\nGenerated string identifiers" as ModelDefinitions
+}
+
+package "Data/Service Layers" {
+  database "Persistent Storage" as Storage
+  cloud "Supporting Data-Processing Assets\nSustainability scoring / recommendations" as DataProcessing
+  component "Recommendation/Scoring Workflows" as Workflows
+  component "Additional Data/Service Components" as AdditionalServices
+}
+
+Website --> UserREST : HTTP/JSON
+Extension --> UserREST : HTTP/JSON
+ApiClient --> UserREST : HTTP/JSON
+ApiClient --> PingREST : HTTP/JSON
+
+UserAPI ..|> UserREST : realizes
+PingEndpoint ..|> PingREST : realizes
+Backend --> UserAPI : exposes
+Backend --> PingEndpoint : exposes
+Backend --> LoopBack : uses (C-001)
+
+UserAPI --> FilterCriteria : GET /users accepts
+UserAPI --> WhereCriteria : PATCH /users accepts
+UserAPI --> PartialUserUpdate : PATCH /users accepts
+UserAPI --> UserRepo : queries with filter
+UserAPI --> UserRepo : bulk updates with where and partial body
+UserRepo --> UserModel : operates on
+
+PingEndpoint --> HttpContext : request context
+PingEndpoint --> PingResponse : returns
+UserAPI --> UserModel : uses
+UserAPI --> NewUser : uses
+UserAPI --> RelationLoader : GET /users/{id} includes relations
+RelationLoader --> UserRepo : loads relations
+
+UserModel --> ModelDefinitions : generated string id
+InventoryItem --> ModelDefinitions : generated string id
+UserRepo --> Storage : persists
+
+Workflows --> DataProcessing : relies on
+Workflows --> AdditionalServices : relies on
+
+@enduml

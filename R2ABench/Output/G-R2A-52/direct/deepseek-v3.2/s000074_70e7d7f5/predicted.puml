@@ -1,0 +1,140 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam rectangle {
+    BackgroundColor White
+    BorderColor Black
+    ArrowColor Black
+}
+skinparam node {
+    BackgroundColor White
+    BorderColor Black
+}
+skinparam folder {
+    BackgroundColor White
+    BorderColor Black
+}
+
+title Tengine Lite System Architecture
+
+package "External Users & Inputs" {
+  [C API Integrators] as C_API_Users
+  [C++ API Users] as CPP_API_Users
+  [Python API Users] as PY_API_Users
+  [Example Users] as Example_Users
+  [Tool Users] as Tool_Users
+  file "Local Model Files" as Models
+  file "Local Image Files" as Images
+  file "Binary tmfile" as TM_File
+}
+
+package "External Tools & Environment" {
+  [CMake Build System] as CMake
+  [Linux OS] as Linux
+  [Web Browser\n(WebAssembly)] as Browser
+}
+
+package "Tengine Lite System" {
+  folder "API Layer" {
+    [C API] as C_API
+    [C++ API] as CPP_API
+    [Python API] as PY_API
+  }
+
+  folder "Example Applications" {
+    [Classification Example] as Ex_Classify
+    [Detection Examples] as Ex_Detect
+    [Segmentation Examples] as Ex_Segment
+    [Pose/Landmark Examples] as Ex_Pose
+    [OCR Example] as Ex_OCR
+  }
+
+  folder "Core Architecture Modules" {
+    [Scheduler Module] as Scheduler
+    [Device Module] as Device
+    [Operator Module] as Operator
+    [Serializer Module] as Serializer
+  }
+
+  folder "Model Conversion Tooling" {
+    [Linux Pre-compiled\nConverter Tool] as Linux_Converter
+    [Browser-based\nOnline Converter] as Web_Converter
+  }
+
+  node "Internal Data" {
+    [Serialized Model Parameters] as Serialized_Params
+    [Converted Model Artifacts] as Converted_Models
+  }
+}
+
+' External User Connections
+C_API_Users --> C_API : "Integrates via"
+CPP_API_Users --> CPP_API : "Uses/Inspects"
+PY_API_Users --> PY_API : "Uses/Inspects"
+Example_Users --> Ex_Classify : "Runs"
+Example_Users --> Ex_Detect : "Runs"
+Example_Users --> Ex_Segment : "Runs"
+Example_Users --> Ex_Pose : "Runs"
+Example_Users --> Ex_OCR : "Runs"
+Tool_Users --> Linux_Converter : "Uses (Linux)"
+Tool_Users --> Web_Converter : "Uses (Browser)"
+
+' External Data & Environment Connections
+Models --> Ex_Classify : "Consumes"
+Models --> Ex_Detect : "Consumes"
+Models --> Ex_Segment : "Consumes"
+Models --> Ex_Pose : "Consumes"
+Models --> Ex_OCR : "Consumes"
+Images --> Ex_Classify : "Consumes"
+Images --> Ex_Detect : "Consumes"
+Images --> Ex_Segment : "Consumes"
+Images --> Ex_Pose : "Consumes"
+Images --> Ex_OCR : "Consumes"
+TM_File --> Serializer : "Decodes"
+CMake --> C_API : "Builds via"
+CMake --> CPP_API : "Builds via"
+CMake --> PY_API : "Builds via"
+Linux --> Linux_Converter : "Runs on"
+Browser --> Web_Converter : "Hosts & Executes"
+
+' Internal System Data Flow
+Serializer --> Serialized_Params : "Produces"
+Linux_Converter --> Converted_Models : "Produces"
+Web_Converter --> Converted_Models : "Produces"
+Converted_Models --> Models : "Can become"
+
+' Core Module Interactions
+C_API --> Scheduler : "Invokes"
+CPP_API --> Scheduler : "Invokes"
+PY_API --> Scheduler : "Invokes"
+Scheduler --> Device : "Schedules to"
+Scheduler --> Operator : "Manages via"
+Scheduler --> Serializer : "Uses"
+Device --> Operator : "Executes"
+Operator --> Device : "Provides NN Ops for"
+
+' Example Applications Internal Usage
+Ex_Classify --> C_API : "Uses"
+Ex_Detect --> C_API : "Uses"
+Ex_Segment --> C_API : "Uses"
+Ex_Pose --> C_API : "Uses"
+Ex_OCR --> C_API : "Uses"
+
+note right of Serializer
+  Decodes binary tmfile
+  into serialized model
+  parameters.
+end note
+
+note right of Web_Converter
+  Executes locally in browser
+  via WebAssembly.
+  No data uploaded.
+end note
+
+note left of CMake
+  Enables cross-platform
+  compilation.
+end note
+
+@enduml

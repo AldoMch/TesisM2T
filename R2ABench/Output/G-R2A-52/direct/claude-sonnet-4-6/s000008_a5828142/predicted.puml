@@ -1,0 +1,203 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2980B9
+  FontColor #1A1A2E
+}
+skinparam component {
+  BackgroundColor #EAF7EA
+  BorderColor #27AE60
+  FontColor #1A1A2E
+}
+skinparam database {
+  BackgroundColor #FEF9E7
+  BorderColor #F39C12
+  FontColor #1A1A2E
+}
+skinparam cloud {
+  BackgroundColor #F9EBEA
+  BorderColor #E74C3C
+  FontColor #1A1A2E
+}
+skinparam rectangle {
+  BackgroundColor #F4ECF7
+  BorderColor #8E44AD
+  FontColor #1A1A2E
+}
+skinparam arrow {
+  Color #555555
+  FontColor #333333
+  FontSize 10
+}
+skinparam defaultFontSize 11
+skinparam defaultFontName Arial
+
+title Bunny Code — System Architecture Diagram
+
+node "Browser (Vue Frontend)" as FE {
+  component "Login / Registration View" as LoginView
+  component "Project Workspace / Editor View" as EditorView
+  component "Coding-Process Playback View" as PlaybackView
+  component "Battle View" as BattleView
+  component "REST API Client" as RESTClient
+  component "Socket.IO Client" as SocketClient
+}
+
+node "Nginx Reverse Proxy" as Nginx {
+  component "Static Asset Serving\n& Request Routing" as NginxRouter
+}
+
+node "Node.js / Express Backend" as Backend {
+
+  rectangle "Authentication Module" as AuthModule {
+    component "Registration & Login Handler" as RegLogin
+    component "JWT Validator\n(Bearer Token Parser)" as JWTValidator
+    component "User Detail Query" as UserQuery
+  }
+
+  rectangle "Project & Version Module" as ProjectModule {
+    component "Project CRUD Handler" as ProjectCRUD
+    component "Version & Initial File Handler" as VersionHandler
+  }
+
+  rectangle "Workspace Socket Module" as WorkspaceModule {
+    component "Workspace Auth & Status Emitter\n(statusChecked event)" as WorkspaceAuth
+    component "Edit State & Occupation Coordinator" as EditCoord
+    component "Leave & Disconnect Cleanup Handler" as LeaveCleanup
+  }
+
+  rectangle "Battle Socket Module" as BattleModule {
+    component "Battle Invitation Creator\n& Expiry Manager" as InviteManager
+    component "Battle Acceptance Handler\n(Redis Isolated Execution)" as AcceptHandler
+    component "Battle State Manager\n(Readiness / Code Sync /\nJudge / Outcome / Leave)" as BattleStateManager
+  }
+
+  rectangle "Code Execution Module" as ExecModule {
+    component "Code Submission Handler" as CodeSubmitHandler
+    component "Sandbox Invoker" as SandboxInvoker
+  }
+
+  rectangle "Coding-Process Record Module" as ReplayModule {
+    component "Coding Event Recorder" as EventRecorder
+    component "Playback Query Handler\n(by Project / Version / Time Range)" as PlaybackQuery
+  }
+
+  rectangle "File & Distribution Module" as FileModule {
+    component "File Upload Handler\n(Code / Battle / User Files)" as FileUploadHandler
+    component "Archive & Asset URL Provider" as AssetURLProvider
+  }
+
+  component "Socket.IO Server" as SocketIOServer
+  component "REST API Router" as RESTRouter
+}
+
+node "Docker Sandbox" as DockerSandbox {
+  component "Code Compiler / Executor\n(Isolated Process)" as CodeExecutor
+}
+
+database "MySQL" as MySQL {
+  component "Users" as DBUsers
+  component "Projects & Versions" as DBProjects
+  component "Battle Records & Outcomes" as DBBattles
+  component "Problems" as DBProblems
+}
+
+database "InfluxDB\n(Time-Series Store)" as InfluxDB {
+  component "Coding-Process Records" as TSRecords
+}
+
+database "Redis Cache" as Redis {
+  component "Workspace Socket/Version Mappings" as RedisWorkspace
+  component "Battle Invitation Cache\n(Temporary, Watched)" as RedisBattleInvite
+  component "Battle State Cache" as RedisBattleState
+}
+
+cloud "S3-Compatible Object Storage" as ObjectStorage {
+  component "Code Files" as S3Code
+  component "Battle Result Files" as S3Battle
+  component "User Files" as S3User
+  component "Static Assets & Archives" as S3Assets
+}
+
+cloud "CDN / URL Distribution\n(CloudFront-style)" as CDN {
+  component "Distributable URL Endpoints" as CDNEndpoints
+}
+
+node "Automated Deployment Environment" as DeployEnv {
+  component "Deployment Scripts\n(Frontend / Backend / Services)" as DeployScripts
+}
+
+' ─── Frontend to Nginx ───
+LoginView --> RESTClient
+EditorView --> RESTClient
+EditorView --> SocketClient
+PlaybackView --> RESTClient
+BattleView --> SocketClient
+BattleView --> RESTClient
+
+RESTClient --> NginxRouter : HTTPS REST
+SocketClient --> NginxRouter : WSS Socket.IO
+
+' ─── Nginx to Backend ───
+NginxRouter --> RESTRouter : Proxy REST API
+NginxRouter --> SocketIOServer : Proxy WebSocket
+NginxRouter --> AssetURLProvider : Serve / Proxy Static
+
+' ─── Backend Internal Wiring ───
+RESTRouter --> AuthModule
+RESTRouter --> ProjectModule
+RESTRouter --> ExecModule
+RESTRouter --> ReplayModule
+RESTRouter --> FileModule
+
+SocketIOServer --> WorkspaceModule
+SocketIOServer --> BattleModule
+
+JWTValidator --> RegLogin
+JWTValidator --> UserQuery
+
+WorkspaceAuth --> Redis : Write socket/version mapping\n(non-read-only, Redis ready)
+EditCoord --> Redis : Update edit occupation state
+LeaveCleanup --> Redis : Remove stale mappings
+
+InviteManager --> Redis : Store/expire invite cache
+AcceptHandler --> Redis : Watched read+delete\n(isolated execution)
+BattleStateManager --> Redis : Read/update battle state
+
+CodeSubmitHandler --> SandboxInvoker
+SandboxInvoker --> DockerSandbox : Invoke code execution
+
+EventRecorder --> InfluxDB : Write time-series events
+PlaybackQuery --> InfluxDB : Query by project/version/time range
+
+' ─── Auth & Project to MySQL ───
+RegLogin --> MySQL
+UserQuery --> MySQL
+ProjectCRUD --> MySQL
+VersionHandler --> MySQL
+BattleStateManager --> MySQL : Persist battle record & outcome
+InviteManager --> MySQL
+
+' ─── File uploads to Object Storage ───
+FileUploadHandler --> ObjectStorage : Upload code/battle/user files
+AssetURLProvider --> ObjectStorage : Upload archives & assets
+ObjectStorage --> CDN : Replicate / serve assets
+
+' ─── Docker Sandbox result return ───
+DockerSandbox --> SandboxInvoker : Execution result\n(status, output, errors)
+
+' ─── Deployment ───
+DeployScripts --> Backend : Deploy backend service
+DeployScripts --> FE : Deploy Vue app
+DeployScripts --> Nginx : Configure reverse proxy
+DeployScripts --> MySQL : Configure DB
+DeployScripts --> InfluxDB : Configure time-series DB
+DeployScripts --> Redis : Configure cache (host/port/auth)
+DeployScripts --> DockerSandbox : Configure sandbox
+DeployScripts --> ObjectStorage : Configure object storage
+DeployScripts --> CDN : Configure distribution endpoints
+
+@enduml

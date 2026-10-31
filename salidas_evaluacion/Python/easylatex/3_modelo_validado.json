@@ -1,0 +1,203 @@
+{
+  "requirements": [
+    {
+      "id": "easylatex-R001",
+      "description": "The system shall ingest handwritten, image, spreadsheet, and PDF inputs, automatically parse supported files, and convert recognized formulas or tables into normalized LaTeX code."
+    },
+    {
+      "id": "easylatex-R002",
+      "description": "The system shall support user registration, login/authentication, password recovery, and user account information management, including credential validation and failure feedback for invalid login attempts."
+    },
+    {
+      "id": "easylatex-R003",
+      "description": "The system shall manage projects and collaboration groups, including creation, browsing, joining, member management, shared resources, and role-based access for owners and collaborators."
+    },
+    {
+      "id": "easylatex-R004",
+      "description": "The system shall manage a version tree for project history, including historical version lookup, child-version creation, file editing, restoration, download, and version comments."
+    },
+    {
+      "id": "easylatex-R005",
+      "description": "The system shall allow users to edit generated LaTeX content, render a real-time preview, and export outputs as PDF, LaTeX source, PNG, or JPEG artifacts, with compatibility to mainstream LaTeX workflows."
+    },
+    {
+      "id": "easylatex-R006",
+      "description": "The system shall persist and retrieve user, group, project, version, file-path, parsed-content, workspace, edit-time, and comment data according to the database schema constraints."
+    },
+    {
+      "id": "easylatex-R007",
+      "description": "The system shall provide browser-based user interfaces for the main workflows and support modern browsers, including WebSocket-capable clients for real-time web interaction."
+    },
+    {
+      "id": "easylatex-R008",
+      "description": "The system shall expose external HTTP/REST APIs for user, project, file, collaboration, preview, version, and comment operations, and define internal service interfaces for verification, storage, recognition, LaTeX generation, rendering, collaboration, and version control."
+    },
+    {
+      "id": "easylatex-R009",
+      "description": "The system shall protect sensitive data and defend relevant web inputs against common attacks, including encryption-related privacy handling and protections against SQL injection, XSS, and CSRF."
+    }
+  ],
+  "components": [
+    {
+      "id": "comp-web-client",
+      "name": "Web Client Application",
+      "type": "Frontend Application",
+      "description": "Browser-based SPA providing user interface workflows, editor interaction, real-time preview rendering, and WebSocket client support.",
+      "tracesTo": [
+        "easylatex-R005",
+        "easylatex-R007"
+      ]
+    },
+    {
+      "id": "comp-api-gateway",
+      "name": "API & Security Gateway",
+      "type": "Gateway / Reverse Proxy",
+      "description": "Exposes external HTTP/REST and WebSocket endpoints, handles routing, rate-limiting, and enforces security defenses (SQLi, XSS, CSRF filtering and SSL/TLS termination).",
+      "tracesTo": [
+        "easylatex-R007",
+        "easylatex-R008",
+        "easylatex-R009"
+      ]
+    },
+    {
+      "id": "comp-auth-service",
+      "name": "Authentication and Account Service",
+      "type": "Microservice",
+      "description": "Manages user registration, credential validation, sessions/tokens, password recovery, and account data encryption.",
+      "tracesTo": [
+        "easylatex-R002",
+        "easylatex-R008",
+        "easylatex-R009"
+      ]
+    },
+    {
+      "id": "comp-collab-service",
+      "name": "Project & Collaboration Service",
+      "type": "Microservice",
+      "description": "Handles project lifecycle, workspace state, collaboration groups, and role-based access control (RBAC).",
+      "tracesTo": [
+        "easylatex-R003",
+        "easylatex-R008"
+      ]
+    },
+    {
+      "id": "comp-version-service",
+      "name": "Version Control Service",
+      "type": "Microservice",
+      "description": "Manages project version trees, child-version branching, restoration points, file revisions, and version comments.",
+      "tracesTo": [
+        "easylatex-R004",
+        "easylatex-R008"
+      ]
+    },
+    {
+      "id": "comp-recognition-service",
+      "name": "Document Ingestion & Recognition Service",
+      "type": "Processing Service",
+      "description": "Ingests handwritten notes, images, PDFs, and spreadsheets; parses structures and generates normalized LaTeX code.",
+      "tracesTo": [
+        "easylatex-R001",
+        "easylatex-R008"
+      ]
+    },
+    {
+      "id": "comp-latex-engine",
+      "name": "LaTeX Rendering & Export Engine",
+      "type": "Processing Engine",
+      "description": "Performs real-time LaTeX preview rendering, validation, and multi-format export generation (PDF, source, PNG, JPEG).",
+      "tracesTo": [
+        "easylatex-R005",
+        "easylatex-R008"
+      ]
+    },
+    {
+      "id": "comp-data-persistence",
+      "name": "Data Persistence Layer",
+      "type": "Storage Service",
+      "description": "Persists relational schema entities, version trees, audit logs, and file metadata with encrypted storage constraints.",
+      "tracesTo": [
+        "easylatex-R006",
+        "easylatex-R009"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn-client-gateway",
+      "source": "comp-web-client",
+      "target": "comp-api-gateway",
+      "type": "HTTPS / WSS",
+      "description": "Transfers client API calls and real-time bidirectional WebSocket events."
+    },
+    {
+      "id": "conn-gateway-auth",
+      "source": "comp-api-gateway",
+      "target": "comp-auth-service",
+      "type": "gRPC / Internal REST",
+      "description": "Routes authentication, password recovery, and identity verification requests."
+    },
+    {
+      "id": "conn-gateway-collab",
+      "source": "comp-api-gateway",
+      "target": "comp-collab-service",
+      "type": "gRPC / Internal REST",
+      "description": "Routes project management and collaborative session requests."
+    },
+    {
+      "id": "conn-gateway-version",
+      "source": "comp-api-gateway",
+      "target": "comp-version-service",
+      "type": "gRPC / Internal REST",
+      "description": "Routes version lookup, tree traversal, commit, and restore commands."
+    },
+    {
+      "id": "conn-gateway-recognition",
+      "source": "comp-api-gateway",
+      "target": "comp-recognition-service",
+      "type": "gRPC / Internal REST",
+      "description": "Dispatches uploaded files for ingestion, parsing, and LaTeX conversion."
+    },
+    {
+      "id": "conn-gateway-latex",
+      "source": "comp-api-gateway",
+      "target": "comp-latex-engine",
+      "type": "gRPC / Internal REST",
+      "description": "Dispatches rendering and export transformation tasks."
+    },
+    {
+      "id": "conn-auth-persistence",
+      "source": "comp-auth-service",
+      "target": "comp-data-persistence",
+      "type": "Encrypted Database Driver",
+      "description": "Reads and writes user credentials and profile records."
+    },
+    {
+      "id": "conn-collab-persistence",
+      "source": "comp-collab-service",
+      "target": "comp-data-persistence",
+      "type": "Encrypted Database Driver",
+      "description": "Manages persistence of projects, group memberships, and role assignments."
+    },
+    {
+      "id": "conn-version-persistence",
+      "source": "comp-version-service",
+      "target": "comp-data-persistence",
+      "type": "Encrypted Database Driver",
+      "description": "Stores and queries version tree nodes, snapshots, and file references."
+    },
+    {
+      "id": "conn-recognition-persistence",
+      "source": "comp-recognition-service",
+      "target": "comp-data-persistence",
+      "type": "Encrypted Database Driver / Blob Storage",
+      "description": "Stores uploaded assets, parsed raw data, and normalized LaTeX definitions."
+    },
+    {
+      "id": "conn-collab-version",
+      "source": "comp-collab-service",
+      "target": "comp-version-service",
+      "type": "gRPC / Internal REST",
+      "description": "Coordinates workspace edit states with project version tree revisions."
+    }
+  ]
+}

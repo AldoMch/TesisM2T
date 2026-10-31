@@ -1,0 +1,108 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BorderColor #555555
+  BorderThickness 1.5
+}
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontSize 12
+}
+skinparam actor {
+  BackgroundColor #FFFDE7
+  BorderColor #F57F17
+}
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam arrow {
+  Color #444444
+  FontSize 10
+}
+
+title Activiti 7 Guide-Documented Platform Architecture
+
+actor "Authenticated User /\nTask API User /\nHuman Participant" as User
+actor "Cluster Operator /\nDeveloper" as Operator
+
+rectangle "Keycloak\n(Identity Provider / SSO)" as Keycloak #E3F2FD
+
+rectangle "Kubernetes / GKE Cluster" as K8sCluster {
+
+  rectangle "NGINX Ingress Controller\n(Public IP Exposure)" as Ingress #FFF3E0
+
+  rectangle "Spring Boot Application" as SpringApp {
+    component "Spring Security\n(User · Group · Role)" as SpringSec
+    component "ProcessRuntime API" as ProcessRT
+    component "TaskRuntime API\n[requires ROLE_ACTIVITI_USER]" as TaskRT
+  }
+
+  component "Example Runtime Bundle\n(Process Definitions &\nProcess Instances)" as RuntimeBundle
+
+  component "Audit Service\n(Audit Events)" as AuditSvc
+
+  component "Query Service\n(Process Execution Info)" as QuerySvc
+
+  component "Notification Service" as NotifSvc #F5F5F5
+
+  component "Cloud Connectors" as CloudConn #F5F5F5
+
+  rectangle "Deployment Descriptors\n(Input Rate · Replica Counts)" as DeployDesc #F3E5F5
+
+  database "Config Maps /\nRegistry" as ConfigMaps #E8F5E9
+}
+
+User -right-> Keycloak : 1. obtain auth token\n(API-001 / DE-001)
+User -down-> Ingress : 2. request with token\n(CI-003 / FR-001)
+Ingress -down-> SpringSec : route external traffic\n(CI-002 / FR-007)
+
+Keycloak -down-> SpringSec : token validation\n(NFR-001 / NFR-003)
+
+SpringSec -right-> ProcessRT : authenticated access\n(FR-002 / FR-003)
+SpringSec -right-> TaskRT : role-based access\n(FR-005 / C-002)
+
+ProcessRT -down-> RuntimeBundle : view process definitions,\nstart SimpleProcess (FR-002/FR-003)
+TaskRT -down-> RuntimeBundle : task interaction\n(API-007 / API-008)
+
+RuntimeBundle -right-> AuditSvc : emit audit events\n(FR-004 / DR-004)
+RuntimeBundle -down-> QuerySvc : process execution info\n(API-006 / DR-005)
+RuntimeBundle ..> NotifSvc : notifications\n(background)
+RuntimeBundle ..> CloudConn : cloud connector calls\n(background)
+
+DeployDesc -up-> RuntimeBundle : replica count\n(NFR-002 / DR-007)
+DeployDesc ..> CloudConn : input rate\n(NFR-002)
+ConfigMaps -up-> RuntimeBundle : configuration\n(C-001)
+
+Operator -right-> DeployDesc : configure scalability\n(NFR-002 / AD-005)
+Operator ..> Ingress : configure ingress /\npublic IP (FR-007 / C-003)
+
+note right of Ingress
+  Routes external requests
+  to selected internal services
+  (CI-002, C-003, FR-007)
+end note
+
+note bottom of TaskRT
+  Access denied unless
+  ACTIVITI_USER /
+  ROLE_ACTIVITI_USER
+  is granted (FR-005, C-002)
+end note
+
+note bottom of AuditSvc
+  Exposes audit events for
+  just-started process instances
+  (FR-004, DR-004)
+end note
+
+note right of NotifSvc
+  Architecture background
+  components — no explicit
+  functional requirement
+  assigned (C-006)
+end note
+
+@enduml

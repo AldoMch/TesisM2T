@@ -1,0 +1,140 @@
+@startuml Tengine_Lite_Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam packageStyle rectangle
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam ArrowColor #444444
+skinparam ComponentBorderColor #555555
+skinparam PackageBorderColor #333333
+skinparam NodeBorderColor #333333
+skinparam DatabaseBorderColor #555555
+skinparam CloudBorderColor #555555
+
+' ─────────────────────────────────────────────
+' External Systems
+' ─────────────────────────────────────────────
+
+cloud "WebAssembly-capable\nWeb Browser" as BrowserEnv {
+  component [Browser WASM Runtime] as WAsmRuntime
+}
+
+' ─────────────────────────────────────────────
+' Local Filesystem (model & image assets)
+' ─────────────────────────────────────────────
+
+package "Local Filesystem\n(Model & Image Assets)" as LocalFS #F5F5F5 {
+  component [tmfile Binaries] as TmfileStore
+  component [Image Assets] as ImageAssets
+}
+
+' ─────────────────────────────────────────────
+' Build & Deployment Layer
+' ─────────────────────────────────────────────
+
+package "Build & Deployment Layer" #EAF0FB {
+  component [CMake Build System] as CMake
+}
+
+' ─────────────────────────────────────────────
+' Model Conversion & Tooling Layer
+' ─────────────────────────────────────────────
+
+package "Model Conversion & Tooling Layer" #FEF9E7 {
+  component [Linux Pre-compiled Converter] as LinuxConverter
+  component [WebAssembly Online Converter\n<<local-only execution\nno private data uploaded>>] as WasmConverter
+}
+
+' ─────────────────────────────────────────────
+' API Surface Layer
+' ─────────────────────────────────────────────
+
+package "API Surface Layer" #E9F7EF {
+  component [C API Module\n<<compatible with original\nTengine C API (NFR-002)>>] as CAPI
+  component [C++ API Module] as CppAPI
+  component [Python API Module] as PyAPI
+}
+
+' ─────────────────────────────────────────────
+' Example Application Layer
+' ─────────────────────────────────────────────
+
+package "Example Application Layer" #FDF2F8 {
+  component [Example Programs\n(Classification / Detection /\nSegmentation / Pose /\nLandmark / OCR)] as Examples
+}
+
+' ─────────────────────────────────────────────
+' Core Inference Engine Layer
+' ─────────────────────────────────────────────
+
+package "Core Inference Engine Layer" #EBF5FB {
+
+  component [Scheduler Module\n(Graph Orchestration &\nHardware Coordination)] as Scheduler
+
+  component [Serializer Module\n(tmfile Binary Decoder)] as Serializer
+
+  component [Device Module\n(NN Operator Backend /\nHardware Dispatch)] as Device
+
+  component [Operator Module\n(NN Operator Registry &\nInitialization)] as Operator
+
+}
+
+' ─────────────────────────────────────────────
+' Serialized Model Parameters artifact
+' ─────────────────────────────────────────────
+
+component [Serialized Model Parameters\n(Decoded tmfile Output)] as SerializedParams
+
+' ─────────────────────────────────────────────
+' Key Dependencies / Arrows
+' ─────────────────────────────────────────────
+
+' Example Programs -> C API only (FR-002)
+Examples --> CAPI : uses C API\n(FR-002)
+
+' Example Programs -> Local Assets
+Examples --> ImageAssets : reads images
+Examples --> TmfileStore : loads models
+
+' C API -> Core Engine
+CAPI --> Scheduler : delegates model load,\ngraph setup & inference
+
+' C++ and Python API Modules -> Scheduler (documented as developer-facing entry points)
+CppAPI ..> Scheduler : delegates (inferred)
+PyAPI ..> Scheduler : delegates (inferred)
+
+' Core Engine internal dependencies
+Scheduler --> Serializer : request tmfile\ndecoding (FR-006)
+Serializer --> SerializedParams : produces serialized\nmodel parameters (DR-004)
+SerializedParams --> Scheduler : decoded model\nparameters returned
+
+Scheduler --> Device : dispatch computation\ngraph to NN backend
+Scheduler --> Operator : access registered\nNN operators
+
+' Serializer reads tmfile input
+Serializer --> TmfileStore : reads tmfile\nbinary input
+
+' Model Conversion -> tmfile output
+LinuxConverter --> TmfileStore : produces tmfile\nbinary artifacts
+WasmConverter --> TmfileStore : produces tmfile\nbinary artifacts (local-only)
+
+' Model Conversion external constraints
+note on link
+  Executes entirely within browser;\nno private data uploaded (NFR-003, FR-008)
+end note
+WasmConverter --> WAsmRuntime : executes in browser\n(local-only, NFR-003)
+
+' CMake -> all native components (NFR-001, C-001)
+CMake --> CAPI : compiles
+CMake --> CppAPI : compiles
+CMake --> PyAPI : compiles
+CMake --> Examples : compiles
+CMake --> Scheduler : compiles
+CMake --> Serializer : compiles
+CMake --> Device : compiles
+CMake --> Operator : compiles
+CMake --> LinuxConverter : compiles
+CMake --> WasmConverter : compiles
+
+@enduml

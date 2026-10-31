@@ -1,0 +1,113 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam roundCorner 15
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam RectangleBorderColor #333333
+skinparam RectangleBackgroundColor #FFFFFF
+skinparam RectangleFontColor #000000
+
+title Archifiltre-docs System Architecture (SRS Scope)
+
+package "Electron Desktop Application" {
+  [Main Process] as Main
+  [Renderer Process] as Renderer
+  [Translation Module] as Translation
+  [User Settings Store] as SettingsStore
+}
+
+package "Background Processing" {
+  [Worker Manager] as WorkerManager
+  [Batch Processor] as BatchProcessor
+  [File System Access] as FS
+}
+
+package "Export Workers" {
+  [Tree CSV Worker] as TreeWorker
+  [RESIP Export Worker] as RESIPWorker
+  [CSV Export Worker] as CSVWorker
+  [Excel Export Worker] as ExcelWorker
+}
+
+package "Hash Computation" {
+  [Hash Batch Processor] as HashBatch
+  [Hash Debug Writer] as DebugWriter
+}
+
+package "Data Models" {
+  [User Settings] as SettingsModel
+  [Export Input Data] as ExportData
+  [Hash Input Data] as HashData
+}
+
+package "Outputs" {
+  [CSV Files] as CSVOutput
+  [Excel Files] as ExcelOutput
+  [RESIP Export] as RESIPOutput
+  [Hash Maps] as HashOutput
+  [Debug Files] as DebugOutput
+}
+
+Main --> Renderer : IPC
+Renderer --> Translation : gets language
+Renderer --> SettingsStore : reads persisted
+Renderer --> WorkerManager : triggers export/hash
+
+SettingsStore --> SettingsModel : provides data
+Translation --> ExportData : provides language context
+
+WorkerManager --> TreeWorker : spawns
+WorkerManager --> RESIPWorker : spawns
+WorkerManager --> CSVWorker : spawns
+WorkerManager --> ExcelWorker : spawns
+
+ExportData --> TreeWorker : files/folders map
+ExportData --> RESIPWorker : files, metadata, aliases,\ncomments, tags
+ExportData --> CSVWorker : aliases, comments, files,\nmetadata, tags, hashes
+ExportData --> ExcelWorker : CsvExporterData
+
+TreeWorker --> CSVOutput : generates
+RESIPWorker --> RESIPOutput : generates
+CSVWorker --> CSVOutput : generates
+ExcelWorker --> ExcelOutput : generates
+
+Renderer --> BatchProcessor : triggers hash
+BatchProcessor --> HashBatch : delegates
+HashData --> HashBatch : paths, basePath
+HashBatch --> FS : reads files
+HashBatch --> HashOutput : produces hash maps
+HashBatch --> DebugWriter : sends debug data
+DebugWriter --> FS : writes files
+FS --> DebugOutput : hash-result-debug\nhash-error-debug
+
+note right of SettingsStore
+  Sanitization Logic:
+  - Empty/undefined -> defaults
+  - Invalid values -> defaults
+  - Valid values preserved
+end note
+
+note right of WorkerManager
+  Asynchronous Processing:
+  - Background workers
+  - Observable/stream results
+  - Progress updates
+end note
+
+note right of HashBatch
+  Batch Processing:
+  - Processes paths in batches
+  - Aggregates results
+end note
+
+note bottom of DebugWriter
+  Storage Constraint:
+  Files written to
+  app.getPath("userData")
+end note
+
+@enduml

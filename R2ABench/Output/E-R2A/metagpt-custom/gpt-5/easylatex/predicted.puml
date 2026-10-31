@@ -1,0 +1,138 @@
+@startuml
+
+node "Client - Modern Web Browser (Chrome/Firefox/Safari/Edge)" as Browser {
+  package "Client/Web UI" {
+    component "Web Client UI" as WebUI
+  }
+}
+
+node "Web Server (Nginx/Apache HTTPD)" as WebServer {
+  component "HTTP/WS Reverse Proxy" as Proxy
+}
+
+node "App Server (Node.js 14.x+)" as AppServer {
+  package "REST API" {
+    component "REST API Gateway" as ApiGateway
+  }
+
+  package "Realtime Communication" {
+    component "Realtime Gateway (WebSocket)" as WSGateway
+  }
+
+  package "Application Services" {
+    component "Auth Service" as AuthSvc
+    component "Permission Control" as PermSvc
+    component "Project Service" as ProjectSvc
+    component "Group/Collaboration Service" as CollabSvc
+    component "Version Control Service" as VersionSvc
+    component "Comment Service" as CommentSvc
+    component "File Upload/Ingestion" as FileIngest
+  }
+
+  package "Data Persistence" {
+    component "Data Access/Repository" as Repository
+  }
+
+  package "File Storage" {
+    component "File Storage Manager" as FileStoreMgr
+  }
+
+  package "Security & Compliance" {
+    component "Security Module" as SecurityMod
+  }
+}
+
+node "Processing Cluster (Python 3.8+)" as ProcCluster {
+  package "Processing & Conversion" {
+    component "Processing Orchestrator" as Orchestrator
+    component "Handwriting/Image Recognition Service" as HWR
+    component "PDF Extraction Service" as PDFExtract
+    component "CSV/Excel Parser" as CSVParser
+    component "LaTeX Generation Service" as LatexGen
+  }
+}
+
+node "Rendering Host" as RenderHost {
+  package "Rendering & Export" {
+    component "Preview Rendering Service" as PreviewRender
+    component "Export Service" as ExportSvc
+  }
+
+  node "LaTeX Engine (TeX Live / MiKTeX)" as LatexEngine
+}
+
+database "Relational DB (MySQL 8+ / PostgreSQL 12+)" as RDBMS
+cloud "Object/File Storage" as ObjectStore
+
+' Client to Edge/Gateway
+WebUI -> Proxy : HTTP/HTTPS
+WebUI -> Proxy : WebSocket
+
+' Edge to App Server gateways
+Proxy -> ApiGateway : HTTP/REST
+Proxy -> WSGateway : WebSocket
+
+' REST API to Application Services
+ApiGateway -> AuthSvc
+ApiGateway -> PermSvc
+ApiGateway -> ProjectSvc
+ApiGateway -> CollabSvc
+ApiGateway -> VersionSvc
+ApiGateway -> CommentSvc
+ApiGateway -> FileIngest
+ApiGateway -> ExportSvc
+ApiGateway -> PreviewRender
+
+' WebSocket authN/authZ and security
+WSGateway -> AuthSvc
+WSGateway -> PermSvc
+SecurityMod -> ApiGateway
+SecurityMod -> WSGateway
+SecurityMod -> Repository
+
+' File ingestion to storage and processing
+FileIngest -> FileStoreMgr
+FileStoreMgr -> ObjectStore
+FileIngest -> Orchestrator
+FileIngest -> Repository
+
+' Processing orchestration and conversion pipeline
+Orchestrator -> HWR
+Orchestrator -> PDFExtract
+Orchestrator -> CSVParser
+Orchestrator -> FileStoreMgr
+Orchestrator -> Repository
+Orchestrator -> ProjectSvc
+
+HWR -> LatexGen
+PDFExtract -> LatexGen
+CSVParser -> LatexGen
+
+' Processing results persistence
+LatexGen -> Repository
+LatexGen -> VersionSvc
+
+' Rendering and realtime preview
+LatexGen -> PreviewRender
+WSGateway -> PreviewRender
+PreviewRender -> WSGateway
+PreviewRender -> LatexEngine
+ExportSvc -> LatexEngine
+
+' Export artifact persistence and metadata
+ExportSvc -> FileStoreMgr
+ExportSvc -> Repository
+
+' Realtime collaboration/comment/version updates
+CollabSvc -> WSGateway
+VersionSvc -> WSGateway
+CommentSvc -> WSGateway
+
+' Data persistence
+ProjectSvc -> Repository
+CollabSvc -> Repository
+VersionSvc -> Repository
+CommentSvc -> Repository
+Repository -> RDBMS
+
+@enduml

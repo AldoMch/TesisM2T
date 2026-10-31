@@ -1,0 +1,46 @@
+@startuml
+title VirtualMotionTracker Architecture
+
+skinparam componentStyle rectangle
+
+package "User Environment" {
+  [User Application] as userApp
+}
+
+package "VirtualMotionTracker System" {
+  [VMT Manager] as vmtManager
+  [VMT Driver] as vmtDriver
+  database "Shared Memory" as sharedMem
+}
+
+package "Runtime Environment" {
+  [SteamVR/OpenVR Runtime] as steamvr
+}
+
+userApp --> vmtManager : External Control Input (OSC)
+vmtManager <---> sharedMem : JSON Messages
+vmtDriver <---> sharedMem : JSON Messages
+vmtDriver --> steamvr : OpenVR Driver Interface
+steamvr --> vmtDriver : Load & Host Driver
+
+note right of vmtManager
+  Handles external control input
+  Manages communication
+end note
+
+note left of vmtDriver
+  Exposes virtual motion tracking
+  Integrates with SteamVR/OpenVR
+end note
+
+note bottom of sharedMem
+  Bidirectional JSON messaging
+  Synchronization fields included
+end note
+
+note top of steamvr
+  OpenVR/SteamVR runtime
+  Loads and hosts VMT Driver
+end note
+
+@enduml

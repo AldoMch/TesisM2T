@@ -1,0 +1,66 @@
+@startuml
+' Deployment & Component Diagram - Layered Architecture
+
+' === EXTERNAL SYSTEMS ===
+node "WebBrowser" {
+  component "ClientApp" as frontend
+}
+
+cloud "ExternalSystems" {
+  component "SiteMinder" as siteminder
+  database "MsSqlDatabase" as database
+}
+
+' === ARCHITECTURE LAYERS ===
+
+' FRONTEND LAYER
+package "FrontendLayer" {
+  component "NotificationQueue" as notificationQueue
+  component "CookieService" as cookieService
+  component "ControlledListLoader" as controlledListLoader
+}
+
+' API LAYER
+package "ApiLayer" {
+  component "BackendApi" as api
+}
+
+' BACKEND LAYER
+package "BackendLayer" {
+  component "NetCoreWebApi" as webapi
+  component "DomainServices" as domainServices
+  component "DevelopmentBackDoor" as devBackDoor
+}
+
+' DATA ACCESS LAYER
+package "DataAccessLayer" {
+  component "EntityFrameworkDbContext" as efDbContext
+}
+
+' === DEPENDENCIES ===
+
+' Frontend internal dependencies
+frontend --> api : consumes
+frontend --> notificationQueue : uses
+frontend --> cookieService : uses
+frontend --> controlledListLoader : initializes
+
+' API to Backend
+api --> webapi : implemented by
+
+' Backend internal flow
+webapi --> domainServices : uses
+domainServices --> efDbContext : uses
+efDbContext --> database : persists to
+
+' Development back door
+devBackDoor --> webapi : bypasses auth for
+
+' External integrations
+frontend --> siteminder : authenticates via
+webapi --> siteminder : validates tokens from
+
+' Development token flow
+devBackDoor ..> webapi : issues dev tokens to
+
+@enduml

@@ -1,0 +1,342 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::EventBridge Rule"
+      ],
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::AWS EventBridge"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::SNS Topic"
+      ],
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "CMS BigMAC::BigMAC Data Receiver"
+      ],
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Account / Region::Connector Management Layer::Connector Configuration Handler\\n(cluster + service + connector defs)",
+        "AWS Account / Region::Connector Management Layer::Connector Management Library\\nput / delete(empty-set) / restart\\n(FR-002, DR-002)"
+      ],
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Account / Region::Event Routing & Alerting Layer::SNS Subscription Manager\\n(manual / out-of-band operator action)\\n(FR-004, NFR-002)"
+      ],
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Appian::Appian Data Source"
+      ],
+      "gt_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "AWS Cloud\\nConnector Account::Chat notification",
+        "AWS Cloud\\nConnector Account::Email notification",
+        "AWS Cloud\\nConnector Account::Slack notification"
+      ],
+      "predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::SNS Subscription Targets\\n(manually maintained endpoints)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::AWS CLI Credentials"
+      ],
+      "gt_nodes": [
+        "Global::VPC peering\\nconnection"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::AWS CLI Credentials",
+        "AWS Account / Region::CLI / Script Layer::Stage Listing Script\\n(listRunningStages)"
+      ],
+      "gt_node": "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::EventBridge Rule",
+        "AWS Account / Region::AWS Infrastructure::IAM Policy\\n(EventBridge publish\\npermission on SNS)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::AWS EventBridge"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::ECS Service\\n(runtime event producer)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::Chat notification"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "AWS Cloud\\nConnector Account::Email notification"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::SNS Topic",
+        "AWS Account / Region::Event Routing & Alerting Layer::SNS Subscription Manager\\n(manual / out-of-band operator action)\\n(FR-004, NFR-002)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "AWS Cloud\\nConnector Account::Slack notification"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "CMS BigMAC::BigMAC Data Receiver"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Account / Region::AWS Infrastructure::ECS Cluster",
+        "AWS Account / Region::Connector Management Layer::Connector Configuration Handler\\n(cluster + service + connector defs)",
+        "AWS Account / Region::Connector Management Layer::Connector Management Library\\nput / delete(empty-set) / restart\\n(FR-002, DR-002)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "AWS Account / Region::Event Routing & Alerting Layer::SNS Subscription Manager\\n(manual / out-of-band operator action)\\n(FR-004, NFR-002)"
+      ],
+      "gt_node": "AWS Cloud\\nConnector Account::VPC::topics::Private subnet::AWS Lambda\\ncreate/delete topics"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Global::VPC peering\\nconnection"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::AWS Infrastructure::AWS CLI Credentials",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::AWS Infrastructure::ECS Cluster",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::AWS Infrastructure::ECS Service\\n(runtime event producer)",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB",
+        "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::AWS Infrastructure::EventBridge Rule",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::AWS EventBridge"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::AWS Infrastructure::IAM Policy\\n(EventBridge publish\\npermission on SNS)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::SNS Topic\\nalerts",
+        "AWS Cloud\\nConnector Account::AWS EventBridge"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::AWS Infrastructure::SNS Subscription Targets\\n(manually maintained endpoints)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::AWS Infrastructure::SNS Topic",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::SNS Topic\\nalerts"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "AWS Account / Region::CI/CD Layer::GitHub Actions Workflow\\n(deploy.yml)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::CLI / Script Layer::Stage Listing Script\\n(listRunningStages)",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::Connector Management Layer::Connector Configuration Handler\\n(cluster + service + connector defs)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::Connector Management Layer::Connector Management Library\\nput / delete(empty-set) / restart\\n(FR-002, DR-002)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::connector::Private subnet::AWS Fargate\\nKafka Connect Cluster"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "AWS Account / Region::Event Routing & Alerting Layer::SNS Subscription Manager\\n(manual / out-of-band operator action)\\n(FR-004, NFR-002)",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::Email notification"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "AWS Account / Region::Metrics Collection Layer::Deployment Metrics Collector\\nfailedRuns / passedRuns\\n(FR-005)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "AWS Account / Region::Metrics Collection Layer::PR Metrics Collector\\ncreated_at / merged_at\\nwhole-hour difference\\n(FR-006, DR-005)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "AWS Account / Region::Metrics Collection Layer::Paginated Result Aggregator\\nper_page=100\\n(NFR-004)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "AWS Account / Region::Runtime Environment::Node Version Manager\\n(nvm use - NFR-001)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Appian::Appian Data Source",
+      "reference_nodes": [
+        "AWS Cloud\\nAppian Source::VPC::Appian\\nOracle DB"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "CMS BigMAC::BigMAC Data Receiver",
+      "reference_nodes": [
+        "AWS Cloud\\nConnector Account::VPC::CMS BigMAC"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "GitHub Platform::GitHub Actions API",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "GitHub Platform::GitHub Pull Requests API",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Appian",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::CMS BigMAC",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::GitHub Platform",
+      "reference_nodes": []
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1576,
+      "completion_tokens": 216,
+      "total_tokens": 1792,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "AWS Account / Region::AWS Infrastructure::ECS Cluster",
+    "AWS Account / Region::AWS Infrastructure::ECS Service\\n(runtime event producer)",
+    "AWS Account / Region::AWS Infrastructure::IAM Policy\\n(EventBridge publish\\npermission on SNS)",
+    "AWS Account / Region::CI/CD Layer::GitHub Actions Workflow\\n(deploy.yml)",
+    "AWS Account / Region::CLI / Script Layer::Stage Listing Script\\n(listRunningStages)",
+    "AWS Account / Region::Metrics Collection Layer::Deployment Metrics Collector\\nfailedRuns / passedRuns\\n(FR-005)",
+    "AWS Account / Region::Metrics Collection Layer::PR Metrics Collector\\ncreated_at / merged_at\\nwhole-hour difference\\n(FR-006, DR-005)",
+    "AWS Account / Region::Metrics Collection Layer::Paginated Result Aggregator\\nper_page=100\\n(NFR-004)",
+    "AWS Account / Region::Runtime Environment::Node Version Manager\\n(nvm use - NFR-001)",
+    "GitHub Platform::GitHub Actions API",
+    "GitHub Platform::GitHub Pull Requests API",
+    "Global::Appian",
+    "Global::CMS BigMAC",
+    "Global::GitHub Platform"
+  ],
+  "_provenance": {
+    "fingerprint": "a0bb291ca5745d36eb841770ed2b72fdec548f087dfa207559b2ab43d815e654",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 2
+  }
+}

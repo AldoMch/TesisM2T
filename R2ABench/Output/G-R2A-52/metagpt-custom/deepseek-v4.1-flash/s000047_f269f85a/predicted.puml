@@ -1,0 +1,98 @@
+@startuml
+cloud "Electron Desktop Application Runtime" as ElectronRuntime
+node "Filesystem Paths for Hash Computation" as FsPaths
+database "Runtime User Data Directory\n(app.getPath('userData'))" as UserDataDir
+
+database "Persisted Settings Source\n({}, empty string, undefined, invalid persisted settings)" as PersistedSettingsSource
+database "Normalized Settings / Defaults\n(isTrackingEnabled, isMonitoringEnabled, language)" as NormalizedSettings
+
+package "Settings/Configuration Layer" {
+  component "Settings Sanitizer" as SettingsSanitizer
+  database "User Settings Data Model\n(isTrackingEnabled, isMonitoringEnabled, language)" as UserSettings
+}
+
+package "Translation/Internationalization Layer" {
+  component "Translation Module\n(current language)" as TranslationModule
+}
+
+package "Controller Layer" {
+  component "Tree CSV Export Controller" as TreeCsvCtrl
+  component "RESIP Export Controller" as ResipCtrl
+  component "CSV Export Controller" as CsvCtrl
+  component "Excel Export Controller" as ExcelCtrl
+  component "Hash Computation Controller" as HashCtrl
+}
+
+package "Background Processing Layer" {
+  component "Background Worker / Child-Process / Batch Utilities" as BgWorkerUtil
+  interface "Observable / Stream Result Delivery" as ObservableStream
+  package "Export Layer" {
+    component "Tree CSV Export Worker" as TreeCsvWorker
+    component "RESIP Export Worker" as ResipWorker
+    component "CSV Export Worker" as CsvWorker
+    component "Excel Export Worker" as ExcelWorker
+  }
+}
+
+package "Hash Processing Layer" {
+  component "Batch Hash Processor" as BatchHash
+  component "Hash Debug Writer" as HashDebugWriter
+}
+
+package "Runtime/Platform Layer" {
+  component "Application User Data Directory Access" as UserDataAccess
+}
+
+database "Tree CSV Export Input\n(files-and-folders map)" as TreeCsvInput
+database "RESIP Export Inputs\n(files/folders, metadata, aliases, comments, tags)" as ResipInputs
+database "CSV Export Inputs\n(aliases, comments, files/folders, metadata, tags, hashes)" as CsvInputs
+database "CsvExporterData" as CsvExporterData
+
+PersistedSettingsSource --> SettingsSanitizer : supplies raw persisted settings\n({}, empty string, undefined, invalid)
+SettingsSanitizer --> UserSettings : sanitizes persisted settings
+SettingsSanitizer --> NormalizedSettings : outputs normalized/defaults
+
+TreeCsvInput --> TreeCsvCtrl : supplies files-and-folders map
+ResipInputs --> ResipCtrl : supplies files/folders, metadata, aliases, comments, tags
+CsvInputs --> CsvCtrl : supplies aliases, comments, files/folders, metadata, tags, hashes
+CsvExporterData --> ExcelCtrl : supplies CsvExporterData
+
+TreeCsvCtrl --> TranslationModule : obtains current language
+TreeCsvCtrl --> TreeCsvWorker : passes files-and-folders map + current language
+TreeCsvCtrl --> ObservableStream : consumes progress/result
+
+ResipCtrl --> ResipWorker : passes files/folders, metadata, aliases, comments, tags, starts worker, filters/maps results
+ResipCtrl --> ObservableStream : consumes progress/result
+
+CsvCtrl --> TranslationModule : obtains current language
+CsvCtrl --> CsvWorker : passes CSV data\n(aliases, comments, files/folders, metadata, tags, hashes) + language
+CsvCtrl --> ObservableStream : consumes async result
+
+ExcelCtrl --> TranslationModule : obtains current language
+ExcelCtrl --> ExcelWorker : passes CsvExporterData + language
+ExcelCtrl --> ObservableStream : consumes async result
+
+HashCtrl --> BatchHash : invokes batch hash with paths/basePath
+HashCtrl --> HashDebugWriter : creates debug writers
+HashCtrl --> ObservableStream : consumes hash stream/results
+FsPaths --> HashCtrl : supplies submitted paths/basePath
+
+TreeCsvWorker --> ObservableStream : emits progress/final
+ResipWorker --> ObservableStream : emits progress/final
+CsvWorker --> ObservableStream : emits async result
+ExcelWorker --> ObservableStream : emits async result
+BatchHash --> ObservableStream : returns data-processing stream + merged hash-map
+
+TreeCsvWorker --> BgWorkerUtil : uses
+ResipWorker --> BgWorkerUtil : uses
+CsvWorker --> BgWorkerUtil : uses
+ExcelWorker --> BgWorkerUtil : uses
+BatchHash --> BgWorkerUtil : uses
+
+BatchHash --> FsPaths : reads paths + basePath
+
+HashDebugWriter --> UserDataAccess : writes hash-result-debug / hash-error-debug
+UserDataAccess --> UserDataDir : accesses user data path
+UserDataDir --> ElectronRuntime : provided by app.getPath('userData')
+
+@enduml

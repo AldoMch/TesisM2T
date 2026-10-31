@@ -1,0 +1,124 @@
+@startuml
+title torc_py Task-Based Parallelism Library - Architecture
+
+skinparam componentStyle rectangle
+skinparam rectangleBorderColor #333333
+skinparam backgroundColor #FAFAFA
+
+actor "Python Application\nDeveloper" as AppDev
+actor "HPC Application\nDeveloper" as HpcDev
+
+rectangle "Application Layer" {
+    component [Python Application\n(import torc)] as App
+    component [Image Preprocessing\nApplication] as ImgApp
+    component [Numerical Optimization\nApplication\n(CMA / Pi4U)] as OptApp
+}
+
+rectangle "torc_py Library (Python Package)" {
+
+    rectangle "Public API Layer" {
+        component [Task Submission API\ntorc.submit()\ntorc.wait()\ntorc.as_completed()] as SubmitAPI
+        component [Map API\ntorc.map()] as MapAPI
+        component [SPMD API\ntorc.spmd()] as SpmdAPI
+        component [Lifecycle API\ntorc.start()\ntorc.init()\ntorc.launch()\ntorc.shutdown()] as LifecycleAPI
+        component [Query API\ntorc.worker_id()\ntorc.num_workers()\ntorc.node_id()\ntorc.num_nodes()\ntorc.gettime()] as QueryAPI
+        component [Stealing Control API\ntorc.enable_stealing()\ntorc.disable_stealing()] as StealAPI
+    }
+
+    rectangle "Core Runtime Layer" {
+        component [Task Scheduler /\nDistributor\n(cyclic / directed qid)] as Scheduler
+        component [Task Descriptor\n(Future)\n.input() / .result()] as TaskDesc
+        component [Callback Manager] as CallbackMgr
+        component [Load Balancer /\nTask Stealing Engine] as StealEngine
+        component [SPMD Coordinator] as SpmdCoord
+        component [Runtime Lifecycle\nManager] as LifecycleMgr
+    }
+
+    rectangle "Execution Layer (per MPI Process)" {
+        component [Server Thread\n(yield: TORC_SERVER_YIELDTIME)] as ServerThread
+        component [Worker Thread Pool\n(TORC_WORKERS threads)\n(yield: TORC_WORKER_YIELDTIME)] as WorkerPool
+        component [Worker Queue\n(per worker)] as WorkerQueue
+    }
+
+    rectangle "Configuration Layer" {
+        component [Environment Variable\nConfiguration\nTORC_WORKERS\nTORC_STEALING\nTORC_SERVER_YIELDTIME\nTORC_WORKER_YIELDTIME] as EnvConfig
+    }
+}
+
+rectangle "Inter-Process Communication Layer" {
+    component [MPI Communication\n(internal)] as MpiComm
+}
+
+rectangle "External Dependencies" {
+    component [mpi4py / MPI Runtime\n(mpirun)] as Mpi4py
+    component [Python Multithreading\n(threading)] as PyThreading
+    component [termcolor] as Termcolor
+}
+
+rectangle "Optional Dependencies\n(for examples)" {
+    component [numpy] as Numpy
+    component [cma] as Cma
+    component [h5py] as H5py
+    component [pillow] as Pillow
+}
+
+rectangle "External Data Stores" {
+    database "Image Input Files\n(label-named subfolders)" as ImgInput
+    database "HDF5 Output File\n(preprocessed images)" as HDF5Output
+}
+
+AppDev --> App
+HpcDev --> App
+
+App --> SubmitAPI
+App --> MapAPI
+App --> SpmdAPI
+App --> LifecycleAPI
+App --> QueryAPI
+App --> StealAPI
+
+ImgApp --> MapAPI
+ImgApp --> ImgInput
+ImgApp --> HDF5Output
+OptApp --> SubmitAPI
+OptApp --> MapAPI
+
+SubmitAPI --> Scheduler
+SubmitAPI --> TaskDesc
+SubmitAPI --> CallbackMgr
+MapAPI --> Scheduler
+SpmdAPI --> SpmdCoord
+LifecycleAPI --> LifecycleMgr
+StealAPI --> StealEngine
+
+Scheduler --> WorkerQueue
+Scheduler --> TaskDesc
+CallbackMgr --> TaskDesc
+StealEngine --> WorkerQueue
+SpmdCoord --> MpiComm
+LifecycleMgr --> ServerThread
+LifecycleMgr --> WorkerPool
+
+ServerThread --> WorkerQueue
+WorkerPool --> WorkerQueue
+WorkerPool --> TaskDesc
+
+EnvConfig --> LifecycleMgr
+EnvConfig --> WorkerPool
+EnvConfig --> StealEngine
+EnvConfig --> ServerThread
+
+WorkerQueue --> StealEngine
+
+MpiComm --> Mpi4py
+WorkerPool --> PyThreading
+ServerThread --> PyThreading
+LifecycleMgr --> Termcolor
+
+ImgApp --> Numpy
+ImgApp --> H5py
+ImgApp --> Pillow
+OptApp --> Cma
+OptApp --> Numpy
+
+@enduml

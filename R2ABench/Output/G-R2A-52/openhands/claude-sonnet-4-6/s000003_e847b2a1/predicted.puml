@@ -1,0 +1,103 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam defaultTextAlignment center
+skinparam packageBorderColor #666666
+skinparam packageBackgroundColor #FAFAFA
+skinparam rectangleBorderColor #444444
+skinparam rectangleBackgroundColor #DDEEFF
+skinparam arrowColor #333333
+skinparam actorBorderColor #333333
+
+top to bottom direction
+
+actor "Prediction Participant" as participant
+actor "Service Operator" as operator
+actor "Integration/Test Operator" as testOperator
+
+package "Browser Frontend" {
+  rectangle "Wallet Provider / Context\n(wallet-backed API for child components)" as walletProvider
+  rectangle "Prediction API Context\n(prediction operation entry point)" as predApiCtx
+  rectangle "Prediction Creation UI\n(asset, target price, time range, NFT media)" as createUI
+  rectangle "Prediction Viewing UI\n(ongoing and processed predictions)" as viewUI
+  rectangle "Outcome NFT Operations UI\n(fund / rent / withdraw / claim reward)" as nftUI
+  rectangle "Aeternity Wallet Client" as walletClient
+  rectangle "Aeternity SDK" as aeSdk
+}
+
+package "Aeternity Blockchain" {
+  rectangle "AENS Name Resolution" as aens
+  rectangle "PredictionCards Smart Contract\n(Sophia smart contract)" as smartContract
+  rectangle "Aeternity Oracle" as aeOracle
+}
+
+package "Backend Services" {
+  rectangle "Oracle Service\n(Quarkus)\n\n- register / maintain oracle validity\n- check pending oracle queries\n- compare target price vs actual price\n- submit oracle result responses" as oracleService
+  rectangle "Prediction-Processing Service\n\n- detect closed predictions\n- initiate oracle queries\n- drive on-chain result processing" as processingService
+}
+
+package "External Systems" {
+  rectangle "External Price Provider" as priceProvider
+  rectangle "Prediction Media Storage\n(IPFS-compatible)\n\noutcome NFT images / animations" as mediaStorage
+}
+
+package "Local Contract Integration-Test Environment" {
+  rectangle "Aeternity Node" as localAeNode
+  rectangle "Compiler Service" as compilerSvc
+  rectangle "Index Service" as indexSvc
+  rectangle "Debug Endpoint" as debugEndpoint
+  rectangle "Test Proxy\n(CORS: GET, POST, OPTIONS;\nContent-Type, Cache-Control,\nContent-Range, Range)" as testProxy
+}
+
+' --- User interactions ---
+participant --> walletClient : connects wallet
+participant --> createUI : create prediction
+participant --> viewUI : view predictions
+participant --> nftUI : fund / rent / withdraw / claim
+operator --> oracleService : configure & run
+operator --> processingService : configure & run
+testOperator --> testProxy : browser-style contract testing
+
+' --- Frontend internal wiring ---
+walletClient --> aeSdk : delegates SDK calls
+walletProvider --> walletClient : wraps wallet client
+walletProvider --> predApiCtx : provides wallet-backed API
+predApiCtx --> createUI : exposes prediction creation ops
+predApiCtx --> viewUI : exposes prediction viewing ops
+predApiCtx --> nftUI : exposes fund/reward ops
+
+' --- Frontend to blockchain ---
+aeSdk --> aens : resolve contract address by AENS name
+aeSdk --> smartContract : submit prediction creation\n(converted ms timestamps + NFT media)
+aeSdk --> smartContract : read prediction & outcome NFT state
+aeSdk --> smartContract : fund / rent / withdraw / claim reward
+
+' --- Frontend to media storage ---
+viewUI --> mediaStorage : load outcome NFT media
+nftUI --> mediaStorage : load outcome NFT media
+
+' --- Oracle Service to blockchain ---
+oracleService --> aens : locate contract via AENS name
+oracleService --> aeOracle : register oracle on startup
+oracleService --> aeOracle : extend oracle validity\n(when below configured threshold)
+oracleService --> aeOracle : read pending oracle queries
+oracleService --> aeOracle : submit oracle result responses\n(higher / lower_or_equal)
+oracleService --> priceProvider : fetch actual asset price
+
+' --- Prediction-Processing Service to blockchain ---
+processingService --> aens : locate contract via AENS name
+processingService --> smartContract : detect closed predictions
+processingService --> smartContract : initiate oracle query\nfor closed predictions
+processingService --> smartContract : drive on-chain result processing\nafter oracle response available
+
+' --- On-chain oracle flow ---
+smartContract --> aeOracle : post oracle queries\n(asset, target price, end time)
+aeOracle --> smartContract : deliver oracle response\ntriggers outcome determination\n& reward-claiming path
+
+' --- Local test environment ---
+testProxy --> localAeNode : proxies requests with CORS support
+localAeNode --> compilerSvc : compile Sophia contracts
+localAeNode --> indexSvc : index chain state
+localAeNode --> debugEndpoint : exposes debug API
+
+@enduml

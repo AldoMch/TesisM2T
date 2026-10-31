@@ -1,0 +1,149 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam component {
+    BackgroundColor #E6F3FF
+    BorderColor #0066CC
+    FontColor #003366
+}
+skinparam node {
+    BackgroundColor #FFF0E6
+    BorderColor #CC6600
+    FontColor #663300
+}
+skinparam database {
+    BackgroundColor #E6FFE6
+    BorderColor #009900
+    FontColor #006600
+}
+skinparam queue {
+    BackgroundColor #F0E6FF
+    BorderColor #6600CC
+    FontColor #330066
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #666666
+    FontColor #000000
+    roundCorner 10
+}
+
+title PlugIt System Architecture
+
+rectangle "External Environment" {
+  [External Users / Systems] as External
+  [Inbound Email Source] as EmailSource
+}
+
+rectangle "PlugIt Proxy Environment" {
+  component "PlugIt Proxy" as Proxy {
+    component "Proxy API Endpoint" as APIEndpoint
+    component "Proxy-Side Data Store" as ProxyDataStore
+    component "Standalone Mail Workflow" as MailWorkflow {
+      component "Mail Intake" as MailIntake
+      component "Routing Validator" as RoutingValidator
+      component "Auto-Response Filter" as AutoResponseFilter
+      component "Text Payload Extractor" as PayloadExtractor
+      component "Mail Handler" as MailHandler
+    }
+  }
+}
+
+database "Proxy Database" as ProxyDB
+
+rectangle "PlugIt Service Environment" {
+  component "PlugIt Service 1" as Service1 {
+    component "Service Logic" as Logic1
+    component "PlugIt API Client" as APIClient1
+  }
+  database "Service Database 1" as ServiceDB1
+
+  component "PlugIt Service 2" as Service2 {
+    component "Service Logic" as Logic2
+    component "PlugIt API Client" as APIClient2
+  }
+  database "Service Database 2" as ServiceDB2
+
+  component "PlugIt Service N" as ServiceN {
+    component "Service Logic" as LogicN
+    component "PlugIt API Client" as APIClientN
+  }
+  database "Service Database N" as ServiceDBN
+}
+
+rectangle "Configuration & Management" {
+  component "Service Configuration" as ServiceConfig {
+    file "Project Config" as ProjConfig
+    file "Local/Private Config" as LocalConfig
+  }
+  component "Database Schema Manager" as SchemaManager {
+    file "Versioned Upgrade Files" as UpgradeFiles
+  }
+}
+
+' External to Proxy Communication
+External --> APIEndpoint : "Access Services"
+EmailSource --> MailIntake : "Inbound Email"
+
+' Internal Proxy Communication
+APIEndpoint --> ProxyDataStore
+ProxyDataStore --> ProxyDB : "persists"
+MailIntake --> RoutingValidator : "Email with Token"
+RoutingValidator --> AutoResponseFilter : "Valid Token"
+AutoResponseFilter --> PayloadExtractor : "Not Auto-Response"
+PayloadExtractor --> MailHandler : "Routing Data + Text Payload"
+MailHandler --> APIEndpoint : "Handler Result (Example)"
+
+' Proxy to Service Communication (PlugIt Protocol)
+APIEndpoint --> Service1 : "Proxy-to-Service"
+APIEndpoint --> Service2 : "Proxy-to-Service"
+APIEndpoint --> ServiceN : "Proxy-to-Service"
+
+' Service Internal Communication
+Logic1 --> APIClient1 : "Uses"
+APIClient1 --> APIEndpoint : "API Requests"
+Logic1 --> ServiceDB1 : "CRUD Operations"
+
+Logic2 --> APIClient2 : "Uses"
+APIClient2 --> APIEndpoint : "API Requests"
+Logic2 --> ServiceDB2 : "CRUD Operations"
+
+LogicN --> APIClientN : "Uses"
+APIClientN --> APIEndpoint : "API Requests"
+LogicN --> ServiceDBN : "CRUD Operations"
+
+' Configuration Dependencies
+Service1 ..> ServiceConfig : "Reads"
+Service2 ..> ServiceConfig : "Reads"
+ServiceN ..> ServiceConfig : "Reads"
+ProjConfig ..> LocalConfig : "Extends/Overrides"
+SchemaManager ..> UpgradeFiles : "Manages"
+ServiceDB1 ..> SchemaManager : "Schema Upgrades"
+ServiceDB2 ..> SchemaManager : "Schema Upgrades"
+ServiceDBN ..> SchemaManager : "Schema Upgrades"
+
+note right of External
+  Accesses unified service
+  experience through the Proxy.
+end note
+
+note right of EmailSource
+  Example/Standalone Scope Only.
+  Not a core framework requirement.
+end note
+
+note bottom of ServiceConfig
+  Contains API_URL, SQLALCHEMY_URL,
+  DEBUG, PI_BASE_URL, PI_ALLOWED_NETWORKS.
+  Private settings in Local Config.
+end note
+
+note left of SchemaManager
+  Uses version-managed upgrade files
+  (e.g., Alembic) for schema evolution.
+end note
+
+@enduml

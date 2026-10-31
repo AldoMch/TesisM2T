@@ -1,0 +1,119 @@
+@startuml
+package "Command-Line Interface Layer" {
+  component "CLI" as CLI
+}
+
+package "Application/Workflow Orchestration Layer" {
+  component "Solver Orchestrator" as SolverOrchestrator
+  component "Wsplit Backup Manager" as WsplitBackupManager
+  component "Result Reporter" as ResultReporter
+}
+
+package "Solver Core Layer" {
+  component "Pollard Kangaroo Solver (SECP256K1 interval ECDLP)" as KangarooSolver
+  component "Tame Herd Manager" as TameHerdManager
+  component "Wild Herd Manager" as WildHerdManager
+  component "Distinguished Points Manager" as DPM
+  component "In-Memory Distinguished Points Hash Table" as HashTableStore
+}
+
+package "Persistence/Data Layer" {
+  component "Input File Parser" as InputFileParser
+  component "Work File Manager" as WorkFileManager
+  component "Server Configuration Handler" as ServerConfigHandler
+  component "Backup Interval Setting" as BackupIntervalSetting
+  component "Distinguished-Point Bit Count Setting" as DPBitSetting
+}
+
+package "Distributed/Network Layer" {
+  component "Distributed Server" as DistributedServer
+  component "Distributed Client" as DistributedClient
+}
+
+package "Merge/Inspection Layer" {
+  component "Work File Inspector" as WorkFileInspector
+  component "Offline Merger" as OfflineMerger
+}
+
+package "Execution Acceleration Layer" {
+  component "GPU Execution Handler" as GPUExecutionHandler
+}
+
+package "External Systems" {
+  node "Command-line execution environment" as CLIEnvironment
+  node "CPU/GPU-enabled execution environment" as ComputeEnvironment
+  cloud "Operator-managed network" as OperatorNetwork
+  database "File system" as FileSystem
+}
+
+CLI --> InputFileParser : selects input file
+CLI --> WorkFileManager : save/resume options
+CLI --> DistributedServer : starts server with backup interval and DP bits
+CLI --> DistributedClient : starts client and server address
+CLI --> GPUExecutionHandler : GPU execution options
+CLI --> SolverOrchestrator : dispatches workflow
+CLI --> CLIEnvironment : runs in
+CLI --> DPM : sets -d distinguished-point bits
+
+SolverOrchestrator --> InputFileParser : initiates input parsing
+SolverOrchestrator --> KangarooSolver : starts solve/resume
+SolverOrchestrator --> WorkFileInspector : inspection workflow
+SolverOrchestrator --> OfflineMerger : merge workflow
+SolverOrchestrator --> WsplitBackupManager : wsplit workflow
+SolverOrchestrator --> DistributedServer : server workflow
+SolverOrchestrator --> DistributedClient : client workflow
+SolverOrchestrator --> DPM : configures distinguished-point bits
+SolverOrchestrator --> WorkFileManager : save/resume workflow
+
+InputFileParser --> KangarooSolver : parsed problem instance
+InputFileParser --> FileSystem : reads ASCII input
+
+KangarooSolver --> TameHerdManager : coordinates tame herd
+KangarooSolver --> WildHerdManager : coordinates wild herd
+KangarooSolver --> DPM : uses distinguished points
+KangarooSolver --> HashTableStore : stores distinguished points
+KangarooSolver --> ResultReporter : reports solved/ongoing state
+KangarooSolver --> ComputeEnvironment : CPU/GPU computation
+KangarooSolver --> WorkFileManager : saves/resumes kangaroo state
+
+TameHerdManager --> DPM : submits tame distinguished points
+WildHerdManager --> DPM : submits wild distinguished points
+
+DPM --> HashTableStore : retains distinguished points
+
+WorkFileManager --> FileSystem : reads/writes work files
+
+WorkFileInspector --> WorkFileManager : reads work file
+WorkFileInspector --> ResultReporter : sends work-file information
+WorkFileInspector --> CLI : displays work-file information
+
+OfflineMerger --> WorkFileManager : reads multiple work files
+OfflineMerger --> ResultReporter : reports solved key
+OfflineMerger --> HashTableStore : can produce hash table
+OfflineMerger --> FileSystem : reads/writes master work file
+
+WsplitBackupManager --> WorkFileManager : writes prefixed backups
+WsplitBackupManager --> HashTableStore : resets after backup cycle
+WsplitBackupManager --> FileSystem : writes backup work files
+
+DistributedClient --> DistributedServer : connects to server
+DistributedClient --> KangarooSolver : performs kangaroo computation
+DistributedClient --> OperatorNetwork : uses network
+DistributedClient --> WorkFileManager : produces local work files
+
+DistributedServer --> OperatorNetwork : serves clients
+DistributedServer --> WorkFileManager : outputs work files
+DistributedServer --> HashTableStore : outputs hash-table data
+DistributedServer --> ServerConfigHandler : reads configuration
+DistributedServer --> ResultReporter : outputs result files
+DistributedServer --> BackupIntervalSetting : reads backup interval
+DistributedServer --> DPBitSetting : reads distinguished-point bits
+ServerConfigHandler --> FileSystem : reads configuration
+ResultReporter --> FileSystem : writes result files
+ResultReporter --> CLI : reports solved/ongoing state
+
+GPUExecutionHandler --> ComputeEnvironment : applies GPU options
+GPUExecutionHandler --> KangarooSolver : applies GPU acceleration
+GPUExecutionHandler --> DistributedClient : applies GPU options
+
+@enduml

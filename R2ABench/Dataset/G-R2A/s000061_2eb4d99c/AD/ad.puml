@@ -1,0 +1,59 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #4A5D78
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam cloud {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "AWS IoT Device Simulator" as IotDeviceSimulator {
+    rectangle "Users" as Users
+    rectangle "Browser Web UI\nstatic app client" as BrowserWebUi
+    cloud "Amazon CloudFront" as CloudFront
+    database "Amazon S3\nWeb UI bucket" as WebUiBucket
+    rectangle "Amazon Cognito" as Cognito
+    rectangle "Amazon API Gateway\nREST API" as ApiGateway
+    rectangle "AWS Lambda\nSimulator API" as LambdaSimulator
+    database "Amazon DynamoDB\nSimulator state" as DynamoDb
+    database "Amazon S3\nRoute data bucket" as RouteBucket
+    rectangle "AWS Step Functions\nSimulation workflow" as StepFunctions
+    cloud "AWS IoT Core" as IotCore
+    rectangle "AWS CloudFormation\nCustom resources" as CloudFormation
+}
+
+Users --> CloudFront : web app request
+CloudFront --> WebUiBucket : fetch web assets
+CloudFront --> BrowserWebUi : deliver static web UI
+BrowserWebUi --> Cognito : authenticate
+Cognito --> BrowserWebUi : auth tokens
+BrowserWebUi --> ApiGateway : API requests
+ApiGateway --> LambdaSimulator : REST integration
+LambdaSimulator <--> DynamoDb : simulator metadata and state
+LambdaSimulator --> RouteBucket : get route JSON\nby routeName
+RouteBucket --> LambdaSimulator : route JSON
+LambdaSimulator --> StepFunctions : start simulation workflow
+StepFunctions --> IotCore : publish simulated device messages
+CloudFormation --> WebUiBucket : deploy/configure\nsolution assets
+CloudFormation --> LambdaSimulator : custom-resource setup
+@enduml

@@ -1,0 +1,118 @@
+{
+  "candidate": {
+    "sample_id": "s000353_eb501ff3",
+    "repository_name": "caraml-dev/turing",
+    "image_url": "https://github.com/caraml-dev/turing/blob/main/docs/assets/turing_architecture.png",
+    "source_ref": "22d15b1895af3c813fb7c2490f68158670108d8c",
+    "total_score": 96,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 16048,
+    "document_count": 40,
+    "document_types": [
+      "code_api_route",
+      "readme",
+      "requirements_like"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 38,
+      "user_scenario": 42,
+      "api_io": 88,
+      "deployment": 154,
+      "constraints": 27,
+      "non_functional": 21
+    },
+    "time_status": "row_sha_with_view_date",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 11,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 96
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "engines/pyfunc-ensembler-service/README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05364846821452414,
+      "text": "# PyFuncEnsembler Server for Real-Time Experiments PyFuncEnsemblerRunner is a tool for deploying user-defined ensemblers (for use with Turing routers), written in MLflow's flavour. ## Usage To run the ensembler as a webservice: ## Docker Image Building To create a docker image locally, you'll need to first download the model artifacts from the MLflow's model registry: To build the docker image, run the following:"
+    },
+    {
+      "evidence_id": "E002",
+      "path": "engines/router/README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.0505715470267709,
+      "text": "8080 of the user container by default. This can be configured by setting field. Refer to PR. 2. Custom env vars can be added to each of the Turing app's user containers by setting the key under the , or sections of the values file, as follows: 3. Jaeger client is initialised to trace all requests ( mode). However, the tracer's methods determine whether the app adds the trace to the requests. To run Jaeger locally, do . Simulating incoming requests with Spans:"
+    },
+    {
+      "evidence_id": "E003",
+      "path": "api/api/specs/routers.yaml",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05433992749054224,
+      "text": "openapi: 3.0.3 info: title: Endpoints and schemas of Turing Routers version: 0.0.1 .tags: &tags - \"Router\" .id: &id type: \"integer\" format: \"int32\" .timeout: &timeout type: \"string\" pattern: '^[0-9]+(ms|s|m|h)$' paths: \"/projects/{project_id}/routers\": get: tags: *tags summary: \"List routers belonging to project\" parameters: - in: \"path\" name: \"project_id\" description: \"id of the project to retrieve routers from\" schema: For HTTP_JSON protocol, the valid are and . Whereas, for UPI_V1 protocol the valid are and . If is , then should contain the name of the request header. If is , then should be a valid json path. If is , then should contain variable name stored in field of the incoming req..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "api/README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05221400329729651,
+      "text": "----|------------- | /turing/api | HTTP handlers and routing for Turing API as defined in openapi.yaml | /turing/cluster | Packages for creating, updating and deleting Turing router deployment in Kubernetes cluster | /turing/cmd | Turing API server binaries | /turing/config | Configuration spec for Turing API | /turing/generated | Models generated from the openapi specs (openapi-sdk.yaml) | /turing/middleware | HTTP server middlewares e.g. authorization and request validation | /turing/models | Contains Turing domain model. Ideally, this package should not depend on packages outside the standard library. | /turing/service | Packages responsible for persisting domain objects and managing t..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "api/api/specs/ensemblers.yaml",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05287936107608238,
+      "text": "f: \"#/components/schemas/Ensembler\" responses: \"201\": description: A JSON representation of a successfully saved ensembler content: application/json: schema: $ref: \"#/components/schemas/Ensembler\" \"/projects/{project_id}/ensemblers/{ensembler_id}\": get: tags: *tags operationId: \"GetEnsemblerDetails\" summary: Returns Ensembler's details by its ID parameters: - in: path name: project_id schema: <<: *id required: true - in: path name: ensembler_id schema: <<: *id required: true responses: \"200\": description: A JSON object representing an instance of the specific type of Ensembler content: application/json: schema: $ref: \"#/components/schemas/Ensembler\" put: tags: *tags operationId: \"UpdateEn..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "api/api/specs/ensemblers.yaml",
+      "doc_type": "code_api_route",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.052062066149448756,
+      "text": "n/json: schema: $ref: \"#/components/schemas/Ensembler\" delete: tags: *tags operationId: DeleteEnsembler parameters: - in: path name: project_id required: true schema: <<: *id - in: path name: ensembler_id required: true schema: <<: *id responses: \"200\": content: application/json: schema: $ref: \"#/components/schemas/EnsemblerId\" description: A JSON object representing an id of deleted ensembler \"400\": description: Ensembler is used by other entity \"404\": description: Ensembler not found \"500\": description: Failed to delete ensembler summary: Delete Ensembler by its ID components: schemas: EnsemblerId: $ref: \"./common.yaml#/components/schemas/IdObject\" EnsemblerType: type: \"string\" enum: -..."
+    }
+  ]
+}

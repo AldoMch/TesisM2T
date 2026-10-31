@@ -1,0 +1,133 @@
+@startuml
+
+package "Client/UI Layer" {
+  component "NuxtSSRApp"
+}
+
+package "Backend API Layer" {
+  component "IrisAPIServer"
+}
+
+package "Domain Services Layer" {
+  component "UserAuthService"
+  component "ProfileService"
+  component "AdminService"
+  component "PostService"
+  component "ReviewWorkflowService"
+  component "CommentService"
+  component "ReplyService"
+  component "FavoritesService"
+  component "NotificationService"
+  component "SearchRecommendationService"
+  component "GameSaveService"
+  component "GameSessionEngine"
+  component "EconomyService"
+  component "InventoryService"
+  component "AchievementService"
+}
+
+package "Integration Layer" {
+  component "LLMOrchestrator"
+  component "EmailVerificationService"
+  component "MediaAIGCService"
+}
+
+package "Data Layer" {
+  component "DataAccessLayer"
+  component "GormORM"
+  database "MySQLDatabase"
+}
+
+package "Cross-Cutting Concerns Layer" {
+  component "SecurityModule"
+  component "ObservabilityModule"
+  component "FaultToleranceModule"
+}
+
+package "Deployment/Infrastructure Layer" {
+  cloud "Cloud/Datacenter Environment" {
+    node "ContainerOrchestration" {
+      node "Docker"
+      node "Kubernetes"
+    }
+  }
+}
+
+package "External Systems" {
+  cloud "LLM Provider"
+  cloud "Email Delivery Service"
+  cloud "AIGC Media Provider"
+}
+
+/' Key Dependencies '/
+"NuxtSSRApp" --> "IrisAPIServer"
+"NuxtSSRApp" --> "MediaAIGCService"
+
+"IrisAPIServer" --> "UserAuthService"
+"IrisAPIServer" --> "ProfileService"
+"IrisAPIServer" --> "AdminService"
+"IrisAPIServer" --> "PostService"
+"IrisAPIServer" --> "CommentService"
+"IrisAPIServer" --> "ReplyService"
+"IrisAPIServer" --> "FavoritesService"
+"IrisAPIServer" --> "NotificationService"
+"IrisAPIServer" --> "SearchRecommendationService"
+"IrisAPIServer" --> "GameSaveService"
+"IrisAPIServer" --> "GameSessionEngine"
+"IrisAPIServer" --> "EconomyService"
+"IrisAPIServer" --> "InventoryService"
+"IrisAPIServer" --> "AchievementService"
+
+"UserAuthService" --> "EmailVerificationService"
+
+"AdminService" --> "ReviewWorkflowService"
+
+"CommentService" --> "NotificationService"
+"ReplyService" --> "NotificationService"
+"ReviewWorkflowService" --> "NotificationService"
+
+"FavoritesService" --> "DataAccessLayer"
+"SearchRecommendationService" --> "DataAccessLayer"
+
+"GameSessionEngine" --> "LLMOrchestrator"
+"GameSessionEngine" --> "GameSaveService"
+
+"LLMOrchestrator" --> "LLM Provider"
+
+"EmailVerificationService" --> "Email Delivery Service"
+"MediaAIGCService" --> "AIGC Media Provider"
+
+/' Persistence dependencies '/
+"UserAuthService" --> "DataAccessLayer"
+"ProfileService" --> "DataAccessLayer"
+"PostService" --> "DataAccessLayer"
+"CommentService" --> "DataAccessLayer"
+"ReplyService" --> "DataAccessLayer"
+"NotificationService" --> "DataAccessLayer"
+"ReviewWorkflowService" --> "DataAccessLayer"
+"AdminService" --> "DataAccessLayer"
+"GameSaveService" --> "DataAccessLayer"
+"EconomyService" --> "DataAccessLayer"
+"InventoryService" --> "DataAccessLayer"
+"AchievementService" --> "DataAccessLayer"
+
+/' ORM and Database '/
+"DataAccessLayer" --> "GormORM"
+"GormORM" --> "MySQLDatabase"
+
+/' Cross-cutting concerns '/
+"IrisAPIServer" --> "SecurityModule"
+"IrisAPIServer" --> "ObservabilityModule"
+"FaultToleranceModule" --> "DataAccessLayer"
+"ObservabilityModule" --> "DataAccessLayer"
+"ObservabilityModule" --> "MySQLDatabase"
+
+/' Deployment mapping (high-level) '/
+"Kubernetes" --> "NuxtSSRApp"
+"Kubernetes" --> "IrisAPIServer"
+"Kubernetes" --> "DataAccessLayer"
+"Kubernetes" --> "LLMOrchestrator"
+"Kubernetes" --> "EmailVerificationService"
+"Kubernetes" --> "MediaAIGCService"
+
+@enduml

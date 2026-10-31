@@ -1,0 +1,71 @@
+@startuml
+title Containerized Song Mood Lookup Architecture
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam wrapWidth 200
+left to right direction
+
+' Actors
+actor "End User" as EndUser
+actor "Operator" as Operator
+actor "Data Inspector" as DataInspector
+
+' External dependency
+cloud "Genius API\n(External)" as Genius
+
+' Dockerized deployment with separate container services
+node "Dockerized Application Stack\n(Docker/Compose network)" as Docker {
+  component "React Frontend\n(frontend service)" as Frontend <<container>>
+  component "FastAPI Backend\n(backend service)" as Backend <<container>>
+  database "Elasticsearch\n(storage service)" as ES <<container>>
+  component "Kibana\n(kibana service)" as Kibana <<container>>
+}
+
+' Primary interactions
+EndUser --> Frontend : HTTP(S)\nBrowser access
+Frontend --> Backend : REST/JSON\nSong lookup requests
+Backend --> ES : Query/Store\nSong records & mood associations
+Kibana --> ES : Connect for data inspection
+Backend --> Genius : HTTPS\nSearch missing songs
+
+' Roles accessing Kibana
+Operator --> Kibana : Access Kibana UI
+DataInspector --> Kibana : Inspect stored data
+
+' Notes on components and constraints
+note right of ES
+- Stores song records (name, SLink, lyrics, language)
+- Stores mood associations (song -> mood)
+end note
+
+note top of Backend
+- No runtime mood classifier/inference
+- Uses Elasticsearch as authoritative store
+- Uses Genius API when song not found
+end note
+
+note bottom of Docker
+Separate container services:
+- frontend (React)
+- backend (FastAPI)
+- elasticsearch
+- kibana
+end note
+
+note bottom of Frontend
+Does not access storage directly
+end note
+
+note right of Genius
+External dependency; not an internal container service
+end note
+
+note as Scope
+Project dataset scope: English songs
+(No runtime language rejection required)
+end note
+
+Scope .. Docker
+
+@enduml

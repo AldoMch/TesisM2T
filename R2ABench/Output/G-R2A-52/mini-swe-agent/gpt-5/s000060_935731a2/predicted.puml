@@ -1,0 +1,43 @@
+@startuml
+skinparam componentStyle rectangle
+
+title Auditor Client Library Architecture (lowes/auditor)
+
+package "Application Layer (JVM 11)" {
+  component "Integrating JVM Application\n(Service using auditor)" as App
+}
+
+package "Auditor Client Library (Kotlin/JVM)" {
+  component "Auditor Client API\n(Generates AuditEvent from old/new)" as AuditorClient
+}
+
+package "Infrastructure Abstractions" {
+  interface "EventPublisher" as EventPublisher
+  interface "LogProvider" as LogProvider
+  interface "AuditEventElementFilter" as ElementFilter
+}
+
+package "Default Implementation (Optional)" {
+  component "KafkaPublisher\n(Default EventPublisher)" as KafkaPublisher
+}
+
+package "External Systems" {
+  component "Kafka Topic\n(Event Stream)" as KafkaTopic <<Kafka>>
+  component "Downstream Consumers\n(Out of scope)" as Consumers
+}
+
+App --> AuditorClient : audit(oldObject, newObject, config)
+AuditorClient --> ElementFilter : apply filters
+AuditorClient --> LogProvider : logs
+AuditorClient --> EventPublisher : publish(AuditEvent JSON)
+KafkaPublisher -down-|> EventPublisher : implements
+KafkaPublisher --> KafkaTopic : produce JSON events
+KafkaTopic --> Consumers : consume
+
+note right of AuditorClient
+- Config: applicationName, eventSource, eventSubType, metadata, filters
+- Output: AuditEvent (JSON)
+- Detects CREATED / UPDATED / DELETED elements
+end note
+
+@enduml

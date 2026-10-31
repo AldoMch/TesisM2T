@@ -1,0 +1,103 @@
+@startuml
+!define RECTANGLE class
+
+title EIVAS System Architecture
+
+skinparam componentStyle rectangle
+
+package "EIVAS Web Application" {
+  [Frontend Pages] as frontend
+  [Backend Services] as backend
+  [Database] as database
+  [Algorithm Module] as algorithm
+  [Map Service] as mapservice
+}
+
+frontend -down-> backend : HTTP Requests
+backend -down-> database : Data Storage/Retrieval
+backend -right-> algorithm : Analysis Requests
+algorithm -down-> backend : Analysis Results
+backend -right-> mapservice : Geospatial Data
+
+note right of frontend
+  User Interfaces:
+  - Epidemiological reporting form
+  - Case management list
+  - Map display interface
+  - Association information display
+  - Graph relationship display
+  - Statistical charts
+end note
+
+note right of backend
+  Core Functions:
+  - Epidemiological reporting
+  - Case management
+  - Individual case analysis
+  - Overall analysis
+  - Outbreak overview
+end note
+
+note right of database
+  Data Objects:
+  - Basic case information
+  - Disease-related information
+  - Itinerary trajectory
+  - Imported-case information
+  - Associated case entries
+  - Analytical chart data
+end note
+
+note right of algorithm
+  Capabilities:
+  - Regional flow maps
+  - Case clustering graphs
+  - Risk calculations
+  - Clustering algorithms
+end note
+
+note right of mapservice
+  Visualization:
+  - Location display
+  - Itinerary paths
+  - Geographic context
+  - Address confirmation
+end note
+
+rectangle "Epidemiological\nForm Filler" as filler
+rectangle "Epidemiological\nAnalyst" as analyst
+
+filler -up-> frontend : Data Entry
+analyst -up-> frontend : Analysis & Review
+
+note top of filler
+  Responsibilities:
+  - Accurate/convenient info entry
+  - Questionnaire/interview data collection
+end note
+
+note top of analyst
+  Responsibilities:
+  - Outbreak statistics access
+  - Case associations analysis
+  - Infection source inference
+end note
+
+cloud "Web Browser" as browser
+frontend -up-> browser : HTML/CSS/JS
+
+note bottom of database
+  Assumptions:
+  - Persistent storage
+  - Data integrity
+  - Privacy compliance
+end note
+
+note bottom of algorithm
+  Dependencies:
+  - Case investigation data
+  - Threshold parameters
+  - Analysis rules
+end note
+
+@enduml

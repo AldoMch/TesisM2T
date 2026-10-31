@@ -1,0 +1,211 @@
+@startuml
+title POCD Persistent Object Consistency Detection - System Architecture
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+skinparam defaultFontName Arial
+
+actor "Class Diagram Manager /\nTechnical User" as Manager
+actor "Unauthenticated User" as Unauth
+actor "New User" as NewUser
+actor "Third-party Application" as ThirdParty
+
+package "User Interface Layer (Front-end SPA)" as UI {
+  component "Registration & Login UI" as UILogin
+  component "File Management UI" as UIFile
+  component "Detection Configuration UI" as UIConfig
+  component "Detection Record & Report Export UI" as UIRecord
+  component "Detection Result & Repair UI" as UIResult
+  component "Help & Detection Case UI" as UIHelp
+}
+
+package "Business Logic Layer (Back-end)" as Biz {
+  component "API Gateway / REST Controllers" as API
+  component "Open API / Integration Facade" as OpenAPI
+
+  package "Account & Access" as PAccount {
+    component "Account & Authentication Service" as AuthSvc
+    component "Role-Based Access Control" as RBAC
+  }
+
+  package "File & Configuration Management" as PFileConfig {
+    component "File Management Service" as FileSvc
+    component "Detection Rule & Exception Config Service" as ConfigSvc
+  }
+
+  package "Parsing & Data Conversion" as PParsing {
+    component "MDJ Class Diagram Parser" as MDJParser
+    component "MySQL / JDBC Database Parser" as DBParser
+    component "Relationship Extractor" as RelExtract
+    component "JSON / Jackson Converter" as JsonConv
+  }
+
+  package "Matching & Consistency Detection" as PDetect {
+    component "Entity Matching Engine" as MatchEngine
+    component "Field / Type / Attribute-Column Detector" as FieldDetect
+    component "Class-Table Detector" as ClassDetect
+    component "Relationship Multiplicity / Type Detector" as RelDetect
+    component "Missing / Extra Relationship Detector" as MissingDetect
+  }
+
+  package "Repair, Reporting & History" as PRepair {
+    component "Class Diagram Repair Suggestion Engine" as CDRepairSuggest
+    component "Automatic Class Diagram Repair Engine" as CDRepairExec
+    component "Database Repair Suggestion Engine" as DBRepairSuggest
+    component "Automatic Database Repair Engine" as DBRepairExec
+    component "Detection Report Export Service" as ReportSvc
+    component "History & Modification Record Service" as HistorySvc
+  }
+
+  package "Help, Case, Audit & Async" as PSupport {
+    component "Help Manual & FAQ Service" as HelpSvc
+    component "Detection Case Service" as CaseSvc
+    component "Operation Log / Audit Service" as AuditSvc
+    component "Async Task & Job Scheduler" as AsyncSvc
+  }
+}
+
+package "Data Access Layer" as DA {
+  component "User Repository" as UserRepo
+  component "File Metadata Repository" as FileRepo
+  component "Config & Exception Repository" as ConfigRepo
+  component "Parsing Result Repository" as ParseRepo
+  component "Detection Result Repository" as DetectRepo
+  component "Repair & History Repository" as RepairRepo
+  component "Help & Case Repository" as HelpRepo
+  component "Audit Log Repository" as AuditRepo
+  component "JDBC MySQL Connector" as JDBC
+  component "File / Object Storage Access" as FileStorageAccess
+  component "JSON Serialization / Deserialization" as JSONAccess
+}
+
+database "POCD Metadata DB\n(accounts, file metadata,\nconfig, detection records,\nrepair history, logs)" as MetaDB
+database "Target MySQL Database\n(schema under consistency check)" as TargetDB
+database "File / Object Storage\n(.mdj, DB design files,\nreports, cases)" as FileStore
+
+cloud "StarUML\nMDJ Files" as StarUML
+cloud "MySQL Design Files /\nScripts" as MySQLFiles
+cloud "Third-party Systems" as ThirdPartySys
+
+' UI to API
+Manager --> UILogin
+Manager --> UIFile
+Manager --> UIConfig
+Manager --> UIRecord
+Manager --> UIResult
+Manager --> UIHelp
+Unauth --> UILogin
+NewUser --> UIHelp
+UILogin --> API : HTTPS / SSL
+UIFile --> API : HTTPS / SSL
+UIConfig --> API : HTTPS / SSL
+UIRecord --> API : HTTPS / SSL
+UIResult --> API : HTTPS / SSL
+UIHelp --> API : HTTPS / SSL
+
+' External API
+ThirdParty --> OpenAPI : Open API / SSL
+OpenAPI --> API
+
+' API to business services
+API --> AuthSvc
+API --> FileSvc
+API --> ConfigSvc
+API --> MDJParser
+API --> DBParser
+API --> MatchEngine
+API --> FieldDetect
+API --> ClassDetect
+API --> RelDetect
+API --> MissingDetect
+API --> CDRepairSuggest
+API --> CDRepairExec
+API --> DBRepairSuggest
+API --> DBRepairExec
+API --> ReportSvc
+API --> HistorySvc
+API --> HelpSvc
+API --> CaseSvc
+API --> AuditSvc
+API --> AsyncSvc
+
+' Business internal
+AuthSvc --> RBAC
+AuthSvc --> UserRepo
+FileSvc --> FileRepo
+ConfigSvc --> ConfigRepo
+MDJParser --> FileStorageAccess
+DBParser --> JDBC
+DBParser --> FileStorageAccess
+RelExtract --> DBParser
+JsonConv --> JSONAccess
+MatchEngine --> ParseRepo
+MatchEngine --> JsonConv
+FieldDetect --> MatchEngine
+ClassDetect --> MatchEngine
+RelDetect --> MatchEngine
+MissingDetect --> MatchEngine
+FieldDetect --> DetectRepo
+ClassDetect --> DetectRepo
+RelDetect --> DetectRepo
+MissingDetect --> DetectRepo
+CDRepairSuggest --> DetectRepo
+CDRepairExec --> RepairRepo
+DBRepairSuggest --> DetectRepo
+DBRepairExec --> RepairRepo
+ReportSvc --> DetectRepo
+HistorySvc --> DetectRepo
+HistorySvc --> RepairRepo
+HelpSvc --> HelpRepo
+CaseSvc --> HelpRepo
+AuditSvc --> AuditRepo
+AsyncSvc --> MatchEngine
+AsyncSvc --> FieldDetect
+AsyncSvc --> ClassDetect
+AsyncSvc --> RelDetect
+AsyncSvc --> MissingDetect
+AsyncSvc --> CDRepairExec
+AsyncSvc --> DBRepairExec
+
+' Data access to stores
+UserRepo --> MetaDB
+FileRepo --> MetaDB
+ConfigRepo --> MetaDB
+ParseRepo --> MetaDB
+DetectRepo --> MetaDB
+RepairRepo --> MetaDB
+HelpRepo --> MetaDB
+AuditRepo --> MetaDB
+JDBC --> TargetDB
+FileStorageAccess --> FileStore
+FileStorageAccess --> StarUML : read .mdj
+FileStorageAccess --> MySQLFiles : read design/script
+JSONAccess --> ParseRepo
+JSONAccess --> DetectRepo
+
+' Notes
+note right of UI
+  <b>Presentation Layer</b>
+  Front-end and back-end separated architecture.
+  Communicates with the back end over HTTPS/SSL.
+end note
+
+note right of Biz
+  <b>Business Logic Layer</b>
+  Parses MDJ and MySQL inputs, performs matching/detection,
+  generates repair suggestions/results and reports.
+  Supports asynchronous detection tasks.
+end note
+
+note right of DA
+  <b>Data Access Layer</b>
+  Repositories, JDBC connector, JSON/Jackson conversion,
+  and file/object storage access.
+end note
+
+note bottom of MetaDB
+  Sensitive data transmission uses SSL/TLS.
+  Role-based access control restricts resources.
+end note
+
+@enduml

@@ -1,0 +1,26 @@
+@startuml
+component "Admin Web Console" as COMPADMINWEB
+component "API Gateway & Security Filter" as COMPAPIGW
+component "Audit Logging Service" as COMPAUDITSVC
+component "User & Authentication Service" as COMPAUTHSVC
+component "Distributed Cache Cluster" as COMPCACHE
+component "Relational Persistence Store" as COMPDATASTORE
+component "Observability & Telemetry System" as COMPOBSERVABILITY
+component "Order Management Service" as COMPORDERSVC
+component "Product Catalog Service" as COMPPRODSVC
+component "WeChat Mini Program Client" as COMPWMPCLIENT
+COMPADMINWEB --> COMPAPIGW : HTTPS/REST
+COMPAPIGW --> COMPAUDITSVC : Asynchronous Event/gRPC
+COMPAPIGW --> COMPAUDITSVC : gRPC
+COMPAPIGW --> COMPAUTHSVC : gRPC
+COMPAPIGW --> COMPOBSERVABILITY : OTLP/OpenTelemetry
+COMPAPIGW --> COMPORDERSVC : gRPC
+COMPAPIGW --> COMPPRODSVC : gRPC
+COMPAUDITSVC --> COMPDATASTORE : SQL/TLS
+COMPAUTHSVC --> COMPDATASTORE : SQL/TLS
+COMPORDERSVC --> COMPDATASTORE : SQL/TLS
+COMPORDERSVC --> COMPOBSERVABILITY : OTLP/OpenTelemetry
+COMPPRODSVC --> COMPCACHE : Redis Protocol
+COMPPRODSVC --> COMPDATASTORE : SQL/TLS
+COMPWMPCLIENT --> COMPAPIGW : HTTPS/REST
+@enduml

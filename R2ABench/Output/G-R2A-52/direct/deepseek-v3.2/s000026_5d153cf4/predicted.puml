@@ -1,0 +1,107 @@
+@startuml
+!define RECTANGLE class
+skinparam class {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+  FontColor Black
+}
+skinparam component {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+  FontColor Black
+}
+skinparam node {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+  FontColor Black
+}
+skinparam rectangle {
+  BackgroundColor White
+  BorderColor Black
+  ArrowColor Black
+  FontColor Black
+}
+
+title GKE Pub/Sub WebSocket Adapter - System Architecture
+
+node "Google Cloud Platform" {
+  rectangle "GCP Project" {
+    component "Pub/Sub Topic" as PUBSUB_TOPIC
+    component "Pub/Sub Subscription" as PUBSUB_SUB
+  }
+  cloud "Google Kubernetes Engine" as GKE {
+    rectangle "Kubernetes Cluster" {
+      node "Kubernetes Namespace" as NS {
+        folder "Deployment Instance" {
+          rectangle "ConfigMap" as CONFIGMAP
+          rectangle "HorizontalPodAutoscaler" as HPA
+          rectangle "Deployment" as DEPLOYMENT {
+            component "Adapter Pod" as POD {
+              component "Adapter Container" as CONTAINER {
+                rectangle "Environment Variable\nSYMBOL" as ENV_SYMBOL
+                rectangle "Entrypoint Script\nexec.sh" as EXEC_SH
+                rectangle "Node.js Process\npulltop" as PULLTOP
+                rectangle "WebSocket Daemon\nwebsocketd" as WEBSOCKETD
+              }
+            }
+          }
+          rectangle "Service" as SERVICE
+        }
+      }
+    }
+  }
+  rectangle "External Web Clients" as CLIENTS
+}
+
+' Data Flow
+PUBSUB_TOPIC --> PUBSUB_SUB : "Messages"
+PUBSUB_SUB --> PULLTOP : "Pull Messages"
+PULLTOP --> WEBSOCKETD : "Stream Output"
+WEBSOCKETD --> SERVICE : "Port 8080"
+SERVICE --> CLIENTS : "WebSocket\nPort 80"
+
+' Configuration and Management Flow
+CONFIGMAP --> ENV_SYMBOL : "topic"
+ENV_SYMBOL --> EXEC_SH : "Parameter"
+EXEC_SH --> PULLTOP : "Start with\nSYMBOL"
+HPA --> DEPLOYMENT : "Autoscale\n(CPU 80%)"
+DEPLOYMENT --> POD : "Manages Replicas\n(1-2)"
+SERVICE --> POD : "Load Balances\nConnections"
+
+' External Dependencies
+rectangle "GCP Prerequisites" as PREREQS {
+  rectangle "Billing Enabled"
+  rectangle "Topic Read Access"
+  rectangle "Subscription Creation\nPermission"
+}
+
+PREREQS -[hidden]d-> GKE
+note right of PREREQS
+  Deployment Preconditions
+end note
+
+note right of CONTAINER
+  Runtime Composition:
+  exec.sh -> pulltop -> websocketd
+end note
+
+note right of POD
+  Multiplexes many clients
+  using one Pub/Sub subscription
+end note
+
+note right of WEBSOCKETD
+  Serves cache of
+  last 10 messages
+end note
+
+note right of SERVICE
+  Type: LoadBalancer
+  External Port: 80
+  Target Port: 8080
+end note
+
+@enduml

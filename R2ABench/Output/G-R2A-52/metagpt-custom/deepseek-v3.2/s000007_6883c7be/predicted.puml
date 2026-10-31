@@ -1,0 +1,50 @@
+@startuml
+
+package "External Systems" {
+    component "HTTP Client" as http_client
+    cloud "Upstream Server" as upstream
+    component "Local Filesystem" as filesystem
+    node "Maven Build Environment" as maven
+    node "Java Runtime Environment" as jre
+}
+
+package "Proxy Layer" {
+    component "HTTP Proxy" as proxy {
+        component "Debug Logger" as debug_logger
+    }
+}
+
+package "Test Server Layer" {
+    component "Local Test Server" as test_server {
+        component "File Handler" as file_handler
+    }
+}
+
+package "Test Client Layer" {
+    component "Asynchronous HTTP Client" as async_client {
+        component "Workload Generator" as workload_gen
+        component "Success Counter" as success_counter
+        component "Executor Service" as executor_service
+    }
+}
+
+' Key Dependencies
+http_client --> proxy : "sends HTTP requests"
+proxy --> upstream : "forwards FullHttpRequest"
+proxy --> test_server : "forwards during testing"
+async_client --> test_server : "issues GET requests"
+file_handler --> filesystem : "reads/writes files"
+workload_gen --> executor_service : "uses"
+async_client --> success_counter : "updates on HTTP 200"
+
+' External Dependencies
+proxy ..> jre : "Java 1.7 target"
+test_server ..> jre : "Java 1.8 target"
+test_server ..> maven : "multi-module build"
+async_client ..> maven : "multi-module build"
+
+' Internal Data Flow
+proxy --> debug_logger : "logs forwarded requests"
+async_client --> executor_service : "shuts down after execution"
+
+@enduml

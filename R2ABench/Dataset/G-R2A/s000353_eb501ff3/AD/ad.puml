@@ -1,0 +1,65 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #555555
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "Turing User" as TuringUser
+rectangle "Router Clients" as RouterClients
+rectangle "Router Endpoints" as RouterEndpoints
+
+package "Turing System" as TuringSystem {
+    rectangle "Turing UI\nWeb interface to configure Routers" as TuringUi
+    rectangle "Turing API Server\nHTTP REST API to configure Routers" as TuringApiServer
+    database "Database\nPersistent storage for Router objects" as RouterDatabase
+}
+
+rectangle "Secret Store" as SecretStore
+rectangle "Authorization Service" as AuthorizationService
+
+package "Kubernetes Cluster" as KubernetesCluster {
+    rectangle "Knative Controller" as KnativeController
+    rectangle "Istio" as Istio
+}
+
+rectangle "Experimentation Service" as ExperimentationService
+rectangle "Machine Learning Platform\nMLP API Server" as MlpApiServer
+rectangle "Monitoring and Alerting Service" as MonitoringService
+
+TuringUser --> TuringUi : use
+TuringUi --> TuringApiServer : make HTTP calls
+TuringApiServer --> RouterDatabase : save and retrieve routers
+
+RouterClients --> RouterEndpoints : requests from router clients
+TuringApiServer --> RouterEndpoints : create endpoints\nfor accessing routers
+
+TuringApiServer --> SecretStore : save and retrieve\ncredentials
+TuringApiServer --> AuthorizationService : check user\npermissions
+TuringApiServer --> KubernetesCluster : deploy router\nworkloads
+TuringApiServer --> ExperimentationService : retrieve experiments\nconfigured for routers
+TuringApiServer --> MlpApiServer : retrieve projects and\nenvironments for routers
+TuringApiServer --> MonitoringService : configure alerts based\non router metrics
+
+KubernetesCluster --> KnativeController : manage router services
+KubernetesCluster --> Istio : expose router traffic
+Istio --> RouterEndpoints : route client traffic
+MonitoringService --> KubernetesCluster : retrieve router metrics
+@enduml

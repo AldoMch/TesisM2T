@@ -1,0 +1,148 @@
+@startuml AI_Driven_Text_Adventure_Game_Architecture
+title AI-Driven Text Adventure Game and Community Platform - Layered Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' =========================================================
+' Client Layer
+' =========================================================
+package "Client Layer" {
+  [Web / Mobile Browser Client] as CLIENT
+  [Game UI\n(plot, choices, music, AIGC feedback)] as GAME_UI
+  [Community UI\n(posts, comments, search, favorites)] as COMM_UI
+  [Admin Console UI\n(user/post lists, review)] as ADMIN_UI
+  [Local Temporary Save Store] as LOCAL_SAVE
+}
+
+' =========================================================
+' Presentation / Edge Layer
+' =========================================================
+package "Presentation / Edge Layer" {
+  [Nuxt.js SSR Frontend Server] as NUXT
+  [Iris API Gateway\n(REST, routing, middleware)] as GATEWAY
+  [Session / Authentication Middleware] as SESSION
+}
+
+' =========================================================
+' Application Service Layer
+' =========================================================
+package "Application Service Layer" {
+  [User & Account Service\n(register, login, logout, profile, password)] as SVC_USER
+  [Community Post Service\n(posts, comments, replies, review status)] as SVC_POST
+  [Favorites Service] as SVC_FAV
+  [Notification Service\n(comment/reply/review events)] as SVC_NOTIFY
+  [Search & Recommendation Service] as SVC_SEARCH
+  [Game Service\n(new game, saves, continue, choices, background)] as SVC_GAME
+  [Game Save Sharing Service] as SVC_SHARE
+  [Achievement, Currency & Item Service] as SVC_ACH
+  [Administration & Governance Service\n(user/post review, ban/restore, reports)] as SVC_ADMIN
+}
+
+' =========================================================
+' AI / Model Integration Layer
+' =========================================================
+package "AI / Model Integration Layer" {
+  [LLM Orchestration Service\n(plot, events, decision effects)] as AI_ORCH
+  [Background Consistency Guard] as AI_GUARD
+  [AIGC Media Service\n(image and sound-effect generation)] as AI_MEDIA
+}
+
+' =========================================================
+' Data Access Layer
+' =========================================================
+package "Data Access Layer" {
+  [Gorm ORM / Repository Layer] as ORM
+}
+
+' =========================================================
+' Data Stores
+' =========================================================
+package "Data Stores" {
+  database "MySQL Relational Database\n(accounts, posts, comments, favorites,\nnotifications, saves, state, currency)" as DB
+  database "Asset / Media Store\n(avatars, screenshots, AIGC images, audio)" as ASSETS
+}
+
+' =========================================================
+' External Systems
+' =========================================================
+package "External Systems" {
+  [Large Language Model Provider API] as LLM
+  [AIGC Image / Audio Provider] as AIGC
+  [Email / Verification Code Service] as EMAIL
+  [Cloud Provider / Data Center Infrastructure] as CLOUD
+}
+
+' =========================================================
+' Deployment / Operations
+' =========================================================
+package "Deployment & Operations" {
+  [Docker Containers] as DOCKER
+  [Kubernetes Orchestration\n(scaling, management)] as K8S
+  [Logging, Monitoring & Backup] as OPS
+}
+
+' ------------------ Client -> Edge ------------------
+CLIENT --> GAME_UI
+CLIENT --> COMM_UI
+CLIENT --> ADMIN_UI
+GAME_UI --> NUXT
+COMM_UI --> NUXT
+ADMIN_UI --> NUXT
+GAME_UI --> LOCAL_SAVE
+NUXT --> GATEWAY
+GATEWAY --> SESSION
+
+' ------------------ Edge -> Services ------------------
+GATEWAY --> SVC_USER
+GATEWAY --> SVC_POST
+GATEWAY --> SVC_FAV
+GATEWAY --> SVC_NOTIFY
+GATEWAY --> SVC_SEARCH
+GATEWAY --> SVC_GAME
+GATEWAY --> SVC_ADMIN
+
+' ------------------ Service interdependencies ------------------
+SVC_USER --> SVC_NOTIFY
+SVC_POST --> SVC_NOTIFY
+SVC_POST --> SVC_SEARCH
+SVC_POST --> SVC_FAV
+SVC_ADMIN --> SVC_POST
+SVC_ADMIN --> SVC_USER
+SVC_ADMIN --> SVC_NOTIFY
+SVC_GAME --> SVC_SHARE
+SVC_SHARE --> SVC_POST
+SVC_GAME --> SVC_ACH
+SVC_POST --> SVC_ACH
+SVC_SEARCH --> SVC_POST
+
+' ------------------ Services -> AI ------------------
+SVC_GAME --> AI_ORCH
+AI_ORCH --> AI_GUARD
+AI_ORCH --> LLM
+SVC_GAME --> AI_MEDIA
+AI_MEDIA --> AIGC
+SVC_USER --> EMAIL
+
+' ------------------ Persistence ------------------
+SVC_USER --> ORM
+SVC_POST --> ORM
+SVC_FAV --> ORM
+SVC_NOTIFY --> ORM
+SVC_SEARCH --> ORM
+SVC_GAME --> ORM
+SVC_ADMIN --> ORM
+SVC_ACH --> ORM
+ORM --> DB
+SVC_USER --> ASSETS
+SVC_POST --> ASSETS
+AI_MEDIA --> ASSETS
+
+' ------------------ Deployment ------------------
+DOCKER --> K8S
+K8S --> CLOUD
+OPS --> DB
+OPS --> ASSETS
+
+@enduml

@@ -1,0 +1,161 @@
+@startuml MyEMS_REST_API_Admin_Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BorderColor #555555
+  FontStyle bold
+  FontSize 13
+}
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontSize 11
+}
+skinparam node {
+  BackgroundColor #EEF5EE
+  BorderColor #3A7A3A
+  FontSize 12
+}
+skinparam database {
+  BackgroundColor #FFF3CC
+  BorderColor #B8860B
+  FontSize 11
+}
+skinparam cloud {
+  BackgroundColor #F0E8FF
+  BorderColor #7B3FA0
+  FontSize 11
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #888888
+}
+skinparam arrow {
+  Color #444444
+  FontSize 10
+}
+
+' ─────────────────────────────────────────────
+' External Systems (integration actors only)
+' ─────────────────────────────────────────────
+cloud "External Systems" {
+  component [Third-Party Applications] as ThirdParty
+  component [MyEMS Components] as MyEMSComponents
+}
+
+' ─────────────────────────────────────────────
+' Browser Runtime Environment
+' ─────────────────────────────────────────────
+cloud "Browser Runtime Environment" as BrowserRuntime {
+
+  package "Client Layer" {
+    component [AdminApp] as AdminApp
+    component [ClientRouter] as ClientRouter
+
+    package "Base-Path Config Store\n(DR-005)" as BasePathStore {
+      component [RuntimeAPIBasePathValue\n{protocol}//{hostname}:{port}/api/] as BasePathValue
+    }
+
+    component [BasePathResolver] as BasePathResolver
+
+    package "Lazy-Loaded Modules" {
+      package "UserSettingsModule\n[MENU.USERSETTING.USER]\n(UI-001, DR-001)" as UserMod {
+        component [LoginServicesGroup\n(login-related services/controllers)\n(FR-003)] as LoginServices
+      }
+      package "ContactSettingsModule\n[MENU.SETTINGS.CONTACT]\n(UI-002, DR-002)" as ContactMod {
+        component [ContactSettingsController] as ContactCtrl
+      }
+      package "TariffSettingsModule\n[settings route config]\n(FR-006, DR-003)" as TariffMod {
+        component [TariffSettingsController] as TariffCtrl
+      }
+      package "CategorySettingsModule\n[settings route config]\n(FR-006, DR-004)" as CategoryMod {
+        component [CategorySettingsController] as CategoryCtrl
+      }
+    }
+  }
+}
+
+' ─────────────────────────────────────────────
+' Routing / Proxy Layer
+' ─────────────────────────────────────────────
+node "Routing / Proxy Layer\n(Optional, transparent to browser)\n(CON-003, CI-002)" as ProxyLayer {
+  component [ReverseProxy\n(Nginx or equivalent)] as ReverseProxy
+}
+
+' ─────────────────────────────────────────────
+' API Service Layer
+' ─────────────────────────────────────────────
+node "API Service Layer\n(Python Runtime)" as APILayer {
+  component [APIEndpoint\n/api/] as APIEndpoint
+  component [RESTAPIService] as RESTAPIService
+}
+
+' ─────────────────────────────────────────────
+' Runtime / Deployment Layer
+' ─────────────────────────────────────────────
+node "Runtime / Deployment Layer" as DeployLayer {
+  component [PythonRuntimeEnvironment\n(installed dependencies)\n(CON-001, NFR-005)] as PythonEnv
+  component [DockerBasedSetup\n(FR-009)] as DockerSetup
+}
+
+' ─────────────────────────────────────────────
+' Data Layer
+' ─────────────────────────────────────────────
+node "Data Layer" as DataLayer {
+  database "MySQLDatabase\n(MySQL-compatible)" as MySQLDB
+}
+
+' ─────────────────────────────────────────────
+' Client Layer Internal Dependencies
+' ─────────────────────────────────────────────
+AdminApp --> ClientRouter : delegates route resolution\n& lazy-loading lifecycle
+AdminApp --> BasePathResolver : triggers base-path\ncomputation at startup
+BasePathResolver --> BasePathValue : stores computed\nruntime API base-path\n(DR-005)
+BasePathValue --> AdminApp : provides resolved base-path\nfor outbound API calls\n(FR-007, SI-002)
+
+ClientRouter --> UserMod : lazy-loads on /user route\n[MENU.USERSETTING.USER]\n(UI-001, DR-001, FR-003)
+ClientRouter --> ContactMod : lazy-loads on /contact route\n[MENU.SETTINGS.CONTACT]\n(UI-002, DR-002)
+ClientRouter --> TariffMod : lazy-loads on tariff\nsettings route config\n(FR-006, DR-003)
+ClientRouter --> CategoryMod : lazy-loads on category\nsettings route config\n(FR-006, DR-004)
+
+' ─────────────────────────────────────────────
+' Client → Proxy / API
+' (AdminApp targets same-origin /api/ only;
+'  proxy is transparent — no direct arrow to ReverseProxy)
+' ─────────────────────────────────────────────
+AdminApp --> APIEndpoint : same-origin /api/ calls\nusing resolved base-path\n(FR-007, SI-002, CON-003)
+
+' ─────────────────────────────────────────────
+' Proxy → API (transparent forwarding)
+' ─────────────────────────────────────────────
+ReverseProxy --> APIEndpoint : forwards /api/ traffic\nHTTP/HTTPS\n(CI-002)
+
+' ─────────────────────────────────────────────
+' API Endpoint → Service realization
+' ─────────────────────────────────────────────
+RESTAPIService ..|> APIEndpoint : implements /api/ endpoint
+
+' ─────────────────────────────────────────────
+' API Service → Data Layer
+' ─────────────────────────────────────────────
+RESTAPIService --> MySQLDB : persistent storage\n(MySQL connector)
+
+' ─────────────────────────────────────────────
+' API Service Runtime Dependency
+' ─────────────────────────────────────────────
+RESTAPIService ..> PythonEnv : requires installed\nPython packages\nbefore startup\n(CON-001, NFR-005)
+
+' ─────────────────────────────────────────────
+' Deployment / Provisioning
+' (DockerSetup provisions PythonEnv;
+'  quick-run is a documented procedure, not a component)
+' ─────────────────────────────────────────────
+DockerSetup ..> PythonEnv : provisions Python\ndependency environment\n(FR-009, NFR-003)
+
+' ─────────────────────────────────────────────
+' External Integration Clients → API
+' ─────────────────────────────────────────────
+ThirdParty --> APIEndpoint : consumes RESTful API\n(SI-001, FR-001)
+MyEMSComponents --> APIEndpoint : exchanges operational data\n(SI-001, FR-001)
+
+@enduml

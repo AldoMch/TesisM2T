@@ -1,0 +1,169 @@
+@startuml
+!define RECTANGLE rectangle
+!define COMPONENT component
+!define INTERFACE interface
+!define DATABASE database
+!define NODE node
+!define CLOUD cloud
+!define FOLDER folder
+!define PACKAGE package
+
+skinparam componentStyle uml2
+skinparam rectangle {
+  BackgroundColor<<External>> LightBlue
+  BorderColor DarkBlue
+}
+skinparam component {
+  BackgroundColor LightYellow
+  BorderColor DarkOrange
+}
+skinparam interface {
+  BackgroundColor LightGreen
+  BorderColor DarkGreen
+}
+skinparam arrowColor DarkGray
+skinparam noteBackgroundColor #FFF2CC
+skinparam noteBorderColor #D6B656
+
+title System Architecture - psmpi Communication Components
+
+' ========== EXTERNAL SYSTEMS ==========
+rectangle "Linux Environment" <<External>> as linux_env {
+  rectangle "Shell CLI" as shell_cli
+  rectangle "Linux Verbs API" <<External>> as verbs_api
+  rectangle "Network Transport" <<External>> as network_transport
+}
+
+' ========== CORE SYSTEM COMPONENTS ==========
+package "psmpi Communication System" as psmpi_system {
+  
+  component "Embedded hwloc Verification" as hwloc_verification {
+    component "run-embedded-tests.sh" as run_tests
+    component "Manual Build Workflow" as manual_build
+    note right of manual_build
+      Requires: hwloc-tree/
+      Sequence: autogen.sh → configure → make
+    end note
+  }
+  
+  component "Communication Subsystem" as comm_subsystem {
+    component "Initialization/Termination" as init_term
+    component "Progress Engine" as progress_engine
+    component "Connection Manager" as connection_mgr
+    component "One-to-Many Transfer" as one_to_many
+  }
+  
+  component "Send State Machine" as send_sm {
+    component "Flow Control Checker" as flow_control
+    component "Send Path Selector" as send_selector
+    component "Packet Buffer Manager" as pkt_buffer_mgr
+  }
+  
+  component "Embedded Libfabric Verbs Provider" as verbs_provider {
+    component "Verbs Transport" as verbs_transport
+    component "Dependency Manager" as dep_mgr
+  }
+  
+  database "Data Structures" as data_structs {
+    component "Packet Buffer" as packet_buffer
+    component "Network Send Descriptor" as net_send_desc
+    component "Data Descriptor" as data_desc
+    component "Flow Control State" as flow_state
+  }
+}
+
+' ========== INTERFACES AND CONNECTIONS ==========
+interface "Command Line" as cli_interface
+interface "Verbs API Interface" as verbs_interface
+interface "Network Interface" as net_interface
+interface "Data Flow" as data_interface
+
+' ========== RELATIONSHIPS ==========
+' External interfaces
+shell_cli -- cli_interface
+cli_interface -- run_tests
+cli_interface -- manual_build
+
+verbs_api -- verbs_interface
+verbs_interface -- verbs_provider
+
+network_transport -- net_interface
+net_interface -- comm_subsystem
+
+' Internal data flow
+comm_subsystem -- data_interface
+send_sm -- data_interface
+data_interface -- data_structs
+
+' Communication subsystem to send state machine
+comm_subsystem --> send_sm : send requests
+send_sm --> comm_subsystem : send completion
+
+' Send state machine dependencies
+send_sm --> packet_buffer : packs/unpacks data
+send_sm --> net_send_desc : prepares descriptors
+send_sm --> data_desc : references payload
+send_sm --> flow_state : checks flow status
+
+' Verbs provider dependencies
+verbs_provider --> dep_mgr : version checks
+dep_mgr --> verbs_api : requires libibverbs >= 1.1.8\nlibrdmacm >= 1.0.16
+
+' Build environment constraints
+hwloc_verification --> shell_cli : manual execution only
+manual_build --> shell_cli : requires renamed hwloc-tree/
+
+' ========== NOTES AND CONSTRAINTS ==========
+note top of hwloc_verification
+  <b>Constraint C-001:</b>
+  Manual verification only
+  Not part of make check
+end note
+
+note right of comm_subsystem
+  <b>Design Responsibilities:</b>
+  - Initialization/Finalization
+  - Progress advancement
+  - Blocking progress
+  - Connection establishment
+  - One-to-many transfer
+end note
+
+note right of send_sm
+  <b>Send Path Behavior:</b>
+  - FR-005: Flow control check
+  - FR-006: Direct access for pinned data
+  - FR-007: Packet buffer packing
+  - FR-008: Rendezvous control fields
+end note
+
+note bottom of verbs_provider
+  <b>Constraints C-004, C-005:</b>
+  Requires Linux Verbs API
+  libibverbs >= 1.1.8
+  librdmacm >= 1.0.16
+end note
+
+note left of data_structs
+  <b>Data Requirements:</b>
+  DR-001: Packet buffer
+  DR-002: Network send descriptor
+  DR-003: Data descriptor
+  DR-004: Rendezvous control fields
+  DR-005: Flow control state
+end note
+
+' ========== LEGEND ==========
+legend right
+  |<color:blue>**External System**</color>|
+  |<color:orange>**Core Component**</color>|
+  |<color:green>**Interface**</color>|
+  |<color:purple>**Data Structure**</color>|
+  |-- Interface connection|
+  |--> Control/data flow|
+  |<b>FR-XXX</b> Functional Requirement|
+  |<b>C-XXX</b> System Constraint|
+  |<b>DR-XXX</b> Data Requirement|
+end legend
+
+@enduml

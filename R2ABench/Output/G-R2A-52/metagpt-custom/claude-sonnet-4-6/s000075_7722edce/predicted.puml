@@ -1,0 +1,162 @@
+@startuml statlord_architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontName Arial
+skinparam defaultFontSize 13
+skinparam ArrowColor #444444
+skinparam ArrowThickness 1.5
+
+skinparam package {
+  BorderColor #555555
+  BackgroundColor #F0F4FF
+  FontStyle bold
+  FontSize 14
+}
+
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #DDEEFF
+  FontSize 12
+}
+
+skinparam node {
+  BorderColor #557755
+  BackgroundColor #E8F5E9
+  FontSize 12
+}
+
+skinparam cloud {
+  BorderColor #666666
+  BackgroundColor #EEEEEE
+}
+
+' ─────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────
+cloud "External Systems" {
+  [API Clients] as APIClients
+  [HeadlessBrowser\n(automated rendering)] as HeadlessBrowser
+  [Human User\n(Browser)] as HumanUser
+}
+
+node "Build Toolchain\n(Node.js / npm)\n[image-build-time only]" as NodeBuild {
+  [npm install + npm run build\n→ produces /static/ assets] as NpmBuild
+}
+
+node "Container Image\n(baked static assets)" as ContainerImage {
+  [Built SPA Assets\n(HTML / JS / CSS)] as BuiltAssets
+}
+
+node "Container Runtime\n(Docker / Python 3.7 base)" as DockerEnv {
+
+  ' ─────────────────────────────────────────
+  ' CLIENT / EDITOR LAYER
+  ' ─────────────────────────────────────────
+  package "Client / Editor Layer" as ClientLayer {
+    [EditorSPA\n(TypeScript / React SPA)] as EditorSPA
+
+    package "Redux Store" as ReduxStorePkg {
+      [ControlsSlice] as ControlsSlice
+      [ElementsSlice] as ElementsSlice
+      [LayoutsSlice] as LayoutsSlice
+      [GaugesSlice] as GaugesSlice
+      [DisplaysSlice\n(key, available, resolution_x,\nresolution_y, display_data,\nrotation)] as DisplaysSlice
+    }
+
+    [ReduxMiddleware\n(thunks / HTTP dispatch)] as ReduxMiddleware
+  }
+
+  ' ─────────────────────────────────────────
+  ' SERVER / API LAYER
+  ' ─────────────────────────────────────────
+  package "Server / API Layer" as ServerLayer {
+    [DjangoServer\n(manage.py runserver)] as DjangoServer
+
+    package "REST API Resources" as APIResources {
+      [GaugeAPI\n(key, value)] as GaugeAPI
+      [DisplayAPI\n(key, available, resolution,\ncurrent_layout, display_data,\nrotation)] as DisplayAPI
+      [LayoutAPI\n(key, data, display_positions)] as LayoutAPI
+    }
+
+    [StaticAssetHost\n(Django static file serving\ncapability)] as StaticAssetHost
+  }
+
+  ' ─────────────────────────────────────────
+  ' VIEWER / RENDERING LAYER
+  ' ─────────────────────────────────────────
+  package "Viewer / Rendering Layer" as ViewerLayer {
+    [ViewerRenderer\n(B&W pixel output\nat display resolution)] as ViewerRenderer
+  }
+
+  ' ─────────────────────────────────────────
+  ' PERSISTENCE LAYER
+  ' ─────────────────────────────────────────
+  package "Persistence Layer" as PersistenceLayer {
+    [PostgreSQLDatabase\n(Gauge | Display | Layout)\n<<database>>] as PostgreSQLDB
+  }
+
+}
+
+' ─────────────────────────────────────────
+' BUILD-TIME ARTIFACT FLOW
+' ─────────────────────────────────────────
+NpmBuild -down-> BuiltAssets : compiles SPA\n(build-time)
+BuiltAssets -down-> StaticAssetHost : baked into\ncontainer image
+
+' ─────────────────────────────────────────
+' STATIC ASSET SERVING
+' ─────────────────────────────────────────
+' StaticAssetHost is a capability of DjangoServer
+DjangoServer -right-> StaticAssetHost : hosts static\nasset capability
+
+StaticAssetHost -down-> HumanUser : delivers SPA\n(HTML/JS/CSS)
+HumanUser -down-> EditorSPA : loads & runs\nin browser
+
+' ─────────────────────────────────────────
+' EDITOR SPA → REDUX → MIDDLEWARE → API
+' ─────────────────────────────────────────
+EditorSPA --> ControlsSlice : dispatches actions
+EditorSPA --> ElementsSlice : dispatches actions
+EditorSPA --> LayoutsSlice : dispatches actions
+EditorSPA --> GaugesSlice : dispatches actions
+EditorSPA --> DisplaysSlice : dispatches actions
+
+ControlsSlice --> ReduxMiddleware : state-driven\nHTTP thunks
+ElementsSlice --> ReduxMiddleware : state-driven\nHTTP thunks
+LayoutsSlice --> ReduxMiddleware : state-driven\nHTTP thunks
+GaugesSlice --> ReduxMiddleware : state-driven\nHTTP thunks
+DisplaysSlice --> ReduxMiddleware : state-driven\nHTTP thunks
+
+ReduxMiddleware -right-> DjangoServer : layout CRUD,\ndisplay registration,\nrender / delete requests\n(HTTP REST)
+
+' ─────────────────────────────────────────
+' DJANGO SERVER ROUTING
+' ─────────────────────────────────────────
+DjangoServer --> GaugeAPI : routes /gauge/**
+DjangoServer --> DisplayAPI : routes /display/**
+DjangoServer --> LayoutAPI : routes /layout/**
+DjangoServer --> ViewerRenderer : routes /viewer/**
+
+' ─────────────────────────────────────────
+' PERSISTENCE
+' ─────────────────────────────────────────
+DjangoServer -down-> PostgreSQLDB : persist / retrieve\nGauge, Display, Layout\n(ORM)
+
+' ─────────────────────────────────────────
+' VIEWER RENDERING PATHS
+' ─────────────────────────────────────────
+ViewerRenderer --> DisplayAPI : reads display_data,\ncurrent_layout, resolution,\nrotation
+ViewerRenderer --> LayoutAPI : reads layout data\n& display_positions
+
+' Browser viewer path (human user)
+HumanUser --> ViewerRenderer : HTTP GET /viewer/**\n(browser viewer path)
+
+' Headless automation path
+HeadlessBrowser --> ViewerRenderer : HTTP GET /viewer/**\n(automated rendering)
+
+' ─────────────────────────────────────────
+' EXTERNAL API CLIENTS
+' ─────────────────────────────────────────
+APIClients -right-> DjangoServer : POST gauge data,\nregister displays\n(HTTP REST)
+
+@enduml

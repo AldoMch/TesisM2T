@@ -1,0 +1,108 @@
+@startuml
+skinparam backgroundColor #FAFAFA
+skinparam componentBackgroundColor #DDEEFF
+skinparam componentBorderColor #336699
+skinparam componentFontColor #222222
+skinparam packageBackgroundColor #F5F5F5
+skinparam packageBorderColor #888888
+skinparam packageFontStyle bold
+skinparam nodeBackgroundColor #FFF8E1
+skinparam nodeBorderColor #B8860B
+skinparam databaseBackgroundColor #E8F5E9
+skinparam databaseBorderColor #388E3C
+skinparam cloudBackgroundColor #FCE4EC
+skinparam cloudBorderColor #C62828
+skinparam ArrowColor #444444
+
+' ─── External Systems ───────────────────────────────────────────
+cloud "MuJoCo\n(Physics Engine)" as MuJoCo
+cloud "OpenAI Gym\n(Interface Contract)" as OpenAIGym
+
+' ─── File-System / Artifact Layer ───────────────────────────────
+package "File-System / Artifact Layer" {
+  database "YAML Config Files" as YAMLFiles
+  database "MuJoCo XML Assets" as XMLAssets
+  database "Merged MuJoCo XML\n(Integrated Asset)" as MergedXML
+  database "Run Folder\n(checkpoints/ | training_outputs/)" as RunFolder
+  database "evaluate/ Directory" as EvaluateDir
+  database "Standalone Simulator\nPackage" as StandalonePackage
+}
+
+' ─── Build Layer ─────────────────────────────────────────────────
+package "Build Layer" {
+  component "SimulatorBuilder" as SimulatorBuilder
+  component "MuJoCoXMLIntegrator" as MuJoCoXMLIntegrator
+}
+
+' ─── Simulation Core Layer ───────────────────────────────────────
+package "Simulation Core Layer" {
+  component "GymSimulatorWrapper" as GymSimulatorWrapper
+  component "BiomechanicalModel" as BiomechanicalModel
+  component "InteractionTask" as InteractionTask
+}
+
+' ─── Perception Layer ────────────────────────────────────────────
+package "Perception Layer" {
+  component "PerceptionModule\n(Abstract Base)" as PerceptionModule
+  component "EgocentricVisionModule" as EgocentricVisionModule
+  component "ProprioceptionModule" as ProprioceptionModule
+}
+
+' ─── Training Layer ──────────────────────────────────────────────
+package "Training Layer" {
+  component "RLTrainingRunner" as RLTrainingRunner
+}
+
+' ─── Evaluation Layer ────────────────────────────────────────────
+package "Evaluation Layer" {
+  component "EvaluationRunner" as EvaluationRunner
+  component "CheckpointManager" as CheckpointManager
+  component "ActionLogger" as ActionLogger
+}
+
+' ─── Build Layer Dependencies ────────────────────────────────────
+SimulatorBuilder --> YAMLFiles : reads config
+SimulatorBuilder --> MuJoCoXMLIntegrator : orchestrate XML merge\n(supply biomechanical + task XML)
+SimulatorBuilder --> BiomechanicalModel : instantiate
+SimulatorBuilder --> InteractionTask : instantiate
+SimulatorBuilder --> PerceptionModule : wrap with perception
+SimulatorBuilder --> GymSimulatorWrapper : produce built simulator
+
+MuJoCoXMLIntegrator --> XMLAssets : reads XML assets
+MuJoCoXMLIntegrator --> MergedXML : writes merged MuJoCo XML
+
+InteractionTask --> MuJoCoXMLIntegrator : supplies task XML
+
+' ─── Simulation Core Layer Dependencies ──────────────────────────
+GymSimulatorWrapper --> BiomechanicalModel : delegate actuation
+GymSimulatorWrapper --> InteractionTask : delegate step/reset/obs
+GymSimulatorWrapper --> PerceptionModule : route observations through
+GymSimulatorWrapper --> OpenAIGym : implements interface
+GymSimulatorWrapper --> MuJoCo : runtime physics
+GymSimulatorWrapper --> MergedXML : loads unified XML
+
+' ─── Perception Layer Dependencies ───────────────────────────────
+EgocentricVisionModule --|> PerceptionModule : extends
+ProprioceptionModule --|> PerceptionModule : extends
+
+' ─── Training Layer Dependencies ─────────────────────────────────
+RLTrainingRunner --> SimulatorBuilder : trigger build before training
+RLTrainingRunner --> GymSimulatorWrapper : interact via Gym API
+RLTrainingRunner --> RunFolder : write checkpoints and training outputs
+
+' ─── Evaluation Layer Dependencies ───────────────────────────────
+EvaluationRunner --> RunFolder : load simulator from run folder
+EvaluationRunner --> CheckpointManager : resolve checkpoint
+EvaluationRunner --> EvaluateDir : ensure evaluate/ exists
+EvaluationRunner --> ActionLogger : activate when logging enabled
+EvaluationRunner --> GymSimulatorWrapper : execute evaluation episodes
+
+CheckpointManager --> RunFolder : read checkpoints/ directory
+CheckpointManager --> EvaluationRunner : return resolved checkpoint
+
+ActionLogger --> EvaluateDir : write action logs
+
+' ─── Packaging Layer Dependencies ────────────────────────────────
+SimulatorBuilder --> StandalonePackage : produce standalone\nsimulator package
+
+@enduml

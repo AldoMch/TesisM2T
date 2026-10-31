@@ -1,0 +1,169 @@
+@startuml Gran-Book Backend Platform
+
+skinparam backgroundColor #FAFAFA
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam package {
+  BorderColor #555555
+  FontColor #222222
+  FontStyle bold
+}
+
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #DDEEFF
+  FontColor #111111
+}
+
+skinparam node {
+  BorderColor #446644
+  BackgroundColor #DDEEDD
+  FontColor #111111
+}
+
+skinparam database {
+  BorderColor #996633
+  BackgroundColor #FFF3CC
+  FontColor #111111
+}
+
+skinparam cloud {
+  BorderColor #886699
+  BackgroundColor #EEE0FF
+  FontColor #111111
+}
+
+' ─────────────────────────────────────────────
+' CLIENT LAYER
+' ─────────────────────────────────────────────
+package "Client Layer" as ClientLayer #EEF4FF {
+  component [Native Mobile Apps] as MobileApps
+  component [Administrative Web App] as AdminWebApp
+}
+
+' ─────────────────────────────────────────────
+' INFRASTRUCTURE LAYER
+' ─────────────────────────────────────────────
+package "Infrastructure Layer (GCP)" as InfraLayer #E8F5E9 {
+  node "GCP Load Balancer" as LoadBalancer
+  node "GKE Cluster" as GKECluster
+  node "GCE Virtual Machine (Operational Tooling / TLS)" as GCEVirtualMachine
+}
+
+' ─────────────────────────────────────────────
+' GATEWAY / BFF LAYER
+' ─────────────────────────────────────────────
+package "Gateway / BFF Layer" as GatewayLayer #FFF8DC {
+  component [GatewayBFF] as GatewayBFF
+  note right of GatewayBFF
+    Request Routing
+    Protocol Adaptation
+    Response Aggregation
+    Serves mobile and admin clients
+  end note
+}
+
+' ─────────────────────────────────────────────
+' INTERNAL SERVICES LAYER
+' ─────────────────────────────────────────────
+package "Internal Services Layer" as ServicesLayer #E3F2FD {
+  package "GKE Deployed Containers" as GKEDeploy #D0E8FB {
+    component [AuthAPI] as AuthAPI
+    note right of AuthAPI : Authentication Domain
+    component [UserAPI] as UserAPI
+    note right of UserAPI : User Management (Golang)
+    component [BookAPI] as BookAPI
+    note right of BookAPI : Book Management
+    component [ECSiteAPI] as ECSiteAPI
+    note right of ECSiteAPI : EC Site Operations
+    component [SupportAPI] as SupportAPI
+    note right of SupportAPI : Support and Information (Isolated)
+    component [MessageService] as MessageService
+    note right of MessageService : Message and Notification Management
+  }
+}
+
+' ─────────────────────────────────────────────
+' DATA LAYER
+' ─────────────────────────────────────────────
+package "Data Layer" as DataLayer #FFF3E0 {
+  database "MySQLStore\n(Users, Books, EC Site)" as MySQLStore
+  database "NoSQLStore\n(Message Data)" as NoSQLStore
+  database "ObjectStorage\n(Thumbnails / Binary Objects, GCS)" as ObjectStorage
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL INTEGRATION LAYER
+' ─────────────────────────────────────────────
+package "External Integration Layer" as ExternalLayer #F3E5F5 {
+  cloud "Firebase Authentication" as FirebaseAuth
+  cloud "Book-Search API (External Book Lookup)" as BookSearchAPI
+  cloud "Stripe (Payment Processing)" as Stripe
+  cloud "Push Notification Provider" as PushNotif
+  cloud "Email Notification Provider" as EmailNotif
+  cloud "Let's Encrypt (TLS / DNS-01)" as LetsEncrypt
+}
+
+' ─────────────────────────────────────────────
+' ROUTING WAYPOINTS
+' ─────────────────────────────────────────────
+component [HTTPS / REST Entry] as ClientEntryPoint
+component [Internal API (gRPC / HTTP)] as InternalGW
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — CLIENT → INFRA
+' ─────────────────────────────────────────────
+MobileApps  --> ClientEntryPoint : HTTPS
+AdminWebApp --> ClientEntryPoint : HTTPS (admin access path)
+ClientEntryPoint --> LoadBalancer : inbound TLS traffic
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — INFRA → GATEWAY
+' ─────────────────────────────────────────────
+LoadBalancer --> GatewayBFF : route to BFF entry point
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — GATEWAY → INTERNAL SERVICES
+' ─────────────────────────────────────────────
+GatewayBFF --> InternalGW
+InternalGW --> AuthAPI        : auth requests
+InternalGW --> UserAPI        : user management requests
+InternalGW --> BookAPI        : book management requests
+InternalGW --> ECSiteAPI      : EC site requests
+InternalGW --> SupportAPI     : support requests
+InternalGW --> MessageService : message and notification requests
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — SERVICES → DATA LAYER
+' ─────────────────────────────────────────────
+UserAPI        --> MySQLStore    : user data persistence
+BookAPI        --> MySQLStore    : book data persistence
+ECSiteAPI      --> MySQLStore    : EC site data persistence
+SupportAPI     --> MySQLStore    : support data persistence
+MessageService --> NoSQLStore    : message data persistence
+UserAPI        --> ObjectStorage : profile thumbnail objects (DR-006)
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — SERVICES → EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+AuthAPI        --> FirebaseAuth  : delegate credential validation
+BookAPI        --> BookSearchAPI : external book lookup integration
+ECSiteAPI      --> Stripe        : payment processing delegation
+MessageService --> PushNotif     : push notification dispatch
+MessageService --> EmailNotif    : email notification dispatch
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — GKE ORCHESTRATION
+' ─────────────────────────────────────────────
+GKECluster --> GKEDeploy : orchestrates containers
+
+' ─────────────────────────────────────────────
+' DEPENDENCIES — GCE VM → TLS CHAIN
+' ─────────────────────────────────────────────
+GCEVirtualMachine --> LetsEncrypt   : TLS cert provisioning (DNS-01 challenge)
+GCEVirtualMachine --> LoadBalancer  : applies provisioned TLS certificates
+
+@enduml

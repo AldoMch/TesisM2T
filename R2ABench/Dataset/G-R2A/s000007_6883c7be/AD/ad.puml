@@ -1,0 +1,120 @@
+@startuml
+skinparam componentStyle rectangle
+top to bottom direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #111111
+skinparam ArrowThickness 1.5
+skinparam package {
+    BorderColor #111111
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #111111
+    BorderThickness 1
+}
+
+package "Clients" as Clients {
+    rectangle "Web Client" as WebClient
+    rectangle "APP Client" as AppClient
+    rectangle "Business Server" as BusinessClient
+    rectangle "Developer" as Developer
+}
+
+package "Access Layer\nKeepalived(VIP)" as AccessLayer {
+    rectangle "Openresty" as OpenrestyA
+    rectangle "Openresty" as OpenrestyB
+}
+
+package "Proxy Layer" as ProxyLayer {
+    rectangle "cgi_proxy 2" as CgiProxy2
+
+    package "cgi_proxy 1" as CgiProxy1 {
+        rectangle "Logging" as Logging
+        rectangle "Appkey\nValidate" as AppkeyValidate
+        rectangle "Global Limit" as GlobalLimit
+        rectangle "Login &\nPermission" as LoginPermission
+        rectangle "Proxy Core" as ProxyCore
+        rectangle "Formatter" as Formatter
+
+        package "Plugin" as Plugin {
+            rectangle "Attach Check" as AttachCheck
+            rectangle "Download" as Download
+            rectangle "Upload" as Upload
+            rectangle "Mock" as Mock
+            rectangle "Check\nParameter" as CheckParameter
+            rectangle "Agent" as Agent
+        }
+    }
+}
+
+package "Support Platform" as SupportPlatform {
+    rectangle "Redis Cache" as RedisCache
+    database "Mysql" as Mysql
+    queue "Msg Center\nKafka" as MsgCenter
+    database "Data Bank\nHDFS/Hbase/Druid" as DataBank
+    rectangle "User Center" as UserCenter
+    rectangle "Permission\nCenter" as PermissionCenter
+}
+
+package "CGI Portal" as CgiPortal {
+    rectangle "CGI Manager" as CgiManager
+    rectangle "Metrics &\nReport" as MetricsReport
+    rectangle "Case Manager" as CaseManager
+    rectangle "Log & Tree\ninquire" as LogTreeInquire
+    rectangle "Appkey\nManager" as AppkeyManager
+    rectangle "Http Test\nClient" as HttpTestClient
+    rectangle "Service\nManager" as ServiceManager
+    rectangle "Document\nGenerate" as DocumentGenerate
+}
+
+rectangle "Log consumer" as LogConsumer
+
+package "Task Scheduler" as TaskScheduler {
+    rectangle "Log Analysis" as LogAnalysis
+    rectangle "CGI Case\nExecutor" as CgiCaseExecutor
+    rectangle "Monitor/Alarm" as MonitorAlarm
+    rectangle "CGI Health\nCheck" as CgiHealthCheck
+    rectangle "Daily Report" as DailyReport
+}
+
+package "Business Servers" as BusinessServers {
+    rectangle "Business Server A" as BusinessServerA
+    rectangle "Business Server B" as BusinessServerB
+    rectangle "Business Server C" as BusinessServerC
+    rectangle "......" as OtherBusinessServers
+}
+
+WebClient --> AccessLayer : Request / Response
+AppClient --> AccessLayer : Request / Response
+BusinessClient --> AccessLayer : Request / Response
+AccessLayer --> CgiProxy1 : route
+AccessLayer --> CgiProxy2 : route
+
+Formatter --> ProxyCore
+AppkeyValidate --> RedisCache : appkey cache
+AppkeyValidate --> Mysql : appkey metadata
+GlobalLimit --> RedisCache : rate limit
+LoginPermission --> UserCenter : authenticate
+LoginPermission --> PermissionCenter : authorize
+Logging --> MsgCenter : logs
+ProxyCore ..> Plugin : plugin hooks
+Upload --> DataBank : upload data
+Download --> DataBank : download data
+Agent --> BusinessServers : invoke backend
+
+Developer --> CgiPortal
+CgiPortal --> Mysql : manage config/cases
+CgiPortal --> DataBank : query logs/metrics/docs
+HttpTestClient --> AccessLayer : test request
+
+MsgCenter --> LogConsumer : log stream
+LogConsumer --> LogAnalysis
+LogConsumer --> DailyReport
+LogAnalysis --> DataBank : analytics data
+DailyReport --> DataBank : report data
+CgiCaseExecutor --> BusinessServers : execute cases
+CgiHealthCheck --> BusinessServers : health check
+@enduml

@@ -1,0 +1,209 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName Helvetica
+skinparam defaultFontSize 12
+skinparam arrowColor #000000
+skinparam componentBackgroundColor #F5F5F5
+skinparam componentBorderColor #333333
+skinparam componentFontColor #000000
+
+title POCD System Architecture Diagram
+caption Based on SRS: Persistent Object Consistency Detection System
+
+' ========== EXTERNAL ENTITIES ==========
+package "External Systems" {
+  component "StarUML\n(MDJ Files)" as staruml
+  component "MySQL Database" as mysql
+  component "User Browser" as browser
+  component "Third-Party Apps" as thirdparty
+}
+
+' ========== FRONTEND LAYER (UI) ==========
+package "Frontend Layer" {
+  component "Web Interface" as webui {
+    component "Registration/Login\nInterface" as auth_ui
+    component "File Management\nInterface" as file_ui
+    component "Detection Configuration\nInterface" as config_ui
+    component "Detection Result\nInterface" as result_ui
+    component "Help & Case\nInterface" as help_ui
+    component "Report Export\nInterface" as report_ui
+    component "History View\nInterface" as history_ui
+  }
+}
+
+' ========== BACKEND LAYER ==========
+package "Backend Layer" {
+  
+  ' ========== BUSINESS LOGIC LAYER ==========
+  package "Business Logic Layer" {
+    
+    component "User Management\nService" as user_service
+    component "File Processing\nService" as file_service
+    
+    package "Parsing Services" {
+      component "MDJ Parser" as mdj_parser
+      component "Database Parser" as db_parser
+      component "JSON Converter" as json_converter
+    }
+    
+    package "Matching & Detection\nServices" {
+      component "Entity Matcher" as entity_matcher
+      component "Inconsistency Detector" as detector {
+        component "Field Detector" as field_det
+        component "Type Detector" as type_det
+        component "Attribute/Column Detector" as attr_det
+        component "Class/Table Detector" as class_det
+        component "Multiplicity Detector" as mult_det
+        component "Relationship Type Detector" as reltype_det
+        component "Relationship Match Detector" as relmatch_det
+      }
+    }
+    
+    package "Repair Services" {
+      component "Repair Suggestion\nGenerator" as suggestion_gen
+      component "Class Diagram\nRepair Engine" as cd_repair
+      component "Database Repair\nEngine" as db_repair
+    }
+    
+    component "Report Generator" as report_gen
+    component "Configuration Manager" as config_mgr
+    component "Help & Case Manager" as help_mgr
+  }
+  
+  ' ========== DATA ACCESS LAYER ==========
+  package "Data Access Layer" {
+    component "User Repository" as user_repo
+    component "File Repository" as file_repo
+    component "Configuration Repository" as config_repo
+    component "Detection History\nRepository" as history_repo
+    component "Report Repository" as report_repo
+    component "Help & Case\nRepository" as help_repo
+  }
+  
+  ' ========== EXTERNAL INTERFACES ==========
+  component "JDBC Database\nConnector" as jdbc_connector
+  component "Open API\nInterface" as open_api
+}
+
+' ========== SECURITY & INFRASTRUCTURE ==========
+cloud "SSL/TLS Encryption" as ssl
+component "Authentication &\nAuthorization" as auth
+component "Audit Logging" as audit_log
+
+' ========== CONNECTIONS ==========
+
+' External to Frontend
+browser --> webui : HTTP/HTTPS\n(User Interactions)
+
+' Frontend to Backend
+webui --> user_service : REST API\n(Login/Registration)
+webui --> file_service : REST API\n(File Operations)
+webui --> config_mgr : REST API\n(Configuration)
+webui --> detector : REST API\n(Detection Requests)
+webui --> suggestion_gen : REST API\n(Repair Suggestions)
+webui --> report_gen : REST API\n(Report Generation)
+webui --> help_mgr : REST API\n(Help/Case Access)
+
+' External to Parsing Services
+staruml --> mdj_parser : MDJ Files
+mysql --> jdbc_connector : Database Connection
+jdbc_connector --> db_parser : Database Schema
+
+' Parsing Services to Matching
+mdj_parser --> json_converter : Class Diagram Objects
+db_parser --> json_converter : Database Schema Objects
+json_converter --> entity_matcher : JSON Data
+
+' Matching to Detection
+entity_matcher --> detector : Matching Results
+
+' Detection to Repair
+detector --> suggestion_gen : Inconsistency Reports
+suggestion_gen --> cd_repair : Class Diagram Repairs
+suggestion_gen --> db_repair : Database Repairs
+
+' Repair to External
+cd_repair --> staruml : Repaired MDJ Files
+db_repair --> mysql : Database Updates
+
+' Services to Data Access Layer
+user_service --> user_repo : CRUD Operations
+file_service --> file_repo : CRUD Operations
+config_mgr --> config_repo : CRUD Operations
+detector --> history_repo : Save Results
+report_gen --> report_repo : Save Reports
+help_mgr --> help_repo : CRUD Operations
+
+' Open API for Third Parties
+thirdparty --> open_api : REST API
+
+' Security Connections
+ssl ..> browser : Encrypts
+ssl ..> webui : Encrypts
+ssl ..> open_api : Encrypts
+auth ..> user_service : Validates
+auth ..> webui : Protects
+audit_log ..> user_service : Logs
+audit_log ..> file_service : Logs
+audit_log ..> detector : Logs
+audit_log ..> cd_repair : Logs
+audit_log ..> db_repair : Logs
+
+' Internal Service Dependencies
+file_service --> mdj_parser : Parse Requests
+file_service --> db_parser : Parse Requests
+config_mgr --> detector : Rule Configuration
+help_mgr --> webui : Content Delivery
+report_gen --> webui : Report Delivery
+report_gen --> detector : Report Data
+
+' ========== NOTES & LEGENDS ==========
+note top of webui
+  <b>Frontend Features:</b>
+  - Registration/Login
+  - File Upload/Download
+  - Detection Configuration
+  - Result Visualization
+  - Report Export
+  - History View
+  - Help & Examples
+end note
+
+note right of detector
+  <b>Detection Types:</b>
+  1. Field Inconsistencies
+  2. Type Inconsistencies
+  3. Attribute/Column Mismatches
+  4. Class/Table Mismatches
+  5. Multiplicity Inconsistencies
+  6. Relationship Type Issues
+  7. Missing/Extra Relationships
+end note
+
+note left of entity_matcher
+  <b>Matching Algorithm:</b>
+  - String Similarity
+  - Data Type Compatibility
+  - Structure Analysis
+  - Relationship Mapping
+end note
+
+legend right
+  | Color Legend |
+  |---|
+  <color:#ADD8E6>External Systems</color> |
+  <color:#90EE90>Frontend Layer</color> |
+  <color:#FFB6C1>Business Logic</color> |
+  <color:#FFD700>Data Access</color> |
+  <color:#DDA0DD>Infrastructure</color> |
+  ---
+  <b>Architecture Constraints:</b>
+  1. Frontend-Backend Separation
+  2. Three-Layer Design (UI/BL/DA)
+  3. JSON Data Exchange Format
+  4. SSL Encryption for Sensitive Data
+end legend
+
+@enduml

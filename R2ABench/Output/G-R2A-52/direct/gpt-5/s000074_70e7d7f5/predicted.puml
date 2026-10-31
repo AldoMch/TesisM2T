@@ -1,0 +1,138 @@
+@startuml
+title OAID/Tengine Lite - System Architecture
+
+skinparam componentStyle rectangle
+
+package "Tengine Lite Library" as tengine_pkg {
+  component "C API" as c_api
+  component "C++ API Docs Entry" as cpp_api
+  component "Python API Docs Entry" as py_api
+
+  package "Core Modules" {
+    component "Scheduler" as scheduler
+    component "Operator Module" as operator
+    component "Serializer (tmfile)" as serializer
+    component "Device Backend" as device
+  }
+
+  c_api --> scheduler
+  c_api --> operator
+  c_api --> serializer
+
+  scheduler --> device
+  scheduler --> serializer
+
+  operator --> device
+
+  note right of serializer
+    Decodes binary tmfile models
+    Produces serialized model parameters
+  end note
+
+  note right of scheduler
+    Schedules NNIR/computation graphs
+    Manages hardware resources
+    Coordinates model loading via serializer
+  end note
+
+  note right of operator
+    Registers and initializes NN Operators
+  end note
+
+  note right of device
+    NN Operators backend implementation
+  end note
+
+  note right of c_api
+    Compatible with original Tengine C API (NFR-002)
+  end note
+}
+
+package "Example Applications" as examples_pkg {
+  component "Classification (MobileNet v1 via C API)" as ex_cls
+  component "Detections (SSD, RetinaFace, YoloV3/V4-tiny/V5s,\nNanoDet, EfficientDet)" as ex_detect
+  component "Segmentations (Yolact, U-Net)" as ex_seg
+  component "Pose (OpenPose, HRNet)" as ex_pose
+  component "OCR (CRNN - Chinese)" as ex_ocr
+
+  ex_cls --> c_api
+  ex_detect --> c_api
+  ex_seg --> c_api
+  ex_pose --> c_api
+  ex_ocr --> c_api
+
+  note bottom of examples_pkg
+    Examples run locally using models and images under project root (FR-003, C-004)
+  end note
+}
+
+database "Local Model Files (project root)" as model_files
+database "Local Image Files (project root)" as image_files
+file "Binary tmfile Model" as tmfile
+folder "Serialized Model Parameters" as serialized_params
+artifact "Converted Model Artifacts" as converted_artifacts
+
+serializer --> tmfile
+serializer --> serialized_params
+
+ex_cls --> model_files
+ex_cls --> image_files
+ex_detect --> model_files
+ex_detect --> image_files
+ex_seg --> model_files
+ex_seg --> image_files
+ex_pose --> model_files
+ex_pose --> image_files
+ex_ocr --> model_files
+ex_ocr --> image_files
+
+node "Linux Environment" {
+  component "Model Converter (CLI)" as converter_cli
+  note right of converter_cli
+    Pre-compiled for Linux (NFR-004)
+  end note
+}
+
+node "Web Browser (WebAssembly)" {
+  component "Online Converter (WASM)" as converter_wasm
+  note right of converter_wasm
+    Executes locally in browser via WebAssembly (FR-008, NFR-003)
+    No external network required
+  end note
+}
+
+model_files --> converter_cli
+model_files --> converter_wasm
+converter_cli --> converted_artifacts
+converter_wasm --> converted_artifacts
+converted_artifacts --> model_files
+
+component "CMake-based Build System" as cmake
+note right of cmake
+  Cross-platform compilation (NFR-001)
+end note
+
+cmake --> tengine_pkg
+cmake --> examples_pkg
+
+component "C API Integrators" <<User>> as user_c
+component "C++ API Users" <<User>> as user_cpp
+component "Python API Users" <<User>> as user_py
+component "Example Users" <<User>> as user_examples
+component "Tool Users" <<User>> as user_tools
+
+user_c --> c_api
+user_cpp --> cpp_api
+user_py --> py_api
+user_examples --> examples_pkg
+user_tools --> converter_cli
+user_tools --> converter_wasm
+
+legend left
+  Library: Tengine Lite core modules and API surfaces
+  Examples: Runnable applications for AI tasks
+  Data: Local assets, tmfile, serialized params, converted artifacts
+  Tooling: Linux CLI converter and browser-local WASM converter
+  Build: CMake cross-platform compilation
+endlegend
+@enduml

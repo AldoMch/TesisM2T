@@ -1,0 +1,70 @@
+@startuml
+!define RECTANGLE rectangle linewidth 1
+
+title Turing System Architecture
+
+skinparam componentStyle rectangle
+
+package "Turing API Service" {
+  [HTTP API Layer] as api_layer
+  [Middleware Layer] as middleware
+  [Router Management Service] as router_service
+  [Ensembler Management Service] as ensembler_service
+}
+
+package "External Systems" {
+  [Kubernetes Cluster] as k8s
+  [MLflow Model Registry] as mlflow
+  [Jaeger Tracing] as jaeger
+}
+
+package "PyFuncEnsembler Runtime" {
+  [PyFuncEnsembler Webservice] as pyfunc
+}
+
+database "Data Store" {
+  [Routers DB] as routers_db
+  [Ensemblers DB] as ensemblers_db
+}
+
+api_layer --> middleware : uses
+middleware --> router_service : validates & authorizes
+middleware --> ensembler_service : validates & authorizes
+
+router_service --> routers_db : CRUD operations
+ensembler_service --> ensemblers_db : CRUD operations
+
+router_service --> k8s : manage deployments
+ensembler_service --> pyfunc : integrates with
+
+pyfunc --> mlflow : downloads artifacts
+
+router_service --> jaeger : sends traces
+ensembler_service --> jaeger : sends traces
+
+note right of api_layer
+  Exposes RESTful endpoints
+  for routers and ensemblers
+end note
+
+note right of middleware
+  Provides authorization
+  and request validation
+end note
+
+note right of k8s
+  Manages router
+  deployment lifecycle
+end note
+
+note left of pyfunc
+  Runs user-defined
+  ensemblers as webservices
+end note
+
+note right of mlflow
+  Source of model
+  artifacts for PyFunc
+end note
+
+@enduml

@@ -1,0 +1,91 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam nodesep 10
+skinparam ranksep 20
+
+title System Architecture: Airflow Spark Docker Integration
+
+node "Host Machine" {
+  [Data Engineer] as DataEngineer
+}
+
+node "Docker Compose Network" {
+
+  component "Postgres (9.6)" as Postgres {
+    [Metadata Database]
+  }
+
+  component "Airflow Webserver" as Airflow {
+    [Web UI]
+    [Scheduler]
+    [LocalExecutor]
+    [SparkSubmitOperator]
+  }
+
+  component "Spark Master" as SparkMaster {
+    [Master UI]
+    [Cluster Manager]
+  }
+
+  component "Spark Worker 1" as Worker1 {
+    [Executor]
+  }
+
+  component "Spark Worker 2" as Worker2 {
+    [Executor]
+  }
+
+  component "Spark Worker 3" as Worker3 {
+    [Executor]
+  }
+
+  component "Jupyter/PySpark" as Jupyter {
+    [Notebook Server]
+    [PySpark Kernel]
+  }
+
+  database "Shared Volumes" as Volumes {
+    folder "DAGs"
+    folder "Spark Apps"
+    folder "Notebooks"
+    folder "Input Data"
+  }
+}
+
+' --- Connections ---
+' User Access
+DataEngineer --> Airflow : "UI Port 8282"
+DataEngineer --> SparkMaster : "UI Port 8181"
+DataEngineer --> Jupyter : "UI Port 8888"
+DataEngineer --> Volumes : "File Access"
+
+' Core Dependencies
+Airflow --> Postgres : "Metadata\nPort 5432"
+Airflow --> SparkMaster : "Job Submission\nspark://spark:7077"
+SparkMaster --> Worker1 : "Task Dispatch"
+SparkMaster --> Worker2 : "Task Dispatch"
+SparkMaster --> Worker3 : "Task Dispatch"
+Jupyter --> SparkMaster : "Interactive Jobs"
+
+' Volume Mounts
+Airflow --> Volumes : "Mounts\nDAGs, Apps, Data"
+SparkMaster --> Volumes : "Mounts\nApps, Data"
+Worker1 --> Volumes : "Mounts\nApps, Data"
+Worker2 --> Volumes : "Mounts\nApps, Data"
+Worker3 --> Volumes : "Mounts\nApps, Data"
+Jupyter --> Volumes : "Mounts\nNotebooks, Data"
+
+' Inherited/Secondary Capabilities
+component "Bundled Spark CLI" as SparkCLI {
+  [pyspark shell]
+  [run-example]
+  [ML libsvm loader]
+}
+SparkCLI --> SparkMaster : "MASTER env var\n(e.g., spark://...)"
+note right of SparkCLI
+  Inherited Capabilities
+  (Spark 2.4.5 Hadoop 2.6)
+end note
+
+@enduml

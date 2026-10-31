@@ -1,0 +1,163 @@
+@startuml AWS_IoT_Device_Simulator
+
+skinparam linetype ortho
+skinparam packageStyle rectangle
+skinparam componentStyle uml2
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #5566AA
+  FontColor #222244
+  FontStyle bold
+}
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #3355AA
+  FontColor #112244
+}
+skinparam node {
+  BackgroundColor #EEF8EE
+  BorderColor #337733
+  FontColor #113311
+}
+skinparam database {
+  BackgroundColor #FFF8DC
+  BorderColor #AA8800
+}
+skinparam storage {
+  BackgroundColor #FFF8DC
+  BorderColor #CC9900
+}
+
+' ============================================================
+' HOSTING / DISTRIBUTION LAYER
+' ============================================================
+package "Hosting / Distribution Layer" as HostingLayer {
+  storage "WebAssetsBucket\n(Amazon S3\nStatic Web Assets)" as WebAssetsBucket
+  component "CloudFrontDistribution\n(Amazon CloudFront CDN\nWeb Console Delivery)" as CloudFrontDistribution
+}
+
+' ============================================================
+' PRESENTATION LAYER
+' ============================================================
+package "Presentation Layer" as PresentationLayer {
+  component "WebConsole\n(Browser UI)" as WebConsole
+}
+
+' ============================================================
+' IDENTITY LAYER
+' ============================================================
+package "Identity Layer" as IdentityLayer {
+  component "CognitoUserPool\n(Amazon Cognito\nUser Pool – Auth/Authz)" as CognitoUserPool
+}
+
+' ============================================================
+' API LAYER
+' ============================================================
+package "API Layer" as APILayer {
+  component "ApiGateway\n(Amazon API Gateway\nREST API – REGIONAL\nAccess Logging | X-Ray Tracing)" as ApiGateway
+  component "ApiStageProd\n(API Stage: prod\nRequest Validation\nCORS Headers Enforced)" as ApiStageProd
+  component "CORSOptionsHandler\n(OPTIONS Method Handler\nPreflight Response 200\nAllowed Headers: Authorization,\nContent-Type, X-Amz-Date,\nX-Amz-Security-Token, X-Api-Key)" as CORSOptionsHandler
+}
+
+' ============================================================
+' COMPUTE / BUSINESS LOGIC LAYER
+' ============================================================
+package "Compute / Business Logic Layer" as ComputeLayer {
+  component "SimulationLambda\n(Lambda – Simulation &\nDevice-Type Management)" as SimulationLambda
+  component "DeviceSimulatorLambda\n(Lambda – Simulated Device\nBehaviour, Message Generation\n& Route Loading from S3)" as DeviceSimulatorLambda
+}
+
+' ============================================================
+' ORCHESTRATION LAYER
+' ============================================================
+package "Orchestration Layer" as OrchestrationLayer {
+  component "SimulationOrchestrator\n(AWS Step Functions\nSimulation Lifecycle\nState Machine)" as SimulationOrchestrator
+}
+
+' ============================================================
+' DATA / STORAGE LAYER
+' ============================================================
+package "Data / Storage Layer" as DataLayer {
+  database "SimulationStateStore\n(Amazon DynamoDB\nDevice-Type & Simulation\nMetadata)" as SimulationStateStore
+  storage "RouteStore\n(Amazon S3 – ROUTE_BUCKET\nUTF-8 JSON Route Objects)" as RouteStore
+}
+
+' ============================================================
+' MESSAGING / DEVICE LAYER
+' ============================================================
+package "Messaging / Device Layer" as MessagingLayer {
+  component "IoTPublisher\n(AWS IoT Core\nIoT Topic Endpoint)" as IoTPublisher
+}
+
+' ============================================================
+' DEPLOYMENT / INITIALISATION LAYER
+' ============================================================
+package "Deployment / Initialisation Layer" as DeploymentLayer {
+  component "CloudFormation\n(AWS CloudFormation\nStack Orchestrator)" as CloudFormation
+  component "CustomResourceLambda\n(CloudFormation Custom-Resource\nResponse Constructor)" as CustomResourceLambda
+}
+
+' ============================================================
+' OBSERVABILITY
+' ============================================================
+package "Observability" as ObservabilityLayer {
+  component "CloudWatchLogs\n(JSON Access Logs\nINFO-level Method Logs)" as CloudWatchLogs
+}
+
+' ============================================================
+' DEPENDENCY ARROWS
+' ============================================================
+
+' Hosting chain
+WebAssetsBucket --> CloudFrontDistribution : serve static assets
+CloudFrontDistribution --> WebConsole : deliver web console to browser
+
+' Presentation → Identity
+WebConsole --> CognitoUserPool : authenticate user
+
+' Presentation → API
+WebConsole --> ApiGateway : REST calls\n(GET / POST / PUT / DELETE / OPTIONS)
+
+' API internal structure
+ApiGateway --> ApiStageProd : route via prod stage
+ApiStageProd --> CORSOptionsHandler : handle OPTIONS preflight
+ApiStageProd --> CognitoUserPool : authorise request\n(Authorization header)
+
+' API → Compute
+ApiStageProd --> SimulationLambda : forward validated request\n(Lambda proxy integration)
+
+' Compute → Data
+SimulationLambda --> SimulationStateStore : read / write\nsimulation & device-type records
+
+' Compute → Orchestration
+SimulationLambda --> SimulationOrchestrator : start / stop\nstate machine execution
+
+' Orchestration → Data
+SimulationOrchestrator --> SimulationStateStore : read / write\nsimulation lifecycle state
+SimulationOrchestrator --> RouteStore : coordinate route-loading\npath during simulation
+
+' Orchestration → Compute
+SimulationOrchestrator --> DeviceSimulatorLambda : invoke simulator\n(simulation workflow step)
+
+' Compute → Data (route loading internal to simulator)
+DeviceSimulatorLambda --> RouteStore : retrieve route JSON\n(resolved route key)
+DeviceSimulatorLambda --> SimulationStateStore : read / update\ndevice simulation state
+
+' Compute → Messaging
+DeviceSimulatorLambda --> IoTPublisher : publish simulated-device\nmessages to IoT topics
+
+' CloudFormation → CustomResource (invoke)
+CloudFormation --> CustomResourceLambda : invoke on create /\nupdate / delete\n(event + context)
+
+' CustomResource → pre-signed S3 callback URL (not a direct CF call)
+CustomResourceLambda --> WebAssetsBucket : POST response to\npre-signed ResponseURL\n(HTTPS callback)
+
+' CustomResource / CloudFormation → Data initialisation
+CustomResourceLambda --> SimulationStateStore : initialise / seed\nconfiguration records
+CustomResourceLambda --> RouteStore : initialise / seed\nroute objects
+
+' API → Observability
+ApiGateway --> CloudWatchLogs : emit JSON access logs\n(INFO level, X-Ray tracing)
+
+@enduml

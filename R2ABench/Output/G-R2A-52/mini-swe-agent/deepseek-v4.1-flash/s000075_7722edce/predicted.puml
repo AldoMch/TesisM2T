@@ -1,0 +1,89 @@
+@startuml
+title statlord - Layered Architecture (de1ux/statlord)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+' ===================== External Actors / Systems =====================
+actor "Browser Editor User" as EditorUser
+actor "Viewer / Display Consumer" as ViewerUser
+actor "API Client" as ApiClient
+
+package "External Display Devices" as Devices {
+    component "OLED Display" as Oled
+    component "E-Paper Display" as EPaper
+    component "LCD Display" as Lcd
+}
+
+' ===================== Presentation Layer (Browser) =====================
+package "Presentation Layer (Browser / SPA)" as ClientLayer {
+    component "Browser Editor SPA\n(TypeScript / React)" as EditorSPA
+    component "Redux Store\n(controls, elements, layouts,\ngauges, displays)" as ReduxStore
+    component "Layout Editing UI\n(text / gauge positioning,\nmulti-display canvas)" as LayoutEditor
+    component "Viewer Renderer\n(black-and-white pixel view\nat display resolution)" as ViewerRenderer
+    component "API Client / HTTP Layer" as ClientHttp
+}
+
+' ===================== Application / Service Layer (Server) =====================
+package "Application Layer (Django / Python)" as ServerLayer {
+    component "Web / API Router\n(URL Routing)" as ApiRouter
+    component "Gauge Service\n(key, value <=600 chars)" as GaugeService
+    component "Display Service\n(key, available, resolution_x/y,\ncurrent_layout, display_data, rotation)" as DisplayService
+    component "Layout Service\n(key, data (binary),\ndisplay_positions (text))" as LayoutService
+    component "Deletion Handler\n(null current_layout on layout delete)" as DeleteHandler
+    component "Static Asset Server\n(built client assets)" as StaticServer
+}
+
+' ===================== Data Layer =====================
+package "Data Layer" as DataLayer {
+    database "PostgreSQL\n(Gauge, Display, Layout)" as Postgres
+}
+
+' ===================== Deployment / Runtime =====================
+package "Containerized Runtime (development-grade)" as Runtime {
+    node "Docker Container\nPython 3.7 base" as Container {
+        artifact "Built Static Client Assets" as BuiltAssets
+        artifact "Python Package Requirements" as PyDeps
+        artifact "manage.py runserver" as DevServer
+    }
+}
+
+' ===================== Relationships =====================
+EditorUser --> EditorSPA : layout editing
+ViewerUser --> ViewerRenderer : view rendering
+ApiClient --> ClientHttp : structured payloads (Gauge/Display/Layout)
+
+EditorSPA --> ReduxStore : state management
+EditorSPA --> LayoutEditor
+LayoutEditor --> ReduxStore
+ViewerRenderer --> ClientHttp : read display data
+
+ClientHttp --> ApiRouter : HTTP / JSON
+
+ApiRouter --> GaugeService
+ApiRouter --> DisplayService
+ApiRouter --> LayoutService
+
+DisplayService --> LayoutService : current_layout reference
+LayoutService --> DeleteHandler : layout deletion
+DeleteHandler ..> DisplayService : set current_layout = null
+
+GaugeService --> Postgres : persist
+DisplayService --> Postgres : persist
+LayoutService --> Postgres : persist
+DeleteHandler --> Postgres
+
+StaticServer --> BuiltAssets : serve client build
+ApiRouter --> StaticServer : serve static content
+
+ViewerRenderer --> Devices : rendered display output
+Runtime --> ServerLayer
+Container --> BuiltAssets
+Container --> PyDeps
+Container --> DevServer
+DevServer --> ServerLayer
+
+' Build-time dependency
+note right of BuiltAssets : npm install / npm run build\n(node.js + npm) required before packaging
+
+@enduml

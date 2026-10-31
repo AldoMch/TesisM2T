@@ -1,0 +1,91 @@
+@startuml
+title Foot365 System Architecture (AWS)
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 220
+skinparam maxMessageSize 200
+left to right direction
+
+actor "User" as user
+
+package "AWS" {
+  node "Amazon S3\n(Static Website Hosting)" as s3
+  component "Web Frontend\n(HTML/CSS/Bootstrap/jQuery)" as fe
+  [Amazon API Gateway] as apigw
+
+  [Amazon Cognito] as cognito
+  [AWS IAM] as iam
+
+  database "Amazon DynamoDB\n(Match Data)" as ddb
+  component "Elasticsearch\n(Search Index)" as es
+
+  component "AWS Lambda:\nFootballInfoHandler\n(Python/Node)" as l_info
+  component "AWS Lambda:\nChatbotConversationHandler" as l_chat
+  component "AWS Lambda:\nPredictionOrchestrator" as l_pred
+  component "AWS Lambda:\nReminderRequestHandler" as l_rem
+  component "AWS Lambda:\nNotificationWorker" as l_notif
+
+  queue "Amazon SQS\n(Reminder Queue)" as sqs
+  component "Amazon SNS\n(SMS Topic)" as sns
+
+  cloud "Amazon SageMaker\n(Prediction Endpoint)" as sagemaker
+
+  node "Amazon EC2\nKafka Cluster" as ec2
+  component "Live Score Processor\n(EC2 Consumer, Avro)" as ec2_consumer
+}
+
+' User and Frontend
+user --> s3 : HTTP(S) requests\nStatic web content
+s3 --> apigw : HTTPS JSON API calls\nSigV4 (execute-api)
+
+' Authorization
+apigw ..> cognito : JWT/Token validation\n(Protected access)
+apigw ..> iam : IAM policy enforcement
+
+' API routing to backend logic
+apigw --> l_info : GET fixtures/results/\nlive-scores
+apigw --> l_chat : POST chatbot messages
+apigw --> l_pred : GET predictions
+apigw --> l_rem : POST reminder requests
+
+' Data access
+l_info --> ddb : Read/Write match data
+l_info --> es : Search queries
+l_chat --> ddb : Read match info
+l_chat --> es : Search queries
+
+' Prediction workflow
+l_pred --> sagemaker : Invoke model endpoint\n(Generate probabilities)
+sagemaker --> l_pred : Prediction results
+
+' Reminder & notification workflow
+l_rem --> sqs : Enqueue reminder message
+sqs --> l_notif : Poll messages
+l_notif --> sns : Publish SMS notification
+sns --> user : SMS delivered
+
+' Streaming live score updates
+ec2 --> ec2_consumer : Kafka topics\nApache Avro payloads
+ec2_consumer --> ddb : Update live score data
+ec2_consumer --> es : Update searchable views
+
+' Notes
+note right of apigw
+Default content-type: application/json
+Supports method, path, query, headers, body
+end note
+
+note right of ec2
+Live score updates pipeline
+Kafka with Apache Avro on EC2
+end note
+
+note bottom of es
+Search over match results,\nstatistics, fixtures, live scores
+end note
+
+note bottom of cognito
+User authentication\nand session tokens
+end note
+
+@enduml

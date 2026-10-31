@@ -1,0 +1,68 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam packageStyle rectangle
+
+title statlord — System Architecture (de1ux/statlord @ 2677633)
+
+actor "Browser Editor User" as EditorUser
+actor "API Client" as ApiClient
+
+package "Client (Browser)" {
+  component "Editor SPA\nTypeScript / React" as Editor
+  component "Redux Store\n(controls, elements, layouts,\ngauges, displays)" as Redux
+  component "Canvas Operations\n(render / delete)" as Canvas
+  component "Viewer Rendering Path\n(black & white pixel view\nat display resolution)" as Viewer
+}
+
+package "Server (Python 3.7 / Django)" {
+  component "HTTP API Layer\n(Web / JSON)" as API
+  component "Static Asset Host\n(built client assets)" as Static
+
+  package "Domain Models" {
+    component "Gauge\n{key, value}" as Gauge
+    component "Display\n{key, available, resolution_x, resolution_y,\ncurrent_layout, display_data, rotation}" as Display
+    component "Layout\n{key, data, display_positions}" as Layout
+  }
+}
+
+database "PostgreSQL" as DB
+
+EditorUser --> Editor : uses in browser
+ApiClient --> API : posts data / registers displays
+
+Editor --> Redux
+Editor --> Canvas
+Editor --> Viewer
+Redux ..> Canvas : state-driven edits
+
+Canvas --> API : layout render / delete requests
+Editor --> API : layout creation & editing
+Viewer --> API : reads display data / layout
+Static --> Editor : serves static assets
+
+API --> Gauge : FR-001 / DR-001
+API --> Display : FR-002, FR-003 / DR-002
+API --> Layout : FR-006 / DR-004
+
+Gauge --> DB : persist
+Display --> DB : persist
+Layout --> DB : persist
+
+Display --> Layout : current_layout\n(nullable; set to null on layout delete, DR-009)
+
+note right of Viewer
+  FR-007: generates per-display
+  rendered output; full
+  headless-browser rendering
+  requires separate verification.
+end note
+
+note bottom of API
+  NFR-004 / C-006: containerized deployment is
+  development-grade — Django dev server
+  (./manage.py runserver), not production-ready.
+  Client must be built first (npm install && npm run build, C-003).
+end note
+
+@enduml

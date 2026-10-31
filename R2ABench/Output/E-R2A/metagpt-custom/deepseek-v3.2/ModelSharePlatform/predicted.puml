@@ -1,0 +1,61 @@
+@startuml
+
+package "Presentation Layer" {
+    component "User Interface Component" as UI
+    component "Internationalization Component" as I18N
+}
+
+package "Application / Business Logic Layer" {
+    component "Authentication &\nAuthorization Component" as Auth
+    component "Content Management Component" as Content
+    component "Model Management Component" as Model {
+        component "Model Upload &\nReview" as ModelUpload
+        component "Online Model Invocation" as ModelInvocation
+    }
+    component "Dataset Management Component" as Dataset
+    component "Follow Management Component" as Follow
+    component "Administration Component" as Admin
+}
+
+package "Data Access Layer" {
+    component "Data Persistence Component" as Persistence
+    component "File Storage Service" as FileStorage
+}
+
+package "Data Storage Layer" {
+    database "Database" as DB
+}
+
+rectangle "External Systems" {
+    cloud "Email Service" as Email
+    cloud "Payment Gateway" as Gateway
+}
+
+' Key Dependencies
+Auth --> UI : "protects access"
+UI --> Content : "creates/views content"
+UI --> Model : "manages models"
+UI --> Dataset : "manages datasets"
+UI --> Follow : "follows/unfollows users"
+UI --> Admin : "administrative actions"
+I18N --> UI : "provides localized strings"
+
+Content --> Persistence : "stores/retrieves\nQ&A & blog data"
+ModelUpload --> Persistence : "stores/retrieves\nmodel metadata"
+ModelUpload --> FileStorage : "stores/serves\nmodel files"
+ModelInvocation --> Persistence : "reads model\nconfiguration"
+Dataset --> Persistence : "stores/retrieves\ndataset metadata"
+Dataset --> FileStorage : "stores/serves\ndataset files"
+Follow --> Persistence : "stores/retrieves\nfollow relationships"
+Admin --> Content : "executes content\ndeletions"
+Admin --> Model : "executes model\ndeletions"
+Admin --> Auth : "manages user\naccounts"
+
+Persistence --> DB : "CRUD operations"
+FileStorage --> DB : "stores/retrieves\nfile metadata"
+
+' External Dependencies
+Auth --> Email : "sends password\nrecovery emails"
+UI --> Gateway : "initiates payment"
+
+@enduml

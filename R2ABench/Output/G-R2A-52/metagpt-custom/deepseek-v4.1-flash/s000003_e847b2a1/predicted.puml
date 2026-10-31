@@ -1,0 +1,72 @@
+@startuml
+package "Presentation / Frontend Layer" {
+  component "Frontend Application" as Frontend
+  component "Frontend Prediction API / Context Provider" as FrontendContext
+}
+
+package "Application / Service Layer" {
+  component "Oracle Service" as OracleService
+  component "Prediction-Processing Service" as PredictionProcessing
+}
+
+package "Configuration Artifacts" {
+  artifact "Oracle-Service Runtime Configuration" as OracleRuntimeConfig
+}
+
+node "On-chain / Blockchain Layer (Aeternity Blockchain)" as BlockchainLayer {
+  component "PredictionCards Smart Contract" as PredictionCardsContract
+  component "Aeternity Oracle" as AeternityOracle
+  component "Sophia Smart Contract Runtime" as SophiaRuntime
+}
+
+package "Integration / External Layer" {
+  component "Wallet / SDK Integration" as WalletSDKIntegration
+  component "AENS Contract Locator" as AENSContractLocator
+  database "Prediction Media Storage" as PredictionMediaStorage
+  cloud "External Price Provider" as ExternalPriceProvider
+}
+
+node "Local Testing / Integration Layer" as LocalTestingLayer {
+  node "Local Contract Integration-Test Stack" as LocalContractStack {
+    component "Aeternity Node" as LocalAeternityNode
+    component "Compiler" as LocalCompiler
+    component "Index" as LocalIndex
+    component "Debug Endpoint" as LocalDebugEndpoint
+    component "Aeternity Transaction Domain Objects" as LocalTxDomain
+    component "Oracle Domain Objects" as LocalOracleDomain
+    component "AENS Domain Objects" as LocalAENSDomain
+  }
+  component "Local Test Proxy / CORS" as LocalTestProxy
+}
+
+cloud "Aeternity Wallet Client" as AeternityWalletClient
+cloud "Aeternity SDK" as AeternitySDK
+interface "AENS (Aeternity Naming System)" as AENS
+
+Frontend --> FrontendContext : uses wallet-backed prediction context
+FrontendContext --> WalletSDKIntegration : wallet-backed prediction capabilities
+Frontend --> WalletSDKIntegration : contract operations
+Frontend --> PredictionMediaStorage : load outcome NFT media
+Frontend --> AENSContractLocator : resolve deployed contract
+AENSContractLocator --> AENS : lookup AENS name
+
+WalletSDKIntegration --> AeternityWalletClient : connected wallet
+WalletSDKIntegration --> AeternitySDK : Aeternity SDK
+WalletSDKIntegration --> PredictionCardsContract : wallet-mediated contract operations
+
+PredictionProcessing --> PredictionCardsContract : complete result processing
+PredictionProcessing --> AENSContractLocator : resolve deployed contract
+
+OracleService --> AeternityOracle : maintain oracle / submit responses
+OracleService --> ExternalPriceProvider : fetch external price data
+OracleService --> AENSContractLocator : resolve deployed contract
+OracleService --> OracleRuntimeConfig : loads runtime configuration
+
+PredictionCardsContract --> AeternityOracle : read oracle response
+PredictionCardsContract --> SophiaRuntime : executes in
+
+LocalTestProxy --> LocalAeternityNode : proxy browser/node
+LocalTestProxy --> LocalCompiler : proxy compiler
+LocalTestProxy --> LocalIndex : proxy index
+LocalTestProxy --> LocalDebugEndpoint : proxy debug endpoint
+@enduml

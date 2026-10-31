@@ -1,0 +1,117 @@
+@startuml
+left to right direction
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "API Client" as client
+
+package "Installation / Provisioning" as install {
+  component "Installation Scripts / CLI\n(AWS profiles, env, DNS, API keys)" as installer
+  component "CloudFormation Templates\n(YAML 2010-09-09)" as cfn
+  installer --> cfn : Provide parameters
+}
+
+node "AWS Account: Cognito" as acctCognito {
+  component "Cognito User Pool" as userpool
+  component "User Pool Client" as upclient
+  component "Cognito Identity Pool" as idpool
+  component "IAM Role (Authenticated)" as roleAuth
+  component "IAM Role (Unauthenticated)" as roleUnauth
+
+  userpool -down-> upclient
+  idpool --> userpool : Cognito provider link
+  idpool ..> roleAuth : maps authenticated role
+  idpool ..> roleUnauth : maps unauthenticated role
+}
+
+node "AWS Account: API Gateway" as acctApi {
+  component "API Gateway" as apigw
+  component "Cognito Authorizer" as authorizer
+  component "Method: WhoAmI" as whoami
+  component "Method: ECS Proxy" as ecsMethod
+  component "Deployment Stage" as stage
+  component "Output: CallbackURL" as callback
+  component "VPC Link" as vpclink
+
+  apigw o-- whoami
+  apigw o-- ecsMethod
+  apigw o-- authorizer
+  apigw --> stage
+  stage --> callback : publishes
+  whoami ..> authorizer : uses
+  ecsMethod ..> authorizer : uses
+
+  node "VPC" as vpc {
+    component "Network Load Balancer\n(Input: ARN)" as nlb
+    component "ECS Service" as ecs
+    component "Interface VPC Endpoint for Amazon SQS\n(Private DNS enabled)" as vpce
+    component "Security Group\n(Ingress TCP 0-65535 from VPC CIDR)" as sg
+
+    nlb --> ecs
+    vpce -down- sg
+  }
+
+  vpclink --> nlb
+  ecsMethod --> vpclink : integration via VPC Link
+}
+
+cloud "Amazon SQS (Regional Service)" as sqs
+vpce --> sqs : Private connectivity
+
+client --> apigw : HTTPS invoke
+
+' Cross-account dependency: API account consumes Cognito User Pool ARN
+authorizer ..> userpool : Configured with User Pool ARN (cross-account)
+
+' Provisioning flows
+cfn --> userpool
+cfn --> upclient
+cfn --> idpool
+cfn --> roleAuth
+cfn --> roleUnauth
+cfn --> apigw
+cfn --> authorizer
+cfn --> whoami
+cfn --> ecsMethod
+cfn --> stage
+cfn --> vpclink
+cfn --> vpce
+cfn --> sg
+
+note right of whoami
+  Role header handling:
+  - Declares optional response header 'x-pagopa-pn-cx-role'
+  - Maps from Cognito authorizer claim custom:Role
+  - HTTP 200 response
+end note
+
+note right of ecsMethod
+  Forwards Cognito role claim to integration request header
+  'x-pagopa-pn-cx-role'
+end note
+
+note right of idpool
+  Permits unauthenticated identities.
+  Attaches authenticated and unauthenticated IAM roles.
+end note
+
+note right of vpce
+  Private DNS enabled.
+  Access restricted by security group to VPC CIDR.
+end note
+
+note right of authorizer
+  Cognito User Pool authorizer configured
+  using cross-account User Pool ARN.
+end note
+
+note bottom of stage
+  Deployment depends on WhoAmI and ECS methods.
+end note
+
+note top of cfn
+  Defines infrastructure components via CloudFormation.
+  Token validity units constrained to days|hours|minutes|seconds.
+end note
+
+@enduml

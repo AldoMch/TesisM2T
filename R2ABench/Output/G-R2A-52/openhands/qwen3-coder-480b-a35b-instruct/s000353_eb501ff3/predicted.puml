@@ -1,0 +1,95 @@
+@startuml
+!define RECTANGLE rectangle filled #ffffff
+!define COMPONENT component filled #ffffff
+!define DATABASE database filled #ffffff
+!define QUEUE queue filled #ffffff
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam wrapWidth 200
+skinparam maxMessageSize 100
+
+title Turing System Architecture
+
+' Main system boundary
+package "Turing System" {
+  [API Service] as api #lightblue
+  [Router Manager] as router_mgr #lightgreen
+  [PyFuncEnsembler Runtime] as pyfunc_runtime #lightyellow
+  [Kubernetes Operator] as kube_op #lightgreen
+  
+  ' Internal components
+  [Request Validator] as validator #lightsalmon
+  [Authorization Middleware] as auth #lightsalmon
+  [Jaeger Tracer] as tracer #lightsalmon
+  
+  ' Data stores
+  [Configuration Store] as config_store #lightgray
+}
+
+' External systems
+[Kubernetes Cluster] as kube #lightpink
+[MLflow Registry] as mlflow #lightpink
+[API Clients] as clients #lightpink
+[Jaeger Backend] as jaeger_backend #lightpink
+
+' Relationships
+clients --> api : HTTP/JSON
+api --> validator : Request validation
+api --> auth : Authorization check
+validator --> api : Validated requests
+auth --> api : Authorized requests
+api --> router_mgr : Manage routers
+api --> pyfunc_runtime : Manage ensemblers
+router_mgr --> kube_op : Deploy/Update/Delete
+kube_op --> kube : Kubernetes operations
+pyfunc_runtime --> mlflow : Download artifacts
+kube_op --> config_store : Read configurations
+router_mgr --> config_store : Read configurations
+api --> config_store : Read configurations
+
+kube_op <--> kube : Manage deployments
+pyfunc_runtime <--> kube : Deploy ensembler services
+tracer --> jaeger_backend : Send traces
+
+note right of api
+  OpenAPI 3.0.3
+  HTTP Endpoints for:
+  - Routers
+  - Ensemblers
+end note
+
+note right of router_mgr
+  Manages lifecycle of
+  Turing router deployments
+end note
+
+note right of pyfunc_runtime
+  PyFuncEnsembler webservice
+  runtime for user-defined
+  ensemblers
+end note
+
+note right of kube_op
+  Kubernetes cluster
+  operations for router
+  deployments
+end note
+
+note bottom of kube
+  Kubernetes cluster for
+  hosting router and
+  ensembler deployments
+end note
+
+note bottom of mlflow
+  MLflow model registry for
+  ensembler artifacts
+end note
+
+note bottom of jaeger_backend
+  Jaeger tracing backend
+end note
+
+@enduml

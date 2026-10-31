@@ -1,0 +1,89 @@
+@startuml
+title AWS IoT Device Simulator - Architecture Overview
+
+skinparam componentStyle rectangle
+
+rectangle "Users & Clients" {
+  actor Admin as Admin
+  actor "API Client" as APIClient
+}
+
+package "Presentation Layer" {
+  [Web Management Console] as WebConsole
+  [Identity Service (e.g., Amazon Cognito)] as Cognito
+}
+
+package "API Layer" {
+  [Amazon API Gateway (REGIONAL)\n- REST API\n- CORS, Validation\n- Access Logs (JSON)\n- Tracing] as APIGW
+}
+
+package "Service Layer (Lambda)" {
+  [Simulation Management Service (Lambda)] as SimMgmt
+  [Device Type Management Service (Lambda)] as DevTypeSvc
+  [Route Loader Service (Lambda)] as RouteLoader
+  [Simulation Orchestrator (Lambda/Step Functions Task)] as SimOrchestrator
+  [Custom Resource Handler (Lambda)] as CustomRes
+}
+
+package "Orchestration" {
+  [AWS Step Functions - Simulation Workflow] as StepFn
+}
+
+package "Data Layer" {
+  database "Amazon DynamoDB\n- Simulations\n- Device Types\n- State" as DynamoDB
+  folder "Amazon S3 Route Bucket (ROUTE_BUCKET)\n- route JSON" as S3Routes
+}
+
+package "Messaging/IoT" {
+  [AWS IoT Core\n- Publish simulated messages] as IoTCore
+}
+
+package "Deployment & Ops" {
+  [AWS CloudFormation\n(Custom Resources)] as Cfn
+  [Amazon CloudWatch Logs] as CWLogs
+  [AWS X-Ray (Tracing)] as XRay
+}
+
+' External interactions
+Admin --> WebConsole : Manage simulations & device types
+APIClient --> APIGW : HTTPS (GET, POST, PUT, DELETE, OPTIONS)
+
+' Auth
+WebConsole --> APIGW : Authenticated API calls (Cognito)
+WebConsole --> Cognito : Authenticate
+APIGW --> Cognito : Authorize requests
+
+' API integrations to services
+APIGW --> SimMgmt : Lambda Proxy
+APIGW --> DevTypeSvc : Lambda Proxy
+APIGW --> SimOrchestrator : Start/Manage simulations
+
+' Service layer dependencies
+SimOrchestrator --> StepFn : Start execution
+StepFn --> RouteLoader : Task fetch route
+RouteLoader --> S3Routes : Get route JSON
+RouteLoader --> DynamoDB : Update route state
+SimMgmt --> DynamoDB : CRUD simulations
+DevTypeSvc --> DynamoDB : CRUD device types
+SimOrchestrator --> IoTCore : Publish simulated messages
+
+' Deployment-time custom resource
+Cfn --> CustomRes : Invoke (Create/Update/Delete)
+CustomRes --> S3Routes : Initialize route assets
+CustomRes --> APIGW : Provide API details (ID/Endpoint)
+
+' Observability
+APIGW --> CWLogs : Access logs (JSON, INFO)
+APIGW --> XRay : Traces
+SimMgmt --> CWLogs
+DevTypeSvc --> CWLogs
+RouteLoader --> CWLogs
+SimOrchestrator --> CWLogs
+CustomRes --> CWLogs
+SimMgmt --> XRay
+DevTypeSvc --> XRay
+RouteLoader --> XRay
+SimOrchestrator --> XRay
+CustomRes --> XRay
+
+@enduml

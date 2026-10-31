@@ -1,0 +1,76 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #34495E
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+package "Linux Kernel Functions" as KernelFunctions {
+    rectangle "sys_write()" as SysWrite
+    rectangle "sys_open()" as SysOpen
+    rectangle "inet_csk_accept()" as InetAccept
+}
+
+package "Main eBPF Program" as MainEbpf {
+    rectangle "Kprobe\nentry probe" as Kprobe
+    rectangle "Kretprobe\nreturn probe" as Kretprobe
+    rectangle "Kprobe / Kretprobe\nother traced calls" as OtherProbe
+    database "Prog Map\npid to fd" as ProgMap
+    database "Ret Prog Map\npid to fd" as RetProgMap
+    database "Prog Maps\nhandler mappings" as OtherProgMaps
+}
+
+database "Prog ID Map\npid to id" as ProgIdMap
+
+package "Event Handler eBPF Programs" as HandlerPrograms {
+    rectangle "Handler Probe\nhandle_syscall_write" as WriteHandler
+    rectangle "Default Handler Probes" as DefaultHandlers
+    rectangle "Process Specific\nHandler Probes" as ProcessHandlers
+}
+
+database "Perf Event Map\nshared event map" as PerfEventMap
+
+rectangle "TraceLeft\nCLI and library tracer" as TraceLeft
+
+SysWrite --> Kprobe : triggers entry probe
+SysWrite --> Kretprobe : triggers return probe
+SysOpen --> OtherProbe : triggers trace probe
+InetAccept --> OtherProbe : triggers network trace
+
+Kprobe --> ProgMap : lookup handler fd
+Kretprobe --> RetProgMap : lookup return handler fd
+OtherProbe --> OtherProgMaps : lookup handler mapping
+
+TraceLeft --> ProgMap : update default handlers
+TraceLeft --> RetProgMap : update return handlers
+TraceLeft --> OtherProgMaps : update process handlers
+TraceLeft --> ProgIdMap : update pid to program id
+
+ProgMap --> WriteHandler : tail call
+RetProgMap --> WriteHandler : tail call return handler
+OtherProgMaps --> DefaultHandlers : tail call
+OtherProgMaps --> ProcessHandlers : tail call
+WriteHandler --> ProgIdMap : lookup program id
+
+WriteHandler --> PerfEventMap : perf_event_output\ncommon section first
+DefaultHandlers --> PerfEventMap : emit events\ncommon section first
+ProcessHandlers --> PerfEventMap : emit events\ncommon section first
+PerfEventMap --> TraceLeft : events
+@enduml

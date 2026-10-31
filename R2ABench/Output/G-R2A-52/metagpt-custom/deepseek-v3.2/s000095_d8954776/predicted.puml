@@ -1,0 +1,49 @@
+@startuml
+
+package "Presentation Layer" {
+  component "Main Activity" as main_activity
+  component "Fragments" as fragments
+}
+
+package "Application/Service Layer" {
+  component "GPS Logging Service" as gps_service
+  component "Location Listeners" as location_listeners
+  component "Event Bus" as event_bus
+}
+
+package "Data Layer" {
+  component "Loggers" as loggers
+  database "Log Files\n(GPX, KML, text)" as log_files
+  component "GPRMC Encoder" as gprmc_encoder
+}
+
+cloud "External Systems" {
+  component "OpenStreetMap" as osm
+  component "Dropbox" as dropbox
+  component "OpenGTS Server" as opengts
+}
+
+node "Android Framework" {
+  component "Google Play Services" as play_services
+}
+
+node "Build System" {
+  component "Gradle Properties" as gradle_props
+}
+
+' Key Dependencies
+gps_service --> event_bus : publishes location
+fragments --> event_bus : subscribes to events
+location_listeners --> gps_service : provides updates
+gps_service --> loggers : writes location data
+loggers --> log_files : persists data
+event_bus --> loggers : triggers logging
+location_listeners --> play_services : requests location\n<<required dependency>>
+gprmc_encoder --> opengts : sends GPRMC over UDP
+log_files --> osm : uploads data
+log_files --> dropbox : uploads files
+gradle_props --> gprmc_encoder : injects credentials at build
+gradle_props --> osm : injects credentials at build
+gradle_props --> dropbox : injects credentials at build
+
+@enduml

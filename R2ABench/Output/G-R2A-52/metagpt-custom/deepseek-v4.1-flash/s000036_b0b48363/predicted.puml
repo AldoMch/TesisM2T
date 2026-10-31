@@ -1,0 +1,100 @@
+@startuml
+
+node "Server Host" {
+  component "Node.js Application (port 7000)" as NodeApp
+  component "HTTP Server" as HttpServer
+  component "Startup / CLI Aliases" as Startup
+  component "Express Application" as ExpressApp
+  component "JSON Body Parser" as JsonParser
+  component "Logging Router" as LoggingRouter
+  component "Logger Status Endpoint" as LoggerStatus
+  component "Static File Handler" as StaticFiles
+  component "Public Web Directory" as PublicWebDir
+  component "Socket.IO Server" as SocketIOServer
+  component "Connected Socket.IO Client List" as ClientList
+}
+
+node "Browser Client" {
+  component "Browser Web UI" as WebUI
+  component "Socket.IO Client" as SocketIOClient
+  component "Socket.IO Notification Handler" as NotificationHandler
+  component "Ajv Validator" as Ajv
+  component "Invalid-Message Error Wrapper" as ErrorWrapper
+  component "Received-Data Store" as ReceivedData
+  component "Last-Update Time" as LastUpdateTime
+  component "Window Dispatcher" as WindowDispatcher
+  component "Registered Window Set" as WindowSet
+  component "Default Window" as DefaultWindow
+  component "Window" as Window
+  component "Window Filter" as WindowFilter
+  component "Tag and Name Display Handler" as TagNameHandler
+  component "Visualizer Configuration Loader" as ConfigLoader
+  component "Default Visualizer Configuration" as DefaultVisConfig
+  component "Visualizer Dispatcher" as VisDispatcher
+  component "Visualizer Modules" as Visualizers
+  component "HypnoLog Data Object / Schema" as HypnoLogData
+}
+
+cloud "Logging Producers" as Producers
+cloud "Browser Clients" as BrowserClients
+cloud "Node.js Runtime" as NodeRuntime
+cloud "npm/CLI Environment" as NpmCLI
+cloud "Default Browser" as DefaultBrowser
+cloud "Socket.IO" as SocketIOLibs
+cloud "Ajv Library" as AjvLib
+cloud "User Configuration File" as UserConfig
+
+NodeRuntime --> NodeApp : runs
+NpmCLI --> Startup : invokes
+Startup --> NodeApp : starts
+Startup --> DefaultBrowser : attempts to open
+DefaultBrowser --> WebUI : opens
+
+NodeApp --> HttpServer : hosts
+HttpServer --> ExpressApp : serves
+HttpServer --> SocketIOServer : attaches
+ExpressApp --> JsonParser : uses JSON body parser middleware
+JsonParser --> LoggingRouter : parses JSON body before routing
+ExpressApp --> LoggingRouter : mounts under /logger
+ExpressApp --> StaticFiles : serves static browser assets
+StaticFiles --> PublicWebDir : reads public web directory
+PublicWebDir --> WebUI : delivers /client.html and UI assets
+LoggingRouter --> LoggerStatus : exposes /logger/status
+LoggingRouter --> SocketIOServer : forwards log objects
+LoggerStatus --> SocketIOServer : obtains logger status
+SocketIOServer --> ClientList : manages connected clients
+SocketIOServer --> SocketIOClient : notification event
+SocketIOLibs --> SocketIOServer : provides server library
+SocketIOLibs --> SocketIOClient : provides client library
+
+Producers --> LoggingRouter : POST /logger/in
+BrowserClients --> WebUI : uses
+
+WebUI --> SocketIOClient : creates same-origin connection
+SocketIOClient --> NotificationHandler : receives Socket.IO notification
+NotificationHandler --> Ajv : validates received message
+Ajv --> ErrorWrapper : invalid message
+Ajv --> ReceivedData : valid HypnoLog data object
+ErrorWrapper --> ReceivedData : wrapped HypnoLog-error
+HypnoLogData --> Ajv : provides data/type/tags/name schema
+ReceivedData --> HypnoLogData : stores data object
+ReceivedData --> LastUpdateTime : updates last-update time
+ReceivedData --> WindowDispatcher : dispatches display objects
+WindowDispatcher --> WindowSet : selects registered/default window
+WindowSet --> Window : contains registered windows
+WindowSet --> DefaultWindow : provides default window
+WindowDispatcher --> Window : passes objects
+Window --> WindowFilter : adds tags to filter
+WindowFilter --> Window : filters displayed objects
+Window --> TagNameHandler : applies tags and names
+TagNameHandler --> WindowFilter : provides tag values
+Window --> VisDispatcher : requests visualization
+WebUI --> ConfigLoader : loads visualizers
+ConfigLoader --> UserConfig : reads config
+ConfigLoader --> DefaultVisConfig : falls back when user config unavailable
+ConfigLoader --> Visualizers : loads modules
+VisDispatcher --> Visualizers : evaluates canDisplay in order and selects first match
+Visualizers --> Window : appends DOM elements
+AjvLib --> Ajv : provides validation
+
+@enduml

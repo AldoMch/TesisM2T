@@ -1,0 +1,157 @@
+@startuml
+!define RECTANGLE class
+
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #000000
+}
+
+skinparam node {
+  BackgroundColor #FFF8DC
+  BorderColor #B8860B
+}
+
+skinparam database {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+skinparam rectangle {
+  BackgroundColor #F3E5F5
+  BorderColor #6A1B9A
+}
+
+skinparam interface {
+  BackgroundColor #FFE0B2
+  BorderColor #E65100
+}
+
+skinparam arrow {
+  Color #333333
+}
+
+skinparam cloud {
+  BackgroundColor #E3F2FD
+  BorderColor #1565C0
+}
+
+title HTTP Proxy System Architecture
+
+node "Client Environment" as clientenv {
+  component "HTTP Client\n(External)" as httpclient
+  component "Test Client\n(Async HTTP Workload)" as testclient {
+    component "Fixed Thread Pool\n(50 threads)" as threadpool
+    component "Async HTTP Client\n(GET Requests)" as asyncclient
+    component "Success Counter\n(HTTP 200 detector)" as counter
+  }
+}
+
+node "Proxy Layer\n(Java 1.7 / Netty-style Channel)" as proxylayer {
+  component "HTTP Proxy Component" as proxy {
+    component "Inbound Request Handler\n(FullHttpRequest)" as inboundhandler
+    component "Request Forwarder\n(write + flush on channel active)" as forwarder
+    component "Debug Logger\n(URI, headers, body)" as debuglogger
+  }
+}
+
+node "Test Server Environment\n(Java 1.8 / Grizzly + Jersey)" as testserverenv {
+  component "HTTP Test Server" as testserver {
+    component "Server Startup\n(Programmatic / Base URI)" as startup
+    component "GET /download Endpoint" as downloadendpoint
+    component "File Upload Handler" as uploadhandler
+  }
+  component "Response Builder" as responsebuilder {
+    component "Structured Response Object\n(code: Integer, msg: String, data: Object)" as structuredresponse
+    component "File Download Response\n(application/octet-stream\nContent-Disposition attachment)" as filedownloadresponse
+    component "File Upload Map Payload\n(filepath -> filename)" as uploadpayload
+  }
+}
+
+node "Upstream Server" as upstreamserver {
+  component "Upstream Channel\n(Netty-style ChannelContext)" as upstreamchannel
+  component "Upstream HTTP Handler" as upstreamhandler
+}
+
+database "Local Filesystem" as filesystem {
+  component "Target Download File" as targetfile
+}
+
+node "Maven Multi-Module Build\n(Java 1.7 / 1.8 baselines)" as buildenv {
+  component "Proxy SDK Module\n(Java 1.7)" as proxysdk
+  component "Test Server Module\n(Java 1.8)" as testservermodule
+}
+
+interface "HTTP Request/Response\n(URI, headers, body, status)" as httpinterface
+interface "File Transfer Response\n(application/octet-stream\nContent-Disposition)" as filetransferinterface
+interface "Base URI" as baseuri
+
+httpclient --> httpinterface : HTTP requests
+httpinterface --> inboundhandler : inbound FullHttpRequest
+
+testclient --> baseuri : 50 threads x 1000 GET requests
+threadpool --> asyncclient : schedules async requests
+asyncclient --> baseuri : GET requests
+asyncclient --> counter : response status code
+counter --> asyncclient : increments on HTTP 200
+
+inboundhandler --> forwarder : retains FullHttpRequest
+forwarder --> debuglogger : URI, headers, body (debug)
+forwarder --> upstreamchannel : write + flush\n(after channel active)
+
+upstreamchannel --> upstreamhandler : forwarded HTTP request
+upstreamhandler --> httpclient : HTTP response
+
+startup --> baseuri : exposes reachable base URI
+baseuri --> testclient : target endpoint
+baseuri --> downloadendpoint : GET /download
+baseuri --> uploadhandler : file upload
+
+downloadendpoint --> filesystem : checks file existence
+targetfile --> filedownloadresponse : binary payload (if exists)
+filedownloadresponse --> filetransferinterface : Content-Disposition + octet-stream
+filetransferinterface --> httpclient : download response
+
+uploadhandler --> uploadpayload : filepath -> filename map
+uploadpayload --> structuredresponse : wraps in structured response
+structuredresponse --> httpclient : code, msg, data
+
+responsebuilder --> testserver : provides response types
+
+proxysdk --> proxylayer : compiles proxy component (Java 1.7)
+testservermodule --> testserverenv : compiles test server (Java 1.8)
+
+note right of forwarder
+  FR-002, FR-003:
+  Forwards retained FullHttpRequest
+  (URI, headers, body) without
+  modification after channel activation
+end note
+
+note right of downloadendpoint
+  FR-004, FR-005:
+  Returns file only when
+  target file exists on filesystem
+end note
+
+note right of testclient
+  NFR-001:
+  50 threads x 1000 requests
+  = 50,000 total async GET requests
+  NFR-003: shuts down executor
+  and closes async client after run
+end note
+
+note right of structuredresponse
+  DR-002:
+  code: Integer
+  msg: String
+  data: Object
+end note
+
+@enduml

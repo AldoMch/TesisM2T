@@ -1,0 +1,82 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE Frontend {
+  RECTANGLE "Main Interface" as main_ui
+  RECTANGLE "Configuration Interface" as config_ui
+  RECTANGLE "Training Interface" as training_ui
+  RECTANGLE "Inference Interface" as inference_ui
+}
+
+RECTANGLE Backend {
+  RECTANGLE "Model Initialization" as model_init
+  RECTANGLE "Model Training" as model_training
+  RECTANGLE "Model Inference" as model_inference
+  RECTANGLE "Model Management" as model_management
+}
+
+RECTANGLE "MyTorch/NNE Framework" as framework {
+  RECTANGLE "GPU Acceleration" as gpu_accel
+  RECTANGLE "Weight Initialization" as weight_init
+  RECTANGLE "Classic Models" as classic_models
+  RECTANGLE "Preset Datasets" as preset_datasets
+}
+
+RECTANGLE "SQLite Database" as database {
+  RECTANGLE "Model Storage" as model_storage
+  RECTANGLE "Dataset Storage" as dataset_storage
+  RECTANGLE "Training Logs" as training_logs
+  RECTANGLE "Inference Logs" as inference_logs
+}
+
+' Relationships
+main_ui --> config_ui : navigates to
+main_ui --> training_ui : navigates to
+main_ui --> inference_ui : navigates to
+
+config_ui --> model_init : configures
+training_ui --> model_training : controls
+inference_ui --> model_inference : controls
+
+model_init --> framework : uses
+model_training --> framework : uses
+model_inference --> framework : uses
+model_management --> framework : manages
+
+framework --> gpu_accel : includes
+framework --> weight_init : includes
+framework --> classic_models : includes
+framework --> preset_datasets : includes
+
+model_init --> database : persists to
+model_training --> database : persists to
+model_inference --> database : persists to
+model_management --> database : manages
+
+database --> model_storage : stores
+database --> dataset_storage : stores
+database --> training_logs : stores
+database --> inference_logs : stores
+
+note right of framework
+  Extension of existing NNE framework
+end note
+
+note right of database
+  Local SQLite persistence with
+  automatic backup and recovery
+end note
+
+note bottom of gpu_accel
+  GPU-accelerated matrix operations
+  with automatic resource detection
+end note
+
+note bottom of classic_models
+  ResNet, VGG, Transformer, etc.
+end note
+
+note bottom of preset_datasets
+  CIFAR, ImageNet, COCO, etc.
+end note
+@enduml

@@ -1,0 +1,67 @@
+@startuml
+title TokenCard Contracts - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+actor "Owner\n(Externally Owned Address)" as Owner
+actor "Integrator / Developer" as Integrator
+
+package "Off-Chain Interaction Layer" {
+    component "Generated Go Contract Bindings" as GoBindings {
+        port "Call (read-only)" as BindCall
+        port "Transact / Transfer (paid)" as BindTransact
+    }
+}
+
+package "Ethereum Network" {
+
+    component "Consumer Contract Wallet" as Wallet {
+        component "ETH / ERC20 Asset Holdings" as Assets
+    }
+
+    component "Gas Tank\n(ETH on Owner Address)" as GasTank
+
+    package "Name Resolution" {
+        component "Ethereum Name Service (ENS)" as ENS
+    }
+
+    package "Supporting Contracts" {
+        component "Controller Contract" as Controller
+        component "Token Whitelist" as Whitelist
+        component "Oracle / Licence (Rate Provider)" as Oracle
+        component "TKN Holder Contract" as TKNHolder
+    }
+}
+
+Owner --> Wallet : owns / controls
+Owner --> GasTank : holds gas-payment ETH
+
+Integrator --> GoBindings : invokes
+GoBindings --> Controller : Call(adminCount), Call(controllerCount)
+GoBindings --> Controller : Transact(method, params) / Transfer
+GoBindings --> Wallet : contract interaction
+
+Wallet --> ENS : resolve supporting contract addresses
+ENS --> Controller : resolves to address
+ENS --> Whitelist : resolves to address
+ENS --> Oracle : resolves to address
+
+Wallet --> Whitelist : token support, rate,\nloadability, burnability
+Wallet --> Oracle : obtain exchange-rate data
+Oracle ..> Wallet : exchange-rate data
+Whitelist --> TKNHolder : burnability status
+Controller --> Wallet : control / confirmation operations
+
+note right of Wallet
+  Holds user ETH and ERC20 assets
+  (protected by wallet security)
+end note
+
+note right of GasTank
+  Gas-payment ETH kept outside the
+  Consumer Contract Wallet and outside
+  wallet security protections
+end note
+
+@enduml

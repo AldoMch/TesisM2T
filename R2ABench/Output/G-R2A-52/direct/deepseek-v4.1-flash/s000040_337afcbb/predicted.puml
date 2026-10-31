@@ -1,0 +1,118 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam linetype ortho
+skinparam nodesep 50
+skinparam ranksep 50
+skinparam shadowing false
+
+actor "External User / System" as External
+actor "External Mail Sender" as MailSender
+
+package "PlugIt Proxy Host Platform" {
+  component "Unified Service Experience" as UX
+  component "PlugIt Proxy API" as ProxyAPI
+  component "Network Access Control\n(PI_ALLOWED_NETWORKS CIDR)" as NetACL
+  database "Proxy-side Data Store" as ProxyStore
+
+  package "Standalone Proxy Mail Workflow (example scope)" {
+    component "Mail Intake" as MailIntake
+    component "Routing Token Validator" as RoutingValidator
+    component "Auto-Response Suppressor" as AutoSuppressor
+    component "Text Payload Extractor" as PayloadExtractor
+    component "Mail Handler" as MailHandler
+  }
+}
+
+package "Configuration" {
+  component "Project Configuration\nAPI_URL, SQLALCHEMY_URL, DEBUG,\nPI_BASE_URL, PI_ALLOWED_NETWORKS" as ProjectCfg
+  component "Local / Private Configuration\nexcluded from source control" as LocalCfg
+}
+
+package "Programmatic Integration" {
+  package "PlugIt API Client" {
+    component "API Client Core" as ApiClient
+    component "User Information" as CapUser
+    component "Subscription Tags" as CapTags
+    component "Organization Information" as CapOrg
+    component "Project Members" as CapMembers
+    component "Email Sending" as CapEmail
+    component "Forum Topics" as CapForum
+  }
+}
+
+package "PlugIt Service A (isolated)" {
+  component "Service Application A" as ServiceA
+  component "Service Configuration Reader A" as ServiceConfigA
+  database "Service A Data Store\n(MySQL / SQLite)" as ServiceADB
+}
+
+package "PlugIt Service B (isolated)" {
+  component "Service Application B" as ServiceB
+  component "Service Configuration Reader B" as ServiceConfigB
+  database "Service B Data Store\n(MySQL / SQLite)" as ServiceBDB
+}
+
+component "Alembic Migration Tool" as Alembic
+
+database "Inbound Mailbox" as Mailbox
+
+' External access
+External --> ProxyAPI : external-to-proxy access
+ProxyAPI --> NetACL : enforce allowed networks
+ProxyAPI --> UX : presents unified experience
+ProxyAPI --> ProxyStore : proxy-side data
+
+' Proxy to services
+ProxyAPI --> ServiceA : PlugIt protocol
+ProxyAPI --> ServiceB : PlugIt protocol
+
+' Services to own DBs
+ServiceA --> ServiceADB : configured DB connection\nSQLALCHEMY_URL
+ServiceB --> ServiceBDB : configured DB connection\nSQLALCHEMY_URL
+
+' Service configuration
+ServiceA --> ServiceConfigA : reads settings
+ServiceB --> ServiceConfigB : reads settings
+ServiceConfigA --> ProjectCfg : project settings
+ServiceConfigA --> LocalCfg : private/local settings
+ServiceConfigB --> ProjectCfg : project settings
+ServiceConfigB --> LocalCfg : private/local settings
+
+' API client
+ApiClient --> ProxyAPI : PlugIt API requests\ninitialized with API_URL
+ApiClient --> CapUser
+ApiClient --> CapTags
+ApiClient --> CapOrg
+ApiClient --> CapMembers
+ApiClient --> CapEmail
+ApiClient --> CapForum
+
+' Mail workflow
+MailSender --> Mailbox : inbound email
+Mailbox --> MailIntake : inbound email
+MailIntake --> RoutingValidator : routing token hash:data
+MailIntake --> AutoSuppressor : auto-response headers
+MailIntake --> PayloadExtractor : first text part
+RoutingValidator --> MailHandler : decoded routing data
+PayloadExtractor --> MailHandler : text payload
+MailHandler --> Mailbox : remove successfully processed
+LocalCfg --> RoutingValidator : configured mail secret
+LocalCfg --> MailIntake : mail routing settings
+
+' DB schema evolution
+Alembic --> ServiceADB : version-managed upgrade files
+Alembic --> ServiceBDB : version-managed upgrade files
+ServiceA --> Alembic : schema changes
+ServiceB --> Alembic : schema changes
+
+note right of ProjectCfg
+  FR-001, DR-001
+end note
+note right of LocalCfg
+  FR-002, NFR-003, AD-003
+end note
+note bottom of MailHandler
+  Example/standalone proxy scope only (C-004)
+end note
+@enduml

@@ -1,0 +1,86 @@
+@startuml
+
+skinparam rectangle {
+  RoundCorner 10
+}
+skinparam node {
+  RoundCorner 10
+}
+
+title Home Recipes - System Architecture
+
+together {
+  node "Client Platforms" as Platforms {
+    rectangle "Android" as Android
+    rectangle "iOS" as iOS
+    rectangle "Web" as Web
+    rectangle "macOS" as macOS
+  }
+}
+
+node "Flutter/Dart Client\n(Home Recipes App)" as FlutterClient {
+  rectangle "Generated Dart\ngRPC Client Code" as DartGenCode
+}
+
+rectangle "Protocol Buffers\n(.proto definitions)" as ProtoFiles {
+  rectangle "Service & Message\nContracts" as ProtoContracts
+}
+
+node "gRPC-Gateway\n(HTTP Middleware)" as GRPCGateway {
+  rectangle "addRecipe\nHTTP Endpoint" as EP_AddRecipe
+  rectangle "ListAllRecipes\nHTTP Endpoint" as EP_ListRecipes
+  rectangle "ListAllIngredientsAtHome\nHTTP Endpoint" as EP_ListIngHome
+  rectangle "GetAllIngredientsForRecipe\nHTTP Endpoint" as EP_GetIngRecipe
+}
+
+node "Go gRPC Server" as GoServer {
+  rectangle "Generated Go\ngRPC Server Code" as GoGenCode
+  rectangle "Recipe Service\nImplementation" as RecipeService
+  rectangle "Ingredient Service\nImplementation" as IngredientService
+}
+
+actor "End User" as EndUser
+actor "API Consumer\n/ Tester" as APIConsumer
+actor "Developer" as Developer
+actor "Operator" as Operator
+
+node "Docker Container\n(Server Image)" as DockerContainer
+
+node "Kubernetes Cluster\n(Local)" as K8sLocal {
+  rectangle "Deployment\nManifests" as K8sManifests
+}
+
+node "Azure Kubernetes Service\n(AKS)" as AKS {
+  rectangle "AKS Deployment\nConfiguration" as AKSConfig
+}
+
+EndUser --> Platforms : uses
+Platforms --> FlutterClient : runs on
+FlutterClient --> DartGenCode : uses
+
+Developer --> ProtoFiles : defines & maintains
+
+ProtoFiles --> DartGenCode : generates (protoc + Dart plugin)
+ProtoFiles --> GoGenCode : generates (protoc + Go plugin)
+ProtoFiles --> GRPCGateway : generates (gRPC-Gateway plugin)
+
+FlutterClient -right-> GoServer : gRPC (generated Protocol Buffers)
+
+APIConsumer --> GRPCGateway : HTTP requests (curl / HTTP client)
+
+GRPCGateway --> GoServer : gRPC calls (translated from HTTP)
+
+GoServer --> RecipeService : implements
+GoServer --> IngredientService : implements
+GoGenCode --> GoServer : scaffolds
+
+Operator --> DockerContainer : builds & runs
+DockerContainer --> GoServer : packages & executes
+
+Operator --> K8sLocal : deploys
+K8sLocal --> GoServer : runs server stack
+
+Operator --> AKS : deploys
+AKS --> GoServer : runs server stack on Azure
+
+@enduml

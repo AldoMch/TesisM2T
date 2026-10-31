@@ -1,0 +1,163 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam ArrowColor #555555
+skinparam ArrowFontSize 11
+
+skinparam node {
+  BackgroundColor #E8F4FD
+  BorderColor #2E86AB
+  FontColor #1a1a1a
+}
+
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #2E86AB
+  FontColor #1a1a1a
+}
+
+skinparam package {
+  BackgroundColor #F0F8FF
+  BorderColor #2E86AB
+  FontColor #1a1a1a
+}
+
+skinparam database {
+  BackgroundColor #FFF8E7
+  BorderColor #F0A500
+  FontColor #1a1a1a
+}
+
+skinparam cloud {
+  BackgroundColor #EDF7ED
+  BorderColor #3A7D44
+  FontColor #1a1a1a
+}
+
+title ClearML Agent System Architecture
+
+'=== External Actors / Infrastructure ===
+actor "Kubernetes\nOperator" as k8sOperator
+actor "ClearML\nUser" as clearmlUser
+actor "Developer /\nIntegrator" as developer
+
+'=== ClearML Server / Backend ===
+node "ClearML Server / Backend" as clearmlServer {
+  component "Execution Queue" as execQueue
+  component "Events Service\n(v2.5)" as eventsService
+  component "Models Service\n(v2.4)" as modelsService
+  component "Worker Status\nEndpoint" as workerStatusEndpoint
+  component "Server Ping\nEndpoint" as pingEndpoint
+}
+
+'=== ClearML Agent Runtime ===
+node "ClearML Agent Runtime\n(clearml-agent Docker Image)" as agentRuntime {
+
+  package "Worker Telemetry" as workerTelemetry {
+    component "Status Reporter\n[default: 2s period\nreport_period_sec]" as statusReporter
+    component "Connectivity\nPing\n[default: 30s period\nping_period_sec]" as connectivityPing
+    component "Worker\nConfiguration\n[report_period_sec\nping_period_sec\nlog_stdout\nreport_global_mem_used]" as workerConfig
+    component "Memory\nReporter\n[process/machine scope]" as memReporter
+  }
+
+  package "Execution Modes" as execModes {
+
+    package "Kubernetes Glue Mode" as k8sGlueMode {
+      component "Queue Job\nPoller" as queuePoller
+      component "YAML Template\nProcessor" as yamlProcessor
+      component "Kubernetes Job\nBuilder\n(FR-001)" as k8sJobBuilder
+    }
+
+    package "Long-lasting Service-Pod Mode" as servicePodMode {
+      component "Service Pod\nController\n(FR-003)" as servicePodCtrl
+      component "Docker Socket\nManager\n[/var/run/docker.sock]" as dockerSocketMgr
+      component "Sibling Container\nManager" as siblingContainerMgr
+    }
+
+    package "In-Pod Experiment Execution" as inPodExec {
+      component "Environment\nInstaller\n(FR-002)" as envInstaller
+      component "Experiment\nProcess Launcher" as experimentLauncher
+      component "Process Monitor" as processMonitor
+      component "Stdout/Stderr\nLogger\n[log_stdout=true\nby default]" as stdoutLogger
+    }
+  }
+
+  package "Backend Service Client" as backendClient {
+    component "Session Request\nHandler" as sessionHandler
+    component "Service Action\nDispatcher\n[create, get,\nget_by_id,\nget_all, get_all_ex]" as actionDispatcher
+    component "Response Mapper\n[Entity / TableResponse]" as responseMapper
+
+    package "Service Interfaces" as serviceInterfaces {
+      component "Events Service\nClient\n[Histogram Request:\ntask, samples, key\n(iter/iso_time/timestamp)]" as eventsClient
+      component "Models Service\nClient\n[Delete Request:\nmodel, force\nModel: id, name,\nuser, company,\ncreated, task]" as modelsClient
+    }
+  }
+}
+
+'=== Kubernetes Cluster ===
+node "Kubernetes Cluster" as k8sCluster {
+  component "Kubernetes Job\n(prepared from YAML template)" as k8sJob
+  component "Experiment Pod" as experimentPod
+}
+
+'=== External Data Inputs ===
+database "YAML Job\nTemplate\n(DR-006)" as yamlTemplate
+database "ClearML Execution\nQueue Jobs\n(DR-005)" as queueJobs
+
+'=== User Interactions ===
+clearmlUser --> execQueue : submit jobs
+k8sOperator --> agentRuntime : deploy & configure
+developer --> backendClient : invoke service actions
+
+'=== Worker Telemetry flows ===
+workerConfig --> statusReporter : configures period
+workerConfig --> connectivityPing : configures period
+workerConfig --> memReporter : configures scope
+statusReporter --> workerStatusEndpoint : periodic status\nreports (FR-004)
+connectivityPing --> pingEndpoint : periodic ping\n(FR-005)
+memReporter --> statusReporter : memory metrics
+
+'=== Kubernetes Glue Mode flows ===
+queuePoller --> execQueue : pull queued jobs\n(FR-001)
+execQueue --> queueJobs : queue job data
+queueJobs --> queuePoller
+yamlTemplate --> yamlProcessor : YAML template input\n(DR-006, C-003)
+queuePoller --> k8sJobBuilder : job input (DR-005)
+yamlProcessor --> k8sJobBuilder : processed template
+k8sJobBuilder --> k8sJob : prepare Kubernetes job\n(FR-001)
+
+'=== Service-Pod Mode flows ===
+servicePodCtrl --> dockerSocketMgr : socket access\n(C-002)
+dockerSocketMgr --> siblingContainerMgr : manage sibling containers\n(FR-003, C-005)
+
+'=== In-Pod Experiment flows ===
+k8sJob --> experimentPod : spawn pod
+experimentPod --> envInstaller : trigger environment install\n(FR-002)
+envInstaller --> experimentLauncher : start experiment process
+experimentLauncher --> processMonitor : monitor process
+experimentLauncher --> stdoutLogger : capture logs\n(FR-006)
+workerConfig --> stdoutLogger : log_stdout=true (default)
+
+'=== Backend Client flows ===
+actionDispatcher --> sessionHandler : session-based request
+sessionHandler --> eventsService : events API call\n(v2.5)
+sessionHandler --> modelsService : models API call\n(v2.4)
+eventsService --> eventsClient : histogram response
+modelsService --> modelsClient : model response
+eventsClient --> responseMapper : map response
+modelsClient --> responseMapper : map response
+responseMapper --> actionDispatcher : Entity / TableResponse\n(FR-007)
+actionDispatcher --> serviceInterfaces : route to service client
+
+'=== Legend ===
+legend right
+  |= Color |= Meaning |
+  |<#E8F4FD>   | Infrastructure Node |
+  |<#F0F8FF>   | Logical Package |
+  |<#FFF8E7>   | External Data Store |
+  |<#EDF7ED>   | External Server |
+endlegend
+
+@enduml

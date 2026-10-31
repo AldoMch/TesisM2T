@@ -1,0 +1,79 @@
+@startuml
+
+package "Deployment/Infrastructure Layer" {
+  cloud "DNS / Load Balancer" as dns
+  cloud "HTTP/WebSocket Network" as net
+}
+
+package "Web Delivery Layer" {
+  node "Web Delivery Server" as webnode {
+    component "Static Asset Web Server" as staticweb
+  }
+}
+
+package "Client Layer" {
+  node "Web Browser" as browser {
+    component "Browser Client (Three.js)" as browserclient
+    component "Client Scene/Ship Manager" as sceneMgr
+    component "Three.js" as threejs
+  }
+}
+
+package "Messaging/Session Protocol Layer" {
+  component "Messaging Protocol Handler\n(JSON [event,data]/[action,data])" as msgHandler
+  component "Heartbeat Manager\n(ping/pong)" as hbMgr
+  component "Reconnect Manager\n(reconnect context)" as rcMgr
+}
+
+package "Transport Layer" {
+  component "WebSocket Client" as wsClient
+}
+
+package "Game Server Layer" {
+  node "Erlang/OTP Game Server\nMaster Node" as master {
+    component "WebSocket Server Endpoint" as wsServerMaster
+    component "Room Manager" as roomMgr
+    component "Server Directory /\nRedirect Service" as dirSvc
+  }
+  node "Erlang/OTP Game Server\nReplica Node" as replica {
+    component "WebSocket Server Endpoint" as wsServerReplica
+  }
+}
+
+/' External dependencies and flows '/
+
+' Asset delivery path
+browserclient --> dns : Resolve server address
+browserclient --> net : HTTP(S) asset requests
+net --> staticweb
+
+' Client runtime dependencies
+browserclient --> threejs
+msgHandler --> wsClient : send frames (JSON)
+wsClient --> msgHandler : receive frames (JSON)
+hbMgr --> wsClient : ping/pong
+rcMgr --> wsClient : reconnect context
+
+' Transport and server-side runtime
+wsClient --> net : WebSocket over HTTP(S)
+net --> wsServerMaster
+net --> wsServerReplica
+wsServerMaster --> net
+wsServerReplica --> net
+
+' Key server topology and services
+master --> replica : master/replica topology
+master --> roomMgr
+master --> dirSvc
+
+' Server application connections to WebSocket endpoints
+wsServerMaster --> roomMgr : create_room, join_room
+roomMgr --> wsServerMaster : room_players_number updates
+
+wsServerMaster --> dirSvc : servers_list request
+dirSvc --> wsServerMaster : servers_list, servers_list_redirect
+
+' Application-level action handling
+msgHandler --> sceneMgr : game_reconnect
+
+@enduml

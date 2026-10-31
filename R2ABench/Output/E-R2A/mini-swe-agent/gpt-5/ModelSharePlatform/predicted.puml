@@ -1,0 +1,71 @@
+@startuml
+title ModelSharePlatform - Layered Architecture
+
+package Presentation_Layer {
+  [Web_Browser]
+  [Web_Frontend_Vue_TS_SPA]
+  [Web_Browser] --> [Web_Frontend_Vue_TS_SPA]
+}
+
+package Application_Layer_Spring_Boot {
+  [API_Gateway_REST_Controller]
+  [Auth_Session_Management]
+  [Account_Service]
+  [QA_Service]
+  [Blog_Service]
+  [Model_Service]
+  [Dataset_Service]
+  [Follow_Service]
+  [Admin_Governance_Service]
+  [Recommendation_Engine]
+  [Online_Inference_Orchestrator]
+  [API_Gateway_REST_Controller] --> [Auth_Session_Management]
+  [API_Gateway_REST_Controller] --> [Account_Service]
+  [API_Gateway_REST_Controller] --> [QA_Service]
+  [API_Gateway_REST_Controller] --> [Blog_Service]
+  [API_Gateway_REST_Controller] --> [Model_Service]
+  [API_Gateway_REST_Controller] --> [Dataset_Service]
+  [API_Gateway_REST_Controller] --> [Follow_Service]
+  [API_Gateway_REST_Controller] --> [Admin_Governance_Service]
+  [API_Gateway_REST_Controller] --> [Recommendation_Engine]
+  [API_Gateway_REST_Controller] --> [Online_Inference_Orchestrator]
+}
+
+package Data_Layer {
+  database MySQL as MySQL
+  [Object_Storage]
+  [Search_Index_optional]
+}
+
+package External_Systems {
+  [Payment_Gateway]
+  [Email_Verification_Service]
+  node Model_Runtime_Compute as Runtime
+}
+
+[General_User] --> [Web_Browser]
+[Administrator] --> [Web_Browser]
+[Web_Frontend_Vue_TS_SPA] --> [API_Gateway_REST_Controller]
+
+[Auth_Session_Management] --> MySQL
+[Account_Service] --> MySQL
+[QA_Service] --> MySQL
+[Blog_Service] --> MySQL
+[Model_Service] --> MySQL
+[Dataset_Service] --> MySQL
+[Follow_Service] --> MySQL
+[Admin_Governance_Service] --> MySQL
+[Recommendation_Engine] --> MySQL
+
+[Model_Service] --> [Object_Storage]
+[Dataset_Service] --> [Object_Storage]
+[Online_Inference_Orchestrator] --> [Object_Storage]
+[Online_Inference_Orchestrator] --> Runtime
+
+[Recommendation_Engine] --> [Search_Index_optional]
+
+[Model_Service] --> [Payment_Gateway]
+[Account_Service] --> [Email_Verification_Service]
+
+skinparam componentStyle rectangle
+@enduml

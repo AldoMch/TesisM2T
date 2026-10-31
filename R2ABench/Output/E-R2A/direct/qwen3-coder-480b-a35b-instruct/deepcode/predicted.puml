@@ -1,0 +1,109 @@
+@startuml
+!define RECTANGLE class
+
+title DeepCode System Architecture
+
+skinparam componentStyle rectangle
+
+' Layers
+package "Frontend Layer" {
+    [Vue 3 Application] as frontend
+}
+
+package "Presentation Layer" {
+    [Nginx Reverse Proxy] as nginx
+    [CDN] as cdn
+}
+
+package "Proxy Layer" {
+    [API Gateway] as gateway
+}
+
+package "Business Layer" {
+    package "User Module" {
+        [User Service] as userService
+        [Authentication Service] as authService
+    }
+
+    package "Problem Module" {
+        [Problem Service] as problemService
+        [Solution Service] as solutionService
+    }
+
+    package "Forum Module" {
+        [Discussion Service] as discussionService
+        [Comment Service] as commentService
+    }
+
+    package "Judging Module" {
+        [Judging Scheduler] as judgeScheduler
+        [JudgeHost] as judgeHost
+        [JudgeCore] as judgeCore
+    }
+
+    package "AI Module" {
+        [LLM Service Interface] as llmInterface
+        [LangChain4j] as langchain
+    }
+
+    package "Platform Operations" {
+        [Monitoring & Alerting] as monitoring
+        [CI/CD Pipeline] as cicd
+        [Security Filter] as securityFilter
+    }
+}
+
+package "Access Layer" {
+    [MySQL Database] as mysql
+    [Redis Cache] as redis
+    [MinIO Storage] as minio
+}
+
+package "External Services" {
+    [SMTP Server] as smtp
+    [AI Service Provider] as aiProvider
+}
+
+' Connections
+frontend --> nginx : HTTPS
+nginx --> gateway : Internal Call
+gateway --> userService : REST API
+gateway --> problemService : REST API
+gateway --> discussionService : REST API
+gateway --> judgeScheduler : REST API
+gateway --> llmInterface : REST API
+
+userService --> mysql : Data Access
+problemService --> mysql : Data Access
+solutionService --> mysql : Data Access
+discussionService --> mysql : Data Access
+commentService --> mysql : Data Access
+
+userService --> redis : Cache
+authService --> redis : Session Store
+problemService --> redis : Cache
+
+minio <-- problemService : Test Cases
+minio <-- solutionService : Attachments
+minio <-- discussionService : Media Files
+
+judgeScheduler --> judgeHost : HTTP Request
+judgeHost --> judgeCore : Task Execution
+judgeCore --> minio : Read Test Cases
+
+llmInterface --> langchain : Integration
+langchain --> aiProvider : API Calls
+
+monitoring --> prometheus : Metrics Collection
+prometheus --> grafana : Visualization
+grafana --> pagerduty : Alerts
+
+cicd --> kubernetes : Deployment
+kubernetes --> dockerRegistry : Image Pull
+
+securityFilter --> authService : Auth Check
+authService --> jwt : Token Validation
+
+cdn --> frontend : Static Assets
+
+@enduml

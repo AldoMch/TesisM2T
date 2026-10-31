@@ -1,0 +1,72 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+skinparam defaultFontName Arial
+skinparam shadowing false
+skinparam ArrowColor #333333
+skinparam ArrowThickness 1.5
+skinparam package {
+    BackgroundColor #FFFFFF
+    BorderColor #777777
+    BorderThickness 1
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #555555
+    BorderThickness 1
+}
+
+rectangle "MPI" as MpiRuntime
+
+package "Compute node" as ComputeNode1 {
+    rectangle "MPI Process" as MpiProcess1 {
+        rectangle "Worker\nThread" as WorkerThread1
+        rectangle "Task Queue" as TaskQueue1
+        rectangle "Server\nThread" as ServerThread1
+    }
+}
+
+package "Compute node" as ComputeNode2 {
+    rectangle "MPI Process" as MpiProcess2 {
+        rectangle "Worker\nThread" as WorkerThread2
+        rectangle "Task Queue" as TaskQueue2
+        rectangle "Server\nThread" as ServerThread2
+    }
+}
+
+package "Task Queue (in detail)" as TaskQueueDetail {
+    rectangle "Level 0" as Level0
+    rectangle "Level 1" as Level1
+    rectangle "Level 2" as Level2
+    rectangle "Level 3" as Level3
+    rectangle "Level 4" as Level4
+    rectangle "Level 5" as Level5
+    rectangle "..." as MoreLevels
+    rectangle "A1" as TaskA1
+    rectangle "A2" as TaskA2
+    rectangle "A3" as TaskA3
+    rectangle "B1" as TaskB1
+    rectangle "B2" as TaskB2
+}
+
+MpiRuntime <--> MpiProcess1 : MPI communication
+MpiRuntime <--> MpiProcess2 : MPI communication
+WorkerThread1 --> TaskQueue1 : pulls tasks
+ServerThread1 --> TaskQueue1 : handles task requests
+WorkerThread2 --> TaskQueue2 : pulls tasks
+ServerThread2 --> TaskQueue2 : handles task requests
+TaskQueue1 ..> TaskQueueDetail : expanded view
+TaskQueue2 ..> TaskQueueDetail : same queue structure
+Level0 --> TaskA1
+TaskA1 --> TaskA2
+TaskA2 --> TaskA3
+Level1 --> TaskB1
+TaskB1 --> TaskB2
+Level0 -[hidden]down-> Level1
+Level1 -[hidden]down-> Level2
+Level2 -[hidden]down-> Level3
+Level3 -[hidden]down-> Level4
+Level4 -[hidden]down-> Level5
+Level5 ..> MoreLevels : more levels
+@enduml

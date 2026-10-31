@@ -1,0 +1,534 @@
+{
+  "matched_pairs": [
+    {
+      "gt_nodes": [
+        "Compute node::MPI Process",
+        "Global::MPI"
+      ],
+      "predicted_nodes": [
+        "Global::MPI Runtime\\n(mpi4py, mpirun)"
+      ],
+      "is_boundary_correct": false,
+      "match_type": "N:1"
+    },
+    {
+      "gt_nodes": [
+        "Compute node::MPI Process::Server\\nThread"
+      ],
+      "predicted_nodes": [
+        "Execution Layer::IdleYieldMonitor\\n(worker idle-poll loop\\nTORC_WORKER_YIELDTIME)"
+      ],
+      "is_boundary_correct": false,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Compute node::MPI Process::Worker\\nThread"
+      ],
+      "predicted_nodes": [
+        "Execution Layer::WorkerThreadPool\\n(TORC_WORKERS threads\\nper MPI process\\nidle-yield via TORC_WORKER_YIELDTIME)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::...",
+        "Task Queue (in detail)::A1",
+        "Task Queue (in detail)::A2",
+        "Task Queue (in detail)::A3",
+        "Task Queue (in detail)::B1",
+        "Task Queue (in detail)::B2",
+        "Task Queue (in detail)::Level 0",
+        "Task Queue (in detail)::Level 1",
+        "Task Queue (in detail)::Level 2",
+        "Task Queue (in detail)::Level 3",
+        "Task Queue (in detail)::Level 4",
+        "Task Queue (in detail)::Level 5"
+      ],
+      "predicted_nodes": [
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)"
+      ],
+      "is_boundary_correct": true,
+      "match_type": "N:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::MPI Runtime\\n(mpi4py, mpirun)",
+        "MPI Communication Layer::MPICommSubsystem\\n(task dispatch, result return\\nsteal req/resp, SPMD coord)",
+        "Public API Layer::TorcAPI\\n(torc.submit, torc.wait, torc.map\\ntorc.spmd, torc.start, torc.init\\ntorc.launch, torc.shutdown\\ntorc.worker_id, torc.num_workers\\ntorc.node_id, torc.num_nodes\\ntorc.enable_stealing\\ntorc.disable_stealing, torc.gettime)"
+      ],
+      "gt_node": "Compute node::MPI Process"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Execution Layer::IdleYieldMonitor\\n(worker idle-poll loop\\nTORC_WORKER_YIELDTIME)",
+        "Execution Layer::WorkerThreadPool\\n(TORC_WORKERS threads\\nper MPI process\\nidle-yield via TORC_WORKER_YIELDTIME)",
+        "MPI Communication Layer::MPIPollingLoop\\n(MPI message polling\\nTORC_SERVER_YIELDTIME idle yield)",
+        "Runtime Configuration Layer::ConfigurationManager\\n(TORC_WORKERS\\nTORC_STEALING\\nTORC_SERVER_YIELDTIME\\nTORC_WORKER_YIELDTIME)"
+      ],
+      "gt_node": "Compute node::MPI Process::Server\\nThread"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Compute node::MPI Process::Task Queue"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Execution Layer::WorkerThreadPool\\n(TORC_WORKERS threads\\nper MPI process\\nidle-yield via TORC_WORKER_YIELDTIME)",
+        "Runtime Configuration Layer::ConfigurationManager\\n(TORC_WORKERS\\nTORC_STEALING\\nTORC_SERVER_YIELDTIME\\nTORC_WORKER_YIELDTIME)"
+      ],
+      "gt_node": "Compute node::MPI Process::Worker\\nThread"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::MPI Runtime\\n(mpi4py, mpirun)",
+        "MPI Communication Layer::MPICommSubsystem\\n(task dispatch, result return\\nsteal req/resp, SPMD coord)",
+        "Public API Layer::TorcAPI\\n(torc.submit, torc.wait, torc.map\\ntorc.spmd, torc.start, torc.init\\ntorc.launch, torc.shutdown\\ntorc.worker_id, torc.num_workers\\ntorc.node_id, torc.num_nodes\\ntorc.enable_stealing\\ntorc.disable_stealing, torc.gettime)"
+      ],
+      "gt_node": "Global::MPI"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::..."
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::A1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::A2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::A3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::B1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::B2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 0"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 1"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 2"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 4"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+        "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+        "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+        "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+        "Task Management Layer::TaskSubmissionManager"
+      ],
+      "gt_node": "Task Queue (in detail)::Level 5"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Example / Application Layer::ImagePreprocessingExample",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Example / Application Layer::MasterWorkerExample",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Example / Application Layer::NumericalOptimizationExample",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Example / Application Layer::SPMDExample",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Example / Application Layer::TaskStealingExample",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Execution Layer::IdleYieldMonitor\\n(worker idle-poll loop\\nTORC_WORKER_YIELDTIME)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Server\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Execution Layer::SPMDController\\n(broadcast, MPI app-level\\nall-rank execution)",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Execution Layer::WorkerThreadPool\\n(TORC_WORKERS threads\\nper MPI process\\nidle-yield via TORC_WORKER_YIELDTIME)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Server\\nThread",
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::HDF5 File System\\n(preprocessed image output)",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Labeled Image File System\\n(raw image input)",
+      "reference_nodes": [
+        "Compute node::MPI Process"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::MPI Runtime\\n(mpi4py, mpirun)",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Optional Dependencies",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Python Threading Runtime\\n(threading module)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::termcolor\\n(console output formatting)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MPI Communication Layer::MPICommSubsystem\\n(task dispatch, result return\\nsteal req/resp, SPMD coord)",
+      "reference_nodes": [
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "MPI Communication Layer::MPIPollingLoop\\n(MPI message polling\\nTORC_SERVER_YIELDTIME idle yield)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Server\\nThread",
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Optional Dependencies::cma\\n(CMA-ES)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Optional Dependencies::h5py",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Optional Dependencies::numpy",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Optional Dependencies::pillow",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Public API Layer::TorcAPI\\n(torc.submit, torc.wait, torc.map\\ntorc.spmd, torc.start, torc.init\\ntorc.launch, torc.shutdown\\ntorc.worker_id, torc.num_workers\\ntorc.node_id, torc.num_nodes\\ntorc.enable_stealing\\ntorc.disable_stealing, torc.gettime)",
+      "reference_nodes": [
+        "Compute node::MPI Process",
+        "Global::MPI"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Runtime Configuration Layer::ConfigurationManager\\n(TORC_WORKERS\\nTORC_STEALING\\nTORC_SERVER_YIELDTIME\\nTORC_WORKER_YIELDTIME)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Server\\nThread",
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Scheduling & Queue Layer::WorkerQueue\\n(per-worker FIFO)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Task Queue",
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Task Management Layer::CallbackDispatcher\\n(fires on spawning rank\\nafter result return)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Server\\nThread",
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Task Management Layer::CompletionIterator\\n(as_completed: yields tasks\\nin completion order)",
+      "reference_nodes": [
+        "Compute node::MPI Process::Server\\nThread",
+        "Compute node::MPI Process::Worker\\nThread"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Task Management Layer::ParallelMapExecutor",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Task Management Layer::TaskDescriptor\\n(Future-like: input, result)",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Task Management Layer::TaskSubmissionManager",
+      "reference_nodes": [
+        "Task Queue (in detail)::..."
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1804,
+      "completion_tokens": 136,
+      "total_tokens": 1940,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "_ownership_repair": {
+    "decisions": {
+      "layer_flags": {
+        "g0": false,
+        "g1": false,
+        "g2": true,
+        "g3": true
+      },
+      "owners": {
+        "p8": "g2"
+      }
+    },
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 1371,
+      "completion_tokens": 46,
+      "total_tokens": 1417,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [],
+  "unmatched_predicted_nodes": [
+    "Example / Application Layer::ImagePreprocessingExample",
+    "Example / Application Layer::MasterWorkerExample",
+    "Example / Application Layer::NumericalOptimizationExample",
+    "Example / Application Layer::SPMDExample",
+    "Example / Application Layer::TaskStealingExample",
+    "Execution Layer::SPMDController\\n(broadcast, MPI app-level\\nall-rank execution)",
+    "Global::HDF5 File System\\n(preprocessed image output)",
+    "Global::Labeled Image File System\\n(raw image input)",
+    "Global::Optional Dependencies",
+    "Global::Python Threading Runtime\\n(threading module)",
+    "Global::termcolor\\n(console output formatting)",
+    "MPI Communication Layer::MPICommSubsystem\\n(task dispatch, result return\\nsteal req/resp, SPMD coord)",
+    "MPI Communication Layer::MPIPollingLoop\\n(MPI message polling\\nTORC_SERVER_YIELDTIME idle yield)",
+    "Optional Dependencies::cma\\n(CMA-ES)",
+    "Optional Dependencies::h5py",
+    "Optional Dependencies::numpy",
+    "Optional Dependencies::pillow",
+    "Public API Layer::TorcAPI\\n(torc.submit, torc.wait, torc.map\\ntorc.spmd, torc.start, torc.init\\ntorc.launch, torc.shutdown\\ntorc.worker_id, torc.num_workers\\ntorc.node_id, torc.num_nodes\\ntorc.enable_stealing\\ntorc.disable_stealing, torc.gettime)",
+    "Runtime Configuration Layer::ConfigurationManager\\n(TORC_WORKERS\\nTORC_STEALING\\nTORC_SERVER_YIELDTIME\\nTORC_WORKER_YIELDTIME)",
+    "Scheduling & Queue Layer::CyclicScheduler\\n(qid = -1, round-robin)",
+    "Scheduling & Queue Layer::DirectedScheduler\\n(qid >= 0, targeted)",
+    "Scheduling & Queue Layer::StealingCoordinator\\n(idle detection, steal request)",
+    "Task Management Layer::CallbackDispatcher\\n(fires on spawning rank\\nafter result return)",
+    "Task Management Layer::CompletionIterator\\n(as_completed: yields tasks\\nin completion order)",
+    "Task Management Layer::ParallelMapExecutor",
+    "Task Management Layer::TaskDescriptor\\n(Future-like: input, result)",
+    "Task Management Layer::TaskSubmissionManager"
+  ],
+  "_provenance": {
+    "fingerprint": "1c486a4a776a09b4e09fed32389f7c9c0df139b81e26d78fc67e97fdde793aa3",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "ownership_repair_source_sha256": "df66febf5b02b8998e8976598f10c10ff855809f7ed87aacfe7f2c730ae9f536"
+  }
+}

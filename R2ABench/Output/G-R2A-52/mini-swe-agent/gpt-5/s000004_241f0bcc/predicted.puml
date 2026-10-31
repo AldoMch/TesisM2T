@@ -1,0 +1,81 @@
+@startuml
+title EMBC ESS - Layered Architecture Overview
+
+skinparam componentStyle rectangle
+top to bottom direction
+
+actor "Role-based Front-end User" as User
+actor "DB Operator/Admin" as DBA
+
+package "Client (Browser - Angular)" {
+  component "Routing & Guards\n- Role-based routing\n- Login/session handling\n- RedirectGuard" as Routing
+  component "HTTP Interceptor\n- Watchdog reset\n- 401 -> Session Expired" as Interceptor
+  component "NgRx Store\n(Selected shared state)" as Store
+  component "Controlled-list Loader\n(on init -> Store)" as Controlled
+  component "Service Wrappers\n- Evacuee\n- Incident Task\n- Organization\n- Referral\n- Registration" as Wrappers
+  component "Notification Queue & Notifier" as Notifier
+}
+
+package "API & Server (.NET)" {
+  component ".NET Core WebAPI\nControllers" as WebAPI
+  component "Domain Services" as DomainSvc
+  component "Entity Framework / DbContext" as EF
+  database "MS SQL Database" as SQL
+  component "Repository SQL Scripts\n(Data maintenance)" as SqlScripts
+  component "Development Bypass\n(backend-only, dev env)" as DevBypass
+}
+
+package "External Systems" {
+  component "SiteMinder" as SiteMinder
+  component "External URLs" as ExternalURLs
+}
+
+' User interactions
+User --> Routing : use UI
+Routing --> Notifier : enqueue/display notifications
+
+' Client state and initialization
+Controlled --> Store : load controlled lists
+Routing --> Store : read/write view state
+Wrappers --> Store : cache selected data
+
+' HTTP flow with interceptor
+Routing --> Wrappers
+Wrappers --> Interceptor : HTTP requests
+Interceptor --> WebAPI : HTTPS
+Interceptor --> Routing : 401 -> logout/session expired
+
+' Server-side flow
+WebAPI --> SiteMinder : auth context
+WebAPI --> DomainSvc
+DomainSvc --> EF
+EF --> SQL
+
+' Redirect to external URLs
+Routing --> ExternalURLs : redirect via guard
+
+' Dev-only bypass
+DevBypass .. WebAPI : dev only
+
+' Operational scripts
+DBA --> SqlScripts
+SqlScripts --> SQL : maintenance (e.g., volunteer deactivation)
+
+' Notes
+note right of Controlled
+Controlled-list data is loaded at application start
+and stored in the NgRx client store;
+it is not modeled as a parameterized API endpoint.
+end note
+
+note right of DomainSvc
+Includes registration-related capabilities
+(e.g., PDF collection) as part of server-side services.
+end note
+
+note bottom of WebAPI
+Backend API schemas and detailed business logic
+are outside the scope of this SRS.
+end note
+
+@enduml

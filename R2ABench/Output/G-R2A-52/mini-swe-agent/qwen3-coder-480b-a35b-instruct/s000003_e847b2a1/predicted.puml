@@ -1,0 +1,59 @@
+@startuml
+title Prediction Cards System Architecture
+
+skinparam componentStyle rectangle
+
+package "Frontend Application" {
+  [User Interface] as ui
+  [Wallet Integration] as wallet
+}
+
+package "Blockchain Layer" {
+  [Aeternity Blockchain] as blockchain
+  [PredictionCards Smart Contract] as contract
+  [AENS Name Service] as aens
+}
+
+package "Backend Services" {
+  [Oracle Service] as oracle
+  [Prediction Processing Service] as processor
+}
+
+package "External Systems" {
+  [External Price Provider] as priceProvider
+}
+
+package "Storage" {
+  [Prediction Media Storage] as mediaStorage
+}
+
+package "Development & Testing" {
+  [Local Integration Test Stack] as testStack
+}
+
+ui --> wallet : uses
+wallet --> contract : interacts via SDK
+contract --> blockchain : deployed on
+contract --> aens : located via
+processor --> contract : monitors and triggers
+processor --> oracle : initiates queries
+oracle --> priceProvider : fetches price data
+oracle --> contract : submits responses
+mediaStorage <-- ui : loads media
+mediaStorage <-- contract : references media
+testStack ..> contract : tests
+testStack ..> ui : proxies requests
+
+note right of oracle
+  Quarkus-based implementation
+end note
+
+note right of processor
+  Drives outcome determination
+end note
+
+note top of contract
+  Maintains prediction state
+end note
+
+@enduml

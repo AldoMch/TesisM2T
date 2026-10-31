@@ -1,0 +1,91 @@
+@startuml
+title Android GPSLogger System Architecture (SRS-derived)
+
+skinparam componentStyle rectangle
+
+node "Android Runtime" {
+  package "GPSLogger App" {
+    component "Main Activity / Fragments" as Fragments
+    component "Event Bus" as EventBus
+    component "GPS Logging Service" as LoggingService
+    component "Location Listeners" as LocationListeners
+    package "Log Outputs" {
+      component "GPX Logger" as GPXLogger
+      component "KML Logger" as KMLLogger
+      component "Text Logger" as TextLogger
+    }
+    package "OpenGTS Integration" {
+      component "SerializableLocation" as SerializableLocation
+      component "GPRMC Encoder" as GPRMCEncoder
+      component "OpenGTS Sender (UDP)" as OpenGTSSender
+      component "OpenGTS Config" as OpenGTSConfig
+    }
+    package "External Integrations" {
+      component "OpenStreetMap Integration" as OSM
+      component "Dropbox Integration" as Dropbox
+    }
+    component "Session Settings" as Settings
+    component "App Configuration" as AppConfig
+  }
+  component "Google Play Services" as GPSvc
+}
+
+cloud "OpenStreetMap Service" as OSMService
+cloud "Dropbox API" as DropboxService
+database "OpenGTS Server" as OpenGTSServer
+
+node "Build Environment" {
+  component "Gradle Build" as Gradle
+  component "Android SDK Build Tools 19.0.3" as SDKTools
+  component "Support & Google Repositories" as Repos
+  component "local.properties (sdk.dir)" as LocalProperties
+}
+
+' Flows: location acquisition and in-app distribution
+GPSvc --> LocationListeners : Provide fused/location updates
+LocationListeners --> LoggingService : Location data
+LoggingService --> EventBus : Publish location events
+EventBus --> Fragments : Deliver updates for UI/behavior
+
+' Logging to enabled outputs
+Settings --> LoggingService : Enable/parameters
+Settings --> GPXLogger
+Settings --> KMLLogger
+Settings --> TextLogger
+LoggingService --> GPXLogger : Write GPX records
+LoggingService --> KMLLogger : Write KML records
+LoggingService --> TextLogger : Write text records
+
+' OpenGTS messaging over UDP
+LoggingService --> SerializableLocation : Create serializable snapshot
+SerializableLocation --> GPRMCEncoder : Input
+GPRMCEncoder --> OpenGTSSender : GPRMC string
+OpenGTSConfig --> OpenGTSSender : server, port, method=UDP, deviceId, path?
+OpenGTSSender --> OpenGTSServer : UDP datagram
+
+' External integrations and credential injection
+Gradle --> AppConfig : Inject OSM/Dropbox credentials
+LocalProperties --> Gradle : sdk.dir
+SDKTools --> Gradle
+Repos --> Gradle
+AppConfig --> OSM : GPSLOGGER_OSM_CONSUMERKEY/SECRET
+AppConfig --> Dropbox : GPSLOGGER_DROPBOX_APPKEY/APPSECRET
+OSM --> OSMService : API calls (optional)
+Dropbox --> DropboxService : API calls (optional)
+
+' Notes capturing constraints
+note right of GPSvc
+Requires Google Play Services.
+Android phones 2.2+ or emulator API 17+.
+end note
+
+note bottom of Gradle
+Reads ~/.gradle/gradle.properties for credentials.
+end note
+
+note right of OpenGTSConfig
+Required: server, port, method, deviceId.
+Optional: path.
+end note
+
+@enduml

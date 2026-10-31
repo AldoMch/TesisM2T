@@ -1,0 +1,138 @@
+@startuml
+title OCI Jenkins Terraform Deployment - System Architecture
+
+skinparam componentStyle rectangle
+
+actor "Deployment Operator" as Operator
+actor "Infrastructure Admin" as InfraAdmin
+actor "DevOps Engineer" as DevOps
+
+package "Operator Environment" as OpEnv {
+  component "terraform.tfvars / JSON\n(variable-file configuration)" as VarFile
+  component "Terraform CLI\n(init, plan, apply)" as TerraformCLI
+}
+
+package "Terraform Configuration" as TFConfig {
+  component "Variable Mapping & Validation\n- maps inputs to modules\n- enforces base64 for Cloud-Init\n- ensures canonical 'bastion_host'" as VarMap
+  component "OCI Provider" as OCIProvider
+  component "Jenkins Master Module\n- master_* variables\n- http_port, jnlp_port\n- label_prefix" as MasterModule
+  component "Jenkins Agent Module\n- slave_* variables\n- jnlp_port\n- label_prefix" as AgentModule
+}
+
+package "Deployment Inputs" as Inputs {
+  rectangle "OCI Credential Inputs\n- tenancy_ocid\n- compartment_ocid\n- user_ocid\n- region\n- fingerprint\n- private_key_path" as OciCreds
+  rectangle "SSH Access Inputs\n- ssh_authorized_keys\n- ssh_private_key" as SSHInputs
+  rectangle "Jenkins Cluster Inputs\n- label_prefix\n- jenkins_version\n- jenkins_password\n- http_port\n- jnlp_port\n- plugins" as ClusterInputs
+  rectangle "Master Inputs\n- master_ad\n- master_subnet_id\n- master_display_name\n- master_image_id\n- master_shape\n- master_user_data (base64)" as MasterInputs
+  rectangle "Agent Inputs\n- slave_count\n- slave_ads\n- slave_subnet_ids\n- slave_display_name\n- slave_image_id\n- slave_shape\n- slave_user_data (base64)" as AgentInputs
+  rectangle "Bastion Inputs (private deployment)\n- bastion_host (canonical)\n- bastion_user\n- bastion_private_key" as BastionInputs
+}
+
+cloud "OCI" as OCI {
+  node "Tenancy" as Tenancy {
+    node "Compartment" as Compartment {
+      node "VCN" as VCN {
+        node "Public Subnet" as PubSubnet {
+          node "Jenkins Master\nCompute Instance" as Master
+          component "Load Balancer (Optional)\nPublic endpoint for Jenkins" as LB
+        }
+        node "Private Subnet(s)" as PrivSubnets {
+          node "Jenkins Agents x N\nCompute Instances" as Agents
+          node "Bastion Host (Optional)\nControlled SSH access" as Bastion
+        }
+        component "NAT Gateway\n(Outbound only for private nodes)" as NAT
+      }
+    }
+  }
+}
+
+' Relationships: Operators and inputs
+Operator --> TerraformCLI : run\ninit/plan/apply
+DevOps --> VarFile : prepare\ncluster & node\nconfiguration
+InfraAdmin --> VCN : prepare existing\nnetwork objects
+
+VarFile --> OciCreds
+VarFile --> SSHInputs
+VarFile --> ClusterInputs
+VarFile --> MasterInputs
+VarFile --> AgentInputs
+VarFile --> BastionInputs
+
+OciCreds --> VarMap
+SSHInputs --> VarMap
+ClusterInputs --> VarMap
+MasterInputs --> VarMap
+AgentInputs --> VarMap
+BastionInputs --> VarMap
+
+TerraformCLI --> VarMap : consume variables
+TerraformCLI --> OCIProvider : provider init/use
+VarMap --> MasterModule
+VarMap --> AgentModule
+
+MasterModule --> OCIProvider : create master\nattach VNIC to\nmaster_subnet_id\napply master_user_data
+AgentModule --> OCIProvider : create N agents\nattach VNICs to\nslave_subnet_ids\napply slave_user_data
+
+OCIProvider --> OCI : OCI API calls
+
+' Provisioned resources and networking
+OCI ..> Master : provision compute\n(Jenkins Master)
+OCI ..> Agents : provision compute\n(Jenkins Agents x N)
+Master -[hidden]- Agents
+
+' Jenkins communication pathways
+Agents --> Master : JNLP (agent->master)\njnlp_port\n(private IPs)
+LB --> Master : HTTP/HTTPS\nhttp_port (optional)
+
+' SSH access paths
+Operator ..> Bastion : SSH (private deployment)\nvia bastion_user/private_key
+Bastion ..> Master : SSH (authorized_keys)
+Bastion ..> Agents : SSH (authorized_keys)
+Operator ..> Master : SSH (direct if public)\n(when exposed)
+
+' Notes for key constraints and prerequisites
+note right of VCN
+Pre-existing network objects used:
+- Subnets (public/private)
+- Route tables, DHCP options
+- Security lists
+Existing-infrastructure scenario: IDs supplied via variables.
+end note
+
+note bottom of NAT
+Private-node prerequisite:
+Outbound internet via NAT for package installs.
+Not enforced unless validation configured.
+end note
+
+note top of Master
+Jenkins Master:
+- http_port for UI
+- jnlp_port for agent comms
+- Configured via variables
+- Cloud-Init user_data (base64)
+end note
+
+note top of Agents
+Jenkins Agents:
+- Count = slave_count
+- Connect to Master via JNLP
+- Cloud-Init user_data (base64)
+- Placed in private subnets
+end note
+
+note right of BastionInputs
+Canonical variable name:
+bastion_host
+(end-to-end private-access support)
+end note
+
+note bottom of TerraformCLI
+Terraform sequence:
+- terraform init
+- terraform plan
+- terraform apply
+Repeatable via variable files.
+end note
+
+@enduml

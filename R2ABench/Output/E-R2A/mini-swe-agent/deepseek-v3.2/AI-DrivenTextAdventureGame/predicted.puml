@@ -1,0 +1,180 @@
+@startuml
+title AI-Driven Text Adventure Game and Community Platform - Layered Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam component {
+  BackgroundColor #FFFFFF
+  BorderColor #333333
+  FontColor #333333
+}
+
+'' === LAYERS ===
+package "Presentation Layer" {
+  component "Web Client (Vue.js/Nuxt.js)" as WEB_CLIENT {
+    [Game Interface]
+    [Community Interface]
+    [User Profile Interface]
+    [Admin Interface]
+  }
+
+  component "Mobile Client" as MOBILE_CLIENT
+}
+
+package "Application Layer" {
+  component "API Gateway" as API_GATEWAY {
+    [Authentication]
+    [Request Routing]
+    [Rate Limiting]
+  }
+
+  package "Game Services" {
+    component "Game Engine Service" as GAME_ENGINE {
+      [Plot Generation]
+      [Game State Management]
+      [Choice Processing]
+    }
+
+    component "Save Management Service" as SAVE_MGMT {
+      [Save Creation]
+      [Save Retrieval]
+      [Save Sharing]
+    }
+  }
+
+  package "Community Services" {
+    component "Post Service" as POST_SERVICE {
+      [Post Creation]
+      [Post Review]
+      [Search & Recommendations]
+    }
+
+    component "Comment Service" as COMMENT_SERVICE {
+      [Comment Management]
+      [Reply Management]
+    }
+
+    component "Notification Service" as NOTIFICATION_SERVICE {
+      [Notification Generation]
+      [Notification Delivery]
+    }
+  }
+
+  package "User Services" {
+    component "User Management Service" as USER_SERVICE {
+      [Registration/Authentication]
+      [Profile Management]
+      [Authorization]
+    }
+
+    component "Admin Service" as ADMIN_SERVICE {
+      [User Governance]
+      [Content Moderation]
+      [System Monitoring]
+    }
+
+    component "Favorites Service" as FAVORITES_SERVICE {
+      [Favorite Management]
+      [Collection Organization]
+    }
+  }
+}
+
+package "Infrastructure Layer" {
+  component "AI/LLM Integration" as AI_INTEGRATION {
+    [LLM API Client]
+    [Prompt Engineering]
+    [Response Processing]
+  }
+
+  component "Database Layer" as DB_LAYER {
+    database "MySQL Database" as MYSQL_DB {
+      [User Data]
+      [Game Saves]
+      [Posts & Comments]
+      [System Metadata]
+    }
+  }
+
+  component "File Storage" as FILE_STORAGE {
+    [Game Assets]
+    [User Uploads]
+    [Generated Content]
+  }
+
+  component "Message Queue" as MESSAGE_QUEUE {
+    [Async Processing]
+    [Event Distribution]
+  }
+
+  component "Cache Layer" as CACHE_LAYER {
+    [Session Cache]
+    [Content Cache]
+    [Game State Cache]
+  }
+}
+
+package "External Systems" {
+  component "LLM Provider API" as LLM_PROVIDER
+  component "Email Service" as EMAIL_SERVICE
+  component "Cloud Platform" as CLOUD_PLATFORM
+}
+
+'' === CONNECTIONS ===
+WEB_CLIENT --> API_GATEWAY : "HTTP/WebSocket"
+MOBILE_CLIENT --> API_GATEWAY : "HTTP/WebSocket"
+
+API_GATEWAY --> GAME_ENGINE : "Game API Calls"
+API_GATEWAY --> SAVE_MGMT : "Save Operations"
+API_GATEWAY --> POST_SERVICE : "Community API"
+API_GATEWAY --> COMMENT_SERVICE : "Comment API"
+API_GATEWAY --> NOTIFICATION_SERVICE : "Notification API"
+API_GATEWAY --> USER_SERVICE : "Auth/User API"
+API_GATEWAY --> ADMIN_SERVICE : "Admin API"
+API_GATEWAY --> FAVORITES_SERVICE : "Favorites API"
+
+GAME_ENGINE --> AI_INTEGRATION : "LLM Requests"
+GAME_ENGINE --> SAVE_MGMT : "Save/Load Operations"
+GAME_ENGINE --> DB_LAYER : "Game State Persistence"
+
+SAVE_MGMT --> DB_LAYER : "Save Data CRUD"
+SAVE_MGMT --> POST_SERVICE : "Save Sharing"
+
+POST_SERVICE --> DB_LAYER : "Post Data CRUD"
+POST_SERVICE --> COMMENT_SERVICE : "Comment Association"
+POST_SERVICE --> NOTIFICATION_SERVICE : "Review Events"
+
+COMMENT_SERVICE --> DB_LAYER : "Comment Data CRUD"
+COMMENT_SERVICE --> NOTIFICATION_SERVICE : "Comment Events"
+
+NOTIFICATION_SERVICE --> DB_LAYER : "Notification Storage"
+NOTIFICATION_SERVICE --> MESSAGE_QUEUE : "Async Delivery"
+
+USER_SERVICE --> DB_LAYER : "User Data CRUD"
+USER_SERVICE --> EMAIL_SERVICE : "Verification Emails"
+
+ADMIN_SERVICE --> DB_LAYER : "Governance Data"
+ADMIN_SERVICE --> POST_SERVICE : "Content Review"
+
+FAVORITES_SERVICE --> DB_LAYER : "Favorite Data CRUD"
+
+AI_INTEGRATION --> LLM_PROVIDER : "API Calls"
+AI_INTEGRATION --> FILE_STORAGE : "Generated Content"
+
+DB_LAYER --> CACHE_LAYER : "Cache Warming"
+MESSAGE_QUEUE --> NOTIFICATION_SERVICE : "Event Processing"
+
+'' === DEPLOYMENT NOTES ===
+note right of CLOUD_PLATFORM
+  Deployed on Kubernetes
+  with Docker containers
+  Auto-scaling enabled
+end note
+
+note right of LLM_PROVIDER
+  External LLM Service
+  (OpenAI, Anthropic, etc.)
+  For dynamic plot generation
+end note
+
+@enduml

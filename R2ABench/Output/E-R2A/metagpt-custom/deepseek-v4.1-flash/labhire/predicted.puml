@@ -1,0 +1,136 @@
+@startuml
+
+package "Presentation/UI Layer" {
+  component "Student UI" as StudentUI
+  component "Mentor UI" as MentorUI
+  component "Admin UI" as AdminUI
+}
+
+package "Application/Service Layer" {
+  component "Authentication & Registration" as AuthReg
+  component "Project Service" as ProjectSvc
+  component "Recommendation Service" as RecommendSvc
+  component "Search Service" as SearchSvc
+  component "Application & Mutual Evaluation" as AppMutualSvc
+  component "Favorites Service" as FavoriteSvc
+  component "Personal Information & Resume" as PersonalResume
+  component "Enterprise Certification" as EnterpriseCert
+  component "Community Service" as CommunitySvc
+  component "Popularity Ranking" as PopularitySvc
+  component "Admin & Review Service" as AdminReviewSvc
+  component "Automatic Field Validation" as AutoFieldValidation
+}
+
+package "Integration/External Interface Layer" {
+  component "Verification Code Service" as VerificationCode
+  component "Notification Service" as NotificationSvc
+  component "Chat Service" as ChatSvc
+  component "Graphical CAPTCHA Service" as CaptchaSvc
+  component "SMS Verification Code Handler (optional; provider unspecified)" as SmsCodeHandler
+}
+
+package "Domain/Data Layer" {
+  database "Back-end Database" as BackendDB
+}
+
+package "Security/Governance Layer" {
+  component "Risk Control & Audit" as RiskAudit
+  component "Access Control & Privacy" as AccessControl
+  component "Encryption Service" as EncryptionSvc
+}
+
+cloud "University/Campus Email System" as UnivEmail
+cloud "Enterprise Email System/Domain" as EntEmail
+cloud "Email Push Service" as EmailPush
+
+StudentUI --> AuthReg
+StudentUI --> RecommendSvc
+StudentUI --> SearchSvc
+StudentUI --> ProjectSvc
+StudentUI --> PersonalResume
+StudentUI --> FavoriteSvc
+StudentUI --> CommunitySvc
+StudentUI --> EnterpriseCert
+StudentUI --> AppMutualSvc
+StudentUI --> ChatSvc
+
+MentorUI --> AuthReg
+MentorUI --> ProjectSvc
+MentorUI --> AppMutualSvc
+MentorUI --> ChatSvc
+MentorUI --> PersonalResume
+
+AdminUI --> AdminReviewSvc
+
+AuthReg --> VerificationCode : campus email verification code
+EnterpriseCert --> VerificationCode : enterprise email verification code
+
+RecommendSvc --> BackendDB : user interest/skill/behavior tags, project tags
+
+NotificationSvc --> EmailPush : email push
+NotificationSvc --> BackendDB : in-site messages
+NotificationSvc --> AccessControl : notification visibility
+
+ChatSvc --> AccessControl : chat access permissions
+ChatSvc --> EncryptionSvc : encrypted chat content
+ChatSvc --> BackendDB
+ChatSvc --> NotificationSvc : mentor messages
+
+AdminReviewSvc --> BackendDB : administrator accounts, review data
+AdminReviewSvc --> EnterpriseCert : second-round enterprise qualification review
+AdminReviewSvc --> AuthReg : first-round university identity review
+AdminReviewSvc --> PersonalResume : first-round identity/resume review
+AdminReviewSvc --> CommunitySvc : post/comment review and deletion
+AdminReviewSvc --> AutoFieldValidation : automatic field validation (FR-022)
+AdminReviewSvc --> NotificationSvc : review feedback via in-site/email
+AdminReviewSvc --> AccessControl : admin review permissions
+
+PersonalResume --> AccessControl : resume permission control
+PersonalResume --> BackendDB
+
+AppMutualSvc --> AccessControl : application/evaluation permissions
+AppMutualSvc --> ProjectSvc : project status gating for application/evaluation
+AppMutualSvc --> BackendDB
+AppMutualSvc --> NotificationSvc : project applications
+
+CommunitySvc --> EnterpriseCert : verify enterprise certification for referral posts
+CommunitySvc --> RiskAudit : sensitive/ad/malicious review criteria and massive comments
+CommunitySvc --> PopularitySvc : popularity-sorted posts/comments
+CommunitySvc --> NotificationSvc : comment replies
+CommunitySvc --> AccessControl : post/comment permissions
+CommunitySvc --> BackendDB
+
+PopularitySvc --> CommunitySvc : likes/comments/views/time decay
+PopularitySvc --> AccessControl : ranking visibility
+PopularitySvc --> BackendDB
+
+ProjectSvc --> BackendDB
+ProjectSvc --> NotificationSvc : review states
+ProjectSvc --> AccessControl : project visibility/edit permissions
+
+FavoriteSvc --> BackendDB
+FavoriteSvc --> NotificationSvc : favorite updates
+FavoriteSvc --> AccessControl : favorite permissions
+
+RecommendSvc --> AccessControl : recommendation visibility
+SearchSvc --> BackendDB
+SearchSvc --> AccessControl : search result permissions
+
+AuthReg --> BackendDB
+AuthReg --> EncryptionSvc : login/registration confidentiality
+AuthReg --> AccessControl : user-type and role permissions
+AuthReg --> CaptchaSvc : graphical verification code
+AuthReg --> SmsCodeHandler : SMS verification code (optional/inferred)
+AuthReg --> RiskAudit : login/operation frequency limits, abnormal behavior
+
+RiskAudit --> AdminReviewSvc : risk-control logs, audit alerts
+RiskAudit --> CaptchaSvc : graphical code challenges
+RiskAudit --> SmsCodeHandler : SMS code challenges (optional/inferred)
+
+VerificationCode --> UnivEmail : send/validate campus email codes
+VerificationCode --> EntEmail : send/validate enterprise email codes
+
+EnterpriseCert --> BackendDB
+EnterpriseCert --> AccessControl : certification data permissions
+
+@enduml

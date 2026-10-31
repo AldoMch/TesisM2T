@@ -1,0 +1,120 @@
+{
+  "candidate": {
+    "sample_id": "s000050_275af3e0",
+    "repository_name": "SafeBreach-Labs/hAFL2",
+    "image_url": "https://github.com/SafeBreach-Labs/hAFL2/blob/main/images/Architecture.png",
+    "source_ref": "64e1bfab4a63a3515fcbbbfce2a5837a2c71bafa",
+    "total_score": 100,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 11702,
+    "document_count": 18,
+    "document_types": [
+      "code_api_route",
+      "config",
+      "readme",
+      "test",
+      "tutorial_guide"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 31,
+      "user_scenario": 1,
+      "api_io": 22,
+      "deployment": 32,
+      "constraints": 16,
+      "non_functional": 4
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 15,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 100
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "kAFL-Fuzzer/test.py",
+      "doc_type": "test",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05234883184856744,
+      "text": "#!/usr/bin/env python3 # # Copyright (C) 2019-2020 Intel Corporation # SPDX-License-Identifier: AGPL-3.0-or-later \"\"\" This file offers an alternative/standalone entry point to tests/, e.g. to launch some benchmarks contained there. To execute all regular tests, run pytest inside kAFL-Fuzzer/ directory. \"\"\" from tests.test_random import * from tests.test_deterministic import * from tests.test_havoc_handler import * if __name__ == '__main__': print(\"\\nRunning tests...\") rand_main() deter_main() havoc_main() print(\"\\nDone!\")"
+    },
+    {
+      "evidence_id": "E002",
+      "path": "tests/user_bench/README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.050633469419048165,
+      "text": "# kAFL Userspace Fuzzing This directly contains sample scripts for launching Linux userspace binaries in kAFL. The selected target binary is packaged into an initrd and launched via . An embedded forkserver is used to map kAFL hypercalls to AFL-style I/O inside the guest. The scripts are sufficiently clever to launch typical AFL benchmark binaries such as those in the binutils package. The required shared libraries are automatically copied from the host system into the initrd. Example use:"
+    },
+    {
+      "evidence_id": "E003",
+      "path": "tutorial.md",
+      "doc_type": "tutorial_guide",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05379409713440477,
+      "text": "xample, if the output was , assign the variable with: 3. Disable Child Partition DSE by running the following from within an elevated command prompt (restart the child partition VM after you're done): # Compile Necessary Binaries You need to compile both the harness and the crash monitoring driver from the hAFL2 codebase. We will be using two of them - packet_sender.exe (the program which triggers the packet-sending IOCTL) and loader.exe (which creates a fuzzing snapshot, loads and executes packet_sender.exe). 1. Compile hAFL2’s fuzzing binaries by executing bash ./hAFL2/targets/windows_86_64/compile.sh. 2. Use Visual Studio to compile both drivers from within the folder: 1. **CPHarness**..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "tutorial.md",
+      "doc_type": "tutorial_guide",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05278081797235022,
+      "text": "el pointer of netvsc and use it in order to send packets to the root partition. The offset of this global list is changed between Windows builds, so if you'll use a different version of Windows, make sure to do the following: 1. Use IDA Pro in order to disassemble the of the Windows build you've installed on the child partition VM. 2. Rebase the program address to 0 ( ) 3. Open the Names window ( ) 4. Look for and copy its offset. 5. Open source code and change the (within the ) to the offset you've copied. 6. Don't compile it yet. ## Configuring the Child Partition VM Note: *Make sure the child partition VM is turned off.* 1. **From within the Root Partition VM:** 1. open a PowerShell co..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "kAFL-Fuzzer/tests/test_deterministic.py",
+      "doc_type": "test",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.050679195556178544,
+      "text": "outdata)) for payload in payloads: copy = bytearray(payload) for skip_null in [False, True]: for use_eff_map in [False, True]: if use_eff_map: eff_map = generate_effector_map(len(payload)) else: eff_map = None func(copy, verifier, effector_map=eff_map, skip_null=skip_null) # mutators may work directly on payload but must restore changes on exit! assert(copy == payload) def assert_bitflip_invariants(func, flipped_bits, loops, skips, payloads): global calls def verifier(outdata, label=None): global calls calls += 1 # each mutator has characteristic max number of bits it can flip assert(ham_distance(payload,outdata) == flipped_bits), \"Bitflips mismatch:\\n%s\\n%s\" % (hexlify(payload),hexlify(o..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "kAFL-Fuzzer/tests/test_deterministic.py",
+      "doc_type": "test",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.04936454849498328,
+      "text": "# Copyright (C) 2019-2020 Intel Corporation # SPDX-License-Identifier: AGPL-3.0-or-later \"\"\" Test kAFL deterministic mutations \"\"\" import os import struct from binascii import hexlify from fuzzer.technique.interesting_values import * from fuzzer.technique.arithmetic import * from fuzzer.technique.bitflip import * from fuzzer.technique.helper import * from tests.helper import ham_distance, ham_weight def generate_effector_map(length): eff_map = [] for i in range(length): eff_map.append(random.choice([True, False])) return eff_map def run_mutation(func, payloads, v=False): global calls skip_zero = False eff_map = None def verifier(outdata, label=None): global calls calls += 1 if v: print(\"O..."
+    }
+  ]
+}

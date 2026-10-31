@@ -1,0 +1,111 @@
+@startuml Earth_Defender_Architecture_v2
+
+skinparam backgroundColor #FAFAFA
+skinparam packageBackgroundColor #EEF2FF
+skinparam componentBackgroundColor #FFFFFF
+skinparam nodeBackgroundColor #FFF8E1
+skinparam databaseBackgroundColor #E8F5E9
+skinparam defaultFontName Arial
+skinparam arrowColor #37474F
+skinparam componentBorderColor #546E7A
+skinparam packageBorderColor #3949AB
+skinparam nodeBorderColor #F57F17
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "External Systems" {
+    component [DNS / Load Balancer] as DNS
+}
+
+' ─────────────────────────────────────────────
+' LAYER 1 – CLIENT (BROWSER)
+' ─────────────────────────────────────────────
+package "Client Layer (Browser)" {
+
+    component [Three.js Renderer] as Renderer
+    component [WebSocket Manager] as WSManager
+    component [Message Serializer /\nDeserializer] as MsgCodec
+    component [Inbound Action Dispatcher] as ActionDispatcher
+    component [Reconnect Context Store] as ReconnectStore
+    component [Room Manager] as RoomManager
+    component [Server List Manager] as ServerListMgr
+    component [Heartbeat Timer /\nPing-Pong Handler] as HeartbeatTimer
+    component [Page / Window Controller] as PageController
+}
+
+' ─────────────────────────────────────────────
+' LAYER 2 – WEB / ASSET SERVER
+' ─────────────────────────────────────────────
+package "Web / Asset Server Layer" {
+    component [Static Asset Server\n(HTML, CSS, JS, Images)] as AssetServer
+}
+
+' ─────────────────────────────────────────────
+' LAYER 3 – GAME SERVER (MASTER)
+' ─────────────────────────────────────────────
+package "Game Server Layer – Master (Erlang/OTP)" {
+    component [OTP Game Server – Master] as OTPMaster
+}
+
+' ─────────────────────────────────────────────
+' LAYER 4 – GAME SERVER (REPLICA)
+' ─────────────────────────────────────────────
+package "Game Server Layer – Replica (Erlang/OTP)" {
+    component [OTP Game Server – Replica] as OTPReplica
+}
+
+' ═══════════════════════════════════════════════════════
+' DEPENDENCIES & DATA FLOWS
+' ═══════════════════════════════════════════════════════
+
+' --- DNS resolves address for Client and routes to Asset/Game servers ---
+DNS --> WSManager       : resolves game server\naddress for client
+DNS --> AssetServer     : routes asset requests\n(HTTP load balancing)
+
+' --- Browser fetches static assets over HTTP ---
+WSManager --> AssetServer   : GET assets over HTTP\n(HTML, JS, CSS, images)
+AssetServer --> WSManager   : delivers static bundle\n(HTTP response)
+
+' --- Three.js bundle initialised from downloaded assets ---
+WSManager --> Renderer  : initialise Three.js\nbundle after download
+
+' --- WebSocket connection: HTTP Upgrade ws:// over HTTP ---
+WSManager --> OTPMaster : WebSocket connection\n(HTTP Upgrade -> ws://)\n[event, data] JSON frames
+
+' --- Server-to-client inbound message flow ---
+OTPMaster --> WSManager : inbound JSON frames\n[event, data] over ws://
+
+' --- Client inbound processing pipeline ---
+WSManager --> MsgCodec          : raw inbound frame\n(decode)
+MsgCodec --> ActionDispatcher   : parsed [action, data]
+
+' --- Client outbound processing pipeline (all outbound via MsgCodec) ---
+HeartbeatTimer --> MsgCodec     : encode ping / null
+RoomManager --> MsgCodec        : encode room\ncreate / join events
+ReconnectStore --> MsgCodec     : encode reconnect\ncontext payload
+MsgCodec --> WSManager          : serialised [event, data]\noutbound frame
+
+' --- Heartbeat: periodic ping sent; pong handled by dispatcher ---
+HeartbeatTimer --> HeartbeatTimer   : 60 s interval trigger
+ActionDispatcher --> HeartbeatTimer : pong response\n-> reset timer
+
+' --- ActionDispatcher routes inbound actions ---
+ActionDispatcher --> Renderer       : game_reconnect\n-> re-add ships
+ActionDispatcher --> RoomManager    : room_players_number\n-> update count
+ActionDispatcher --> ServerListMgr  : servers_list\n-> update list
+ActionDispatcher --> PageController : server_error\n-> trigger page reload
+
+' --- servers_list_redirect: update list then disconnect WebSocket ---
+ActionDispatcher --> ServerListMgr  : servers_list_redirect\n-> update server list
+ServerListMgr --> WSManager         : disconnect current\nWebSocket connection
+
+' --- ReconnectStore: written on room join/create; read on close ---
+RoomManager --> ReconnectStore  : write room ID,\nplayer ID, ship index\non join / create
+WSManager --> ReconnectStore    : read context\non connection close\nfor reconnect payload
+
+' --- Master / Replica state replication and failover ---
+OTPMaster --> OTPReplica    : state replication /\nfault-tolerant mirroring
+OTPReplica --> WSManager    : failover redirect\n(servers_list_redirect)\nif master unavailable
+
+@enduml

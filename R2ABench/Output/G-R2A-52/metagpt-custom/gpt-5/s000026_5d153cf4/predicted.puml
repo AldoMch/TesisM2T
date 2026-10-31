@@ -1,0 +1,53 @@
+@startuml
+
+package "Platform Environment" {
+  cloud "GCP Project" as gcp {
+    node "GKE Cluster" as gke {
+      package "Configuration" {
+        component "Kubernetes ConfigMap (topic)" as confmap
+        component "Runtime Topic Parameter (SYMBOL)" as symbolEnv
+      }
+      package "Runtime" {
+        node "Adapter Pod/Container" as pod {
+          component "exec.sh" as exesh
+          component "pulltop (Node.js)" as pulltop
+          component "websocketd (:8080)" as ws
+          component "RecentMessageCache (last 10)" as cache
+        }
+      }
+      package "Networking / Exposure" {
+        component "Kubernetes Service (LoadBalancer) (:80)" as svc
+      }
+      package "Deployment & Scaling" {
+        component "Adapter Deployment" as deploy
+        component "Horizontal Pod Autoscaler (HPA)" as hpa
+      }
+    }
+    cloud "Google Cloud Pub/Sub" as pubsub
+  }
+}
+
+node "Web Clients" as clients
+
+confmap --> deploy : keyRef 'topic'
+deploy --> symbolEnv : inject ConfigMap.topic -> env SYMBOL
+
+symbolEnv --> exesh : env SYMBOL
+pod --> exesh : entrypoint
+exesh --> pulltop : start with SYMBOL
+
+pulltop --> cache : feed messages
+ws --> cache : read last 10 on connect
+pulltop --> ws : runtime output
+
+pulltop --> pubsub : subscribe & pull
+
+deploy --> pod : manage pods
+hpa --> deploy : scale (min 1..max 2, CPU 80%)
+
+clients --> svc : WebSocket (ws://) TCP 80
+svc --> clients : WebSocket (upgrade + frames)
+svc --> ws : forward 80 -> 8080 (targetPort)
+ws --> svc : frames via Service
+
+@enduml

@@ -1,0 +1,102 @@
+@startuml
+' Layered Component/Deployment Diagram for Activiti 7 Platform
+
+' === Presentation Layer ===
+package "Presentation Layer" {
+    component "REST/API Requests"
+    component "Developer Actions"
+    component "Cluster Commands"
+}
+
+' === API Layer ===
+package "API Layer" {
+    component "ProcessRuntime API" as ProcessAPI
+    component "TaskRuntime API" as TaskAPI
+    component "Authentication Gateway"
+    component "API Gateway"
+}
+
+' === Service Layer ===
+package "Service Layer" {
+    component "Activiti Runtime Bundle" as RuntimeBundle
+    component "Audit Service" as AuditSvc
+    component "Query Service" as QuerySvc
+    component "Notification Service" as NotificationSvc
+    component "Cloud Connectors" as CloudConnectors
+}
+
+' === Security Layer ===
+package "Security Layer" {
+    component "Keycloak" as AuthServer
+    component "Spring Security" as SecFramework
+}
+
+' === Infrastructure Layer ===
+package "Infrastructure Layer" {
+    node "Kubernetes / GKE" {
+        component "NGINX Ingress Controller" as IngressCtrl
+        component "Deployment Descriptors" as DeployCfg
+        component "Kubernetes Registry/Config Maps" as K8sRegistry
+        database "Persistent Storage"
+    }
+}
+
+' === External Systems ===
+cloud "External Users & Systems"
+
+' === Major Dependencies & Connections ===
+
+' Presentation to API
+"REST/API Requests" --> "API Gateway"
+"Developer Actions" --> "API Gateway"
+"Cluster Commands" --> "API Gateway"
+
+' API Gateway routing
+"API Gateway" --> "ProcessRuntime API"
+"API Gateway" --> "TaskRuntime API"
+"API Gateway" --> "Authentication Gateway"
+
+' API to Security
+"ProcessRuntime API" --> "Authentication Gateway"
+"TaskRuntime API" --> "Authentication Gateway"
+"Authentication Gateway" --> "Spring Security"
+"Spring Security" --> "Keycloak"
+"Authentication Gateway" --> "Keycloak"
+
+' API to Services
+"ProcessRuntime API" --> "Activiti Runtime Bundle"
+"TaskRuntime API" --> "Activiti Runtime Bundle"
+"Activiti Runtime Bundle" --> "Audit Service"
+"Activiti Runtime Bundle" --> "Query Service"
+"Activiti Runtime Bundle" --> "Notification Service"
+"Activiti Runtime Bundle" --> "Cloud Connectors"
+
+' Security Internal Flow (removed ROLE_ACTIVITI_USER Context component)
+"Spring Security" --> "ProcessRuntime API" : [valid token]
+"Spring Security" --> "TaskRuntime API" : [valid token]
+"Spring Security" --> "Authentication Gateway" : [valid token]
+
+' Rejection paths for invalid/expired tokens or unauthorized access
+"Spring Security" -up-> "External Users & Systems" : reject [invalid/expired token]
+"Spring Security" -up-> "External Users & Systems" : reject [unauthorized access]
+
+' Infrastructure Routing
+"NGINX Ingress Controller" --> "API Gateway"
+
+' Deployment Configs with scalability configuration
+"Deployment Descriptors" --> "Activiti Runtime Bundle" : configures replica count
+"Deployment Descriptors" --> "Audit Service" : configures input rate
+"Deployment Descriptors" --> "Query Service" : configures input rate
+"Deployment Descriptors" --> "Notification Service" : configures input rate
+
+' Kubernetes registry/config maps usage
+"K8sRegistry" --> "DeployCfg" : provides configs
+
+' External Access
+"External Users & Systems" --> "NGINX Ingress Controller"
+
+' Persistent Data
+"Audit Service" --> "Persistent Storage"
+"Query Service" --> "Persistent Storage"
+
+@enduml

@@ -1,0 +1,105 @@
+@startuml
+
+package "Presentation Layer" {
+  component "WeChat Mini Program UI" as MiniProgramUI
+  interface "Administrator Backend Interface" as AdminBackend
+}
+
+package "Business Layer" {
+  component "Authentication & Permission Control" as Auth
+  component "Product Information Viewing" as ProductView
+  component "Order Module" as OrderModule
+  component "Personal Center" as PersonalCenter
+  component "Product Management" as ProductMgmt
+  component "Order Management" as OrderMgmt
+  component "User Management" as UserMgmt
+  component "Security & Input Validation" as SecurityValidation
+  component "Data Review & Privacy Enforcement" as DataReviewPrivacy
+  component "Monitoring & Logging" as MonitoringLogging
+  component "Administrator Log Management" as AdminLogMgmt
+  component "Fault Recovery & Incident Management" as FaultRecovery
+}
+
+package "Data Layer" {
+  component "Data Access/Repository" as DataAccess
+}
+
+package "Data Entity" {
+  database "Campus Helper" as Database
+}
+
+package "External Systems" {
+  component "WeChat Mini Program Runtime" as WeChatRuntime
+  node "WeChat 8.0+ Client" as WeChatClient
+  node "Android 5.0+ OS" as AndroidOS
+}
+
+' Presentation dependencies
+MiniProgramUI --> Auth : login / role permission checks
+MiniProgramUI --> ProductView : browse / detail
+MiniProgramUI --> OrderModule : create / modify / confirm / cancel
+MiniProgramUI --> PersonalCenter : favorites / orders
+
+AdminBackend --> Auth : administrator login/permission check
+AdminBackend --> ProductMgmt : product admin (via Auth)
+AdminBackend --> OrderMgmt : order admin (via Auth)
+AdminBackend --> UserMgmt : user admin (via Auth)
+AdminBackend --> AdminLogMgmt : retrieve/manage operation logs (via Auth)
+AdminBackend --> DataReviewPrivacy : review/audit data privacy (via Auth)
+AdminBackend --> FaultRecovery : emergency update/incident handling (via Auth)
+
+' Authentication and permission enforcement
+Auth --> UserMgmt : verify accounts/roles
+Auth --> DataAccess : read credentials/roles/permissions
+Auth --> ProductView : enforce user access
+Auth --> OrderModule : enforce user permissions
+Auth --> PersonalCenter : enforce access
+Auth --> ProductMgmt : enforce admin permissions
+Auth --> OrderMgmt : enforce admin permissions
+Auth --> UserMgmt : enforce management permissions
+Auth --> AdminLogMgmt : enforce admin permissions
+Auth --> DataReviewPrivacy : enforce data review permissions
+Auth --> FaultRecovery : enforce incident management permissions
+Auth --> MonitoringLogging : auth/security logs
+
+' Business data access
+ProductView --> DataAccess : read product/category
+OrderModule --> DataAccess : order CRUD
+PersonalCenter --> DataAccess : read favorites/orders
+ProductMgmt --> DataAccess : product CRUD/search
+OrderMgmt --> DataAccess : order read/update
+UserMgmt --> DataAccess : user/permission read/update
+AdminLogMgmt --> DataAccess : audit/operation log CRUD
+DataReviewPrivacy --> DataAccess : review stored data/privacy
+DataAccess --> Database : persistence / retrieval
+
+' Security validation and privacy enforcement
+SecurityValidation --> Auth : validate login inputs
+SecurityValidation --> ProductView : validate search/detail input
+SecurityValidation --> OrderModule : validate order input/injection
+SecurityValidation --> OrderMgmt : validate admin order changes
+SecurityValidation --> ProductMgmt : validate/block injection
+SecurityValidation --> UserMgmt : validate/protect privacy
+SecurityValidation --> DataReviewPrivacy : enforce privacy controls
+SecurityValidation --> DataAccess : review data access/privacy
+SecurityValidation --> Database : inspect stored data/privacy
+
+' Monitoring, logging, and incident management
+ProductView --> MonitoringLogging : service logs/response time
+OrderModule --> MonitoringLogging : order service logs/error codes
+PersonalCenter --> MonitoringLogging : service logs
+ProductMgmt --> MonitoringLogging : service logs
+OrderMgmt --> MonitoringLogging : service logs
+UserMgmt --> MonitoringLogging : service logs
+DataAccess --> MonitoringLogging : DB load/slow query metrics
+Database --> MonitoringLogging : database metrics
+MonitoringLogging --> FaultRecovery : alerts/incidents
+FaultRecovery --> DataAccess : rollback/recovery data
+FaultRecovery --> AdminBackend : incident alerts/case study
+
+' External runtime
+WeChatClient --> WeChatRuntime : runs Mini Program
+AndroidOS --> WeChatClient : runs
+WeChatRuntime --> MiniProgramUI : runtime APIs
+
+@enduml

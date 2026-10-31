@@ -1,0 +1,113 @@
+@startuml
+title AWS IoT Device Simulator - Layered Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' Presentation / Client Layer
+' ============================================================
+package "Presentation Layer" {
+  [Web Management Console\n(simulation & device-type UI)] as CONSOLE
+  [API Client\n(REST consumer)] as APICLIENT
+}
+
+' ============================================================
+' Identity & Access
+' ============================================================
+package "Identity & Access (AWS-managed)" {
+  [Amazon Cognito\n(user authentication / JWT)] as COGNITO
+}
+
+' ============================================================
+' Edge / API Layer
+' ============================================================
+package "API Layer (Amazon API Gateway)" {
+  [Regional REST API\n(API ID + deployed endpoint)] as APIGW
+  [Stage: prod] as STAGE
+  [Request Validation\n(params + body)] as REQVAL
+  [CORS Preflight Config\n(GET/POST/PUT/DELETE/OPTIONS, statusCode 200)] as CORS
+}
+
+' ============================================================
+' Service / Compute Layer
+' ============================================================
+package "Service Layer (AWS Lambda)" {
+  [Simulation Management Service\n(CRUD simulations)] as SIMSVC
+  [Device Type Management Service] as DEVICESVC
+  [Route Loading Service\n(FR-005, FR-006)] as ROUTESVC
+  [Custom Resource Handler\n(FR-004)] as CRHANDLER
+}
+
+' ============================================================
+' Orchestration Layer
+' ============================================================
+package "Orchestration Layer" {
+  [AWS Step Functions\n(simulation orchestration)] as STEPFUN
+  [Device Simulation Engine\n(FR-007 simulated device behavior)] as SIMENGINE
+  [Simulated Message Publisher\n(FR-008)] as PUBLISHER
+}
+
+' ============================================================
+' Data Layer
+' ============================================================
+package "Data Layer" {
+  database "Amazon DynamoDB\n(simulations, device types, route state)" as DDB
+  database "Amazon S3 Route Bucket\n(ROUTE_BUCKET, route-{id}.json)" as S3ROUTE
+}
+
+' ============================================================
+' External / Platform Layer
+' ============================================================
+package "External & Platform Services" {
+  [AWS IoT\n(message topics)] as IOT
+  [AWS CloudFormation\n(custom resource events, stack name)] as CFN
+  [Solution Configuration\n(solution ID / version)] as SOLCFG
+}
+
+' ============================================================
+' Observability (NFR-001..003)
+' ============================================================
+package "Observability" {
+  [CloudWatch Logs\n(JSON access logs, INFO method logging)] as CWLOGS
+  [AWS X-Ray Tracing] as XRAY
+}
+
+' ------------------------- Relationships -------------------------
+CONSOLE --> APIGW : HTTPS REST calls
+APICLIENT --> APIGW : HTTPS REST calls
+CONSOLE --> COGNITO : authenticate / obtain token
+COGNITO --> APIGW : Authorization header (JWT)
+
+APIGW --> STAGE
+APIGW --> REQVAL
+APIGW --> CORS
+
+APIGW --> SIMSVC : Lambda integration
+APIGW --> DEVICESVC : Lambda integration
+APIGW --> ROUTESVC : Lambda integration
+
+SIMSVC --> DDB : read/write simulation state
+DEVICESVC --> DDB : read/write device types
+SIMSVC --> STEPFUN : start simulation execution
+STEPFUN --> SIMENGINE : invoke device simulation
+SIMENGINE --> ROUTESVC : request route state
+ROUTESVC --> S3ROUTE : GetObject(ROUTE_BUCKET, route key)
+ROUTESVC --> DDB : persist assembled route state
+SIMENGINE --> PUBLISHER : generated device messages
+PUBLISHER --> IOT : publish to IoT topics
+SIMENGINE --> DDB : update simulation progress
+
+CFN --> CRHANDLER : custom resource event + Lambda context
+SOLCFG --> CRHANDLER : solution ID / version
+CRHANDLER --> CFN : CloudFormation response body
+
+APIGW --> CWLOGS : access logs (JSON)
+APIGW --> XRAY : tracing enabled
+SIMSVC --> CWLOGS
+DEVICESVC --> CWLOGS
+ROUTESVC --> CWLOGS
+CRHANDLER --> CWLOGS
+
+@enduml

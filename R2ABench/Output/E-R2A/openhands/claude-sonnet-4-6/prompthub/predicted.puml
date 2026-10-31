@@ -1,0 +1,140 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam component {
+  BackgroundColor #DDEEFF
+  BorderColor #336699
+  FontColor #003366
+}
+skinparam package {
+  BackgroundColor #F0F4FF
+  BorderColor #336699
+}
+skinparam database {
+  BackgroundColor #FFF3CC
+  BorderColor #CC9900
+}
+skinparam node {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+skinparam actor {
+  BackgroundColor #FCE4EC
+  BorderColor #880E4F
+}
+skinparam arrow {
+  Color #336699
+}
+
+actor Visitor as visitor
+actor "Registered User" as user
+actor Administrator as admin
+
+node "Client Browser\n(Chrome / Firefox / Safari)" as client_browser {
+  package "Frontend Application\n[Vue.js / jQuery / HTML / CSS]" as frontend {
+    component "Home Page &\nArtwork List UI" as ui_home
+    component "Registration / Login /\nAccount UI" as ui_auth
+    component "Artwork Detail UI" as ui_detail
+    component "Upload & Edit UI" as ui_upload
+    component "Favourite Management UI" as ui_fav
+    component "Notification UI" as ui_notif
+    component "Admin Dashboard UI" as ui_admin
+  }
+}
+
+node "Server\n[Ubuntu 22.04 · Docker 20.10.17]" as server {
+
+  package "Backend\n[Python · Django]" as backend {
+    component "User & Auth\nService" as svc_auth
+    component "Artwork\nService" as svc_artwork
+    component "Review\nService" as svc_review
+    component "Favourite\nService" as svc_fav
+    component "Comment & Reply\nService" as svc_comment
+    component "Follow &\nRelationship Service" as svc_follow
+    component "Notification\nService" as svc_notif
+    component "Admin\nService" as svc_admin
+    component "Security &\nValidation Layer\n[HTTPS · Auth · XSS/SQL Guard]" as svc_security
+    component "Log\nService" as svc_log
+  }
+
+  package "Algorithm Support Module\n[Python · PyTorch / TensorFlow]" as algo {
+    component "Popular\nRecommendation Engine" as algo_popular
+    component "Personalized\nRecommendation Engine" as algo_personal
+  }
+
+  package "Data Layer" as data {
+    database "SQLite Database" as db {
+      component "User Accounts\n& Credentials" as db_user
+      component "AI Artworks\n& Prompts" as db_artwork
+      component "Review Records" as db_review
+      component "Comments\n& Replies" as db_comment
+      component "Favourites &\nCategories" as db_fav
+      component "Follow\nRelationships" as db_follow
+      component "Browsing\nHistory" as db_history
+      component "Notification\nMessages" as db_notif
+    }
+    component "Image File\nStorage" as file_storage
+    component "Log Storage\n& Backup" as log_storage
+  }
+}
+
+' Actor to Frontend
+visitor --> ui_home : browse artworks\n& search
+visitor --> ui_auth : register / login
+visitor --> ui_detail : view artwork detail
+user --> ui_home : browse / recommend
+user --> ui_auth : manage account
+user --> ui_detail : comment / reply / favourite
+user --> ui_upload : upload / edit artwork
+user --> ui_fav : manage favourites
+user --> ui_notif : view notifications
+admin --> ui_admin : review / moderate
+
+' Frontend to Backend (HTTPS)
+ui_auth ..> svc_security : HTTPS request
+ui_home ..> svc_security : HTTPS request
+ui_detail ..> svc_security : HTTPS request
+ui_upload ..> svc_security : HTTPS request
+ui_fav ..> svc_security : HTTPS request
+ui_notif ..> svc_security : HTTPS request
+ui_admin ..> svc_security : HTTPS request
+
+' Security layer distributes to services
+svc_security --> svc_auth
+svc_security --> svc_artwork
+svc_security --> svc_review
+svc_security --> svc_fav
+svc_security --> svc_comment
+svc_security --> svc_follow
+svc_security --> svc_notif
+svc_security --> svc_admin
+svc_security --> svc_log
+
+' Services to Recommendation
+svc_artwork --> algo_popular : popularity signals
+svc_artwork --> algo_personal : usage signals\n& preferences
+algo_popular --> svc_artwork : ranked artwork list
+algo_personal --> svc_artwork : personalised list
+
+' Services to Database
+svc_auth --> db_user
+svc_artwork --> db_artwork
+svc_artwork --> file_storage : store / retrieve\nAI images
+svc_review --> db_review
+svc_review --> db_artwork
+svc_comment --> db_comment
+svc_fav --> db_fav
+svc_follow --> db_follow
+svc_follow --> db_history
+svc_notif --> db_notif
+svc_admin --> db_user
+svc_admin --> db_artwork
+svc_admin --> db_review
+svc_admin --> db_comment
+svc_log --> log_storage
+
+' Notification triggers
+svc_comment --> svc_notif : comment / reply event
+svc_review --> svc_notif : review status change
+
+@enduml

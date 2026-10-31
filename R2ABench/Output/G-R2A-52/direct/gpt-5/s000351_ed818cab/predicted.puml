@@ -1,0 +1,121 @@
+@startuml
+title Kangrand System Architecture
+
+skinparam componentStyle rectangle
+skinparam defaultFontName Monospaced
+skinparam wrapWidth 200
+skinparam shadowing false
+
+' Scope and constraints notes
+note "Problem scope: Interval ECDLP on SECP256K1 only (C-001)" as N_SCOPE
+note "Files + CLI only; no GUI (C-002)" as N_CLI
+
+cloud "Operator-Controlled Network" as NET
+
+'========================
+' Standalone (Local) Mode
+'========================
+node "Local Host (Standalone)" as LOCAL {
+  component "Kangrand CLI (Standalone)" as CLI
+  component "Kangaroo Engine\n(tame & wild herds)" as ENG
+  component "Distinguished-Point Selector\n(-d sets DP bits)" as DPSEL
+  database "In-Memory Hash Table\n(distinguished points)" as HT_LOCAL
+  component "Workfile Manager\n(-w save, -wi interval, -i resume, -ws include state)" as WF_LOCAL
+  node "GPU Device (optional)" as GPU_LOCAL
+
+  artifact "Input ASCII File\n(hex values; pubkeys compressed/uncompressed)" as INPUT
+  artifact "Work File(s)" as WORK_LOCAL
+  artifact "Result File" as RESULT_LOCAL
+
+  CLI --> ENG : start solve\n(FR-003)
+  ENG --> DPSEL : walk points
+  DPSEL --> HT_LOCAL : store DPs\n(NFR-001)
+  HT_LOCAL --> ENG : collision signals
+  CLI ..> INPUT : reads\n(FR-001, FR-002)
+  CLI ..> WF_LOCAL : control save/resume
+  WF_LOCAL ..> WORK_LOCAL : save (-w/-wi/-ws), resume (-i)\n(FR-004, FR-005, FR-006)
+  ENG ..> RESULT_LOCAL : write solved key (if found)
+  ENG ..> WF_LOCAL : persist kangaroo state (-ws)
+  ENG ..> GPU_LOCAL : use GPU when enabled\n(FR-011)
+
+  N_SCOPE .. LOCAL
+  N_CLI .. LOCAL
+}
+
+'========================
+' Distributed Mode
+'========================
+node "Distributed Server (wsplit-enabled)" as SERVER {
+  component "Server Coordinator" as SRV
+  database "In-Memory Hash Table\n(reset each backup)" as HT_SRV
+  component "Backup/Workfile Writer\n(backup interval -wi)" as BKP
+  component "Result Emitter" as RES_EMIT
+  artifact "Server Config File" as SRV_CFG
+  artifact "Server Work File(s)\n(prefixed, per cycle)" as WORK_SRV
+  artifact "Hash-Table Snapshot(s)\n(optional)" as HT_SNAP
+  artifact "Result File(s)" as RESULT_SRV
+
+  SRV --> HT_SRV : insert DPs / check collisions
+  BKP --> WORK_SRV : write backups\n(FR-010, FR-009)
+  BKP --> HT_SNAP : optional hash data
+  RES_EMIT --> RESULT_SRV : write results
+  SRV ..> SRV_CFG : read at startup\n(FR-010)
+}
+
+note right of SERVER
+- No built-in authentication (NFR-004)
+- wsplit resets in-memory hash table
+  after each backup (FR-009, NFR-003)
+end note
+
+package "Distributed Clients (xN)" as CLIENTS {
+  node "Client Host" as CLIENT_HOST {
+    component "Kangrand Client" as CLIENT
+    component "Kangaroo Engine" as CENG
+    component "DP Selector" as CDP
+    node "GPU Device (optional)" as GPU_CLIENT
+    artifact "Client Work File(s)" as WORK_CLIENT
+
+    CLIENT --> CENG : run walkers
+    CENG --> CDP : generate DPs
+    CLIENT ..> WORK_CLIENT : optional local save
+    CENG ..> GPU_CLIENT : use GPU when enabled\n(FR-011)
+  }
+}
+
+' Network Links (no auth)
+CLIENTS -[#707070,dashed]- NET
+SERVER -[#707070,dashed]- NET
+CLIENTS <--> SERVER : DP streams / work updates\n(no authentication)\n(FR-011, NFR-004)
+
+'========================
+' Offline Merge Workflow
+'========================
+node "Offline Merge Host" as MERGE_HOST {
+  component "Workfile Merger" as MERGER
+  artifact "Collected Work Files\n(server/client outputs)" as WORK_COLLECTED
+  artifact "Master Work File\n(or merged hash-table state)" as WORK_MASTER
+  artifact "Result File (from merge)" as RESULT_MERGE
+
+  MERGER ..> WORK_COLLECTED : read multiple inputs\n(FR-008, FR-012)
+  MERGER --> WORK_MASTER : write consolidated work\n(FR-012)
+  MERGER --> RESULT_MERGE : emit solved key if found\n(FR-008)
+}
+
+note bottom of MERGE_HOST
+Work files are portable for the same key/range
+across hardware and DP settings;
+performance may vary (NFR-005).
+Merging may require expected RAM (C-004).
+end note
+
+'========================
+' Cross-Cutting Notes
+'========================
+note "Wsplit operation: writes prefixed backups and resets hash table (FR-009, NFR-003)" as N_WSPLIT
+N_WSPLIT .. SERVER
+
+note "Clients must be stopped before server restarts with changed range/target to avoid wrong point submissions (C-005)" as N_RESTART
+N_RESTART .. SERVER
+
+@enduml

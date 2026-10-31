@@ -1,0 +1,117 @@
+{
+  "candidate": {
+    "sample_id": "s000009_ff7318d0",
+    "repository_name": "adityajain10/foot365-live-streaming-chatbot-prediction-app-on-aws",
+    "image_url": "https://github.com/adityajain10/foot365-live-streaming-chatbot-prediction-app-on-aws/blob/master/Snapshots/architecture.jpg",
+    "source_ref": "3f424fa0347bf989489aeafbfae03266d70cf0c0",
+    "total_score": 96,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 4348,
+    "document_count": 7,
+    "document_types": [
+      "code_api_route",
+      "readme"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 39,
+      "user_scenario": 19,
+      "api_io": 68,
+      "deployment": 51,
+      "constraints": 7,
+      "non_functional": 9
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 96
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05251018151599855,
+      "text": "# Foot365 An AWS-based web-application for Football enthusaists, to get round-theclock information about matches, live scores, match predictions, fixtures, results and live match screenings near them. ## Problem Statement We aim to serve the football community by providing round-the-clock services regarding match fixtures, standings, schedules and screenings available to them. The main idea behind this project is to unite passionate football enthusiasts who wish to be up-to-date with the Football seasons. We manage their teams’ schedule, provide them reminders about upcoming games, suggest sports screening recommendations near them, set up email and SMS reminders on a request basis, speec..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05219573673077458,
+      "text": "d enables developers to build modern, serverless applications that can start small and scale globally to support petabytes of data and tens of millions of read and write requests per second. We store the match results, stats and fixtures in the dynamo DB further connecting it with Elastic Search. #### AWS SageMaker We used Amazon SageMaker to build, train, and deploy machine learning models quickly. Amazon SageMaker provided us a fully-managed service that covers the entire machine learning workflow to label and prepare your data, choose an algorithm, train the model, tune and optimize it for deployment, make predictions of probability of match draws and win, and take action. ## 5. Extern..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "FrontEnd/js/apigClient.js",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05467345319936541,
+      "text": "application/json if(config.defaultContentType === undefined) { config.defaultContentType = 'application/json'; } //If defaultAcceptType is not defined then default to application/json if(config.defaultAcceptType === undefined) { config.defaultAcceptType = 'application/json'; } // extract endpoint and path from url var invokeUrl = ' var endpoint = /(^https?:\\/\\/[^\\/]+)/g.exec(invokeUrl)[1]; var pathComponent = invokeUrl.substring(endpoint.length); var sigV4ClientConfig = { accessKey: config.accessKey, secretKey: config.secretKey, sessionToken: config.sessionToken, serviceName: 'execute-api', region: config.region, endpoint: endpoint, defaultContentType: config.defaultContentType, defaultAc..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "FrontEnd/js/lib/apiGatewayCore/simpleHttpClient.js",
+      "doc_type": "code_api_route",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.053794642857142846,
+      "text": "pClient = { }; simpleHttpClient.endpoint = apiGateway.core.utils.assertDefined(config.endpoint, 'endpoint'); simpleHttpClient.makeRequest = function (request) { var verb = apiGateway.core.utils.assertDefined(request.verb, 'verb'); var path = apiGateway.core.utils.assertDefined(request.path, 'path'); var queryParams = apiGateway.core.utils.copy(request.queryParams); if (queryParams === undefined) { queryParams = {}; } var headers = apiGateway.core.utils.copy(request.headers); if (headers === undefined) { headers = {}; } //If the user has not specified an override for Content type the use default if(headers['Content-Type'] === undefined) { headers['Content-Type'] = config.defaultContentType..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05463389656938045,
+      "text": "ng this data. • Our predictions for the final week of season assumes that all the matches played in the current season barring the last week are considered. ## 3. Architecture Diagram ## 4. Technology Stack ### Front end: • HTML • CSS • Bootstrap • JQuery ### Back end: • Python • Node ### AWS Services used: • Cognito & IAM for Authentication, Security Management • S3 for Static Web Hosting, Data Storage • API Gateway for routing and configuring business logic • Lambda for incorporating modular logic functionality • SQS and SNS for queuing and notification services • Sagemaker for match predictions using ML • EC2 for Kafka (with Apache Avro) for live score update • DynamoDB and ElasticSear..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05460252406973719,
+      "text": "d enables developers to build modern, serverless applications that can start small and scale globally to support petabytes of data and tens of millions of read and write requests per second. We store the match results, stats and fixtures in the dynamo DB further connecting it with Elastic Search. #### AWS SageMaker We used Amazon SageMaker to build, train, and deploy machine learning models quickly. Amazon SageMaker provided us a fully-managed service that covers the entire machine learning workflow to label and prepare your data, choose an algorithm, train the model, tune and optimize it for deployment, make predictions of probability of match draws and win, and take action. ## 5. Extern..."
+    }
+  ]
+}

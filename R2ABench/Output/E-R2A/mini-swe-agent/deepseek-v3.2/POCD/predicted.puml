@@ -1,0 +1,216 @@
+@startuml
+title POCD - Persistent Object Consistency Detection System Architecture
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #F5F5F5
+skinparam component {
+  BackgroundColor #E6F3FF
+  BorderColor #0066CC
+  FontColor #000000
+}
+skinparam node {
+  BackgroundColor #FFF0E6
+  BorderColor #FF6600
+  FontColor #000000
+}
+skinparam database {
+  BackgroundColor #E6FFE6
+  BorderColor #00CC00
+  FontColor #000000
+}
+
+' === LAYERS ===
+package "User Interface Layer" {
+  component "Web Frontend" as UI {
+    [User Interface]
+    [Authentication Module]
+    [File Upload/Download]
+    [Configuration Interface]
+    [Report Viewer]
+    [Help System]
+  }
+}
+
+package "Business Logic Layer" {
+  component "Account Management Service" as AMS {
+    [User Registration]
+    [Authentication]
+    [Session Management]
+  }
+
+  component "File Management Service" as FMS {
+    [File Storage]
+    [File Metadata]
+    [File Processing Queue]
+  }
+
+  component "Detection Configuration Service" as DCS {
+    [Rule Management]
+    [Exception Configuration]
+    [Configuration Persistence]
+  }
+
+  component "Class Diagram Parser" as CDP {
+    [MDJ File Parser]
+    [Class/Interface Extractor]
+    [Relationship Analyzer]
+    [JSON Converter]
+  }
+
+  component "Database Parser" as DBP {
+    [JDBC Connector]
+    [MySQL Parser]
+    [Schema Extractor]
+    [Relationship Detector]
+    [JSON Converter]
+  }
+
+  component "Entity Matching Service" as EMS {
+    [Attribute Matcher]
+    [Entity Matcher]
+    [Relationship Matcher]
+    [Similarity Analyzer]
+  }
+
+  component "Inconsistency Detection Engine" as IDE {
+    [Field Inconsistency Detector]
+    [Type Inconsistency Detector]
+    [Attribute/Column Mismatch Detector]
+    [Class/Table Mismatch Detector]
+    [Relationship Analyzer]
+  }
+
+  component "Repair Engine" as RE {
+    [Repair Suggestion Generator]
+    [Repair Order Planner]
+    [Class Diagram Repair]
+    [Database Repair]
+  }
+
+  component "Report Service" as RS {
+    [Report Generator]
+    [Export Module]
+    [History Manager]
+  }
+
+  component "Help & Examples Service" as HES {
+    [Help Documentation]
+    [Case Repository]
+    [Sample Files]
+  }
+}
+
+package "Data Access Layer" {
+  database "User Database" as UDB {
+    [User Accounts]
+    [Sessions]
+    [Permissions]
+  }
+
+  database "File Storage" as FS {
+    [Class Diagram Files]
+    [Database Files]
+    [Uploaded Files]
+  }
+
+  database "Configuration Database" as CDB {
+    [Detection Rules]
+    [Exception Rules]
+    [System Settings]
+  }
+
+  database "Detection Results Database" as DRDB {
+    [Parsing Results]
+    [Matching Results]
+    [Inconsistency Reports]
+    [Repair Suggestions]
+    [Historical Records]
+  }
+
+  database "Help Database" as HDB {
+    [Help Documents]
+    [Case Files]
+    [Sample Data]
+  }
+}
+
+' === EXTERNAL SYSTEMS ===
+node "External MySQL Database" as EXT_DB {
+  [Target Database]
+  [Schema Information]
+  [Connection via JDBC]
+}
+
+node "StarUML Tool" as STARUML {
+  [MDJ File Export]
+}
+
+node "User Browser" as BROWSER {
+  [Web Client]
+  [SSL Connection]
+}
+
+' === CONNECTIONS ===
+BROWSER --> UI : HTTPS/SSL
+UI --> AMS : Authentication Requests
+UI --> FMS : File Operations
+UI --> DCS : Configuration Management
+UI --> RS : Report Requests
+UI --> HES : Help Requests
+
+AMS --> UDB : User Data Access
+FMS --> FS : File Storage
+DCS --> CDB : Configuration Storage
+
+CDP --> FS : Read MDJ Files
+DBP --> EXT_DB : JDBC Connection
+DBP --> FS : Read Database Files
+
+CDP --> EMS : Parsed Class Data
+DBP --> EMS : Parsed Database Data
+EMS --> IDE : Matching Results
+IDE --> RS : Detection Reports
+RS --> DRDB : Store Results
+
+IDE --> RE : Inconsistency Data
+RE --> RS : Repair Suggestions
+RE --> CDP : Class Diagram Updates
+RE --> DBP : Database Updates
+
+HES --> HDB : Content Access
+
+' === DATA FLOW ===
+STARUML --> FS : Upload MDJ Files
+EXT_DB --> DBP : Schema Extraction
+
+' === LAYER CONNECTIONS ===
+UI -[hidden]d- AMS
+AMS -[hidden]d- FMS
+FMS -[hidden]d- DCS
+DCS -[hidden]d- CDP
+CDP -[hidden]d- DBP
+DBP -[hidden]d- EMS
+EMS -[hidden]d- IDE
+IDE -[hidden]d- RE
+RE -[hidden]d- RS
+RS -[hidden]d- HES
+
+note right of UI
+  Frontend provides:
+  - User authentication
+  - File management
+  - Configuration UI
+  - Report viewing
+  - Help access
+end note
+
+note left of IDE
+  Core detection engine:
+  - Field inconsistencies
+  - Type mismatches
+  - Attribute/column issues
+  - Class/table mismatches
+  - Relationship analysis
+end note
+
+@enduml

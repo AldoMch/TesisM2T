@@ -1,0 +1,67 @@
+@startuml
+
+package "External Systems" {
+  [Redis-based Applications] as redis_apps
+  [Redis Pub/Sub-style Applications] as pubsub_apps
+  database "Redis Storage\n(standalone/cluster)" as redis_storage
+}
+
+node "Redis Agent Network" {
+  component "Redis Proxy Agent 1" as redis_proxy_1
+  component "Redis Proxy Agent 2" as redis_proxy_2
+  component "Redis Proxy Agent N" as redis_proxy_n
+  
+  redis_proxy_1 -[hidden]- redis_proxy_2
+  redis_proxy_2 -[hidden]- redis_proxy_n
+}
+
+node "Pub/Sub Network" {
+  component "PubSub Service Node 1" as pubsub_node_1
+  component "PubSub Service Node 2" as pubsub_node_2
+  component "PubSub Service Node N" as pubsub_node_n
+  
+  pubsub_node_1 -[hidden]- pubsub_node_2
+  pubsub_node_2 -[hidden]- pubsub_node_n
+}
+
+component "Peer Discovery & Routing\n(Kademlia DHT / libp2p)" as peer_disco
+
+' External connections
+redis_apps --> redis_proxy_1 : "Redis protocol (RESP)\n<String|Set|List|Hash|SortedSet|Stream|Control>"
+redis_apps <-- redis_proxy_1 : "Response data (RESP)"
+pubsub_apps --> pubsub_node_1 : "Redis Pub/Sub protocol (RESP)"
+pubsub_apps <-- pubsub_node_1 : "Pub/Sub messages (RESP)"
+
+' Redis Agent Network connections
+redis_proxy_1 --> redis_proxy_2 : "Instruction sync\n(peer-to-peer)"
+redis_proxy_1 --> redis_proxy_n : "Instruction sync\n(peer-to-peer)"
+redis_proxy_2 --> redis_proxy_n : "Instruction sync\n(peer-to-peer)"
+
+' Pub/Sub Network connections
+pubsub_node_1 --> pubsub_node_2 : "Cross-network Pub/Sub\n(NAT traversal)"
+pubsub_node_1 --> pubsub_node_n : "Cross-network Pub/Sub\n(NAT traversal)"
+pubsub_node_2 --> pubsub_node_n : "Cross-network Pub/Sub\n(NAT traversal)"
+
+' Redis Proxy to storage
+redis_proxy_1 --> redis_storage : "Data writes/reads\n(cluster-aware routing)"
+redis_proxy_2 --> redis_storage : "Data writes/reads\n(cluster-aware routing)"
+redis_proxy_n --> redis_storage : "Data writes/reads\n(cluster-aware routing)"
+
+' Pub/Sub to Peer Discovery
+pubsub_node_1 --> peer_disco : "Join network,\ndiscover peers"
+pubsub_node_2 --> peer_disco : "Join network,\ndiscover peers"
+pubsub_node_n --> peer_discovery : "Join network,\ndiscover peers"
+
+' Redis Proxy to Pub/Sub relationship
+redis_proxy_1 ..> pubsub_node_1 : "Part of same\nIceFireDB infrastructure"
+redis_proxy_2 ..> pubsub_node_2 : "Part of same\nIceFireDB infrastructure"
+
+' Internal SQL handling (shown as note)
+note right of redis_proxy_1
+  Internal SQL handling:
+  - SQL/MySQL-style packet interface
+  - SQL Result Parser
+  (implementation detail)
+end note
+
+@enduml

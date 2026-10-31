@@ -1,0 +1,83 @@
+@startuml
+skinparam componentStyle rectangle
+left to right direction
+
+actor "End Users" as EndUsers
+actor "Administrators" as Admins
+actor "Operations Engineers" as Ops
+
+package "Clients" as Clients {
+  component "Native Mobile App" as Mobile
+  component "Administrative Web Application" as AdminWeb
+}
+
+package "GCP (Target Environment)" as GCP {
+  node "External Load Balancer" as LB
+  node "GKE Cluster" as GKE {
+    component "Gateway / BFF" as BFF <<Gateway>>
+    component "Authentication Integration" as AuthSvc <<Service>>
+    component "User Management Service" as UserSvc <<Service>>
+    component "Book Management Service" as BookSvc <<Service>>
+    component "EC Site Service" as ECSvc <<Service>>
+    component "Support API Service" as SupportSvc <<Service>>
+    component "Administration Service" as AdminSvc <<Service>>
+    component "Message Management Service" as MessageSvc <<Service>>
+    component "Notification Processor" as NotifySvc <<Service>>
+  }
+  database "MySQL" as MySQL
+  database "NoSQL Store" as NoSQL
+  folder "Object Storage" as ObjStore
+  node "GCE VM (Ops)" as GCEVM
+}
+
+package "External Services" as Ext {
+  cloud "Firebase Authentication" as Firebase
+  cloud "Stripe (Payments)" as Stripe
+  cloud "Book Search API (Provider TBD)" as BookAPI
+  cloud "Push Notification Provider" as PushProv
+  cloud "Email Notification Provider" as EmailProv
+}
+
+' Client to system access
+EndUsers --> Mobile
+Admins --> AdminWeb
+Mobile --> LB : HTTPS
+AdminWeb --> LB : HTTPS
+LB --> BFF : Load-balanced traffic
+
+' Gateway to internal services
+BFF --> AuthSvc : Auth requests
+BFF --> UserSvc
+BFF --> BookSvc
+BFF --> ECSvc
+BFF --> SupportSvc
+BFF --> AdminSvc
+
+' Authentication flow
+AuthSvc --> Firebase : Token verification / auth
+
+' Service data access
+UserSvc --> MySQL
+BookSvc --> MySQL
+ECSvc --> MySQL
+MessageSvc --> NoSQL : Message data
+BookSvc --> ObjStore : Thumbnails / objects
+
+' External integrations
+BookSvc --> BookAPI : Book lookup
+ECSvc --> Stripe : Payments
+NotifySvc --> PushProv : Push notifications
+NotifySvc --> EmailProv : Email notifications
+NotifySvc --> MessageSvc : Consume message data
+
+' Operations and administration
+Ops --> GKE : Cluster access (GKE credentials)
+Ops --> GCEVM : VM setup & TLS tooling
+GCEVM --> LB : TLS cert provisioning (Let's Encrypt DNS-01)
+
+note right of GKE
+Internal APIs follow documented request/response design
+and Protocol Buffers naming conventions.
+Services are deployed as containers on GKE.
+end note
+@enduml

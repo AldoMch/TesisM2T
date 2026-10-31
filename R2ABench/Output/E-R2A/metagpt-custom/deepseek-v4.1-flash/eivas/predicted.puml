@@ -1,0 +1,106 @@
+@startuml
+package "Presentation/User Interface Layer" {
+  component "Epidemiological Reporting Form" as Form
+  component "Case Management List" as CaseList
+  component "Map Display Interface" as MapUI
+  component "Association Information Display" as AssocUI
+  component "Graph Relationship Display" as GraphUI
+  component "Regional Flow Map Display" as RegionalFlowMapUI
+  component "Case Clustering Graph Display" as CaseClusterUI
+  component "Heat Map Display" as HeatMapUI
+  component "Temperature/Humidity Trend Chart" as TempHumidityChart
+  component "Age Distribution Chart" as AgeDistChart
+  component "Occupation Distribution Chart" as OccupationDistChart
+  component "Transportation Statistics Chart" as TransportStatsChart
+  component "Operation Prompt/Feedback Provider" as Prompt
+  component "User Documentation/Help" as Help
+}
+
+package "Application/Service Layer" {
+  interface "Front-end to Back-end Database Interface" as FE_DB_IF
+  interface "Database Storage Interface" as DB_Store_IF
+  interface "Algorithm Module Interface" as Algo_IF
+  component "Case Management Service" as CaseMgmtSvc
+  component "Individual Case Analysis Service" as CaseAnalysisSvc
+  component "Outbreak Overview Service" as OutbreakOverviewSvc
+  component "Overall Analysis" as OverallAnalysis
+  component "Data Quality Checker" as QualityChecker
+}
+
+package "Data/Storage Layer" {
+  database "Back-end Database" as DB
+}
+
+package "Algorithm/Analytics Layer" {
+  component "Algorithm Module" as Algo
+}
+
+package "Visualization/Geospatial Layer" {
+  cloud "Map/Geographic Visualization Capability" as MapCap
+}
+
+package "Security/Operations Layer" {
+  component "Personal Information Query Encryption Handler" as PIIEnc
+  component "Frequent-IP Cooldown Manager" as IPCooL
+  component "Backup/Failover Manager" as BackupMgr
+}
+
+node "Backup Server" as BackupServer
+
+' UI to services / capabilities
+Form --> DB_Store_IF
+CaseList --> CaseMgmtSvc
+MapUI --> CaseAnalysisSvc
+MapUI --> FE_DB_IF : candidate addresses / itinerary paths
+MapUI --> MapCap
+AssocUI --> CaseAnalysisSvc
+GraphUI --> CaseAnalysisSvc
+RegionalFlowMapUI --> OverallAnalysis
+CaseClusterUI --> OverallAnalysis
+HeatMapUI --> OutbreakOverviewSvc
+TempHumidityChart --> OutbreakOverviewSvc
+AgeDistChart --> OutbreakOverviewSvc
+OccupationDistChart --> OutbreakOverviewSvc
+TransportStatsChart --> OutbreakOverviewSvc
+
+' Service orchestration and data access
+CaseMgmtSvc --> FE_DB_IF
+CaseAnalysisSvc --> FE_DB_IF
+OutbreakOverviewSvc --> FE_DB_IF
+OverallAnalysis --> FE_DB_IF
+OverallAnalysis --> Algo_IF
+OverallAnalysis --> QualityChecker
+QualityChecker --> FE_DB_IF
+QualityChecker --> OverallAnalysis : error feedback
+QualityChecker --> Prompt : error feedback
+
+' Algorithm data input and provided interface
+Algo --> FE_DB_IF : case investigation data
+Algo -- Algo_IF : provides
+
+' Database interfaces and encryption path
+DB -- FE_DB_IF : provides
+DB -- DB_Store_IF : provides
+FE_DB_IF --> PIIEnc : PII query encryption
+PIIEnc --> DB : encrypted query
+FE_DB_IF --> IPCooL : frequent-IP cooldown
+
+' Backup / failover
+DB --> BackupMgr : backup/failover trigger
+BackupMgr --> BackupServer : failover
+
+' Prompt/feedback availability
+Form --> Prompt
+CaseList --> Prompt
+MapUI --> Prompt
+AssocUI --> Prompt
+GraphUI --> Prompt
+RegionalFlowMapUI --> Prompt
+CaseClusterUI --> Prompt
+HeatMapUI --> Prompt
+TempHumidityChart --> Prompt
+AgeDistChart --> Prompt
+OccupationDistChart --> Prompt
+TransportStatsChart --> Prompt
+
+@enduml

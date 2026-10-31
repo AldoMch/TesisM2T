@@ -1,0 +1,240 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Actors\\n(out of deployment scope)::Web Clients\\n[browsers / WS consumers]\\n(no SDK or credentials needed)",
+        "Kubernetes Orchestration Layer::WebSocket Endpoint\\n[ws://<LB-IP>:80]"
+      ],
+      "gt_nodes": [
+        "Global::Browser"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Container Runtime Layer\\n(Adapter Pod)::pulltop\\n[Node.js Process]"
+      ],
+      "gt_nodes": [
+        "Your GCP project::Compute Engine::pulltop"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Container Runtime Layer\\n(Adapter Pod)::websocketd\\n[WebSocket Bridge :8080]"
+      ],
+      "gt_nodes": [
+        "Your GCP project::Compute Engine::websocketd"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::Google Cloud Pub/Sub::Pub/Sub Topic\\n[configured topic]"
+      ],
+      "gt_nodes": [
+        "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime Layer\\n(Adapter Pod)::Message Cache\\n[last 10 messages]",
+      "reference_nodes": [
+        "Global::Browser"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime Layer\\n(Adapter Pod)::SYMBOL\\nEnv Variable\\n[SI-004 / FR-004 / DR-002]",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine::pulltop"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime Layer\\n(Adapter Pod)::exec.sh\\n[Entrypoint Script]",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine::pulltop"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime Layer\\n(Adapter Pod)::pulltop\\n[Node.js Process]",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine::pulltop"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Container Runtime Layer\\n(Adapter Pod)::websocketd\\n[WebSocket Bridge :8080]",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine::websocketd"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Actors\\n(out of deployment scope)::Web Clients\\n[browsers / WS consumers]\\n(no SDK or credentials needed)",
+      "reference_nodes": [
+        "Global::Browser"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::Google Cloud Pub/Sub",
+      "reference_nodes": [
+        "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::Google Cloud Pub/Sub::Pub/Sub Subscription\\n(per adapter instance)",
+      "reference_nodes": [
+        "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::Google Cloud Pub/Sub::Pub/Sub Topic\\n[configured topic]",
+      "reference_nodes": [
+        "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::IAM & Billing",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::IAM & Billing::Subscription Creation\\nPermission\\n[FR-010 / CON-003]",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::IAM & Billing::Topic Read-Access\\nPermission\\n[CON-002 / FR-010]",
+      "reference_nodes": [
+        "Your GCP project::Compute Engine"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::GCP Infrastructure Layer\\n(Google Cloud Platform Project)",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Kubernetes Orchestration Layer::ConfigMap\\n[topic key → SYMBOL]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Kubernetes Orchestration Layer::Deployment\\n[adapter pods]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Kubernetes Orchestration Layer::HorizontalPodAutoscaler\\n[min:1, max:2, CPU:80%]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Kubernetes Orchestration Layer::LoadBalancer Service\\n[TCP :80 → :8080]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Kubernetes Orchestration Layer::WebSocket Endpoint\\n[ws://<LB-IP>:80]",
+      "reference_nodes": []
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Actors\\n(out of deployment scope)::Web Clients\\n[browsers / WS consumers]\\n(no SDK or credentials needed)",
+        "Kubernetes Orchestration Layer::WebSocket Endpoint\\n[ws://<LB-IP>:80]"
+      ],
+      "gt_node": "Global::Browser"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Your GCP project::Compute Engine"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime Layer\\n(Adapter Pod)::SYMBOL\\nEnv Variable\\n[SI-004 / FR-004 / DR-002]",
+        "Container Runtime Layer\\n(Adapter Pod)::exec.sh\\n[Entrypoint Script]",
+        "Container Runtime Layer\\n(Adapter Pod)::pulltop\\n[Node.js Process]"
+      ],
+      "gt_node": "Your GCP project::Compute Engine::pulltop"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Container Runtime Layer\\n(Adapter Pod)::websocketd\\n[WebSocket Bridge :8080]"
+      ],
+      "gt_node": "Your GCP project::Compute Engine::websocketd"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::Google Cloud Pub/Sub",
+        "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::Google Cloud Pub/Sub::Pub/Sub Topic\\n[configured topic]"
+      ],
+      "gt_node": "pubsub-public-data project::Cloud Pub/Sub\\ntopic"
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 5457,
+      "completion_tokens": 544,
+      "total_tokens": 6001,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Your GCP project::Compute Engine"
+  ],
+  "unmatched_predicted_nodes": [
+    "Container Runtime Layer\\n(Adapter Pod)::Message Cache\\n[last 10 messages]",
+    "Container Runtime Layer\\n(Adapter Pod)::SYMBOL\\nEnv Variable\\n[SI-004 / FR-004 / DR-002]",
+    "Container Runtime Layer\\n(Adapter Pod)::exec.sh\\n[Entrypoint Script]",
+    "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::Google Cloud Pub/Sub",
+    "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::Google Cloud Pub/Sub::Pub/Sub Subscription\\n(per adapter instance)",
+    "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::IAM & Billing",
+    "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::IAM & Billing::Subscription Creation\\nPermission\\n[FR-010 / CON-003]",
+    "GCP Infrastructure Layer\\n(Google Cloud Platform Project)::IAM & Billing::Topic Read-Access\\nPermission\\n[CON-002 / FR-010]",
+    "Global::GCP Infrastructure Layer\\n(Google Cloud Platform Project)",
+    "Kubernetes Orchestration Layer::ConfigMap\\n[topic key → SYMBOL]",
+    "Kubernetes Orchestration Layer::Deployment\\n[adapter pods]",
+    "Kubernetes Orchestration Layer::HorizontalPodAutoscaler\\n[min:1, max:2, CPU:80%]",
+    "Kubernetes Orchestration Layer::LoadBalancer Service\\n[TCP :80 → :8080]"
+  ],
+  "_provenance": {
+    "fingerprint": "6f2cca8b961f28a9763c22d5a6a52a74169e55cc3300ce888666b03ca40ebb78",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 1
+  }
+}

@@ -1,0 +1,78 @@
+@startuml
+!define RECTANGLE class
+
+RECTANGLE "Angular ClientApp" as ClientApp {
+  +Browser-based front-end
+  +NgRx state management
+  +Role-based routing
+  +HTTP interceptors
+  +Service wrappers
+}
+
+RECTANGLE "Backend API" as BackendAPI {
+  +.NET Core WebAPI
+  +Controllers
+  +Domain services
+  +Entity Framework/DbContext
+}
+
+RECTANGLE "Database" as Database {
+  +MS SQL Server
+  +Persistent entities
+  +Repository scripts
+}
+
+RECTANGLE "Authentication" as Auth {
+  +SiteMinder
+  +Login/session handling
+}
+
+RECTANGLE "External Systems" as External {
+  +Notification targets
+  +PDF generation services
+}
+
+ClientApp --> BackendAPI : HTTP requests/responses
+BackendAPI --> Database : Data access
+ClientApp ..> Auth : Respects authentication
+BackendAPI ..> Auth : Enforces authentication
+ClientApp --> External : Notification routing
+BackendAPI --> External : PDF collection
+
+note right of ClientApp
+  Key Components:
+  - Role-based routing
+  - NgRx store
+  - Service wrappers for:
+    * Evacuee
+    * Incident-task
+    * Organization
+    * Referral
+    * Registration
+  - Notification queue
+end note
+
+note right of BackendAPI
+  Key Components:
+  - Domain services
+  - Entity Framework
+  - DbContext
+  - Controllers
+end note
+
+note right of Database
+  Key Components:
+  - MS SQL persistence
+  - Repository scripts
+  - Controlled-list data
+end note
+
+note right of Auth
+  Key Components:
+  - SiteMinder integration
+  - Session management
+  - Development backdoor
+    (backend-only)
+end note
+
+@enduml

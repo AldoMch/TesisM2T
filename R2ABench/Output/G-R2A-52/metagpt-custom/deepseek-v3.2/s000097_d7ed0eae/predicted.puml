@@ -1,0 +1,62 @@
+@startuml
+title BeeGreen Component Diagram
+
+package "Client Layer" {
+    component "Website Client" as website
+    component "Browser Extension Client" as extension
+}
+
+node "API Layer" {
+    [User Controller] as userController
+    [Ping Controller] as pingController
+    component "Backend Server" as server
+}
+
+package "Data Access Layer" {
+    component "UserRepository" as userRepo
+    component "InventoryItemRepository" as inventoryRepo
+}
+
+package "Data Model Layer" {
+    component "User Model" as userModel
+    component "InventoryItem Model" as inventoryModel
+    component "PingResponse Model" as pingResponse
+}
+
+database "Persistence Layer" {
+    database "Persistent Storage" as storage
+}
+
+cloud "Data/Service Layer" {
+    cloud "Sustainability Scoring Service" as scoringService
+    cloud "Recommendation Workflow" as recWorkflow
+}
+
+' Client to Server Dependencies
+website --> server : "HTTP API"
+extension --> server : "HTTP API"
+
+' Server to Controller Dependencies
+server --> userController : "request context"
+server --> pingController : "request context"
+
+' Controller Dependencies
+userController --> userModel : "type definitions"
+userController --> userRepo : "uses"
+userController --> inventoryRepo : "uses"
+pingController --> pingResponse : "creates/returns"
+
+' Repository Dependencies
+userRepo --> userModel : "manages"
+userRepo --> storage : "persists/retrieves"
+inventoryRepo --> inventoryModel : "manages"
+inventoryRepo --> storage : "persists/retrieves"
+
+' Service Layer Dependencies
+scoringService --> storage : "reads data"
+
+' Filter/Parameter Flows
+userController --> userRepo : "with filter parameters"
+userController --> inventoryRepo : "with where criteria"
+
+@enduml

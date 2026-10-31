@@ -1,0 +1,133 @@
+@startuml
+' Deployment View - AWS Infrastructure
+node "AWS Cloud" {
+    node "Web Hosting" {
+        component "S3 Bucket" as FrontendHost
+    }
+
+    node "API Management" {
+        component "API Gateway" as ApiGateway
+    }
+
+    node "Compute" {
+        component "Lambda Functions" as BackendServices
+    }
+
+    node "Authentication" {
+        component "Cognito" as AuthCognito
+        component "IAM" as AuthIAM
+    }
+
+    node "Data Storage" {
+        database "DynamoDB" as PrimaryDB
+        database "Elasticsearch" as SearchEngine
+    }
+
+    node "Streaming" {
+        node "EC2 Instance" {
+            component "Kafka-Avro Processor" as StreamingProcessor
+        }
+    }
+
+    node "AI-ML" {
+        component "SageMaker" as MLService
+    }
+
+    node "Messaging" {
+        component "SQS" as MessageQueue
+        component "SNS" as NotificationService
+    }
+}
+
+' Component Layer - Logical View
+package "Presentation Layer" {
+    component "Web UI" as WebUI
+    component "Chatbot Interface" as ChatbotUI
+    component "Live Scores Display" as LiveScoresUI
+}
+
+package "API Layer" {
+    component "REST API" as GW
+}
+
+package "Application Layer" {
+    component "Backend Logic" as AppLogic
+    component "Reminder Handler" as ReminderHandler
+}
+
+package "Authentication Layer" {
+    component "Auth Service" as AuthService
+}
+
+package "Data Layer" {
+    component "User-Data Store" as UserDataStore
+    component "Search Index" as SearchStore
+}
+
+package "Streaming Layer" {
+    component "Event Streamer" as EventStreamer
+}
+
+package "AI-ML Layer" {
+    component "Prediction Engine" as PredictionEngine
+}
+
+package "Notification Layer" {
+    component "Message Queue" as MsgQueue
+    component "Notifier" as Notifier
+}
+
+' External Actor
+actor "End User" as EndUser
+
+' Frontend to Hosting
+FrontendHost --> WebUI : hosts
+FrontendHost --> ChatbotUI : hosts
+FrontendHost --> LiveScoresUI : hosts
+
+' User interactions
+EndUser --> WebUI : uses
+EndUser --> ChatbotUI : interacts
+EndUser --> LiveScoresUI : views
+
+' API Gateway Implementation
+ApiGateway --> GW : implements
+
+' Authentication Integration
+AuthCognito --> AuthService : provides user auth
+AuthIAM --> AuthService : provides access control
+AuthService --> GW : secures
+AuthService --> AppLogic : validates requests
+
+' Core Application Flow
+GW --> AppLogic : routes requests
+AppLogic --> UserDataStore : reads/writes
+AppLogic --> SearchStore : queries
+AppLogic --> PredictionEngine : requests predictions
+AppLogic --> ReminderHandler : schedules reminders
+
+' Reminder Processing Flow
+ReminderHandler --> MsgQueue : queues reminders
+MsgQueue --> Notifier : triggers notifications
+Notifier --> NotificationService : sends alerts
+
+' Bidirectional Streaming for Live Updates
+EventStreamer <--> StreamingProcessor : processes events
+EventStreamer --> LiveScoresUI : pushes updates
+
+' Chatbot Integration
+ChatbotUI --> AppLogic : sends messages
+AppLogic --> ChatbotUI : responds
+
+' Data Storage Mapping
+PrimaryDB --> UserDataStore : persists data
+SearchEngine --> SearchStore : indexes content
+
+' ML Service Mapping
+MLService --> PredictionEngine : executes models
+
+' Messaging Mapping
+MessageQueue --> MsgQueue : queues tasks
+NotificationService --> Notifier : delivers messages
+
+@enduml

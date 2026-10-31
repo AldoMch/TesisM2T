@@ -1,0 +1,175 @@
+@startuml
+title PromptHub System Architecture
+
+skinparam componentStyle rectangle
+skinparam wrapWidth 200
+skinparam maxMessageSize 200
+
+actor Visitor
+actor "Registered User" as RegUser
+actor Administrator as Admin
+actor "AI Artwork Creator" as Creator
+actor "AI Artwork Viewer / Newcomer" as Viewer
+actor "Developers / Ops" as DevOps
+
+rectangle "Client" as Client {
+  component "Web Browser" as Browser
+  component "Front-end UI\n(Vue/jQuery, HTML/CSS/JS)" as FE <<JavaScript>>
+  Browser -- FE : runs
+}
+
+node "Server (Ubuntu 22.04)\nDocker 20.10.17" as Server {
+  component "Firewall & CORS\n(WAF rules, CORS policy)" as WAF <<Security>>
+
+  node "Container: Django Backend" as BE {
+     component "API Gateway & Auth\n(HTTPS, AuthN/AuthZ, Input Validation)" as API <<Django>>
+     component "User & Account Service\n(registration, login, logout, password, profile)" as UserSvc <<Django>>
+     component "Social Graph Service\n(follow/unfollow, fans, follows)" as SocialSvc <<Django>>
+     component "Artwork & Review Service\n(upload/edit/delete, review workflow)" as ArtSvc <<Django>>
+     component "Search & Filter Service\n(keywords, tags, sorting, filtering)" as SearchSvc <<Django>>
+     component "Favorite Service\n(favorites, categories, visibility)" as FavSvc <<Django>>
+     component "Comment Service" as CommentSvc <<Django>>
+     component "Reply Service" as ReplySvc <<Django>>
+     component "History Service\n(browsing history)" as HistorySvc <<Django>>
+     component "Notification Service\n(unread/read, count)" as NotifSvc <<Django>>
+     component "Recommendation Gateway\n(popular, personalized, preference toggle)" as RecGateway <<Django>>
+     component "Admin Management API\n(users, artworks, comments, replies)" as AdminAPI <<Django>>
+     component "Rate Limiter & Concurrency Control" as RateLimit <<Security>>
+     component "Django ORM / Data Access" as ORM <<Django>>
+     component "Logging & Audit\n(log files, error localization)" as Logging <<Observability>>
+
+     API -- RateLimit
+     API --> UserSvc
+     API --> SocialSvc
+     API --> ArtSvc
+     API --> SearchSvc
+     API --> FavSvc
+     API --> CommentSvc
+     API --> ReplySvc
+     API --> HistorySvc
+     API --> NotifSvc
+     API --> RecGateway
+     API --> AdminAPI
+
+     UserSvc --> ORM
+     SocialSvc --> ORM
+     ArtSvc --> ORM
+     SearchSvc --> ORM
+     FavSvc --> ORM
+     CommentSvc --> ORM
+     ReplySvc --> ORM
+     HistorySvc --> ORM
+     NotifSvc --> ORM
+     AdminAPI --> ORM
+     RecGateway --> ORM : read signals & prefs
+
+     API ..> Logging
+     UserSvc ..> Logging
+     ArtSvc ..> Logging
+  }
+
+  node "Container: Algorithm Engine" as Algo {
+     component "Recommendation Engine\n(PyTorch/TensorFlow)\n(personalized ranking)" as Recommender <<Python>>
+  }
+
+  node "Container: SQLite" as DB {
+     database "SQLite DB\n(users, artworks, reviews,\nfavorites, comments, replies,\nfollows, history, notifications,\npreferences, logs)" as SQLite
+  }
+
+  storage "Persistent Volume: Data & Logs" as Volume
+
+  component "Healthcheck & Auto-Restart\n(Docker restart policy)" as Health <<Reliability>>
+  component "Disk Usage Monitor\n(< 80% capacity)" as DiskMon <<Reliability>>
+}
+
+cloud "SMTP / Email Service" as SMTP
+cloud "Offsite Backup Storage" as Backup
+
+' Actors use the client browser
+Visitor --> Browser
+RegUser --> Browser
+Admin --> Browser
+Creator --> Browser
+Viewer --> Browser
+
+' Front-end communicates securely with server
+FE -down-> WAF : HTTPS requests
+WAF -down-> API : HTTPS (REST/Web API)\nCORS enforced
+
+' Backend internal communications
+RecGateway -down-> Recommender : Internal API (protocol TBD)
+ORM -down-> SQLite : SQL (SQLite)
+
+' Emails: verification codes and alerts
+UserSvc -right-> SMTP : Email verification codes
+Health -right-> SMTP : Error alerts
+DiskMon -right-> SMTP : Capacity alerts
+SMTP -down-> DevOps : Alert emails
+
+' Persistence and backups
+Logging -down-> Volume
+SQLite -down-> Volume
+Volume -down-> Backup : Scheduled offsite backups
+
+' Notes for NFRs and constraints
+note top of WAF
+- Secure HTTP (HTTPS)
+- Firewall and CORS enabled
+- Prevent illegal links, XSS, SQL injection
+end note
+
+note right of API
+- AuthN/AuthZ for user & admin
+- Server-side data revalidation
+- End-to-end encryption for sensitive data
+- Core service response <= 0.5s
+end note
+
+note right of SQLite
+- SQLite adopted due to runtime constraints
+- Future migration to MySQL (design TBD)
+end note
+
+note bottom of ArtSvc
+- Image display target <= 0.5s
+- Streaming allowed when applicable
+end note
+
+note right of NotifSvc
+- Adds unread notifications on comments, replies, review updates
+- Mark as read and delete supported
+end note
+
+note right of AdminAPI
+- Review uploaded artworks (approve/reject)
+- View/manage users, artworks, comments, replies
+end note
+
+note right of Recommender
+- Personalized recommendations
+- Uses signals: history, favorites, follows, etc.
+- Respects user preference switch
+end note
+
+note right of RateLimit
+- Limits simultaneous access volume
+end note
+
+note right of Health
+- Auto-restart containers after errors
+- Target mean time to single point failure > 720 hours
+end note
+
+note right of DiskMon
+- Alert when disk usage >= 80%
+end note
+
+note bottom of Volume
+- Logs backed up and stored
+- Supports fault localization
+end note
+
+note bottom of Browser
+- Requires network connectivity
+end note
+@enduml

@@ -1,0 +1,129 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+
+title Campus Helper Platform - System Architecture
+
+actor "Guest" as Guest
+actor "Registered User" as User
+actor "Customer" as Customer
+actor "Seller" as Seller
+actor "Administrator" as Admin
+
+package "Presentation Layer (WeChat Mini Program Client)" {
+  component "Homepage / Popular Products Interface" as UI_Home
+  component "Product Category Interface" as UI_Category
+  component "Product Detail Interface" as UI_Detail
+  component "Order Interface" as UI_Order
+  component "Personal Center Interface" as UI_Personal
+  component "Administrator Product Management Interface" as UI_AdminProduct
+  component "Administrator Order Management Interface" as UI_AdminOrder
+  component "Administrator User Management Interface" as UI_AdminUser
+}
+
+package "Business Layer" {
+  component "Authentication & Permission Control" as SVC_Auth
+  component "Product Viewing Service" as SVC_ProductView
+  component "Product Management Service" as SVC_ProductMgmt
+  component "Order Service" as SVC_Order
+  component "Order Management Service" as SVC_OrderMgmt
+  component "Personal Center Service" as SVC_Personal
+  component "User Management Service" as SVC_UserMgmt
+  component "Tag & Category Service" as SVC_Tag
+  component "Log & Monitoring Service" as SVC_Log
+}
+
+package "Data Layer" {
+  component "Product Data Access" as DAO_Product
+  component "Order Data Access" as DAO_Order
+  component "User Data Access" as DAO_User
+  component "Favorite Data Access" as DAO_Favorite
+  component "Tag & Category Data Access" as DAO_Tag
+  component "Log & Monitoring Data Access" as DAO_Log
+  component "Monitoring Data Access" as DAO_Monitor
+  component "Input Validation & SQL Injection Protection" as DAO_Validate
+}
+
+package "Data Entity Layer (Database)" {
+  database "User & Permission Data" as DB_User
+  database "Product Data" as DB_Product
+  database "Tag & Category Data" as DB_Tag
+  database "Order Data" as DB_Order
+  database "Favorite Data" as DB_Favorite
+  database "Administration Log Data" as DB_Log
+  database "Fault & Monitoring Data" as DB_Monitor
+}
+
+Guest --> UI_Home
+Guest --> UI_Category
+Guest --> UI_Detail
+
+User --> UI_Home
+User --> UI_Category
+User --> UI_Detail
+User --> UI_Order
+User --> UI_Personal
+
+Customer --> UI_Order
+Seller --> UI_Detail
+
+Admin --> UI_AdminProduct
+Admin --> UI_AdminOrder
+Admin --> UI_AdminUser
+
+UI_Home --> SVC_ProductView
+UI_Category --> SVC_ProductView
+UI_Category --> SVC_Tag
+UI_Detail --> SVC_ProductView
+UI_Order --> SVC_Order
+UI_Order --> SVC_Auth
+UI_Personal --> SVC_Personal
+UI_Personal --> SVC_Auth
+UI_AdminProduct --> SVC_ProductMgmt
+UI_AdminProduct --> SVC_Auth
+UI_AdminOrder --> SVC_OrderMgmt
+UI_AdminOrder --> SVC_Auth
+UI_AdminUser --> SVC_UserMgmt
+UI_AdminUser --> SVC_Auth
+
+SVC_Auth --> DAO_User
+SVC_ProductView --> DAO_Product
+SVC_ProductView --> DAO_Tag
+SVC_ProductMgmt --> DAO_Product
+SVC_ProductMgmt --> DAO_Validate
+SVC_ProductMgmt --> SVC_Log
+SVC_Order --> DAO_Order
+SVC_Order --> DAO_Validate
+SVC_OrderMgmt --> DAO_Order
+SVC_OrderMgmt --> SVC_Log
+SVC_Personal --> DAO_Favorite
+SVC_Personal --> DAO_Order
+SVC_UserMgmt --> DAO_User
+SVC_UserMgmt --> SVC_Log
+SVC_Tag --> DAO_Tag
+SVC_Log --> DAO_Log
+SVC_Log --> DAO_Monitor
+
+DAO_Product --> DB_Product
+DAO_Order --> DB_Order
+DAO_User --> DB_User
+DAO_Favorite --> DB_Favorite
+DAO_Tag --> DB_Tag
+DAO_Log --> DB_Log
+DAO_Monitor --> DB_Monitor
+
+note right of SVC_Auth
+  NFR-003: login authentication
+  and role-based permission control
+end note
+note right of DAO_Validate
+  NFR-002: server-side input
+  validation and SQL injection
+  protection
+end note
+note bottom of DB_Monitor
+  NFR-019: CPU, memory, I/O,
+  connections, QPS, error codes,
+  slow queries, cache, queue metrics
+end note
+@enduml

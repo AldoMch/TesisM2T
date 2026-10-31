@@ -1,0 +1,117 @@
+{
+  "candidate": {
+    "sample_id": "s000026_5d153cf4",
+    "repository_name": "GoogleCloudPlatform/gke-pubsub-websocket-adapter",
+    "image_url": "https://github.com/GoogleCloudPlatform/gke-pubsub-websocket-adapter/blob/main/architecture.svg",
+    "source_ref": "575c112acd7b60c40381e4a2fba92905ce828982",
+    "total_score": 91,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 1287,
+    "document_count": 7,
+    "document_types": [
+      "deployment_config",
+      "readme"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 5,
+      "user_scenario": 2,
+      "api_io": 6,
+      "deployment": 16,
+      "constraints": 3,
+      "non_functional": 1
+    },
+    "time_status": "resolved_before_view",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 6,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 15,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 91
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "Dockerfile",
+      "doc_type": "deployment_config",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05495706479313037,
+      "text": "FROM archlinux/base:latest ARG input RUN pacman --noconfirm -Syu ca-certificates openssl wget unzip nodejs npm; yes | pacman -Scc RUN mkdir /project RUN mkdir /project/pulltop COPY pulltop/package*.json /project/pulltop/ COPY container/exec.sh /project/exec.sh RUN chmod +x /project/exec.sh RUN cd project/pulltop/ && npm install ADD pulltop/pulltop.js /project/pulltop/pulltop.js RUN wget -q -O /tmp/websocketd.zip \\ \\ && unzip /tmp/websocketd.zip -d /tmp/websocketd && mv /tmp/websocketd/websocketd /usr/bin \\ && chmod +x /usr/bin/websocketd EXPOSE 8080 WORKDIR /project RUN chmod -R 777 /project/exec.sh CMD [\"sh\", \"-c\", \"/project/exec.sh $SYMBOL\"]"
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05443548387096775,
+      "text": "# The provides an easy way to distribute Google Cloud Pub/Sub topic messages over WebSockets so that they may be sent to web clients without using the SDK or Pub/Sub API. ## Synopsis The is a tool to create the support infrastructure necessary to operate a load-balanced, autoscaled GKE cluster that mirrors messages sent to a Pub/Sub topic to clients connecting through WebSockets. ## Requirements To deploy to your GCP project, you will need billing enabled and the following permissions: * Read access to the topic you'd like to mirror. The topic may reside in a separate project provided that it is readable by the user or service account runs as. * Pub/Sub subscripton creation privileges in..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "kubernetes/service.yaml",
+      "doc_type": "deployment_config",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05460252406973719,
+      "text": "apiVersion: v1 kind: Service metadata: name: dyson-taxi-service # {\"$kpt-set\":\"service-name\"} spec: ports: - port: 80 protocol: TCP targetPort: 8080 selector: app: dyson-taxi-app # {\"$kpt-set\":\"app-name\"} type: LoadBalancer"
+    },
+    {
+      "evidence_id": "E004",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05433992749054224,
+      "text": "ocally has a few advantages: * It decouples the subscription from client WebSocket connections, and multiplexes potentially many clients while only consuming a single subscription per VM. * By using as the command piped to , clients are served a cache of the last 10 messages published to the topic, even when there is no immediate message flow. This allows for UIs rendering message content to show meaningful data even during periods of low traffic. The exposed to web clients through a single endpoint that maps to an indivdual Pub/Sub topic and load balances across VMs in the cluster. The cluster is set to scale up and down automatically based upon the number of clients connected. Currently..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "kubernetes/configmap.yaml",
+      "doc_type": "deployment_config",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05573770491803279,
+      "text": "kind: ConfigMap apiVersion: v1 metadata: name: topic-config data: topic: projects/pubsub-public-data/topics/taxirides-realtime # {\"$kpt-set\":\"topic\"}"
+    },
+    {
+      "evidence_id": "E006",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05319615749525617,
+      "text": "ocally has a few advantages: * It decouples the subscription from client WebSocket connections, and multiplexes potentially many clients while only consuming a single subscription per VM. * By using as the command piped to , clients are served a cache of the last 10 messages published to the topic, even when there is no immediate message flow. This allows for UIs rendering message content to show meaningful data even during periods of low traffic. The exposed to web clients through a single endpoint that maps to an indivdual Pub/Sub topic and load balances across VMs in the cluster. The cluster is set to scale up and down automatically based upon the number of clients connected. Currently..."
+    }
+  ]
+}

@@ -1,0 +1,116 @@
+@startuml
+!define RECTANGLE class
+!define COMPONENT component
+!define DATABASE database
+
+skinparam componentStyle rectangle
+skinparam shadowing false
+
+title EasyLaTex System Architecture
+
+' Presentation Layer
+package "Presentation Layer" {
+  [Web Browser] as browser
+}
+
+' Application Layer
+package "Application Layer" {
+  package "Frontend" {
+    [User Interface] as ui
+  }
+  
+  package "Backend Services" {
+    [User Management Service] as user_service
+    [File Processing Service] as file_service
+    [AI Recognition Service] as ai_service
+    [Rendering Service] as render_service
+    [Collaboration Service] as collab_service
+    [Version Control Service] as version_service
+    [Authentication Service] as auth_service
+    [API Gateway] as api_gateway
+  }
+}
+
+' Business Logic Layer
+package "Business Logic Layer" {
+  [OCR Engine] as ocr_engine
+  [Formula Recognition] as formula_recog
+  [Table Recognition] as table_recog
+  [LaTeX Generator] as latex_gen
+  [Preview Renderer] as preview_renderer
+  [Collaboration Manager] as collab_manager
+  [Version Manager] as version_manager
+}
+
+' Data Layer
+package "Data Layer" {
+  database "Main Database" {
+    [User Data] as user_data
+    [Project Data] as project_data
+    [File Storage] as file_storage
+    [Version History] as version_data
+    [Collaboration Data] as collab_data
+  }
+}
+
+' External Systems
+package "External Systems" {
+  [LaTeX Engine] as latex_engine
+  [Cloud Storage] as cloud_storage
+  [AI Models] as ai_models
+}
+
+' Connections
+browser --> ui : uses
+ui --> api_gateway : REST API calls
+api_gateway --> user_service : routes
+api_gateway --> file_service : routes
+api_gateway --> ai_service : routes
+api_gateway --> render_service : routes
+api_gateway --> collab_service : routes
+api_gateway --> version_service : routes
+
+user_service --> auth_service : validates
+user_service --> user_data : manages
+file_service --> file_storage : stores/retrieves
+ai_service --> ocr_engine : processes
+ai_service --> formula_recog : recognizes
+ai_service --> table_recog : recognizes
+render_service --> latex_gen : generates
+render_service --> preview_renderer : renders
+collab_service --> collab_manager : manages
+collab_service --> collab_data : stores
+version_service --> version_manager : controls
+version_service --> version_data : tracks
+
+ocr_engine --> ai_models : utilizes
+formula_recog --> ai_models : utilizes
+table_recog --> ai_models : utilizes
+latex_gen --> latex_engine : uses
+preview_renderer --> latex_engine : uses
+
+user_data --> database : persists
+project_data --> database : persists
+file_storage --> cloud_storage : stores
+version_data --> database : persists
+collab_data --> database : persists
+
+' Notes
+note right of browser
+  Modern browsers:
+  Chrome, Firefox, Safari, Edge
+end note
+
+note right of ai_models
+  Deep learning models for
+  formula/table recognition
+  Accuracy > 90%
+end note
+
+note bottom of latex_engine
+  TeX Live, MiKTeX or
+  compatible LaTeX engine
+end note
+
+@enduml
+

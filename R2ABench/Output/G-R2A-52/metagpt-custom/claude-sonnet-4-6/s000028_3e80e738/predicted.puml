@@ -1,0 +1,149 @@
+@startuml PN_Infra_Architecture
+
+skinparam backgroundColor #FAFAFA
+skinparam package {
+  BorderColor #555555
+  FontStyle bold
+  FontSize 13
+}
+skinparam component {
+  BorderColor #336699
+  BackgroundColor #D6E8F7
+  FontSize 11
+}
+skinparam rectangle {
+  BorderColor #557744
+  BackgroundColor #E8F5E2
+  FontSize 12
+}
+skinparam arrow {
+  Color #444444
+  FontSize 10
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL SYSTEMS
+' ─────────────────────────────────────────────
+cloud "AWS CloudFormation\n(Provisioning Engine)" as CFNEngine
+cloud "AWS CLI" as AWSCLI
+cloud "AWS IAM\n(Web-Identity Federation)" as AWSIAM
+cloud "Network Load Balancer\n(ECS Target ARN)" as NLB
+
+' ─────────────────────────────────────────────
+' INFRASTRUCTURE PROVISIONING LAYER
+' ─────────────────────────────────────────────
+package "Infrastructure Provisioning Layer" as ProvisioningLayer #FFF8DC {
+
+  component [CloudFormation Templates\n(YAML 2010-09-09)] as CFNTemplates
+  component [Installation Scripts\n(AWS CLI profiles & env params)] as InstallScripts
+
+  component [TokenValidityParams\n(AccessTokenValidityUnits,\nIdTokenValidityUnits,\nRefreshTokenValidityUnits)] as TokenValidityParams <<input-parameter>>
+
+  InstallScripts -down-> CFNTemplates : supplies env-specific\nparameters
+  InstallScripts -right-> AWSCLI : invokes via
+  CFNTemplates -right-> CFNEngine : deployed by
+  TokenValidityParams -down-> CFNTemplates : constrained validity\nunit values (NFR-003)
+}
+
+' ─────────────────────────────────────────────
+' AWS ACCOUNT: COGNITO ACCOUNT
+' ─────────────────────────────────────────────
+rectangle "AWS Account: Cognito Account" as CognitoAccount {
+
+  ' ── Authentication Layer ──
+  package "Authentication Layer" as AuthNLayer #D6EAF8 {
+
+    component [CognitoUserPool\n(token validity, custom:Role, email)] as UserPool
+    component [CognitoUserPoolClient\n(attribute scope, ClientId)] as UserPoolClient
+    component [CognitoIdentityPool\n(provider binding, unauth identities)] as IdentityPool
+    component [IdentityPoolRoleAttachment\n(auth + unauth role mapping)] as RoleAttachment
+
+    UserPool -down-> UserPoolClient : creates / binds\n(ClientId)
+    UserPool -down-> IdentityPool : provides ProviderName\n+ UserPoolId (DR-002)
+    UserPoolClient -down-> IdentityPool : provides ClientId\n(provider binding)
+    IdentityPool -down-> RoleAttachment : identity pool ARN\nrequired for mapping
+  }
+
+  ' ── Authorization & Identity Layer ──
+  package "Authorization & Identity Layer" as AuthZLayer #D5F5E3 {
+
+    component [UnauthenticatedIAMRole\n(sts:AssumeRoleWithWebIdentity)] as UnauthRole
+    component [AuthenticatedIAMRole\n(sts:AssumeRoleWithWebIdentity)] as AuthRole
+
+    UnauthRole -right-> AWSIAM : created in /\nfederated by
+    AuthRole -right-> AWSIAM : created in /\nfederated by
+  }
+
+  UnauthRole -up-> IdentityPool : trust policy embeds\nidentity pool ARN (FR-007)
+  AuthRole -up-> IdentityPool : trust policy embeds\nidentity pool ARN (FR-006)
+  UnauthRole -down-> RoleAttachment : ARN mapped\ninto role attachment
+  AuthRole -down-> RoleAttachment : ARN mapped\ninto role attachment
+}
+
+' ─────────────────────────────────────────────
+' AWS ACCOUNT: API GATEWAY ACCOUNT
+' ─────────────────────────────────────────────
+rectangle "AWS Account: API Gateway Account" as APIGWAccount {
+
+  ' ── API Gateway Layer ──
+  package "API Gateway Layer" as APIGWLayer #FDEBD0 {
+
+    component [CognitoUserPoolAuthorizer\n(cross-account user-pool ARN)] as Authorizer
+    component [WhoAmIMethod\n(x-pagopa-pn-cx-role response header\ncustom:Role claim mapping)\n<<HTTP 200 response defined>>] as WhoAmIMethod
+    component [ECSProxyMethod\n(x-pagopa-pn-cx-role request header\nVPC link integration)] as ECSMethod
+    component [ApiGatewayVpcLink\n(NLB ARN integration)] as VpcLink
+    component [ApiGatewayDeployment\n(stage deployment)] as APIGWDeployment
+
+    component [CallbackURLOutput\n(API GW ID + region + stage)] as CallbackOut <<output>>
+
+    Authorizer -down-> WhoAmIMethod : protects / supplies\ncustom:Role claim
+    Authorizer -down-> ECSMethod : protects / forwards\nrole claim
+    Authorizer -down-> APIGWDeployment : authorizer must exist\nbefore deployment (CON-004)
+    ECSMethod -right-> VpcLink : uses VPC link\nas integration backend (FR-011)
+    WhoAmIMethod -down-> APIGWDeployment : must exist\nbefore deployment
+    ECSMethod -down-> APIGWDeployment : must exist\nbefore deployment
+    APIGWDeployment -right-> CallbackOut : publishes\nCallbackURL
+  }
+
+  ' ── Private Network Connectivity Layer ──
+  package "Private Network Connectivity Layer" as PrivNetLayer #E8DAEF {
+
+    component [SQSEndpointSecurityGroup\n(TCP 0-65535, VPC CIDR ingress)] as SGEndpoint
+    component [SQSVpcInterfaceEndpoint\n(interface type, regional SQS service)] as SQSEndpoint
+    note right of SQSEndpoint : Private DNS enabled\n(NFR-001 / FR-013)
+
+    SQSEndpoint -down-> SGEndpoint : references security group\n(SG association, FR-013/FR-014)
+  }
+}
+
+' ─────────────────────────────────────────────
+' EXTERNAL AWS SERVICES (target systems)
+' ─────────────────────────────────────────────
+component "Amazon SQS\n(private access target)" as AWSSQS <<database>>
+cloud "AWS VPC / EC2 Networking\n(VPC, subnets, security groups)" as AWSVPC
+
+SQSEndpoint -right-> AWSSQS : private connectivity\nvia interface endpoint
+SQSEndpoint -down-> AWSVPC : hosted in VPC /\nsubnet scoped
+SGEndpoint -down-> AWSVPC : VPC CIDR\ningress restriction
+
+' ─────────────────────────────────────────────
+' CROSS-ACCOUNT DEPENDENCY
+' ─────────────────────────────────────────────
+UserPool -[#CC0000,dashed]--> Authorizer : cross-account:\nuser-pool ARN\npassed as input param
+
+' ─────────────────────────────────────────────
+' VPC LINK -> NLB
+' ─────────────────────────────────────────────
+VpcLink -down-> NLB : NLB ARN\n(installation input)
+
+' ─────────────────────────────────────────────
+' PROVISIONING LAYER -> RESOURCES
+' ─────────────────────────────────────────────
+CFNTemplates -[#888888,dashed]--> UserPool : declares Cognito\n& IAM resources
+CFNTemplates -[#888888,dashed]--> IdentityPool : declares Cognito\n& IAM resources
+CFNTemplates -[#888888,dashed]--> UnauthRole : declares Cognito\n& IAM resources
+CFNTemplates -[#888888,dashed]--> AuthRole : declares Cognito\n& IAM resources
+CFNTemplates -[#888888,dashed]--> Authorizer : declares APIGW\n& VPC endpoint resources
+CFNTemplates -[#888888,dashed]--> SQSEndpoint : declares APIGW\n& VPC endpoint resources
+
+@enduml

@@ -1,0 +1,68 @@
+@startuml
+
+package "CLI Layer" {
+    component "CLI Entry Point" as cli_entry
+    component "Trace Command" as trace_cmd
+    component "Event Registration Structure" as event_reg
+}
+
+package "Library/Loader Layer" {
+    component "Probe Loader" as probe_loader
+    component "Userspace Tracer" as userspace_tracer
+    component "gobpf Library" as gobpf
+}
+
+package "Configuration Generator" {
+    component "Configuration Generator" as config_gen
+    database "Event Configuration Metadata" as event_config
+}
+
+package "Kernel eBPF Layer" {
+    component "Main eBPF Program" as main_ebpf
+    component "Handler eBPF Programs" as handler_ebpf
+    database "Program Maps (handle_NAME_progs)" as prog_maps
+    database "Return-Program Maps (handle_NAME_progs_ret)" as ret_maps
+    component "No-op Handler" as noop_handler
+}
+
+package "Event Channel" {
+    component "Perf Event Channel" as perf_channel
+    component "Common Event Header" as event_header
+}
+
+rectangle "Linux Kernel" as linux_kernel {
+    component "eBPF/kprobe facilities" as ebpf_facilities
+    component "kprobe/handle_NAME" as kprobe_attach
+    component "kretprobe/handle_NAME" as kretprobe_attach
+}
+
+' Dependencies within the system
+cli_entry --> trace_cmd : "executes"
+trace_cmd --> event_reg : "parses CLI args into"
+trace_cmd --> probe_loader : "initiates tracing"
+event_reg --> probe_loader : "provides registration data"
+probe_loader --> gobpf : "uses"
+gobpf --> linux_kernel : "interfaces with"
+probe_loader --> main_ebpf : "loads"
+probe_loader --> handler_ebpf : "loads"
+probe_loader --> noop_handler : "loads for unconfigured probes"
+config_gen --> event_config : "reads"
+config_gen --> handler_ebpf : "generates source code for"
+main_ebpf --> prog_maps : "selects default handlers from"
+main_ebpf --> ret_maps : "selects return handlers from"
+prog_maps --> handler_ebpf : "contains"
+ret_maps --> handler_ebpf : "contains"
+handler_ebpf --> event_header : "prepends to events"
+handler_ebpf --> perf_channel : "emits events to"
+noop_handler --> perf_channel : "emits no events"
+perf_channel --> userspace_tracer : "transfers events to"
+userspace_tracer --> probe_loader : "coordinates with"
+kprobe_attach --> handler_ebpf : "attaches"
+kretprobe_attach --> handler_ebpf : "attaches"
+
+' External dependencies
+main_ebpf --> linux_kernel : "runs in"
+handler_ebpf --> linux_kernel : "runs in"
+noop_handler --> linux_kernel : "runs in"
+
+@enduml

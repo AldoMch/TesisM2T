@@ -1,0 +1,118 @@
+{
+  "candidate": {
+    "sample_id": "s000066_a314f8cb",
+    "repository_name": "alexprut/earth-defender",
+    "image_url": "https://github.com/alexprut/earth-defender/blob/master/documentation/img/GeneralArchitecture.png",
+    "source_ref": "5d4d8f0832fc74882a701d6a0dedee23fd494648",
+    "total_score": 88,
+    "prd_srs_convertibility_score": 15,
+    "requirement_relevance_score": 25,
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ]
+  },
+  "features": {
+    "effective_token_count": 4537,
+    "document_count": 8,
+    "document_types": [
+      "code_api_route",
+      "code_cli",
+      "readme"
+    ],
+    "covered_categories": [
+      "api_io",
+      "constraints",
+      "deployment",
+      "functionality",
+      "non_functional",
+      "user_scenario"
+    ],
+    "category_hits": {
+      "functionality": 115,
+      "user_scenario": 24,
+      "api_io": 26,
+      "deployment": 46,
+      "constraints": 4,
+      "non_functional": 8
+    },
+    "time_status": "row_sha_no_view_date",
+    "retrieval_strategy": "hybrid",
+    "retrieval_sections": [
+      "constraints",
+      "data_requirements",
+      "external_interfaces",
+      "functional_requirements",
+      "non_functional_requirements"
+    ]
+  },
+  "scores": {
+    "effective_doc_score": 11,
+    "doc_diversity_score": 15,
+    "requirement_relevance_score": 25,
+    "temporal_consistency_score": 7,
+    "traceability_score": 15,
+    "prd_srs_convertibility_score": 15,
+    "total_score": 88
+  },
+  "evidence_chunks": [
+    {
+      "evidence_id": "E001",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05383354996258222,
+      "text": "Earth Defender -------------- A distributed soft real-time 3D single/multiplayer game build with Erlang/OTP and Three.js __Live preview__: ## Table of contents 1. Installation 1. Client 2. Server 2. Architecture 1. General Architecture 2. Use Cases 1. Multiplayer, create new room 2. Multiplayer, join a room 4. Client 3. Server 3. License ## Installation Below you can see the instructions for building and starting the game _client_ and _server_. ### Client 1. The client code is inside the directory, open your terminal and type: 2. Install Bower dependencies: 3. Setup the game client (by default in is included a default game initialization, the file is also included as default in ), below y..."
+    },
+    {
+      "evidence_id": "E002",
+      "path": "README.md",
+      "doc_type": "readme",
+      "section": "functional_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05306777580343155,
+      "text": "e server should be listening on address and port ): 5. You can also run a slave/replica for fault-tolerant purposes (inside the you can find a default configuration that you may change): ## Architecture To allow multiplayer mode play the WebSocket protocol is used, that runs over HTTP for asynchronous communication that can occur concurrently. Since browser can't receive a WebSocket connection, but only initialize one, client to client (P2P) connections is not possibile due to the limitation of the protocol (to solve that problem WebRTC can be used). ### General Architecture Above in the image is illustrated the general architecture of multiplayer game. The client entities (or players) ar..."
+    },
+    {
+      "evidence_id": "E003",
+      "path": "client/js/gameClient.js",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05355891420407549,
+      "text": "nectIntervalCounter) } }; GameClient.prototype.disconnect = function () { this.websocket.close(); }; GameClient.prototype.stopHeartBeat = function () { clearTimeout(this.heartBeatId); }; GameClient.prototype.resetHeartBeat = function () { this.stopHeartBeat(); this.heartBeatId = setTimeout((function () { if (this.isConnected()) { this.send(\"ping\", null); this.resetHeartBeat(); } }).bind(this), this.heartBeatInterval); }; GameClient.prototype.isConnected = function () { return (this.websocket && (this.websocket.readyState === this.websocket.OPEN)) ? true : false; }; GameClient.prototype.send = function (event, data) { var sendData = JSON.stringify([event, data]); if (this.isConnected()) {..."
+    },
+    {
+      "evidence_id": "E004",
+      "path": "client/js/gameClient.js",
+      "doc_type": "code_cli",
+      "section": "external_interfaces",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05220165553045988,
+      "text": "me.roomId, this.game.playerId, index]); } var sendData; while (sendData = this.queue.shift()) { this.send(sendData.event, sendData.data); } this.resetHeartBeat(); }; GameClient.prototype.onClose = function (event) { console.log('onClose'); console.log(event); this.reconnect(); }; GameClient.prototype.onMessage = function (event) { var receivedData = JSON.parse(event.data); var action = receivedData[0]; var data = (receivedData.length > 1) ? receivedData[1] : null; console.log('onMessage (Receiving)'); console.log(event); switch (action) { case \"game_reconnect\": this.game.reAddShipFromScene(data); this.game.start(); break; case \"room_players_number\": this.game.setPlayers(data); break; case..."
+    },
+    {
+      "evidence_id": "E005",
+      "path": "client/js/gameClient.js",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05441021637742949,
+      "text": "me.roomId, this.game.playerId, index]); } var sendData; while (sendData = this.queue.shift()) { this.send(sendData.event, sendData.data); } this.resetHeartBeat(); }; GameClient.prototype.onClose = function (event) { console.log('onClose'); console.log(event); this.reconnect(); }; GameClient.prototype.onMessage = function (event) { var receivedData = JSON.parse(event.data); var action = receivedData[0]; var data = (receivedData.length > 1) ? receivedData[1] : null; console.log('onMessage (Receiving)'); console.log(event); switch (action) { case \"game_reconnect\": this.game.reAddShipFromScene(data); this.game.start(); break; case \"room_players_number\": this.game.setPlayers(data); break; case..."
+    },
+    {
+      "evidence_id": "E006",
+      "path": "client/js/gameClient.js",
+      "doc_type": "code_cli",
+      "section": "data_requirements",
+      "retrievers": "bm25|code|dense|hyde",
+      "score": 0.05355266373411535,
+      "text": "data); break; case \"servers_list\": this.setServers(data); break; case \"servers_list_redirect\": this.setServers(data); this.disconnect(); break; case \"server_error\": window.location.reload(); break; case \"pong\": break; default: console.log(\"Warning: onMessage can not handle action \" + \"\\\"\" + action + \"\\\"\"); } }; GameClient.prototype.onError = function (event) { console.log('onError'); console.log(event.data); };"
+    }
+  ]
+}

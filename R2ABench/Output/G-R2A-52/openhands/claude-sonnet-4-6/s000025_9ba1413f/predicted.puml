@@ -1,0 +1,76 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam backgroundColor #FAFAFA
+skinparam defaultFontSize 13
+
+actor "Authenticated User" as AuthUser
+actor "End User" as EndUser
+
+rectangle "Environment Variables" as EnvVars {
+  component "FIREBASE_AUTH_DOMAIN" as ENV1
+  component "FIREBASE_DATABASE_URL" as ENV2
+  component "FIREBASE_PROJECT_ID" as ENV3
+  component "FIREBASE_PUBLIC_API_KEY" as ENV4
+}
+
+rectangle "Frontend\n(Next.js)" as Frontend {
+  component "Frontend Form\n(Help-Task Entry)" as Form
+  component "Firebase Session Handler" as SessionHandler
+  component "Firebase Runtime Config" as FirebaseConfig
+}
+
+rectangle "End-User Entry Channels\n(Text / Call)" as Channels
+
+rectangle "Next.js API Routes" as APIRoutes {
+  component "POST /api/login" as LoginAPI
+  component "POST /api/logout" as LogoutAPI
+  component "Session Middleware" as SessionMiddleware
+  component "Server-Side Session Store" as SessionStore
+}
+
+rectangle "Firebase" as FirebasePlatform {
+  component "Firebase Authentication\n(ID Token Verification)" as FirebaseAuth
+  component "Firebase Admin SDK" as FirebaseAdmin
+}
+
+rectangle "Middleware Layer\n(Task Request Processing)" as MiddlewareLayer {
+  component "Address-to-Neighborhood\nHandler" as AddrNeighborhood
+  component "Service-Area\nDecision" as ServiceArea
+}
+
+rectangle "Backend\n(Firebase Functions)" as BackendFunctions {
+  component "Custom API Functions" as CustomAPIs
+  component "OnFleet Task Handler" as OnFleetHandler
+}
+
+component "OnFleet\n(Task Creation)" as OnFleet
+
+EnvVars --> FirebaseConfig : provides config values
+FirebaseConfig --> Frontend : loaded at startup
+
+AuthUser --> SessionHandler : triggers login / logout
+SessionHandler --> LoginAPI : POST /api/login\n{token}
+SessionHandler --> LogoutAPI : POST /api/logout
+SessionHandler --> FirebasePlatform : getIdToken()
+
+LoginAPI --> SessionMiddleware : wrapped by
+SessionMiddleware --> SessionStore : provides session object
+LoginAPI --> FirebaseAdmin : verify ID token
+FirebaseAdmin --> FirebaseAuth : token verification
+LoginAPI --> SessionStore : store decoded token\n+ original token
+
+EndUser --> Form : submits help-task request
+EndUser --> Channels : text / call entry
+Form --> MiddlewareLayer : task request data
+Channels --> MiddlewareLayer : task request data
+
+MiddlewareLayer --> AddrNeighborhood : address processing
+AddrNeighborhood --> ServiceArea : neighborhood result
+ServiceArea --> BackendFunctions : eligible request
+
+BackendFunctions --> CustomAPIs
+BackendFunctions --> OnFleetHandler : create task
+OnFleetHandler --> OnFleet : OnFleet task creation API
+
+@enduml

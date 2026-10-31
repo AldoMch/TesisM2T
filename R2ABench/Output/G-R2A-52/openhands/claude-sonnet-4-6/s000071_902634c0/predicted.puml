@@ -1,0 +1,83 @@
+@startuml
+skinparam componentStyle rectangle
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontSize 12
+skinparam ArrowColor #444444
+skinparam componentBorderColor #555555
+skinparam packageBorderColor #777777
+skinparam packageFontStyle bold
+
+package "ClearML Agent" {
+
+  package "Worker Runtime" {
+    [Telemetry Reporter] as Telemetry
+    [Server Ping] as Ping
+    [Stdout/Stderr Logger] as Logger
+    note right of Telemetry : report_period_sec (default 2s)
+    note right of Ping : ping_period_sec (default 30s)
+  }
+
+  package "Kubernetes Integration" {
+    [Kubernetes Glue] as KGlue
+    note bottom of KGlue : Pulls jobs from queue\nPrepares K8s jobs\nvia YAML template
+
+    [Service Pod Mode] as SPMode
+    note bottom of SPMode : clearml-agent Docker image\nSibling container management\nvia mapped Docker socket
+  }
+
+  package "Backend Service Client" {
+    [Service Action Handler] as SAH
+    note right of SAH : create → entity with response ID\nget / get_by_id → mapped entity\nget_all / get_all_ex → TableResponse
+  }
+
+}
+
+package "Kubernetes Cluster" {
+  [Kubernetes Job] as KJob
+  package "Experiment Pod" {
+    [Environment Installer] as EnvInstaller
+    [Experiment Process] as ExpProcess
+    [Process Monitor] as ProcMonitor
+  }
+  [Docker Socket] as DockerSocket
+  [Sibling Docker Containers] as SiblingContainers
+}
+
+package "ClearML Backend" {
+  [ClearML Server] as ClearMLServer
+  [Execution Queue] as ExecQueue
+
+  package "Events Service v2.5" {
+    [Histogram Request Handler] as HistHandler
+    note right of HistHandler : key: iter | iso_time | timestamp\nfields: task, samples, key
+  }
+
+  package "Models Service v2.4" {
+    [Model Delete Handler] as ModelDelete
+    note right of ModelDelete : fields: model, force
+    [Model Metadata Store] as ModelMeta
+    note right of ModelMeta : nullable: id, name, user\n company, created, task
+  }
+}
+
+KGlue --> ExecQueue : pull queued jobs
+KGlue --> KJob : prepare from YAML template
+
+KJob --> EnvInstaller : triggers in-pod setup
+EnvInstaller --> ExpProcess : install environment & start
+ProcMonitor --> ExpProcess : monitor
+
+SPMode --> DockerSocket : manage sibling containers
+DockerSocket --> SiblingContainers : spawn / manage
+
+Telemetry --> ClearMLServer : periodic status report
+Ping --> ClearMLServer : periodic connectivity ping
+
+SAH --> ClearMLServer : session-based service requests
+SAH --> HistHandler : histogram queries (Events v2.5)
+SAH --> ModelDelete : model delete requests (Models v2.4)
+SAH --> ModelMeta : model metadata retrieval (Models v2.4)
+
+Logger ..> ExpProcess : capture stdout / stderr
+
+@enduml

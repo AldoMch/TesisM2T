@@ -1,0 +1,172 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FAFAFA
+skinparam rectangle {
+  BorderColor #333333
+  FontColor #111111
+}
+skinparam node {
+  BorderColor #333333
+  FontColor #111111
+}
+skinparam component {
+  BorderColor #555555
+  FontColor #111111
+  BackgroundColor #EEF2FF
+}
+skinparam database {
+  BorderColor #555555
+  FontColor #111111
+  BackgroundColor #FFF8E7
+}
+skinparam cloud {
+  BorderColor #555555
+  FontColor #111111
+}
+skinparam arrow {
+  Color #444444
+  FontColor #444444
+  FontSize 10
+}
+skinparam defaultFontSize 12
+
+title TraceLeft System Architecture
+
+actor "CLI Operator" as operator
+actor "Developer / Integrator" as developer
+actor "Maintainer" as maintainer
+
+rectangle "TraceLeft System" {
+
+  rectangle "CLI Layer" as cli_layer {
+    component "CLI Entry Point\n(FR-001)" as cli_entry
+    component "trace Command\n(FR-002)" as trace_cmd
+    component "Event Registration\nParser\n(DR-004)" as event_reg_parser
+
+    note right of event_reg_parser
+      Parses inputs into:
+      - ProgramID
+      - Pids
+      - ELFPath
+    end note
+
+    cli_entry --> trace_cmd : dispatches
+    trace_cmd --> event_reg_parser : parses inputs
+  }
+
+  rectangle "TraceLeft Library" as lib_layer {
+
+    rectangle "Probe Subsystem" as probe_subsystem {
+      component "Probe Loader\n(FR-006, FR-009)" as probe_loader
+      component "Default Handler\nProbes" as default_handlers
+      component "Process-Specific\nHandler Probes" as proc_handlers
+
+      probe_loader --> default_handlers : loads
+      probe_loader --> proc_handlers : loads when available
+
+      note bottom of probe_loader
+        Naming scheme:
+        Maps: handle_NAME_progs
+              handle_NAME_progs_ret
+        Probes: kprobe/handle_NAME
+                kretprobe/handle_NAME
+      end note
+    }
+
+    rectangle "Event Reception" as event_reception {
+      component "Userspace Tracer\n/ Event Dispatcher\n(FR-008, DR-001)" as userspace_tracer
+    }
+
+    probe_loader --> userspace_tracer : activates tracing session
+  }
+
+  rectangle "Configuration & Generation Layer" as gen_layer {
+    component "Event Config\nReader\n(FR-005)" as config_reader
+    component "eBPF Handler\nCode Generator\n(FR-005, NFR-004)" as handler_generator
+
+    database "Event Configuration\nMetadata\n(Proto/JSON)\n(DR-003)" as event_config {
+      note right
+        Fields:
+        - position
+        - type
+        - name
+        - suffix
+        - hash_func
+      end note
+    }
+
+    component "Generated eBPF\nHandler Source" as generated_handler_src
+
+    event_config --> config_reader : read
+    config_reader --> handler_generator : provides metadata
+    handler_generator --> generated_handler_src : produces
+  }
+
+  rectangle "Linux Kernel Space" as kernel_space {
+
+    rectangle "eBPF Runtime\n(gobpf integration)\n(NFR-003, C-003)" as ebpf_runtime {
+
+      component "Main eBPF Program\n(kprobe / kretprobe)\n(FR-003)" as main_ebpf_prog
+
+      rectangle "Handler Maps\n(FR-007, FR-009)" as handler_maps {
+        component "handle_NAME_progs\n(entry map)" as entry_map
+        component "handle_NAME_progs_ret\n(return map)" as ret_map
+      }
+
+      component "Handler eBPF Programs\n(FR-008)" as handler_programs
+
+      note bottom of handler_programs
+        No-op if no handler set:
+        returns 0 (FR-007)
+      end note
+
+      main_ebpf_prog --> entry_map : selects handler\n(keyed by process context)
+      main_ebpf_prog --> ret_map : selects return handler\n(keyed by process context)
+      entry_map --> handler_programs : dispatch
+      ret_map --> handler_programs : dispatch
+    }
+
+    rectangle "Linux Kernel Facilities\n(C-001, C-002, NFR-001)" as kernel_facilities {
+      component "kprobe / kretprobe\nhooks" as kprobe_hooks
+      component "Perf-based\nEvent Channel\n(DR-002)" as perf_channel
+    }
+
+    main_ebpf_prog --> kprobe_hooks : attaches via
+    handler_programs --> perf_channel : emit events\n(common header first)
+  }
+}
+
+operator --> cli_entry : invokes
+developer --> lib_layer : embeds / integrates
+maintainer --> event_config : defines
+maintainer --> gen_layer : drives generation
+
+trace_cmd --> probe_loader : initiates probe loading\nwith EventRegistration
+probe_loader --> ebpf_runtime : installs probes\n(via gobpf)
+generated_handler_src --> handler_programs : compiled into
+
+perf_channel --> userspace_tracer : delivers events\n(syscall / file / network)
+
+note as event_note
+  Each event begins with
+  Common Event Header Section
+  (DR-001, NFR-002, FR-008)
+  enabling userspace dispatch
+end note
+
+perf_channel .. event_note
+userspace_tracer .. event_note
+
+rectangle "Supported Event Types\n(FR-004)" as event_types {
+  component "Syscall Events" as syscall_ev
+  component "File Events" as file_ev
+  component "Network Events" as net_ev
+}
+
+userspace_tracer --> syscall_ev : dispatches
+userspace_tracer --> file_ev : dispatches
+userspace_tracer --> net_ev : dispatches
+
+developer --> event_types : consumes
+
+@enduml

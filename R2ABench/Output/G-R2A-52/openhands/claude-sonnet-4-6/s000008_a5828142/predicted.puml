@@ -1,0 +1,117 @@
+@startuml
+
+skinparam componentStyle rectangle
+skinparam defaultFontSize 12
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+actor "User / Visitor" as User
+
+node "Browser" {
+    component "Vue Frontend\n(Web App)" as VueFE {
+        component "Login / Register View" as AuthView
+        component "Project Workspace\n(Code Editor)" as WorkspaceView
+        component "Battle View" as BattleView
+        component "Playback View" as PlaybackView
+    }
+}
+
+node "Nginx Reverse Proxy" as Nginx {
+    component "Reverse Proxy\n(HTTP / WS)" as NginxProxy
+}
+
+node "Node.js / Express Backend" as BackendNode {
+
+    package "REST API Layer" as RestAPI {
+        component "Auth API\n(Register / Login / JWT)" as AuthAPI
+        component "Project API\n(Create / Query / Update)" as ProjectAPI
+        component "Version & File API" as VersionAPI
+        component "Code Execution API" as ExecAPI
+        component "Playback / Recording API" as PlaybackAPI
+        component "File Upload API" as FileUploadAPI
+    }
+
+    package "Socket.IO Layer" as SocketLayer {
+        component "Workspace Socket\n(Auth / Edit / Leave / Disconnect)" as WorkspaceSocket
+        component "Battle Socket\n(Invite / Accept / Ready /\nSync / Judge / End / Leave)" as BattleSocket
+    }
+
+    package "Business Services" as Services {
+        component "JWT Auth Service" as JWTService
+        component "Project Service" as ProjectService
+        component "Workspace Service" as WorkspaceService
+        component "Coding Process Service" as RecordingService
+        component "Battle Service" as BattleService
+        component "Code Execution Service" as ExecService
+        component "File / Storage Service" as FileService
+    }
+}
+
+node "Data Layer" as DataLayer {
+    database "MySQL\n(Users / Projects /\nVersions / Battles)" as MySQL
+    database "InfluxDB\n(Coding-Process\nTime-Series Records)" as InfluxDB
+    database "Redis Cache\n(Workspace Mappings /\nBattle State /\nTemp Invitations)" as Redis
+}
+
+node "Docker Sandbox" as SandboxNode {
+    component "Code Execution\nSandbox" as Sandbox
+}
+
+node "Object Storage & CDN" as StorageNode {
+    component "S3-Compatible\nObject Storage" as S3
+    component "CDN Distribution\n(Static Assets /\nArchives)" as CDN
+}
+
+node "Deployment Infrastructure" as DeployInfra {
+    component "Automated Deployment\nScripts" as DeployScripts
+}
+
+' User to Browser
+User --> VueFE : interacts via browser
+
+' Browser to Nginx
+VueFE --> NginxProxy : HTTP REST / WebSocket
+
+' Nginx to Backend
+NginxProxy --> RestAPI : forward REST requests
+NginxProxy --> SocketLayer : proxy WebSocket (Socket.IO)
+
+' REST API to Services
+AuthAPI --> JWTService
+ProjectAPI --> ProjectService
+VersionAPI --> ProjectService
+ExecAPI --> ExecService
+PlaybackAPI --> RecordingService
+FileUploadAPI --> FileService
+
+' Socket to Services
+WorkspaceSocket --> WorkspaceService
+WorkspaceSocket --> JWTService
+BattleSocket --> BattleService
+BattleSocket --> JWTService
+
+' Services to Data Layer
+JWTService --> MySQL : user identity
+ProjectService --> MySQL : project / version data
+WorkspaceService --> Redis : socket-version mappings
+BattleService --> Redis : battle state / temp invitations
+RecordingService --> InfluxDB : coding-process records
+BattleService --> MySQL : battle records / outcomes
+FileService --> S3 : upload files
+
+' Code Execution
+ExecService --> Sandbox : submit code (Docker)
+Sandbox --> ExecService : execution result
+
+' File Distribution
+S3 --> CDN : origin content
+CDN --> VueFE : distributable URLs / static assets
+
+' Deployment
+DeployScripts --> BackendNode : deploy backend
+DeployScripts --> NginxProxy : configure reverse proxy
+DeployScripts --> DataLayer : configure databases / cache
+DeployScripts --> SandboxNode : configure sandbox
+DeployScripts --> StorageNode : configure storage / CDN
+
+@enduml

@@ -1,0 +1,198 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #FEFEFE
+skinparam classBackgroundColor #FEFEFE
+skinparam classBorderColor #333333
+skinparam arrowColor #333333
+skinparam classArrowColor #333333
+skinparam packageBackgroundColor #FEFEFE
+skinparam packageBorderColor #333333
+skinparam noteBackgroundColor #FEFEFE
+skinparam noteBorderColor #333333
+
+title Campus Helper Platform - System Architecture
+
+package "Client Environment" {
+  [WeChat Mini Program Client] as Client
+  note right of Client
+    Android 5.0+, 4GB+ RAM
+    WeChat 8.0+
+  end note
+}
+
+package "Presentation Layer" {
+  [Homepage / Popular Products UI] as UI_Home
+  [Product Category UI] as UI_Category
+  [Product Detail UI] as UI_Detail
+  [Order Interface] as UI_Order
+  [Personal Center UI] as UI_Personal
+  [Admin Product Mgmt UI] as UI_AdminProduct
+  [Admin Order Mgmt UI] as UI_AdminOrder
+  [Admin User Mgmt UI] as UI_AdminUser
+}
+
+package "Business Layer" {
+  [Product Browsing Service] as SVC_Browse
+  [Order Management Service] as SVC_Order
+  [User Profile Service] as SVC_User
+  [Admin Product Service] as SVC_AdminProduct
+  [Admin Order Service] as SVC_AdminOrder
+  [Admin User Service] as SVC_AdminUser
+  [Authentication & Authorization Service] as SVC_Auth
+  [Monitoring & Logging Service] as SVC_Monitor
+}
+
+package "Data Layer" {
+  [Product Data Access] as DAO_Product
+  [Order Data Access] as DAO_Order
+  [User Data Access] as DAO_User
+  [Favorite Data Access] as DAO_Favorite
+  [Tag/Category Data Access] as DAO_Tag
+  [Admin Log Data Access] as DAO_Log
+}
+
+package "Data Entity Layer (Database)" {
+  database "Platform Database" as DB {
+    [User & Permission Data]
+    [Product Data]
+    [Order Data]
+    [Favorite Data]
+    [Tag & Category Data]
+    [Administration Log Data]
+    [Fault & Monitoring Data]
+  }
+}
+
+' Client to Presentation Layer connections
+Client --> UI_Home : Views popular products
+Client --> UI_Category : Browses by category
+Client --> UI_Detail : Views product details
+Client --> UI_Order : Creates/modifies/confirms/cancels orders
+Client --> UI_Personal : Views favorites & order records
+Client --> UI_AdminProduct : Manages products (Admin)
+Client --> UI_AdminOrder : Manages orders (Admin)
+Client --> UI_AdminUser : Manages users (Admin)
+
+' Presentation Layer to Business Layer connections
+UI_Home --> SVC_Browse : Popular product list request
+UI_Category --> SVC_Browse : Categorized product list request
+UI_Detail --> SVC_Browse : Product detail request
+UI_Detail --> SVC_Order : Order creation request
+UI_Order --> SVC_Order : Order modification/confirmation/cancellation
+UI_Personal --> SVC_User : Favorites & order records request
+UI_AdminProduct --> SVC_AdminProduct : Product CRUD operations
+UI_AdminOrder --> SVC_AdminOrder : Order CRUD operations
+UI_AdminUser --> SVC_AdminUser : User CRUD operations
+
+' Business Layer internal connections
+SVC_Browse --> SVC_Auth : Permission check
+SVC_Order --> SVC_Auth : Permission check
+SVC_User --> SVC_Auth : Permission check
+SVC_AdminProduct --> SVC_Auth : Admin permission check
+SVC_AdminOrder --> SVC_Auth : Admin permission check
+SVC_AdminUser --> SVC_Auth : Admin permission check
+SVC_Browse --> SVC_Monitor : Logs & metrics
+SVC_Order --> SVC_Monitor : Logs & metrics
+SVC_User --> SVC_Monitor : Logs & metrics
+SVC_AdminProduct --> SVC_Monitor : Admin action logs
+SVC_AdminOrder --> SVC_Monitor : Admin action logs
+SVC_AdminUser --> SVC_Monitor : Admin action logs
+
+' Business Layer to Data Layer connections
+SVC_Browse --> DAO_Product : Product queries
+SVC_Browse --> DAO_Tag : Category/tag queries
+SVC_Order --> DAO_Order : Order CRUD operations
+SVC_User --> DAO_User : User profile queries
+SVC_User --> DAO_Favorite : Favorite queries
+SVC_User --> DAO_Order : User order queries
+SVC_AdminProduct --> DAO_Product : Product CRUD operations
+SVC_AdminProduct --> DAO_Log : Log admin actions
+SVC_AdminOrder --> DAO_Order : Order CRUD operations
+SVC_AdminOrder --> DAO_Log : Log admin actions
+SVC_AdminUser --> DAO_User : User CRUD operations
+SVC_AdminUser --> DAO_Log : Log admin actions
+SVC_Auth --> DAO_User : User authentication
+SVC_Monitor --> DAO_Log : Store monitoring data
+
+' Data Layer to Database connections
+DAO_Product --> DB : CRUD operations
+DAO_Order --> DB : CRUD operations
+DAO_User --> DB : CRUD operations
+DAO_Favorite --> DB : CRUD operations
+DAO_Tag --> DB : CRUD operations
+DAO_Log --> DB : CRUD operations
+
+' Non-functional components
+cloud "Security & Protection" as Security {
+  [Input Validation]
+  [SQL Injection Prevention]
+  [Human-Machine Recognition]
+}
+
+cloud "Monitoring & Observability" as Observability {
+  [CPU/Memory/I/O Monitoring]
+  [Response Time & QPS]
+  [Database Load & Slow Queries]
+  [Error Code Tracking]
+}
+
+cloud "Fault Recovery" as Recovery {
+  [Service Rollback/Restart]
+  [Emergency Update]
+  [Hardware Replacement Process]
+}
+
+Security --> SVC_Auth : Enhances security
+Security --> SVC_Browse : Validates inputs
+Security --> SVC_Order : Validates inputs
+Observability --> SVC_Monitor : Provides metrics
+Recovery --> DB : Data recovery procedures
+Recovery --> SVC_Monitor : Fault detection
+
+note top of Security
+  NFR-001 to NFR-004
+  Security & Privacy
+end note
+
+note top of Observability
+  NFR-019, NFR-020
+  Observability & Incident Mgmt
+end note
+
+note top of Recovery
+  NFR-017, NFR-018
+  Fault Recovery
+end note
+
+note right of SVC_Browse
+  FR-001, FR-002
+  Popular & categorized browsing
+end note
+
+note right of SVC_Order
+  FR-003 to FR-006
+  Order lifecycle management
+end note
+
+note right of SVC_User
+  FR-007, FR-008
+  Personal favorites & records
+end note
+
+note right of SVC_AdminProduct
+  FR-009 to FR-012
+  Admin product management
+end note
+
+note right of SVC_AdminOrder
+  FR-013 to FR-015
+  Admin order management
+end note
+
+note right of SVC_AdminUser
+  FR-016 to FR-018
+  Admin user management
+end note
+
+@enduml

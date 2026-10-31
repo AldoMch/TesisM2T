@@ -1,0 +1,106 @@
+@startuml
+title squatm3gator API - System Architecture
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Web User" as User
+actor "Client Application" as ClientApp
+actor "Operator" as Operator
+
+package "squatm3gator API Process" {
+
+  component "Web Entry Page\n(index.html)" as WebUI
+
+  component "HTTP API / Request Handler" as API {
+    component "Session Manager" as SessionMgr
+    component "Attack Option Parser" as OptionParser
+    component "Query String Parser" as QueryParser
+    component "HTTP Error Handler" as ErrorHandler
+    component "Homoglyph-Complete\nRetrieval Endpoint" as HomoEndpoint
+  }
+
+  component "Asynchronous Client Channel\n(Socket.IO / WebSocket)" as SocketChannel
+
+  component "Background Consumer Thread" as Consumer {
+    component "Job Listener" as JobListener
+    component "Worker Execution Flow" as WorkerFlow
+    component "Reporting Router\n(session/job matching)" as ReportRouter
+  }
+}
+
+component "Redis Message Broker" as Redis {
+  component "Job Channel" as JobChannel
+  component "Reporting Channel" as ReportChannel
+}
+
+component "Wrapped squatm3 Engine\n(CLI subprocess)" as Squatm3
+
+cloud "GoDaddy APIs" as GoDaddy {
+  component "Single-Domain\nAvailability Endpoint" as GDDSingle
+  component "Batch Availability\nEndpoint" as GDDBatch
+}
+
+database "Configuration Store" as Config
+
+' User / client interactions
+User --> WebUI : GET /
+User --> SocketChannel : receive progress/results
+ClientApp --> API : GET domain-generation resources
+ClientApp --> SocketChannel : asynchronous updates
+Operator --> Config : configure
+
+' HTTP API internal
+WebUI --> API : serve main page
+API --> SessionMgr : create / validate session
+API --> QueryParser : parse request query
+QueryParser --> ErrorHandler : parsing failure
+API --> OptionParser : parse attack codes,\ngodaddy, output flags
+API --> HomoEndpoint : GET complete homoglyphs
+API --> ErrorHandler : HTTP 400/404/500
+SessionMgr --> ReportRouter : session key
+
+' Job dispatch
+OptionParser --> API : constructed options string
+API --> JobChannel : publish job\n(job ID = session key)
+HomoEndpoint --> JobChannel : publish job
+
+' Async processing
+Consumer --> JobChannel : listen / receive jobs
+JobListener --> WorkerFlow : dispatch job
+WorkerFlow --> Squatm3 : invoke with -Hf / --add /\n--output=json options
+Squatm3 --> WorkerFlow : generated domain variants
+WorkerFlow --> ReportRouter : report\nWORKER_ID#JOB_UUID#{MESSAGE/RESULT}
+ReportRouter --> ReportChannel : read/publish reports
+ReportChannel --> SocketChannel : deliver session-matched messages
+SocketChannel --> User : session-specific\nprogress / results
+
+' Optional GoDaddy integration
+WorkerFlow --> GoDaddy : domain availability check\n(Authorization: sso-key <key>:<secret>) : optional
+GoDaddy --> WorkerFlow : availability results
+
+' Configuration
+Config --> API : Redis URI,\nGoDaddy key/secret/base URL/endpoints
+Config --> Consumer : Redis URI
+Config --> WorkerFlow : GoDaddy credentials & endpoints
+
+Redis --> Config : configured Redis URI
+
+note right of API
+  FR-001 Main page + session init
+  FR-003 Attack option parsing
+  FR-004 Job creation/publication
+  FR-006 Homoglyph-complete GET
+  FR-007/008 Error handling
+end note
+
+note right of Consumer
+  FR-002 Background consumer startup
+  FR-005 Session-bound async reporting
+  NFR-001 Decoupled async processing
+  NFR-002 Result isolation by session
+  C-003 Redis-listening consumer
+end note
+
+@enduml

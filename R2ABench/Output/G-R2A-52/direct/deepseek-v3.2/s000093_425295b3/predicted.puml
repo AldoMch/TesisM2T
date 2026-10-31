@@ -1,0 +1,70 @@
+@startuml
+!define RECTANGLE class
+skinparam componentStyle rectangle
+skinparam backgroundColor #F0F0F0
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    ArrowColor #333333
+    FontColor #333333
+}
+skinparam rectangle {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    FontColor #333333
+}
+skinparam node {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    FontColor #333333
+}
+skinparam database {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+    FontColor #333333
+}
+
+title VirtualMotionTracker System Architecture
+
+package "External Systems" {
+  [User Application] as UA
+  [SteamVR/OpenVR Runtime] as STEAMVR
+  database "Legacy Binding File\n(controller_type: mycontroller)" as BINDING
+}
+
+package "VirtualMotionTracker System" {
+  [VMT Manager] as MANAGER
+  [VMT Driver] as DRIVER
+  database "Shared Memory\n(JSON Messages)" as SHMEM
+}
+
+UA --> MANAGER : "External Control Input\n(Architecturally OSC)"
+MANAGER --> SHMEM : "JSON Messages\n(Manager -> Driver)"
+SHMEM --> DRIVER : "JSON Messages\n(Manager -> Driver)"
+DRIVER --> SHMEM : "JSON Messages\n(Driver -> Manager)"
+SHMEM --> MANAGER : "JSON Messages\n(Driver -> Manager)"
+DRIVER --> STEAMVR : "OpenVR Driver Interface"
+BINDING --> STEAMVR : "Loaded for controller_type\n'mycontroller'"
+
+note right of SHMEM
+  Synchronization fields:
+  - send count
+  - handshake count
+  - message length
+end note
+
+note right of DRIVER
+  Provides virtual motion tracking
+  capability to SteamVR/OpenVR
+end note
+
+note right of BINDING
+  JSON format
+  Right-hand mappings:
+  - /user/hand/right/input/a -> /actions/legacy/in/right_axis1_press
+  - /user/hand/right/input/c -> /actions/legacy/in/right_a_press
+  - /user/hand/right/input/b -> /actions/legacy/in/right_grip_press
+  Mode: button, sub_mode: complex
+end note
+
+@enduml

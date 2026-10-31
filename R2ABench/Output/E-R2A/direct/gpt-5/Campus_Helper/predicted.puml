@@ -1,0 +1,173 @@
+@startuml
+title Campus Helper Platform - System Architecture (4-Layer)
+
+skinparam componentStyle rectangle
+skinparam packageStyle rectangle
+skinparam rectangle {
+  BackgroundColor<<Layer>> #F7F7F7
+  BorderColor<<Layer>> #BBBBBB
+}
+skinparam note {
+  BackgroundColor #FFFEE0
+  BorderColor #BBBB88
+}
+
+left to right direction
+
+actor "Guest" as Guest
+actor "Registered User\n(Customer/Seller)" as RegUser
+actor "Administrator" as Admin
+
+rectangle "WeChat Mini Program Runtime\n(WeChat >= 8.0)\n[AD-001][C-001][C-003]" as WeChat {
+  package "Presentation Layer" <<Layer>> as Presentation {
+    component "Mini Program UI\n- Home / Popular\n- Category Browse\n- Product Detail\n- Order UI\n- Personal Center" as MiniUI
+  }
+}
+
+rectangle "Administration Backend (Web UI)" as AdminUI {
+  package "Presentation Layer" <<Layer>> as AdminPresentation {
+    component "Admin Console UI\n- Product Mgmt\n- Order Mgmt\n- User Mgmt" as AdminConsole
+  }
+}
+
+package "Business Layer" <<Layer>> as Business {
+  component "Application API\n(Facade)" as AppAPI
+  component "AuthN/Z Service\n(RBAC, Session/JWT)\n[NFR-003]" as Auth
+  component "Input Validation & SQLi Guard\n[NFR-002]" as Validation
+  component "Anti-Abuse / Bot Detection\n[NFR-001]" as AntiAbuse
+
+  component "Product Catalog Service\n[FR-001, FR-002]" as ProductService
+  component "Popularity Rules Engine\n[AD-002]" as Popularity
+  component "Search & Category Service\n[FR-002]" as SearchService
+
+  component "Order Service\n(Create/Modify Remark/\nConfirm/Cancel)\n[FR-003..FR-006, FR-008]" as OrderService
+  component "Favorites Service\n[FR-007]" as FavoriteService
+  component "User Profile Service" as UserProfileService
+
+  component "Admin Product Mgmt Service\n[FR-009..FR-012]" as AdminProductService
+  component "Admin Order Mgmt Service\n[FR-013..FR-015]" as AdminOrderService
+  component "Admin User Mgmt Service\n[FR-016..FR-018]" as AdminUserService
+  component "Admin Logging Service" as AdminLogService
+
+  component "Observability\n(Metrics, Tracing, QPS)\n[NFR-019, NFR-020]" as Observability
+}
+
+package "Data Layer" <<Layer>> as DataLayer {
+  component "Data Review & Privacy Guard\n[NFR-004]" as DataReview
+  component "User Repository\n[DR-001]" as UserRepo
+  component "Product Repository\n[DR-002]" as ProductRepo
+  component "Order Repository\n[DR-004]" as OrderRepo
+  component "Favorites Repository\n[DR-005]" as FavoriteRepo
+  component "Tag/Category Repository\n[DR-003]" as TagRepo
+  component "Admin Log Repository\n[DR-006]" as AdminLogRepo
+  component "Monitoring Metrics Collector\n[DR-007]" as MetricsRepo
+}
+
+package "Data Entity Layer (Database)" <<Layer>> as DataEntity {
+  database "Relational Database\nCampusHelperDB\n- Users, RolesPermissions [DR-001]\n- Products [DR-002]\n- Categories, Tags [DR-003]\n- Orders [DR-004]\n- Favorites [DR-005]\n- AdminLogs [DR-006]\n- ReviewStatus [DR-008]" as RelDB
+  database "Logs & Metrics Store\n(Service Logs, QPS, RT, CPU/Mem, DB load)\n[DR-007]" as LogDB
+}
+
+' Actors to Presentation
+Guest --> MiniUI : View products\n[FR-001, FR-002]
+RegUser --> MiniUI : Browse, Order,\nFavorites, Records\n[FR-001..FR-008]
+Admin --> AdminConsole : Manage products,\norders, users\n[FR-009..FR-018]
+
+' Presentation to Business
+MiniUI --> AppAPI : API calls\n(browse, order, favorites)
+AdminConsole --> AppAPI : Admin API calls\n(products/orders/users)
+
+' Cross-cutting concerns
+AppAPI --> Validation
+AppAPI --> AntiAbuse
+AppAPI --> Auth
+
+' API to domain services
+AppAPI --> ProductService
+AppAPI --> SearchService
+AppAPI --> OrderService
+AppAPI --> FavoriteService
+AppAPI --> UserProfileService
+AppAPI --> AdminProductService
+AppAPI --> AdminOrderService
+AppAPI --> AdminUserService
+AppAPI --> Observability
+
+' Domain service interactions
+ProductService --> Popularity
+ProductService --> Observability
+SearchService --> Observability
+OrderService --> Observability
+FavoriteService --> Observability
+UserProfileService --> Observability
+AdminProductService --> AdminLogService
+AdminOrderService --> AdminLogService
+AdminUserService --> AdminLogService
+AdminProductService --> Observability
+AdminOrderService --> Observability
+AdminUserService --> Observability
+AdminLogService --> Observability
+
+' Business to Data layer
+Auth --> UserRepo
+UserProfileService --> UserRepo
+ProductService --> ProductRepo
+ProductService --> TagRepo
+Popularity --> ProductRepo
+SearchService --> ProductRepo
+SearchService --> TagRepo
+OrderService --> OrderRepo
+OrderService --> ProductRepo
+FavoriteService --> FavoriteRepo
+AdminProductService --> ProductRepo
+AdminProductService --> TagRepo
+AdminOrderService --> OrderRepo
+AdminUserService --> UserRepo
+AdminLogService --> AdminLogRepo
+Observability --> MetricsRepo
+
+' Data layer to Data entity layer
+UserRepo --> DataReview : write operations
+ProductRepo --> DataReview : write operations
+OrderRepo --> DataReview : write operations
+FavoriteRepo --> DataReview : write operations
+TagRepo --> DataReview : write operations
+AdminLogRepo --> DataReview : write operations
+
+DataReview --> RelDB : validated & reviewed writes
+UserRepo --> RelDB : reads
+ProductRepo --> RelDB : reads
+OrderRepo --> RelDB : reads
+FavoriteRepo --> RelDB : reads
+TagRepo --> RelDB : reads
+AdminLogRepo --> RelDB : reads
+
+MetricsRepo --> LogDB
+
+' Notes for key components and NFRs
+note right of AppAPI
+NFR-005/NFR-006/NFR-007:
+- Support 500~3000 concurrent users
+- 95% RT <= 1.5s (normal), <= 4s (peak)
+- Off-peak search <= 3s
+NFR-008/NFR-016:
+- Up to 10k users, <=100k rows
+- Preserve extension points
+end note
+
+note bottom of DataEntity
+C-004: Four-layer architecture enforced.
+Data is reviewed and privacy-protected (NFR-004).
+Fault recovery targets (NFR-017, NFR-018) rely on ops processes.
+end note
+
+note right of Observability
+NFR-019/NFR-020:
+- Monitor CPU, Mem, I/O, connections
+- QPS, RT, error codes
+- DB load, slow queries
+- Service logs, storage metrics
+- Support rollback/restart/emergency updates
+end note
+
+@enduml

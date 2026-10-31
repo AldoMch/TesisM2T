@@ -1,0 +1,194 @@
+{
+  "requirements": [
+    {
+      "id": "eivas-R001",
+      "description": "Provide a web application supported by a back-end database for case, itinerary, and association data, an algorithm module for regional flow and clustering analysis, and geographic visualization for locations and paths."
+    },
+    {
+      "id": "eivas-R002",
+      "description": "The system shall provide a reporting pipeline that captures, formats, submits, stores, and makes available for analysis epidemiological investigation records including basic case information, disease-related information, itinerary trajectory information, and optional imported-case information."
+    },
+    {
+      "id": "eivas-R003",
+      "description": "The system shall support case management by displaying case records, searching, sorting, and filtering them, and by allowing existing case information to be completed or corrected, including the completion-status view."
+    },
+    {
+      "id": "eivas-R004",
+      "description": "The system shall support itinerary investigation assistance by querying historical itinerary data, prompting detailed activity locations when a case cannot recall them, displaying ambiguous addresses on a map for confirmation, and visualizing case itineraries."
+    },
+    {
+      "id": "eivas-R005",
+      "description": "The system shall support individual case association analysis by filtering associated cases using spatial and temporal thresholds and by presenting a confirmed-case-centered relationship graph."
+    },
+    {
+      "id": "eivas-R006",
+      "description": "The system shall support outbreak-level analysis by checking whether case data is sufficient, returning errors and management prompts when data is problematic, and generating regional flow maps and case clustering graphs through the algorithm module."
+    },
+    {
+      "id": "eivas-R007",
+      "description": "Display outbreak heat maps, temperature and humidity trends, age and occupation distributions, and transportation statistics using the relevant case, stopover, and climate data."
+    },
+    {
+      "id": "eivas-R008",
+      "description": "The system shall protect personal-information queries through encrypted handling and throttle frequent query IPs to reduce resource abuse and protect normal reporting and analysis."
+    },
+    {
+      "id": "eivas-R009",
+      "description": "The system shall tolerate abnormal or out-of-spec input without crashing."
+    }
+  ],
+  "components": [
+    {
+      "id": "web-frontend",
+      "name": "Web Application Frontend",
+      "type": "UserInterface",
+      "description": "Provides user interface for case management, reporting, itinerary prompts, interactive maps, relationship graphs, and outbreak dashboards.",
+      "tracesTo": [
+        "eivas-R001",
+        "eivas-R003",
+        "eivas-R004",
+        "eivas-R005",
+        "eivas-R007"
+      ]
+    },
+    {
+      "id": "api-gateway",
+      "name": "API Gateway and Security Guard",
+      "type": "Gateway",
+      "description": "Enforces IP rate-limiting, validates incoming payloads to handle abnormal inputs safely, and handles query-level encryption for personal information.",
+      "tracesTo": [
+        "eivas-R008",
+        "eivas-R009"
+      ]
+    },
+    {
+      "id": "case-reporting-service",
+      "name": "Case Management and Reporting Service",
+      "type": "BackendService",
+      "description": "Executes reporting pipelines, case data completion tracking, searching, filtering, and validation of case records.",
+      "tracesTo": [
+        "eivas-R002",
+        "eivas-R003",
+        "eivas-R006",
+        "eivas-R009"
+      ]
+    },
+    {
+      "id": "itinerary-service",
+      "name": "Itinerary and Location Assistance Service",
+      "type": "BackendService",
+      "description": "Handles itinerary tracking, historical location queries, and ambiguous address resolution for investigative assistance.",
+      "tracesTo": [
+        "eivas-R002",
+        "eivas-R004"
+      ]
+    },
+    {
+      "id": "epidemiological-analytics-engine",
+      "name": "Epidemiological Algorithm Engine",
+      "type": "AnalyticsModule",
+      "description": "Performs regional flow analysis, clustering algorithms, spatial-temporal association analysis, and outbreak indicator computation.",
+      "tracesTo": [
+        "eivas-R001",
+        "eivas-R005",
+        "eivas-R006",
+        "eivas-R007"
+      ]
+    },
+    {
+      "id": "gis-visualization-service",
+      "name": "Geographic Visualization Service",
+      "type": "GISService",
+      "description": "Generates spatial layers, heat maps, trajectories, and coordinates for location and path rendering.",
+      "tracesTo": [
+        "eivas-R001",
+        "eivas-R004",
+        "eivas-R006",
+        "eivas-R007"
+      ]
+    },
+    {
+      "id": "central-datastore",
+      "name": "Primary Database",
+      "type": "Database",
+      "description": "Stores cases, trajectories, association data, stopover details, and climate context with encryption-at-rest support.",
+      "tracesTo": [
+        "eivas-R001",
+        "eivas-R002",
+        "eivas-R008"
+      ]
+    }
+  ],
+  "connectors": [
+    {
+      "id": "conn-frontend-gateway",
+      "source": "web-frontend",
+      "target": "api-gateway",
+      "type": "HTTPS/WSS",
+      "description": "Routes user requests and visualization queries through rate limiting and security layers."
+    },
+    {
+      "id": "conn-gateway-case-service",
+      "source": "api-gateway",
+      "target": "case-reporting-service",
+      "type": "gRPC",
+      "description": "Dispatches case reporting and management operations."
+    },
+    {
+      "id": "conn-gateway-itinerary-service",
+      "source": "api-gateway",
+      "target": "itinerary-service",
+      "type": "gRPC",
+      "description": "Dispatches itinerary management and location assistance requests."
+    },
+    {
+      "id": "conn-gateway-analytics-engine",
+      "source": "api-gateway",
+      "target": "epidemiological-analytics-engine",
+      "type": "gRPC",
+      "description": "Dispatches clustering, association, and regional flow computation requests."
+    },
+    {
+      "id": "conn-gateway-gis-service",
+      "source": "api-gateway",
+      "target": "gis-visualization-service",
+      "type": "HTTPS",
+      "description": "Fetches spatial layers, heat maps, and map projection assets."
+    },
+    {
+      "id": "conn-case-service-datastore",
+      "source": "case-reporting-service",
+      "target": "central-datastore",
+      "type": "DatabaseClient",
+      "description": "Persists and queries epidemiological records and completion status."
+    },
+    {
+      "id": "conn-itinerary-service-datastore",
+      "source": "itinerary-service",
+      "target": "central-datastore",
+      "type": "DatabaseClient",
+      "description": "Persists and queries trajectory points, stopovers, and addresses."
+    },
+    {
+      "id": "conn-analytics-datastore",
+      "source": "epidemiological-analytics-engine",
+      "target": "central-datastore",
+      "type": "DatabaseClient",
+      "description": "Reads case, itinerary, and climate data for model execution."
+    },
+    {
+      "id": "conn-analytics-gis",
+      "source": "epidemiological-analytics-engine",
+      "target": "gis-visualization-service",
+      "type": "InternalRPC",
+      "description": "Supplies clustering and flow calculation results for spatial rendering."
+    },
+    {
+      "id": "conn-itinerary-gis",
+      "source": "itinerary-service",
+      "target": "gis-visualization-service",
+      "type": "InternalRPC",
+      "description": "Supplies itinerary coordinates for trajectory path rendering and disambiguation."
+    }
+  ]
+}

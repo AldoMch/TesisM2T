@@ -1,0 +1,787 @@
+{
+  "matched_pairs": [
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Infrastructure Layer::  [RabbitMQ]"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Infra Layer::RabbitMQ"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Infrastructure Layer::  [Model Database]"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Infra Layer::MySQL"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Infrastructure Layer::  [Recommendation DB]"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Infra Layer::Redis"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "gt_nodes": [
+        "Awesome Music System::Micro Service Layer",
+        "Awesome Music System::Micro Service Layer::service-auth"
+      ],
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "Service Layer::  [Algorithm Service]"
+      ],
+      "match_type": "N:1"
+    },
+    {
+      "is_boundary_correct": false,
+      "predicted_nodes": [
+        "Service Layer::  [Scheduling Service]"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Infrastructure Layer::  [etcd]"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Micro Service Layer::service-discovery"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Presentation Layer::  [Web Frontend]"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Web Browser --> Web Frontend : HTTPS",
+        "Global::Web Frontend --> Web Backend : REST API"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Security Critical Zone"
+      ],
+      "match_type": "1:N"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway"
+      ],
+      "match_type": "1:1"
+    },
+    {
+      "is_boundary_correct": true,
+      "predicted_nodes": [
+        "External Systems::  [File Storage]"
+      ],
+      "gt_nodes": [
+        "Awesome Music System::Security Critical Zone::Static Resource Server"
+      ],
+      "match_type": "1:1"
+    }
+  ],
+  "reference_node_coverage": [
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Layer::  [Hadoop]",
+        "Infrastructure Layer::  [Nginx]",
+        "Infrastructure Layer::  [RabbitMQ]",
+        "Infrastructure Layer::  [etcd]"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Layer::  [Model Database]",
+        "Infrastructure Layer::  [Score Database]"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer::MySQL"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "External Systems::  [Monitoring]"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer::Prometheus"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Layer::  [RabbitMQ]",
+        "Global::Algorithm Service --> RabbitMQ : Task Status",
+        "Global::Scheduling Service --> RabbitMQ : Task Queue"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer::RabbitMQ"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Infrastructure Layer::  [Model Database]",
+        "Infrastructure Layer::  [Recommendation DB]"
+      ],
+      "gt_node": "Awesome Music System::Infra Layer::Redis"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Algorithm Service --> Recommendation DB : Generate Recommendations",
+        "Global::Algorithm Service --> Score Database : Score Processing",
+        "Global::Web Backend --> Algorithm Service : Music Generation",
+        "Global::Web Backend --> Model Database : Model Data",
+        "Global::Web Backend --> Recommendation DB : Recommendations",
+        "Global::Web Backend --> Recommendation DB : Update Hot Charts",
+        "Global::Web Backend --> Score Database : Score Data",
+        "Global::Web Backend --> User Database : User Data",
+        "Global::Web Frontend --> Web Backend : REST API",
+        "Service Layer::  [Algorithm Service]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Application Layer::  [Web Backend]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-auth"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Application Layer::  [Web Backend]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-auth::auth1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Application Layer::  [Web Backend]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-auth::auth2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Application Layer::  [Web Backend]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-auth::auth3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::etcd --> Algorithm Service : Configuration",
+        "Global::etcd --> Scheduling Service : Configuration",
+        "Global::etcd --> Web Backend : Configuration"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-discovery"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::etcd --> Algorithm Service : Configuration"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-discovery::discovery1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::etcd --> Algorithm Service : Configuration"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-discovery::discovery2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::etcd --> Algorithm Service : Configuration"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-discovery::discovery3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Scheduling Service --> Algorithm Service : Classification",
+        "Global::Scheduling Service --> Algorithm Service : Daily Training",
+        "Global::Scheduling Service --> Algorithm Service : Recommendations",
+        "Global::Scheduling Service --> RabbitMQ : Task Queue",
+        "Global::Web Backend --> Scheduling Service : Task Submission",
+        "Service Layer::  [Scheduling Service]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-scheduler"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Scheduling Service --> Algorithm Service : Classification"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-scheduler::scheduler1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Scheduling Service --> RabbitMQ : Task Queue"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-scheduler::scheduler2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Scheduling Service --> Algorithm Service : Recommendations"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-scheduler::scheduler3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Application Layer::  [Web Backend]",
+        "Client Layer::  [Web Browser]",
+        "Global::Algorithm Service --> Score Database : Score Processing",
+        "Global::Web Backend --> Algorithm Service : Music Generation",
+        "Global::Web Backend --> Recommendation DB : Recommendations",
+        "Global::Web Backend --> Recommendation DB : Update Hot Charts",
+        "Global::Web Backend --> Scheduling Service : Task Submission",
+        "Global::Web Backend --> Score Database : Score Data",
+        "Global::Web Backend --> User Database : User Data",
+        "Global::Web Browser --> Web Frontend : HTTPS",
+        "Global::Web Frontend --> Web Backend : REST API",
+        "Global::etcd --> Web Backend : Configuration",
+        "Presentation Layer::  [Web Frontend]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-web"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Application Layer::  [Web Backend]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-web::web1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Web Frontend --> Web Backend : REST API"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-web::web2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Application Layer::  [Web Backend]"
+      ],
+      "gt_node": "Awesome Music System::Micro Service Layer::service-web::web3"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing",
+        "Global::Web Browser --> Web Frontend : HTTPS",
+        "Infrastructure Layer::  [Nginx]"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing",
+        "Infrastructure Layer::  [Nginx]"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Nginx Cluster"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing",
+        "Global::Web Browser --> Web Frontend : HTTPS",
+        "Global::Web Frontend --> Web Backend : REST API"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Spring Cloud Gateway"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing",
+        "Global::Web Frontend --> Web Backend : REST API"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [
+        "Global::Nginx --> Web Backend : Load Balancing"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway3"
+    },
+    {
+      "covered": true,
+      "covering_predicted_nodes": [
+        "External Systems::  [File Storage]"
+      ],
+      "gt_node": "Awesome Music System::Security Critical Zone::Static Resource Server"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server1"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server2"
+    },
+    {
+      "covered": false,
+      "covering_predicted_nodes": [],
+      "gt_node": "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server3"
+    }
+  ],
+  "predicted_node_grounding": [
+    {
+      "grounded": true,
+      "predicted_node": "Application Layer::  [Web Backend]",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web",
+        "Awesome Music System::Micro Service Layer::service-auth"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Client Layer::  [Mobile App]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Client Layer::  [Web Browser]",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::  [Email Service]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "External Systems::  [File Storage]",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "External Systems::  [Monitoring]",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::Prometheus"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Algorithm Service --> Model Database : Model Parameters",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::MySQL"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Algorithm Service --> RabbitMQ : Task Status",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::RabbitMQ",
+        "Awesome Music System::Micro Service Layer::service-scheduler",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler1",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Algorithm Service --> Recommendation DB : Generate Recommendations",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer",
+        "Awesome Music System::Micro Service Layer::service-scheduler",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Algorithm Service --> Score Database : Score Processing",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Hadoop --> Algorithm Service : Big Data Processing",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Mobile App --> Web Frontend : HTTPS",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Nginx --> Web Backend : Load Balancing",
+      "reference_nodes": [
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway",
+        "Awesome Music System::Security Critical Zone::Nginx Cluster"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Scheduling Service --> Algorithm Service : Classification",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Scheduling Service --> Algorithm Service : Daily Training",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Scheduling Service --> Algorithm Service : Recommendations",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Scheduling Service --> RabbitMQ : Task Queue",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::RabbitMQ",
+        "Awesome Music System::Micro Service Layer::service-scheduler",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler1",
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler2"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Backend --> Algorithm Service : Music Generation",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Web Backend --> Email Service : Notifications",
+      "reference_nodes": []
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Web Backend --> File Storage : File Storage",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Backend --> Model Database : Model Data",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": false,
+      "predicted_node": "Global::Web Backend --> Monitoring : Metrics",
+      "reference_nodes": []
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Backend --> Recommendation DB : Recommendations",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Backend --> Recommendation DB : Update Hot Charts",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler::scheduler3",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Backend --> Scheduling Service : Task Submission",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Backend --> Score Database : Score Data",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::MySQL",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Backend --> User Database : User Data",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Browser --> Web Frontend : HTTPS",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web",
+        "Awesome Music System::Security Critical Zone"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::Web Frontend --> Web Backend : REST API",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::etcd --> Algorithm Service : Configuration",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-discovery",
+        "Awesome Music System::Micro Service Layer::service-scheduler",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::etcd --> Scheduling Service : Configuration",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-discovery",
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Global::etcd --> Web Backend : Configuration",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-discovery",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::  [Hadoop]",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::  [Model Database]",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::MySQL",
+        "Awesome Music System::Infra Layer::Redis",
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::  [Nginx]",
+      "reference_nodes": [
+        "Awesome Music System::Security Critical Zone::Nginx Cluster",
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::  [RabbitMQ]",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::RabbitMQ"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::  [Recommendation DB]",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::Redis",
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::  [Score Database]",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer::MySQL",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::  [User Database]",
+      "reference_nodes": [
+        "Awesome Music System::Infra Layer",
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Infrastructure Layer::  [etcd]",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-discovery",
+        "Awesome Music System::Micro Service Layer::service-scheduler",
+        "Awesome Music System::Security Critical Zone::Spring Cloud Gateway"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Presentation Layer::  [Web Frontend]",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-web"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Service Layer::  [Algorithm Service]",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer"
+      ]
+    },
+    {
+      "grounded": true,
+      "predicted_node": "Service Layer::  [Scheduling Service]",
+      "reference_nodes": [
+        "Awesome Music System::Micro Service Layer::service-scheduler"
+      ]
+    }
+  ],
+  "_response_metadata": {
+    "model": "gpt-5.4-mini-2026-03-17",
+    "usage": {
+      "prompt_tokens": 2407,
+      "completion_tokens": 219,
+      "total_tokens": 2626,
+      "completion_tokens_details": {
+        "audio_tokens": 0,
+        "reasoning_tokens": 0
+      },
+      "prompt_tokens_details": {
+        "audio_tokens": 0,
+        "cached_tokens": 0
+      }
+    }
+  },
+  "unmatched_gt_nodes": [
+    "Awesome Music System::Infra Layer",
+    "Awesome Music System::Infra Layer::Prometheus",
+    "Awesome Music System::Micro Service Layer::service-auth::auth1",
+    "Awesome Music System::Micro Service Layer::service-auth::auth2",
+    "Awesome Music System::Micro Service Layer::service-auth::auth3",
+    "Awesome Music System::Micro Service Layer::service-discovery::discovery1",
+    "Awesome Music System::Micro Service Layer::service-discovery::discovery2",
+    "Awesome Music System::Micro Service Layer::service-discovery::discovery3",
+    "Awesome Music System::Micro Service Layer::service-scheduler::scheduler1",
+    "Awesome Music System::Micro Service Layer::service-scheduler::scheduler2",
+    "Awesome Music System::Micro Service Layer::service-scheduler::scheduler3",
+    "Awesome Music System::Micro Service Layer::service-web::web1",
+    "Awesome Music System::Micro Service Layer::service-web::web2",
+    "Awesome Music System::Micro Service Layer::service-web::web3",
+    "Awesome Music System::Security Critical Zone::Nginx Cluster",
+    "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx1",
+    "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx2",
+    "Awesome Music System::Security Critical Zone::Nginx Cluster::Nginx3",
+    "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway1",
+    "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway2",
+    "Awesome Music System::Security Critical Zone::Spring Cloud Gateway::gateway3",
+    "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server1",
+    "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server2",
+    "Awesome Music System::Security Critical Zone::Static Resource Server::Static Server3"
+  ],
+  "unmatched_predicted_nodes": [
+    "Application Layer::  [Web Backend]",
+    "Client Layer::  [Mobile App]",
+    "Client Layer::  [Web Browser]",
+    "External Systems::  [Email Service]",
+    "External Systems::  [Monitoring]",
+    "Global::Algorithm Service --> Model Database : Model Parameters",
+    "Global::Algorithm Service --> RabbitMQ : Task Status",
+    "Global::Algorithm Service --> Recommendation DB : Generate Recommendations",
+    "Global::Algorithm Service --> Score Database : Score Processing",
+    "Global::Hadoop --> Algorithm Service : Big Data Processing",
+    "Global::Mobile App --> Web Frontend : HTTPS",
+    "Global::Scheduling Service --> Algorithm Service : Classification",
+    "Global::Scheduling Service --> Algorithm Service : Daily Training",
+    "Global::Scheduling Service --> Algorithm Service : Recommendations",
+    "Global::Scheduling Service --> RabbitMQ : Task Queue",
+    "Global::Web Backend --> Algorithm Service : Music Generation",
+    "Global::Web Backend --> Email Service : Notifications",
+    "Global::Web Backend --> File Storage : File Storage",
+    "Global::Web Backend --> Model Database : Model Data",
+    "Global::Web Backend --> Monitoring : Metrics",
+    "Global::Web Backend --> Recommendation DB : Recommendations",
+    "Global::Web Backend --> Recommendation DB : Update Hot Charts",
+    "Global::Web Backend --> Scheduling Service : Task Submission",
+    "Global::Web Backend --> Score Database : Score Data",
+    "Global::Web Backend --> User Database : User Data",
+    "Global::etcd --> Algorithm Service : Configuration",
+    "Global::etcd --> Scheduling Service : Configuration",
+    "Global::etcd --> Web Backend : Configuration",
+    "Infrastructure Layer::  [Hadoop]",
+    "Infrastructure Layer::  [Nginx]",
+    "Infrastructure Layer::  [Score Database]",
+    "Infrastructure Layer::  [User Database]"
+  ],
+  "_provenance": {
+    "fingerprint": "73721631d550b30cdabe84a18b4d1681c2def87ee1268057b9b654367c0557e7",
+    "model": "gpt-5.4-mini",
+    "metric_version": "l1-correspondence-v2",
+    "validation_attempts": 3
+  }
+}

@@ -1,0 +1,111 @@
+@startuml
+!define LAYER_COLOR #E6F3FF
+!define COMPONENT_COLOR #CCE6FF
+!define EXTERNAL_COLOR #FFE6E6
+!define DATASTORE_COLOR #E6FFE6
+
+skinparam component {
+  BackgroundColor<<Layer>> LAYER_COLOR
+  BackgroundColor<<Component>> COMPONENT_COLOR
+  BackgroundColor<<External>> EXTERNAL_COLOR
+  BackgroundColor<<DataStore>> DATASTORE_COLOR
+  BorderColor #666666
+  ArrowColor #333333
+}
+
+title Configuration Anomaly Detection (CAD) - Architecture Overview
+
+package "User Layer" <<Layer>> {
+  [SRE/Operations User] as SRE_USER
+  [Deployment Engineer] as DEPLOY_ENG
+  [Developer/Contributor] as DEV_USER
+}
+
+package "Application Layer" <<Layer>> {
+  component "CAD CLI (cadctl)" as CAD_CLI {
+    component "CHGM Workflow Handler" as CHGM_HANDLER
+    component "Anomaly Detection Engine" as ANOMALY_DETECT
+    component "Mitigation Disposition" as MITIGATION
+  }
+  
+  component "Integration Library" as INTEG_LIB {
+    component "PagerDuty Integration" as PAGERDUTY_INT
+    component "AWS Integration" as AWS_INT
+    component "OCM Integration" as OCM_INT
+  }
+  
+  component "Template Update Utility" as TEMPLATE_UTIL
+}
+
+package "Execution Layer" <<Layer>> {
+  component "Tekton EventListener" as EVENT_LISTENER
+  component "Tekton Trigger" as TEKTON_TRIGGER
+  component "Tekton PipelineRun" as PIPELINE_RUN
+  component "CAD Checks Pipeline" as CAD_PIPELINE
+}
+
+package "External Systems" <<External>> {
+  [Alert Webhook Source] as ALERT_SOURCE
+  [PagerDuty System] as PAGERDUTY
+  [AWS Cloud Services] as AWS
+  [OpenShift Cluster Manager] as OCM
+}
+
+package "Data/Artifacts" <<DataStore>> {
+  database "Deployment Templates" as DEPLOY_TEMPLATES
+  database "PipelineRun Manifests" as PIPELINE_MANIFESTS
+  database "Alert Payloads" as ALERT_PAYLOADS
+}
+
+' User interactions
+SRE_USER --> CAD_CLI : "Executes workflows"
+DEPLOY_ENG --> EVENT_LISTENER : "Operates execution paths"
+DEV_USER --> TEMPLATE_UTIL : "Updates templates"
+
+' CLI internal components
+CAD_CLI --> CHGM_HANDLER : "CHGM alerts"
+CAD_CLI --> ANOMALY_DETECT : "Anomaly detection"
+CAD_CLI --> MITIGATION : "Mitigation actions"
+
+' Integration flows
+CAD_CLI --> INTEG_LIB : "Uses integrations"
+INTEG_LIB --> PAGERDUTY_INT : "Alert handling"
+INTEG_LIB --> AWS_INT : "Cloud operations"
+INTEG_LIB --> OCM_INT : "Cluster management"
+
+' External system connections
+PAGERDUTY_INT --> PAGERDUTY : "Alert notifications"
+AWS_INT --> AWS : "Cloud API calls"
+OCM_INT --> OCM : "Cluster operations"
+
+' Tekton execution paths
+ALERT_SOURCE --> EVENT_LISTENER : "Alert webhooks"
+EVENT_LISTENER --> TEKTON_TRIGGER : "Triggers pipeline"
+TEKTON_TRIGGER --> PIPELINE_RUN : "Creates PipelineRun"
+PIPELINE_RUN --> CAD_PIPELINE : "Executes CAD checks"
+
+' Skip-webhook path (alternative)
+CAD_CLI --> PIPELINE_RUN : "Direct creation\n(skip-webhook)"
+
+' Data flows
+ALERT_SOURCE --> ALERT_PAYLOADS : "Stores payloads"
+PIPELINE_RUN --> PIPELINE_MANIFESTS : "Uses manifests"
+TEMPLATE_UTIL --> DEPLOY_TEMPLATES : "Updates templates"
+
+' Pipeline configuration
+CAD_PIPELINE --> CAD_CLI : "Invokes CLI\nin pipeline tasks"
+
+' Container runtime context
+note right of CAD_CLI
+  Containerized runtime
+  UBI minimal base image
+  /bin/cadctl entry point
+end note
+
+note right of PIPELINE_RUN
+  Tekton v1beta1
+  configuration-anomaly-detection namespace
+  cad-checks-pipeline reference
+end note
+
+@enduml

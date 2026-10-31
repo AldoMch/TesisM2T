@@ -1,0 +1,147 @@
+@startuml
+title HypnoLog Server - System Architecture
+
+skinparam componentStyle uml2
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+' ============================================================
+' External Actors
+' ============================================================
+actor "Logging Client Developer\n(Any language / HTTP POST)" as LoggingClient
+actor "Visualization User\n(Standard Browser)" as User
+actor "Server Operator" as Operator
+
+' ============================================================
+' Client-side (Logging Producer)
+' ============================================================
+package "Logging Producer (External, any language)" {
+  component "HTTP JSON Client" as HttpJsonClient
+}
+
+' ============================================================
+' HypnoLog Server (Node.js / Express)
+' ============================================================
+package "HypnoLog Server (Node.js / Express)" {
+
+  component "Startup Entry Point\n(bin/www, npm start, CLI aliases)\nDefault port 7000, CLI port override" as Startup
+  component "HTTP Server\n(Node HTTP)" as HttpServer
+  component "Express Application" as ExpressApp
+  component "JSON Body Parser\n(Content-Type: application/json, 50mb limit)" as JsonBodyParser
+
+  package "Logging Router (/logger)" {
+    component "Logger In Endpoint\nPOST /logger/in" as LoggerIn
+    component "Logger Status Endpoint\nGET /logger/status" as LoggerStatus
+  }
+
+  component "Static Web File Hosting\n(public web directory)" as StaticFiles
+
+  package "Socket.IO Notification Service" {
+    component "Socket.IO Server\n(attached to HTTP server)" as SocketIOServer
+    component "Display Clients Registry\n(add on connect / remove on disconnect)" as ClientRegistry
+  }
+}
+
+' ============================================================
+' Browser Client
+' ============================================================
+package "Browser Client (web UI at /client.html)" {
+
+  component "Socket.IO Client\n(same-origin connection)" as SocketIOClient
+  component "Notification Message Handler\n(Socket.IO 'notification' event)" as NotificationHandler
+  component "Ajv Schema Validator\n(HypnoLog Data Object schema)" as SchemaValidator
+  component "HypnoLog-error Wrapper\n(wraps error message, validator details,\noriginal message)" as ErrorWrapper
+  component "Received-Data Store\n(client-side list, last-update time)" as ReceivedDataStore
+  component "Window Dispatcher" as WindowDispatcher
+
+  package "Windows" {
+    component "Default Window\n(renders log lines via visualizers)" as DefaultWindow
+  }
+
+  package "Visualizer Dispatcher" {
+    component "Visualizer Loader\n(loads from config / default config)" as VisualizerLoader
+    component "Visualizer Selection\n(first canDisplay(obj) match)" as VisualizerSelection
+  }
+
+  package "Visualizer Plugins (canDisplay / display contract)" {
+    component "Visualizer 1" as Visualizer1
+    component "Visualizer 2" as Visualizer2
+    component "Visualizer N" as VisualizerN
+  }
+
+  component "DOM Rendering / UI\n(tag filters, variable-name prefix,\nlog lines)" as BrowserUI
+}
+
+' ============================================================
+' Relationships
+' ============================================================
+LoggingClient --> HttpJsonClient : sends JSON log messages
+HttpJsonClient --> LoggerIn : HTTP POST JSON (/logger/in)
+LoggingClient --> LoggerStatus : HTTP request (/logger/status)
+
+Operator --> Startup : starts server / selects port
+Startup --> HttpServer : launches
+HttpServer --> ExpressApp : hosts
+ExpressApp --> JsonBodyParser : parses request body
+ExpressApp --> LoggingRouter
+ExpressApp --> StaticFiles : serves browser assets
+HttpServer --> SocketIOServer : attaches Socket.IO
+SocketIOServer --> ClientRegistry : manages connections
+
+LoggerIn --> JsonBodyParser : parses JSON body (no server-side schema rejection)
+LoggerIn --> SocketIOServer : forwards parsed log object for broadcast
+SocketIOServer --> ClientRegistry : looks up connected display clients
+
+StaticFiles --> User : serves /client.html and JS bundles
+User --> SocketIOClient : opens UI in browser
+SocketIOClient --> SocketIOServer : Socket.IO notification delivery (same origin)
+SocketIOClient --> NotificationHandler : receives notification messages
+NotificationHandler --> SchemaValidator : validates received message
+SchemaValidator --> ErrorWrapper : invalid message -> HypnoLog-error object
+ErrorWrapper --> ReceivedDataStore : stores wrapped error object
+SchemaValidator --> ReceivedDataStore : valid object stored
+ReceivedDataStore --> BrowserUI : updates last-update state
+ReceivedDataStore --> WindowDispatcher : dispatches objects to windows
+WindowDispatcher --> DefaultWindow : passes object to each registered window
+DefaultWindow --> VisualizerSelection : requests DOM element
+VisualizerLoader --> Visualizer1 : loads
+VisualizerLoader --> Visualizer2 : loads
+VisualizerLoader --> VisualizerN : loads
+VisualizerLoader --> DefaultWindow : provides configured visualizers
+VisualizerSelection --> Visualizer1 : canDisplay(obj) / display(obj, callback)
+VisualizerSelection --> Visualizer2 : canDisplay(obj) / display(obj, callback)
+VisualizerSelection --> VisualizerN : canDisplay(obj) / display(obj, callback)
+Visualizer1 --> BrowserUI : DOM element (tag / name metadata)
+Visualizer2 --> BrowserUI : DOM element
+VisualizerN --> BrowserUI : DOM element
+DefaultWindow --> BrowserUI : appends visualizer output
+
+' ============================================================
+' Data Model Notes
+' ============================================================
+note right of LoggerIn
+  HypnoLog Data Object (JSON):
+  - data  : required (value / structure)
+  - type  : required (string, display selector)
+  - tags  : optional (UI filtering)
+  - name  : optional (variable-name display)
+end note
+
+note bottom of ErrorWrapper
+  HypnoLog-error object contains:
+  - error message
+  - Ajv validator error details
+  - original received message
+end note
+
+note bottom of Startup
+  Runtime:
+  - Node.js application
+  - npm start -> node ./bin/www
+  - CLI aliases provided
+  - default port 7000, CLI argument override
+  Out of scope: persistence, retention,
+  authentication, authorization, privacy
+end note
+
+@enduml

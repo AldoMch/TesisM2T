@@ -1,0 +1,78 @@
+@startuml
+package "Runtime / Launch" {
+  node "Docker/ROS Runtime" as runtime {
+    component "Launch Entry (simulator)\nlaunch/styx.launch" as launch_sim
+    component "Launch Entry (site)\nlaunch/site.launch" as launch_site
+  }
+}
+
+package "Perception" {
+  component "Traffic Light Perception Node" as tl_detector
+}
+
+package "Planning" {
+  component "Waypoint Loader" as wp_loader
+  component "Waypoint Updater" as wp_updater
+}
+
+package "Control" {
+  component "Waypoint-Following Controller" as controller
+  component "Drive-by-Wire Control Node" as dbw
+}
+
+package "ROS Messaging (Topics)" as ros_topics {
+  interface "/current_pose" as t_current_pose
+  interface "/camera_image" as t_camera
+  interface "/base_waypoints" as t_base_wp
+  interface "/traffic_waypoint" as t_traf_wp
+  interface "/final_waypoints" as t_final_wp
+  interface "/twist_cmd" as t_twist
+  interface "/vehicle_cmd" as t_vehicle_cmd
+}
+
+cloud "Docker" as docker
+cloud "ROS" as ros
+cloud "Udacity Capstone Project Simulator" as simulator
+cloud "rosbag (recorded playback)" as rosbag
+
+runtime --> docker
+runtime --> ros
+ros --> ros_topics
+
+' Launch files orchestrate startup (not data flow)
+launch_sim ..> tl_detector : starts
+launch_sim ..> wp_loader : starts
+launch_sim ..> wp_updater : starts
+launch_sim ..> controller : starts
+launch_sim ..> dbw : starts
+
+launch_site ..> tl_detector : starts
+launch_site ..> wp_loader : starts
+launch_site ..> wp_updater : starts
+launch_site ..> controller : starts
+launch_site ..> dbw : starts
+
+simulator --> t_camera
+rosbag --> t_camera
+t_camera --> tl_detector
+tl_detector --> t_traf_wp
+
+wp_loader --> t_base_wp
+t_base_wp --> wp_updater
+t_traf_wp --> wp_updater
+t_current_pose --> wp_updater
+
+' Per reviewer: TL detector needs base waypoints and current pose
+t_base_wp --> tl_detector
+t_current_pose --> tl_detector
+
+wp_updater --> t_final_wp
+t_final_wp --> controller
+controller --> t_twist
+t_twist --> dbw
+dbw --> t_vehicle_cmd
+
+simulator --> t_current_pose
+rosbag --> t_current_pose
+t_vehicle_cmd --> simulator
+@enduml
