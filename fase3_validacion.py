@@ -1,6 +1,7 @@
 from __future__ import annotations
 import argparse
 import json
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -9,6 +10,11 @@ INPUT_NAME = "2_candidato_materializado.json"
 VALID_NAME = "3_modelo_validado.json"
 ERROR_NAME = "reporte_de_errores_fase3.json"
 LANGUAGES = ("JAVA", "Python")
+
+
+def find_duplicate_ids(identifiers: list[str]) -> list[str]:
+    """Devuelve, en orden de primera aparición, los IDs que aparecen más de una vez."""
+    return [identifier for identifier, count in Counter(identifiers).items() if count > 1]
 
 
 def validate_candidate(candidate: Any) -> list[str]:
@@ -29,17 +35,22 @@ def validate_candidate(candidate: Any) -> list[str]:
     connectors = candidate.get("connectors")
 
     requirement_ids: set[str] = set()
+    requirement_id_list: list[str] = []
     if "requirements" in candidate:
         if not isinstance(requirements, list):
             errors.append("La clave 'requirements' debe contener una lista.")
         else:
             for index, requirement in enumerate(requirements):
-                if not isinstance(requirement, dict) or not isinstance(requirement.get("id"), str):
+                if (not isinstance(requirement, dict) or not isinstance(requirement.get("id"), str)
+                        or not requirement["id"].strip()):
                     errors.append(f"El requisito en requirements[{index}] no tiene un id de texto válido.")
                 else:
                     requirement_ids.add(requirement["id"])
+                    requirement_id_list.append(requirement["id"])
 
     component_ids: set[str] = set()
+    component_id_list: list[str] = []
+    traced_requirement_ids: set[str] = set()
     if "components" in candidate:
         if not isinstance(components, list):
             errors.append("La clave 'components' debe contener una lista.")
@@ -49,10 +60,11 @@ def validate_candidate(candidate: Any) -> list[str]:
                     errors.append(f"El componente en components[{index}] debe ser un objeto.")
                     continue
                 component_id = component.get("id")
-                if not isinstance(component_id, str):
+                if not isinstance(component_id, str) or not component_id.strip():
                     errors.append(f"El componente en components[{index}] no tiene un id de texto válido.")
                 else:
                     component_ids.add(component_id)
+                    component_id_list.append(component_id)
 
                 # Regla 2: cada traza debe apuntar a un requisito existente.
                 traces = component.get("tracesTo", [])
@@ -60,10 +72,17 @@ def validate_candidate(candidate: Any) -> list[str]:
                     errors.append(f"El componente '{component_id or index}' tiene tracesTo que no es una lista.")
                     continue
                 for trace_id in traces:
+                    if not isinstance(trace_id, str):
+                        errors.append(
+                            f"El componente '{component_id or index}' tiene en tracesTo un valor que no es texto: {trace_id!r}."
+                        )
+                        continue
                     if trace_id not in requirement_ids:
                         errors.append(
                             f"El componente '{component_id or index}' referencia el requisito inexistente '{trace_id}' en tracesTo."
                         )
+                        continue
+                    traced_requirement_ids.add(trace_id)
 
     if "connectors" in candidate:
         if not isinstance(connectors, list):
@@ -76,10 +95,27 @@ def validate_candidate(candidate: Any) -> list[str]:
                     continue
                 source = connector.get("source")
                 target = connector.get("target")
-                if source not in component_ids:
+                if not isinstance(source, str) or source not in component_ids:
                     errors.append(f"El conector {index} tiene source inexistente: '{source}'.")
-                if target not in component_ids:
+                if not isinstance(target, str) or target not in component_ids:
                     errors.append(f"El conector {index} tiene target inexistente: '{target}'.")
+
+    # Regla 4: los IDs de requisitos y de componentes deben ser únicos.
+    for duplicate_id in find_duplicate_ids(requirement_id_list):
+        errors.append(f"El id de requisito '{duplicate_id}' está duplicado en requirements.")
+    for duplicate_id in find_duplicate_ids(component_id_list):
+        errors.append(f"El id de componente '{duplicate_id}' está duplicado en components.")
+
+    # Regla 5: cobertura del 100 % sobre R_A. Cada requisito declarado debe
+    # aparecer en el tracesTo de al menos un componente.
+    if isinstance(requirements, list) and isinstance(components, list):
+        if not requirement_id_list:
+            errors.append("La lista 'requirements' está vacía; no se puede calcular la cobertura de R_A.")
+        for requirement_id in dict.fromkeys(requirement_id_list):
+            if requirement_id not in traced_requirement_ids:
+                errors.append(
+                    f"El requisito '{requirement_id}' no está cubierto: ningún componente lo referencia en tracesTo."
+                )
 
     return errors
 
@@ -88,10 +124,10 @@ def write_json(path: Path, data: Any) -> None:
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def process_project(project_dir: Path) -> str:
+def process_project(project_dir: Path, revalidate: bool = False) -> str:
     valid_path = project_dir / VALID_NAME
     error_path = project_dir / ERROR_NAME
-    if valid_path.exists() or error_path.exists():
+    if not revalidate and (valid_path.exists() or error_path.exists()):
         return "ya fue validado; se omite"
 
     input_path = project_dir / INPUT_NAME
@@ -100,27 +136,31 @@ def process_project(project_dir: Path) -> str:
 
     try:
         candidate = json.loads(input_path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as error:
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
         report = {
             "fase_fallo": "Fase 3 (Validación Determinista)",
             "error_tipo": "Violación de Integridad Referencial",
             "detalles": [f"No se pudo leer el candidato materializado: {error}"],
         }
         write_json(error_path, report)
+        valid_path.unlink(missing_ok=True)
         return "rechazado; el archivo JSON no se pudo leer"
 
     errors = validate_candidate(candidate)
     if errors:
         report = {
             "fase_fallo": "Fase 3 (Validación Determinista)",
-            "error_tipo": "Violación de Integridad Referencial",
+            "error_tipo": "Violación de Integridad (referencial, unicidad o cobertura)",
             "detalles": errors,
         }
         write_json(error_path, report)
+        # En modo --revalidar, un modelo aceptado antes puede dejar de serlo.
+        valid_path.unlink(missing_ok=True)
         return f"rechazado; {len(errors)} error(es) registrado(s)"
 
     # Se vuelve a serializar con dos espacios, sin transformar el contenido.
     write_json(valid_path, candidate)
+    error_path.unlink(missing_ok=True)
     return "válido; se creó 3_modelo_validado.json"
 
 
@@ -132,6 +172,11 @@ def main() -> int:
         default=Path("salidas_evaluacion"),
         help="Carpeta que contiene JAVA y Python (por defecto: salidas_evaluacion).",
     )
+    parser.add_argument(
+        "--revalidar",
+        action="store_true",
+        help="Vuelve a validar proyectos ya procesados (útil tras cambiar las reglas).",
+    )
     args = parser.parse_args()
 
     root = args.root
@@ -142,7 +187,7 @@ def main() -> int:
             print(f"[{language}] No existe la carpeta; se omite.")
             continue
         for project_dir in sorted(path for path in language_dir.iterdir() if path.is_dir()):
-            print(f"[{language}/{project_dir.name}] {process_project(project_dir)}")
+            print(f"[{language}/{project_dir.name}] {process_project(project_dir, args.revalidar)}")
             processed += 1
 
     print(f"Fase 3 terminada. Proyectos revisados: {processed}.")

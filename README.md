@@ -1,57 +1,96 @@
-# Tesis M2T: piloto reproducible
+# Tesis M2T: de requisitos a PlantUML
 
-Esta implementación está junto a `R2ABench`, sin modificar sus datos, scripts ni resultados. El primer hito implementado es local y no usa una API: leer un caso real, adaptarlo, validar un candidato controlado, transformarlo a PlantUML y ejecutar las métricas L1 reales del benchmark en un control de identidad.
+El proyecto genera un borrador de arquitectura de componentes a partir de requisitos. Usa los **17 proyectos de E-R2A** incluidos en R2ABench: **8 de JAVA y 9 de Python**. Las referencias del benchmark se utilizan únicamente en la revisión posterior.
 
-## Hallazgos de la inspección
+La generación tiene cuatro fases. Solo la primera consulta a Gemini; las demás son algoritmos locales.
 
-Los casos E-R2A de Java y Python usan una línea JSON por requisito en `req_final.jsonl`. Los campos observados son `req_id`, `requirement`, `source` y `category`; `source` contiene evidencia del SRS. Los diagramas `AD/ad.puml` usan `package`, `rectangle`, `database` y flechas dirigidas.
+| Fase | Script | Entrada | Salida o fallo |
+|---|---|---|---|
+| 1. Generación | [fase1_generacion.py](fase1_generacion.py) | `req_final.jsonl` de cada proyecto E-R2A | `1_respuesta_llm_candidata.txt`; si falla la API, mensaje en consola |
+| 2. Materialización | [fase2_parseo.py](fase2_parseo.py) | Respuesta textual de fase 1 | `2_candidato_materializado.json` o `reporte_de_errores.json` |
+| 3. Validación | [fase3_validacion.py](fase3_validacion.py) | Candidato materializado | `3_modelo_validado.json` o `reporte_de_errores_fase3.json` |
+| 4. Transformación M2T | [fase4_m2t.py](fase4_m2t.py) | Modelo aprobado en fase 3 | `4_codigo_final.puml`; si falla la transformación, mensaje en consola |
 
-R2ABench L1 primero extrae un grafo PlantUML y requiere una alineación semántica de nodos para comparar una predicción con una referencia. Esa alineación puede venir de una caché válida o de un juez configurado. Por ello este proyecto solo crea una alineación de identidad para el control “archivo contra copia idéntica”; no es una alineación semántica aplicable a resultados generados.
+## Qué hace cada fase
 
-## Ejecutar el piloto local
+**Fase 1.** Lee `req_id` y `requirement` de cada línea del JSONL y los envía como pares ID/texto. El prompt y una única demostración de entrada y salida están dentro del script: es una configuración *one-shot*. Usa `gemini-flash-latest`, temperatura `0.2` y salida solicitada como JSON. Guarda el texto recibido sin validarlo. La categoría y la evidencia `source` del JSONL no se envían, ni se incorpora el SRS completo. No lee `AD/ad.puml`.
 
-Desde la raíz del repositorio, usa Python 3.12 y las dependencias del benchmark más `jsonschema`:
+Hace hasta tres intentos de llamada por proyecto, con esperas fijas de 10 segundos entre fallos, y una pausa de 5 segundos después de procesarlo. Son reintentos de API; no hay reparación guiada por errores de validación.
 
-```bash
-python3 -m pip install -r requirements.txt
-python3 -m src.prepare_requirements R2ABench/Dataset/E-R2A/JAVA/AI-DrivenTextAdventureGame/req_final.jsonl --out results/pilot/input.json
-python3 -m src.create_controlled_candidate results/pilot/input.json --out results/pilot/controlled_candidate.json
-python3 -m src.run_pipeline --requirements R2ABench/Dataset/E-R2A/JAVA/AI-DrivenTextAdventureGame/req_final.jsonl --candidate results/pilot/controlled_candidate.json --out results/pilot/proposal/run_01
+**Fase 2.** Elimina espacios exteriores y los delimitadores de un bloque Markdown JSON, si aparecen. Usa `json.loads()` para leer el texto y lo guarda con dos espacios de sangría. No corrige comas ni completa campos. Poder leerlo como JSON no acredita que cumpla el modelo arquitectónico.
+
+**Fase 3.** Revisa las claves `requirements`, `components` y `connectors`, sus listas, los IDs y las referencias. Exige IDs únicos en requisitos y componentes; cada traza debe apuntar a un requisito declarado y cada extremo de conector a un componente existente. También exige cobertura declarada del 100 %: todos los requisitos del candidato deben aparecer en algún `tracesTo`.
+
+Aquí R_A es el conjunto de requisitos declarados en el candidato. Esta fase no compara sus textos ni sus IDs con el archivo original del benchmark y no evalúa si las asociaciones son pertinentes. No utiliza JSON Schema.
+
+**Fase 4.** Ordena componentes por ID y conectores por origen, destino y etiqueta. Limpia los IDs para obtener alias alfanuméricos y resuelve colisiones con sufijos numéricos. Emite una declaración `component` por componente y una flecha dirigida por conector, escapando los nombres. Para la etiqueta usa el primer campo de texto disponible entre `type`, `protocol`, `name` y `description`; si no hay ninguno, usa `relates_to`. `layer` y `responsibility` no se representan visualmente.
+
+## Archivos por proyecto
+
+```text
+R2ABench/Dataset/E-R2A/
+├── JAVA/<Proyecto>/req_final.jsonl
+├── JAVA/<Proyecto>/AD/ad.puml
+└── Python/<Proyecto>/...               # misma organización
+
+salidas_evaluacion/
+├── JAVA/
+│   └── <Proyecto>/
+│       ├── 1_respuesta_llm_candidata.txt
+│       ├── 2_candidato_materializado.json
+│       ├── 3_modelo_validado.json
+│       ├── 4_codigo_final.puml
+│       └── 4_codigo_final.svg         # solo si hay renderizador y se genera
+└── Python/
+    └── <Proyecto>/...                 # mismos nombres
 ```
 
-`controlled_candidate.json` es un artefacto de prueba: conserva y enlaza todos los requisitos, pero no pretende ser una arquitectura de calidad. Sirve para probar el contrato sin ocultar una llamada a un modelo.
+Un rechazo en fase 2 genera `reporte_de_errores.json`; en fase 3, `reporte_de_errores_fase3.json`. Los artefactos posteriores pueden faltar. Un PlantUML antiguo puede seguir existiendo después de una revalidación fallida: el reporte lo identifica como histórico y lo excluye de los resultados aceptados.
 
-Para comprobar la interfaz estructural real de R2ABench contra una copia de la referencia, crea la copia fuera del benchmark y ejecuta:
+## Ejecución
 
-```bash
-cp R2ABench/Dataset/E-R2A/JAVA/AI-DrivenTextAdventureGame/AD/ad.puml results/pilot/reference_copy.puml
-python3 -m src.evaluate_run --pred results/pilot/reference_copy.puml --reference R2ABench/Dataset/E-R2A/JAVA/AI-DrivenTextAdventureGame/AD/ad.puml --identity-alignment --parser-only --out results/pilot/identity_evaluation.json
-```
-
-El resultado esperado del control es `l1_structural_similarity: 100.0`. En `AI-DrivenTextAdventureGame`, las relaciones de referencia conectan contenedores y no entidades, por lo que el evaluador informa `l1_edge_f1: null`; no corresponde interpretarlo como una F1 de cero. `--parser-only` es explícito: la instalación actual no tiene un renderizador PlantUML configurado, así que L0 completo no puede afirmarse aún. Cuando configures `PLANTUML_CMD`, omite ese indicador para ejecutar el L0 real.
-
-## Contrato y límites
-
-El esquema está en `schemas/architecture.schema.json`. Además del esquema, el validador exige IDs únicos, conectores hacia componentes existentes, conservación exacta de IDs y textos de requisitos, trazas existentes y cobertura declarada de todos los requisitos preparados. La cobertura declarada no demuestra que el componente satisfaga el requisito; esa pertinencia se evalúa separadamente.
-
-El transformador solo representa componentes, bases de datos, externos y relaciones. `layer` es opcional en el JSON y no se convierte en agrupamiento, por lo que este piloto no reclama comparar capas mediante L1.
-
-## Ejecutar una llamada al modelo
-
-El cliente usa el protocolo `/chat/completions` compatible con OpenAI. Configura `OPENAI_BASE_URL`, `OPENAI_MODEL` y `OPENAI_API_KEY` en tu entorno; la clave se usa para la solicitud y nunca se escribe en `results/`. Con el mismo caso y la misma demostración sintética, ejecuta una sola repetición de cada método:
+Desde la raíz, con Python 3.12:
 
 ```bash
-python3 -m src.run_llm --method proposal --requirements R2ABench/Dataset/E-R2A/JAVA/AI-DrivenTextAdventureGame/req_final.jsonl --out results/pilot/AI-DrivenTextAdventureGame/proposal/run_01
-python3 -m src.run_llm --method baseline --requirements R2ABench/Dataset/E-R2A/JAVA/AI-DrivenTextAdventureGame/req_final.jsonl --out results/pilot/AI-DrivenTextAdventureGame/baseline/run_01
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements-generation.txt
 ```
 
-La propuesta registra `input.json`, `request.json`, `response.txt`, y según avance, `candidate.json`, `parse.json`, `validation.json`, `generated.puml` y `metadata.json`. La línea base recibe los mismos requisitos y guarda su PlantUML directo. Después de obtener una alineación semántica válida del benchmark, usa `src.evaluate_run --alignment` para escribir `evaluation.json` sin repetir la generación.
-
-## Verificación
+Configura `GEMINI_API_KEY` en `.env`, siguiendo [.env.example](.env.example), o en el entorno. Esa clave solo se necesita para la fase 1. El cliente Gemini se crea al importar ese script.
 
 ```bash
-python3 -m unittest discover -s tests -q
-(cd R2ABench && python3 -m unittest discover -s evaluation_script/tests -q)
+.venv/bin/python fase1_generacion.py
+python3 fase2_parseo.py
+python3 fase3_validacion.py
+python3 fase4_m2t.py
 ```
 
-El siguiente paso, una vez revisado este piloto, es implementar el cliente LLM, guardar `request.json` y `response.txt` por intento, y comparar la propuesta con una línea base que reciba los mismos requisitos.
+Cada fase omite las salidas ya procesadas. La fase 2 y la fase 3 también omiten proyectos con su reporte de error; la fase 4 omite aquellos que no tienen modelo aprobado. Para aplicar reglas nuevas de fase 3 a resultados existentes:
+
+```bash
+python3 fase3_validacion.py --revalidar
+```
+
+La revalidación conserva el contenido de los candidatos que cumplen las reglas. Si uno deja de cumplirlas, elimina su antiguo `3_modelo_validado.json` y guarda el reporte de rechazo. No borra su PlantUML histórico.
+
+## Revisión posterior y reporte
+
+[fase5_reporte_validacion.py](fase5_reporte_validacion.py) recorre los proyectos definidos en E-R2A, incluso si les faltan salidas, y genera [RESULTADOS_VALIDACION_17_PROYECTOS.md](RESULTADOS_VALIDACION_17_PROYECTOS.md):
+
+```bash
+python3 fase5_reporte_validacion.py
+```
+
+Comprueba los delimitadores, declaraciones, alias y referencias del PlantUML generado, y contrasta su cantidad de componentes y conectores con el modelo. Reporta requisitos, componentes, conectores, cobertura declarada y conteos del diagrama de referencia, con medias y el número de casos disponibles. Incluye los rechazos.
+
+Si encuentra `plantuml` en el sistema o un JAR indicado mediante `PLANTUML_JAR` o `--plantuml-jar`, intenta generar SVG. Si no lo encuentra, hace únicamente la revisión estructural y lo indica en el reporte. Se puede forzar esta última opción:
+
+```bash
+python3 fase5_reporte_validacion.py --sin-render
+```
+
+Los conteos GT incluyen `rectangle`, `component`, `database`, `package`, `node` e `interface`, desglosados en el reporte. Las relaciones se cuentan por declaración, distinguiendo dirigidas y no dirigidas; no se confunden las declaraciones de contenedores con componentes planos.
+
+Esta revisión compara tamaños y detecta problemas técnicos. No calcula similitud arquitectónica L1 ni calidad semántica L2. Esas evaluaciones requieren las interfaces y configuraciones de [R2ABench/evaluation_script](R2ABench/evaluation_script/README.md). El benchmark se conserva sin cambios.
+
+Las incidencias históricas de generación se describen en [REPORTE_GEMINI.md](REPORTE_GEMINI.md).
